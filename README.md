@@ -201,13 +201,15 @@ to let the web page reconnect to the new connection socket.**
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.sh --headless --ebook <ebook_file_path> \
-         --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
+         --language <language> --custom_model <custom_model_path>
      ```
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
-         --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
+         --language <language> --custom_model <custom_model_path>
      ```
+     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     
 - **<custom_model_path>**: Path to `model_name.zip` file,
       which must contain (according to the tts engine) all the mandatory files<br>
       (see ./lib/models.py).
@@ -241,7 +243,8 @@ usage: app.py [-h] [--session SESSION] [--share] [--headless] [--ebook EBOOK]
               [--text_temp TEXT_TEMP] [--waveform_temp WAVEFORM_TEMP]
               [--output_dir OUTPUT_DIR] [--version]
 
-Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
+Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or
+run the script in headless mode for direct conversion.
 
 options:
   -h, --help            show this help message and exit
@@ -263,7 +266,7 @@ options:
                         Relative or absolute path of the directory containing the files to convert. 
                             Cannot be used when --ebook is present.
   --language LANGUAGE   Language of the e-book. Default language is set 
-                            in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py
+                  in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py
 
 optional parameters:
   --voice VOICE         (Optional) Path to the voice cloning file for TTS engine. 
@@ -272,8 +275,9 @@ optional parameters:
                         (Optional) Pprocessor unit type for the conversion. 
                             Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.
   --tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}
-                        (Optional) Preferred TTS engine (available are: ['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
-                            Default depends on the selected language. The tts engine should be compatible with the chosen language
+            (Optional) Preferred TTS engine (available are:
+['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
+            Default depends on the selected language. The tts engine should be compatible with the chosen language
   --custom_model CUSTOM_MODEL
                         (Optional) Path to the custom model zip file cntaining mandatory model files. 
                             Please refer to ./lib/models.py
@@ -288,7 +292,8 @@ optional parameters:
                         (xtts only, optional) A length penalty applied to the autoregressive decoder. 
                             Default to config.json model. Not applied to custom models.
   --num_beams NUM_BEAMS
-                        (xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
+                        (xtts only, optional) Controls how many alternative sequences the model explores.
+                            Must be equal or greater than length penalty. 
                             Default to config.json model.
   --repetition_penalty REPETITION_PENALTY
                         (xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
@@ -297,7 +302,8 @@ optional parameters:
                             Lower values mean more likely outputs and increased audio generation speed. 
                             Default to config.json model.
   --top_p TOP_P         (xtts only, optional) Top-p sampling. 
-                            Lower values mean more likely outputs and increased audio generation speed. Default to config.json model.
+                            Lower values mean more likely outputs and increased audio generation speed.
+                            Default to config.json model.
   --speed SPEED         (xtts only, optional) Speed factor for the speech generation. 
                             Default to config.json model.
   --enable_text_splitting
@@ -331,7 +337,9 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
 
-TIP: if it needs some more pauses, just add '###' or '[pause]' between the words you wish more pause. one [pause] equals to 1.4 seconds
+TIP: if it needs some more pauses, just add '###' or 
+'[pause]' between the words you wish more pause. 
+one [pause] equals to 1.4 seconds
 
 
 ### Docker Compose
@@ -366,7 +374,8 @@ For pre-built image enable `#image: docker.io/athomasson2/ebook2audiobook:latest
 
 ```bash
 SKIP_XTTS_TEST: "true" # (Saves space by not baking xtts model into docker image)
-TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] # All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
+TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu]
+# All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
 ```
 
 
@@ -397,9 +406,6 @@ By Default: All compose containers share the contents your local `ebook2audioboo
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
-
-
-
 #### De-noise training data
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
@@ -418,7 +424,6 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
-
 ## Output Formats
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
 
@@ -428,6 +433,12 @@ git pull # Locally/Compose
 
 docker pull athomasson2/ebook2audiobook:latest # For Pre-build docker images
 ```
+
+## Your own Ebook2Audiobook customization
+You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
+a copy of the original conf.py so on each ebook2audiobook update you will backup your modified conf.py and put
+back the original one. You must plan the same process for models.py. If you wish to make your own custom model
+as an official ebook2audiobook fine tuned model so please contact us and we'll ad it to the models.py list.
 
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
