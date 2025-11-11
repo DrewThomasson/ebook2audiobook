@@ -2,6 +2,9 @@ import os
 import platform
 import tempfile
 
+min_python_version = (3,8)
+max_python_version = (3,13)
+
 tmp_dir = os.path.abspath('tmp')
 tempfile.tempdir = tmp_dir
 tmp_expire = 7 # days
@@ -43,9 +46,6 @@ if platform.system() == 'Windows':
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
 
 prog_version = (lambda: open('VERSION.txt').read().strip())()
-
-min_python_version = (3,10)
-max_python_version = (3,13)
 
 NATIVE = 'native'
 FULL_DOCKER = 'full_docker'
