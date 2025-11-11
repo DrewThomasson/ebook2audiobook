@@ -27,7 +27,6 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 #logging.basicConfig(level=logging.DEBUG)
 
 lock = threading.Lock()
-xtts_builtin_speakers_list = None
 
 class Coqui:
     def __init__(self,session:DictProxy):
@@ -44,11 +43,11 @@ class Coqui:
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
             self.params={TTS_ENGINES['XTTSv2']:{"latent_embedding":{}},TTS_ENGINES['BARK']:{},TTS_ENGINES['VITS']:{"semitones":{}},TTS_ENGINES['FAIRSEQ']:{"semitones":{}},TTS_ENGINES['TACOTRON2']:{"semitones":{}},TTS_ENGINES['YOURTTS']:{}}
-            self.params[self.session['tts_engine']]['samplerate']=models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
+            self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             self.resampler_cache = {}
             self.audio_segments = []
-            if xtts_builtin_speakers_list is None:
+            if not xtts_builtin_speakers_list:
                 self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
                 xtts_builtin_speakers_list = torch.load(self.speakers_path)
                 using_gpu = self.session['device'] != devices['CPU']['proc']
@@ -424,7 +423,6 @@ class Coqui:
         return tmp_path
 
     def convert(self, sentence_index:int, sentence:str)->bool:
-        global xtts_builtin_speakers_list
         try:
             speaker = None
             audio_sentence = False
