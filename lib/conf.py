@@ -31,6 +31,7 @@ os.environ['TTS_CACHE'] = tts_dir
 os.environ['TORCH_HOME'] = tts_dir
 os.environ['TTS_HOME'] = models_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
+os.environ['TESSDATA_PREFIX'] = f'{models_dir}/tessdata'
 os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
@@ -76,7 +77,7 @@ audiobooks_gradio_dir = os.path.abspath(os.path.join('audiobooks','gui','gradio'
 audiobooks_host_dir = os.path.abspath(os.path.join('audiobooks','gui','host'))
 audiobooks_cli_dir = os.path.abspath(os.path.join('audiobooks','cli'))
 
-ebook_formats = ['.epub', '.mobi', '.azw3', '.fb2', '.lrf', '.rb', '.snb', '.tcr', '.pdf', '.txt', '.rtf', '.doc', '.docx', '.html', '.odt', '.azw'] # Add or remove the format you accept as input
+ebook_formats = ['.epub', '.mobi', '.azw3', '.fb2', '.lrf', '.rb', '.snb', '.tcr', '.pdf', '.txt', '.rtf', '.doc', '.docx', '.html', '.odt', '.azw', '.tiff', '.tif', '.png', '.jpg', '.jpeg', '.bmp'] # Add or remove the format you accept as input
 voice_formats = ['.mp4', '.m4b', '.m4a', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg', '.aiff', '.aif', '.wma', '.dsd', '.opus', '.pcmu', '.pcma', '.gsm'] # Add or remove the format you accept as input
 output_formats = ['aac', 'flac', 'mp3', 'm4b', 'm4a', 'mp4', 'mov', 'ogg', 'wav', 'webm']
 default_audio_proc_samplerate = 24000

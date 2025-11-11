@@ -15,7 +15,7 @@ import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
-from PIL import Image
+from PIL import Image, ImageSequence
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import Counter
@@ -337,12 +337,12 @@ def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_file
         return None
         
 def hash_proxy_dict(proxy_dict) -> str:
-	try:
-		data = dict(proxy_dict)
-	except Exception:
-		data = {}
-	data_str = json.dumps(data, sort_keys=True, default=str)
-	return hashlib.md5(data_str.encode("utf-8")).hexdigest()
+    try:
+        data = dict(proxy_dict)
+    except Exception:
+        data = {}
+    data_str = json.dumps(data, sort_keys=True, default=str)
+    return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
 def calculate_hash(filepath, hash_algorithm='sha256'):
     hash_func = hashlib.new(hash_algorithm)
@@ -372,7 +372,90 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def convert2epub(id:str)->bool:
+def ocr2xhtml(img: Image.Image, lang: str) -> str:
+    try:
+        debug = True
+        try:
+            data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
+        except Exception as e:
+            print(f'The OCR {lang} trained model must be downloaded.')
+            try:
+                tessdata_dir = os.environ['TESSDATA_PREFIX']
+                url = f'https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata'
+                dest_path = os.path.join(tessdata_dir, f'{lang}.traineddata')
+                print(f'Downloading {lang}.traineddata into {tessdata_dir}...')
+                response = requests.get(url, timeout=15)
+                if response.status_code == 200:
+                    with open(dest_path, 'wb') as f:
+                        f.write(response.content)
+                    print(f'Downloaded and installed {lang}.traineddata successfully.')
+                    data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
+                else:
+                    raise RuntimeError(f'Failed to download traineddata for {lang} (HTTP {response.status_code})')
+            except Exception as ex:
+                print(f'Automatic download failed: {ex}')
+                raise
+        data = data.dropna(subset=['text'])
+        lines = []
+        last_block = None
+        for _, row in data.iterrows():
+            text = row['text'].strip()
+            if not text:
+                continue
+            block = row['block_num']
+            if last_block is not None and block != last_block:
+                lines.append('')  # blank line between blocks
+            lines.append(text)
+            last_block = block
+        joined = '\n'.join(lines)
+        raw_lines = [l.strip() for l in joined.split('\n')]
+        # Normalize line breaks
+        merged_lines = []
+        buffer = ''
+        for i, line in enumerate(raw_lines):
+            if not line:
+                if buffer:
+                    merged_lines.append(buffer.strip())
+                    buffer = ''
+                continue
+            if buffer and not buffer.endswith(('.', '?', '!', ':')) and not line[0].isupper():
+                buffer += ' ' + line
+            else:
+                if buffer:
+                    merged_lines.append(buffer.strip())
+                buffer = line
+        if buffer:
+            merged_lines.append(buffer.strip())
+        # Detect heading-like lines
+        xhtml_parts = []
+        debug_dump = []
+        for i, p in enumerate(merged_lines):
+            is_heading = False
+            if p.isupper() and len(p.split()) <= 8:
+                is_heading = True
+            elif len(p.split()) <= 5 and p.istitle():
+                is_heading = True
+            elif (i == 0 or (i > 0 and merged_lines[i-1] == '')) and len(p.split()) <= 10:
+                is_heading = True
+            if is_heading:
+                xhtml_parts.append(f'<h2>{p}</h2>')
+                debug_dump.append(f'[H2] {p}')
+            else:
+                xhtml_parts.append(f'<p>{p}</p>')
+                debug_dump.append(f'[P ] {p}')
+        if debug:
+            print('=== OCR DEBUG OUTPUT ===')
+            for line in debug_dump:
+                print(line)
+            print('========================')
+        return '\n'.join(xhtml_parts)
+    except Exception as e:
+        error = f'ocr2xhtml error: {e}'
+        print(error)
+        DependencyError(e)
+        return ''
+
+def convert2epub(id:str)-> bool:
     session = context.get_session(id)
     if session['cancellation_requested']:
         msg = 'Cancel requested'
@@ -383,7 +466,7 @@ def convert2epub(id:str)->bool:
         author = False
         util_app = shutil.which('ebook-convert')
         if not util_app:
-            error = "The 'ebook-convert' utility is not installed or not found."
+            error = 'ebook-convert utility is not installed or not found.'
             print(error)
             return False
         file_input = session['ebook']
@@ -396,33 +479,75 @@ def convert2epub(id:str)->bool:
             error = f'Unsupported file format: {file_ext}'
             print(error)
             return False
-        if file_ext == '.pdf':  
-            msg = 'File input is a PDF. flatten it in MarkDown...'
+        if file_ext == '.pdf':
+            msg = 'File input is a PDF. flatten it in XHTML...'
             print(msg)
-            doc = fitz.open(session['ebook'])
+            doc = fitz.open(file_input)
             pdf_metadata = doc.metadata
             filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
             title = pdf_metadata.get('title') or filename_no_ext
             author = pdf_metadata.get('author') or False
-            markdown_pages = []
+            xhtml_pages = []
             for i, page in enumerate(doc):
-                text = page.get_text("markdown").strip()
+                try:
+                    text = page.get_text('xhtml').strip()
+                except Exception as e:
+                    print(f'Error extracting text from page {i+1}: {e}')
+                    text = ''
                 if not text:
-                    msg = f'The page {page} seems to be text image. Using OCR to convert it to real text...'
+                    msg = f'The page {i+1} seems to be image-based. Using OCR...'
                     print(msg)
+                    if session['is_gui_process']:
+                        show_alert({"type": "warning", "msg": msg})
                     pix = page.get_pixmap(dpi=300)
-                    img = Image.open(io.BytesIO(pix.tobytes("png")))
-                    text = pytesseract.image_to_string(img, lang=session['language']).strip()
-                    text = text.replace("\n", "  \n")
-                markdown_pages.append(f"## Page {i+1}\n{text}\n")
-            markdown_text = "\n".join(markdown_pages)
-            # Remove single asterisks for italics (but not bold **)
-            markdown_text = re.sub(r'(?<!\*)\*(?!\*)(.*?)\*(?!\*)', r'\1', markdown_text)
-            # Remove single underscores for italics (but not bold __)
-            markdown_text = re.sub(r'(?<!_)_(?!_)(.*?)_(?!_)', r'\1', markdown_text)
-            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
-            with open(file_input, "w", encoding="utf-8") as html_file:
-                html_file.write(markdown_text)
+                    img = Image.open(io.BytesIO(pix.tobytes('png')))
+                    xhtml_content = ocr2xhtml(img, session['language'])
+                else:
+                    xhtml_content = text
+                xhtml_pages.append(xhtml_content)
+            xhtml_body = '\n'.join(xhtml_pages)
+            xhtml_text = (
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                '<head>\n'
+                f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                '</head>\n'
+                '<body>\n'
+                f'{xhtml_body}\n'
+                '</body>\n'
+                '</html>\n'
+            )
+            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+            with open(file_input, 'w', encoding='utf-8') as html_file:
+                html_file.write(xhtml_text)
+        elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
+            filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
+            msg = f'File input is an image ({file_ext}). Running OCR...'
+            print(msg)
+            img = Image.open(file_input)
+            xhtml_pages = []
+            page_count = 0
+            for i, frame in enumerate(ImageSequence.Iterator(img)):
+                page_count += 1
+                frame = frame.convert('RGB')
+                xhtml_content = ocr2xhtml(frame, session['language'])
+                xhtml_pages.append(xhtml_content)
+            xhtml_body = '\n'.join(xhtml_pages)
+            xhtml_text = (
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                '<head>\n'
+                f'<meta charset="utf-8"/>\n<title>{filename_no_ext}</title>\n'
+                '</head>\n'
+                '<body>\n'
+                f'{xhtml_body}\n'
+                '</body>\n'
+                '</html>\n'
+            )
+            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+            with open(file_input, 'w', encoding='utf-8') as html_file:
+                html_file.write(xhtml_text)
+            print(f'OCR completed for {page_count} image page(s).')
         msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
         print(msg)
         cmd = [
@@ -442,7 +567,7 @@ def convert2epub(id:str)->bool:
         if title:
             cmd += ['--title', title]
         if author:
-            cmd += ['--authors', author]        
+            cmd += ['--authors', author]
         result = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
@@ -462,24 +587,29 @@ def convert2epub(id:str)->bool:
         print(error)
         DependencyError(e)
         return False
+    except Exception as e:
+        error = f'convert2epub error: {e}'
+        print(error)
+        DependencyError(e)
+        return False
 
 def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
     # 1. Try metadata (official EPUB title)
-    meta_title = epubBook.get_metadata("DC","title")
+    meta_title = epubBook.get_metadata('DC','title')
     if meta_title and meta_title[0][0].strip():
         return meta_title[0][0].strip()
     # 2. Try <title> in the head of the first XHTML document
     if all_docs:
-        html = all_docs[0].get_content().decode("utf-8")
-        soup = BeautifulSoup(html,"html.parser")
-        title_tag = soup.select_one("head > title")
+        html = all_docs[0].get_content().decode('utf-8')
+        soup = BeautifulSoup(html,'html.parser')
+        title_tag = soup.select_one('head > title')
         if title_tag and title_tag.text.strip():
             return title_tag.text.strip()
-        # 3. Try <img alt = "..."> if no visible <title>
-        img = soup.find("img",alt = True)
+        # 3. Try <img alt = '...'> if no visible <title>
+        img = soup.find('img',alt = True)
         if img:
             alt = img['alt'].strip()
-            if alt and "cover" not in alt.lower():
+            if alt and 'cover' not in alt.lower():
                 return alt
     return None
 
@@ -3114,7 +3244,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'update_audiobook_player(): {e}'
                     print(error)
                     alert_exception(error, id)
-                return gr.update(), gr.update(value=None), gr.update(value=None)
+                return gr.update(value=0), gr.update(value=None), gr.update(value=None)
 
             def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->dict:
                 return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
