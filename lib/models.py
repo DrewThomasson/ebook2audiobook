@@ -73,7 +73,7 @@ default_engine_settings = {
     },
     TTS_ENGINES['BARK']: {
         "samplerate": 24000,
-        "text_temp": 0.6,
+        "text_temp": 0.4,
         "waveform_temp": 0.6,
         "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
         "speakers_path": os.path.join(voices_dir, '__bark'),
