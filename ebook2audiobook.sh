@@ -412,6 +412,17 @@ else
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
+	
+		# Return early if headless mode
+		if [[ -n "${arguments['headless']+exists}" ]]; then
+			return 0
+		fi
+	
+		# Return early if app bundle already exists
+		if [ -d "$APP_BUNDLE" ]; then
+			echo "✓ $APP_NAME.app bundle already exists at $APP_BUNDLE"
+			return 0
+		fi
 
 		echo "🚀 Creating $APP_NAME.app bundle..."
 		mkdir -p "$MACOS" "$RESOURCES"
