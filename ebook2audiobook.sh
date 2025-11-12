@@ -420,6 +420,15 @@ else
 				return 1   # No display server → headless
 			fi
 
+			if pgrep -x vncserver    >/dev/null 2>&1 || \
+			   pgrep -x Xvnc         >/dev/null 2>&1 || \
+			   pgrep -x x11vnc        >/dev/null 2>&1 || \
+			   pgrep -x Xtightvnc    >/dev/null 2>&1 || \
+			   pgrep -x Xtigervnc    >/dev/null 2>&1 || \
+			   pgrep -x Xrealvnc     >/dev/null 2>&1; then
+				return 0
+			fi
+
 			if pgrep -x gnome-shell       >/dev/null 2>&1 || \
 			   pgrep -x plasmashell       >/dev/null 2>&1 || \
 			   pgrep -x xfce4-session     >/dev/null 2>&1 || \
@@ -548,11 +557,6 @@ EOF
 PLIST
 		echo -e "\nLauncher created at: $APP_BUNDLE\nNext time in GUI mode you just need to open the launchpad and click on ebook2audiobook icon.\n"
 		open_gui
-	}
-
-	function linux_app {
-		# Linux desktop entry creation goes here
-		return 0
 	}
 
 	function linux_app() {
