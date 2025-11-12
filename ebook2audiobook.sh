@@ -558,6 +558,11 @@ PLIST
 	function linux_app() {
 		local DESKTOP_FILE="$HOME/.local/share/applications/ebook2audiobook.desktop"
 		local ICON_PATH="$APP_ROOT/tools/icons/linux/app.png"
+		
+		if [[ -f "$DESKTOP_FILE" ]]; then
+			open_gui
+			return 0
+		fi
 
 		mkdir -p "$HOME/.local/share/applications"
 
@@ -580,7 +585,7 @@ EOF
 		open_gui
 	}
 
-	function build_app {
+	function build_gui {
 		if [[ " ${ARGS[*]} " = *" --headless "* || has_no_display -eq 1 ]]; then
 			return 0
 		fi
@@ -608,7 +613,7 @@ EOF
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
 				conda activate "$APP_ROOT/$PYTHON_ENV"
-				build_app
+				build_gui
 				python "$APP_ROOT/app.py" --script_mode "$APP_MODE" "${ARGS[@]}"
 				conda deactivate 2>&1 > /dev/null
 				conda deactivate 2>&1 > /dev/null
