@@ -427,13 +427,13 @@ else
 (
 	host=127.0.0.1
 	port=7860
-	url="http://$host:$port/"
+	url="http://\$host:\$port/"
 
-	until (echo >"/dev/tcp/$host/$port") >/dev/null 2>&1; do
+	until (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
 		sleep 1
 	done
 
-	open "$url"
+	open "\$url"
 ) &
 
 open -a Terminal "$SCRIPT_DIR/ebook2audiobook.sh"
