@@ -71,7 +71,8 @@ devices = {
     "CUDA": {"proc": "cuda", "found": False},
     "MPS": {"proc": "mps", "found": False},
     "ROCM": {"proc": "rocm", "found": False},
-    "XPU": {"proc": "xpu", "found": False},
+    "XPU": {"proc": "xpu", "found": False}
+}
 default_device = devices['CPU']['proc']
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
 default_chapters_preview = False
@@ -111,9 +112,18 @@ audiobooks_cli_dir = os.path.abspath(os.path.join('audiobooks','cli'))
 # files and audio supported formats
 # ---------------------------------------------------------------------
 
-ebook_formats = ['.epub', '.mobi', '.azw3', '.fb2', '.lrf', '.rb', '.snb', '.tcr', '.pdf', '.txt', '.rtf', '.doc', '.docx', '.html', '.odt', '.azw', '.tiff', '.tif', '.png', '.jpg', '.jpeg', '.bmp'] # Add or remove the format you accept as input
-voice_formats = ['.mp4', '.m4b', '.m4a', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg', '.aiff', '.aif', '.wma', '.dsd', '.opus', '.pcmu', '.pcma', '.gsm'] # Add or remove the format you accept as input
-output_formats = ['aac', 'flac', 'mp3', 'm4b', 'm4a', 'mp4', 'mov', 'ogg', 'wav', 'webm']
+ebook_formats = [
+    ".epub", ".mobi", ".azw3", ".fb2", ".lrf", ".rb", ".snb", ".tcr", ".pdf",
+    ".txt", ".rtf", ".doc", ".docx", ".html", ".odt", ".azw", ".tiff", ".tif",
+    ".png", ".jpg", ".jpeg", ".bmp",
+]
+voice_formats = [
+    ".mp4", ".m4b", ".m4a", ".mp3", ".wav", ".aac", ".flac", ".alac", ".ogg",
+    ".aiff", ".aif", ".wma", ".dsd", ".opus", ".pcmu", ".pcma", ".gsm",
+]
+output_formats = [
+    "aac", "flac", "mp3", "m4b", "m4a", "mp4", "mov", "ogg", "wav", "webm",
+]
 default_audio_proc_samplerate = 24000
 default_audio_proc_format = 'flac' # or 'mp3', 'aac', 'm4a', 'm4b', 'amr', '3gp', 'alac'. 'wav' format is ok but limited to process files < 4GB
 default_output_format = 'm4b'
