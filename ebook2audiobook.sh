@@ -404,24 +404,22 @@ else
 	}
 
 	function mac_app {
-
-		local MACOS="$CONTENTS/MacOS"
 		local APP_NAME="ebook2audiobook"
 		local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 		local CONTENTS="$APP_BUNDLE/Contents"
+		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
 
-		if [[ " ${ARGS[@]} " =~ " --headless " || -d "$APP_BUNDLE" ]]; then
+		if [[ " ${ARGS[*]} " == *" --headless "* || -d "$APP_BUNDLE" ]]; then
 			return 0
 		fi
-		
-		if [[ ! -d "$HOME/Applications" ]]; then
-			mkdir $HOME/Applications
-		fi
 
-		if [[ ! -d "$MACOS" "$RESOURCES" ]]; then
+		[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
+
+		if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
 			mkdir -p "$MACOS" "$RESOURCES"
+		fi
 
 		cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
@@ -433,13 +431,12 @@ else
 	open http://localhost:7860/
 ) &
 
-$SCRIPT_DIR/ebook2audiobook.sh
-
+"$SCRIPT_DIR/ebook2audiobook.sh"
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
 
-		if [ -f "$ICON_PATH" ]; then
+		if [[ -f "$ICON_PATH" ]]; then
 			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 		else
 			echo "Warning: Icon not found at $ICON_PATH"
@@ -476,10 +473,9 @@ EOF
 </plist>
 PLIST
 
-		touch "$APP_BUNDLE"
-		echo "\nE2A Launcher created at: $APP_BUNDLE\n \
-			Next time you just need to click on the launcher\n \
-			to run Ebook1Audiobook and open the browser automatically\n\n"
+		echo -e "\nE2A Launcher created at: $APP_BUNDLE\n 
+			Next time you just need to click on the launcher\n 
+			to run Ebook2Audiobook and open the browser automatically.\n"
 	}
 
 	function linux_app {
