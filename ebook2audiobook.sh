@@ -557,7 +557,7 @@ PLIST
 
 	function linux_app() {
 		local DESKTOP_FILE="$HOME/.local/share/applications/ebook2audiobook.desktop"
-		local ICON_PATH="$APP_ROOT/tools/icons/linux/app.png"
+		local ICON_PATH="$APP_ROOT/tools/icons/linux/appIcon"
 		
 		if [[ -f "$DESKTOP_FILE" ]]; then
 			open_gui
