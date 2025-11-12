@@ -425,10 +425,15 @@ else
 #!/bin/zsh
 
 (
-	until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
+	host=127.0.0.1
+	port=7860
+	url="http://$host:$port/"
+
+	until (echo >"/dev/tcp/$host/$port") >/dev/null 2>&1; do
 		sleep 1
 	done
-	open http://localhost:7860/
+
+	open "$url"
 ) &
 
 open -a Terminal "$SCRIPT_DIR/ebook2audiobook.sh"
