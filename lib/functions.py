@@ -3136,7 +3136,7 @@ def build_interface(args:dict)->gr.Blocks:
                     </div>
                 '''
 
-            def restore_interface(id: str, req: gr.Request) -> tuple:
+            def restore_interface(id:str, req:gr.Request)->tuple:
                 try:
                     session = context.get_session(id)
                     socket_hash = str(req.session_hash)
@@ -3640,16 +3640,16 @@ def build_interface(args:dict)->gr.Blocks:
                                 state['type'] = 'warning'
                                 state['msg'] = error
                         show_alert(state)
-                        return gr.update(value=None), update_gr_custom_model_list(id)
+                        return gr.update(value=None), update_gr_custom_model_list(id), gr.update(visible=False)
                 except ClientDisconnect:
                     error = 'Client disconnected during upload. Operation aborted.'
                     state['type'] = 'error'
                     state['msg'] = error
                 except Exception as e:
-                    error = f'change_gr_custom_model_file() exception: {str(e)}'
+                    error = f'change_gr_custom_model_file() error: {str(e)}'
                     state['type'] = 'error'
                     state['msg'] = error
-                return gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(visible=True)
 
             def change_gr_tts_engine_list(engine:str, id:str)->tuple:
                 session = context.get_session(id)
@@ -4115,7 +4115,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_file.upload(
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
-                outputs=[gr_custom_model_file, gr_custom_model_list]
+                outputs=[gr_custom_model_file, gr_custom_model_list, gr_row_voice_player]
             )
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,

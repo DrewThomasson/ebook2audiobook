@@ -11,6 +11,7 @@ ARCH=$(uname -m)
 PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.13"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -44,10 +45,7 @@ done
 
 NATIVE="native"
 FULL_DOCKER="full_docker"
-
 SCRIPT_MODE="$NATIVE"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 PYTHON_ENV="python_env"
@@ -400,67 +398,56 @@ else
 					python -m pip install --no-cache-dir --use-pep517 --progress-bar=on 'transformers<=4.51.3'
 				fi
 			fi
-			conda deactivate
+			conda deactivate 2>&1 > /dev/null
 		fi
 		return 0
 	}
 
 	function create_macos_app_bundle {
 		local APP_NAME="ebook2audiobook"
-		
-		# Get Desktop path that works in any language
-		local DESKTOP_PATH=$(osascript -e 'tell application "Finder" to return POSIX path of (desktop folder as alias)' 2>/dev/null)
-		
-		# Fallback to English Desktop if osascript fails
-		if [ -z "$DESKTOP_PATH" ]; then
-			DESKTOP_PATH="$HOME/Desktop"
-		fi
-		
-		local APP_BUNDLE="$DESKTOP_PATH/$APP_NAME.app"
+		local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
 
-		# Return early if headless mode - check ARGS directly
+		if [[ ! -d "$HOME/Applications" ]]; then
+			mkdir $HOME/Applications
+		fi
+
 		if [[ " ${ARGS[@]} " =~ " --headless " ]]; then
 			return 0
 		fi
 
-		# Check if app bundle exists in any location
-		if [ -d "$APP_BUNDLE" ] || [ -d "/Applications/$APP_NAME.app" ] || [ -d "$HOME/Applications/$APP_NAME.app" ]; then
+		if [[ -d "$APP_BUNDLE" ]]; then
 			return 0
 		fi
-
+		
 		mkdir -p "$MACOS" "$RESOURCES"
 
-		# Create the executable script inside the bundle
 		cat > "$MACOS/$APP_NAME" << EOF
-#!/bin/bash
+#!/bin/zsh
 
-# Create a temporary script file to run in Terminal
 TEMP_SCRIPT=\$(mktemp)
 
 cat > "\$TEMP_SCRIPT" << 'SCRIPT'
-#!/bin/bash
+#!/bin/zsh
+
 cd "$SCRIPT_DIR"
-conda deactivate
-bash ebook2audiobook.sh
 
-# Wait 10 seconds for the server to start
-sleep 10
+(
+    until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
+        sleep 1
+    done
+    open http://localhost:7860/
+) &
 
-# Open the browser
-open http://localhost:7860/
+./ebook2audiobook.sh
 
 SCRIPT
 
 chmod +x "\$TEMP_SCRIPT"
-
-# Open Terminal and run the script
 open -a Terminal "\$TEMP_SCRIPT"
-
-# Clean up the temp script after 60 seconds
 sleep 60
 rm "\$TEMP_SCRIPT"
 
@@ -468,14 +455,12 @@ EOF
 
 		chmod +x "$MACOS/$APP_NAME"
 
-		# Copy the icon to the bundle
 		if [ -f "$ICON_PATH" ]; then
 			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 		else
 			echo "Warning: Icon not found at $ICON_PATH"
 		fi
 
-		# Create the Info.plist file (required for macOS app bundles)
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -505,14 +490,13 @@ EOF
 	<string>AppIcon</string>
 </dict>
 </plist>
+
 PLIST
 
-
-		# Update macOS cache to recognize the new app
 		touch "$APP_BUNDLE"
-
 		echo ""
-		echo "E2A Launcher located at: $APP_BUNDLE"
+		echo "E2A Launcher created at: $APP_BUNDLE"
+		echo "Next time you will just click on the launcher to run E2A and open the browser automatically"
 		echo ""
 	}
 
@@ -531,8 +515,8 @@ PLIST
 
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
-		conda deactivate
-		conda deactivate
+		conda deactivate 2>&1 > /dev/null
+		conda deactivate 2>&1 > /dev/null
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
 		pass=true	   
 		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
@@ -547,8 +531,8 @@ PLIST
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 				create_app_bundle
 				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
-				conda deactivate
-				conda deactivate
+				conda deactivate 2>&1 > /dev/null
+				conda deactivate 2>&1 > /dev/null
 			fi
 		fi
 	else
