@@ -12,7 +12,7 @@ PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.v
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.13"
 
-export APP_ROOT="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")" && pwd)"
+esport APP_ROOT="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")" && pwd)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
 
@@ -411,81 +411,66 @@ else
 		local RESOURCES="$CONTENTS/Resources"
 		local ICON_PATH="$APP_ROOT/tools/icons/mac/appIcon.icns"
 
-		if [[ " ${ARGS[*]} " == *" --headless "* || -d "$APP_BUNDLE" ]]; then
-			return 0
-		fi
+		[[ -d "$HOME/Applications" ]] || mkdir -p "$HOME/Applications"
+		mkdir -p "$MACOS" "$RESOURCES"
 
-		[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
-
-		if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
-			mkdir -p "$MACOS" "$RESOURCES"
-		fi
+		# Escape APP_ROOT safely for AppleScript
+		local ESCAPED_APP_ROOT
+		ESCAPED_APP_ROOT=$(printf '%q' "$APP_ROOT")
 
 		cat > "$MACOS/$APP_NAME" << EOF
-#!/bin/zsh
+	#!/bin/zsh
 
-(
-    host=127.0.0.1
-    port=7860
-    url="http://\$host:\$port/"
-    timeout=30
-    start_time=\$(date +%s)
+	(
+		host=127.0.0.1
+		port=7860
+		url="http://\$host:\$port/"
+		timeout=30
+		start_time=\$(date +%s)
 
-    while ! (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
-        sleep 1
-        elapsed=\$(( \$(date +%s) - \$start_time ))
-        if [ "\$elapsed" -ge "\$timeout" ]; then
-            echo "Timeout after \${timeout}s: \${url} not responding"
-            exit 1
-        fi
-    done
+		while ! (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
+			sleep 1
+			elapsed=\$(( \$(date +%s) - \$start_time ))
+			if [ "\$elapsed" -ge "\$timeout" ]; then
+				echo "Timeout after \${timeout}s: \${url} not responding"
+				exit 1
+			fi
+		done
 
-    open "\$url"
-) &
+		open "\$url"
+	) &
 
-osascript -e '
-tell application "Terminal"
-    do script "cd \"$(dirname "$APP_ROOT")\" && ./ebook2audiobook.sh"
-    activate
-end tell
-'
-EOF
+	osascript -e '
+	tell application "Terminal"
+		do script "cd ${ESCAPED_APP_ROOT} && ./ebook2audiobook.sh"
+		activate
+	end tell
+	'
+	EOF
 
 		chmod +x "$MACOS/$APP_NAME"
 		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
-	<key>CFBundleExecutable</key>
-	<string>ebook2audiobook</string>
-	<key>CFBundleIdentifier</key>
-	<string>com.local.ebook2audiobook</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>ebook2audiobook</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>10.9</string>
-	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
-	<key>CFBundleIconFile</key>
-	<string>AppIcon</string>
-</dict>
-</plist>
-PLIST
+	<?xml version="1.0" encoding="UTF-8"?>
+	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+	<plist version="1.0">
+	<dict>
+		<key>CFBundleExecutable</key>
+		<string>ebook2audiobook</string>
+		<key>CFBundleIdentifier</key>
+		<string>com.local.ebook2audiobook</string>
+		<key>CFBundleName</key>
+		<string>ebook2audiobook</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleIconFile</key>
+		<string>AppIcon</string>
+	</dict>
+	</plist>
+	PLIST
 
-		echo -e "\nE2A Launcher created at: $APP_BUNDLE\nNext time you just need to click on the launcher\nto run Ebook2Audiobook and open the browser automatically.\n"
+		echo -e "\nE2A Launcher created at: $APP_BUNDLE\nDouble-click to run Ebook2Audiobook.\n"
 	}
 
 	function linux_app {
