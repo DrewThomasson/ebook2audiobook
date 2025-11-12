@@ -7,7 +7,7 @@ set "ARGS=%*"
 set "NATIVE=native"
 set "FULL_DOCKER=full_docker"
 
-set "SCRIPT_MODE=%NATIVE%"
+set "APP_MODE=%NATIVE%"
 set "APP_ROOT=%~dp0"
 
 set "ARCH=%PROCESSOR_ARCHITECTURE%"
@@ -61,7 +61,7 @@ if "%ARCH%"=="x86" (
 
 :: Check if running inside Docker
 if defined CONTAINER (
-	set "SCRIPT_MODE=%FULL_DOCKER%"
+	set "APP_MODE=%FULL_DOCKER%"
 	goto :main
 )
 
@@ -258,8 +258,8 @@ goto :install_components
 exit /b
 
 :main
-if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
-	call python %APP_ROOT%\app.py --script_mode %SCRIPT_MODE% %ARGS%
+if "%APP_MODE%"=="%FULL_DOCKER%" (
+	call python %APP_ROOT%\app.py --script_mode %APP_MODE% %ARGS%
 ) else (
 	if not exist "%APP_ROOT%\%PYTHON_ENV%" (
 		call conda create --prefix "%APP_ROOT%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
@@ -276,7 +276,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		call %CONDA_ENV% activate base
 		call conda activate "%APP_ROOT%\%PYTHON_ENV%"
 	)
-	call python "%APP_ROOT%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+	call python "%APP_ROOT%\app.py" --script_mode %APP_MODE% %ARGS%
 	call conda deactivate
 )
 exit /b

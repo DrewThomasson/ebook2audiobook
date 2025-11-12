@@ -45,7 +45,7 @@ done
 
 NATIVE="native"
 FULL_DOCKER="full_docker"
-SCRIPT_MODE="$NATIVE"
+APP_MODE="$NATIVE"
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 PYTHON_ENV="python_env"
@@ -90,11 +90,11 @@ compare_versions() {
 
 # Check if the current script is run inside a docker container
 if [[ -n "$container" || -f /.dockerenv ]]; then
-	SCRIPT_MODE="$FULL_DOCKER"
+	APP_MODE="$FULL_DOCKER"
 else
 	if [[ -n "${arguments['script_mode']+exists}" ]]; then
 		if [ "${arguments['script_mode']}" = "$NATIVE" ]; then
-			SCRIPT_MODE="${arguments['script_mode']}"
+			APP_MODE="${arguments['script_mode']}"
 		fi
 	fi
 fi
@@ -429,15 +429,10 @@ cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
 (
-	host=127.0.0.1
-	port=7860
-	url="http://\$host:\$port/"
-
-	until (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
-		sleep 1
-	done
-
-	open "\$url"
+    until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
+        sleep 1
+    done
+    open http://localhost:7860/
 ) &
 
 # TODO: launch directly ./ebook2audiobook.sh when log available in gradio
@@ -499,11 +494,11 @@ PLIST
 		fi
 	}
 
-	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
-		python "$APP_ROOT/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+	if [ "$APP_MODE" = "$FULL_DOCKER" ]; then
+		python "$APP_ROOT/app.py" --script_mode "$APP_MODE" "${ARGS[@]}"
 		conda deactivate 2>&1 > /dev/null
 		conda deactivate 2>&1 > /dev/null
-	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
+	elif [ "$APP_MODE" = "$NATIVE" ]; then
 		pass=true	   
 		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
 			if ! install_programs; then
@@ -516,7 +511,7 @@ PLIST
 				source $CONDA_ENV
 				conda activate "$APP_ROOT/$PYTHON_ENV"
 				build_app
-				python "$APP_ROOT/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+				python "$APP_ROOT/app.py" --script_mode "$APP_MODE" "${ARGS[@]}"
 				conda deactivate 2>&1 > /dev/null
 				conda deactivate 2>&1 > /dev/null
 			fi
