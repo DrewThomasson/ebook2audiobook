@@ -403,7 +403,7 @@ else
 		return 0
 	}
 	
-	no_display_mode() {
+	has_no_display() {
 		if [[ "$OSTYPE" = "darwin"* ]]; then
 			if pgrep -x WindowServer >/dev/null 2>&1 &&
 			   [[ "$(launchctl managername 2>/dev/null)" = "Aqua" ]]; then
@@ -480,7 +480,12 @@ else
 		# Escape APP_ROOT safely for AppleScript
 		local ESCAPED_APP_ROOT
 
-		if [[ " ${ARGS[*]} " = *" --headless "* || -d "$APP_BUNDLE" || no_display_mode -eq 1 ]]; then
+		if [[ " ${ARGS[*]} " = *" --headless "* || has_no_display -eq 1 ]]; then
+			return 0
+		fi
+		
+		if [[ -d "$APP_BUNDLE" ]]; then
+			open_gui
 			return 0
 		fi
 
