@@ -432,10 +432,23 @@ cat > "$MACOS/$APP_NAME" << EOF
 	host=127.0.0.1
 	port=7860
 	url="http://\$host:\$port/"
-    until curl -fs \$url >/dev/null 2>&1; do
-        sleep 1
-    done
-    open \$url
+	timeout=30
+	start_time=\$(date +%s)
+
+	echo "Waiting for \$url ..."
+
+	while ! nc -z "\$host" "\$port" >/dev/null 2>&1; do
+		sleep 1
+		elapsed=\$(( \$(date +%s) - \$start_time ))
+		if [ "\$elapsed" -ge "\$timeout" ]; then
+			echo "Timeout after \${timeout}s: \${url} not responding"
+			exit 0
+		fi
+	done
+
+	sleep 1
+	open "\$url"
+	exit 0
 ) &
 
 # TODO: replace when log available in gradio with
