@@ -438,15 +438,13 @@ cat > "$TEMP_SCRIPT" << 'SCRIPT'
 cd "$SCRIPT_DIR"
 
 (
-  echo "Waiting for http://localhost:7860 to become available..."
   until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
-    sleep 1
+	  sleep 1
   done
-  echo "Server is up — opening browser."
   open http://localhost:7860/
 ) &
 
-zsh ebook2audiobook.sh
+zsh $SCRIPT_DIR/ebook2audiobook.sh
 
 SCRIPT
 
