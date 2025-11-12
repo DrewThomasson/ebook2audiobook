@@ -429,10 +429,13 @@ cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
 (
-    until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
+	host=127.0.0.1
+	port=7860
+	url="http://\$host:\$port/"
+    until curl -fs \$url >/dev/null 2>&1; do
         sleep 1
     done
-    open http://localhost:7860/
+    open \$url
 ) &
 
 # TODO: launch directly ./ebook2audiobook.sh when log available in gradio
