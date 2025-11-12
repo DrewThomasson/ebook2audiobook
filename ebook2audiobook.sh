@@ -340,7 +340,7 @@ else
 	function conda_check {
 		if ! command -v conda &> /dev/null || [ ! -f "$CONDA_ENV" ]; then
 			echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
-			if [[ "$OSTYPE" == darwin* ]]; then
+			if [[ "$OSTYPE" = darwin* ]]; then
 				curl -fsSLo "$CONDA_INSTALLER" "$CONDA_URL"
 				shell_name="zsh"
 			else
@@ -404,9 +404,9 @@ else
 	}
 	
 	no_display_mode() {
-		if [[ "$OSTYPE" == "darwin"* ]]; then
+		if [[ "$OSTYPE" = "darwin"* ]]; then
 			if pgrep -x WindowServer >/dev/null 2>&1 &&
-			   [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
+			   [[ "$(launchctl managername 2>/dev/null)" = "Aqua" ]]; then
 				return 0   # macOS GUI
 			else
 				return 1   # SSH or console mode
@@ -456,7 +456,7 @@ else
 				fi
 			done
 
-			if [[ "$OSTYPE" == "darwin"* ]]; then
+			if [[ "$OSTYPE" = "darwin"* ]]; then
 				open "$url" >/dev/null 2>&1 &
 			elif command -v xdg-open >/dev/null 2>&1; then
 				xdg-open "$url" >/dev/null 2>&1 &
@@ -481,7 +481,7 @@ else
 		# Escape APP_ROOT safely for AppleScript
 		local ESCAPED_APP_ROOT
 
-		if [[ " ${ARGS[*]} " == *" --headless "* || -d "$APP_BUNDLE" || no_display_mode ]]; then
+		if [[ " ${ARGS[*]} " = *" --headless "* || -d "$APP_BUNDLE" || no_display_mode eq 1 ]]; then
 			return 0
 		fi
 
