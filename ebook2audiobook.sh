@@ -411,9 +411,16 @@ else
 		local RESOURCES="$CONTENTS/Resources"
 		local ICON_PATH="$APP_ROOT/tools/icons/mac/appIcon.icns"
 
-		[[ -d "$HOME/Applications" ]] || mkdir -p "$HOME/Applications"
-		mkdir -p "$MACOS" "$RESOURCES"
+		if [[ " ${ARGS[*]} " == *" --headless "* || -d "$APP_BUNDLE" ]]; then
+			return 0
+		fi
 
+		[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
+
+		if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
+			mkdir -p "$MACOS" "$RESOURCES"
+		fi
+		
 		# Escape APP_ROOT safely for AppleScript
 		local ESCAPED_APP_ROOT
 		ESCAPED_APP_ROOT=$(printf '%q' "$APP_ROOT")
@@ -445,8 +452,8 @@ tell application "Terminal"
 	do script "cd ${ESCAPED_APP_ROOT} && ./ebook2audiobook.sh"
 	activate
 end tell
-'
 EOF
+
 
 		chmod +x "$MACOS/$APP_NAME"
 		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
@@ -456,21 +463,33 @@ EOF
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>ebook2audiobook</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.local.ebook2audiobook</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>ebook2audiobook</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.9</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 </dict>
 </plist>
 PLIST
 
-		echo -e "\nE2A Launcher created at: $APP_BUNDLE\nDouble-click to run Ebook2Audiobook.\n"
+		echo -e "\nE2A Launcher created at: $APP_BUNDLE\nNext time you just need to click on the launcher\nto run Ebook2Audiobook and open the browser automatically.\n"
 	}
 
 	function linux_app {
