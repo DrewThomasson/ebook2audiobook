@@ -481,7 +481,7 @@ else
 		# Escape APP_ROOT safely for AppleScript
 		local ESCAPED_APP_ROOT
 
-		if [[ " ${ARGS[*]} " = *" --headless "* || -d "$APP_BUNDLE" || no_display_mode eq 1 ]]; then
+		if [[ " ${ARGS[*]} " = *" --headless "* || -d "$APP_BUNDLE" || no_display_mode -eq 1 ]]; then
 			return 0
 		fi
 
