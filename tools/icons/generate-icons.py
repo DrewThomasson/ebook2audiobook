@@ -103,6 +103,9 @@ def create_mac_icns(output_dir):
             icns = IcnsFile()
 
             for size in sizes:
+                # Skip sizes not directly supported by ICNS
+                if size not in [16, 32, 128, 256, 512, 1024]:
+                    continue
                 png_path = f'{output_dir}/icon-{size}.png'
                 if not os.path.exists(png_path):
                     continue
