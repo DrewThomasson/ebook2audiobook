@@ -411,33 +411,32 @@ else
 			else
 				return 1   # SSH or console mode
 			fi
-		fi
+		else
+			if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+				return 1
+			fi
 
-		if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+			if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
+				return 1   # No display server → headless
+			fi
+
+			if pgrep -x gnome-shell       >/dev/null 2>&1 || \
+			   pgrep -x plasmashell       >/dev/null 2>&1 || \
+			   pgrep -x xfce4-session     >/dev/null 2>&1 || \
+			   pgrep -x cinnamon          >/dev/null 2>&1 || \
+			   pgrep -x mate-session      >/dev/null 2>&1 || \
+			   pgrep -x lxsession         >/dev/null 2>&1 || \
+			   pgrep -x openbox           >/dev/null 2>&1 || \
+			   pgrep -x i3                >/dev/null 2>&1 || \
+			   pgrep -x sway              >/dev/null 2>&1 || \
+			   pgrep -x hyprland          >/dev/null 2>&1 || \
+			   pgrep -x wayfire           >/dev/null 2>&1 || \
+			   pgrep -x river              >/dev/null 2>&1 || \
+			   pgrep -x fluxbox           >/dev/null 2>&1; then
+				return 0   # Desktop environment detected
+			fi
 			return 1
 		fi
-
-		if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
-			return 1   # No display server → headless
-		fi
-
-		if pgrep -x gnome-shell       >/dev/null 2>&1 || \
-		   pgrep -x plasmashell       >/dev/null 2>&1 || \
-		   pgrep -x xfce4-session     >/dev/null 2>&1 || \
-		   pgrep -x cinnamon          >/dev/null 2>&1 || \
-		   pgrep -x mate-session      >/dev/null 2>&1 || \
-		   pgrep -x lxsession         >/dev/null 2>&1 || \
-		   pgrep -x openbox           >/dev/null 2>&1 || \
-		   pgrep -x i3                >/dev/null 2>&1 || \
-		   pgrep -x sway              >/dev/null 2>&1 || \
-		   pgrep -x hyprland          >/dev/null 2>&1 || \
-		   pgrep -x wayfire           >/dev/null 2>&1 || \
-		   pgrep -x river              >/dev/null 2>&1 || \
-		   pgrep -x fluxbox           >/dev/null 2>&1; then
-			return 0   # Desktop environment detected
-		fi
-
-		return 1
 	}
 	
 	function open_gui() {
