@@ -498,6 +498,7 @@ EOF
 PLIST
 
 		echo -e "\nE2A Launcher created at: $APP_BUNDLE\nNext time you just need to click on the launcher\nto run Ebook2Audiobook and open the browser automatically.\n"
+		zsh $MACOS/$APP_NAME
 	}
 
 	function linux_app {
