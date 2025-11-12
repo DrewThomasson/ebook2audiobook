@@ -479,10 +479,6 @@ else
 		local ICON_PATH="$APP_ROOT/tools/icons/mac/appIcon.icns"
 		# Escape APP_ROOT safely for AppleScript
 		local ESCAPED_APP_ROOT
-
-		if [[ " ${ARGS[*]} " = *" --headless "* || has_no_display -eq 1 ]]; then
-			return 0
-		fi
 		
 		if [[ -d "$APP_BUNDLE" ]]; then
 			open_gui
@@ -559,12 +555,41 @@ PLIST
 		return 0
 	}
 
+	function linux_app() {
+		local DESKTOP_FILE="$HOME/.local/share/applications/ebook2audiobook.desktop"
+		local ICON_PATH="$APP_ROOT/tools/icons/linux/app.png"
+
+		mkdir -p "$HOME/.local/share/applications"
+
+		cat > "$DESKTOP_FILE" <<EOF
+[Desktop Entry]
+Type=Application
+Name=ebook2audiobook
+Exec=$APP_ROOT/ebook2audiobook.sh
+Icon=$ICON_PATH
+Terminal=true
+Categories=Utility;
+EOF
+
+		chmod +x "$DESKTOP_FILE"
+
+		if command -v update-desktop-database >/dev/null 2>&1; then
+			update-desktop-database ~/.local/share/applications >/dev/null 2>&1
+		fi
+		echo -e "\nLauncher created at: ~/.local/share/applications\nNext time in GUI mode you just need to click on the start menu and click on ebook2audiobook icon.\n"
+		open_gui
+	}
+
 	function build_app {
+		if [[ " ${ARGS[*]} " = *" --headless "* || has_no_display -eq 1 ]]; then
+			return 0
+		fi
 		if [[ "$OSTYPE" = "darwin"* ]]; then
 			mac_app
 		elif [[ "$OSTYPE" = "linux"* ]]; then
 			linux_app
 		fi
+		return 0
 	}
 
 	if [ "$APP_MODE" = "$FULL_DOCKER" ]; then
