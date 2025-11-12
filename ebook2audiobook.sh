@@ -403,37 +403,28 @@ else
 		return 0
 	}
 
-	function create_macos_app_bundle {
+	function mac_app_build {
+
+		local MACOS="$CONTENTS/MacOS"
 		local APP_NAME="ebook2audiobook"
 		local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 		local CONTENTS="$APP_BUNDLE/Contents"
-		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
 
+		if [[ " ${ARGS[@]} " =~ " --headless " || -d "$APP_BUNDLE" ]]; then
+			return 0
+		fi
+		
 		if [[ ! -d "$HOME/Applications" ]]; then
 			mkdir $HOME/Applications
 		fi
 
-		if [[ " ${ARGS[@]} " =~ " --headless " ]]; then
-			return 0
-		fi
-
-		if [[ -d "$APP_BUNDLE" ]]; then
-			return 0
-		fi
-		
-		mkdir -p "$MACOS" "$RESOURCES"
+		if [[ ! -d "$MACOS" "$RESOURCES" ]]; then
+			mkdir -p "$MACOS" "$RESOURCES"
 
 		cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
-
-TEMP_SCRIPT=\$(mktemp)
-
-cat > "\$TEMP_SCRIPT" << 'SCRIPT'
-#!/bin/zsh
-
-cd "$SCRIPT_DIR"
 
 (
     until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
@@ -442,14 +433,7 @@ cd "$SCRIPT_DIR"
     open http://localhost:7860/
 ) &
 
-./ebook2audiobook.sh
-
-SCRIPT
-
-chmod +x "\$TEMP_SCRIPT"
-open -a Terminal "\$TEMP_SCRIPT"
-sleep 60
-rm "\$TEMP_SCRIPT"
+$SCRIPT_DIR/ebook2audiobook.sh
 
 EOF
 
@@ -490,26 +474,24 @@ EOF
 	<string>AppIcon</string>
 </dict>
 </plist>
-
 PLIST
 
 		touch "$APP_BUNDLE"
-		echo ""
-		echo "E2A Launcher created at: $APP_BUNDLE"
-		echo "Next time you will just click on the launcher to run E2A and open the browser automatically"
-		echo ""
+		echo "\nE2A Launcher created at: $APP_BUNDLE\n \
+			Next time you just need to click on the launcher\n \
+			to run Ebook1Audiobook and open the browser automatically\n\n"
 	}
 
-	function create_linux_app_launcher {
+	function linux_app_build {
 		# Linux desktop entry creation goes here
 		return 0
 	}
 
-	function create_app_bundle {
+	function build_app {
 		if [[ "$OSTYPE" = "darwin"* ]]; then
-			create_macos_app_bundle
+			mac_app_build
 		elif [[ "$OSTYPE" = "linux"* ]]; then
-			create_linux_app_launcher
+			linux_app_build
 		fi
 	}
 
@@ -529,7 +511,7 @@ PLIST
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
-				create_app_bundle
+				build_app
 				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate 2>&1 > /dev/null
 				conda deactivate 2>&1 > /dev/null
