@@ -411,12 +411,7 @@ else
 		# Get Desktop path that works in any language
 		local DESKTOP_PATH=$(osascript -e 'tell application "Finder" to return POSIX path of (desktop folder as alias)' 2>/dev/null)
 		
-		# Fallback to English Desktop if osascript fails
-		if [ -z "$DESKTOP_PATH" ]; then
-			DESKTOP_PATH="$HOME/Desktop"
-		fi
-		
-		local APP_BUNDLE="$DESKTOP_PATH/$APP_NAME.app"
+		local APP_BUNDLE="~/Applications/$APP_NAME.app"
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
@@ -435,46 +430,39 @@ else
 		mkdir -p "$MACOS" "$RESOURCES"
 
 		# Create the executable script inside the bundle
-		cat > "$MACOS/$APP_NAME" << EOF
-#!/bin/bash
+		cat > "$MACOS/$APP_NAME" << 'EOF'
+#!/bin/zsh
 
-# Create a temporary script file to run in Terminal
-TEMP_SCRIPT=\$(mktemp)
+TEMP_SCRIPT=$(mktemp)
 
-cat > "\$TEMP_SCRIPT" << 'SCRIPT'
-#!/bin/bash
+cat > "$TEMP_SCRIPT" << 'SCRIPT'
+#!/bin/zsh
+
 cd "$SCRIPT_DIR"
-bash ebook2audiobook.sh
+(
+  until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
+    sleep 1
+  done
+  open http://localhost:7860/
+) &
 
-# Wait 10 seconds for the server to start
-sleep 10
-
-# Open the browser
-open http://localhost:7860/
+./ebook2audiobook.sh
 
 SCRIPT
 
-chmod +x "\$TEMP_SCRIPT"
-
-# Open Terminal and run the script
-open -a Terminal "\$TEMP_SCRIPT"
-
-# Clean up the temp script after 60 seconds
+chmod +x "$TEMP_SCRIPT"
+open -a Terminal "$TEMP_SCRIPT"
 sleep 60
-rm "\$TEMP_SCRIPT"
+rm "$TEMP_SCRIPT"
 
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
-
-		# Copy the icon to the bundle
 		if [ -f "$ICON_PATH" ]; then
 			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 		else
 			echo "Warning: Icon not found at $ICON_PATH"
 		fi
-
-		# Create the Info.plist file (required for macOS app bundles)
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -507,9 +495,7 @@ EOF
 PLIST
 
 
-		# Update macOS cache to recognize the new app
 		touch "$APP_BUNDLE"
-
 		echo ""
 		echo "E2A Launcher located at: $APP_BUNDLE"
 		echo ""
