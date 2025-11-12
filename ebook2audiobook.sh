@@ -442,7 +442,7 @@ cd "$SCRIPT_DIR"
     open http://localhost:7860/
 ) &
 
-zsh "$SCRIPT_DIR/ebook2audiobook.sh"
+./ebook2audiobook.sh
 
 SCRIPT
 
