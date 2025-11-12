@@ -407,69 +407,70 @@ else
 
 	function create_macos_app_bundle {
 		local APP_NAME="ebook2audiobook"
-		
-		# Get Desktop path that works in any language
-		local DESKTOP_PATH=$(osascript -e 'tell application "Finder" to return POSIX path of (desktop folder as alias)' 2>/dev/null)
-		
-		local APP_BUNDLE="~/Applications/$APP_NAME.app"
+		local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
 
-		# Return early if headless mode - check ARGS directly
+		if [[ ! -d "$HOME/Applications" ]]; then
+			mkdir $HOME/Applications
+		fi
+
 		if [[ " ${ARGS[@]} " =~ " --headless " ]]; then
 			return 0
 		fi
 
-		# Check if app bundle exists in any location
-		if [ -d "$APP_BUNDLE" ] || [ -d "/Applications/$APP_NAME.app" ] || [ -d "$HOME/Applications/$APP_NAME.app" ]; then
+		if [[ -d "$APP_BUNDLE" ]]; then
 			return 0
 		fi
-
 		mkdir -p "$MACOS" "$RESOURCES"
-
 		# Create the executable script inside the bundle
-		cat > "$MACOS/$APP_NAME" << EOF
-#!/bin/bash
+		cat > "$MACOS/$APP_NAME" << 'EOF'
+#!/bin/zsh
 
 # Create a temporary script file to run in Terminal
-TEMP_SCRIPT=\$(mktemp)
+TEMP_SCRIPT=$(mktemp)
 
-cat > "\$TEMP_SCRIPT" << 'SCRIPT'
-#!/bin/bash
+cat > "$TEMP_SCRIPT" << 'SCRIPT'
+#!/bin/zsh
+
+# Navigate to the correct directory
 cd "$SCRIPT_DIR"
-bash ebook2audiobook.sh
 
-# Wait 10 seconds for the server to start
-sleep 10
+# Start a background watcher to detect when the server is ready
+(
+  echo "Waiting for http://localhost:7860 to become available..."
+  until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
+    sleep 1
+  done
+  echo "Server is up — opening browser."
+  open http://localhost:7860/
+) &
 
-# Open the browser
-open http://localhost:7860/
+# Run the main script in the foreground to keep logs visible
+zsh ebook2audiobook.sh
 
 SCRIPT
 
-chmod +x "\$TEMP_SCRIPT"
+chmod +x "$TEMP_SCRIPT"
 
-# Open Terminal and run the script
-open -a Terminal "\$TEMP_SCRIPT"
+# Open Terminal and execute the temporary script
+open -a Terminal "$TEMP_SCRIPT"
 
 # Clean up the temp script after 60 seconds
 sleep 60
-rm "\$TEMP_SCRIPT"
-
+rm "$TEMP_SCRIPT"
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
 
-		# Copy the icon to the bundle
 		if [ -f "$ICON_PATH" ]; then
 			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 		else
 			echo "Warning: Icon not found at $ICON_PATH"
 		fi
 
-		# Create the Info.plist file (required for macOS app bundles)
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -499,12 +500,10 @@ EOF
 	<string>AppIcon</string>
 </dict>
 </plist>
+
 PLIST
 
-
-		# Update macOS cache to recognize the new app
 		touch "$APP_BUNDLE"
-
 		echo ""
 		echo "E2A Launcher located at: $APP_BUNDLE"
 		echo ""
