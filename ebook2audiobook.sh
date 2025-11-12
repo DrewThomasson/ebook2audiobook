@@ -407,7 +407,15 @@ else
 
 	function create_macos_app_bundle {
 		local APP_NAME="ebook2audiobook"
-		local DESKTOP_PATH="$HOME/Desktop"
+		
+		# Get Desktop path that works in any language
+		local DESKTOP_PATH=$(osascript -e 'tell application "Finder" to return POSIX path of (desktop folder as alias)' 2>/dev/null)
+		
+		# Fallback to English Desktop if osascript fails
+		if [ -z "$DESKTOP_PATH" ]; then
+			DESKTOP_PATH="$HOME/Desktop"
+		fi
+		
 		local APP_BUNDLE="$DESKTOP_PATH/$APP_NAME.app"
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
