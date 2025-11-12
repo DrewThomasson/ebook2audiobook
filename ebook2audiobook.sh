@@ -384,7 +384,7 @@ else
 				esac
 			fi
 			# Use this condition to chmod writable folders once
-			chmod -R u+rwX,go+rX ./audiobooks ./tmp ./models
+			chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
 			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y
 			conda init > /dev/null 2>&1
 			source $CONDA_ENV
@@ -430,8 +430,8 @@ else
 	done
 	open http://localhost:7860/
 ) &
-cd "$SCRIPT_DIR"
-open -a Terminal "./ebook2audiobook.sh"
+
+open -a Terminal "$SCRIPT_DIR/ebook2audiobook.sh"
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
@@ -501,7 +501,7 @@ PLIST
 				source $CONDA_ENV
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 				build_app
-				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+				python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate 2>&1 > /dev/null
 				conda deactivate 2>&1 > /dev/null
 			fi
