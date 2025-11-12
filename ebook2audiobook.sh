@@ -425,27 +425,31 @@ else
 #!/bin/zsh
 
 (
-	host=127.0.0.1
-	port=7860
-	url="http://\$host:\$port/"
-	timeout=30
-	start_time=\$(date +%s)
+    host=127.0.0.1
+    port=7860
+    url="http://\$host:\$port/"
+    timeout=30
+    start_time=\$(date +%s)
 
-	while ! (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
-		sleep 1
-		elapsed=\$(( \$(date +%s) - \$start_time ))
-		if [ "\$elapsed" -ge "\$timeout" ]; then
-			echo "Timeout after \${timeout}s: \${url} not responding"
-			exit 1
-		fi
-	done
+    while ! (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
+        sleep 1
+        elapsed=\$(( \$(date +%s) - \$start_time ))
+        if [ "\$elapsed" -ge "\$timeout" ]; then
+            echo "Timeout after \${timeout}s: \${url} not responding"
+            exit 1
+        fi
+    done
 
-	open "\$url"
+    open "\$url"
 ) &
 
-open -a Terminal "$APP_ROOT/ebook2audiobook.sh"
+osascript -e '
+tell application "Terminal"
+    do script "cd \"$(dirname "$SCRIPT_DIR")\" && ./ebook2audiobook.sh"
+    activate
+end tell
+'
 EOF
-
 
 		chmod +x "$MACOS/$APP_NAME"
 		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"

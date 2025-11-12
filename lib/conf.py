@@ -2,6 +2,9 @@ import os
 import platform
 import tempfile
 
+# ---------------------------------------------------------------------
+# Global configuration
+# ---------------------------------------------------------------------
 min_python_version = (3,10)
 max_python_version = (3,13)
 
@@ -14,6 +17,9 @@ ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
 
+# ---------------------------------------------------------------------
+# Environment setup
+# ---------------------------------------------------------------------
 os.environ['PYTHONUTF8'] = '1'
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['COQUI_TOS_AGREED'] = '1'
@@ -46,6 +52,9 @@ os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
 if platform.system() == 'Windows':
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
 
+# ---------------------------------------------------------------------
+# Version and runtime config
+# ---------------------------------------------------------------------
 prog_version = (lambda: open('VERSION.txt').read().strip())()
 
 NATIVE = 'native'
@@ -53,13 +62,30 @@ FULL_DOCKER = 'full_docker'
 
 debug_mode = False
 
-devices = {"CPU": {"proc": "cpu", "found": True}, "CUDA": {"proc": "cuda", "found": False}, "MPS": {"proc": "mps", "found": False}, "ROCM": {"proc": "rocm", "found": False}, "XPU": {"proc": "xpu", "found": False}}
+# ---------------------------------------------------------------------
+# Hardware mappings
+# ---------------------------------------------------------------------
+
+devices = {
+    "CPU": {"proc": "cpu", "found": True},
+    "CUDA": {"proc": "cuda", "found": False},
+    "MPS": {"proc": "mps", "found": False},
+    "ROCM": {"proc": "rocm", "found": False},
+    "XPU": {"proc": "xpu", "found": False},
 default_device = devices['CPU']['proc']
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
 default_chapters_preview = False
 
+# ---------------------------------------------------------------------
+# Python environment references
+# ---------------------------------------------------------------------
+
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
+
+# ---------------------------------------------------------------------
+# Interface configuration
+# ---------------------------------------------------------------------
 
 interface_host = '0.0.0.0'
 interface_port = 7860
@@ -73,9 +99,17 @@ interface_component_options = {
     "gr_group_custom_model": True
 }
 
+# ---------------------------------------------------------------------
+# UI directories
+# ---------------------------------------------------------------------
+
 audiobooks_gradio_dir = os.path.abspath(os.path.join('audiobooks','gui','gradio'))
 audiobooks_host_dir = os.path.abspath(os.path.join('audiobooks','gui','host'))
 audiobooks_cli_dir = os.path.abspath(os.path.join('audiobooks','cli'))
+
+# ---------------------------------------------------------------------
+# files and audio supported formats
+# ---------------------------------------------------------------------
 
 ebook_formats = ['.epub', '.mobi', '.azw3', '.fb2', '.lrf', '.rb', '.snb', '.tcr', '.pdf', '.txt', '.rtf', '.doc', '.docx', '.html', '.odt', '.azw', '.tiff', '.tif', '.png', '.jpg', '.jpeg', '.bmp'] # Add or remove the format you accept as input
 voice_formats = ['.mp4', '.m4b', '.m4a', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg', '.aiff', '.aif', '.wma', '.dsd', '.opus', '.pcmu', '.pcma', '.gsm'] # Add or remove the format you accept as input
