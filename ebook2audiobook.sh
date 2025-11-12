@@ -423,7 +423,7 @@ else
 		fi
 
 		# Check if app bundle exists in any location
-		if [ -d "$APP_BUNDLE" ] || [ -d "/Applications/$APP_NAME.app" ] || [ -d "$HOME/Applications/$APP_NAME.app" ]; then
+		if [[ -d "$APP_BUNDLE" ]]; then
 			return 0
 		fi
 
@@ -458,11 +458,13 @@ rm "$TEMP_SCRIPT"
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
+
 		if [ -f "$ICON_PATH" ]; then
 			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 		else
 			echo "Warning: Icon not found at $ICON_PATH"
 		fi
+
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -492,8 +494,8 @@ EOF
 	<string>AppIcon</string>
 </dict>
 </plist>
-PLIST
 
+PLIST
 
 		touch "$APP_BUNDLE"
 		echo ""
