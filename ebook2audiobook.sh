@@ -403,12 +403,41 @@ else
 		return 0
 	}
 	
-	is_desktop_mode() {
-		if pgrep -x WindowServer >/dev/null 2>&1 && [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
-			return 0  # GUI session available
-		else
-			return 1  # headless mode
+	no_display_mode() {
+		if [[ "$OSTYPE" == "darwin"* ]]; then
+			if pgrep -x WindowServer >/dev/null 2>&1 &&
+			   [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
+				return 0   # macOS GUI
+			else
+				return 1   # SSH or console mode
+			fi
 		fi
+
+		if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+			return 1
+		fi
+
+		if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
+			return 1   # No display server → headless
+		fi
+
+		if pgrep -x gnome-shell       >/dev/null 2>&1 || \
+		   pgrep -x plasmashell       >/dev/null 2>&1 || \
+		   pgrep -x xfce4-session     >/dev/null 2>&1 || \
+		   pgrep -x cinnamon          >/dev/null 2>&1 || \
+		   pgrep -x mate-session      >/dev/null 2>&1 || \
+		   pgrep -x lxsession         >/dev/null 2>&1 || \
+		   pgrep -x openbox           >/dev/null 2>&1 || \
+		   pgrep -x i3                >/dev/null 2>&1 || \
+		   pgrep -x sway              >/dev/null 2>&1 || \
+		   pgrep -x hyprland          >/dev/null 2>&1 || \
+		   pgrep -x wayfire           >/dev/null 2>&1 || \
+		   pgrep -x river              >/dev/null 2>&1 || \
+		   pgrep -x fluxbox           >/dev/null 2>&1; then
+			return 0   # Desktop environment detected
+		fi
+
+		return 1
 	}
 	
 	function open_gui() {
@@ -452,7 +481,7 @@ else
 		# Escape APP_ROOT safely for AppleScript
 		local ESCAPED_APP_ROOT
 
-		if [[ " ${ARGS[*]} " == *" --headless "* || -d "$APP_BUNDLE" ]]; then
+		if [[ " ${ARGS[*]} " == *" --headless "* || -d "$APP_BUNDLE" || no_display_mode ]]; then
 			return 0
 		fi
 
