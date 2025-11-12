@@ -75,17 +75,17 @@ export TMPDIR="$SCRIPT_DIR/.cache"
 export PATH="$CONDA_PATH:$PATH"
 
 compare_versions() {
-    local ver1=$1
-    local ver2=$2
-    # Pad each version to 3 parts
-    IFS='.' read -r v1_major v1_minor <<<"$ver1"
-    IFS='.' read -r v2_major v2_minor <<<"$ver2"
+	local ver1=$1
+	local ver2=$2
+	# Pad each version to 3 parts
+	IFS='.' read -r v1_major v1_minor <<<"$ver1"
+	IFS='.' read -r v2_major v2_minor <<<"$ver2"
 
-    ((v1_major < v2_major)) && return 1
-    ((v1_major > v2_major)) && return 2
-    ((v1_minor < v2_minor)) && return 1
-    ((v1_minor > v2_minor)) && return 2
-    return 0
+	((v1_major < v2_major)) && return 1
+	((v1_major > v2_major)) && return 2
+	((v1_minor < v2_minor)) && return 1
+	((v1_minor > v2_minor)) && return 2
+	return 0
 }
 
 # Check if the current script is run inside a docker container
@@ -403,7 +403,7 @@ else
 		return 0
 	}
 
-	function mac_app_build {
+	function mac_app {
 
 		local MACOS="$CONTENTS/MacOS"
 		local APP_NAME="ebook2audiobook"
@@ -427,10 +427,10 @@ else
 #!/bin/zsh
 
 (
-    until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
-        sleep 1
-    done
-    open http://localhost:7860/
+	until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
+		sleep 1
+	done
+	open http://localhost:7860/
 ) &
 
 $SCRIPT_DIR/ebook2audiobook.sh
@@ -482,16 +482,16 @@ PLIST
 			to run Ebook1Audiobook and open the browser automatically\n\n"
 	}
 
-	function linux_app_build {
+	function linux_app {
 		# Linux desktop entry creation goes here
 		return 0
 	}
 
 	function build_app {
 		if [[ "$OSTYPE" = "darwin"* ]]; then
-			mac_app_build
+			mac_app
 		elif [[ "$OSTYPE" = "linux"* ]]; then
-			linux_app_build
+			linux_app
 		fi
 	}
 
