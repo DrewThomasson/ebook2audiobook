@@ -495,7 +495,8 @@ PLIST
 
 		touch "$APP_BUNDLE"
 		echo ""
-		echo "E2A Launcher located at: $APP_BUNDLE"
+		echo "E2A Launcher created at: $APP_BUNDLE"
+		echo "Next time you will just click on the launcher to run E2A and open the browser automatically"
 		echo ""
 	}
 
