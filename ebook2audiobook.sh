@@ -425,7 +425,7 @@ else
 		local ESCAPED_APP_ROOT
 		ESCAPED_APP_ROOT=$(printf '%q' "$APP_ROOT")
 
-		cat > "$MACOS/$APP_NAME" << EOF
+cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
 (
@@ -444,16 +444,17 @@ else
 		fi
 	done
 
-	open "\$url"
+	# IMPORTANT: evaluate $url at runtime, so remove quotes from the inner variable expansion
+	eval "open \$url"
 ) &
 
 osascript -e '
 tell application "Terminal"
-	do script "cd ${ESCAPED_APP_ROOT} && ./ebook2audiobook.sh"
+	do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
 	activate
 end tell
+'
 EOF
-
 
 		chmod +x "$MACOS/$APP_NAME"
 		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
