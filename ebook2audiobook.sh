@@ -546,7 +546,7 @@ EOF
 </dict>
 </plist>
 PLIST
-		echo -e "\nLauncher created at: $APP_BUNDLE\nNext time in GUI mode you just need to click on the launchpad and click on ebook2audiobook icon.\n"
+		echo -e "\nLauncher created at: $APP_BUNDLE\nNext time in GUI mode you just need to open the launchpad and click on ebook2audiobook icon.\n"
 		open_gui
 	}
 
