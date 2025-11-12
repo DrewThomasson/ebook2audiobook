@@ -100,7 +100,7 @@ else
 fi
 
 if [[ -n "${arguments['help']+exists}" && ${arguments['help']} = true ]]; then
-	python app.py "${ARGS[@]}"
+	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	# Check if running in a Conda or Python virtual environment
 	if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
@@ -490,7 +490,7 @@ PLIST
 	}
 
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
-		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 		conda deactivate 2>&1 > /dev/null
 		conda deactivate 2>&1 > /dev/null
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
