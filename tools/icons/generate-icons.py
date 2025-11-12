@@ -31,7 +31,7 @@ def ensure_package(pkg):
 def create_directories():
     """Create output directories for each platform"""
     for platform in ICON_SIZES.keys():
-        os.makedirs(f'icons/{platform}', exist_ok=True)
+        os.makedirs(f'./{platform}', exist_ok=True)
     print("✓ Directories created")
 
 def resize_image(source_path, output_dir, sizes):
@@ -59,7 +59,7 @@ def create_windows_ico(output_dir):
             format='ICO',
             sizes=[(size, size) for size in sizes]
         )
-        print("✓ Windows ICO file created: icons/windows/appIcon.ico")
+        print("✓ Windows ICO file created: ./windows/appIcon.ico")
         return True
     except Exception as e:
         print(f"✗ Error creating ICO: {e}")
@@ -91,7 +91,7 @@ def create_mac_icns(output_dir):
                     ['iconutil', '-c', 'icns', '-o', icns_path, iconset_dir],
                     check=True, capture_output=True
                 )
-                print("✓ macOS ICNS file created: icons/mac/appIcon.icns (via iconutil)")
+                print("✓ macOS ICNS file created: ./mac/appIcon.icns (via iconutil)")
                 return True
             except (subprocess.CalledProcessError, FileNotFoundError):
                 print("⚠ iconutil not found or failed. Falling back to cross-platform method...")
@@ -117,7 +117,7 @@ def create_mac_icns(output_dir):
                     print(f"⚠ Skipping {png_path}: {e}")
 
             icns.write(icns_path)
-            print("✓ Cross-platform ICNS file created: icons/mac/appIcon.icns (via icnsutil)")
+            print("✓ Cross-platform ICNS file created: ./mac/appIcon.icns (via icnsutil)")
             return True
         except Exception as e:
             print(f"✗ ICNS creation failed (fallback): {e}")
@@ -134,7 +134,7 @@ def create_svg_copy(source_path, output_dir):
         svg_path = source_path.replace('.png', '.svg')
         if os.path.exists(svg_path):
             shutil.copy(svg_path, f'{output_dir}/appIcon.svg')
-            print(f"✓ SVG icon copied: icons/linux/appIcon.svg")
+            print(f"✓ SVG icon copied: ./linux/appIcon.svg")
             return True
         else:
             print("⚠ No SVG source found (optional for Linux)")
@@ -158,25 +158,25 @@ def main():
 
     for platform, sizes in ICON_SIZES.items():
         print(f"Generating {platform.upper()} icons...")
-        output_dir = f'icons/{platform}'
+        output_dir = f'./{platform}'
         if not resize_image(source_image, output_dir, sizes):
             sys.exit(1)
         print()
 
     print("Creating platform-specific formats...\n")
 
-    if not create_windows_ico('icons/windows'):
+    if not create_windows_ico('./windows'):
         print("⚠ Continuing despite ICO creation issue\n")
 
-    if not create_mac_icns('icons/mac'):
+    if not create_mac_icns('./mac'):
         print("⚠ Continuing despite ICNS creation issue\n")
 
-    if not create_svg_copy(source_image, 'icons/linux'):
+    if not create_svg_copy(source_image, './linux'):
         print("⚠ Continuing despite SVG copy issue\n")
 
     print("✅ Icon generation complete!")
     print("\nOutput structure:")
-    print("  icons/")
+    print("  ./")
     print("  ├── windows/")
     print("  │   ├── appIcon.ico")
     print("  │   └── icon-*.png")
