@@ -8,7 +8,7 @@ set "NATIVE=native"
 set "FULL_DOCKER=full_docker"
 
 set "SCRIPT_MODE=%NATIVE%"
-set "SCRIPT_DIR=%~dp0"
+set "APP_ROOT=%~dp0"
 
 set "ARCH=%PROCESSOR_ARCHITECTURE%"
 set "PYTHON_VERSION=3.12"
@@ -19,8 +19,8 @@ set "CURRENT_ENV="
 
 set "PROGRAMS_LIST=calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
 
-set "TMP=%SCRIPT_DIR%\tmp"
-set "TEMP=%SCRIPT_DIR%\tmp"
+set "TMP=%APP_ROOT%\tmp"
+set "TEMP=%APP_ROOT%\tmp"
 
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
 
@@ -34,7 +34,7 @@ set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
 set "CONDA_ENV=%CONDA_INSTALL_DIR%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_INSTALL_DIR%\condabin"
 
-set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
+set "TESSDATA_PREFIX=%APP_ROOT%\models\tessdata"
 
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 
@@ -52,7 +52,7 @@ for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Se
     set "PATH=%%B;%PATH%"
 )
 
-cd /d "%SCRIPT_DIR%"
+cd /d "%APP_ROOT%"
 
 if "%ARCH%"=="x86" (
 	echo Error: 32-bit architecture is not supported.
@@ -259,12 +259,12 @@ exit /b
 
 :main
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
-	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
+	call python %APP_ROOT%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
-	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
-		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+	if not exist "%APP_ROOT%\%PYTHON_ENV%" (
+		call conda create --prefix "%APP_ROOT%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
 		call %CONDA_ENV% activate base
-		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+		call conda activate "%APP_ROOT%\%PYTHON_ENV%"
 		call python -m pip cache purge >nul 2>&1
 		call python -m pip install --upgrade pip
 		for /f "usebackq delims=" %%p in ("requirements.txt") do (
@@ -274,9 +274,9 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		echo All required packages are installed.
 	) else (
 		call %CONDA_ENV% activate base
-		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+		call conda activate "%APP_ROOT%\%PYTHON_ENV%"
 	)
-	call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+	call python "%APP_ROOT%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 	call conda deactivate
 )
 exit /b

@@ -11,7 +11,7 @@ ARCH=$(uname -m)
 PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.13"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -69,9 +69,9 @@ CONDA_INSTALL_DIR="$HOME/Miniforge3"
 CONDA_PATH="$CONDA_INSTALL_DIR/bin"
 CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
 
-export TTS_CACHE="$SCRIPT_DIR/models"
-export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
-export TMPDIR="$SCRIPT_DIR/.cache"
+export TTS_CACHE="$APP_ROOT/models"
+export TESSDATA_PREFIX="$APP_ROOT/models/tessdata"
+export TMPDIR="$APP_ROOT/.cache"
 export PATH="$CONDA_PATH:$PATH"
 
 compare_versions() {
@@ -100,7 +100,7 @@ else
 fi
 
 if [[ -n "${arguments['help']+exists}" && ${arguments['help']} = true ]]; then
-	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
+	python "$APP_ROOT/app.py" "${ARGS[@]}"
 else
 	# Check if running in a Conda or Python virtual environment
 	if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
@@ -370,7 +370,7 @@ else
 				return 1
 			fi
 		fi
-		if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+		if [[ ! -d "$APP_ROOT/$PYTHON_ENV" ]]; then
 			if [[ "$OSTYPE" = "darwin"* && "$ARCH" = "x86_64" ]]; then
 				PYTHON_VERSION="3.11"
 			else
@@ -384,11 +384,11 @@ else
 				esac
 			fi
 			# Use this condition to chmod writable folders once
-			chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
-			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y
+			chmod -R u+rwX,go+rX "$APP_ROOT/audiobooks" "$APP_ROOT/tmp" "$APP_ROOT/models"
+			conda create --prefix "$APP_ROOT/$PYTHON_ENV" python=$PYTHON_VERSION -y
 			conda init > /dev/null 2>&1
 			source $CONDA_ENV
-			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
+			conda activate "$APP_ROOT/$PYTHON_ENV"
 			python -m pip cache purge > /dev/null 2>&1
 			python -m pip install --upgrade pip
 			python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r requirements.txt
@@ -409,7 +409,7 @@ else
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
-		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
+		local ICON_PATH="$APP_ROOT/tools/icons/mac/appIcon.icns"
 
 		if [[ " ${ARGS[*]} " == *" --headless "* || -d "$APP_BUNDLE" ]]; then
 			return 0
@@ -443,7 +443,7 @@ else
 	open "\$url"
 ) &
 
-open -a Terminal "$SCRIPT_DIR/ebook2audiobook.sh"
+open -a Terminal "$APP_ROOT/ebook2audiobook.sh"
 EOF
 
 
@@ -498,7 +498,7 @@ PLIST
 	}
 
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
-		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+		python "$APP_ROOT/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 		conda deactivate 2>&1 > /dev/null
 		conda deactivate 2>&1 > /dev/null
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
@@ -512,9 +512,9 @@ PLIST
 			if conda_check; then
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
-				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
+				conda activate "$APP_ROOT/$PYTHON_ENV"
 				build_app
-				python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+				python "$APP_ROOT/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate 2>&1 > /dev/null
 				conda deactivate 2>&1 > /dev/null
 			fi
