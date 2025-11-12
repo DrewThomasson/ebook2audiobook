@@ -11,6 +11,7 @@ ARCH=$(uname -m)
 PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.13"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -44,10 +45,7 @@ done
 
 NATIVE="native"
 FULL_DOCKER="full_docker"
-
 SCRIPT_MODE="$NATIVE"
-export SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 PYTHON_ENV="python_env"
@@ -426,33 +424,32 @@ else
 		fi
 		mkdir -p "$MACOS" "$RESOURCES"
 		# Create the executable script inside the bundle
-		cat > "$MACOS/$APP_NAME" << 'EOF'
+		
+		cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
+TEMP_SCRIPT=\$(mktemp)
 
-TEMP_SCRIPT=$(mktemp)
-
-cat > "$TEMP_SCRIPT" << 'SCRIPT'
+cat > "\$TEMP_SCRIPT" << 'SCRIPT'
 #!/bin/zsh
 
 cd "$SCRIPT_DIR"
 
 (
-  until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
-	  sleep 1
-  done
-  open http://localhost:7860/
+    until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
+        sleep 1
+    done
+    open http://localhost:7860/
 ) &
 
-zsh $SCRIPT_DIR/ebook2audiobook.sh
+zsh "$SCRIPT_DIR/ebook2audiobook.sh"
 
 SCRIPT
 
-chmod +x "$TEMP_SCRIPT"
-open -a Terminal "$TEMP_SCRIPT"
+chmod +x "\$TEMP_SCRIPT"
+open -a Terminal "\$TEMP_SCRIPT"
 sleep 60
-rm "$TEMP_SCRIPT"
-
+rm "\$TEMP_SCRIPT"
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
