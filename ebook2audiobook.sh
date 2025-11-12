@@ -422,9 +422,9 @@ else
 		if [[ -d "$APP_BUNDLE" ]]; then
 			return 0
 		fi
-		mkdir -p "$MACOS" "$RESOURCES"
-		# Create the executable script inside the bundle
 		
+		mkdir -p "$MACOS" "$RESOURCES"
+
 		cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
@@ -450,6 +450,7 @@ chmod +x "\$TEMP_SCRIPT"
 open -a Terminal "\$TEMP_SCRIPT"
 sleep 60
 rm "\$TEMP_SCRIPT"
+
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
