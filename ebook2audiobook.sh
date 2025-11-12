@@ -400,7 +400,7 @@ else
 					python -m pip install --no-cache-dir --use-pep517 --progress-bar=on 'transformers<=4.51.3'
 				fi
 			fi
-			conda deactivate 2>&1>/dev/null
+			conda deactivate 2>&1 > /dev/null
 		fi
 		return 0
 	}
@@ -444,7 +444,7 @@ TEMP_SCRIPT=\$(mktemp)
 cat > "\$TEMP_SCRIPT" << 'SCRIPT'
 #!/bin/bash
 cd "$SCRIPT_DIR"
-conda deactivate 2>&1>/dev/null
+conda deactivate 2>&1 > /dev/null
 bash ebook2audiobook.sh
 
 # Wait 10 seconds for the server to start
@@ -531,8 +531,8 @@ PLIST
 
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
-		conda deactivate 2>&1>/dev/null
-		conda deactivate 2>&1>/dev/null
+		conda deactivate 2>&1 > /dev/null
+		conda deactivate 2>&1 > /dev/null
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
 		pass=true	   
 		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
@@ -547,8 +547,8 @@ PLIST
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 				create_app_bundle
 				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
-				conda deactivate 2>&1>/dev/null
-				conda deactivate 2>&1>/dev/null
+				conda deactivate 2>&1 > /dev/null
+				conda deactivate 2>&1 > /dev/null
 			fi
 		fi
 	else
