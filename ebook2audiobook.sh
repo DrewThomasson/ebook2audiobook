@@ -407,7 +407,16 @@ else
 
 	function create_macos_app_bundle {
 		local APP_NAME="ebook2audiobook"
-		local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
+		
+		# Get Desktop path that works in any language
+		local DESKTOP_PATH=$(osascript -e 'tell application "Finder" to return POSIX path of (desktop folder as alias)' 2>/dev/null)
+		
+		# Fallback to English Desktop if osascript fails
+		if [ -z "$DESKTOP_PATH" ]; then
+			DESKTOP_PATH="$HOME/Desktop"
+		fi
+		
+		local APP_BUNDLE="$DESKTOP_PATH/$APP_NAME.app"
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
@@ -418,8 +427,8 @@ else
 			return 0
 		fi
 
-		# Return early if app bundle already exists
-		if [ -d "$APP_BUNDLE" ]; then
+		# Check if app bundle exists in any location
+		if [ -d "$APP_BUNDLE" ] || [ -d "/Applications/$APP_NAME.app" ] || [ -d "$HOME/Applications/$APP_NAME.app" ]; then
 			return 0
 		fi
 
