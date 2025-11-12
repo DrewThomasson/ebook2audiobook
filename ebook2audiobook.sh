@@ -432,22 +432,15 @@ cat > "$MACOS/$APP_NAME" << EOF
 	host=127.0.0.1
 	port=7860
 	url="http://\$host:\$port/"
-	timeout=30
-	start_time=\$(date +%s)
 
-	while ! (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
+	until (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
 		sleep 1
-		elapsed=\$(( \$(date +%s) - \$start_time ))
-		if [ "\$elapsed" -ge "\$timeout" ]; then
-			echo "Timeout after \${timeout}s: \${url} not responding"
-			exit 1
-		fi
 	done
 
-	# IMPORTANT: evaluate $url at runtime, so remove quotes from the inner variable expansion
-	eval "open \$url"
+	open "\$url"
 ) &
 
+# TODO: launch directly ./ebook2audiobook.sh when log available in gradio
 osascript -e '
 tell application "Terminal"
 	do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
