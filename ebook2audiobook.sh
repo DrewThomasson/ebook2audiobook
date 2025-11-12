@@ -11,8 +11,8 @@ ARCH=$(uname -m)
 PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.13"
+APP_ROOT="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")" && pwd)"
 
-export APP_ROOT="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")" && pwd)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
 
