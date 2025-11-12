@@ -464,6 +464,8 @@ tell application "Terminal"
 end tell
 '
 EOF
+		chmod +x "$MACOS/$APP_NAME"
+		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
