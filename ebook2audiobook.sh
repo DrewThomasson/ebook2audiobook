@@ -451,7 +451,8 @@ else
 cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
-OPEN_GUI_DEF
+$OPEN_GUI_DEF
+
 open_gui
 
 # TODO: replace when log available in gradio with
