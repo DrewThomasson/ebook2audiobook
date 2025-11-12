@@ -403,6 +403,14 @@ else
 		return 0
 	}
 	
+	is_desktop_mode() {
+		if pgrep -x WindowServer >/dev/null 2>&1 && [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
+			return 0  # GUI session available
+		else
+			return 1  # headless mode
+		fi
+	}
+	
 	function open_gui() {
 		(
 			host=127.0.0.1
@@ -419,8 +427,17 @@ else
 				fi
 			done
 
-			sleep 1
-			open "$url"
+			if [[ "$OSTYPE" == "darwin"* ]]; then
+				open "$url" >/dev/null 2>&1 &
+			elif command -v xdg-open >/dev/null 2>&1; then
+				xdg-open "$url" >/dev/null 2>&1 &
+			elif command -v gio >/dev/null 2>&1; then
+				gio open "$url" >/dev/null 2>&1 &
+			elif command -v x-www-browser >/dev/null 2>&1; then
+				x-www-browser "$url" >/dev/null 2>&1 &
+			else
+				echo "No method found to open the default web browser." >&2
+			fi
 			exit 0
 		) &
 	}
@@ -455,9 +472,11 @@ $OPEN_GUI_DEF
 
 open_gui
 
-# TODO: replace when log available in gradio with
-# cd "$APP_ROOT")
+# TODO: replace osascript when log will be available in gradio with
+#
+# cd "$APP_ROOT"
 # ./ebook2audiobook.sh
+
 osascript -e '
 tell application "Terminal"
 	do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
@@ -498,8 +517,7 @@ EOF
 </dict>
 </plist>
 PLIST
-
-		echo -e "\nE2A Launcher created at: $APP_BUNDLE\nNext time you just need to click on the launcher\nto run Ebook2Audiobook and open the browser automatically.\n"
+		echo -e "\nLauncher created at: $APP_BUNDLE\nNext time in GUI mode you just need to click on the launchpad and click on ebook2audiobook icon.\n"
 		open_gui
 	}
 
