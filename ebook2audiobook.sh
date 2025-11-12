@@ -430,8 +430,8 @@ else
 	done
 	open http://localhost:7860/
 ) &
-
-open -a Terminal "$SCRIPT_DIR/ebook2audiobook.sh"
+cd "$SCRIPT_DIR"
+open -a Terminal "./ebook2audiobook.sh"
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
