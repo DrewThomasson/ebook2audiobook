@@ -444,7 +444,7 @@ TEMP_SCRIPT=\$(mktemp)
 cat > "\$TEMP_SCRIPT" << 'SCRIPT'
 #!/bin/bash
 cd "$SCRIPT_DIR"
-./ebook2audiobook.sh &
+bash -c "ebook2audiobook.sh"
 
 # Wait 10 seconds for the server to start
 sleep 10
