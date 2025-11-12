@@ -473,9 +473,7 @@ EOF
 </plist>
 PLIST
 
-		echo -e "\nE2A Launcher created at: $APP_BUNDLE\n 
-			Next time you just need to click on the launcher\n 
-			to run Ebook2Audiobook and open the browser automatically.\n"
+		echo -e "\nE2A Launcher created at: $APP_BUNDLE\nNext time you just need to click on the launcher\nto run Ebook2Audiobook and open the browser automatically.\n"
 	}
 
 	function linux_app {
