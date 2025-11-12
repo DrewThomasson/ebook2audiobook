@@ -433,28 +433,38 @@ else
 		cat > "$MACOS/$APP_NAME" << 'EOF'
 #!/bin/zsh
 
+# Create a temporary script file to run in Terminal
 TEMP_SCRIPT=$(mktemp)
 
 cat > "$TEMP_SCRIPT" << 'SCRIPT'
 #!/bin/zsh
 
+# Navigate to the correct directory
 cd "$SCRIPT_DIR"
+
+# Start a background watcher to detect when the server is ready
 (
+  echo "Waiting for http://localhost:7860 to become available..."
   until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
     sleep 1
   done
+  echo "Server is up — opening browser."
   open http://localhost:7860/
 ) &
 
-./ebook2audiobook.sh
+# Run the main script in the foreground to keep logs visible
+zsh ebook2audiobook.sh
 
 SCRIPT
 
 chmod +x "$TEMP_SCRIPT"
+
+# Open Terminal and execute the temporary script
 open -a Terminal "$TEMP_SCRIPT"
+
+# Clean up the temp script after 60 seconds
 sleep 60
 rm "$TEMP_SCRIPT"
-
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
