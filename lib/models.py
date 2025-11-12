@@ -47,7 +47,7 @@ default_engine_settings = {
         "speed": 1.0,
         "enable_text_splitting": False,
         "use_deepspeed": False,
-        "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav', 'speakers_xtts.pth'],
+        "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav'],
         "voices": {
             "ClaribelDervla": "Claribel Dervla", "DaisyStudious": "Daisy Studious", "GracieWise": "Gracie Wise",
             "TammieEma": "Tammie Ema", "AlisonDietlinde": "Alison Dietlinde", "AnaFlorence": "Ana Florence",
