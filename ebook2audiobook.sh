@@ -445,7 +445,7 @@ else
 
 osascript -e '
 tell application "Terminal"
-    do script "cd \"$(dirname "$SCRIPT_DIR")\" && ./ebook2audiobook.sh"
+    do script "cd \"$(dirname "$APP_ROOT")\" && ./ebook2audiobook.sh"
     activate
 end tell
 '
