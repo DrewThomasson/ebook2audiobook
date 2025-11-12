@@ -430,17 +430,12 @@ else
 	done
 	open http://localhost:7860/
 ) &
-
-"$SCRIPT_DIR/ebook2audiobook.sh"
+cd $SCRIPT_DIR
+./ebook2audiobook.sh
 EOF
 
 		chmod +x "$MACOS/$APP_NAME"
-
-		if [[ -f "$ICON_PATH" ]]; then
-			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
-		else
-			echo "Warning: Icon not found at $ICON_PATH"
-		fi
+		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
