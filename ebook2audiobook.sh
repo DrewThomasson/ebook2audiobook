@@ -438,7 +438,10 @@ cat > "$MACOS/$APP_NAME" << EOF
     open \$url
 ) &
 
-# TODO: launch directly ./ebook2audiobook.sh when log available in gradio
+# TODO: replace when log available in gradio with
+# cd "$APP_ROOT")
+# ./ebook2audiobook.sh
+
 osascript -e '
 tell application "Terminal"
 	do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
