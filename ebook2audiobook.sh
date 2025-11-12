@@ -419,56 +419,56 @@ else
 		ESCAPED_APP_ROOT=$(printf '%q' "$APP_ROOT")
 
 		cat > "$MACOS/$APP_NAME" << EOF
-	#!/bin/zsh
+#!/bin/zsh
 
-	(
-		host=127.0.0.1
-		port=7860
-		url="http://\$host:\$port/"
-		timeout=30
-		start_time=\$(date +%s)
+(
+	host=127.0.0.1
+	port=7860
+	url="http://\$host:\$port/"
+	timeout=30
+	start_time=\$(date +%s)
 
-		while ! (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
-			sleep 1
-			elapsed=\$(( \$(date +%s) - \$start_time ))
-			if [ "\$elapsed" -ge "\$timeout" ]; then
-				echo "Timeout after \${timeout}s: \${url} not responding"
-				exit 1
-			fi
-		done
+	while ! (echo >"/dev/tcp/\$host/\$port") >/dev/null 2>&1; do
+		sleep 1
+		elapsed=\$(( \$(date +%s) - \$start_time ))
+		if [ "\$elapsed" -ge "\$timeout" ]; then
+			echo "Timeout after \${timeout}s: \${url} not responding"
+			exit 1
+		fi
+	done
 
-		open "\$url"
-	) &
+	open "\$url"
+) &
 
-	osascript -e '
-	tell application "Terminal"
-		do script "cd ${ESCAPED_APP_ROOT} && ./ebook2audiobook.sh"
-		activate
-	end tell
-	'
-	EOF
+osascript -e '
+tell application "Terminal"
+	do script "cd ${ESCAPED_APP_ROOT} && ./ebook2audiobook.sh"
+	activate
+end tell
+'
+EOF
 
 		chmod +x "$MACOS/$APP_NAME"
 		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
-	<?xml version="1.0" encoding="UTF-8"?>
-	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-	<plist version="1.0">
-	<dict>
-		<key>CFBundleExecutable</key>
-		<string>ebook2audiobook</string>
-		<key>CFBundleIdentifier</key>
-		<string>com.local.ebook2audiobook</string>
-		<key>CFBundleName</key>
-		<string>ebook2audiobook</string>
-		<key>CFBundlePackageType</key>
-		<string>APPL</string>
-		<key>CFBundleIconFile</key>
-		<string>AppIcon</string>
-	</dict>
-	</plist>
-	PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>ebook2audiobook</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.local.ebook2audiobook</string>
+	<key>CFBundleName</key>
+	<string>ebook2audiobook</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+</dict>
+</plist>
+PLIST
 
 		echo -e "\nE2A Launcher created at: $APP_BUNDLE\nDouble-click to run Ebook2Audiobook.\n"
 	}
