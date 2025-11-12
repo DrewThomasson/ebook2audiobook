@@ -402,6 +402,28 @@ else
 		fi
 		return 0
 	}
+	
+	function open_gui() {
+		(
+			host=127.0.0.1
+			port=7860
+			url="http://$host:$port/"
+			timeout=30
+			start_time=$(date +%s)
+
+			while ! nc -z "$host" "$port" >/dev/null 2>&1; do
+				sleep 1
+				elapsed=$(( $(date +%s) - start_time ))
+				if [ "$elapsed" -ge "$timeout" ]; then
+					exit 0
+				fi
+			done
+
+			sleep 1
+			open "$url"
+			exit 0
+		) &
+	}
 
 	function mac_app {
 		local APP_NAME="ebook2audiobook"
@@ -410,6 +432,8 @@ else
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
 		local ICON_PATH="$APP_ROOT/tools/icons/mac/appIcon.icns"
+		# Escape APP_ROOT safely for AppleScript
+		local ESCAPED_APP_ROOT
 
 		if [[ " ${ARGS[*]} " == *" --headless "* || -d "$APP_BUNDLE" ]]; then
 			return 0
@@ -420,41 +444,19 @@ else
 		if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
 			mkdir -p "$MACOS" "$RESOURCES"
 		fi
-		
-		# Escape APP_ROOT safely for AppleScript
-		local ESCAPED_APP_ROOT
+
+		OPEN_GUI_DEF=$(declare -f open_gui)
 		ESCAPED_APP_ROOT=$(printf '%q' "$APP_ROOT")
 
 cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
-(
-	host=127.0.0.1
-	port=7860
-	url="http://\$host:\$port/"
-	timeout=30
-	start_time=\$(date +%s)
-
-	echo "Waiting for \$url ..."
-
-	while ! nc -z "\$host" "\$port" >/dev/null 2>&1; do
-		sleep 1
-		elapsed=\$(( \$(date +%s) - \$start_time ))
-		if [ "\$elapsed" -ge "\$timeout" ]; then
-			echo "Timeout after \${timeout}s: \${url} not responding"
-			exit 0
-		fi
-	done
-
-	sleep 1
-	open "\$url"
-	exit 0
-) &
+OPEN_GUI_DEF
+open_gui
 
 # TODO: replace when log available in gradio with
 # cd "$APP_ROOT")
 # ./ebook2audiobook.sh
-
 osascript -e '
 tell application "Terminal"
 	do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
@@ -462,9 +464,6 @@ tell application "Terminal"
 end tell
 '
 EOF
-
-		chmod +x "$MACOS/$APP_NAME"
-		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -498,7 +497,7 @@ EOF
 PLIST
 
 		echo -e "\nE2A Launcher created at: $APP_BUNDLE\nNext time you just need to click on the launcher\nto run Ebook2Audiobook and open the browser automatically.\n"
-		zsh $MACOS/$APP_NAME
+		open_gui
 	}
 
 	function linux_app {
