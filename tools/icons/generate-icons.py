@@ -15,9 +15,9 @@ from PIL import Image
 
 # Icon sizes for each platform
 ICON_SIZES = {
-    'windows': [16, 24, 32, 48, 256],
-    'mac': [16, 32, 64, 128, 256, 512, 1024],
-    'linux': [16, 24, 32, 48, 64, 128, 256]
+    'windows': [256, 48, 32, 24, 16],
+    'mac': [1024, 512, 256, 128, 64, 32, 16],
+    'linux': [256, 128, 64, 48, 32, 24, 16]
 }
 
 def ensure_package(pkg):
@@ -35,35 +35,58 @@ def create_directories():
     print("✓ Directories created")
 
 def resize_image(source_path, output_dir, sizes):
-    """Resize image to multiple sizes"""
     try:
-        img = Image.open(source_path)
-        img = img.convert('RGBA')
+        img = Image.open(source_path).convert("RGBA")
+
+        # fully clean the base image first (remove ALL metadata)
+        base = Image.new("RGBA", img.size)
+        base.paste(img, (0,0))
+
         for size in sizes:
-            resized = img.resize((size, size), Image.Resampling.LANCZOS)
-            output_path = f'{output_dir}/icon-{size}.png'
-            resized.save(output_path, 'PNG')
-            print(f"  ✓ Generated {size}x{size} icon")
+            resized = base.resize((size, size), Image.Resampling.LANCZOS)
+
+            # force a metadata-free PNG
+            clean = Image.new("RGBA", (size, size))
+            clean.paste(resized, (0,0))
+
+            clean.save(
+                f"{output_dir}/icon-{size}.png",
+                format="PNG",
+                optimize=False
+            )
+
+            print(f"  ✓ Clean PNG created for {size}x{size}")
+
         return True
     except Exception as e:
         print(f"✗ Error resizing image: {e}")
         return False
 
 def create_windows_ico(output_dir):
-    """Create Windows ICO file from PNGs"""
     try:
         sizes = ICON_SIZES['windows']
-        images = [Image.open(f'{output_dir}/icon-{size}.png') for size in sizes]
+        images = []
+
+        for size in sizes:
+            images = [Image.open(f'{output_dir}/icon-{size}.png') for size in sizes]
+            img = Image.open(f'{output_dir}/icon-{size}.png').convert("RGBA")
+            clean = Image.new("RGBA", img.size)
+            clean.paste(img)
+            images.append(clean)
+
         images[0].save(
             f'{output_dir}/appIcon.ico',
             format='ICO',
             sizes=[(size, size) for size in sizes]
         )
+
         print("✓ Windows ICO file created: ./windows/appIcon.ico")
         return True
+
     except Exception as e:
         print(f"✗ Error creating ICO: {e}")
         return False
+
 
 def create_mac_icns(output_dir):
     """Create macOS ICNS file from PNGs (native + cross-platform fallback)"""

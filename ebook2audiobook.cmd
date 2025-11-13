@@ -1,6 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
 
+if "%1"=="_open_gui_background" (
+    shift
+    goto :open_gui
+)
+
 :: Capture all arguments into ARGS
 set "ARGS=%*"
 
@@ -8,7 +13,14 @@ set "NATIVE=native"
 set "FULL_DOCKER=full_docker"
 
 set "APP_MODE=%NATIVE%"
+set "APP_NAME=ebook2audiobook"
 set "APP_ROOT=%~dp0"
+set "RUN_SCRIPT=ebook2audiobook.cmd"
+set "ICON_PATH=%APP_ROOT%tools\icons\windows\appIcon.ico"
+
+set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
+set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
+set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 
 set "ARCH=%PROCESSOR_ARCHITECTURE%"
 set "PYTHON_VERSION=3.12"
@@ -46,6 +58,7 @@ set "PROGRAMS_CHECK=0"
 set "DOCKER_CHECK=0"
 
 set "HELP_FOUND=%ARGS:--help=%"
+set "HEADLESS_FOUND=%ARGS:--headless=%"
 
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
@@ -239,6 +252,41 @@ if not "%PROGRAMS_CHECK%"=="0" (
 goto :dispatch
 exit /b
 
+:make_shortcut
+powershell -NoLogo -NoProfile -Command ^
+  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%~1');" ^
+  "$s.TargetPath='cmd.exe';" ^
+  "$s.Arguments='/k cd ""%APP_ROOT%"" && %RUN_SCRIPT%';" ^
+  "$s.WorkingDirectory='%APP_ROOT%';" ^
+  "$s.IconLocation='%ICON_PATH%';" ^
+  "$s.Save()"
+exit /b
+
+:open_gui
+set "host=127.0.0.1"
+set "port=7860"
+set "timeout=60"
+for /l %%I in (1,1,%timeout%) do (
+    (echo ) | curl --silent telnet://%host%:%port% >nul 2>&1
+    if not errorlevel 1 (
+        start "" "http://%host%:%port%/"
+        goto  :eof
+    )
+    timeout /t 1 >nul
+)
+goto  :eof
+
+:build_gui
+if not "%HEADLESS_FOUND%"=="%ARGS%" (
+	if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
+	if not exist "%DESKTOP_LNK%" (
+		call :make_shortcut "%STARTMENU_LNK%"
+		call :make_shortcut "%DESKTOP_LNK%"
+	)
+	start "" /B cmd /c "%~f0" _open_gui_background %*
+)
+exit /b
+
 :dispatch
 if "%SCOOP_CHECK%"=="0" (
 	if "%PROGRAMS_CHECK%"=="0" (
@@ -276,6 +324,7 @@ if "%APP_MODE%"=="%FULL_DOCKER%" (
 		call %CONDA_ENV% activate base
 		call conda activate "%APP_ROOT%\%PYTHON_ENV%"
 	)
+	call :build_gui
 	call python "%APP_ROOT%\app.py" --script_mode %APP_MODE% %ARGS%
 	call conda deactivate
 )
