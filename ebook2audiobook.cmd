@@ -217,7 +217,7 @@ if not "%PROGRAMS_CHECK%"=="0" (
                 if /I "!syslang!"=="ta" set "tesslang=tam"
                 if /I "!syslang!"=="te" set "tesslang=tel"
                 if /I "!syslang!"=="yo" set "tesslang=yor"
-                echo Detected system language: !syslang! → downloading OCR language: !tesslang!
+                echo Detected system language: !syslang! ? downloading OCR language: !tesslang!
                 set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
                 if not exist "!tessdata!\!tesslang!.traineddata" (
                     powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
