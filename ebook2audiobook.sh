@@ -48,10 +48,12 @@ done
 NATIVE="native"
 FULL_DOCKER="full_docker"
 SCRIPT_MODE="$NATIVE"
+APP_NAME="ebook2audiobook"
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
+INSTALLED_LOG="$SCRIPT_DIR/.installed"
 
 if [[ "$OSTYPE" != "linux"* && "$OSTYPE" != "darwin"* ]]; then
 	echo "Error: OS $OSTYPE unsupported."
@@ -196,6 +198,9 @@ else
 					echo >> $HOME/.zprofile
 					echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
 					eval "$(/usr/local/bin/brew shellenv)"
+					if ! grep -iqFx "homebrew" "$INSTALLED_LOG"; then
+						echo "homebrew" >> "$INSTALLED_LOG"
+					fi
 				fi
 		else
 			SUDO="sudo"
@@ -362,6 +367,9 @@ else
 					source "$CONFIG_FILE"
 					conda init "$shell_name"
 					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
+						if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
+							echo "Miniforge3" >> "$INSTALLED_LOG"
+						fi
 				else
 					echo -e "\e[31mconda installation failed.\e[0m"		
 					return 1
@@ -482,7 +490,6 @@ else
 	}
 
 	function mac_app {
-		local APP_NAME="ebook2audiobook"
 		local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"

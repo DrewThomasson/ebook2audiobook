@@ -5,7 +5,7 @@ setlocal enabledelayedexpansion
 set "ARGS=%*"
 set "NATIVE=native"
 set "FULL_DOCKER=full_docker"
-set "APP_MODE=%NATIVE%"
+set "SCRIPT_MODE=%NATIVE%"
 set "APP_NAME=ebook2audiobook"
 set "SCRIPT_DIR=%~dp0"
 set "RUN_SCRIPT=ebook2audiobook.cmd"
@@ -57,7 +57,7 @@ if "%ARCH%"=="x86" (
 
 :: Check if running inside Docker
 if defined CONTAINER (
-	set "APP_MODE=%FULL_DOCKER%"
+	set "SCRIPT_MODE=%FULL_DOCKER%"
 	goto :main
 )
 
@@ -269,7 +269,6 @@ if not "%HEADLESS_FOUND%"=="%ARGS%" (
 		call :make_shortcut "%STARTMENU_LNK%"
 		call :make_shortcut "%DESKTOP_LNK%"
 	)
-	echo [INFO] Launching browser listener in background...
 	start "E2A" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0.bh.ps1"
 )
 exit /b
@@ -293,8 +292,8 @@ goto :install_components
 exit /b
 
 :main
-if "%APP_MODE%"=="%FULL_DOCKER%" (
-	call python %SCRIPT_DIR%\app.py --script_mode %APP_MODE% %ARGS%
+if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
+	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
 		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
@@ -312,7 +311,7 @@ if "%APP_MODE%"=="%FULL_DOCKER%" (
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 	)
 	call :build_gui
-	call python "%SCRIPT_DIR%\app.py" --script_mode %APP_MODE% %ARGS%
+	call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 	call conda deactivate
 )
 exit /b
