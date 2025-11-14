@@ -7,9 +7,9 @@ set "NATIVE=native"
 set "FULL_DOCKER=full_docker"
 set "APP_MODE=%NATIVE%"
 set "APP_NAME=ebook2audiobook"
-set "APP_ROOT=%~dp0"
+set "SCRIPT_DIR=%~dp0"
 set "RUN_SCRIPT=ebook2audiobook.cmd"
-set "ICON_PATH=%APP_ROOT%tools\icons\windows\appIcon.ico"
+set "ICON_PATH=%SCRIPT_DIR%tools\icons\windows\appIcon.ico"
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
@@ -20,8 +20,8 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 set "PROGRAMS_LIST=calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
-set "TMP=%APP_ROOT%\tmp"
-set "TEMP=%APP_ROOT%\tmp"
+set "TMP=%SCRIPT_DIR%\tmp"
+set "TEMP=%SCRIPT_DIR%\tmp"
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
@@ -31,10 +31,10 @@ set "CONDA_INSTALL_DIR=%USERPROFILE%\Miniforge3"
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
 set "CONDA_ENV=%CONDA_INSTALL_DIR%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_INSTALL_DIR%\condabin"
-set "TESSDATA_PREFIX=%APP_ROOT%\models\tessdata"
+set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%" 2>&1 >nul
-set "INSTALLED_LOG=%APP_ROOT%\.installed"
+set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
 set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 
@@ -48,7 +48,7 @@ for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Se
     set "PATH=%%B;%PATH%"
 )
 
-cd /d "%APP_ROOT%"
+cd /d "%SCRIPT_DIR%"
 
 if "%ARCH%"=="x86" (
 	echo Error: 32-bit architecture is not supported.
@@ -148,7 +148,7 @@ if not "%SCOOP_CHECK%"=="0" (
 		if errorlevel 1 (
 			echo scoop>>"%INSTALLED_LOG%"
 		)
-		start "" cmd /k cd /d "%APP_ROOT%" ^& call "%~f0"
+		start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0"
 	) else (
 		echo Conda installation failed.
 		goto :failed
@@ -256,8 +256,8 @@ exit /b
 powershell -NoLogo -NoProfile -Command ^
   "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%~1');" ^
   "$s.TargetPath='cmd.exe';" ^
-  "$s.Arguments='/k cd ""%APP_ROOT%"" && %RUN_SCRIPT%';" ^
-  "$s.WorkingDirectory='%APP_ROOT%';" ^
+  "$s.Arguments='/k cd ""%SCRIPT_DIR%"" && %RUN_SCRIPT%';" ^
+  "$s.WorkingDirectory='%SCRIPT_DIR%';" ^
   "$s.IconLocation='%ICON_PATH%';" ^
   "$s.Save()"
 exit /b
@@ -294,12 +294,12 @@ exit /b
 
 :main
 if "%APP_MODE%"=="%FULL_DOCKER%" (
-	call python %APP_ROOT%\app.py --script_mode %APP_MODE% %ARGS%
+	call python %SCRIPT_DIR%\app.py --script_mode %APP_MODE% %ARGS%
 ) else (
-	if not exist "%APP_ROOT%\%PYTHON_ENV%" (
-		call conda create --prefix "%APP_ROOT%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
+		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
 		call %CONDA_ENV% activate base
-		call conda activate "%APP_ROOT%\%PYTHON_ENV%"
+		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 		call python -m pip cache purge >nul 2>&1
 		call python -m pip install --upgrade pip
 		for /f "usebackq delims=" %%p in ("requirements.txt") do (
@@ -309,10 +309,10 @@ if "%APP_MODE%"=="%FULL_DOCKER%" (
 		echo All required packages are installed.
 	) else (
 		call %CONDA_ENV% activate base
-		call conda activate "%APP_ROOT%\%PYTHON_ENV%"
+		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 	)
 	call :build_gui
-	call python "%APP_ROOT%\app.py" --script_mode %APP_MODE% %ARGS%
+	call python "%SCRIPT_DIR%\app.py" --script_mode %APP_MODE% %ARGS%
 	call conda deactivate
 )
 exit /b

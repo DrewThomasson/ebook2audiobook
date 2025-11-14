@@ -5,7 +5,7 @@ if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" !
 	exec env zsh "$0" "$@"
 fi
 
-export APP_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+export SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
 
@@ -16,7 +16,7 @@ PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.v
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.13"
 
-cd "$APP_ROOT"
+cd "$SCRIPT_DIR"
 
 ARGS=("$@")
 
@@ -47,7 +47,7 @@ done
 
 NATIVE="native"
 FULL_DOCKER="full_docker"
-APP_MODE="$NATIVE"
+SCRIPT_MODE="$NATIVE"
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 PYTHON_ENV="python_env"
@@ -71,9 +71,9 @@ CONDA_INSTALL_DIR="$HOME/Miniforge3"
 CONDA_PATH="$CONDA_INSTALL_DIR/bin"
 CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
 
-export TTS_CACHE="$APP_ROOT/models"
-export TESSDATA_PREFIX="$APP_ROOT/models/tessdata"
-export TMPDIR="$APP_ROOT/.cache"
+export TTS_CACHE="$SCRIPT_DIR/models"
+export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
+export TMPDIR="$SCRIPT_DIR/.cache"
 export PATH="$CONDA_PATH:$PATH"
 
 compare_versions() {
@@ -92,17 +92,17 @@ compare_versions() {
 
 # Check if the current script is run inside a docker container
 if [[ -n "$container" || -f /.dockerenv ]]; then
-	APP_MODE="$FULL_DOCKER"
+	SCRIPT_MODE="$FULL_DOCKER"
 else
 	if [[ -n "${arguments['script_mode']+exists}" ]]; then
 		if [ "${arguments['script_mode']}" = "$NATIVE" ]; then
-			APP_MODE="${arguments['script_mode']}"
+			SCRIPT_MODE="${arguments['script_mode']}"
 		fi
 	fi
 fi
 
 if [[ -n "${arguments['help']+exists}" && ${arguments['help']} = true ]]; then
-	python "$APP_ROOT/app.py" "${ARGS[@]}"
+	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	# Check if running in a Conda or Python virtual environment
 	if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
@@ -372,7 +372,7 @@ else
 				return 1
 			fi
 		fi
-		if [[ ! -d "$APP_ROOT/$PYTHON_ENV" ]]; then
+		if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
 			if [[ "$OSTYPE" = "darwin"* && "$ARCH" = "x86_64" ]]; then
 				PYTHON_VERSION="3.11"
 			else
@@ -386,11 +386,11 @@ else
 				esac
 			fi
 			# Use this condition to chmod writable folders once
-			chmod -R u+rwX,go+rX "$APP_ROOT/audiobooks" "$APP_ROOT/tmp" "$APP_ROOT/models"
-			conda create --prefix "$APP_ROOT/$PYTHON_ENV" python=$PYTHON_VERSION -y
+			chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
+			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y
 			conda init > /dev/null 2>&1
 			source $CONDA_ENV
-			conda activate "$APP_ROOT/$PYTHON_ENV"
+			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 			python -m pip cache purge > /dev/null 2>&1
 			python -m pip install --upgrade pip
 			python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r requirements.txt
@@ -487,8 +487,8 @@ else
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
-		local ICON_PATH="$APP_ROOT/tools/icons/mac/appIcon.icns"
-		# Escape APP_ROOT safely for AppleScript
+		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
+		# Escape SCRIPT_DIR safely for AppleScript
 		local ESCAPED_APP_ROOT
 		
 		if [[ -d "$APP_BUNDLE" ]]; then
@@ -503,7 +503,7 @@ else
 		fi
 
 		OPEN_GUI_DEF=$(declare -f open_gui)
-		ESCAPED_APP_ROOT=$(printf '%q' "$APP_ROOT")
+		ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR")
 
 cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
@@ -514,7 +514,7 @@ open_gui
 
 # TODO: replace osascript when log will be available in gradio with
 #
-# cd "$APP_ROOT"
+# cd "$SCRIPT_DIR"
 # ./ebook2audiobook.sh
 
 osascript -e '
@@ -563,7 +563,7 @@ PLIST
 
 	function linux_app() {
 		local DESKTOP_FILE="$HOME/.local/share/applications/ebook2audiobook.desktop"
-		local ICON_PATH="$APP_ROOT/tools/icons/linux/appIcon"
+		local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
 		
 		if [[ -f "$DESKTOP_FILE" ]]; then
 			open_gui
@@ -576,7 +576,7 @@ PLIST
 [Desktop Entry]
 Type=Application
 Name=ebook2audiobook
-Exec=$APP_ROOT/ebook2audiobook.sh
+Exec=$SCRIPT_DIR/ebook2audiobook.sh
 Icon=$ICON_PATH
 Terminal=true
 Categories=Utility;
@@ -603,11 +603,11 @@ EOF
 		return 0
 	}
 
-	if [ "$APP_MODE" = "$FULL_DOCKER" ]; then
-		python "$APP_ROOT/app.py" --script_mode "$APP_MODE" "${ARGS[@]}"
+	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
+		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 		conda deactivate 2>&1 > /dev/null
 		conda deactivate 2>&1 > /dev/null
-	elif [ "$APP_MODE" = "$NATIVE" ]; then
+	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
 		pass=true	   
 		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
 			if ! install_programs; then
@@ -618,9 +618,9 @@ EOF
 			if conda_check; then
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
-				conda activate "$APP_ROOT/$PYTHON_ENV"
+				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 				build_gui
-				python "$APP_ROOT/app.py" --script_mode "$APP_MODE" "${ARGS[@]}"
+				python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate 2>&1 > /dev/null
 				conda deactivate 2>&1 > /dev/null
 			fi
