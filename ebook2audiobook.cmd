@@ -1,64 +1,47 @@
 @echo off
 setlocal enabledelayedexpansion
 
-if "%1"=="_open_gui_background" (
-    shift
-    goto :open_gui
-)
-
 :: Capture all arguments into ARGS
 set "ARGS=%*"
-
 set "NATIVE=native"
 set "FULL_DOCKER=full_docker"
-
 set "APP_MODE=%NATIVE%"
 set "APP_NAME=ebook2audiobook"
 set "APP_ROOT=%~dp0"
 set "RUN_SCRIPT=ebook2audiobook.cmd"
 set "ICON_PATH=%APP_ROOT%tools\icons\windows\appIcon.ico"
-
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
-
 set "ARCH=%PROCESSOR_ARCHITECTURE%"
 set "PYTHON_VERSION=3.12"
 set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-
 set "PROGRAMS_LIST=calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
-
 set "TMP=%APP_ROOT%\tmp"
 set "TEMP=%APP_ROOT%\tmp"
-
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
-
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
-
 set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
 set "CONDA_INSTALL_DIR=%USERPROFILE%\Miniforge3"
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
 set "CONDA_ENV=%CONDA_INSTALL_DIR%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_INSTALL_DIR%\condabin"
-
 set "TESSDATA_PREFIX=%APP_ROOT%\models\tessdata"
-
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
-
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%" 2>&1 >nul
+set "INSTALLED_LOG=%APP_ROOT%\.installed"
+set "HELP_FOUND=%ARGS:--help=%"
+set "HEADLESS_FOUND=%ARGS:--headless=%"
 
 set "SCOOP_CHECK=0"
 set "CONDA_CHECK=0"
 set "PROGRAMS_CHECK=0"
 set "DOCKER_CHECK=0"
-
-set "HELP_FOUND=%ARGS:--help=%"
-set "HEADLESS_FOUND=%ARGS:--headless=%"
 
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
@@ -147,29 +130,42 @@ goto :dispatch
 exit /b
 
 :install_components
-:: Install Scoop if not already installed
 if not "%SCOOP_CHECK%"=="0" (
 	echo Installing Scoop...
     call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
     call powershell -command "iwr -useb get.scoop.sh | iex"
-	call scoop install git
-	call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
-	call scoop bucket add extras
-	call scoop bucket add versions
-	echo Scoop installed successfully.
-	if "%PROGRAMS_CHECK%"=="0" (
-		set "SCOOP_CHECK=0"
+	where /Q scoop
+	if !errorlevel! equ 0 (
+		echo Scoop installed successfully.
+		call scoop install git
+		call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
+		call scoop bucket add extras
+		call scoop bucket add versions
+		if "%PROGRAMS_CHECK%"=="0" (
+			set "SCOOP_CHECK=0"
+		)
+		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo scoop>>"%INSTALLED_LOG%"
+		)
+		start "" cmd /k cd /d "%APP_ROOT%" ^& call "%~f0"
+	) else (
+		echo Conda installation failed.
+		goto :failed
 	)
-	start "" cmd /k cd /d "%CD%" ^& call "%~f0"
 	exit
 )
-:: Install Conda if not already installed
 if not "%CONDA_CHECK%"=="0" (
 	echo Installing Miniforge...
 	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where /Q conda
-	if !errorlevel! neq 0 (
+	if !errorlevel! equ 0 (
+		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo Miniforge3>>"%INSTALLED_LOG%"
+		)
+	) else (
 		echo Conda installation failed.
 		goto :failed
 	)
@@ -183,7 +179,6 @@ if not "%CONDA_CHECK%"=="0" (
 	start "" cmd /k cd /d "%CD%" ^& call "%~f0"
 	exit
 )
-:: Install missing packages one by one
 if not "%PROGRAMS_CHECK%"=="0" (
     echo Installing missing programs...
     if "%SCOOP_CHECK%"=="0" (
@@ -239,7 +234,12 @@ if not "%PROGRAMS_CHECK%"=="0" (
             set "prog=calibre"
         )
         where /Q !prog!
-        if !errorlevel! neq 0 (
+        if !errorlevel! equ 0 (
+			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
+			if errorlevel 1 (
+				echo %%p>>"%INSTALLED_LOG%"
+			)
+		) else (
             echo %%p installation failed...
             goto :failed
         )
@@ -262,28 +262,15 @@ powershell -NoLogo -NoProfile -Command ^
   "$s.Save()"
 exit /b
 
-:open_gui
-set "host=127.0.0.1"
-set "port=7860"
-set "timeout=60"
-for /l %%I in (1,1,%timeout%) do (
-    (echo ) | curl --silent telnet://%host%:%port% >nul 2>&1
-    if not errorlevel 1 (
-        start "" "http://%host%:%port%/"
-        goto  :eof
-    )
-    timeout /t 1 >nul
-)
-goto  :eof
-
 :build_gui
 if not "%HEADLESS_FOUND%"=="%ARGS%" (
 	if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
-	if not exist "%DESKTOP_LNK%" (
+	if not exist "%STARTMENU_LNK%" (
 		call :make_shortcut "%STARTMENU_LNK%"
 		call :make_shortcut "%DESKTOP_LNK%"
 	)
-	start "" /B cmd /c "%~f0" _open_gui_background %*
+	echo [INFO] Launching browser listener in background...
+	start "E2A" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0.bh.ps1"
 )
 exit /b
 
