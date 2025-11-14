@@ -2418,7 +2418,7 @@ def build_interface(args:dict)->gr.Blocks:
         is_gui_process = args['is_gui_process']
         is_gui_shared = args['share']
         title = 'Ebook2Audiobook'
-        gr_glass_mask_msg = 'Initialization, please wait...'
+        gr_glassmask_msg = 'Initialization, please wait...'
         ebook_src = None
         language_options = [
             (
@@ -2518,6 +2518,8 @@ def build_interface(args:dict)->gr.Blocks:
                     justify-content: center !important;
                     font-size: 1.2rem !important;
                     color: #ffffff !important;
+                    text-align: center !important;
+                    border: none !important;
                     opacity: 1;
                     pointer-events: all !important;
                 }
@@ -3046,7 +3048,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
 
             gr_modal = gr.HTML(visible=False)
-            gr_glass_mask = gr.HTML(gr_glass_mask_msg, elem_id='gr_glass_mask', elem_classes=['gr-glass-mask'])
+            gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
             gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
             gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
             gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
@@ -3246,8 +3248,8 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, id)
                 return gr.update(value=0), gr.update(value=None), gr.update(value=None)
 
-            def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->dict:
-                return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
+            def update_gr_glassmask(str:str=gr_glassmask_msg, attr:list=['gr-glass-mask'])->dict:
+                return gr.update(value=str, elem_id='gr_glassmask', elem_classes=attr)
 
             def change_convert_btn(upload_file:str|None=None, upload_file_mode:str|None=None, custom_model_file:str|None=None, session:DictProxy=None)->dict:
                 try:
@@ -3941,7 +3943,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session['status'] = None
                     if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
-                        return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
+                        return gr.update(), gr.update(), gr.update(value=''), update_gr_glassmask(str=error)
                     else:
                         active_sessions.add(req.session_hash)
                         session[req.session_hash] = req.session_hash
@@ -4358,7 +4360,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_restore_session.change(
                 fn=change_gr_restore_session,
                 inputs=[gr_restore_session, gr_state_update],
-                outputs=[gr_save_session, gr_state_update, gr_session, gr_glass_mask]
+                outputs=[gr_save_session, gr_state_update, gr_session, gr_glassmask]
             ).then(
                 fn=restore_interface,
                 inputs=[gr_session],
@@ -4374,9 +4376,9 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_group_audiobook_list, gr_audiobook_player, gr_timer
                 ]
             ).then(
-                fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
+                fn=lambda session: update_gr_glassmask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
                 inputs=[gr_session],
-                outputs=[gr_glass_mask]
+                outputs=[gr_glassmask]
             ).then(
                 fn=None,
                 inputs=None,
@@ -4428,6 +4430,8 @@ def build_interface(args:dict)->gr.Blocks:
                 js=r'''
                     ()=>{
                         try{
+                            const bc = new BroadcastChannel("E2A-channel");
+                            const tab_id = crypto.randomUUID();
                             let gr_root = (window.gradioApp && window.gradioApp()) || document;
                             let gr_checkboxes;
                             let gr_radios;
@@ -4438,9 +4442,10 @@ def build_interface(args:dict)->gr.Blocks:
                             let gr_playback_time;
                             let gr_progress;
                             let gr_voice_play;
+                            let tabs_opened = false;
                             let init_elements_timeout;
                             let init_audiobook_player_timeout;
-                            let audioFilter = "";
+                            let audio_filter = "";
                             let cues = [];
                             if(typeof window.onElementAvailable !== "function"){
                                 window.onElementAvailable = (selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {})=> {
@@ -4672,7 +4677,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 }
                                                 gr_audiobook_player.addEventListener("loadeddata", ()=>{
                                                     gr_audiobook_player.style.transition = "filter 1s ease";
-                                                    gr_audiobook_player.style.filter = audioFilter;
+                                                    gr_audiobook_player.style.filter = audio_filter;
                                                     gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                                     gr_audiobook_player.volume = window.session_storage.playback_volume;
                                                 });
@@ -4701,16 +4706,16 @@ def build_interface(args:dict)->gr.Blocks:
                                                 let osTheme;
                                                 if(theme){
                                                     if(theme == "dark"){
-                                                        audioFilter = "invert(1) hue-rotate(180deg)";
+                                                        audio_filter = "invert(1) hue-rotate(180deg)";
                                                     }
                                                 }else{
                                                     osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
                                                     if(osTheme){
-                                                        audioFilter = "invert(1) hue-rotate(180deg)";
+                                                        audio_filter = "invert(1) hue-rotate(180deg)";
                                                     }
                                                 }
                                                 gr_audiobook_player.style.transition = "filter 1s ease";
-                                                gr_audiobook_player.style.filter = audioFilter;
+                                                gr_audiobook_player.style.filter = audio_filter;
                                                 gr_audiobook_player.volume = window.session_storage.playback_volume;
                                                 return true;
                                             }
@@ -4841,7 +4846,40 @@ def build_interface(args:dict)->gr.Blocks:
                                     return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
                                 }
                             }
+                            if(typeof(show_glassmask) !== "function"){
+                                function show_glassmask(msg){
+                                    let glassmask = document.querySelector("#gr_glassmask");
+                                    if(!glassmask){
+                                        glassmask = document.createElement("div");
+                                        glassmask.id = "gr_glassmask";
+                                        document.body.appendChild(glassmask);
+                                    }
+                                    glassmask.className = "gr-glass-mask";
+                                    glassmask.innerHTML = `${msg}`;
+                                }
+                            }
                             //////////////////////
+                            bc.onmessage = (event)=>{
+                                try{
+                                    const msg = event.data;
+                                    if(!msg || msg.senderId === tab_id){
+                                        return;
+                                    }
+                                    switch (msg.type){
+                                        case "check-existing":
+                                            bc.postMessage({ type: "already-open", senderId: tab_id });
+                                            break;
+                                        case "already-open":
+                                            tabs_opened = true;
+                                            break;
+                                        case "new-tab-opened":
+                                            show_glassmask(msg.text);
+                                            break;
+                                    }
+                                }catch(e){
+                                    console.warn("bc.onmessage error:", e);
+                                }
+                            };
                             window.addEventListener("beforeunload", ()=>{
                                 try{
                                     const newStorage = JSON.parse(localStorage.getItem("data") || "{}");
@@ -4859,7 +4897,7 @@ def build_interface(args:dict)->gr.Blocks:
                             const currentStorage = localStorage.getItem("data");
                             if(currentStorage){
                                 window.session_storage = JSON.parse(currentStorage);
-                                window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
+                                window.session_storage.tab_id = tab_id;
                                 if(window.session_storage.playback_volume === 0){
                                     window.session_storage.playback_volume = 1.0;
                                 }
@@ -4874,6 +4912,20 @@ def build_interface(args:dict)->gr.Blocks:
                             window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
                                 window.init_audiobook_player();
                             }, {once: false});
+                            try{
+                                bc.postMessage({ type: "check-existing", senderId: tab_id });
+                                setTimeout(()=>{
+                                    if(tabs_opened){
+                                        bc.postMessage({
+                                            type: "new-tab-opened",
+                                            text: "Session expired.<br/>You can close this window",
+                                            senderId: tab_id
+                                        });
+                                    }
+                                }, 250);
+                            }catch(e){
+                                console.warn("bc.postMessage error:", e);
+                            }
                             return window.session_storage;
                         }catch(e){
                             console.warn("gr_raed_data js error:", e);

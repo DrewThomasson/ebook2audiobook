@@ -6,10 +6,14 @@ set "ARGS=%*"
 set "NATIVE=native"
 set "FULL_DOCKER=full_docker"
 set "SCRIPT_MODE=%NATIVE%"
-set "APP_NAME=ebook2audiobook"
 set "SCRIPT_DIR=%~dp0"
-set "RUN_SCRIPT=ebook2audiobook.cmd"
-set "ICON_PATH=%SCRIPT_DIR%tools\icons\windows\appIcon.ico"
+if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+set "APP_NAME=ebook2audiobook"
+set /p APP_VERSION=<"%SCRIPT_DIR%\VERSION.txt"
+set "APP_FILE=%APP_NAME%.cmd"
+set "TEST_HOST=127.0.0.1"
+set "TEST_PORT=7860"
+set "ICON_PATH=%SCRIPT_DIR%\tools\icons\windows\appIcon.ico"
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
@@ -35,6 +39,7 @@ set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%" 2>&1 >nul
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
+set "UNINSTALLER=%SCRIPT_DIR%\uninstall.cmd"
 set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 
@@ -253,13 +258,22 @@ goto :dispatch
 exit /b
 
 :make_shortcut
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayName" /d "%APP_NAME%" /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayVersion" /d "%APP_VERSION%" /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "Publisher" /d "ebook2audiobook Team" /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "InstallLocation" /d "%SCRIPT_DIR%" /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "UninstallString" /d "\"%UNINSTALLER%\"" /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
 powershell -NoLogo -NoProfile -Command ^
-  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%~1');" ^
-  "$s.TargetPath='cmd.exe';" ^
-  "$s.Arguments='/k cd ""%SCRIPT_DIR%"" && %RUN_SCRIPT%';" ^
-  "$s.WorkingDirectory='%SCRIPT_DIR%';" ^
-  "$s.IconLocation='%ICON_PATH%';" ^
-  "$s.Save()"
+  "$s = New-Object -ComObject WScript.Shell; " ^
+  "$shortcut = $s.CreateShortcut('%~1'); " ^
+  "$shortcut.TargetPath = 'cmd.exe'; " ^
+  "$shortcut.Arguments = '/k \"cd /d \"%SCRIPT_DIR%\" && \"%APP_FILE%\"\"'; " ^
+  "$shortcut.WorkingDirectory = '%SCRIPT_DIR%'; " ^
+  "$shortcut.IconLocation = '%ICON_PATH%'; " ^
+  "$shortcut.Save()"
 exit /b
 
 :build_gui
@@ -269,7 +283,7 @@ if not "%HEADLESS_FOUND%"=="%ARGS%" (
 		call :make_shortcut "%STARTMENU_LNK%"
 		call :make_shortcut "%DESKTOP_LNK%"
 	)
-	start "E2A" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0.bh.ps1"
+	start "E2A" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0.bh.ps1" -HostName "%TEST_HOST%" -Port %TEST_PORT%
 )
 exit /b
 

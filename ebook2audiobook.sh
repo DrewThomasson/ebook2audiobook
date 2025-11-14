@@ -49,11 +49,13 @@ NATIVE="native"
 FULL_DOCKER="full_docker"
 SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
+APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
+UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 
 if [[ "$OSTYPE" != "linux"* && "$OSTYPE" != "darwin"* ]]; then
 	echo "Error: OS $OSTYPE unsupported."
@@ -637,4 +639,6 @@ EOF
 	fi
 fi
 
+exit 0
+exit 0
 exit 0
