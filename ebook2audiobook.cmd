@@ -56,14 +56,14 @@ for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Se
 cd /d "%SCRIPT_DIR%"
 
 if "%ARCH%"=="x86" (
-	echo Error: 32-bit architecture is not supported.
-	goto :failed
+    echo Error: 32-bit architecture is not supported.
+    goto :failed
 )
 
 :: Check if running inside Docker
 if defined CONTAINER (
-	set "SCRIPT_MODE=%FULL_DOCKER%"
-	goto :main
+    set "SCRIPT_MODE=%FULL_DOCKER%"
+    goto :main
 )
 
 goto :scoop_check
@@ -71,9 +71,9 @@ goto :scoop_check
 :scoop_check
 where /Q scoop
 if %errorlevel% neq 0 (
-	echo Scoop is not installed. 
-	set "SCOOP_CHECK=1"
-	goto :install_components
+    echo Scoop is not installed. 
+    set "SCOOP_CHECK=1"
+    goto :install_components
 )
 goto :conda_check
 exit /b
@@ -81,36 +81,36 @@ exit /b
 :conda_check
 where /Q conda
 if %errorlevel% neq 0 (
-	echo Miniforge3 is not installed.
-	set "CONDA_CHECK=1"
-	goto :install_components
+    echo Miniforge3 is not installed.
+    set "CONDA_CHECK=1"
+    goto :install_components
 )
 
 :: Check if running in a Conda environment
 if defined CONDA_DEFAULT_ENV (
-	set "CURRENT_ENV=%CONDA_PREFIX%"
+    set "CURRENT_ENV=%CONDA_PREFIX%"
 )
 :: Check if running in a Python virtual environment
 if defined VIRTUAL_ENV (
-	set "CURRENT_ENV=%VIRTUAL_ENV%"
+    set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
 for /f "delims=" %%i in ('where /Q python') do (
-	if defined CONDA_PREFIX (
-		if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-			set "CURRENT_ENV=%CONDA_PREFIX%"
-			break
-		)
-	) else if defined VIRTUAL_ENV (
-		if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-			set "CURRENT_ENV=%VIRTUAL_ENV%"
-			break
-		)
-	)
+    if defined CONDA_PREFIX (
+        if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
+            set "CURRENT_ENV=%CONDA_PREFIX%"
+            break
+        )
+    ) else if defined VIRTUAL_ENV (
+        if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
+            set "CURRENT_ENV=%VIRTUAL_ENV%"
+            break
+        )
+    )
 )
 if not "%CURRENT_ENV%"=="" (
-	echo Current python virtual environment detected: %CURRENT_ENV%. 
-	echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-	goto :failed
+    echo Current python virtual environment detected: %CURRENT_ENV%. 
+    echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+    goto :failed
 )
 goto :programs_check
 exit /b
@@ -120,7 +120,7 @@ set "missing_prog_array="
 for %%p in (%PROGRAMS_LIST%) do (
     set "prog=%%p"
     if "%%p"=="nodejs" set "prog=node"
-	if "%%p"=="calibre-normal" set "prog=calibre"
+    if "%%p"=="calibre-normal" set "prog=calibre"
     where /Q !prog!
     if !errorlevel! neq 0 (
         echo %%p is not installed.
@@ -136,53 +136,53 @@ exit /b
 
 :install_components
 if not "%SCOOP_CHECK%"=="0" (
-	echo Installing Scoop...
+    echo Installing Scoop...
     call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
     call powershell -command "iwr -useb get.scoop.sh | iex"
-	where /Q scoop
-	if !errorlevel! equ 0 (
-		echo Scoop installed successfully.
-		call scoop install git
-		call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
-		call scoop bucket add extras
-		call scoop bucket add versions
-		if "%PROGRAMS_CHECK%"=="0" (
-			set "SCOOP_CHECK=0"
-		)
-		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-		if errorlevel 1 (
-			echo scoop>>"%INSTALLED_LOG%"
-		)
-		start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0"
-	) else (
-		echo Conda installation failed.
-		goto :failed
-	)
-	exit
+    where /Q scoop
+    if !errorlevel! equ 0 (
+        echo Scoop installed successfully.
+        call scoop install git
+        call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
+        call scoop bucket add extras
+        call scoop bucket add versions
+        if "%PROGRAMS_CHECK%"=="0" (
+            set "SCOOP_CHECK=0"
+        )
+        findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+        if errorlevel 1 (
+            echo scoop>>"%INSTALLED_LOG%"
+        )
+        start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0"
+    ) else (
+        echo Conda installation failed.
+        goto :failed
+    )
+    exit
 )
 if not "%CONDA_CHECK%"=="0" (
-	echo Installing Miniforge...
-	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
-	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
-	where /Q conda
-	if !errorlevel! equ 0 (
-		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
-		if errorlevel 1 (
-			echo Miniforge3>>"%INSTALLED_LOG%"
-		)
-	) else (
-		echo Conda installation failed.
-		goto :failed
-	)
-	if not exist "%USERPROFILE%\.condarc" (
-		call conda config --set auto_activate false
-	)
-	call conda update conda -y
-	del "%CONDA_INSTALLER%"
-	set "CONDA_CHECK=0"
-	echo Conda installed successfully.
-	start "" cmd /k cd /d "%CD%" ^& call "%~f0"
-	exit
+    echo Installing Miniforge...
+    call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
+    call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
+    where /Q conda
+    if !errorlevel! equ 0 (
+        findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
+        if errorlevel 1 (
+            echo Miniforge3>>"%INSTALLED_LOG%"
+        )
+    ) else (
+        echo Conda installation failed.
+        goto :failed
+    )
+    if not exist "%USERPROFILE%\.condarc" (
+        call conda config --set auto_activate false
+    )
+    call conda update conda -y
+    del "%CONDA_INSTALLER%"
+    set "CONDA_CHECK=0"
+    echo Conda installed successfully.
+    start "" cmd /k cd /d "%CD%" ^& call "%~f0"
+    exit
 )
 if not "%PROGRAMS_CHECK%"=="0" (
     echo Installing missing programs...
@@ -240,11 +240,11 @@ if not "%PROGRAMS_CHECK%"=="0" (
         )
         where /Q !prog!
         if !errorlevel! equ 0 (
-			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
-			if errorlevel 1 (
-				echo %%p>>"%INSTALLED_LOG%"
-			)
-		) else (
+            findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
+            if errorlevel 1 (
+                echo %%p>>"%INSTALLED_LOG%"
+            )
+        ) else (
             echo %%p installation failed...
             goto :failed
         )
@@ -266,6 +266,7 @@ reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
+
 powershell -NoLogo -NoProfile -Command ^
   "$s = New-Object -ComObject WScript.Shell; " ^
   "$shortcut = $s.CreateShortcut('%~1'); " ^
@@ -274,30 +275,31 @@ powershell -NoLogo -NoProfile -Command ^
   "$shortcut.WorkingDirectory = '%SCRIPT_DIR%'; " ^
   "$shortcut.IconLocation = '%ICON_PATH%'; " ^
   "$shortcut.Save()"
+
 exit /b
 
 :build_gui
 if not "%HEADLESS_FOUND%"=="%ARGS%" (
-	if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
-	if not exist "%STARTMENU_LNK%" (
-		call :make_shortcut "%STARTMENU_LNK%"
-		call :make_shortcut "%DESKTOP_LNK%"
-	)
-	start "E2A" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0.bh.ps1" -HostName "%TEST_HOST%" -Port %TEST_PORT%
+    if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
+    if not exist "%STARTMENU_LNK%" (
+        call :make_shortcut "%STARTMENU_LNK%"
+        call :make_shortcut "%DESKTOP_LNK%"
+    )
+    start "E2A" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0.bh.ps1" -HostName "%TEST_HOST%" -Port %TEST_PORT%
 )
 exit /b
 
 :dispatch
 if "%SCOOP_CHECK%"=="0" (
-	if "%PROGRAMS_CHECK%"=="0" (
-		if "%CONDA_CHECK%"=="0" (
-			if "%DOCKER_CHECK%"=="0" (
-				goto :main
-			) else (
-				goto :failed
-			)
-		)
-	)
+    if "%PROGRAMS_CHECK%"=="0" (
+        if "%CONDA_CHECK%"=="0" (
+            if "%DOCKER_CHECK%"=="0" (
+                goto :main
+            ) else (
+                goto :failed
+            )
+        )
+    )
 )
 echo PROGRAMS_CHECK: %PROGRAMS_CHECK%
 echo CONDA_CHECK: %CONDA_CHECK%
@@ -307,26 +309,26 @@ exit /b
 
 :main
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
-	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
+    call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
-	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
-		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
-		call %CONDA_ENV% activate base
-		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-		call python -m pip cache purge >nul 2>&1
-		call python -m pip install --upgrade pip
-		for /f "usebackq delims=" %%p in ("requirements.txt") do (
-			echo Installing %%p...
-			call python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
-		)
-		echo All required packages are installed.
-	) else (
-		call %CONDA_ENV% activate base
-		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-	)
-	call :build_gui
-	call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-	call conda deactivate
+    if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
+        call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+        call %CONDA_ENV% activate base
+        call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+        call python -m pip cache purge >nul 2>&1
+        call python -m pip install --upgrade pip
+        for /f "usebackq delims=" %%p in ("requirements.txt") do (
+            echo Installing %%p...
+            call python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
+        )
+        echo All required packages are installed.
+    ) else (
+        call %CONDA_ENV% activate base
+        call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+    )
+    call :build_gui
+    call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+    call conda deactivate
 )
 exit /b
 
