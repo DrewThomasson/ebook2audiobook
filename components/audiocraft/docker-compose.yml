@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  audiocraft:
+    image: audiocraft-alpine:latest
+    container_name: audiocraft
+    build:
+      context: .
+      dockerfile: Dockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      - TRANSFORMERS_CACHE=/models/cache
+      - TORCH_HOME=/models/torch
+      - HF_HOME=/models/huggingface
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./app:/app              # your local scripts (generate.py, etc.)
+      - ./models:/models        # persistent model & cache storage
+      - ./outputs:/outputs      # store generated audio here
+    entrypoint: ["/app/entrypoint.sh"]
+    command: ["generate.py"]
+    runtime: nvidia
+    shm_size: "1gb"
+    restart: "no"
