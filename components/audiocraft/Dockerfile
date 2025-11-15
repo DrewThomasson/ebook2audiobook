@@ -3,14 +3,14 @@
 # ===============================
 FROM nvidia/cuda:12.1.0-runtime-rockylinux9 AS builder
 
-# --- Environment & base setup ---
+# --- Environment setup ---
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_BUILD_ISOLATION=0 \
     PIP_NO_DEPENDENCIES=0
 
-# Enable EPEL + CRB + RPM Fusion for ffmpeg and dev tools
+# --- Enable EPEL, CRB, and RPM Fusion for ffmpeg ---
 RUN dnf install -y epel-release && \
     dnf config-manager --set-enabled crb && \
     dnf install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm && \
@@ -22,12 +22,19 @@ RUN dnf install -y epel-release && \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# --- Install pinned dependencies ---
+# --- Copy dependencies ---
 COPY requirements.txt /tmp/requirements.txt
+
+# --- Install pip & build tools ---
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# --- Fix for PyAV (requires Cython) ---
+RUN pip install --no-cache-dir Cython==3.0.10
+
+# --- Install pinned dependencies ---
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# --- Clean builder environment ---
+# --- Clean up ---
 RUN rm -rf /root/.cache /tmp/*
 
 # ===============================
@@ -35,17 +42,17 @@ RUN rm -rf /root/.cache /tmp/*
 # ===============================
 FROM nvidia/cuda:12.1.0-runtime-rockylinux9
 
-# Enable runtime repos + ffmpeg only
+# --- Enable repos and install runtime ffmpeg only ---
 RUN dnf install -y epel-release && \
     dnf config-manager --set-enabled crb && \
     dnf install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm && \
     dnf install -y --nobest ffmpeg && \
     dnf autoremove -y && dnf clean all
 
-# Copy built virtualenv
+# --- Copy prebuilt Python environment ---
 COPY --from=builder /opt/venv /opt/venv
 
-# --- Environment variables ---
+# --- Set environment variables ---
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     TRANSFORMERS_CACHE=/models/cache \
@@ -56,12 +63,15 @@ ENV PATH="/opt/venv/bin:$PATH" \
 WORKDIR /app
 COPY . .
 
-# --- Cleanup unnecessary metadata ---
+# --- Cleanup unnecessary data ---
 RUN find /opt/venv -type d -name "__pycache__" -exec rm -rf {} + && \
     find /opt/venv -type d -name "tests" -exec rm -rf {} + && \
     strip --strip-unneeded /opt/venv/bin/* 2>/dev/null || true
+	
+RUN find /opt/venv/lib/python3.* -type d -name "*.dist-info" -prune -exec rm -rf {} + && \
+    rm -rf /opt/venv/share /opt/venv/include
 
-# --- Labels for traceability ---
+# --- Metadata labels ---
 LABEL org.opencontainers.image.version="1.3.0-cuda12.1-rocky9" \
       org.opencontainers.image.created="2025-11-15" \
       org.opencontainers.image.source="https://github.com/facebookresearch/audiocraft" \
