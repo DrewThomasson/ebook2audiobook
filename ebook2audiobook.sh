@@ -5,7 +5,15 @@ if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" !
 	exec env zsh "$0" "$@"
 fi
 
-export SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-${(%):-%x}}")" && pwd -P 2>/dev/null || cd "$(dirname "$0")" && pwd -P)"
+if [ -n "$BASH_SOURCE" ]; then
+    script_path="${BASH_SOURCE[0]}"
+elif [ -n "$ZSH_VERSION" ]; then
+    script_path="${(%):-%x}"
+else
+    script_path="$0"
+fi
+
+export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
 
