@@ -3,23 +3,19 @@
 # ===============================
 FROM nvidia/cuda:12.1.0-runtime-rockylinux9 AS builder
 
-# Enable EPEL + RPM Fusion to access ffmpeg
+# Enable EPEL, CRB, and RPM Fusion so ffmpeg installs cleanly
 RUN dnf install -y epel-release && \
+    dnf config-manager --set-enabled crb && \
     dnf install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm && \
-    dnf install -y python3 python3-pip git make gcc-c++ ffmpeg && \
+    dnf install -y --nobest python3 python3-pip git make gcc-c++ ffmpeg && \
     dnf clean all
 
-# Create isolated Python environment
+# Create Python venv
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Upgrade pip & wheel
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# Torch GPU build (works on CPU too)
 RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-
-# Audiocraft
 RUN pip install --no-cache-dir audiocraft
 RUN rm -rf /root/.cache
 
@@ -28,10 +24,11 @@ RUN rm -rf /root/.cache
 # ===============================
 FROM nvidia/cuda:12.1.0-runtime-rockylinux9
 
-# Enable same repos to get ffmpeg runtime
+# Enable repos and install ffmpeg runtime
 RUN dnf install -y epel-release && \
+    dnf config-manager --set-enabled crb && \
     dnf install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm && \
-    dnf install -y ffmpeg && \
+    dnf install -y --nobest ffmpeg && \
     dnf clean all
 
 COPY --from=builder /opt/venv /opt/venv
