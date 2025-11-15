@@ -5,8 +5,6 @@ if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" !
 	exec env zsh "$0" "$@"
 fi
 
-set -euo pipefail
-
 if [ -n "$BASH_SOURCE" ]; then
     script_path="${BASH_SOURCE[0]}"
 elif [ -n "$ZSH_VERSION" ]; then
