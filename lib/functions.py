@@ -4430,8 +4430,6 @@ def build_interface(args:dict)->gr.Blocks:
                 js=r'''
                     ()=>{
                         try{
-                            const bc = new BroadcastChannel("E2A-channel");
-                            const tab_id = crypto.randomUUID();
                             let gr_root = (window.gradioApp && window.gradioApp()) || document;
                             let gr_checkboxes;
                             let gr_radios;
@@ -4858,7 +4856,22 @@ def build_interface(args:dict)->gr.Blocks:
                                     glassmask.innerHTML = `${msg}`;
                                 }
                             }
+                            if(typeof(create_uuid) !== "function"){
+                                function create_uuid(){
+                                    try{
+                                        return crypto.randomUUID();
+                                    }catch(e){
+                                        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c =>{
+                                            const r = Math.random() * 16 | 0;
+                                            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                                            return v.toString(16);
+                                        });
+                                    }
+                                }
+                            }
                             //////////////////////
+                            const bc = new BroadcastChannel("E2A-channel");
+                            const tab_id = create_uuid();
                             bc.onmessage = (event)=>{
                                 try{
                                     const msg = event.data;
