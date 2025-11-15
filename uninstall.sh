@@ -22,6 +22,41 @@ UNINSTALLER="uninstall.sh"
 UNINSTALLER_PATH="$SCRIPT_DIR/$UNINSTALLER"
 TEMP_UNINSTALLER="/tmp/${APP_NAME}_uninstaller.sh"
 
+function remove_homebrew() {
+    local BREW_PATH=""
+    local BREW_BIN=""
+    local UNINSTALLER="/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)\""
+    if [[ -d "/opt/homebrew" ]]; then
+        BREW_PATH="/opt/homebrew"
+    elif [[ -d "/usr/local/Homebrew" ]]; then
+        BREW_PATH="/usr/local/Homebrew"
+    else
+        BREW_PATH=""
+    fi
+    BREW_BIN="$BREW_PATH/bin/brew"
+    if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Homebrew" "$INSTALLED_LOG"; then
+        if [[ -x "$BREW_BIN" ]]; then
+            echo "[INFO] Homebrew detected at: $BREW_PATH"
+            "$BREW_BIN" list -1 | while read -r pkg; do
+                echo "  → Uninstalling $pkg"
+                "$BREW_BIN" uninstall --force --ignore-dependencies "$pkg" >/dev/null 2>&1
+            done
+            echo "[INFO] Running Homebrew cleanup..."
+            "$BREW_BIN" cleanup -s >/dev/null 2>&1 || true
+            echo "[INFO] Executing official Homebrew uninstall script..."
+            /bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" >/dev/null 2>&1
+            echo "[INFO] Removing residual Homebrew directories..."
+            sudo rm -rf "$BREW_PATH" \
+                        "$HOME/Library/Caches/Homebrew" \
+                        "$HOME/Library/Logs/Homebrew" \
+                        "$HOME/Library/Preferences/com.apple.Homebrew.plist" \
+                        "$HOME/Library/Preferences/Homebrew"
+
+            echo "[SUCCESS] Homebrew completely removed."
+        fi
+    fi
+}
+
 echo
 echo "========================================"
 echo "  Uninstalling $APP_NAME"
