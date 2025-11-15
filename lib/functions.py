@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract
+import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
 import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, fitz
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
@@ -2386,7 +2386,7 @@ def reset_session(id:str)->None:
     }
     restore_session_from_data(data, session)
 
-def unload_tts()->None:
+def cleanup_memory()->None:
     try:
         active_models = {
             cache
@@ -2397,7 +2397,7 @@ def unload_tts()->None:
         for key in list(loaded_tts.keys()):
             if key not in active_models:
                 del loaded_tts[key]
-        cleanup_garbage()
+        gc.collect()
     except Exception as e:
         error = f"unload_tts() error: {e}"
         print(error)
