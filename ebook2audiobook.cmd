@@ -40,6 +40,7 @@ set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%" 2>&1 >nul
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SCRIPT_DIR%\uninstall.cmd"
+set "BROWSER_HELPER=%SCRIPT_DIR%\.bh.ps1"
 set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 
@@ -258,34 +259,40 @@ goto :dispatch
 exit /b
 
 :make_shortcut
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayName" /d "%APP_NAME%" /f >nul 2>&1
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayVersion" /d "%APP_VERSION%" /f >nul 2>&1
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "Publisher" /d "ebook2audiobook Team" /f >nul 2>&1
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "InstallLocation" /d "%SCRIPT_DIR%" /f >nul 2>&1
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "UninstallString" /d "\"%UNINSTALLER%\"" /f >nul 2>&1
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
-
-powershell -NoLogo -NoProfile -Command ^
+set "shortcut=%~1"
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
   "$s = New-Object -ComObject WScript.Shell; " ^
-  "$shortcut = $s.CreateShortcut('%~1'); " ^
-  "$shortcut.TargetPath = 'cmd.exe'; " ^
-  "$shortcut.Arguments = '/k \"cd /d \"%SCRIPT_DIR%\" && \"%APP_FILE%\"\"'; " ^
-  "$shortcut.WorkingDirectory = '%SCRIPT_DIR%'; " ^
-  "$shortcut.IconLocation = '%ICON_PATH%'; " ^
-  "$shortcut.Save()"
-
+  "$sc = $s.CreateShortcut('%shortcut%'); " ^
+  "$sc.TargetPath = 'cmd.exe'; " ^
+  "$sc.Arguments = '/k ""cd /d """"%SCRIPT_DIR%"""" && """"%APP_FILE%""""""'; " ^
+  "$sc.WorkingDirectory = '%SCRIPT_DIR%'; " ^
+  "$sc.IconLocation = '%ICON_PATH%'; " ^
+  "$sc.Save()"
 exit /b
 
 :build_gui
-if not "%HEADLESS_FOUND%"=="%ARGS%" (
+if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
     if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
     if not exist "%STARTMENU_LNK%" (
         call :make_shortcut "%STARTMENU_LNK%"
         call :make_shortcut "%DESKTOP_LNK%"
     )
-    start "E2A" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0.bh.ps1" -HostName "%TEST_HOST%" -Port %TEST_PORT%
+	for /f "skip=1 delims=" %%L in ('tasklist /v /fo csv /fi "imagename eq powershell.exe" 2^>nul') do (
+		echo %%L | findstr /I "%APP_NAME%" >nul && (
+			for /f "tokens=2 delims=," %%A in ("%%L") do (
+				taskkill /PID %%~A /F >nul 2>&1
+			)
+		)
+	)
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayName" /d "%APP_NAME%" /f >nul 2>&1
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayVersion" /d "%APP_VERSION%" /f >nul 2>&1
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "Publisher" /d "ebook2audiobook Team" /f >nul 2>&1
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "InstallLocation" /d "%SCRIPT_DIR%" /f >nul 2>&1
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "UninstallString" /d "\"%UNINSTALLER%\"" /f >nul 2>&1
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
+    start "%APP_NAME%" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%BROWSER_HELPER%" -HostName "%TEST_HOST%" -Port %TEST_PORT%
 )
 exit /b
 
