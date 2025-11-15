@@ -28,7 +28,6 @@ echo "  Uninstalling $APP_NAME"
 echo "========================================"
 echo
 
-# --- Relaunch from /tmp ---
 if [[ "$SCRIPT_NAME" == "UNINSTALLER"* ]]; then
     echo "Copying uninstaller to temp and relaunching..."
     cp "$0" "$TEMP_UNINSTALLER"
@@ -36,10 +35,10 @@ if [[ "$SCRIPT_NAME" == "UNINSTALLER"* ]]; then
     exec "$TEMP_UNINSTALLER"
 fi
 
-# --- Remove GUI shortcuts ---
 if [[ "$OSTYPE" == "darwin"* ]]; then
     APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
+	echo $DESKTOP_DIR
 	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
     if [[ -d "$APP_BUNDLE" ]]; then
         echo "Removing app bundle..."
@@ -64,7 +63,6 @@ elif [[ "$OSTYPE" == "linux"* ]]; then
 	fi
 fi
 
-# --- Check installed log for Miniforge3 ---
 if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
     if [[ -d "$MINIFORGE_PATH" ]]; then
         echo "Removing Miniforge3 installation at: $MINIFORGE_PATH"
@@ -76,13 +74,11 @@ else
     echo "Miniforge3 not installed by this app, skipping."
 fi
 
-# --- Remove main app folder ---
 if [[ -d "$SCRIPT_DIR" ]]; then
     echo "Removing main application folder: $SCRIPT_DIR"
     rm -rf "$SCRIPT_DIR"
 fi
 
-# --- Clean up temp copy ---
 echo "Cleaning up temporary uninstaller..."
 rm -f "$TEMP_UNINSTALLER" || true
 
