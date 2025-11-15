@@ -3,14 +3,22 @@
 # ===============================
 FROM nvidia/cuda:12.1.0-runtime-rockylinux9 AS builder
 
-RUN dnf install -y python3 python3-pip python3-virtualenv ffmpeg git make gcc-c++ && \
+# Enable EPEL and install core packages
+RUN dnf install -y epel-release && \
+    dnf install -y python3 python3-pip ffmpeg git make gcc-c++ && \
     dnf clean all
 
+# Create isolated environment
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Upgrade pip & install deps
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Torch (GPU build works on CPU fallback)
 RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Audiocraft
 RUN pip install --no-cache-dir audiocraft
 RUN rm -rf /root/.cache
 
@@ -19,8 +27,12 @@ RUN rm -rf /root/.cache
 # ===============================
 FROM nvidia/cuda:12.1.0-runtime-rockylinux9
 
+# Enable EPEL for ffmpeg
+RUN dnf install -y epel-release && \
+    dnf install -y ffmpeg && \
+    dnf clean all
+
 COPY --from=builder /opt/venv /opt/venv
-RUN dnf install -y ffmpeg && dnf clean all
 
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
