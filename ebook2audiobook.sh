@@ -558,6 +558,12 @@ EOF
 </dict>
 </plist>
 PLIST
+		osascript <<EOF
+tell application "Finder"
+	make new alias file at POSIX file "$HOME/Desktop" to POSIX file "$APP_BUNDLE"
+	set name of result to "$APP_NAME"
+end tell
+EOF
 		echo -e "\nLauncher created at: $APP_BUNDLE\nNext time in GUI mode you just need to double click on the desktop shortcut or open the launchpad and click on ebook2audiobook icon.\n"
 		open_gui
 	}
