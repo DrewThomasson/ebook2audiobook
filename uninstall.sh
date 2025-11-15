@@ -58,9 +58,9 @@ elif [[ "$OSTYPE" == "linux"* ]]; then
         rm -f "$MENU_ENTRY"
         update-desktop-database ~/.local/share/applications >/dev/null 2>&1 || true
     fi
-	if [[ -f "DESKTOP_SHORTCUT" ]]; then
+	if [[ -f "$DESKTOP_SHORTCUT" ]]; then
 		echo "Removing desktop shortcut..."
-		rm -f "DESKTOP_SHORTCUT"
+		rm -f "$DESKTOP_SHORTCUT"
 	fi
 fi
 
