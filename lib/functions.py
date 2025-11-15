@@ -47,6 +47,7 @@ from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
+from lib.classes.tts_engines.common.utils import unload_tts
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 
@@ -2153,6 +2154,8 @@ def convert_ebook(args:dict)->tuple:
                 session['output_format'] = str(args['output_format'])
                 session['output_split'] = bool(args['output_split'])
                 session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
+                session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
+                unload_tts()
                 if not session['is_gui_process']:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])

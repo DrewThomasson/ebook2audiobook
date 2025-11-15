@@ -21,7 +21,7 @@ from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.classes.tts_engines.common.utils import cleanup_garbage, unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import cleanup_garbage, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -36,7 +36,7 @@ class Coqui:
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
-            self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
+            self.tts_key = self.session['model_cache']
             self.engine = None
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.engine_zs = None
@@ -82,7 +82,6 @@ class Coqui:
         global lock
         try:
             with lock:
-                unload_tts()
                 from TTS.api import TTS as TTSEngine
                 engine = loaded_tts.get(key, False)
                 if not engine:
@@ -101,7 +100,6 @@ class Coqui:
             with lock:
                 key = kwargs.get('key')
                 device = kwargs.get('device')
-                unload_tts()
                 engine = loaded_tts.get(key, False)
                 if not engine:
                     engine_name = kwargs.get('tts_engine', None)
@@ -241,7 +239,6 @@ class Coqui:
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                         self.engine = self._load_api(self.tts_key, model_path, self.session['device'])
             if self.engine:
-                self.session['model_cache'] = self.tts_key
                 msg = f'TTS {key} Loaded!'
         except Exception as e:
             error = f'_load_engine() error: {e}'
