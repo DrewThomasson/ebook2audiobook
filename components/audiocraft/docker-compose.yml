@@ -16,9 +16,9 @@ services:
       - HF_HOME=/models/huggingface
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./app:/app              # Local scripts
-      - ./models:/models        # Persistent cache
-      - ./outputs:/outputs      # Generated audio
+      - ./app:/app
+      - ./models:/models
+      - ./outputs:/outputs
     entrypoint: ["/app/entrypoint.sh"]
     command: ["generate.py"]
     runtime: nvidia
