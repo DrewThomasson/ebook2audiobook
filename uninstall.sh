@@ -7,8 +7,16 @@ fi
 
 set -euo pipefail
 
+if [ -n "$BASH_SOURCE" ]; then
+    script_path="${BASH_SOURCE[0]}"
+elif [ -n "$ZSH_VERSION" ]; then
+    script_path="${(%):-%x}"
+else
+    script_path="$0"
+fi
+
 APP_NAME="ebook2audiobook"
-SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd -P)"
+SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 MINIFORGE_PATH="$HOME/Miniforge3"
 TEMP_UNINSTALL="/tmp/${APP_NAME}_uninstall.sh"
