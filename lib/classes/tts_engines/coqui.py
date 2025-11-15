@@ -1,5 +1,6 @@
 import torch
 
+torch._utils_internal = type('', (), {'_validate_load_security': lambda *a, **kw: None})()
 _original_load = torch.load
 
 def patched_torch_load(*args, **kwargs):
@@ -7,7 +8,6 @@ def patched_torch_load(*args, **kwargs):
     return _original_load(*args, **kwargs)
     
 torch.load = patched_torch_load
-torch._utils_internal = type('', (), {'_validate_load_security': lambda *a, **kw: None})()
 
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
