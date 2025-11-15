@@ -569,7 +569,7 @@ EOF
 </plist>
 PLIST
 		ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
-		echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or open the launchpad and click on ebook2audiobook icon.\n"
+		echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to the launchpad and click on ebook2audiobook icon."
 		open_gui
 	}
 
@@ -600,7 +600,7 @@ EOF
 		if command -v update-desktop-database >/dev/null 2>&1; then
 			update-desktop-database ~/.local/share/applications >/dev/null 2>&1
 		fi
-		echo -e "Next launch in GUI mode you just need to click on the start menu and click on ebook2audiobook icon.\n"
+		echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to menu entry and click on ebook2audiobook icon."
 		open_gui
 	}
 
