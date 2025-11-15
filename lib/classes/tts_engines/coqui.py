@@ -48,7 +48,7 @@ class Coqui:
             self.resampler_cache = {}
             self.audio_segments = []
             if not xtts_builtin_speakers_list:
-                self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
+                self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=self.cache_dir)
                 xtts_builtin_speakers_list = torch.load(self.speakers_path)
                 using_gpu = self.session['device'] != devices['CPU']['proc']
                 enough_vram = self.session['free_vram_gb'] > 4.0
