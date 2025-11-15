@@ -504,7 +504,8 @@ else
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
-		local DESKTOP_SHORTCUT="$HOME/Desktop/$APP_NAME"
+		local DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
+		local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
 		local OPEN_GUI_DEF=$(declare -f open_gui)
 		local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
@@ -568,19 +569,21 @@ EOF
 </plist>
 PLIST
 		ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
-		echo -e "\nLauncher created at: $APP_BUNDLE\nNext time in GUI mode you just need to double click on the desktop shortcut or open the launchpad and click on ebook2audiobook icon.\n"
+		echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or open the launchpad and click on ebook2audiobook icon.\n"
 		open_gui
 	}
 
 	function linux_app() {
-		local DESKTOP_SHORTCUT="$HOME/.local/share/applications/ebook2audiobook.desktop"
+		local MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
+		local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+		local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
-		if [[ -f "$DESKTOP_SHORTCUT" ]]; then
+		if [[ -f "$MENU_ENTRY" ]]; then
 			open_gui
 			return 0
 		fi
 		mkdir -p "$HOME/.local/share/applications"
-		cat > "$DESKTOP_SHORTCUT" <<EOF
+		cat > "$MENU_ENTRY" <<EOF
 [Desktop Entry]
 Type=Application
 Name=ebook2audiobook
@@ -590,11 +593,14 @@ Terminal=true
 Categories=Utility;
 EOF
 
+		chmod +x "$MENU_ENTRY"
+		mkdir -p "$HOME/Desktop" 2>&1 > /dev/null
+		cp "$MENU_ENTRY" "$DESKTOP_SHORTCUT"
 		chmod +x "$DESKTOP_SHORTCUT"
 		if command -v update-desktop-database >/dev/null 2>&1; then
 			update-desktop-database ~/.local/share/applications >/dev/null 2>&1
 		fi
-		echo -e "\nLauncher created at: ~/.local/share/applications\nNext time in GUI mode you just need to click on the start menu and click on ebook2audiobook icon.\n"
+		echo -e "Next launch in GUI mode you just need to click on the start menu and click on ebook2audiobook icon.\n"
 		open_gui
 	}
 
