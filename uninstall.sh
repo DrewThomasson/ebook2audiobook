@@ -27,25 +27,32 @@ if [[ "$SCRIPT_DIR" != "/tmp"* ]]; then
     exec "$TEMP_UNINSTALL"
 fi
 
-# --- Kill running processes ---
-echo "Stopping any running $APP_NAME or Python processes..."
-pkill -f "$APP_NAME" 2>/dev/null || true
-pkill -f "python" 2>/dev/null || true
-
 # --- Remove GUI shortcuts ---
 if [[ "$OSTYPE" == "darwin"* ]]; then
     APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
+	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
+	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
     if [[ -d "$APP_BUNDLE" ]]; then
-        echo "Removing macOS app bundle..."
+        echo "Removing app bundle..."
         rm -rf "$APP_BUNDLE"
     fi
+	if [[ -f "$DESKTOP_SHORTCUT" ]]; then
+		echo "Removing desktop shortcut..."
+		rm -f "$DESKTOP_SHORTCUT"
+	fi
 elif [[ "$OSTYPE" == "linux"* ]]; then
-    DESKTOP_FILE="$HOME/.local/share/applications/${APP_NAME}.desktop"
-    if [[ -f "$DESKTOP_FILE" ]]; then
-        echo "Removing desktop shortcut..."
-        rm -f "$DESKTOP_FILE"
+	MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
+	DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
+    if [[ -f "$MENU_ENTRY" ]]; then
+        echo "Removing app menu entry..."
+        rm -f "$MENU_ENTRY"
         update-desktop-database ~/.local/share/applications >/dev/null 2>&1 || true
     fi
+	if [[ -f "DESKTOP_SHORTCUT" ]]; then
+		echo "Removing desktop shortcut..."
+		rm -f "DESKTOP_SHORTCUT"
+	fi
 fi
 
 # --- Check installed log for Miniforge3 ---
@@ -71,5 +78,6 @@ echo "Cleaning up temporary uninstaller..."
 rm -f "$TEMP_UNINSTALL" || true
 
 echo
-echo "✅ Uninstall complete."
+echo "Uninstall complete."
+
 exit 0

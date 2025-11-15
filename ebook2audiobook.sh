@@ -592,7 +592,6 @@ Icon=$ICON_PATH
 Terminal=true
 Categories=Utility;
 EOF
-
 		chmod +x "$MENU_ENTRY"
 		mkdir -p "$HOME/Desktop" 2>&1 > /dev/null
 		cp "$MENU_ENTRY" "$DESKTOP_SHORTCUT"
