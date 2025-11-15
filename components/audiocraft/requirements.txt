@@ -1,0 +1,9 @@
+# requirements.txt — pinned for reproducibility
+torch==2.3.1
+torchaudio==2.3.1
+torchvision==0.18.1
+audiocraft==1.3.0
+ffmpeg-python==0.2.0
+av==11.0.0
+numpy==1.26.4
+scipy==1.12.0
