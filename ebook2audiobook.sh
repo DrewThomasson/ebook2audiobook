@@ -497,24 +497,17 @@ else
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
-		# Escape SCRIPT_DIR safely for AppleScript
-		local ESCAPED_APP_ROOT
-		
+		local OPEN_GUI_DEF=$(declare -f open_gui)
+		local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
 		if [[ -d "$APP_BUNDLE" ]]; then
 			open_gui
 			return 0
 		fi
-
 		[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
-
 		if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
 			mkdir -p "$MACOS" "$RESOURCES"
 		fi
-
-		OPEN_GUI_DEF=$(declare -f open_gui)
-		ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR")
-
-cat > "$MACOS/$APP_NAME" << EOF
+		cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
 $OPEN_GUI_DEF
@@ -535,7 +528,6 @@ end tell
 EOF
 		chmod +x "$MACOS/$APP_NAME"
 		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
-
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -566,21 +558,24 @@ EOF
 </dict>
 </plist>
 PLIST
-		echo -e "\nLauncher created at: $APP_BUNDLE\nNext time in GUI mode you just need to open the launchpad and click on ebook2audiobook icon.\n"
+		osascript <<EOF
+tell application "Finder"
+	make new alias file at POSIX file "$HOME/Desktop" to POSIX file "$APP_BUNDLE"
+	set name of result to "$APP_NAME"
+end tell
+EOF
+		echo -e "\nLauncher created at: $APP_BUNDLE\nNext time in GUI mode you just need to double click on the desktop shortcut or open the launchpad and click on ebook2audiobook icon.\n"
 		open_gui
 	}
 
 	function linux_app() {
 		local DESKTOP_FILE="$HOME/.local/share/applications/ebook2audiobook.desktop"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
-		
 		if [[ -f "$DESKTOP_FILE" ]]; then
 			open_gui
 			return 0
 		fi
-
 		mkdir -p "$HOME/.local/share/applications"
-
 		cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Type=Application
@@ -592,7 +587,6 @@ Categories=Utility;
 EOF
 
 		chmod +x "$DESKTOP_FILE"
-
 		if command -v update-desktop-database >/dev/null 2>&1; then
 			update-desktop-database ~/.local/share/applications >/dev/null 2>&1
 		fi

@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
+if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
+	export SWITCHED_TO_ZSH=1
+	exec env zsh "$0" "$@"
+fi
+
 set -euo pipefail
 
 APP_NAME="ebook2audiobook"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd -P)"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 MINIFORGE_PATH="$HOME/Miniforge3"
 TEMP_UNINSTALL="/tmp/${APP_NAME}_uninstall.sh"
