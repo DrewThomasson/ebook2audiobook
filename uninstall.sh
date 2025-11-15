@@ -38,16 +38,12 @@ fi
 if [[ "$OSTYPE" == "darwin"* ]]; then
     APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
-	echo $DESKTOP_DIR
 	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
     if [[ -d "$APP_BUNDLE" ]]; then
         echo "Removing app bundle..."
         rm -rf "$APP_BUNDLE"
     fi
-	if [[ -f "$DESKTOP_SHORTCUT" ]]; then
-		echo "Removing desktop shortcut..."
-		rm -f "$DESKTOP_SHORTCUT"
-	fi
+	rm -f "$DESKTOP_SHORTCUT" 2>&1 > /dev/null
 elif [[ "$OSTYPE" == "linux"* ]]; then
 	MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
 	DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
@@ -57,10 +53,7 @@ elif [[ "$OSTYPE" == "linux"* ]]; then
         rm -f "$MENU_ENTRY"
         update-desktop-database ~/.local/share/applications >/dev/null 2>&1 || true
     fi
-	if [[ -f "$DESKTOP_SHORTCUT" ]]; then
-		echo "Removing desktop shortcut..."
-		rm -f "$DESKTOP_SHORTCUT"
-	fi
+	rm -f "$DESKTOP_SHORTCUT" 2>&1 > /dev/null
 fi
 
 if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
