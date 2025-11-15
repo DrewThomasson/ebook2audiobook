@@ -5,16 +5,26 @@ if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" !
 	exec env zsh "$0" "$@"
 fi
 
-#unset SWITCHED_TO_ZSH
+if [ -n "$BASH_SOURCE" ]; then
+    script_path="${BASH_SOURCE[0]}"
+elif [ -n "$ZSH_VERSION" ]; then
+    script_path="${(%):-%x}"
+else
+    script_path="$0"
+fi
 
-ARCH=$(uname -m)
-PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
-MIN_PYTHON_VERSION="3.10"
-MAX_PYTHON_VERSION="3.13"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
+export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
+
+ARCH=$(uname -m)
+
+PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
+
+MIN_PYTHON_VERSION="3.10"
+MAX_PYTHON_VERSION="3.13"
+
+cd "$SCRIPT_DIR"
 
 ARGS=("$@")
 
@@ -46,10 +56,14 @@ done
 NATIVE="native"
 FULL_DOCKER="full_docker"
 SCRIPT_MODE="$NATIVE"
+APP_NAME="ebook2audiobook"
+APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
+INSTALLED_LOG="$SCRIPT_DIR/.installed"
+UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 
 if [[ "$OSTYPE" != "linux"* && "$OSTYPE" != "darwin"* ]]; then
 	echo "Error: OS $OSTYPE unsupported."
@@ -75,17 +89,17 @@ export TMPDIR="$SCRIPT_DIR/.cache"
 export PATH="$CONDA_PATH:$PATH"
 
 compare_versions() {
-    local ver1=$1
-    local ver2=$2
-    # Pad each version to 3 parts
-    IFS='.' read -r v1_major v1_minor <<<"$ver1"
-    IFS='.' read -r v2_major v2_minor <<<"$ver2"
+	local ver1=$1
+	local ver2=$2
+	# Pad each version to 3 parts
+	IFS='.' read -r v1_major v1_minor <<<"$ver1"
+	IFS='.' read -r v2_major v2_minor <<<"$ver2"
 
-    ((v1_major < v2_major)) && return 1
-    ((v1_major > v2_major)) && return 2
-    ((v1_minor < v2_minor)) && return 1
-    ((v1_minor > v2_minor)) && return 2
-    return 0
+	((v1_major < v2_major)) && return 1
+	((v1_major > v2_major)) && return 2
+	((v1_minor < v2_minor)) && return 1
+	((v1_minor > v2_minor)) && return 2
+	return 0
 }
 
 # Check if the current script is run inside a docker container
@@ -100,7 +114,7 @@ else
 fi
 
 if [[ -n "${arguments['help']+exists}" && ${arguments['help']} = true ]]; then
-	python app.py "${ARGS[@]}"
+	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	# Check if running in a Conda or Python virtual environment
 	if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
@@ -194,6 +208,9 @@ else
 					echo >> $HOME/.zprofile
 					echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
 					eval "$(/usr/local/bin/brew shellenv)"
+					if ! grep -iqFx "homebrew" "$INSTALLED_LOG"; then
+						echo "homebrew" >> "$INSTALLED_LOG"
+					fi
 				fi
 		else
 			SUDO="sudo"
@@ -340,7 +357,7 @@ else
 	function conda_check {
 		if ! command -v conda &> /dev/null || [ ! -f "$CONDA_ENV" ]; then
 			echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
-			if [[ "$OSTYPE" == darwin* ]]; then
+			if [[ "$OSTYPE" = darwin* ]]; then
 				curl -fsSLo "$CONDA_INSTALLER" "$CONDA_URL"
 				shell_name="zsh"
 			else
@@ -360,6 +377,9 @@ else
 					source "$CONFIG_FILE"
 					conda init "$shell_name"
 					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
+						if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
+							echo "Miniforge3" >> "$INSTALLED_LOG"
+						fi
 				else
 					echo -e "\e[31mconda installation failed.\e[0m"		
 					return 1
@@ -384,7 +404,7 @@ else
 				esac
 			fi
 			# Use this condition to chmod writable folders once
-			chmod -R u+rwX,go+rX ./audiobooks ./tmp ./models
+			chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
 			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y
 			conda init > /dev/null 2>&1
 			source $CONDA_ENV
@@ -402,65 +422,122 @@ else
 		fi
 		return 0
 	}
+	
+	has_no_display() {
+		if [[ "$OSTYPE" = "darwin"* ]]; then
+			if pgrep -x WindowServer >/dev/null 2>&1 &&
+			   [[ "$(launchctl managername 2>/dev/null)" = "Aqua" ]]; then
+				return 0   # macOS GUI
+			else
+				return 1   # SSH or console mode
+			fi
+		else
+			if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+				return 1
+			fi
 
-	function create_macos_app_bundle {
-		local APP_NAME="ebook2audiobook"
+			if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
+				return 1   # No display server → headless
+			fi
+
+			if pgrep -x vncserver    >/dev/null 2>&1 || \
+			   pgrep -x Xvnc         >/dev/null 2>&1 || \
+			   pgrep -x x11vnc        >/dev/null 2>&1 || \
+			   pgrep -x Xtightvnc    >/dev/null 2>&1 || \
+			   pgrep -x Xtigervnc    >/dev/null 2>&1 || \
+			   pgrep -x Xrealvnc     >/dev/null 2>&1; then
+				return 0
+			fi
+
+			if pgrep -x gnome-shell       >/dev/null 2>&1 || \
+			   pgrep -x plasmashell       >/dev/null 2>&1 || \
+			   pgrep -x xfce4-session     >/dev/null 2>&1 || \
+			   pgrep -x cinnamon          >/dev/null 2>&1 || \
+			   pgrep -x mate-session      >/dev/null 2>&1 || \
+			   pgrep -x lxsession         >/dev/null 2>&1 || \
+			   pgrep -x openbox           >/dev/null 2>&1 || \
+			   pgrep -x i3                >/dev/null 2>&1 || \
+			   pgrep -x sway              >/dev/null 2>&1 || \
+			   pgrep -x hyprland          >/dev/null 2>&1 || \
+			   pgrep -x wayfire           >/dev/null 2>&1 || \
+			   pgrep -x river              >/dev/null 2>&1 || \
+			   pgrep -x fluxbox           >/dev/null 2>&1; then
+				return 0   # Desktop environment detected
+			fi
+			return 1
+		fi
+	}
+	
+	function open_gui() {
+		(
+			host=127.0.0.1
+			port=7860
+			url="http://$host:$port/"
+			timeout=30
+			start_time=$(date +%s)
+
+			while ! nc -z "$host" "$port" >/dev/null 2>&1; do
+				sleep 1
+				elapsed=$(( $(date +%s) - start_time ))
+				if [ "$elapsed" -ge "$timeout" ]; then
+					exit 0
+				fi
+			done
+
+			if [[ "$OSTYPE" = "darwin"* ]]; then
+				open "$url" >/dev/null 2>&1 &
+			elif command -v xdg-open >/dev/null 2>&1; then
+				xdg-open "$url" >/dev/null 2>&1 &
+			elif command -v gio >/dev/null 2>&1; then
+				gio open "$url" >/dev/null 2>&1 &
+			elif command -v x-www-browser >/dev/null 2>&1; then
+				x-www-browser "$url" >/dev/null 2>&1 &
+			else
+				echo "No method found to open the default web browser." >&2
+			fi
+			exit 0
+		) &
+	}
+
+	function mac_app {
 		local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
+		local DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
+		local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
-
-		if [[ ! -d "$HOME/Applications" ]]; then
-			mkdir $HOME/Applications
-		fi
-
-		if [[ " ${ARGS[@]} " =~ " --headless " ]]; then
-			return 0
-		fi
-
+		local OPEN_GUI_DEF=$(declare -f open_gui)
+		local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
 		if [[ -d "$APP_BUNDLE" ]]; then
+			open_gui
 			return 0
 		fi
-		
-		mkdir -p "$MACOS" "$RESOURCES"
-
+		[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
+		if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
+			mkdir -p "$MACOS" "$RESOURCES"
+		fi
 		cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
-TEMP_SCRIPT=\$(mktemp)
+$OPEN_GUI_DEF
 
-cat > "\$TEMP_SCRIPT" << 'SCRIPT'
-#!/bin/zsh
+open_gui
 
-cd "$SCRIPT_DIR"
+# TODO: replace osascript when log will be available in gradio with
+#
+# cd "$SCRIPT_DIR"
+# ./ebook2audiobook.sh
 
-(
-    until curl -fs http://localhost:7860/ >/dev/null 2>&1; do
-        sleep 1
-    done
-    open http://localhost:7860/
-) &
-
-./ebook2audiobook.sh
-
-SCRIPT
-
-chmod +x "\$TEMP_SCRIPT"
-open -a Terminal "\$TEMP_SCRIPT"
-sleep 60
-rm "\$TEMP_SCRIPT"
-
+osascript -e '
+tell application "Terminal"
+	do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
+	activate
+end tell
+'
 EOF
-
 		chmod +x "$MACOS/$APP_NAME"
-
-		if [ -f "$ICON_PATH" ]; then
-			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
-		else
-			echo "Warning: Icon not found at $ICON_PATH"
-		fi
-
+		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 		cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -490,31 +567,56 @@ EOF
 	<string>AppIcon</string>
 </dict>
 </plist>
-
 PLIST
-
-		touch "$APP_BUNDLE"
-		echo ""
-		echo "E2A Launcher created at: $APP_BUNDLE"
-		echo "Next time you will just click on the launcher to run E2A and open the browser automatically"
-		echo ""
+		ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
+		echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to the launchpad and click on ebook2audiobook icon."
+		open_gui
 	}
 
-	function create_linux_app_launcher {
-		# Linux desktop entry creation goes here
+	function linux_app() {
+		local MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
+		local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+		local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
+		local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
+		if [[ -f "$MENU_ENTRY" ]]; then
+			open_gui
+			return 0
+		fi
+		mkdir -p "$HOME/.local/share/applications"
+		cat > "$MENU_ENTRY" <<EOF
+[Desktop Entry]
+Type=Application
+Name=ebook2audiobook
+Exec=$SCRIPT_DIR/ebook2audiobook.sh
+Icon=$ICON_PATH
+Terminal=true
+Categories=Utility;
+EOF
+		chmod +x "$MENU_ENTRY"
+		mkdir -p "$HOME/Desktop" 2>&1 > /dev/null
+		cp "$MENU_ENTRY" "$DESKTOP_SHORTCUT"
+		chmod +x "$DESKTOP_SHORTCUT"
+		if command -v update-desktop-database >/dev/null 2>&1; then
+			update-desktop-database ~/.local/share/applications >/dev/null 2>&1
+		fi
+		echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to menu entry and click on ebook2audiobook icon."
+		open_gui
+	}
+
+	function build_gui {
+		if [[ " ${ARGS[*]} " = *" --headless "* || has_no_display -eq 1 ]]; then
+			return 0
+		fi
+		if [[ "$OSTYPE" = "darwin"* ]]; then
+			mac_app
+		elif [[ "$OSTYPE" = "linux"* ]]; then
+			linux_app
+		fi
 		return 0
 	}
 
-	function create_app_bundle {
-		if [[ "$OSTYPE" = "darwin"* ]]; then
-			create_macos_app_bundle
-		elif [[ "$OSTYPE" = "linux"* ]]; then
-			create_linux_app_launcher
-		fi
-	}
-
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
-		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 		conda deactivate 2>&1 > /dev/null
 		conda deactivate 2>&1 > /dev/null
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
@@ -529,8 +631,8 @@ PLIST
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
-				create_app_bundle
-				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+				build_gui
+				python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate 2>&1 > /dev/null
 				conda deactivate 2>&1 > /dev/null
 			fi
@@ -540,4 +642,6 @@ PLIST
 	fi
 fi
 
+exit 0
+exit 0
 exit 0

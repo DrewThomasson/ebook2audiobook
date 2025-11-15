@@ -163,6 +163,7 @@ cd ebook2audiobook
      ```bash
      ebook2audiobook.cmd  # Run launch script or double click on it
      ```
+     <i>Note for Windows users: scoop is installed to install missing programs without administrator privileges.</i>
      
    - **Windows Launcher**  
      Double click `ebook2audiobook.cmd`
