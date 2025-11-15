@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
-	export SWITCHED_TO_ZSH=1
-	exec env zsh "$0" "$@"
+    export SWITCHED_TO_ZSH=1
+    exec env zsh "$0" "$@"
 fi
 
 if [ -n "$BASH_SOURCE" ]; then
@@ -44,7 +44,7 @@ function remove_homebrew() {
             echo "[INFO] Running Homebrew cleanup..."
             "$BREW_BIN" cleanup -s >/dev/null 2>&1 || true
             echo "[INFO] Executing official Homebrew uninstall script..."
-            /bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" >/dev/null 2>&1
+            zsh -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" >/dev/null 2>&1
             echo "[INFO] Removing residual Homebrew directories..."
             sudo rm -rf "$BREW_PATH" \
                         "$HOME/Library/Caches/Homebrew" \
@@ -72,23 +72,27 @@ fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
-	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
-	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
+    DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
+    DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
     if [[ -d "$APP_BUNDLE" ]]; then
         echo "Removing app bundle..."
         rm -rf "$APP_BUNDLE"
     fi
-	rm -f "$DESKTOP_SHORTCUT" 2>&1 > /dev/null
+    rm -f "$DESKTOP_SHORTCUT" 2>&1 > /dev/null
 elif [[ "$OSTYPE" == "linux"* ]]; then
-	MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
-	DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
+    MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
+    DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+    DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
     if [[ -f "$MENU_ENTRY" ]]; then
         echo "Removing app menu entry..."
         rm -f "$MENU_ENTRY"
         update-desktop-database ~/.local/share/applications >/dev/null 2>&1 || true
     fi
-	rm -f "$DESKTOP_SHORTCUT" 2>&1 > /dev/null
+    rm -f "$DESKTOP_SHORTCUT" 2>&1 > /dev/null
+fi
+
+if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "homebrew" "$INSTALLED_LOG"; then
+    remove_homebrew
 fi
 
 if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
@@ -98,8 +102,6 @@ if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
     else
         echo "Miniforge3 folder not found, skipping."
     fi
-else
-    echo "Miniforge3 not installed by this app, skipping."
 fi
 
 if [[ -d "$SCRIPT_DIR" ]]; then
