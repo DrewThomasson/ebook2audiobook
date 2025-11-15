@@ -15,9 +15,12 @@ fi
 
 APP_NAME="ebook2audiobook"
 SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
+SCRIPT_NAME="$(basename "$script_path")"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 MINIFORGE_PATH="$HOME/Miniforge3"
-TEMP_UNINSTALL="/tmp/${APP_NAME}_uninstall.sh"
+UNINSTALLER="uninstall.sh"
+UNINSTALLER_PATH="$SCRIPT_DIR/$UNINSTALLER"
+TEMP_UNINSTALLER="/tmp/${APP_NAME}_uninstaller.sh"
 
 echo
 echo "========================================"
@@ -26,11 +29,11 @@ echo "========================================"
 echo
 
 # --- Relaunch from /tmp ---
-if [[ "$SCRIPT_DIR" != "/tmp"* ]]; then
+if [[ "$SCRIPT_NAME" == "UNINSTALLER"* ]]; then
     echo "Copying uninstaller to temp and relaunching..."
-    cp "$0" "$TEMP_UNINSTALL"
-    chmod +x "$TEMP_UNINSTALL"
-    exec "$TEMP_UNINSTALL"
+    cp "$0" "$TEMP_UNINSTALLER"
+    chmod +x "$TEMP_UNINSTALLER"
+    exec "$TEMP_UNINSTALLER"
 fi
 
 # --- Remove GUI shortcuts ---
@@ -81,7 +84,7 @@ fi
 
 # --- Clean up temp copy ---
 echo "Cleaning up temporary uninstaller..."
-rm -f "$TEMP_UNINSTALL" || true
+rm -f "$TEMP_UNINSTALLER" || true
 
 echo
 echo "Uninstall complete."
