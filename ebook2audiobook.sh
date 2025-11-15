@@ -504,6 +504,7 @@ else
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
+		local DESKTOP_SHORTCUT="$HOME/Desktop/$APP_NAME"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
 		local OPEN_GUI_DEF=$(declare -f open_gui)
 		local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
@@ -566,20 +567,20 @@ EOF
 </dict>
 </plist>
 PLIST
-		ln -sf "$APP_BUNDLE" "$HOME/Desktop/$APP_NAME"
+		ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
 		echo -e "\nLauncher created at: $APP_BUNDLE\nNext time in GUI mode you just need to double click on the desktop shortcut or open the launchpad and click on ebook2audiobook icon.\n"
 		open_gui
 	}
 
 	function linux_app() {
-		local DESKTOP_FILE="$HOME/.local/share/applications/ebook2audiobook.desktop"
+		local DESKTOP_SHORTCUT="$HOME/.local/share/applications/ebook2audiobook.desktop"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
-		if [[ -f "$DESKTOP_FILE" ]]; then
+		if [[ -f "$DESKTOP_SHORTCUT" ]]; then
 			open_gui
 			return 0
 		fi
 		mkdir -p "$HOME/.local/share/applications"
-		cat > "$DESKTOP_FILE" <<EOF
+		cat > "$DESKTOP_SHORTCUT" <<EOF
 [Desktop Entry]
 Type=Application
 Name=ebook2audiobook
@@ -589,7 +590,7 @@ Terminal=true
 Categories=Utility;
 EOF
 
-		chmod +x "$DESKTOP_FILE"
+		chmod +x "$DESKTOP_SHORTCUT"
 		if command -v update-desktop-database >/dev/null 2>&1; then
 			update-desktop-database ~/.local/share/applications >/dev/null 2>&1
 		fi
