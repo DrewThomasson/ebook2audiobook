@@ -15,22 +15,6 @@ def cleanup_garbage():
         torch.cuda.ipc_collect()
         torch.cuda.synchronize()
 
-def unload_tts()->None:
-    try:
-        active_models = {
-            cache
-            for session in context.sessions.values()
-            for cache in (session.get('model_cache'), session.get('model_zs_cache'), session.get('stanza_cache'))
-            if cache is not None
-        }
-        for key in list(loaded_tts.keys()):
-            if key not in active_models:
-                del loaded_tts[key]
-        cleanup_garbage()
-    except Exception as e:
-        error = f"unload_tts() error: {e}"
-        print(error)
-
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 
     def format_timestamp(seconds:float)->str:

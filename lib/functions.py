@@ -2154,7 +2154,7 @@ def convert_ebook(args:dict)->tuple:
                 session['output_split'] = bool(args['output_split'])
                 session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
                 session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
-                lib.classes.tts_engines.common.utils.unload_tts()
+                cleanup_memory()
                 if not session['is_gui_process']:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -2385,6 +2385,22 @@ def reset_session(id:str)->None:
         }
     }
     restore_session_from_data(data, session)
+
+def unload_tts()->None:
+    try:
+        active_models = {
+            cache
+            for session in context.sessions.values()
+            for cache in (session.get('model_cache'), session.get('model_zs_cache'), session.get('stanza_cache'))
+            if cache is not None
+        }
+        for key in list(loaded_tts.keys()):
+            if key not in active_models:
+                del loaded_tts[key]
+        cleanup_garbage()
+    except Exception as e:
+        error = f"unload_tts() error: {e}"
+        print(error)
 
 def show_alert(state:dict)->None:
     if isinstance(state, dict):
