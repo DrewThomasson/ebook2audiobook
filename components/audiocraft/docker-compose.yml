@@ -1,10 +1,10 @@
 services:
   audiocraft:
-    image: audiocraft-alpine:latest
     container_name: audiocraft
     build:
       context: .
       dockerfile: Dockerfile
+    image: audiocraft-rocky:latest
     deploy:
       resources:
         reservations:
