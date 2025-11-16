@@ -20,7 +20,7 @@ from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.classes.tts_engines.common.utils import cleanup_garbage, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import cleanup_garbage, append_sentence2vtt, ensure_safe_checkpoint
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -109,10 +109,17 @@ class Coqui:
                         config_path = kwargs.get('config_path',None)
                         vocab_path = kwargs.get('vocab_path',None)
                         if not checkpoint_path or not os.path.exists(checkpoint_path):
-                            raise FileNotFoundError(f"Missing or invalid checkpoint_path: {checkpoint_path}")
+                            error = f'Missing or invalid checkpoint_path: {checkpoint_path}'
+                            raise FileNotFoundError(error)
                             return False
                         if not config_path or not os.path.exists(config_path):
-                            raise FileNotFoundError(f"Missing or invalid config_path: {config_path}")
+                            error = f'Missing or invalid config_path: {config_path}'
+                            raise FileNotFoundError(error)
+                            return False
+                        check_pth = ensure_safe_checkpoint(checkpoint_path)
+                        if not check_pth:
+                            error = f'No valid checkpoint files found or conversion failed in: {checkpoint_path}'
+                            raise RuntimeError(error)
                             return False
                         config = XttsConfig()
                         config.models_dir = os.path.join("models","tts")
@@ -130,7 +137,13 @@ class Coqui:
                         from TTS.tts.models.bark import Bark
                         checkpoint_dir = kwargs.get('checkpoint_dir')
                         if not checkpoint_dir or not os.path.exists(checkpoint_dir):
-                            raise FileNotFoundError(f"Missing or invalid checkpoint_dir: {checkpoint_dir}")
+                            error = f'Missing or invalid checkpoint_dir: {checkpoint_dir}'
+                            raise FileNotFoundError(error)
+                            return False
+                        check_pth = ensure_safe_checkpoint(checkpoint_dir)
+                        if not check_pth:
+                            error = f'No valid checkpoint files found or conversion failed in: {checkpoint_dir}'
+                            raise RuntimeError(error)
                             return False
                         config = BarkConfig()
                         config.CACHE_DIR = self.cache_dir
@@ -168,7 +181,7 @@ class Coqui:
                         if self.session['fine_tuned'] == 'internal':
                             hf_sub = ''
                             if self.speakers_path is None:
-                                self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
+                                self.speakers_path = hf_hub_download(repo_id=hf_repo, filename='speakers_xtts.pth', cache_dir=self.cache_dir)
                         else:
                             hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)

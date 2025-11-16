@@ -1,10 +1,12 @@
 import os
 import gc
 import torch
+import shutil
 import regex as re
-import stanza
 
 from typing import Any, Union
+from safetensors.torch import save_file
+from pathlib import Path
 from lib.models import loaded_tts, TTS_ENGINES
 from lib.functions import context
 
@@ -44,3 +46,51 @@ def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]
         error = f"append_sentence2vtt() error: {e}"
         print(error)
         return False
+
+def is_safetensors_file(path:str)->bool:
+    try:
+        with open(path, 'rb') as f:
+            header = f.read(32)
+            return b'safetensors' in header
+    except Exception:
+        return False
+
+def convert_single_pth_to_safetensors(pth_path:str, delete_original:bool=False)->str:
+    pth_path = Path(pth_path)
+    if not pth_path.exists():
+        error = f'File not found: {pth_path}'
+        raise FileNotFoundError()
+    if pth_path.suffix != '.pth':
+        error = f'Expected a .pth file, got: {pth_path.suffix}'
+        raise ValueError(error)
+    safe_path = pth_path.with_suffix('.safetensors')
+    msg = f'Converting {pth_path.name} → {safe_path.name}'
+    print(msg)
+    state = torch.load(str(pth_path), map_location='cpu', weights_only=True)
+    save_file(state, str(safe_path))
+    if delete_original:
+        pth_path.unlink(missing_ok=True)
+        msg = f'Deleted original: {pth_path}'
+        print(msg)
+    return str(safe_path)
+
+def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
+    if not os.path.isdir(checkpoint_dir):
+        raise FileNotFoundError(f"Invalid checkpoint_dir: {checkpoint_dir}")
+    safe_files = []
+    for fname in os.listdir(checkpoint_dir):
+        if fname.endswith(".pth"):
+            pth_path = os.path.join(checkpoint_dir, fname)
+            if not is_safetensors_file(pth_path):
+                try:
+                    safe_path = convert_single_pth_to_safetensors(pth_path, delete_original=False)
+                    shutil.move(safe_path, pth_path)
+                    msg = f'Replaced {fname} with safetensors content'
+                    print(msg)
+                    safe_files.append(pth_path)
+                except Exception as e:
+                    error = f'Failed to convert {fname}: {e}'
+                    print(error)
+            else:
+                safe_files.append(pth_path)
+    return safe_files
