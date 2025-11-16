@@ -97,22 +97,24 @@ def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
         else:
             safe_files.append(checkpoint_dir)
         return safe_files
+
     if not os.path.isdir(checkpoint_dir):
         raise FileNotFoundError(f"Invalid checkpoint_dir: {checkpoint_dir}")
-    safe_files = []
-    for fname in os.listdir(checkpoint_dir):
-        if fname.endswith(".pth") or fname.endswith(".pt"):
-            pth_path = os.path.join(checkpoint_dir, fname)
-            if not is_safetensors_file(pth_path):
-                try:
-                    safe_path = convert_pth_to_safetensors(pth_path, True)
-                    shutil.move(safe_path, pth_path)
-                    msg = f'Replaced {fname} with safetensors content'
-                    print(msg)
+    for root, _, files in os.walk(checkpoint_dir):
+        for fname in files:
+            if fname.endswith(".pth") or fname.endswith(".pt"):
+                pth_path = os.path.join(root, fname)
+                if not is_safetensors_file(pth_path):
+                    try:
+                        safe_path = convert_pth_to_safetensors(pth_path, True)
+                        shutil.move(safe_path, pth_path)
+                        msg = f'Replaced {os.path.relpath(pth_path, checkpoint_dir)} with safetensors content'
+                        print(msg)
+                        safe_files.append(pth_path)
+                    except Exception as e:
+                        error = f'Failed to convert {fname}: {e}'
+                        print(error)
+                else:
                     safe_files.append(pth_path)
-                except Exception as e:
-                    error = f'Failed to convert {fname}: {e}'
-                    print(error)
-            else:
-                safe_files.append(pth_path)
     return safe_files
+
