@@ -67,7 +67,7 @@ def convert_pth_to_safetensors(pth_path:str, delete_original:bool=False)->str:
     msg = f'Converting {pth_path.name} → {safe_path.name}'
     print(msg)
     try:
-        state = torch.load(str(pth_path), map_location='cpu', weights_only=True)
+        state = torch.load(str(pth_path), map_location='cpu', weights_only=False)
         save_file(state, str(safe_path))
         if delete_original:
             pth_path.unlink(missing_ok=True)
