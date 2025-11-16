@@ -106,14 +106,14 @@ def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
     safe_files = []
     if os.path.isfile(checkpoint_dir):
         if not (checkpoint_dir.endswith('.pth') or checkpoint_dir.endswith('.pt')):
-            raise ValueError(f"Invalid checkpoint file: {checkpoint_dir}")
+            error = f'Invalid checkpoint file: {checkpoint_dir}'
+            raise ValueError(error)
         if not is_safetensors_file(checkpoint_dir):
             try:
-                safe_path = convert_pt_to_safetensors(checkpoint_dir, True)
-                shutil.move(safe_path, checkpoint_dir)
-                msg = f'Replaced {os.path.basename(checkpoint_dir)} with safetensors content'
+                safe_path = convert_pt_to_safetensors(checkpoint_dir, False)
+                msg = f'Created safetensors version of {os.path.basename(checkpoint_dir)} → {safe_path}'
                 print(msg)
-                safe_files.append(checkpoint_dir)
+                safe_files.append(safe_path)
             except Exception as e:
                 error = f'Failed to convert {os.path.basename(checkpoint_dir)}: {e}'
                 print(error)
@@ -126,17 +126,17 @@ def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
         for fname in files:
             if fname.endswith(".pth") or fname.endswith(".pt"):
                 pth_path = os.path.join(root, fname)
-                if not is_safetensors_file(pth_path):
-                    try:
-                        safe_path = convert_pt_to_safetensors(pth_path, True)
-                        shutil.move(safe_path, pth_path)
-                        msg = f'Replaced {os.path.relpath(pth_path, checkpoint_dir)} with safetensors content'
-                        print(msg)
-                        safe_files.append(pth_path)
-                    except Exception as e:
-                        error = f'Failed to convert {fname}: {e}'
-                        print(error)
-                else:
+                if is_safetensors_file(pth_path):
                     safe_files.append(pth_path)
+                    continue
+                try:
+                    safe_path = convert_pt_to_safetensors(pth_path, False)
+                    msg = f'Created safetensors version of {os.path.relpath(pth_path, checkpoint_dir)} → {os.path.relpath(safe_path, checkpoint_dir)}'
+                    print(msg)
+                    safe_files.append(safe_path)
+                except Exception as e:
+                    error = f'Failed to convert {fname}: {e}'
+                    print(error)
     return safe_files
+
 
