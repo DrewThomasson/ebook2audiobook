@@ -55,7 +55,7 @@ def is_safetensors_file(path:str)->bool:
     except Exception:
         return False
 
-def convert_pth_to_safetensors(pth_path:str, delete_original:bool=False)->str:
+def convert_pt_to_safetensors(pth_path:str, delete_original:bool=False)->str:
     pth_path = Path(pth_path)
     if not pth_path.exists():
         error = f'File not found: {pth_path}'
@@ -65,8 +65,10 @@ def convert_pth_to_safetensors(pth_path:str, delete_original:bool=False)->str:
         error = f'Expected a .pth or .pt file, got: {pth_path.suffix}'
         print(error)
         raise ValueError(error)
-    safe_path = pth_path.with_suffix('.safetensors')
-    msg = f'Converting {pth_path.name} → {safe_path.name}'
+    safe_dir = pth_path.parent / "safetensors"
+    safe_dir.mkdir(exist_ok=True)
+    safe_path = safe_dir / pth_path.with_suffix('.safetensors').name
+    msg = f'Converting {pth_path.name} → safetensors/{safe_path.name}'
     print(msg)
     try:
         try:
@@ -92,6 +94,8 @@ def convert_pth_to_safetensors(pth_path:str, delete_original:bool=False)->str:
             pth_path.unlink(missing_ok=True)
             msg = f'Deleted original: {pth_path}'
             print(msg)
+        msg = f'✅ Saved: {safe_path}'
+        print(msg)
         return str(safe_path)
     except Exception as e:
         error = f'Failed to convert {pth_path.name}: {e}'
@@ -105,7 +109,7 @@ def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
             raise ValueError(f"Invalid checkpoint file: {checkpoint_dir}")
         if not is_safetensors_file(checkpoint_dir):
             try:
-                safe_path = convert_pth_to_safetensors(checkpoint_dir, True)
+                safe_path = convert_pt_to_safetensors(checkpoint_dir, True)
                 shutil.move(safe_path, checkpoint_dir)
                 msg = f'Replaced {os.path.basename(checkpoint_dir)} with safetensors content'
                 print(msg)
@@ -124,7 +128,7 @@ def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
                 pth_path = os.path.join(root, fname)
                 if not is_safetensors_file(pth_path):
                     try:
-                        safe_path = convert_pth_to_safetensors(pth_path, True)
+                        safe_path = convert_pt_to_safetensors(pth_path, True)
                         shutil.move(safe_path, pth_path)
                         msg = f'Replaced {os.path.relpath(pth_path, checkpoint_dir)} with safetensors content'
                         print(msg)
