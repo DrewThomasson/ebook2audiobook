@@ -105,10 +105,10 @@ def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
             if not is_safetensors_file(pth_path):
                 try:
                     safe_path = convert_single_pth_to_safetensors(pth_path, delete_original=False)
-                    shutil.move(safe_path, pth_path)
-                    msg = f'Replaced {fname} with safetensors content'
-                    print(msg)
-                    safe_files.append(pth_path)
+                    #shutil.move(safe_path, pth_path)
+                    #msg = f'Replaced {fname} with safetensors content'
+                    #print(msg)
+                    safe_files.append(safe_path)
                 except Exception as e:
                     error = f'Failed to convert {fname}: {e}'
                     print(error)
