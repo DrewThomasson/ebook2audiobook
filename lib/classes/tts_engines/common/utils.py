@@ -59,31 +59,34 @@ def convert_pth_to_safetensors(pth_path:str, delete_original:bool=False)->str:
     pth_path = Path(pth_path)
     if not pth_path.exists():
         error = f'File not found: {pth_path}'
+        print(error)
         raise FileNotFoundError()
     if not (pth_path.suffix in ['.pth', '.pt']):
         error = f'Expected a .pth or .pt file, got: {pth_path.suffix}'
+        print(error)
         raise ValueError(error)
     safe_path = pth_path.with_suffix('.safetensors')
     msg = f'Converting {pth_path.name} → {safe_path.name}'
     print(msg)
     try:
-        state = torch.load(str(pth_path), map_location='cpu', weights_only=False)
-        if isinstance(state, dict):
-            if "model" in state and isinstance(state["model"], dict):
-                state = state["model"]
-            elif any(isinstance(v, dict) for v in state.values()):
-                flattened = {}
-                for k, v in state.items():
-                    if isinstance(v, dict):
-                        for subk, subv in v.items():
-                            flattened[f"{k}.{subk}"] = subv
-                    else:
-                        flattened[k] = v
-                state = flattened
-        state = {k: v for k, v in state.items() if isinstance(v, torch.Tensor)}
-        if not state:
-            error = 'No tensor data found in checkpoint file.'
-            raise ValueError(error)
+        try:
+            state = torch.load(str(pth_path), map_location='cpu', weights_only=True)
+        except Exception:
+            error = f'⚠️ weights_only load failed for {pth_path.name}, retrying unsafely (trusted file).'
+            print(error)
+            state = torch.load(str(pth_path), map_location='cpu', weights_only=False)
+        if isinstance(state, dict) and "model" in state:
+            state = state["model"]
+        flattened = {}
+        for k, v in state.items():
+            if isinstance(v, dict):
+                for subk, subv in v.items():
+                    flattened[f"{k}.{subk}"] = subv
+            else:
+                flattened[k] = v
+        state = {k: v for k, v in flattened.items() if isinstance(v, torch.Tensor)}
+        for k, v in list(state.items()):
+            state[k] = v.clone().detach()
         save_file(state, str(safe_path))
         if delete_original:
             pth_path.unlink(missing_ok=True)
