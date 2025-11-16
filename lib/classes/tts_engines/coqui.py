@@ -126,11 +126,11 @@ class Coqui:
                             error = f'Missing or invalid checkpoint_dir: {checkpoint_dir}'
                             raise FileNotFoundError(error)
                             return False
-                        check_pth = ensure_safe_checkpoint(checkpoint_dir)
-                        if not check_pth:
-                            error = f'No valid checkpoint files found or conversion failed in: {checkpoint_dir}'
-                            raise RuntimeError(error)
-                            return False
+                        #check_pth = ensure_safe_checkpoint(checkpoint_dir)
+                        #if not check_pth:
+                        #    error = f'No valid checkpoint files found or conversion failed in: {checkpoint_dir}'
+                        #    raise RuntimeError(error)
+                        #    return False
                         config = BarkConfig()
                         config.CACHE_DIR = self.cache_dir
                         config.USE_SMALLER_MODELS = True if os.environ['SUNO_USE_SMALL_MODELS'] == 'True' else False

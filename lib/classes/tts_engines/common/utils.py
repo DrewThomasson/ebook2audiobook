@@ -94,7 +94,7 @@ def convert_pt_to_safetensors(pth_path:str, delete_original:bool=False)->str:
             pth_path.unlink(missing_ok=True)
             msg = f'Deleted original: {pth_path}'
             print(msg)
-        msg = f'✅ Saved: {safe_path}'
+        msg = f'Saved: {safe_path}'
         print(msg)
         return str(safe_path)
     except Exception as e:
@@ -138,5 +138,3 @@ def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
                     error = f'Failed to convert {fname}: {e}'
                     print(error)
     return safe_files
-
-
