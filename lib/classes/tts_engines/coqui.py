@@ -1,16 +1,7 @@
+import gc
 import torch
-
-_original_load = torch.load
-
-def patched_torch_load(*args, **kwargs):
-    kwargs.setdefault("weights_only", False)
-    return _original_load(*args, **kwargs)
-    
-torch.load = patched_torch_load
-
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
-import gc
 
 from typing import Any
 from multiprocessing.managers import DictProxy
