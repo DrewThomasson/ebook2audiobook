@@ -126,7 +126,7 @@ class Coqui:
                             error = f'Missing or invalid checkpoint_dir: {checkpoint_dir}'
                             raise FileNotFoundError(error)
                             return False
-                        check_pth = ensure_safe_checkpoint(checkpoint_dir, true)
+                        check_pth = ensure_safe_checkpoint(checkpoint_dir)
                         if not check_pth:
                             error = f'No valid checkpoint files found or conversion failed in: {checkpoint_dir}'
                             raise RuntimeError(error)

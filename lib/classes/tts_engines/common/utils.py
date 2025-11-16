@@ -55,7 +55,7 @@ def is_safetensors_file(path:str)->bool:
     except Exception:
         return False
 
-def convert_single_pth_to_safetensors(pth_path:str, delete_original:bool=False)->str:
+def convert_pth_to_safetensors(pth_path:str, delete_original:bool=False)->str:
     pth_path = Path(pth_path)
     if not pth_path.exists():
         error = f'File not found: {pth_path}'
@@ -75,14 +75,13 @@ def convert_single_pth_to_safetensors(pth_path:str, delete_original:bool=False)-
     return str(safe_path)
 
 def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
-    # NEW: allow both single file and directory
     if os.path.isfile(checkpoint_dir):
         if not checkpoint_dir.endswith('.pth'):
             raise ValueError(f"Invalid checkpoint file: {checkpoint_dir}")
         safe_files = []
         if not is_safetensors_file(checkpoint_dir):
             try:
-                safe_path = convert_single_pth_to_safetensors(checkpoint_dir, delete_original=False)
+                safe_path = convert_pth_to_safetensors(checkpoint_dir, True)
                 shutil.move(safe_path, checkpoint_dir)
                 msg = f'Replaced {os.path.basename(checkpoint_dir)} with safetensors content'
                 print(msg)
@@ -93,18 +92,15 @@ def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
         else:
             safe_files.append(checkpoint_dir)
         return safe_files
-
-    # existing behavior for directories
     if not os.path.isdir(checkpoint_dir):
         raise FileNotFoundError(f"Invalid checkpoint_dir: {checkpoint_dir}")
-
     safe_files = []
     for fname in os.listdir(checkpoint_dir):
         if fname.endswith(".pth"):
             pth_path = os.path.join(checkpoint_dir, fname)
             if not is_safetensors_file(pth_path):
                 try:
-                    safe_path = convert_single_pth_to_safetensors(pth_path, delete_original=False)
+                    safe_path = convert_pth_to_safetensors(pth_path, True)
                     #shutil.move(safe_path, pth_path)
                     #msg = f'Replaced {fname} with safetensors content'
                     #print(msg)
