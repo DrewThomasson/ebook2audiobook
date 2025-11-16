@@ -96,10 +96,10 @@ def convert_pth_to_safetensors(pth_path:str, delete_original:bool=False)->str:
         raise
 
 def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
+    safe_files = []
     if os.path.isfile(checkpoint_dir):
         if not (checkpoint_dir.endswith('.pth') or checkpoint_dir.endswith('.pt')):
             raise ValueError(f"Invalid checkpoint file: {checkpoint_dir}")
-        safe_files = []
         if not is_safetensors_file(checkpoint_dir):
             try:
                 safe_path = convert_pth_to_safetensors(checkpoint_dir, True)
