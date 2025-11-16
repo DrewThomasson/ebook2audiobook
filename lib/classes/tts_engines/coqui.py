@@ -1,6 +1,5 @@
 import torch
 
-torch._utils_internal = type('', (), {'_validate_load_security': lambda *a, **kw: None})()
 _original_load = torch.load
 
 def patched_torch_load(*args, **kwargs):
@@ -352,6 +351,8 @@ class Coqui:
                     shutil.copy(voice_path,voice_temp)
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
+                    import TTS.utils.generic_utils as gen_utils
+                    gen_utils.is_pytorch_at_least_2_4 = lambda version_str=None: True
                     fine_tuned_params = {
                         key.removeprefix("bark_"):cast_type(self.session[key])
                         for key,cast_type in{
@@ -518,6 +519,8 @@ class Coqui:
                                 return False
                         pth_voice_dir = os.path.join(bark_dir, speaker)
                         pth_voice_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
+                        import TTS.utils.generic_utils as gen_utils
+                        gen_utils.is_pytorch_at_least_2_4 = lambda version_str=None: True
                         fine_tuned_params = {
                             key.removeprefix("bark_"): cast_type(self.session[key])
                             for key, cast_type in {

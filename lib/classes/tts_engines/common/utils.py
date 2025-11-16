@@ -8,8 +8,6 @@ from typing import Any, Union
 from lib.models import loaded_tts, TTS_ENGINES
 from lib.functions import context
 
-torch._utils_internal = type('', (), {'_validate_load_security': lambda *a, **kw: None})()
-
 def cleanup_garbage():
     gc.collect()
     if torch.cuda.is_available():
