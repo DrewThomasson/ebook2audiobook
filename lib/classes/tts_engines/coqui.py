@@ -107,6 +107,11 @@ class Coqui:
                             error = f'Missing or invalid config_path: {config_path}'
                             raise FileNotFoundError(error)
                             return False
+                        check_pth = ensure_safe_checkpoint(checkpoint_path)
+                        if not check_pth:
+                            error = f'No valid checkpoint files found or conversion failed in: {checkpoint_path}'
+                            raise RuntimeError(error)
+                            return False
                         config = XttsConfig()
                         config.models_dir = os.path.join("models","tts")
                         config.load_json(config_path)
