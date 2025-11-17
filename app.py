@@ -54,12 +54,14 @@ def check_and_install_requirements(file_path:str)->bool:
         ########## sitecustomize.py
         site_packages_path = sysconfig.get_paths()['purelib']
         src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
-        dest_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
-        if not os.path.exists(dest_pyfile):
-            shutil.copy(src_pyfile, dest_pyfile)
-            print(f'Copied sitecustomize.py to: {dest_pyfile}')
+        dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
+        src_mtime = os.path.getmtime(src_pyfile)
+        dst_mtime = os.path.getmtime(dst_pyfile) if os.path.exists(dst_pyfile) else 0
+        if dst_mtime < src_mtime:
+            shutil.copy2(src_pyfile, dst_pyfile)
+            print(f'Copied sitecustomize.py to: {dst_pyfile}')
             try:
-                spec = importlib.util.spec_from_file_location('sitecustomize', dest_pyfile)
+                spec = importlib.util.spec_from_file_location('sitecustomize', dst_pyfile)
                 sitecustomize = importlib.util.module_from_spec(spec)
                 sys.modules['sitecustomize'] = sitecustomize
                 spec.loader.exec_module(sitecustomize)
