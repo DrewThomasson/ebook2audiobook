@@ -1,5 +1,6 @@
 import argparse
 import filecmp
+import sysconfig
 import importlib.util
 import os
 import shutil
