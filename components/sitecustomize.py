@@ -7,7 +7,6 @@ Use for lightweight, idempotent environment patches.
 import sys
 import importlib
 
-# 1️⃣ Guard against recursive imports
 if not getattr(sys, "_sitecustomize_loaded", False):
     sys._sitecustomize_loaded = True
 
