@@ -14,9 +14,6 @@ if not getattr(sys, "_sitecustomize_loaded", False):
 
     try:
         iu = importlib.import_module("transformers.utils.import_utils")
-    except ModuleNotFoundError:
-        print("[sitecustomize] transformers not available; skipping patch")
-    else:
         if not hasattr(iu, "_patch_applied"):
             #original_check = iu.check_torch_load_is_safe
 
@@ -29,6 +26,8 @@ if not getattr(sys, "_sitecustomize_loaded", False):
             iu.check_torch_load_is_safe = wrapped_check_torch_load_is_safe
             iu._patch_applied = True
             #print("[sitecustomize] transformers hook installed")
+    except ModuleNotFoundError:
+        print("[sitecustomize] transformers not available; skipping patch")
 
     # modify sys.path or environment variables
     # sys.path.insert(0, "/path/to/custom/modules")
