@@ -3638,7 +3638,6 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_custom_model_file(f:str|None, t:str, id:str)->tuple:
                 try:
                     session = context.get_session(id)
-                    print(f'=========={f}============')
                     if f is not None:
                         state = {}
                         if len(custom_model_options) > max_custom_model:
@@ -3673,6 +3672,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'change_gr_custom_model_file() error: {str(e)}'
                     state['type'] = 'error'
                     state['msg'] = error
+                show_alert(state)
                 return gr.update(), gr.update(), gr.update(visible=True)
 
             def change_gr_tts_engine_list(engine:str, id:str)->tuple:
