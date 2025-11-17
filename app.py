@@ -1,5 +1,6 @@
 import argparse
 import filecmp
+import sysconfig
 import importlib.util
 import os
 import shutil
@@ -13,8 +14,6 @@ import warnings
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 from lib import *
-
-warnings.filterwarnings("ignore", message=".*torchaudio._backend.list_audio_backends has been deprecated.*")
 
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
@@ -52,6 +51,24 @@ def check_and_install_requirements(file_path:str)->bool:
         print(error)
         return False
     try:
+        ########## sitecustomize.py
+        site_packages_path = sysconfig.get_paths()['purelib']
+        src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
+        dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
+        src_mtime = os.path.getmtime(src_pyfile)
+        dst_mtime = os.path.getmtime(dst_pyfile) if os.path.exists(dst_pyfile) else 0
+        if dst_mtime < src_mtime:
+            shutil.copy2(src_pyfile, dst_pyfile)
+            try:
+                spec = importlib.util.spec_from_file_location('sitecustomize', dst_pyfile)
+                sitecustomize = importlib.util.module_from_spec(spec)
+                sys.modules['sitecustomize'] = sitecustomize
+                spec.loader.exec_module(sitecustomize)
+            except Exception as e:
+                error = f'sitecustomize.py copied but failed to load: {e}'
+                print(error)
+                return False
+        ##############
         try:
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version

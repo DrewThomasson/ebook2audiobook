@@ -1,10 +1,12 @@
 import os
 import gc
 import torch
+import shutil
 import regex as re
-import stanza
 
 from typing import Any, Union
+from safetensors.torch import save_file
+from pathlib import Path
 from lib.models import loaded_tts, TTS_ENGINES
 from lib.functions import context
 
@@ -14,22 +16,6 @@ def cleanup_garbage():
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
         torch.cuda.synchronize()
-
-def unload_tts()->None:
-    try:
-        active_models = {
-            cache
-            for session in context.sessions.values()
-            for cache in (session.get('model_cache'), session.get('model_zs_cache'), session.get('stanza_cache'))
-            if cache is not None
-        }
-        for key in list(loaded_tts.keys()):
-            if key not in active_models:
-                del loaded_tts[key]
-        cleanup_garbage()
-    except Exception as e:
-        error = f"unload_tts() error: {e}"
-        print(error)
 
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 
@@ -60,3 +46,95 @@ def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]
         error = f"append_sentence2vtt() error: {e}"
         print(error)
         return False
+
+def is_safetensors_file(path:str)->bool:
+    try:
+        with open(path, 'rb') as f:
+            header = f.read(32)
+            return b'safetensors' in header
+    except Exception:
+        return False
+
+def convert_pt_to_safetensors(pth_path:str, delete_original:bool=False)->str:
+    pth_path = Path(pth_path)
+    if not pth_path.exists():
+        error = f'File not found: {pth_path}'
+        print(error)
+        raise FileNotFoundError()
+    if not (pth_path.suffix in ['.pth', '.pt']):
+        error = f'Expected a .pth or .pt file, got: {pth_path.suffix}'
+        print(error)
+        raise ValueError(error)
+    safe_dir = pth_path.parent / "safetensors"
+    safe_dir.mkdir(exist_ok=True)
+    safe_path = safe_dir / pth_path.with_suffix('.safetensors').name
+    msg = f'Converting {pth_path.name} → safetensors/{safe_path.name}'
+    print(msg)
+    try:
+        try:
+            state = torch.load(str(pth_path), map_location='cpu', weights_only=True)
+        except Exception:
+            error = f'⚠️ weights_only load failed for {pth_path.name}, retrying unsafely (trusted file).'
+            print(error)
+            state = torch.load(str(pth_path), map_location='cpu', weights_only=False)
+        if isinstance(state, dict) and "model" in state:
+            state = state["model"]
+        flattened = {}
+        for k, v in state.items():
+            if isinstance(v, dict):
+                for subk, subv in v.items():
+                    flattened[f"{k}.{subk}"] = subv
+            else:
+                flattened[k] = v
+        state = {k: v for k, v in flattened.items() if isinstance(v, torch.Tensor)}
+        for k, v in list(state.items()):
+            state[k] = v.clone().detach()
+        save_file(state, str(safe_path))
+        if delete_original:
+            pth_path.unlink(missing_ok=True)
+            msg = f'Deleted original: {pth_path}'
+            print(msg)
+        msg = f'Saved: {safe_path}'
+        print(msg)
+        return str(safe_path)
+    except Exception as e:
+        error = f'Failed to convert {pth_path.name}: {e}'
+        print(error)
+        raise
+
+def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
+    safe_files = []
+    if os.path.isfile(checkpoint_dir):
+        if not (checkpoint_dir.endswith('.pth') or checkpoint_dir.endswith('.pt')):
+            error = f'Invalid checkpoint file: {checkpoint_dir}'
+            raise ValueError(error)
+        if not is_safetensors_file(checkpoint_dir):
+            try:
+                safe_path = convert_pt_to_safetensors(checkpoint_dir, False)
+                msg = f'Created safetensors version of {os.path.basename(checkpoint_dir)} → {safe_path}'
+                print(msg)
+                safe_files.append(safe_path)
+            except Exception as e:
+                error = f'Failed to convert {os.path.basename(checkpoint_dir)}: {e}'
+                print(error)
+        else:
+            safe_files.append(checkpoint_dir)
+        return safe_files
+    if not os.path.isdir(checkpoint_dir):
+        raise FileNotFoundError(f"Invalid checkpoint_dir: {checkpoint_dir}")
+    for root, _, files in os.walk(checkpoint_dir):
+        for fname in files:
+            if fname.endswith(".pth") or fname.endswith(".pt"):
+                pth_path = os.path.join(root, fname)
+                if is_safetensors_file(pth_path):
+                    safe_files.append(pth_path)
+                    continue
+                try:
+                    safe_path = convert_pt_to_safetensors(pth_path, False)
+                    msg = f'Created safetensors version of {os.path.relpath(pth_path, checkpoint_dir)} → {os.path.relpath(safe_path, checkpoint_dir)}'
+                    print(msg)
+                    safe_files.append(safe_path)
+                except Exception as e:
+                    error = f'Failed to convert {fname}: {e}'
+                    print(error)
+    return safe_files

@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract
+import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
 import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, fitz
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
@@ -2153,6 +2153,8 @@ def convert_ebook(args:dict)->tuple:
                 session['output_format'] = str(args['output_format'])
                 session['output_split'] = bool(args['output_split'])
                 session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
+                session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
+                cleanup_memory()
                 if not session['is_gui_process']:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -2213,9 +2215,9 @@ def convert_ebook(args:dict)->tuple:
                             session['free_vram_gb'] = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
                             if session['free_vram_gb'] == 0:
                                 session['free_vram_gb'] = 1.0
-                                msg_extra += '<br/>VRAM not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>VRAM detected with {session['free_vram_gb']}GB"
+                                msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
                             else:
-                                msg_extra += f"<br/>Free VRAM available: {session['free_vram_gb']}GB"
+                                msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
                                 if session['free_vram_gb'] > 4.0:
                                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                                         os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
@@ -2235,10 +2237,14 @@ def convert_ebook(args:dict)->tuple:
                                 session['device'] = session['device'] if devices['XPU']['found'] else devices['CPU']['proc']
                                 if session['device'] == devices['CPU']['proc']:
                                     msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
-                            if session['free_vram_gb'] <= 4.0:
-                                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
-                                    msg_extra += f"<br/>Switching BARK to SMALL models"                          
+                            if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                if session['free_vram_gb'] < 12.0:
+                                    os.environ["SUNO_OFFLOAD_CPU"] = "True"
+                                    os.environ["SUNO_USE_SMALL_MODELS"] = "True"
+                                    msg_extra += f"<br/>Switching BARK to SMALL models"  
+                                else:
+                                    os.environ["SUNO_OFFLOAD_CPU"] = "False"
+                                    os.environ["SUNO_USE_SMALL_MODELS"] = "False"
                             if msg == '':
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;
@@ -2383,6 +2389,22 @@ def reset_session(id:str)->None:
         }
     }
     restore_session_from_data(data, session)
+
+def cleanup_memory()->None:
+    try:
+        active_models = {
+            cache
+            for session in context.sessions.values()
+            for cache in (session.get('model_cache'), session.get('model_zs_cache'), session.get('stanza_cache'))
+            if cache is not None
+        }
+        for key in list(loaded_tts.keys()):
+            if key not in active_models:
+                del loaded_tts[key]
+        gc.collect()
+    except Exception as e:
+        error = f"unload_tts() error: {e}"
+        print(error)
 
 def show_alert(state:dict)->None:
     if isinstance(state, dict):
@@ -3229,15 +3251,14 @@ def build_interface(args:dict)->gr.Blocks:
                             error = f"{Path(session['audiobook']).name} does not exist!"
                             print(error)
                             alert_exception(error, id)
-                            return gr.update(), gr.update(value=None), gr.update(value=None)
-                        session['playback_time'] = 0
+                            return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
                         audio_info = mediainfo(session['audiobook'])
                         duration = audio_info.get('duration', False)
                         if duration:
                             session['duration'] = float(audio_info['duration'])
                             with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                                 vtt_content = f.read()
-                            return gr.update(value=session['playback_time']), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
+                            return gr.update(value=0.0), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
                         else:
                             error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
                             print(error)
@@ -3246,7 +3267,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'update_audiobook_player(): {e}'
                     print(error)
                     alert_exception(error, id)
-                return gr.update(value=0), gr.update(value=None), gr.update(value=None)
+                return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
 
             def update_gr_glassmask(str:str=gr_glassmask_msg, attr:list=['gr-glass-mask'])->dict:
                 return gr.update(value=str, elem_id='gr_glassmask', elem_classes=attr)
@@ -3919,7 +3940,6 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['audiobook'] in [option[1] for option in audiobook_options]
                         else None
                     )
-                    session['playback_time'] = 0
                     if len(audiobook_options) > 0:
                         if session['audiobook'] is not None:
                             return gr.update(choices=audiobook_options, value=session['audiobook'])
@@ -4430,8 +4450,6 @@ def build_interface(args:dict)->gr.Blocks:
                 js=r'''
                     ()=>{
                         try{
-                            const bc = new BroadcastChannel("E2A-channel");
-                            const tab_id = crypto.randomUUID();
                             let gr_root = (window.gradioApp && window.gradioApp()) || document;
                             let gr_checkboxes;
                             let gr_radios;
@@ -4858,7 +4876,22 @@ def build_interface(args:dict)->gr.Blocks:
                                     glassmask.innerHTML = `${msg}`;
                                 }
                             }
+                            if(typeof(create_uuid) !== "function"){
+                                function create_uuid(){
+                                    try{
+                                        return crypto.randomUUID();
+                                    }catch(e){
+                                        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c =>{
+                                            const r = Math.random() * 16 | 0;
+                                            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                                            return v.toString(16);
+                                        });
+                                    }
+                                }
+                            }
                             //////////////////////
+                            const bc = new BroadcastChannel("E2A-channel");
+                            const tab_id = create_uuid();
                             bc.onmessage = (event)=>{
                                 try{
                                     const msg = event.data;

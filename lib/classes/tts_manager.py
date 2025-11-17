@@ -4,12 +4,9 @@ from typing import Any
 from lib.models import TTS_ENGINES
 
 class TTSManager:
-    def __init__(self, session:Any):   
+    def __init__(self, session:Any)->None:   
         self.session = session
         self.engine = False
-        self._build()
- 
-    def _build(self)->None:
         if self.session['tts_engine'] in TTS_ENGINES.values():
             if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2'],TTS_ENGINES['BARK'],TTS_ENGINES['VITS'],TTS_ENGINES['FAIRSEQ'],TTS_ENGINES['TACOTRON2'],TTS_ENGINES['YOURTTS']]:
                 from lib.classes.tts_engines.coqui import Coqui

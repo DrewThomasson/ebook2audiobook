@@ -1,16 +1,7 @@
+import gc
 import torch
-
-_original_load = torch.load
-
-def patched_torch_load(*args, **kwargs):
-    kwargs.setdefault("weights_only", False)
-    return _original_load(*args, **kwargs)
-    
-torch.load = patched_torch_load
-
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
-import gc
 
 from typing import Any
 from multiprocessing.managers import DictProxy
@@ -20,7 +11,7 @@ from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.classes.tts_engines.common.utils import cleanup_garbage, unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import cleanup_garbage, append_sentence2vtt, ensure_safe_checkpoint
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -35,7 +26,7 @@ class Coqui:
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
-            self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
+            self.tts_key = self.session['model_cache']
             self.engine = None
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.engine_zs = None
@@ -48,8 +39,8 @@ class Coqui:
             self.resampler_cache = {}
             self.audio_segments = []
             if not xtts_builtin_speakers_list:
-                self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
-                xtts_builtin_speakers_list = torch.load(self.speakers_path)
+                self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=self.cache_dir)
+                xtts_builtin_speakers_list = torch.load(self.speakers_path, weights_only=False)
                 using_gpu = self.session['device'] != devices['CPU']['proc']
                 enough_vram = self.session['free_vram_gb'] > 4.0
                 if using_gpu and enough_vram:
@@ -81,7 +72,6 @@ class Coqui:
         global lock
         try:
             with lock:
-                unload_tts()
                 from TTS.api import TTS as TTSEngine
                 engine = loaded_tts.get(key, False)
                 if not engine:
@@ -100,7 +90,6 @@ class Coqui:
             with lock:
                 key = kwargs.get('key')
                 device = kwargs.get('device')
-                unload_tts()
                 engine = loaded_tts.get(key, False)
                 if not engine:
                     engine_name = kwargs.get('tts_engine', None)
@@ -111,10 +100,12 @@ class Coqui:
                         config_path = kwargs.get('config_path',None)
                         vocab_path = kwargs.get('vocab_path',None)
                         if not checkpoint_path or not os.path.exists(checkpoint_path):
-                            raise FileNotFoundError(f"Missing or invalid checkpoint_path: {checkpoint_path}")
+                            error = f'Missing or invalid checkpoint_path: {checkpoint_path}'
+                            raise FileNotFoundError(error)
                             return False
                         if not config_path or not os.path.exists(config_path):
-                            raise FileNotFoundError(f"Missing or invalid config_path: {config_path}")
+                            error = f'Missing or invalid config_path: {config_path}'
+                            raise FileNotFoundError(error)
                             return False
                         config = XttsConfig()
                         config.models_dir = os.path.join("models","tts")
@@ -132,8 +123,14 @@ class Coqui:
                         from TTS.tts.models.bark import Bark
                         checkpoint_dir = kwargs.get('checkpoint_dir')
                         if not checkpoint_dir or not os.path.exists(checkpoint_dir):
-                            raise FileNotFoundError(f"Missing or invalid checkpoint_dir: {checkpoint_dir}")
+                            error = f'Missing or invalid checkpoint_dir: {checkpoint_dir}'
+                            raise FileNotFoundError(error)
                             return False
+                        #check_pth = ensure_safe_checkpoint(checkpoint_dir)
+                        #if not check_pth:
+                        #    error = f'No valid checkpoint files found or conversion failed in: {checkpoint_dir}'
+                        #    raise RuntimeError(error)
+                        #    return False
                         config = BarkConfig()
                         config.CACHE_DIR = self.cache_dir
                         config.USE_SMALLER_MODELS = True if os.environ['SUNO_USE_SMALL_MODELS'] == 'True' else False
@@ -170,7 +167,7 @@ class Coqui:
                         if self.session['fine_tuned'] == 'internal':
                             hf_sub = ''
                             if self.speakers_path is None:
-                                self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
+                                self.speakers_path = hf_hub_download(repo_id=hf_repo, filename='speakers_xtts.pth', cache_dir=self.cache_dir)
                         else:
                             hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
@@ -240,7 +237,6 @@ class Coqui:
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                         self.engine = self._load_api(self.tts_key, model_path, self.session['device'])
             if self.engine:
-                self.session['model_cache'] = self.tts_key
                 msg = f'TTS {key} Loaded!'
         except Exception as e:
             error = f'_load_engine() error: {e}'
@@ -329,6 +325,8 @@ class Coqui:
                             error = f"_check_xtts_builtin_speakers() error: {TTS_ENGINES['XTTSv2']} is False"
                     else:
                         error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
+                    if proc_voice_path:
+                        Path(proc_voice_path).unlink(missing_ok=True)
                     print(error)
                     return False
                 else:
@@ -337,6 +335,8 @@ class Coqui:
                 return voice_path
         except Exception as e:
             error = f'_check_xtts_builtin_speakers() error: {e}'
+            if proc_voice_path:
+                Path(proc_voice_path).unlink(missing_ok=True)
             print(error)
             return False
 
@@ -383,6 +383,8 @@ class Coqui:
         except Exception as e:
             error = f'_check_bark_npz() error: {e}'
             print(error)
+            if voice_temp:
+                os.remove(voice_temp)
             return False
         
     def _tensor_type(self,audio_data:Any)->torch.Tensor:

@@ -1,0 +1,26 @@
+services:
+  audiocraft:
+    container_name: audiocraft
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: audiocraft-rocky:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      - TRANSFORMERS_CACHE=/models/cache
+      - TORCH_HOME=/models/torch
+      - HF_HOME=/models/huggingface
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./app:/app
+      - ./models:/models
+      - ./outputs:/outputs
+    entrypoint: ["/app/entrypoint.sh"]
+    command: ["generate.py"]
+    runtime: nvidia
+    shm_size: "1gb"
+    restart: "no"

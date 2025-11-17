@@ -74,8 +74,8 @@ default_engine_settings = {
     },
     TTS_ENGINES['BARK']: {
         "samplerate": 24000,
-        "text_temp": 0.4,
-        "waveform_temp": 0.6,
+        "text_temp": 0.44,
+        "waveform_temp": 0.33,
         "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
         "speakers_path": os.path.join(voices_dir, '__bark'),
         "voices": {
@@ -124,7 +124,7 @@ default_engine_settings = {
             "zh_speaker_6": "Speaker 6", "zh_speaker_7": "Speaker 7", "zh_speaker_8": "Speaker 8",
             "zh_speaker_9": "Speaker 9"
         },
-        "rating": {"VRAM": 6, "CPU": 1, "RAM": 8, "Realism": 5}
+        "rating": {"VRAM": 6, "CPU": 1, "RAM": 6, "Realism": 5}
     },
     TTS_ENGINES['VITS']: {
         "samplerate": 22050,
@@ -429,7 +429,7 @@ models = {
     TTS_ENGINES['BARK']: {
         "internal": {
             "lang": "multi",
-            "repo": "erogol/bark", # suno/bark, rsxdalv/suno, tts_models/multilingual/multi-dataset/bark
+            "repo": "erogol/bark", # erogol/bark, suno/bark, rsxdalv/suno, tts_models/multilingual/multi-dataset/bark
             "sub": "", # {"big-bf16": "big-bf16/", "small-bf16": "small-bf16/", "big": "big/", "small": "small/"}
             "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'KumarDahl.wav'),
             "files": default_engine_settings[TTS_ENGINES['BARK']]['files'],
