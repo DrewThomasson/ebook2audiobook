@@ -68,7 +68,6 @@ def check_and_install_requirements(file_path:str)->bool:
                 print('sitecustomize.py loaded successfully in current runtime.')
             except Exception as e:
                 print(f'sitecustomize.py copied but failed to load: {e}')
-            print('Note: It will auto-run automatically in future Python sessions.')
         ##############
         try:
             from packaging.specifiers import SpecifierSet
