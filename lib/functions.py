@@ -2215,9 +2215,9 @@ def convert_ebook(args:dict)->tuple:
                             session['free_vram_gb'] = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
                             if session['free_vram_gb'] == 0:
                                 session['free_vram_gb'] = 1.0
-                                msg_extra += '<br/>VRAM not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>VRAM detected with {session['free_vram_gb']}GB"
+                                msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
                             else:
-                                msg_extra += f"<br/>Free VRAM available: {session['free_vram_gb']}GB"
+                                msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
                                 if session['free_vram_gb'] > 4.0:
                                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                                         os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
@@ -4367,7 +4367,7 @@ def build_interface(args:dict)->gr.Blocks:
                         try{
                             if(data){
                                 localStorage.clear();
-                                //data.playback_time = Number(window.session_storage.playback_time);
+                                data.playback_time = Number(window.session_storage.playback_time);
                                 data.playback_volume = parseFloat(window.session_storage.playback_volume);
                                 localStorage.setItem("data", JSON.stringify(data));
                             }
