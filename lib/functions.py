@@ -4363,7 +4363,7 @@ def build_interface(args:dict)->gr.Blocks:
                         try{
                             if(data){
                                 localStorage.clear();
-                                data.playback_time = Number(window.session_storage.playback_time);
+                                //data.playback_time = Number(window.session_storage.playback_time);
                                 data.playback_volume = parseFloat(window.session_storage.playback_volume);
                                 localStorage.setItem("data", JSON.stringify(data));
                             }
