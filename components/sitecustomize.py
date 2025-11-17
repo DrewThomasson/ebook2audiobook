@@ -21,7 +21,7 @@ except ModuleNotFoundError:
     print("[sitecustomize] transformers not available; skipping patch")
 else:
     if not hasattr(iu, "_patch_applied"):
-        original_check = iu.check_torch_load_is_safe
+        #original_check = iu.check_torch_load_is_safe
 
         def wrapped_check_torch_load_is_safe(*args, **kwargs):
             #print("[sitecustomize] Hook: transformers check called")
