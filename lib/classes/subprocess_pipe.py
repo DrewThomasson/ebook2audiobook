@@ -17,19 +17,19 @@ class SubprocessPipe:
         sys.stdout.write(f'\r{self.msg}: {percent:.1f}%')
         sys.stdout.flush()
         if self.is_gui_process:
-            self.progress_bar(percent/100,desc=self.msg)
+            self.progress_bar(percent/100, desc=self.msg)
 
     def _on_complete(self)->None:
-        msg = f"\n{self.msg} completed"
+        msg = f"\n{self.msg} completed: 100%"
         print(msg)
         if self.is_gui_process:
-            self.progress_bar(1.0,desc=msg)
+            self.progress_bar(1.0, desc=msg)
 
     def _on_error(self, err:Exception)->None:
-        error = f"\n{self.msg} failed: {err}"
+        error = f"\n{self.msg} {err}: 0%"
         print(error)
         if self.is_gui_process:
-            self.progress_bar(0.0,desc=error)
+            self.progress_bar(0.0, desc=error)
 
     def _run_process(self)->bool:
         try:
