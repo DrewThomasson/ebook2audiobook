@@ -3247,15 +3247,14 @@ def build_interface(args:dict)->gr.Blocks:
                             error = f"{Path(session['audiobook']).name} does not exist!"
                             print(error)
                             alert_exception(error, id)
-                            return gr.update(), gr.update(value=None), gr.update(value=None)
-                        session['playback_time'] = 0
+                            return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
                         audio_info = mediainfo(session['audiobook'])
                         duration = audio_info.get('duration', False)
                         if duration:
                             session['duration'] = float(audio_info['duration'])
                             with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                                 vtt_content = f.read()
-                            return gr.update(value=session['playback_time']), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
+                            return gr.update(value=0.0), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
                         else:
                             error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
                             print(error)
@@ -3264,7 +3263,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'update_audiobook_player(): {e}'
                     print(error)
                     alert_exception(error, id)
-                return gr.update(value=0), gr.update(value=None), gr.update(value=None)
+                return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
 
             def update_gr_glassmask(str:str=gr_glassmask_msg, attr:list=['gr-glass-mask'])->dict:
                 return gr.update(value=str, elem_id='gr_glassmask', elem_classes=attr)
@@ -3937,7 +3936,6 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['audiobook'] in [option[1] for option in audiobook_options]
                         else None
                     )
-                    session['playback_time'] = 0
                     if len(audiobook_options) > 0:
                         if session['audiobook'] is not None:
                             return gr.update(choices=audiobook_options, value=session['audiobook'])

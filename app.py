@@ -59,15 +59,15 @@ def check_and_install_requirements(file_path:str)->bool:
         dst_mtime = os.path.getmtime(dst_pyfile) if os.path.exists(dst_pyfile) else 0
         if dst_mtime < src_mtime:
             shutil.copy2(src_pyfile, dst_pyfile)
-            print(f'Copied sitecustomize.py to: {dst_pyfile}')
             try:
                 spec = importlib.util.spec_from_file_location('sitecustomize', dst_pyfile)
                 sitecustomize = importlib.util.module_from_spec(spec)
                 sys.modules['sitecustomize'] = sitecustomize
                 spec.loader.exec_module(sitecustomize)
-                print('sitecustomize.py loaded successfully in current runtime.')
             except Exception as e:
-                print(f'sitecustomize.py copied but failed to load: {e}')
+                error = f'sitecustomize.py copied but failed to load: {e}'
+                print(error)
+                return False
         ##############
         try:
             from packaging.specifiers import SpecifierSet
