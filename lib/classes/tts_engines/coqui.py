@@ -325,6 +325,8 @@ class Coqui:
                             error = f"_check_xtts_builtin_speakers() error: {TTS_ENGINES['XTTSv2']} is False"
                     else:
                         error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
+                    if proc_voice_path:
+                        Path(proc_voice_path).unlink(missing_ok=True)
                     print(error)
                     return False
                 else:
@@ -333,6 +335,8 @@ class Coqui:
                 return voice_path
         except Exception as e:
             error = f'_check_xtts_builtin_speakers() error: {e}'
+            if proc_voice_path:
+                Path(proc_voice_path).unlink(missing_ok=True)
             print(error)
             return False
 
@@ -379,6 +383,8 @@ class Coqui:
         except Exception as e:
             error = f'_check_bark_npz() error: {e}'
             print(error)
+            if voice_temp:
+                os.remove(voice_temp)
             return False
         
     def _tensor_type(self,audio_data:Any)->torch.Tensor:
