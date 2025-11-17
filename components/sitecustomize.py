@@ -9,8 +9,7 @@ import importlib
 
 # 1️⃣ Guard against recursive imports
 if getattr(sys, "_sitecustomize_loaded", False):
-    # Prevent running twice if re-imported
-    raise SystemExit
+    return
 sys._sitecustomize_loaded = True
 
 #print("[sitecustomize] Environment hooks active")
