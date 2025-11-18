@@ -2554,7 +2554,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                     font-size: 22px !important;
                     width: 60px !important;
-                    height: 60px !important;
+                    height: 100% !important;
                     margin: 0 !important;
                     padding: 0 !important;
                 }
@@ -2916,7 +2916,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                                     with gr_group_custom_model:
                                         gr_custom_model_file = gr.File(label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
-                                        gr_custom_model_label = gr.Label(value='My models')
                                         with gr.Row(elem_id='gr_row_custom_model'):
                                             gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                             gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
