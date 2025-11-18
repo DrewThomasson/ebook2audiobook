@@ -2625,7 +2625,8 @@ def build_interface(args:dict)->gr.Blocks:
                     padding: 0 !important;
                     margin: 0 !important;
                     text-align: left !important;
-                    font-size: 6px !important;
+                    font-weight: normal !important;
+                    font-size: 9px !important;
                     border: none !important;
                     overflow: hidden !important;
                 }
@@ -2654,7 +2655,8 @@ def build_interface(args:dict)->gr.Blocks:
                 .gr-markdown-output-split-hours {
                     overflow: hidden !important;
                     background: var(--block-background-fill) !important;
-                    border-radius: 0; font-size: 12px !important;
+                    border-radius: 0 !important; 
+                    font-size: 12px !important;
                     text-align: center !important;
                     vertical-align: middle !important;
                     padding-top: 4px !important;
