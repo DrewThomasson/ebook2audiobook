@@ -3730,7 +3730,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(id)
                 session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
                 visible = True if session['custom_model'] is not None else False
-                return gr.update(visible=not visible), gr.update(visible=visible)
+                return gr.update(visible=not visible), gr.update(visible=visible), gr.update(visible=!visible)
             
             def change_gr_output_format_list(val:str, id:str)->None:
                 session = context.get_session(id)
@@ -4164,7 +4164,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
                 inputs=[gr_custom_model_list, gr_session],
-                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn]
+                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn, gr_row_voice_player]
             )
             gr_custom_model_del_btn.click(
                 fn=click_gr_custom_model_del_btn,
