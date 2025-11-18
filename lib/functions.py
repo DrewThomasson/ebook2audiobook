@@ -4164,7 +4164,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
                 inputs=[gr_custom_model_list, gr_session],
-                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn, gr_row_voice_player]
+                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn, gr_group_voice_file]
             )
             gr_custom_model_del_btn.click(
                 fn=click_gr_custom_model_del_btn,
