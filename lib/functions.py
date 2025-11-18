@@ -3189,7 +3189,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(id)
                     socket_hash = str(req.session_hash)
                     if not session.get(socket_hash):
-                        outputs = tuple([gr.update() for _ in range(13)])
+                        outputs = tuple([gr.update() for _ in range(14)])
                         return outputs
                     ebook_data = None
                     file_count = session['ebook_mode']
@@ -3224,6 +3224,7 @@ def build_interface(args:dict)->gr.Blocks:
                         update_gr_custom_model_list(id),
                         update_gr_fine_tuned_list(id),
                         gr.update(value=session['output_format']),
+                        gr.update(value=session['output_channel']),
                         gr.update(value=bool(session['output_split'])),
                         gr.update(value=session['output_split_hours']),
                         update_gr_audiobook_list(id)
@@ -3231,7 +3232,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'restore_interface(): {e}'
                     alert_exception(error, id)
-                    outputs = tuple([gr.update() for _ in range(13)])
+                    outputs = tuple([gr.update() for _ in range(14)])
                     return outputs
 
             def restore_audiobook_player(audiobook:str|None)->tuple:
