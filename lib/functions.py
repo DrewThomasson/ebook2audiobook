@@ -3730,7 +3730,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(id)
                 session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
                 visible = True if session['custom_model'] is not None else False
-                return gr.update(visible=not visible), gr.update(visible=visible), gr.update(visible=!visible)
+                return gr.update(visible=not visible), gr.update(visible=visible), gr.update(visible=not visible)
             
             def change_gr_output_format_list(val:str, id:str)->None:
                 session = context.get_session(id)
