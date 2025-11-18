@@ -2749,7 +2749,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_tts_rating {
                     overflow: hidden !important;
                 }
-                #gr_row_voice_player, #gr_group_custom_model {
+                #gr_row_voice_player, #gr_row_custom_model_list {
                     height: 60px !important;
                 }  
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
@@ -2916,7 +2916,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                                     with gr_group_custom_model:
                                         gr_custom_model_file = gr.File(label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
-                                        with gr.Row(elem_id='gr_row_custom_model'):
+                                        gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
+                                        with gr_row_custom_model_list:
                                             gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                             gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 with gr.Group(elem_id='gr_group_output_format'):
