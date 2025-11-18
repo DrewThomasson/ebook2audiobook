@@ -4169,7 +4169,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_del_btn.click(
                 fn=click_gr_custom_model_del_btn,
                 inputs=[gr_custom_model_list, gr_session],
-                outputs=[gr_confirm_deletion_field_hidden]
+                outputs=[gr_confirm_deletion_field_hidden, gr_modal]
             )
             gr_output_format_list.change(
                 fn=change_gr_output_format_list,
