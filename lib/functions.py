@@ -292,7 +292,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         print(error)
     return False
 
-def extract_custom_model(file_src:str, id, required_files:list)->str|None:
+def extract_custom_model(file_src:str, id:str, required_files:list)->str|None:
     session = context.get_session(id)
     model_path = None
     model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
