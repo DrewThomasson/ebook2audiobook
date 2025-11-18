@@ -3695,7 +3695,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['custom_model'] is not None:
                         voice_visible = False
                     return (
-                        gr.update(visible=voice_visible)
+                        gr.update(visible=voice_visible),
                         gr.update(value=show_rating(session['tts_engine'])), 
                         gr.update(visible=visible_gr_tab_xtts_params),
                         gr.update(visible=False),
@@ -3709,7 +3709,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                         bark_visible = visible_gr_tab_bark_params
                     return (
-                        gr.update(visible=voice_visible)
+                        gr.update(visible=voice_visible),
                         gr.update(value=show_rating(session['tts_engine'])),
                         gr.update(visible=False),
                         gr.update(visible=bark_visible), 
