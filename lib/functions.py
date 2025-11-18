@@ -3575,32 +3575,6 @@ def build_interface(args:dict)->gr.Blocks:
                         voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                     else:
                         voice_options = sorted(voice_options, key=lambda x: x[0].lower())       
-                    if fine_tuned and fine_tuned != 'internal':
-                        session['voice'] = models[session['tts_engine']][fine_tuned]['voice']                        
-                    elif session['custom_model'] is not None:
-                        session['voice'] = os.path.join(session['custom_model'], f"{os.path.basename(session['custom_model'])}.wav")
-                    else:
-                        voice_paths = {v[1] for v in voice_options}
-                        if models[session['tts_engine']]['internal']['voice'] in voice_paths:
-                            default_voice_path = models[session['tts_engine']]['internal']['voice']
-                        else:
-                            default_voice_path = voice_options[0][1]
-                        if session['voice'] is None:
-                            if default_voice_path is not None:
-                                default_name = Path(default_voice_path).stem
-                                for name, value in voice_options:
-                                    if name == default_name and isinstance(value, str):
-                                        session['voice'] = value
-                                        break
-                                else:
-                                    values = [v for _, v in voice_options]
-                                    if default_voice_path in values:
-                                        session['voice'] = default_voice_path
-                                    else:
-                                        session['voice'] = voice_options[0][1]
-                        else:
-                            if session['voice'] not in voice_paths or session['voice'] not in session['custom_model_dir']:
-                                session['voice'] = default_voice_path
                     return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
@@ -3774,10 +3748,12 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(id)
                 session['output_format'] = val
                 return
+
             def change_gr_output_channel_list(val:str, id:str)->None:
                 session = context.get_session(id)
                 session['output_channel'] = val
-                return        
+                return
+                
             def change_gr_output_split(val:str, id:str)->dict:
                 session = context.get_session(id)
                 session['output_split'] = val
