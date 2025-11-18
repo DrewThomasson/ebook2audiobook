@@ -8,7 +8,7 @@ on:
         description: 'Wipe & Re-Install E2A'
 
   workflow_run:
-    workflows: ["Mac E2A Test"]
+    workflows: ["E2A Test"]
     types:
       - completed
     branches:
