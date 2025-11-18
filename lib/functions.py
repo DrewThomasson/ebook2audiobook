@@ -2622,7 +2622,7 @@ def build_interface(args:dict)->gr.Blocks:
                     border-radius: var(--radius-md) !important;
                 }
                 .gr-label textarea[data-testid="textbox"]{
-                    padding: 0 !important;
+                    padding: 0 0 0 3px !important;
                     margin: 0 !important;
                     text-align: left !important;
                     font-weight: normal !important;
