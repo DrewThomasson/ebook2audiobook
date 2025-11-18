@@ -222,7 +222,7 @@ class VoiceExtractor:
             src_file = src_file or self.voice_track
             proc_file = proc_file or self.proc_voice_file
             dst_file = dst_file or self.final_voice_file
-            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_track]
+            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', src_file]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
                 'afftdn=nf=-70,'
