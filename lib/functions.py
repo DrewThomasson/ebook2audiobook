@@ -3733,7 +3733,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_custom_model = visible_gr_group_custom_model
                     else:
                         visible_custom_model = False
-                        session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
+                        session['voice'] = models[session['tts_engine']][selected]['voice']
                     return gr.update(visible=visible_custom_model), update_gr_voice_list(id)
                 return gr.update(), gr.update()
 
