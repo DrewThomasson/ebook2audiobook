@@ -291,8 +291,9 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         raise RuntimeError(error)
     return False
 
-def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_files:list|None)->str|None:
+def extract_custom_model(file_src:str, id, required_files:list|None)->str|None:
     try:
+        session = context.get_session(id)
         model_path = None
         if required_files is None:
             required_files = models[session['tts_engine']][default_fine_tuned]['files']
@@ -2169,9 +2170,8 @@ def convert_ebook(args:dict)->tuple:
                         src_path = Path(session['custom_model'])
                         src_name = src_path.stem
                         if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
-                            required_files = models[session['tts_engine']]['internal']['files']
-                            if analyze_uploaded_file(session['custom_model'], required_files):
-                                model = extract_custom_model(session['custom_model'], session)
+                            if analyze_uploaded_file(session['custom_model'], models[session['tts_engine']]['internal']['files']):
+                                model = extract_custom_model(session['custom_model'], id)
                                 if model is not None:
                                     session['custom_model'] = model
                                 else:
@@ -3647,9 +3647,8 @@ def build_interface(args:dict)->gr.Blocks:
                             state['msg'] = error
                         else:
                             session['tts_engine'] = t
-                            required_files = models[session['tts_engine']]['internal']['files']
-                            if analyze_uploaded_file(f, required_files):
-                                model = extract_custom_model(f, session)
+                            if analyze_uploaded_file(f, models[session['tts_engine']]['internal']['files']):
+                                model = extract_custom_model(f, id)
                                 if model is None:
                                     error = f'Cannot extract custom model zip file {os.path.basename(f)}'
                                     state['type'] = 'warning'
