@@ -3598,7 +3598,7 @@ def build_interface(args:dict)->gr.Blocks:
                     ]
                     session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
                     model_paths = {v[1] for v in custom_model_options}
-                    visible = False if session['custom_model'] is Not None else True
+                    visible = visible_gr_group_voice_file if session['custom_model'] is None else False
                     return gr.update(choices=custom_model_options, value=session['custom_model']), gr.update(visible=visible)
                 except Exception as e:
                     error = f'update_gr_custom_model_list(): {e}!'
