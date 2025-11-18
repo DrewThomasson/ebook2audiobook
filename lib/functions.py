@@ -3764,6 +3764,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session['custom_model'] = selected
                 if selected is not None:
                     session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
+                print(f"path_voice: {session['voice']}")
                 visible_fine_tuned = True if selected is None else False
                 visible_del_btn = False if selected is None else True
                 return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(id)
