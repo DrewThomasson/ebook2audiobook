@@ -2554,7 +2554,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                     font-size: 22px !important;
                     width: 60px !important;
-                    height: 100% !important;
+                    height: 100vh !important;
                     margin: 0 !important;
                     padding: 0 !important;
                 }
