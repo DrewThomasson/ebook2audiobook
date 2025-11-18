@@ -3458,14 +3458,15 @@ def build_interface(args:dict)->gr.Blocks:
                             msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                             session['voice'] = None
                             show_alert({"type": "warning", "msg": msg})
-                            return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(id)
+                            return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(id), gr.update()
                         elif method == 'confirm_custom_model_del':
                             selected_name = os.path.basename(custom_model)
                             shutil.rmtree(custom_model, ignore_errors=True)                           
                             msg = f'Custom model {selected_name} deleted!'
                             session['custom_model'] = None
                             show_alert({"type": "warning", "msg": msg})
-                            return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
+                            visible = visible_gr_group_voice_file if session['custom_model'] is None else False
+                            return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update(), gr.update(visible=visible)
                         elif method == 'confirm_audiobook_del':
                             selected_name = Path(audiobook).stem
                             if os.path.isdir(audiobook):
@@ -3480,12 +3481,11 @@ def build_interface(args:dict)->gr.Blocks:
                             msg = f'Audiobook {selected_name} deleted!'
                             session['audiobook'] = None
                             show_alert({"type": "warning", "msg": msg})
-                            return gr.update(), update_gr_audiobook_list(id), gr.update(value='', visible=False), gr.update()
-                    return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
+                            return gr.update(), update_gr_audiobook_list(id), gr.update(value='', visible=False), gr.update(), gr.update()
                 except Exception as e:
                     error = f'confirm_deletion(): {e}!'
                     alert_exception(error, id)
-                return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
+                return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update(), gr.update()
 
             def confirm_blocks(choice:str, id:str)->dict:
                 session = context.get_session(id)
@@ -3598,9 +3598,8 @@ def build_interface(args:dict)->gr.Blocks:
                     ]
                     session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
                     model_paths = {v[1] for v in custom_model_options}
-                    if session['custom_model'] not in model_paths:
-                        return gr.update(choices=custom_model_options)
-                    return gr.update(choices=custom_model_options, value=session['custom_model'])
+                    visible = False if session['custom_model'] is Not None else True
+                    return gr.update(choices=custom_model_options, value=session['custom_model']), gr.update(visible=visible)
                 except Exception as e:
                     error = f'update_gr_custom_model_list(): {e}!'
                     alert_exception(error, id)
@@ -3689,7 +3688,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if default_voice_path is None:
                     session['voice'] = default_voice_path
                 bark_visible = False
-                voice_visible = True
+                voice_visible = visible_gr_group_voice_file
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                     visible_custom_model = True if session['fine_tuned'] == 'internal' else False
                     if session['custom_model'] is not None:
@@ -3734,7 +3733,7 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_custom_model_list(selected:str, id:str)->tuple:
                 session = context.get_session(id)
                 session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
-                visible = True if session['custom_model'] is not None else False
+                visible = visible_gr_group_voice_file if session['custom_model'] is None else False
                 return gr.update(visible=not visible), gr.update(visible=visible), gr.update(visible=not visible)
             
             def change_gr_output_format_list(val:str, id:str)->None:
@@ -4430,12 +4429,12 @@ def build_interface(args:dict)->gr.Blocks:
             gr_confirm_deletion_yes_btn.click(
                 fn=confirm_deletion,
                 inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_deletion_field_hidden],
-                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_group_voice_file]
             )
             gr_confirm_deletion_no_btn.click(
                 fn=confirm_deletion,
                 inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_group_voice_file]
             )
             gr_confirm_blocks_yes_btn.click(
                 fn=lambda session: confirm_blocks("yes", session),
