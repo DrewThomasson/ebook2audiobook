@@ -4157,14 +4157,21 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_group_custom_model, gr_voice_list]
             )
             gr_custom_model_file.upload(
+                fn=lambda: gr.update(interactive=False),
+                inputs=None,
+                outputs=[gr_tts_engine_list]
+            ).then(
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
                 outputs=[gr_custom_model_file, gr_custom_model_list, gr_row_voice_player],
                 show_progress_on=gr_custom_model_list
             ).then(
-                fn=lambda: gr.update(value=None),
+                fn=lambda: (
+                    gr.update(value=None),
+                    gr.update(interactive=True)
+                ),
                 inputs=None,
-                outputs=[gr_custom_model_file]
+                outputs=[gr_custom_model_file, gr_tts_engine_list]
             )
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
