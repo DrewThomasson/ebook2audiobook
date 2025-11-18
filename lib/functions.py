@@ -3696,7 +3696,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=False),
                             gr.update(visible=bark_visible),
                             gr.update(visible=False), 
-                            gr.update(value='')
+                            gr.update(value=''),
                             update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
                             gr.update(label=''),
                             update_gr_voice_list(id)
