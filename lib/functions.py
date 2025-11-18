@@ -3330,8 +3330,8 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(label=src_label_dir, file_count='directory'), gr.update(visible=False)
 
             def change_gr_voice_file(f:str|None, id:str)->tuple:
+                state = {}
                 if f is not None:
-                    state = {}
                     if len(voice_options) > max_custom_voices:
                         error = f'You are allowed to upload a max of {max_custom_voices} voices'
                         state['type'] = 'warning'
@@ -3353,14 +3353,13 @@ def build_interface(args:dict)->gr.Blocks:
                             state['type'] = 'success'
                             state['msg'] = msg
                             show_alert(state)
+                            return update_gr_voice_list(id)
                         else:
                             error = 'failed! Check if you audio file is compatible.'
                             state['type'] = 'warning'
                             state['msg'] = error
                     show_alert(state)
-                    return update_gr_voice_list(id)
-                else:
-                    return gr.update()
+                return gr.update()
 
             def change_gr_voice_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
@@ -3643,42 +3642,33 @@ def build_interface(args:dict)->gr.Blocks:
                 return dir_path
 
             def change_gr_custom_model_file(f:str|None, t:str, id:str)->tuple:
-                try:
-                    session = context.get_session(id)
-                    if f is not None:
-                        state = {}
-                        if len(custom_model_options) > max_custom_model:
-                            error = f'You are allowed to upload a max of {max_custom_models} models'   
-                            state['type'] = 'warning'
-                            state['msg'] = error
-                        else:
-                            session['tts_engine'] = t
-                            if analyze_uploaded_file(f, models[session['tts_engine']]['internal']['files']):
-                                model = extract_custom_model(f, id)
-                                if model is not None:
-                                    session['custom_model'] = model
-                                    msg = f'{os.path.basename(model)} added to the custom models list'
-                                    state['type'] = 'success'
-                                    state['msg'] = msg
-                                else:
-                                    error = f'Cannot extract custom model zip file {os.path.basename(f)}'
-                                    state['type'] = 'warning'
-                                    state['msg'] = error
+                if f is not None:
+                    state = {}
+                    if len(custom_model_options) > max_custom_model:
+                        error = f'You are allowed to upload a max of {max_custom_models} models'   
+                        state['type'] = 'warning'
+                        state['msg'] = error
+                    else:
+                        session = context.get_session(id)
+                        session['tts_engine'] = t
+                        if analyze_uploaded_file(f, models[session['tts_engine']]['internal']['files']):
+                            model = extract_custom_model(f, id)
+                            if model is not None:
+                                session['custom_model'] = model
+                                msg = f'{os.path.basename(model)} added to the custom models list'
+                                state['type'] = 'success'
+                                state['msg'] = msg
+                                show_alert(state)
+                                return gr.update(value=None), update_gr_custom_model_list(id), gr.update(visible=False)
                             else:
-                                error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                                error = f'Cannot extract custom model zip file {os.path.basename(f)}'
                                 state['type'] = 'warning'
                                 state['msg'] = error
-                        show_alert(state)
-                        return gr.update(value=None), update_gr_custom_model_list(id), gr.update(visible=False)
-                except ClientDisconnect:
-                    error = 'Client disconnected during upload. Operation aborted.'
-                    state['type'] = 'error'
-                    state['msg'] = error
-                except Exception as e:
-                    error = f'change_gr_custom_model_file() error: {str(e)}'
-                    state['type'] = 'error'
-                    state['msg'] = error
-                show_alert(state)
+                        else:
+                            error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                            state['type'] = 'warning'
+                            state['msg'] = error
+                    show_alert(state)
                 return gr.update(), gr.update(), gr.update(visible=True)
 
             def change_gr_tts_engine_list(engine:str, id:str)->tuple:
@@ -4145,6 +4135,10 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
                 outputs=[gr_custom_model_file, gr_custom_model_list, gr_row_voice_player],
+            ).then(
+                fn=lambda: gr.update(value=None),
+                inputs=None,
+                outputs=[gr_custom_model_file]
             )
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
