@@ -3653,6 +3653,7 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_custom_model_file(f:str|None, t:str, id:str)->tuple:
                 if f is not None:
                     state = {}
+                    voice_visible = False
                     if len(custom_model_options) > max_custom_model:
                         error = f'You are allowed to upload a max of {max_custom_models} models'   
                         state['type'] = 'warning'
@@ -3668,7 +3669,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 state['type'] = 'success'
                                 state['msg'] = msg
                                 show_alert(state)
-                                return gr.update(value=None), update_gr_custom_model_list(id), gr.update(visible=False)
+                                return gr.update(value=None), update_gr_custom_model_list(id), gr.update(visible=voice_visible)
                             else:
                                 error = f'Cannot extract custom model zip file {os.path.basename(f)}'
                                 state['type'] = 'warning'
@@ -3678,7 +3679,9 @@ def build_interface(args:dict)->gr.Blocks:
                             state['type'] = 'warning'
                             state['msg'] = error
                     show_alert(state)
-                return gr.update(), gr.update(), gr.update(visible=True)
+                else:
+                    voice_visible = visible_gr_group_voice_file
+                return gr.update(), gr.update(), gr.update(visible=voice_visible)
 
             def change_gr_tts_engine_list(engine:str, id:str)->tuple:
                 session = context.get_session(id)
