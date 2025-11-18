@@ -2621,14 +2621,14 @@ def build_interface(args:dict)->gr.Blocks:
                     margin: var(--size-2) !important;;
                     border-radius: var(--radius-md) !important;
                 }
-                .gr-label {
+                .gr-label textarea[data-testid="textbox"]{
                     padding: 0 !important;
                     margin: 0 !important;
                     text-align: left !important;
                     font-weight: normal !important;
                     font-size: 9px !important;
                     border: none !important;
-                    overflow: hidden !important;
+                    overflow-y: hidden !important;
                 }
                 .gr-markdown p {
                     margin-top: 8px !important;
