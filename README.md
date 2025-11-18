@@ -328,7 +328,7 @@ Linux/Mac:
     Headless mode:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file' --language eng
 
-Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
+Tip: to add of silence (random between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
 
 ```
 
