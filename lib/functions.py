@@ -293,17 +293,14 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     return False
 
 def extract_custom_model(file_src:str, id, required_files:list)->str|None:
-    print('------ extract_custom_model called -------')
     session = context.get_session(id)
     model_path = None
     model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
     model_name = get_sanitized(model_name)
-    print(f'------ model_name: {model_name} -------')
     try:
         with zipfile.ZipFile(file_src, 'r') as zip_ref:
             files = zip_ref.namelist()
             files_length = len(files)
-            print(f'------ files: {files} -------')
             tts_dir = session['tts_engine']
             model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
             os.makedirs(model_path, exist_ok=True)
@@ -4133,6 +4130,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
                 outputs=[gr_custom_model_file, gr_custom_model_list, gr_row_voice_player],
+                show_progress_on=gr_custom_model_list
             ).then(
                 fn=lambda: gr.update(value=None),
                 inputs=None,
