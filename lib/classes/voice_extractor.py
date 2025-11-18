@@ -216,9 +216,12 @@ class VoiceExtractor:
             print(error)
             return 0
 
-    def normalize_audio(self, src_file:str=self.voice_track, proc_file:str=self.proc_voice_file, dst_file:str=self.final_voice_file)->tuple[bool, str]:
+    def normalize_audio(self, src_file:str=None, proc_file:str=None, dst_file:str=None)->tuple[bool, str]:
         error = ''
         try:
+            src_file = src_file or self.voice_track
+            proc_file = proc_file or self.proc_voice_file
+            dst_file = dst_file or self.final_voice_file
             cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_track]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
