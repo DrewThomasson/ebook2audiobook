@@ -322,7 +322,11 @@ def extract_custom_model(file_src:str, id, required_files:list)->str|None:
             extractor = VoiceExtractor(session, voice_ref, voice_output)
             success, error = extractor.normalize_audio(voice_ref, voice_output, voice_output)
             if success:
-               return model_path
+                if os.path.exists(file_src):
+                    os.remove(file_src)
+                if os.path.exists(voice_ref):
+                    os.remove(voice_ref)
+                return model_path
             error = f'normalize_audio {voice_ref} error: {error}'
             print(error)
         else:
