@@ -3690,7 +3690,7 @@ def build_interface(args:dict)->gr.Blocks:
                 voice_visible = visible_gr_group_voice_file
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                     visible_custom_model = True if session['fine_tuned'] == 'internal' else False
-                        voice_visible = False if session['custom_model'] is not None else voice_visible
+                    voice_visible = False if session['custom_model'] is not None else voice_visible
                     return (
                         gr.update(visible=voice_visible),
                         gr.update(value=show_rating(session['tts_engine'])), 
