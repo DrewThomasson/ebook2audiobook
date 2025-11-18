@@ -292,7 +292,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         print(error)
     return False
 
-def extract_custom_model(file_src:str, id:str, required_files:list)->str|None:
+def extract_custom_model(file_src:str, id, required_files:list)->str|None:
     session = context.get_session(id)
     model_path = None
     model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
@@ -2730,7 +2730,6 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_voice_list span[data-testid="block-info"],
                 #gr_device span[data-testid="block-info"],
                 #gr_tts_engine_list span[data-testid="block-info"],
-                #gr_custom_model_list span[data-testid="block-info"],
                 #gr_output_split_hours span[data-testid="block-info"],
                 #gr_session span[data-testid="block-info"],
                 #gr_audiobook_sentence span[data-testid="block-info"],
@@ -2917,7 +2916,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                                     with gr_group_custom_model:
                                         gr_custom_model_file = gr.File(label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
-                                        gr_custom_model_markdown = gr.Markdown(elem_id='gr_custom_model_markdown', value='')
                                         with gr.Row(elem_id='gr_row_custom_model'):
                                             gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                             gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
@@ -3679,13 +3677,13 @@ def build_interface(args:dict)->gr.Blocks:
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                     visible_custom_model = True if session['fine_tuned'] == 'internal' else False
                     return (
-                           gr.update(value=show_rating(session['tts_engine'])),
+                           gr.update(value=show_rating(session['tts_engine'])), 
                            gr.update(visible=visible_gr_tab_xtts_params),
                            gr.update(visible=False),
                            gr.update(visible=visible_custom_model),
                            update_gr_fine_tuned_list(id),
-                           gr.update(value=f"My {session['tts_engine']} custom models"),
                            gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
+                           gr.update(label=f"My {session['tts_engine']} custom models"),
                            update_gr_voice_list(id)
                     )
                 else:
@@ -3697,11 +3695,11 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=bark_visible), 
                             gr.update(visible=False),
                             update_gr_fine_tuned_list(id),
-                            gr.update(value=''),
                             gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
+                            gr.update(label=''),
                             update_gr_voice_list(id)
                     )
-   
+                    
             def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
                 if selected:
                     session = context.get_session(id)
@@ -4131,7 +4129,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_tts_engine_list.change(
                 fn=change_gr_tts_engine_list,
                 inputs=[gr_tts_engine_list, gr_session],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_markdown, gr_custom_model_file, gr_voice_list]
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_voice_list]
             )
             gr_fine_tuned_list.change(
                 fn=change_gr_fine_tuned_list,
