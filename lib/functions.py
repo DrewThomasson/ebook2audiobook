@@ -3399,9 +3399,8 @@ def build_interface(args:dict)->gr.Blocks:
                         speaker_path = os.path.abspath(selected)
                         speaker = re.sub(r'\.wav$|\.npz|\.pth$', '', os.path.basename(selected))
                         builtin_root = os.path.join(voices_dir, session['language'])
-                        sessions_root = os.path.join(voices_dir, '__sessions')
-                        is_in_sessions = os.path.commonpath([speaker_path, os.path.abspath(sessions_root)]) == os.path.abspath(sessions_root)
                         is_in_builtin = os.path.commonpath([speaker_path, os.path.abspath(builtin_root)]) == os.path.abspath(builtin_root)
+                        is_in_models = os.path.commonpath([speaker_path, os.path.abspath(sessiion['custom_model_dir'])]) == os.path.abspath(sessiion['custom_model_dir'])
                         # Check if voice is built-in
                         is_builtin = any(
                             speaker in settings.get('voices', {})
@@ -3411,6 +3410,10 @@ def build_interface(args:dict)->gr.Blocks:
                             error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                             show_alert({"type": "warning", "msg": error})
                             return gr.update(), gr.update(visible=False)
+                        if is_in_models:
+                            error = f'Voice file {speaker} is a voice of one of your custom model and cannot be deleted.'
+                            show_alert({"type": "warning", "msg": error})
+                            return gr.update(), gr.update(visible=False)                          
                         try:
                             selected_path = Path(selected).resolve()
                             parent_path = Path(session['voice_dir']).parent.resolve()
