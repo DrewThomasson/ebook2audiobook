@@ -2554,7 +2554,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                     font-size: 22px !important;
                     width: 60px !important;
-                    height: 100vh !important;
+                    height: 100% !important;
                     margin: 0 !important;
                     padding: 0 !important;
                 }
@@ -2749,7 +2749,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_tts_rating {
                     overflow: hidden !important;
                 }
-                #gr_row_voice_player {
+                #gr_row_voice_player, #gr_group_custom_model {
                     height: 60px !important;
                 }  
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
