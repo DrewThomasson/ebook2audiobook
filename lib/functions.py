@@ -4158,7 +4158,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_custom_model_file.upload(
                 fn=lambda: gr.update(interactive=False),
-                inputs=None,
+                inputs=[gr_tts_engine_list],
                 outputs=[gr_tts_engine_list]
             ).then(
                 fn=change_gr_custom_model_file,
@@ -4167,7 +4167,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=gr_custom_model_list
             ).then(
                 fn=lambda: (gr.update(value=None), gr.update(interactive=True)),
-                inputs=None,
+                inputs=[gr_tts_engine_list],
                 outputs=[gr_custom_model_file, gr_tts_engine_list]
             )
             gr_custom_model_list.change(
