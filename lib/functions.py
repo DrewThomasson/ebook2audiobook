@@ -292,16 +292,14 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         print(error)
     return False
 
-def extract_custom_model(file_src:str, id, required_files:list|None)->str|None:
+def extract_custom_model(file_src:str, id, required_files:list)->str|None:
     print('------ extract_custom_model called -------')
+    session = context.get_session(id)
+    model_path = None
+    model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
+    model_name = get_sanitized(model_name)
+    print(f'------ model_name: {model_name} -------')
     try:
-        session = context.get_session(id)
-        model_path = None
-        if required_files is None:
-            required_files = models[session['tts_engine']][default_fine_tuned]['files']
-        model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
-        model_name = get_sanitized(model_name)
-        print(f'------ model_name: {model_name} -------')
         with zipfile.ZipFile(file_src, 'r') as zip_ref:
             files = zip_ref.namelist()
             files_length = len(files)
@@ -2177,7 +2175,7 @@ def convert_ebook(args:dict)->tuple:
                         src_name = src_path.stem
                         if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
                             if analyze_uploaded_file(session['custom_model'], models[session['tts_engine']]['internal']['files']):
-                                model = extract_custom_model(session['custom_model'], id)
+                                model = extract_custom_model(session['custom_model'], id, models[session['tts_engine']][default_fine_tuned]['files'])
                                 if model is not None:
                                     session['custom_model'] = model
                                 else:
@@ -3652,7 +3650,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.get_session(id)
                         session['tts_engine'] = t
                         if analyze_uploaded_file(f, models[session['tts_engine']]['internal']['files']):
-                            model = extract_custom_model(f, id)
+                            model = extract_custom_model(f, id, models[session['tts_engine']][default_fine_tuned]['files'])
                             if model is not None:
                                 session['custom_model'] = model
                                 msg = f'{os.path.basename(model)} added to the custom models list'
