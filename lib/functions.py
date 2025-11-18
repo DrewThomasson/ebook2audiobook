@@ -317,9 +317,14 @@ def extract_custom_model(file_src:str, id, required_files:list)->str|None:
         if model_path is not None:
             if session['is_gui_process']:
                 os.remove(file_src)
-            msg = f'Extracted files to {model_path}'
+            msg = f'Extracted files to {model_path}. Normalizing ref.wav...'
             print(msg)
-            return model_path
+            voice_ref = os.path.join(model_path, 'ref.wav')
+            voice_output = os.path.join(model_path, f'{model_name}.wav')
+            if normalize_audio(voice_ref, voice_output, default_audio_proc_samplerate, session['is_gui_process']):
+               return model_path
+            error = f'normalize_audio {voice_ref} error'
+            print(error)
         else:
             error = f'An error occured when unzip {file_src}'
     except asyncio.exceptions.CancelledError as e:
