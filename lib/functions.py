@@ -3699,7 +3699,7 @@ def build_interface(args:dict)->gr.Blocks:
                            update_gr_fine_tuned_list(id),
                            gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
                            update_gr_voice_list(id),
-                           gr.update(value=f"My {session['tts_engine']} custom models")
+                           gr.update(value=f"My {session['tts_engine']} Custom Models")
                     )
                 else:
                     if session['tts_engine'] == TTS_ENGINES['BARK']:
