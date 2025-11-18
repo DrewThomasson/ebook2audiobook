@@ -3758,7 +3758,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
                 visible_fine_tuned = True if selected is None else False
                 visible_del_btn = False if selected is None else True
-                return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn))
+                return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn)
             
             def change_gr_output_format_list(val:str, id:str)->None:
                 session = context.get_session(id)
