@@ -3547,6 +3547,12 @@ def build_interface(args:dict)->gr.Blocks:
                             for f in session_voice_dir.rglob(file_pattern)
                             if f.is_file()
                         ]
+                    if session.get('custom_model_dir'):
+                        voice_options.extend(
+                            (f.stem, str(f))
+                            for f in Path(session['custom_model_dir']).rglob('*.wav')
+                            if f.is_file()
+                        )
                     if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                         voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                     else:
