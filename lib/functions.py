@@ -2630,6 +2630,7 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 12px !important;
                     border: none !important;
                     overflow-y: hidden !important;
+                    line-height: 0!important;
                 }
                 .gr-markdown p {
                     margin-top: 8px !important;
