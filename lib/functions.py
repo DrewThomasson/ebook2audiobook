@@ -169,6 +169,7 @@ class SessionContext:
                 "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
                 "final_name": None,
                 "output_format": default_output_format,
+                "output_channel": default_output_channel,
                 "output_split": default_output_split,
                 "output_split_hours": default_output_split_hours,
                 "metadata": {
@@ -1793,6 +1794,11 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     target_rate = '48000'
                     cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
                 cmd += ['-map_metadata', '1'] 
+            if 'output_channel' in session:
+                if session['output_channel'] == 'mono':
+                    cmd += ['-ac', '1']
+                elif session['output_channel'] == 'stereo':
+                    cmd += ['-ac', '2']
             if input_codec == target_codec and input_rate == target_rate:
                 cmd = [
                     shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio,
@@ -2938,7 +2944,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value='Output')
                                     with gr.Row(elem_id='gr_row_output_format'):
                                         gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
-                                        gr_output_channel_list = gr.Dropdown(label='', elem_id='gr_output_channel_list', choices=['mono', 'stereo'], type='value', value=default_output_channel, interactive=True, scale=1)
+                                        gr_output_channel_list = gr.Dropdown(label='Channel', elem_id='gr_output_channel_list', choices=['mono', 'stereo'], type='value', value=default_output_channel, interactive=True, scale=1)
                                         with gr.Group(elem_id='gr_group_output_split'):
                                             gr_output_split = gr.Checkbox(label='Split File', elem_id='gr_output_split', value=default_output_split, interactive=True)
                                             gr_row_output_split_hours = gr.Row(elem_id='gr_row_output_split_hours', visible=False)
@@ -3098,15 +3104,15 @@ def build_interface(args:dict)->gr.Blocks:
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden') 
 
             def disable_components()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(11)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(12)])
                 return outputs
             
             def enable_components(id:str)->tuple:
                 session = context.get_session(id)
                 if session['event'] == 'confirm_blocks':
-                    outputs = tuple([gr.update() for _ in range(11)])
+                    outputs = tuple([gr.update() for _ in range(12)])
                 else:
-                    outputs = tuple([gr.update(interactive=True) for _ in range(11)])
+                    outputs = tuple([gr.update(interactive=True) for _ in range(12)])
                 return outputs
 
             def show_gr_modal(type:str, msg:str)->str:
@@ -3742,7 +3748,10 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(id)
                 session['output_format'] = val
                 return
-                
+            def change_gr_output_channel_list(val:str, id:str)->None:
+                session = context.get_session(id)
+                session['output_channel'] = val
+                return        
             def change_gr_output_split(val:str, id:str)->dict:
                 session = context.get_session(id)
                 session['output_split'] = val
@@ -3796,7 +3805,7 @@ def build_interface(args:dict)->gr.Blocks:
                             show_alert(state)
 
             def submit_convert_btn(
-                    id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, xtts_temperature:float, 
+                    id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
@@ -3817,6 +3826,7 @@ def build_interface(args:dict)->gr.Blocks:
                         "custom_model": custom_model,
                         "fine_tuned": fine_tuned,
                         "output_format": output_format,
+                        "output_channel": output_channel,
                         "xtts_temperature": float(xtts_temperature),
                         "xtts_length_penalty": float(xtts_length_penalty),
                         "xtts_num_beams": int(session['xtts_num_beams']),
@@ -4178,6 +4188,11 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_output_format_list, gr_session],
                 outputs=None
             )
+            gr_output_channel_list.change(
+                fn=change_gr_output_channel_list,
+                inputs=[gr_output_channel_list, gr_session],
+                outputs=None
+            )
             gr_output_split.select(
                 fn=change_gr_output_split,
                 inputs=[gr_output_split, gr_session],
@@ -4364,12 +4379,12 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=disable_components,
                 inputs=None,
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
                 fn=submit_convert_btn,
                 inputs=[
                     gr_session, gr_device, gr_ebook_file, gr_chapters_preview, gr_tts_engine_list, gr_language, gr_voice_list,
-                    gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
+                    gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                     gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                     gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
                 ],
@@ -4377,7 +4392,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
@@ -4410,7 +4425,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=[
                     gr_ebook_file, gr_ebook_mode, gr_chapters_preview, gr_device, gr_language, gr_voice_list,
-                    gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
+                    gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                     gr_output_split, gr_output_split_hours, gr_audiobook_list
                 ]
             ).then(
