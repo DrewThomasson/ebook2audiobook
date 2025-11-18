@@ -303,9 +303,6 @@ def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_file
             files_length = len(files)
             tts_dir = session['tts_engine']
             model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
-            if os.path.exists(model_path):
-                print(f'{model_path} already exists, bypassing files extraction')
-                return model_path
             os.makedirs(model_path, exist_ok=True)
             required_files_lc = set(x.lower() for x in required_files)
             with tqdm(total=files_length, unit='files') as t:
@@ -316,25 +313,24 @@ def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_file
                         with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
                             shutil.copyfileobj(src, dst)
                     t.update(1)
-        if session['is_gui_process']:
-            os.remove(file_src)
         if model_path is not None:
+            if session['is_gui_process']:
+                os.remove(file_src)
             msg = f'Extracted files to {model_path}'
             print(msg)
             return model_path
         else:
             error = f'An error occured when unzip {file_src}'
-            return None
     except asyncio.exceptions.CancelledError as e:
-        DependencyError(e)
-        if session['is_gui_process']:
-            os.remove(file_src)
-        return None       
+        error = f'extract_custom_model asyncio.exceptions.CancelledError: {e}'
+        print(error)     
     except Exception as e:
-        DependencyError(e)
-        if session['is_gui_process']:
+        error = f'extract_custom_model Exception: {e}'
+        print(error)
+    if session['is_gui_process']:
+        if file_src:
             os.remove(file_src)
-        return None
+    return None
         
 def hash_proxy_dict(proxy_dict) -> str:
     try:
@@ -392,8 +388,9 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
                     data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
                 else:
                     raise RuntimeError(f'Failed to download traineddata for {lang} (HTTP {response.status_code})')
-            except Exception as ex:
-                print(f'Automatic download failed: {ex}')
+            except Exception as e:
+                error = f'Automatic download failed: {e}'
+                print(error)
                 raise
         data = data.dropna(subset=['text'])
         lines = []
@@ -3648,7 +3645,6 @@ def build_interface(args:dict)->gr.Blocks:
                             session['tts_engine'] = t
                             required_files = models[session['tts_engine']]['internal']['files']
                             if analyze_uploaded_file(f, required_files):
-                                print('------------ ANALYZING OK -----------')
                                 model = extract_custom_model(f, session)
                                 if model is None:
                                     error = f'Cannot extract custom model zip file {os.path.basename(f)}'
