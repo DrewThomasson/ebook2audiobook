@@ -3574,9 +3574,11 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                         voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                     else:
-                        voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
+                        voice_options = sorted(voice_options, key=lambda x: x[0].lower())       
                     if fine_tuned and fine_tuned != 'internal':
-                        session['voice'] = models[session['tts_engine']][fine_tuned]['voice']
+                        session['voice'] = models[session['tts_engine']][fine_tuned]['voice']                        
+                    elif session['custom_model'] is not None:
+                        session['voice'] = os.path.join(session['custom_model'], f"{os.path.basename(session['custom_model'])}.wav")
                     else:
                         voice_paths = {v[1] for v in voice_options}
                         if models[session['tts_engine']]['internal']['voice'] in voice_paths:
@@ -3764,7 +3766,6 @@ def build_interface(args:dict)->gr.Blocks:
                 session['custom_model'] = selected
                 if selected is not None:
                     session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
-                print(f"path_voice: {session['voice']}")
                 visible_fine_tuned = True if selected is None else False
                 visible_del_btn = False if selected is None else True
                 return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(id)
