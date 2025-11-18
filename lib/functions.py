@@ -3739,11 +3739,13 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(visible=visible), update_gr_voice_list(id, selected)
                 return gr.update(), gr.update()
 
-            def change_gr_custom_model_list(selected:str, id:str)->tuple:
+            def change_gr_custom_model_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
                 session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
-                visible = visible_gr_group_voice_file if session['custom_model'] is None else False
-                return gr.update(visible=not visible), gr.update(visible=visible), gr.update(visible=visible)
+                visible_fine_tuned = True if selected is None else False
+                visible_del_btn = False if selected is None else True
+                visible_voice = visible_gr_group_voice_file if session['custom_model'] is None else False
+                return gr.update(visible=visible), gr.update(visible=visible_del_btn), gr.update(visible=visible_voice)
             
             def change_gr_output_format_list(val:str, id:str)->None:
                 session = context.get_session(id)
