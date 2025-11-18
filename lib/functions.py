@@ -2738,9 +2738,9 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_row_output_split_hours {
                     border-radius: 0 !important;
                 }
-                #gr_progress .progress-bar {
+                /*#gr_progress .progress-bar {
                     background: #ff7b00 !important;
-                }
+                }*/
                 #gr_audiobook_sentence textarea{
                     margin: auto !important;
                     text-align: center !important;
