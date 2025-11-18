@@ -294,50 +294,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
 
 def extract_custom_model(file_src:str, id, required_files:list|None)->str|None:
     print('------ extract_custom_model called -------')
-    try:
-        session = context.get_session(id)
-        model_path = None
-        if required_files is None:
-            required_files = models[session['tts_engine']][default_fine_tuned]['files']
-        model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
-        model_name = get_sanitized(model_name)
-        print(f'------ model_name: {model_name} -------')
-        with zipfile.ZipFile(file_src, 'r') as zip_ref:
-            files = zip_ref.namelist()
-            files_length = len(files)
-            print(f'------ files: {files} -------')
-            tts_dir = session['tts_engine']
-            model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
-            os.makedirs(model_path, exist_ok=True)
-            required_files_lc = set(x.lower() for x in required_files)
-            with tqdm(total=files_length, unit='files') as t:
-                for f in files:
-                    base_f = os.path.basename(f).lower()
-                    if base_f in required_files_lc:
-                        out_path = os.path.join(model_path, base_f)
-                        with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
-                            shutil.copyfileobj(src, dst)
-                    t.update(1)
-        if model_path is not None:
-            if session['is_gui_process']:
-                os.remove(file_src)
-            msg = f'Extracted files to {model_path}'
-            print(msg)
-            return model_path
-        else:
-            error = f'An error occured when unzip {file_src}'
-    except asyncio.exceptions.CancelledError as e:
-        DependencyError(e)
-        error = f'extract_custom_model asyncio.exceptions.CancelledError: {e}'
-        print(error)     
-    except Exception as e:
-        DependencyError(e)
-        error = f'extract_custom_model Exception: {e}'
-        print(error)
-    if session['is_gui_process']:
-        if file_src:
-            os.remove(file_src)
-    return None
+
         
 def hash_proxy_dict(proxy_dict) -> str:
     try:
@@ -3654,9 +3611,7 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['tts_engine'] = t
                             if analyze_uploaded_file(f, models[session['tts_engine']]['internal']['files']):
-                                print('analyze_uploaded_file-----------')
                                 model = extract_custom_model(f, id)
-                                print(f'model---- {model} -------')
                                 if model is not None:
                                     session['custom_model'] = model
                                     msg = f'{os.path.basename(model)} added to the custom models list'
