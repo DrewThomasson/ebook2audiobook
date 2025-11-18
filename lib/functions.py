@@ -2625,8 +2625,9 @@ def build_interface(args:dict)->gr.Blocks:
                     padding: 0 !important;
                     margin: 0 !important;
                     text-align: left !important;
-                    font-size: 8px !important;
+                    font-size: 6px !important;
                     border: none !important;
+                    overflow: hidden !important;
                 }
                 .gr-markdown p {
                     margin-top: 8px !important;
