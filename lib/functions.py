@@ -2916,7 +2916,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Preset Models', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                     gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                                     with gr_group_custom_model:
-                                        gr_custom_model_label = gr.Text(value='My models')
+                                        gr_custom_model_label = gr.Textbox(label='', elem_id='gr_custom_model_label', interactive=False)
                                         gr_custom_model_file = gr.File(label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
                                         gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
                                         with gr_row_custom_model_list:
@@ -3686,7 +3686,8 @@ def build_interface(args:dict)->gr.Blocks:
                            gr.update(visible=visible_custom_model),
                            update_gr_fine_tuned_list(id),
                            gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
-                           update_gr_voice_list(id)
+                           update_gr_voice_list(id),
+                           gr.update(value=f"My {session['tts_engine']} custom models")
                     )
                 else:
                     if session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -3698,7 +3699,8 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=False),
                             update_gr_fine_tuned_list(id),
                             gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
-                            update_gr_voice_list(id)
+                            update_gr_voice_list(id),
+                            gr.update(value='')
                     )
                     
             def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
@@ -4130,7 +4132,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_tts_engine_list.change(
                 fn=change_gr_tts_engine_list,
                 inputs=[gr_tts_engine_list, gr_session],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_voice_list]
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_voice_list, gr_custom_model_label]
             )
             gr_fine_tuned_list.change(
                 fn=change_gr_fine_tuned_list,
