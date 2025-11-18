@@ -3692,11 +3692,12 @@ def build_interface(args:dict)->gr.Blocks:
                             model = extract_custom_model(f, id, models[session['tts_engine']][default_fine_tuned]['files'])
                             if model is not None:
                                 session['custom_model'] = model
+                                session['voice'] = os.path.join(model, f'{model}.wav')
                                 msg = f'{os.path.basename(model)} added to the custom models list'
                                 state['type'] = 'success'
                                 state['msg'] = msg
                                 show_alert(state)
-                                return gr.update(value=None), update_gr_custom_model_list(id)
+                                return gr.update(value=None), update_gr_custom_model_list(id), update_gr_voice_list(id)
                             else:
                                 error = f'Cannot extract custom model zip file {os.path.basename(f)}'
                                 state['type'] = 'warning'
@@ -3706,7 +3707,7 @@ def build_interface(args:dict)->gr.Blocks:
                             state['type'] = 'warning'
                             state['msg'] = error
                     show_alert(state)
-                return gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update()
 
             def change_gr_tts_engine_list(engine:str, id:str)->tuple:
                 session = context.get_session(id)
@@ -4186,7 +4187,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_file.upload(
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
-                outputs=[gr_custom_model_file, gr_custom_model_list],
+                outputs=[gr_custom_model_file, gr_custom_model_list, gr_voice_list],
                 show_progress_on=[gr_custom_model_list]
             )
             gr_custom_model_list.change(
