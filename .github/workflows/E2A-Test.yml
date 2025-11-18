@@ -162,8 +162,7 @@ jobs:
         run: |
           echo "Adding set -e at beginning of ebook2audiobook.sh (for error passing)..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           sed -i.bak '1s;^;set -e\n;' ebook2audiobook.sh && rm -f ebook2audiobook.sh.bak
 
       - name: English TACOTRON2 Custom-Voice headless single test
@@ -171,8 +170,7 @@ jobs:
         run: |
           echo "Running English TACOTRON2 Custom-Voice headless single test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON2
 
       - name: English FAIRSEQ OCR headless single test
@@ -180,8 +178,7 @@ jobs:
         run: |
           echo "Running English FAIRSEQ OCR headless single test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
       - name: Haitian Creole FAIRSEQ OCR headless single test
@@ -189,8 +186,7 @@ jobs:
         run: |
           echo "Running Haitian Creole FAIRSEQ OCR headless single test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless  --language hat --ebook "tools/workflow-testing/odc_test_haitian.pdf" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
 
@@ -199,8 +195,7 @@ jobs:
         run: |
           echo "Running English FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
           
@@ -209,8 +204,7 @@ jobs:
         run: |
           echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/urd-script_davanagari-test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/UnFAIRSEQ
 
       - name: English VITS Custom-Voice headless single test
@@ -219,8 +213,7 @@ jobs:
           echo "Running English VITS Custom-Voice headless single test..."
 
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
 
       - name: English YOURTTS Custom-Voice headless batch test
@@ -228,8 +221,7 @@ jobs:
         run: |
           echo "Running English YOURTTS Custom-Voice headless batch test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
 
 
@@ -238,8 +230,7 @@ jobs:
         run: |
           echo "Running Default XTTSv2 headless Custom-Voice single test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
 
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
@@ -247,8 +238,7 @@ jobs:
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTune
 
       - name: English XTTSv2 headless custom fine-tuned XTTSv2 model single test
@@ -256,8 +246,7 @@ jobs:
         run: |
           echo "English XTTSv2 headless custom fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           [ ! -f BadCartmanSouthPark.zip ] && curl -L "https://huggingface.co/drewThomasson/fineTunedTTSModels/resolve/main/xtts-v2/eng/BadCartmanSouthPark/BadCartmanSouthPark.zip" -o BadCartmanSouthPark.zip || echo "BadCartmanSouthPark.zip already exists"
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --custom_model "BadCartmanSouthPark.zip" --tts_engine XTTSv2 --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTuneCustom
           ls -lhR ./models/__sessions && rm -rf ./models/__sessions
@@ -267,8 +256,7 @@ jobs:
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
+          conda deactivate 2>/dev/null || true
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/BARK 
 
       - name: Upload audiobooks folder artifact
