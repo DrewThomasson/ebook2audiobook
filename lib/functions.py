@@ -3189,7 +3189,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(id)
                     socket_hash = str(req.session_hash)
                     if not session.get(socket_hash):
-                        outputs = tuple([gr.update() for _ in range(14)])
+                        outputs = tuple([gr.update() for _ in range(15)])
                         return outputs
                     ebook_data = None
                     file_count = session['ebook_mode']
@@ -3213,6 +3213,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if prev_cache_dir != current_dir_cache_norm:
                             ebook_data = None
                         session['ebook'] = ebook_data
+                    visible_row_split_hours = True if session['output_split'] else False
                     return (
                         gr.update(value=ebook_data),
                         gr.update(value=session['ebook_mode']),
@@ -3227,12 +3228,13 @@ def build_interface(args:dict)->gr.Blocks:
                         gr.update(value=session['output_channel']),
                         gr.update(value=bool(session['output_split'])),
                         gr.update(value=session['output_split_hours']),
+                        gr.update(visible=visible_row_split_hours),
                         update_gr_audiobook_list(id)
                     )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
                     alert_exception(error, id)
-                    outputs = tuple([gr.update() for _ in range(14)])
+                    outputs = tuple([gr.update() for _ in range(15)])
                     return outputs
 
             def restore_audiobook_player(audiobook:str|None)->tuple:
@@ -4429,7 +4431,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[
                     gr_ebook_file, gr_ebook_mode, gr_chapters_preview, gr_device, gr_language, gr_voice_list,
                     gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                    gr_output_split, gr_output_split_hours, gr_audiobook_list
+                    gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list
                 ]
             ).then(
                 fn=restore_audiobook_player,
