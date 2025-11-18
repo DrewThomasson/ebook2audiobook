@@ -3719,10 +3719,10 @@ def build_interface(args:dict)->gr.Blocks:
                 session['tts_engine'] = engine
                 session['fine_tuned'] = default_fine_tuned
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
+                bark_visible = False
                 if default_voice_path is None:
                     session['voice'] = default_voice_path
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                    bark_visible = False
                     visible_custom_model = True if session['fine_tuned'] == 'internal' else False
                     return (
                         gr.update(value=show_rating(session['tts_engine'])), 
