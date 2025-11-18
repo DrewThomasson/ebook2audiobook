@@ -1,4 +1,4 @@
-name: Mac E2A Test
+name: E2A Test
 
 on:
   workflow_dispatch:
@@ -42,8 +42,12 @@ on:
       - published
 
 jobs:
-  macos-E2A:
-    runs-on: [self-hosted, macos]
+  E2A-test:
+    strategy:
+      matrix:
+        os: [macos, linux]
+    runs-on: [self-hosted, "${{ matrix.os }}"]
+    
 
     steps:
           
@@ -52,7 +56,7 @@ jobs:
         run: |
           echo "Running on:"
           uname -a
-          sw_vers
+          if [[ "$OSTYPE" == "darwin"* ]]; then sw_vers; else cat /etc/os-release; fi
 
       - name: Wipe & Re-Install E2A
         if: ${{ inputs.wipeAndReinstall }}
@@ -160,7 +164,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
+          sed -i.bak '1s;^;set -e\n;' ebook2audiobook.sh && rm -f ebook2audiobook.sh.bak
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
