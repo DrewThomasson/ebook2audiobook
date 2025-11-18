@@ -315,15 +315,15 @@ def extract_custom_model(file_src:str, id, required_files:list)->str|None:
                             shutil.copyfileobj(src, dst)
                     t.update(1)
         if model_path is not None:
-            if session['is_gui_process']:
-                os.remove(file_src)
             msg = f'Extracted files to {model_path}. Normalizing ref.wav...'
             print(msg)
             voice_ref = os.path.join(model_path, 'ref.wav')
             voice_output = os.path.join(model_path, f'{model_name}.wav')
-            if normalize_audio(voice_ref, voice_output, default_audio_proc_samplerate, session['is_gui_process']):
+            extractor = VoiceExtractor(session, voice_ref, voice_output)
+            success, error = extractor.normalize_audio(voice_ref, voice_output, voice_output)
+            if success:
                return model_path
-            error = f'normalize_audio {voice_ref} error'
+            error = f'normalize_audio {voice_ref} error: {error}'
             print(error)
         else:
             error = f'An error occured when unzip {file_src}'
@@ -336,7 +336,7 @@ def extract_custom_model(file_src:str, id, required_files:list)->str|None:
         error = f'extract_custom_model Exception: {e}'
         print(error)
     if session['is_gui_process']:
-        if file_src:
+        if os.path.exists(file_src):
             os.remove(file_src)
     return None
         
@@ -2190,8 +2190,9 @@ def convert_ebook(args:dict)->tuple:
                                     error = f"{model} could not be extracted or mandatory files are missing"
                             else:
                                 error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
-                    if session['voice'] is not None:                  
-                        voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
+                    if session['voice'] is not None:
+                        voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
+                        voice_name = get_sanitized(voice_name)
                         final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
                         if not os.path.exists(final_voice_file):
                             extractor = VoiceExtractor(session, session['voice'], voice_name)

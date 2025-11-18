@@ -27,6 +27,8 @@ class VoiceExtractor:
         self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir,'htdemucs',voice_name)
+        self.proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
+        self.final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
         self.silence_threshold = -60
 
     def _validate_format(self)->tuple[bool,str]:
@@ -214,11 +216,9 @@ class VoiceExtractor:
             print(error)
             return 0
 
-    def _normalize_audio(self)->tuple[bool, str]:
+    def normalize_audio(self, src_file:str=self.voice_track, proc_file:str=self.proc_voice_file, dst_file:str=self.final_voice_file)->tuple[bool, str]:
         error = ''
         try:
-            proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
-            final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
             cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_track]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
@@ -236,28 +236,29 @@ class VoiceExtractor:
                 '-filter_complex', filter_complex,
                 '-map', '[audio]',
                 '-ar', f'{default_audio_proc_samplerate}',
-                '-y', proc_voice_file
+                '-y', proc_file
             ]
             try:
-                proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_track), msg='Normalize')
+                proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(src_file), msg='Normalize')
                 if proc_pipe:
-                    if not os.path.exists(proc_voice_file) or os.path.getsize(proc_voice_file) == 0:
-                        error = f'_normalize_audio() error: {proc_voice_file} was not created or is empty.'
+                    if not os.path.exists(proc_file) or os.path.getsize(proc_file) == 0:
+                        error = f'normalize_audio() error: {proc_file} was not created or is empty.'
                         return False, error
                     else:
-                        os.replace(proc_voice_file, final_voice_file)
-                        shutil.rmtree(self.demucs_dir, ignore_errors = True)
+                        if proc_file != dst_file:
+                            os.replace(proc_file, dst_file)
+                            shutil.rmtree(self.demucs_dir, ignore_errors = True)
                         msg = 'Audio normalization successful!'
                         return True, msg
                 else:
-                    error = f'normalize_audio() error: {final_voice_file}'
+                    error = f'normalize_audio() error: {dst_file}'
                     return False, error
             except subprocess.CalledProcessError as e:
-                error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
+                error = f'normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
         except FileNotFoundError as e:
-            error = '_normalize_audio() FileNotFoundError: {e} Input file or FFmpeg PATH not found!'
+            error = 'normalize_audio() FileNotFoundError: {e} Input file or FFmpeg PATH not found!'
         except Exception as e:
-            error = f'_normalize_audio() error: {e}'
+            error = f'normalize_audio() error: {e}'
         return False, error
 
     def extract_voice(self)->tuple[bool,str|None]:
@@ -282,7 +283,7 @@ class VoiceExtractor:
                             success, msg = self._trim_and_clean(self.silence_threshold)
                             print(msg)
                             if success:
-                                success, msg = self._normalize_audio()
+                                success, msg = self.normalize_audio()
                                 print(msg)
         except Exception as e:
             msg = f'extract_voice() error: {e}'
