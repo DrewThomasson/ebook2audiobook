@@ -2738,9 +2738,9 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_row_output_split_hours {
                     border-radius: 0 !important;
                 }
-                /*#gr_progress .progress-bar {
+                #gr_progress .progress-bar {
                     background: #ff7b00 !important;
-                }*/
+                }
                 #gr_audiobook_sentence textarea{
                     margin: auto !important;
                     text-align: center !important;
@@ -3761,8 +3761,9 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_custom_model_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
-                session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
-                session['voice'] = os.path.join(session['custom_model'], f"{os.path.basename(session['custom_model'])}.wav")
+                session['custom_model'] = selected
+                if selected is not None:
+                    session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
                 visible_fine_tuned = True if selected is None else False
                 visible_del_btn = False if selected is None else True
                 return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(id)
