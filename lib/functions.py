@@ -292,6 +292,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     return False
 
 def extract_custom_model(file_src:str, id, required_files:list|None)->str|None:
+    print('------ extract_custom_model called -------')
     try:
         session = context.get_session(id)
         model_path = None
