@@ -3592,7 +3592,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         session['voice'] = voice_options[0][1]
                         else:
-                            if session['voice'] not in voice_paths:
+                            if session['voice'] not in voice_paths or session['voice'] not in session['custom_model_dir']:
                                 session['voice'] = default_voice_path
                     return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
