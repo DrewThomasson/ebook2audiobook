@@ -3689,30 +3689,35 @@ def build_interface(args:dict)->gr.Blocks:
                 if default_voice_path is None:
                     session['voice'] = default_voice_path
                 bark_visible = False
+                voice_visible = True
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                     visible_custom_model = True if session['fine_tuned'] == 'internal' else False
+                    if session['custom_model'] is not None:
+                        voice_visible = False
                     return (
-                           gr.update(value=show_rating(session['tts_engine'])), 
-                           gr.update(visible=visible_gr_tab_xtts_params),
-                           gr.update(visible=False),
-                           gr.update(visible=visible_custom_model),
-                           update_gr_fine_tuned_list(id),
-                           gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
-                           update_gr_voice_list(id),
-                           gr.update(value=f"My {session['tts_engine']} Custom Models")
+                        gr.update(visible=voice_visible)
+                        gr.update(value=show_rating(session['tts_engine'])), 
+                        gr.update(visible=visible_gr_tab_xtts_params),
+                        gr.update(visible=False),
+                        gr.update(visible=visible_custom_model),
+                        update_gr_fine_tuned_list(id),
+                        gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
+                        update_gr_voice_list(id),
+                        gr.update(value=f"My {session['tts_engine']} Custom Models")
                     )
                 else:
                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                         bark_visible = visible_gr_tab_bark_params
                     return (
-                            gr.update(value=show_rating(session['tts_engine'])),
-                            gr.update(visible=False),
-                            gr.update(visible=bark_visible), 
-                            gr.update(visible=False),
-                            update_gr_fine_tuned_list(id),
-                            gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
-                            update_gr_voice_list(id),
-                            gr.update(value='')
+                        gr.update(visible=voice_visible)
+                        gr.update(value=show_rating(session['tts_engine'])),
+                        gr.update(visible=False),
+                        gr.update(visible=bark_visible), 
+                        gr.update(visible=False),
+                        update_gr_fine_tuned_list(id),
+                        gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
+                        update_gr_voice_list(id),
+                        gr.update(value='')
                     )
                     
             def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
@@ -4144,7 +4149,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_tts_engine_list.change(
                 fn=change_gr_tts_engine_list,
                 inputs=[gr_tts_engine_list, gr_session],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_voice_list, gr_custom_model_label]
+                outputs=[gr_group_voice_file, gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_voice_list, gr_custom_model_label]
             )
             gr_fine_tuned_list.change(
                 fn=change_gr_fine_tuned_list,
