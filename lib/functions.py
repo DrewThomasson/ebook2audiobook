@@ -3523,7 +3523,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['status'] = 'ready'
                 return gr.update(value='', visible=False)
 
-            def update_gr_voice_list(id:str, fine_tuned:str=False)->dict:
+            def update_gr_voice_list(id:str)->dict:
                 try:
                     nonlocal voice_options
                     session = context.get_session(id)
@@ -3727,12 +3727,14 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
                 if selected:
                     session = context.get_session(id)
-                    visible = False
-                    if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                        if selected == 'internal':
-                            visible = visible_gr_group_custom_model
                     session['fine_tuned'] = selected
-                    return gr.update(visible=visible), update_gr_voice_list(id, selected)
+                    visible_custom_model = False
+                    if selected == 'internal':
+                        visible_custom_model = visible_gr_group_custom_model
+                    else:
+                        visible_custom_model = False
+                        session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
+                    return gr.update(visible=visible_custom_model), update_gr_voice_list(id)
                 return gr.update(), gr.update()
 
             def change_gr_custom_model_list(selected:str|None, id:str)->tuple:
