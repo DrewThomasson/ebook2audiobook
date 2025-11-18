@@ -3648,6 +3648,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['tts_engine'] = t
                             required_files = models[session['tts_engine']]['internal']['files']
                             if analyze_uploaded_file(f, required_files):
+                                print('------------ ANALYZING OK -----------')
                                 model = extract_custom_model(f, session)
                                 if model is None:
                                     error = f'Cannot extract custom model zip file {os.path.basename(f)}'
