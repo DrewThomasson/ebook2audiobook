@@ -212,8 +212,9 @@ class JSONDictProxyEncoder(json.JSONEncoder):
             return list(o)
         return super().default(o)
 
-def prepare_dirs(src:str, session:DictProxy[str,Any])->bool:
+def prepare_dirs(src:str, id:str)->bool:
     try:
+        session = context.get_session(id)
         resume = False
         os.makedirs(os.path.join(models_dir,'tts'), exist_ok=True)
         os.makedirs(session['session_dir'], exist_ok=True)
@@ -616,8 +617,9 @@ def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
                 return alt
     return None
 
-def get_cover(epubBook:EpubBook, session:DictProxy[str,Any])->bool|str:
+def get_cover(epubBook:EpubBook, id:str)->bool|str:
     try:
+        session = context.get_session(id)
         if session['cancellation_requested']:
             msg = 'Cancel requested'
             print(msg)
@@ -645,7 +647,7 @@ def get_cover(epubBook:EpubBook, session:DictProxy[str,Any])->bool|str:
         DependencyError(e)
         return False
 
-def get_chapters(epubBook:EpubBook, session:DictProxy[str,Any])->tuple[Any,Any]:
+def get_chapters(epubBook:EpubBook, id:str)->tuple[Any,Any]:
     try:
         msg = r'''
 *******************************************************************************
@@ -658,6 +660,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 *******************************************************************************
         '''
         print(msg)
+        session = context.get_session(id)
         if session['cancellation_requested']:
             msg = 'Cancel requested'
             return msg, None
@@ -1583,7 +1586,7 @@ def convert_chapters2audio(id:str)->bool:
                     if chapter_num <= resume_chapter:
                         msg = f'**Recovering missing file block {chapter_num}'
                         print(msg)
-                    if combine_audio_sentences(chapter_audio_file, int(start), int(end), session):
+                    if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
                         msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
                         print(msg)
                     else:
@@ -1595,8 +1598,9 @@ def convert_chapters2audio(id:str)->bool:
         DependencyError(e)
         return False
 
-def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:DictProxy[str,Any])->bool:
+def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, id:str)->bool:
     try:
+        session = context.get_session(id)
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
         batch_size = 1024
@@ -2037,7 +2041,8 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(TTS_SML['pause'], '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
 
-def delete_unused_tmp_dirs(web_dir:str, days:int, session:DictProxy[str,Any])->None:
+def delete_unused_tmp_dirs(web_dir:str, days:int, id:str)->None:
+    session = context.get_session(id)
     dir_array = [
         tmp_dir,
         web_dir,
@@ -2206,7 +2211,7 @@ def convert_ebook(args:dict)->tuple:
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                         session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
-                        if prepare_dirs(session['ebook'], session):
+                        if prepare_dirs(id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
                             msg_extra = ''
@@ -2281,9 +2286,9 @@ def convert_ebook(args:dict)->tuple:
                                             print(error)
                                             if session['is_gui_process']:
                                                 show_alert({"type": "warning", "msg": error})
-                                        session['cover'] = get_cover(epubBook, session)
+                                        session['cover'] = get_cover(epubBook, id)
                                         if session['cover']:
-                                            session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                            session['toc'], session['chapters'] = get_chapters(epubBook, id)
                                             if session['chapters'] is not None:
                                                 #if session['chapters_preview']:
                                                 #    return 'confirm_blocks', True
@@ -4004,7 +4009,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if is_gui_shared:
                         msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
                         session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
-                        delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session)
+                        delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session['id'])
                     else:
                         msg = f' Note: if no activity is detected after {tmp_expire} days, your session will be cleaned up.'
                         session['audiobooks_dir'] = os.path.join(audiobooks_host_dir, f"web-{session['id']}")
