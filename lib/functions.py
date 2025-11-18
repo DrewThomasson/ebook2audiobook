@@ -3694,7 +3694,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(id)
                 session['tts_engine'] = engine
                 session['fine_tuned'] = default_fine_tuned
-                session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
+                session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice'] if session['custom_model'] is None else os.path.join(session['custom_model'], f"{os.path.basename(session['custom_model'])}.wav")
                 bark_visible = False
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                     visible_custom_model = True if session['fine_tuned'] == 'internal' else False
