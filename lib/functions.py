@@ -2627,7 +2627,7 @@ def build_interface(args:dict)->gr.Blocks:
                     text-align: left !important;
                     font-weight: normal !important;
                     height: auto !important;
-                    font-size: 11px !important;
+                    font-size: 12px !important;
                     border: none !important;
                     overflow-y: hidden !important;
                 }
