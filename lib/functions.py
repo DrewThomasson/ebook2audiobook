@@ -3598,8 +3598,7 @@ def build_interface(args:dict)->gr.Blocks:
                     ]
                     session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
                     model_paths = {v[1] for v in custom_model_options}
-                    visible = visible_gr_group_voice_file if session['custom_model'] is None else False
-                    return gr.update(choices=custom_model_options, value=session['custom_model']), gr.update(visible=visible)
+                    return gr.update(choices=custom_model_options, value=session['custom_model'])
                 except Exception as e:
                     error = f'update_gr_custom_model_list(): {e}!'
                     alert_exception(error, id)
@@ -3691,8 +3690,7 @@ def build_interface(args:dict)->gr.Blocks:
                 voice_visible = visible_gr_group_voice_file
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                     visible_custom_model = True if session['fine_tuned'] == 'internal' else False
-                    if session['custom_model'] is not None:
-                        voice_visible = False
+                        voice_visible = False if session['custom_model'] is not None else voice_visible
                     return (
                         gr.update(visible=voice_visible),
                         gr.update(value=show_rating(session['tts_engine'])), 
