@@ -286,10 +286,10 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         return not missing_files and not required_empty_files
     except zipfile.BadZipFile:
         error = 'The file is not a valid ZIP archive.'
-        raise ValueError(error)
+        print(error)
     except Exception as e:
         error = f'An error occurred: {e}'
-        raise RuntimeError(error)
+        print(error)
     return False
 
 def extract_custom_model(file_src:str, id, required_files:list|None)->str|None:
@@ -3654,16 +3654,18 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['tts_engine'] = t
                             if analyze_uploaded_file(f, models[session['tts_engine']]['internal']['files']):
+                                print('analyze_uploaded_file-----------')
                                 model = extract_custom_model(f, id)
-                                if model is None:
-                                    error = f'Cannot extract custom model zip file {os.path.basename(f)}'
-                                    state['type'] = 'warning'
-                                    state['msg'] = error
-                                else:
+                                print(f'model---- {model} -------')
+                                if model is not None:
                                     session['custom_model'] = model
                                     msg = f'{os.path.basename(model)} added to the custom models list'
                                     state['type'] = 'success'
                                     state['msg'] = msg
+                                else:
+                                    error = f'Cannot extract custom model zip file {os.path.basename(f)}'
+                                    state['type'] = 'warning'
+                                    state['msg'] = error
                             else:
                                 error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                                 state['type'] = 'warning'
