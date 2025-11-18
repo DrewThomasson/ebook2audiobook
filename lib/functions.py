@@ -298,9 +298,11 @@ def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_file
             required_files = models[session['tts_engine']][default_fine_tuned]['files']
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
         model_name = get_sanitized(model_name)
+        print(f'------ model_name: {model_name} -------')
         with zipfile.ZipFile(file_src, 'r') as zip_ref:
             files = zip_ref.namelist()
             files_length = len(files)
+            print(f'------ files: {files} -------')
             tts_dir = session['tts_engine']
             model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
             os.makedirs(model_path, exist_ok=True)
@@ -322,9 +324,11 @@ def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_file
         else:
             error = f'An error occured when unzip {file_src}'
     except asyncio.exceptions.CancelledError as e:
+        DependencyError(e)
         error = f'extract_custom_model asyncio.exceptions.CancelledError: {e}'
         print(error)     
     except Exception as e:
+        DependencyError(e)
         error = f'extract_custom_model Exception: {e}'
         print(error)
     if session['is_gui_process']:
@@ -447,9 +451,9 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
             print('========================')
         return '\n'.join(xhtml_parts)
     except Exception as e:
+        DependencyError(e)
         error = f'ocr2xhtml error: {e}'
         print(error)
-        DependencyError(e)
         return ''
 
 def convert2epub(id:str)-> bool:
@@ -575,19 +579,19 @@ def convert2epub(id:str)-> bool:
         print(result.stdout)
         return True
     except subprocess.CalledProcessError as e:
+        DependencyError(e)
         error = f'convert2epub subprocess.CalledProcessError: {e.stderr}'
         print(error)
-        DependencyError(e)
         return False
     except FileNotFoundError as e:
+        DependencyError(e)
         error = f'convert2epub FileNotFoundError: {e}'
         print(error)
-        DependencyError(e)
         return False
     except Exception as e:
+        DependencyError(e)
         error = f'convert2epub error: {e}'
         print(error)
-        DependencyError(e)
         return False
 
 def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
