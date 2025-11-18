@@ -3690,11 +3690,10 @@ def build_interface(args:dict)->gr.Blocks:
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
                 if default_voice_path is None:
                     session['voice'] = default_voice_path
-                bark_visible = False
-                voice_visible = visible_gr_group_voice_file
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                    bark_visible = False
                     visible_custom_model = True if session['fine_tuned'] == 'internal' else False
-                    voice_visible = False if session['custom_model'] is not None else voice_visible
+                    voice_visible = False if session['custom_model'] is not None else visible_gr_group_voice_file
                     return (
                         gr.update(visible=voice_visible),
                         gr.update(value=show_rating(session['tts_engine'])), 
@@ -3707,6 +3706,7 @@ def build_interface(args:dict)->gr.Blocks:
                         gr.update(value=f"My {session['tts_engine']} Custom Models")
                     )
                 else:
+                    voice_visible = visible_gr_group_voice_file
                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                         bark_visible = visible_gr_tab_bark_params
                     return (
@@ -3736,7 +3736,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(id)
                 session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
                 visible = visible_gr_group_voice_file if session['custom_model'] is None else False
-                return gr.update(visible=not visible), gr.update(visible=visible), gr.update(visible=not visible)
+                return gr.update(visible=not visible), gr.update(visible=visible), gr.update(visible=visible)
             
             def change_gr_output_format_list(val:str, id:str)->None:
                 session = context.get_session(id)
