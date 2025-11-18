@@ -4145,10 +4145,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
                 outputs=[gr_custom_model_file, gr_custom_model_list, gr_row_voice_player],
-            ).then(
-                fn=lambda: gr.update(value=None),
-                inputs=None,
-                outputs=[gr_custom_model_file]
             )
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
