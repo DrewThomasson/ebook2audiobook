@@ -254,12 +254,12 @@ else
 		for program in "${programs_missing[@]}"; do
 			if [ "$program" = "calibre" ]; then				
 				# avoid conflict with calibre builtin lxml
-				#pip uninstall lxml -y 2>/dev/null
+				pip uninstall lxml -y 2>/dev/null
 				echo -e "\e[33mInstalling Calibre...\e[0m"
 				if [[ "$OSTYPE" = "darwin"* ]]; then
 					eval "$PACK_MGR --cask calibre"
 				else
-					$WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | $SUDO sh /dev/stdin
+					sudo -v && $WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
 				fi
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"

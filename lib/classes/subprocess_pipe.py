@@ -26,7 +26,7 @@ class SubprocessPipe:
             self.progress_bar(1.0, desc=msg)
 
     def _on_error(self, err:Exception)->None:
-        error = f"\n{self.msg} {err}: 0%"
+        error = f"\n{self.msg} error: {err}"
         print(error)
         if self.is_gui_process:
             self.progress_bar(0.0, desc=error)
