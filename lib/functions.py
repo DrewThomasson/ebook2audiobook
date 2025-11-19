@@ -5,13 +5,17 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
-import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn
+from __future__ import annotations
+
+import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
+import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
+import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, fitz
+import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
-from PIL import Image
+from PIL import Image, ImageSequence
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import Counter
@@ -19,14 +23,18 @@ from collections.abc import Mapping
 from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
+from ebooklib.epub import EpubBook
+from ebooklib.epub import EpubHtml
 from glob import glob
-from iso639 import languages
+from iso639 import Lang
 from markdown import markdown
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
+from stanza.pipeline.core import Pipeline
 from num2words import num2words
 from pathlib import Path
+from PIL import Image
 from pydub import AudioSegment
 from pydub.utils import mediainfo
 from queue import Queue, Empty
@@ -35,14 +43,12 @@ from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
 
 from lib import *
+from lib.classes.subprocess_pipe import SubprocessPipe
+from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
-
-context = None
-is_gui_process = False
-active_sessions = set()
 
 #import logging
 #logging.basicConfig(
@@ -50,28 +56,31 @@ active_sessions = set()
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
+warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
+
+context = None
+context_tracker = None
+active_sessions = None
+
 class DependencyError(Exception):
-    def __init__(self, message=None):
+    def __init__(self, message:str|None):
         super().__init__(message)
         print(message)
         # Automatically handle the exception when it's raised
         self.handle_exception()
 
-    def handle_exception(self):
+    def handle_exception(self)->None:
         # Print the full traceback of the exception
         traceback.print_exc()      
         # Print the exception message
         error = f'Caught DependencyError: {self}'
-        print(error)    
-        # Exit the script if it's not a web process
-        if not is_gui_process:
-            sys.exit(1)
+        print(error)
 
 class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
 
-    def start_session(self, id):
+    def start_session(self, id:str)->bool:
         with self.lock:
             session = context.get_session(id)
             if session['status'] is None:
@@ -79,33 +88,56 @@ class SessionTracker:
                 return True
         return False
 
-    def end_session(self, id, socket_hash):
+    def end_session(self, id:str, socket_hash:str)->None:
         active_sessions.discard(socket_hash)
         with self.lock:
-            session = context.get_session(id)
-            session['cancellation_requested'] = True
-            session['tab_id'] = None
-            session['status'] = None
-            session[socket_hash] = None
+            context.sessions.pop(id, None)
 
 class SessionContext:
     def __init__(self):
-        self.manager = Manager()
-        self.sessions = self.manager.dict()
+        self.manager:Manager = Manager()
+        self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
         self.cancellation_events = {}
+        
+    def _recursive_proxy(self, data:Any, manager:Manager|None)->Any:
+        if manager is None:
+            manager = Manager()
+        if isinstance(data, dict):
+            proxy_dict = manager.dict()
+            for key, value in data.items():
+                proxy_dict[key] = self._recursive_proxy(value, manager)
+            return proxy_dict
+        elif isinstance(data, list):
+            proxy_list = manager.list()
+            for item in data:
+                proxy_list.append(self._recursive_proxy(item, manager))
+            return proxy_list
+        elif isinstance(data, (str, int, float, bool, type(None))):
+            return data
+        else:
+            error = f'Unsupported data type: {type(data)}'
+            print(error)
+            return None
 
-    def get_session(self, id):
+    def get_session(self, id:str)->str:
         if id not in self.sessions:
-            self.sessions[id] = recursive_proxy({
+            self.sessions[id] = self._recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
                 "tab_id": None,
+                "is_gui_process": False,
+                "free_vram_gb": 0,
                 "process_id": None,
                 "status": None,
                 "event": None,
                 "progress": 0,
                 "cancellation_requested": False,
                 "device": default_device,
+                "tts_engine": default_tts_engine,
+                "fine_tuned": default_fine_tuned,
+                "model_cache": None,
+                "model_zs_cache": None,
+                "stanza_cache": None,
                 "system": None,
                 "client": None,
                 "language": default_language_code,
@@ -116,26 +148,25 @@ class SessionContext:
                 "ebook": None,
                 "ebook_list": None,
                 "ebook_mode": "single",
+                "chapters_preview": default_chapters_preview,
                 "chapters_dir": None,
                 "chapters_dir_sentences": None,
                 "epub_path": None,
                 "filename_noext": None,
-                "tts_engine": default_tts_engine,
-                "fine_tuned": default_fine_tuned,
                 "voice": None,
                 "voice_dir": None,
                 "custom_model": None,
                 "custom_model_dir": None,
-                "temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
-                "length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
-                "num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
-                "repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
-                "top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
-                "top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'],
-                "speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
-                "enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
-                "text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
-                "waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
+                "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
+                "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
+                "xtts_num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
+                "xtts_repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
+                "xtts_top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
+                "xtts_top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'],
+                "xtts_speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
+                "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+                "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
+                "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
                 "final_name": None,
                 "output_format": default_output_format,
                 "output_split": default_output_split,
@@ -162,39 +193,26 @@ class SessionContext:
                 "chapters": None,
                 "cover": None,
                 "duration": 0,
-                "playback_time": 0
+                "playback_time": 0,
+                "playback_volume": 0
             }, manager=self.manager)
         return self.sessions[id]
 
-    def find_id_by_hash(self, socket_hash):
+    def find_id_by_hash(self, socket_hash:str)->str|None:
         for id, session in self.sessions.items():
             if socket_hash in session:
-                return session.get('id')
+                return session['id']
         return None
 
-ctx_tracker = SessionTracker()
+class JSONDictProxyEncoder(json.JSONEncoder):
+    def default(self, o:Any)->Any:
+        if isinstance(o, DictProxy):
+            return dict(o)
+        elif isinstance(o, ListProxy):
+            return list(o)
+        return super().default(o)
 
-def recursive_proxy(data, manager=None):
-    if manager is None:
-        manager = Manager()
-    if isinstance(data, dict):
-        proxy_dict = manager.dict()
-        for key, value in data.items():
-            proxy_dict[key] = recursive_proxy(value, manager)
-        return proxy_dict
-    elif isinstance(data, list):
-        proxy_list = manager.list()
-        for item in data:
-            proxy_list.append(recursive_proxy(item, manager))
-        return proxy_list
-    elif isinstance(data, (str, int, float, bool, type(None))):
-        return data
-    else:
-        error = f"Unsupported data type: {type(data)}"
-        print(error)
-        return
-
-def prepare_dirs(src, session):
+def prepare_dirs(src:str, session:DictProxy[str,Any])->bool:
     try:
         resume = False
         os.makedirs(os.path.join(models_dir,'tts'), exist_ok=True)
@@ -217,7 +235,7 @@ def prepare_dirs(src, session):
         DependencyError(e)
         return False
 
-def check_programs(prog_name, command, options):
+def check_programs(prog_name:str, command:str, options:str)->bool:
     try:
         subprocess.run(
             [command, options],
@@ -227,21 +245,21 @@ def check_programs(prog_name, command, options):
             text=True,
             encoding='utf-8'
         )
-        return True, None
+        return True
     except FileNotFoundError:
         e = f'''********** Error: {prog_name} is not installed! if your OS calibre package version 
         is not compatible you still can run ebook2audiobook.sh (linux/mac) or ebook2audiobook.cmd (windows) **********'''
         DependencyError(e)
-        return False, None
+        return False
     except subprocess.CalledProcessError:
         e = f'Error: There was an issue running {prog_name}.'
         DependencyError(e)
-        return False, None
+        return False
 
-def analyze_uploaded_file(zip_path, required_files):
+def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     try:
         if not os.path.exists(zip_path):
-            error = f"The file does not exist: {os.path.basename(zip_path)}"
+            error = f'The file does not exist: {os.path.basename(zip_path)}'
             print(error)
             return False
         files_in_zip = {}
@@ -259,18 +277,21 @@ def analyze_uploaded_file(zip_path, required_files):
         missing_files = [f for f in required_files if f not in files_in_zip]
         required_empty_files = [f for f in required_files if f in empty_files]
         if missing_files:
-            print(f"Missing required files: {missing_files}")
+            msg = f'Missing required files: {missing_files}'
+            print(msg)
         if required_empty_files:
-            print(f"Required files with 0 KB: {required_empty_files}")
+            msg = f'Required files with 0 KB: {required_empty_files}'
+            print(msg)
         return not missing_files and not required_empty_files
     except zipfile.BadZipFile:
-        error = "The file is not a valid ZIP archive."
+        error = 'The file is not a valid ZIP archive.'
         raise ValueError(error)
     except Exception as e:
-        error = f"An error occurred: {e}"
+        error = f'An error occurred: {e}'
         raise RuntimeError(error)
+    return False
 
-def extract_custom_model(file_src, session, required_files=None):
+def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_files:list|None)->str|None:
     try:
         model_path = None
         if required_files is None:
@@ -295,7 +316,7 @@ def extract_custom_model(file_src, session, required_files=None):
                         with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
                             shutil.copyfileobj(src, dst)
                     t.update(1)
-        if is_gui_process:
+        if session['is_gui_process']:
             os.remove(file_src)
         if model_path is not None:
             msg = f'Extracted files to {model_path}'
@@ -306,17 +327,22 @@ def extract_custom_model(file_src, session, required_files=None):
             return None
     except asyncio.exceptions.CancelledError as e:
         DependencyError(e)
-        if is_gui_process:
+        if session['is_gui_process']:
             os.remove(file_src)
         return None       
     except Exception as e:
         DependencyError(e)
-        if is_gui_process:
+        if session['is_gui_process']:
             os.remove(file_src)
         return None
         
-def hash_proxy_dict(proxy_dict):
-    return hashlib.md5(str(proxy_dict).encode('utf-8')).hexdigest()
+def hash_proxy_dict(proxy_dict) -> str:
+    try:
+        data = dict(proxy_dict)
+    except Exception:
+        data = {}
+    data_str = json.dumps(data, sort_keys=True, default=str)
+    return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
 def calculate_hash(filepath, hash_algorithm='sha256'):
     hash_func = hashlib.new(hash_algorithm)
@@ -346,46 +372,106 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def proxy2dict(proxy_obj):
-    def recursive_copy(source, visited):
-        # Handle circular references by tracking visited objects
-        if id(source) in visited:
-            return None  # Stop processing circular references
-        visited.add(id(source))  # Mark as visited
-        if isinstance(source, dict):
-            result = {}
-            for key, value in source.items():
-                result[key] = recursive_copy(value, visited)
-            return result
-        elif isinstance(source, list):
-            return [recursive_copy(item, visited) for item in source]
-        elif isinstance(source, set):
-            return list(source)
-        elif isinstance(source, (int, float, str, bool, type(None))):
-            return source
-        elif isinstance(source, DictProxy):
-            # Explicitly handle DictProxy objects
-            return recursive_copy(dict(source), visited)  # Convert DictProxy to dict
-        else:
-            return str(source)  # Convert non-serializable types to strings
-    return recursive_copy(proxy_obj, set())
+def ocr2xhtml(img: Image.Image, lang: str) -> str:
+    try:
+        debug = True
+        try:
+            data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
+        except Exception as e:
+            print(f'The OCR {lang} trained model must be downloaded.')
+            try:
+                tessdata_dir = os.environ['TESSDATA_PREFIX']
+                url = f'https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata'
+                dest_path = os.path.join(tessdata_dir, f'{lang}.traineddata')
+                print(f'Downloading {lang}.traineddata into {tessdata_dir}...')
+                response = requests.get(url, timeout=15)
+                if response.status_code == 200:
+                    with open(dest_path, 'wb') as f:
+                        f.write(response.content)
+                    print(f'Downloaded and installed {lang}.traineddata successfully.')
+                    data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
+                else:
+                    raise RuntimeError(f'Failed to download traineddata for {lang} (HTTP {response.status_code})')
+            except Exception as ex:
+                print(f'Automatic download failed: {ex}')
+                raise
+        data = data.dropna(subset=['text'])
+        lines = []
+        last_block = None
+        for _, row in data.iterrows():
+            text = row['text'].strip()
+            if not text:
+                continue
+            block = row['block_num']
+            if last_block is not None and block != last_block:
+                lines.append('')  # blank line between blocks
+            lines.append(text)
+            last_block = block
+        joined = '\n'.join(lines)
+        raw_lines = [l.strip() for l in joined.split('\n')]
+        # Normalize line breaks
+        merged_lines = []
+        buffer = ''
+        for i, line in enumerate(raw_lines):
+            if not line:
+                if buffer:
+                    merged_lines.append(buffer.strip())
+                    buffer = ''
+                continue
+            if buffer and not buffer.endswith(('.', '?', '!', ':')) and not line[0].isupper():
+                buffer += ' ' + line
+            else:
+                if buffer:
+                    merged_lines.append(buffer.strip())
+                buffer = line
+        if buffer:
+            merged_lines.append(buffer.strip())
+        # Detect heading-like lines
+        xhtml_parts = []
+        debug_dump = []
+        for i, p in enumerate(merged_lines):
+            is_heading = False
+            if p.isupper() and len(p.split()) <= 8:
+                is_heading = True
+            elif len(p.split()) <= 5 and p.istitle():
+                is_heading = True
+            elif (i == 0 or (i > 0 and merged_lines[i-1] == '')) and len(p.split()) <= 10:
+                is_heading = True
+            if is_heading:
+                xhtml_parts.append(f'<h2>{p}</h2>')
+                debug_dump.append(f'[H2] {p}')
+            else:
+                xhtml_parts.append(f'<p>{p}</p>')
+                debug_dump.append(f'[P ] {p}')
+        if debug:
+            print('=== OCR DEBUG OUTPUT ===')
+            for line in debug_dump:
+                print(line)
+            print('========================')
+        return '\n'.join(xhtml_parts)
+    except Exception as e:
+        error = f'ocr2xhtml error: {e}'
+        print(error)
+        DependencyError(e)
+        return ''
 
-def convert2epub(id):
+def convert2epub(id:str)-> bool:
     session = context.get_session(id)
     if session['cancellation_requested']:
-        print('Cancel requested')
+        msg = 'Cancel requested'
+        print(msg)
         return False
     try:
         title = False
         author = False
         util_app = shutil.which('ebook-convert')
         if not util_app:
-            error = "The 'ebook-convert' utility is not installed or not found."
+            error = 'ebook-convert utility is not installed or not found.'
             print(error)
             return False
         file_input = session['ebook']
         if os.path.getsize(file_input) == 0:
-            error = f"Input file is empty: {file_input}"
+            error = f'Input file is empty: {file_input}'
             print(error)
             return False
         file_ext = os.path.splitext(file_input)[1].lower()
@@ -394,22 +480,74 @@ def convert2epub(id):
             print(error)
             return False
         if file_ext == '.pdf':
-            import fitz
-            msg = 'File input is a PDF. flatten it in MarkDown...'
+            msg = 'File input is a PDF. flatten it in XHTML...'
             print(msg)
-            doc = fitz.open(session['ebook'])
+            doc = fitz.open(file_input)
             pdf_metadata = doc.metadata
             filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
             title = pdf_metadata.get('title') or filename_no_ext
             author = pdf_metadata.get('author') or False
-            markdown_text = pymupdf4llm.to_markdown(session['ebook'])
-            # Remove single asterisks for italics (but not bold **)
-            markdown_text = re.sub(r'(?<!\*)\*(?!\*)(.*?)\*(?!\*)', r'\1', markdown_text)
-            # Remove single underscores for italics (but not bold __)
-            markdown_text = re.sub(r'(?<!_)_(?!_)(.*?)_(?!_)', r'\1', markdown_text)
-            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
-            with open(file_input, "w", encoding="utf-8") as html_file:
-                html_file.write(markdown_text)
+            xhtml_pages = []
+            for i, page in enumerate(doc):
+                try:
+                    text = page.get_text('xhtml').strip()
+                except Exception as e:
+                    print(f'Error extracting text from page {i+1}: {e}')
+                    text = ''
+                if not text:
+                    msg = f'The page {i+1} seems to be image-based. Using OCR...'
+                    print(msg)
+                    if session['is_gui_process']:
+                        show_alert({"type": "warning", "msg": msg})
+                    pix = page.get_pixmap(dpi=300)
+                    img = Image.open(io.BytesIO(pix.tobytes('png')))
+                    xhtml_content = ocr2xhtml(img, session['language'])
+                else:
+                    xhtml_content = text
+                xhtml_pages.append(xhtml_content)
+            xhtml_body = '\n'.join(xhtml_pages)
+            xhtml_text = (
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                '<head>\n'
+                f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                '</head>\n'
+                '<body>\n'
+                f'{xhtml_body}\n'
+                '</body>\n'
+                '</html>\n'
+            )
+            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+            with open(file_input, 'w', encoding='utf-8') as html_file:
+                html_file.write(xhtml_text)
+        elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
+            filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
+            msg = f'File input is an image ({file_ext}). Running OCR...'
+            print(msg)
+            img = Image.open(file_input)
+            xhtml_pages = []
+            page_count = 0
+            for i, frame in enumerate(ImageSequence.Iterator(img)):
+                page_count += 1
+                frame = frame.convert('RGB')
+                xhtml_content = ocr2xhtml(frame, session['language'])
+                xhtml_pages.append(xhtml_content)
+            xhtml_body = '\n'.join(xhtml_pages)
+            xhtml_text = (
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                '<head>\n'
+                f'<meta charset="utf-8"/>\n<title>{filename_no_ext}</title>\n'
+                '</head>\n'
+                '<body>\n'
+                f'{xhtml_body}\n'
+                '</body>\n'
+                '</html>\n'
+            )
+            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+            with open(file_input, 'w', encoding='utf-8') as html_file:
+                html_file.write(xhtml_text)
+            print(f'OCR completed for {page_count} image page(s).')
         msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
         print(msg)
         cmd = [
@@ -419,7 +557,8 @@ def convert2epub(id):
                 '--epub-version=3',
                 '--flow-size=0',
                 '--chapter-mark=pagebreak',
-                '--page-breaks-before', "//*[name()='h1' or name()='h2' or name()='h3' or name()='h4' or name()='h5']",
+                '--page-breaks-before',
+                "//*[name()='h1' or name()='h2' or name()='h3' or name()='h4' or name()='h5']",
                 '--disable-font-rescaling',
                 '--pretty-print',
                 '--smarten-punctuation',
@@ -439,35 +578,42 @@ def convert2epub(id):
         print(result.stdout)
         return True
     except subprocess.CalledProcessError as e:
-        print(f"Subprocess error: {e.stderr}")
+        error = f'convert2epub subprocess.CalledProcessError: {e.stderr}'
+        print(error)
         DependencyError(e)
         return False
     except FileNotFoundError as e:
-        print(f"Utility not found: {e}")
+        error = f'convert2epub FileNotFoundError: {e}'
+        print(error)
+        DependencyError(e)
+        return False
+    except Exception as e:
+        error = f'convert2epub error: {e}'
+        print(error)
         DependencyError(e)
         return False
 
-def get_ebook_title(epubBook, all_docs):
+def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
     # 1. Try metadata (official EPUB title)
-    meta_title = epubBook.get_metadata("DC", "title")
+    meta_title = epubBook.get_metadata('DC','title')
     if meta_title and meta_title[0][0].strip():
         return meta_title[0][0].strip()
     # 2. Try <title> in the head of the first XHTML document
     if all_docs:
-        html = all_docs[0].get_content().decode("utf-8")
-        soup = BeautifulSoup(html, "html.parser")
-        title_tag = soup.select_one("head > title")
+        html = all_docs[0].get_content().decode('utf-8')
+        soup = BeautifulSoup(html,'html.parser')
+        title_tag = soup.select_one('head > title')
         if title_tag and title_tag.text.strip():
             return title_tag.text.strip()
-        # 3. Try <img alt="..."> if no visible <title>
-        img = soup.find("img", alt=True)
+        # 3. Try <img alt = '...'> if no visible <title>
+        img = soup.find('img',alt = True)
         if img:
             alt = img['alt'].strip()
-            if alt and "cover" not in alt.lower():
+            if alt and 'cover' not in alt.lower():
                 return alt
     return None
 
-def get_cover(epubBook, session):
+def get_cover(epubBook:EpubBook, session:DictProxy[str,Any])->bool|str:
     try:
         if session['cancellation_requested']:
             msg = 'Cancel requested'
@@ -489,14 +635,14 @@ def get_cover(epubBook, session):
             # Convert to RGB if needed (JPEG doesn't support alpha)
             if image.mode in ('RGBA', 'P'):
                 image = image.convert('RGB')
-            image.save(cover_path, format='JPEG')
+            image.save(cover_path, format = 'JPEG')
             return cover_path
         return True
     except Exception as e:
         DependencyError(e)
         return False
 
-def get_chapters(epubBook, session):
+def get_chapters(epubBook:EpubBook, session:DictProxy[str,Any])->tuple[Any,Any]:
     try:
         msg = r'''
 *******************************************************************************
@@ -510,11 +656,11 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         '''
         print(msg)
         if session['cancellation_requested']:
-            print('Cancel requested')
-            return False
+            msg = 'Cancel requested'
+            return msg, None
         # Step 1: Extract TOC (Table of Contents)
         try:
-            toc = epubBook.toc  # Extract TOC
+            toc = epubBook.toc
             toc_list = [
                     nt for item in toc if hasattr(item, 'title')
                     if (nt := normalize_text(
@@ -525,8 +671,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 )) is not None
             ]
         except Exception as toc_error:
-            error = f"Error extracting TOC: {toc_error}"
-            print(error)
+            error = f'Error extracting Table of Content: {toc_error}'
+            show_alert({"type": "warning", "msg": error})
         # Get spine item IDs
         spine_ids = [item[0] for item in epubBook.spine]
         # Filter only spine documents (i.e., reading order)
@@ -535,13 +681,33 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             if item.id in spine_ids
         ]
         if not all_docs:
-            return [], []
+            error = 'No document body found!'
+            return error, None
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
         stanza_nlp = False
         if session['language'] in year_to_decades_languages:
-            stanza.download(session['language_iso1'])
-            stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
+            try:
+                stanza_model = f"stanza-{session['language_iso1']}"
+                stanza_nlp = loaded_tts.get(stanza_model, False)
+                if stanza_nlp:
+                    msg = f"NLP model {stanza_model} loaded!"
+                    print(msg)
+                else:
+                    use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
+                    stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
+                    stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method="reuse_resources")
+                    if stanza_nlp:
+                        session['stanza_cache'] = stanza_model
+                        loaded_tts[stanza_model] = stanza_nlp
+                        msg = f"NLP model {stanza_model} loaded!"
+                        print(msg)
+            except (ConnectionError, TimeoutError) as e:
+                error = f'Stanza model download connection error: {e}. Retry later'
+                return error, None
+            except Exception as e:
+                error = f'Stanza model initialization error: {e}'
+                return error, None
         is_num2words_compat = get_num2words_compat(session['language_iso1'])
         msg = 'Analyzing numbers, maths signs, dates and time to convert in words...'
         print(msg)
@@ -552,17 +718,16 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             elif len(sentences_list) > 0:
                 chapters.append(sentences_list)
         if len(chapters) == 0:
-            error = 'No chapters found!'
-            return None, None
-        return toc, chapters
+            error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
+            return error, None
+        return toc_list, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
-        return None, None
+        return error, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
-
-    def tuple_row(node, last_text_char=None):
+def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
+    def tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             for child in node.children:
                 if isinstance(child, NavigableString):
@@ -570,7 +735,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     if text:
                         yield ("text", text)
                         last_text_char = text[-1] if text else last_text_char
-
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
@@ -581,7 +745,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
 
                     elif name == "table":
                         yield ("table", child)
-
                     else:
                         return_data = False
                         if name in proc_tags:
@@ -591,7 +754,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 # Track last char if this is text or heading
                                 if inner[0] in ("text", "heading") and inner[1]:
                                     last_text_char = inner[1][-1]
-
                             if return_data:
                                 if name in break_tags:
                                     # Only yield break if last char is NOT alnum or space
@@ -599,10 +761,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                         yield ("break", TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
                                     yield ("pause", TTS_SML['pause'])
-
                         else:
                             yield from tuple_row(child, last_text_char)
-
         except Exception as e:
             error = f'filter_chapter() tuple_row() error: {e}'
             DependencyError(error)
@@ -613,7 +773,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         break_tags = ['br', 'p']
         pause_tags = ['div', 'span']
         proc_tags = heading_tags + break_tags + pause_tags
-        raw_html = doc.get_body_content().decode("utf-8")
+        doc_body = doc.get_body_content()
+        raw_html = doc_body.decode("utf-8") if isinstance(doc_body, bytes) else doc_body
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
         if not body or not body.get_text(strip=True):
@@ -783,10 +944,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
-        # Ensure space before and after punctuation_list
-        #pattern_space = re.escape(''.join(punctuation_list))
-        #punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
-        #text = re.sub(punctuation_pattern_space, r' \1', text)
         sentences = get_sentences(text, lang, tts_engine)
         if len(sentences) == 0:
             error = 'No sentences found!'
@@ -798,9 +955,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         DependencyError(error)
         return None
 
-def get_sentences(text, lang, tts_engine):
-
-    def split_inclusive(text, pattern):
+def get_sentences(text:str, lang:str, tts_engine:str)->list|None:
+    def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
         last_end = 0
         for match in pattern.finditer(text):
@@ -812,7 +968,7 @@ def get_sentences(text, lang, tts_engine):
                 result.append(tail)
         return result
 
-    def segment_ideogramms(text):
+    def segment_ideogramms(text:str)->list[str]:
         sml_pattern = "|".join(re.escape(token) for token in sml_tokens)
         segments = re.split(f"({sml_pattern})", text)
         result = []
@@ -820,12 +976,15 @@ def get_sentences(text, lang, tts_engine):
             for segment in segments:
                 if not segment:
                     continue
-                # If the segment is a SML token, keep as its own
                 if re.fullmatch(sml_pattern, segment):
                     result.append(segment)
                 else:
-                    if lang == 'zho':
+                    if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
+                        import pycantonese as pc
+                        result.extend([t for t in pc.segment(segment) if t.strip()])
+                    elif lang == 'zho':
                         import jieba
+                        jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
                         result.extend([t for t in jieba.cut(segment) if t.strip()])
                     elif lang == 'jpn':
                         sudachi = dictionary.Dictionary().create()
@@ -834,16 +993,16 @@ def get_sentences(text, lang, tts_engine):
                     elif lang == 'kor':
                         ltokenizer = LTokenizer()
                         result.extend([t for t in ltokenizer.tokenize(segment) if t.strip()])
-                    elif lang in ['tha', 'lao', 'mya', 'khm']:
+                    elif lang in ['tha','lao','mya','khm']:
                         result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
                     else:
                         result.append(segment.strip())
             return result
         except Exception as e:
             DependencyError(e)
-            return [text]   
+            return [text] 
 
-    def join_ideogramms(idg_list):
+    def join_ideogramms(idg_list:list[str])->str:
         try:
             buffer = ''
             for token in idg_list:
@@ -887,7 +1046,7 @@ def get_sentences(text, lang, tts_engine):
                     for text_part in parts:
                         text_part = text_part.strip()
                         if text_part:
-                            hard_list.append(text_part)
+                            hard_list.append(f' {text_part}')
                 else:
                     s = s.strip()
                     if s:
@@ -937,7 +1096,7 @@ def get_sentences(text, lang, tts_engine):
                 cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                 if any(ch.isalnum() for ch in cleaned):
                     soft_list.append(s.strip())
-
+        soft_list = [s for s in soft_list if any(ch.isalnum() for ch in re.sub(r'[^\p{L}\p{N} ]+', '', s))]
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
@@ -978,73 +1137,8 @@ def get_sentences(text, lang, tts_engine):
         error = f'get_sentences() error: {e}'
         print(error)
         return None
-        
-def get_ram():
-    vm = psutil.virtual_memory()
-    return vm.total // (1024 ** 3)
 
-def get_vram():
-    os_name = platform.system()
-    # NVIDIA (Cross-Platform: Windows, Linux, macOS)
-    try:
-        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
-        nvmlInit()
-        handle = nvmlDeviceGetHandleByIndex(0)  # First GPU
-        info = nvmlDeviceGetMemoryInfo(handle)
-        vram = info.total
-        return int(vram // (1024 ** 3))  # Convert to GB
-    except ImportError:
-        pass
-    except Exception as e:
-        pass
-    # AMD (Windows)
-    if os_name == "Windows":
-        try:
-            cmd = 'wmic path Win32_VideoController get AdapterRAM'
-            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
-            lines = output.stdout.splitlines()
-            vram_values = [int(line.strip()) for line in lines if line.strip().isdigit()]
-            if vram_values:
-                return int(vram_values[0] // (1024 ** 3))
-        except Exception as e:
-            pass
-    # AMD (Linux)
-    if os_name == "Linux":
-        try:
-            cmd = "lspci -v | grep -i 'VGA' -A 12 | grep -i 'preallocated' | awk '{print $2}'"
-            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
-            if output.stdout.strip().isdigit():
-                return int(output.stdout.strip()) // 1024
-        except Exception as e:
-            pass
-    # Intel (Linux Only)
-    intel_vram_paths = [
-        "/sys/kernel/debug/dri/0/i915_vram_total",  # Intel dedicated GPUs
-        "/sys/class/drm/card0/device/resource0"  # Some integrated GPUs
-    ]
-    for path in intel_vram_paths:
-        if os.path.exists(path):
-            try:
-                with open(path, "r") as f:
-                    vram = int(f.read().strip()) // (1024 ** 3)
-                    return vram
-            except Exception as e:
-                pass
-    # macOS (OpenGL Alternative)
-    if os_name == "Darwin":
-        try:
-            from OpenGL.GL import glGetIntegerv
-            from OpenGL.GLX import GLX_RENDERER_VIDEO_MEMORY_MB_MESA
-            vram = int(glGetIntegerv(GLX_RENDERER_VIDEO_MEMORY_MB_MESA) // 1024)
-            return vram
-        except ImportError:
-            pass
-        except Exception as e:
-            pass
-    msg = 'Could not detect GPU VRAM Capacity!'
-    return 0
-
-def get_sanitized(str, replacement="_"):
+def get_sanitized(str:str, replacement:str="_")->str:
     str = str.replace('&', 'And')
     forbidden_chars = r'[<>:"/\\|?*\x00-\x1F ()]'
     sanitized = re.sub(r'\s+', replacement, str)
@@ -1052,7 +1146,7 @@ def get_sanitized(str, replacement="_"):
     sanitized = sanitized.strip("_")
     return sanitized
     
-def get_date_entities(text, stanza_nlp):
+def get_date_entities(text:str, stanza_nlp:Pipeline)->list[tuple[int,int,str]]|bool:
     try:
         doc = stanza_nlp(text)
         date_spans = []
@@ -1065,7 +1159,7 @@ def get_date_entities(text, stanza_nlp):
         print(error)
         return False
 
-def get_num2words_compat(lang_iso1):
+def get_num2words_compat(lang_iso1:str)->bool:
     try:
         test = num2words(1, lang=lang_iso1.replace('zh', 'zh_CN'))
         return True
@@ -1074,7 +1168,7 @@ def get_num2words_compat(lang_iso1):
     except Exception as e:
         return False
 
-def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999_999):
+def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:bool, max_single_value:int=999_999_999_999_999_999)->str:
     # match up to 18 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
     # handle optional range with dash/en dash/em dash between numbers, and allow trailing punctuation
     number_re = re.compile(
@@ -1086,7 +1180,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
         re.UNICODE
     )
 
-    def normalize_commas(num_str: str) -> str:
+    def normalize_commas(num_str:str)->str:
         """Normalize number string to standard comma format: 1,234,567"""
         tok = num_str.replace('\u00A0', '').replace(' ', '')
         if '.' in tok:
@@ -1098,7 +1192,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
             integer_part = tok.replace(',', '')
             return "{:,}".format(int(integer_part))
 
-    def clean_single_num(num_str):
+    def clean_single_num(num_str:str)->str:
         tok = unicodedata.normalize('NFKC', num_str)
         if tok.lower() in ('inf', 'infinity', 'nan'):
             return tok
@@ -1123,7 +1217,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
             )
             return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
 
-    def clean_match(match):
+    def clean_match(match:re.Match)->str:
         first_num = clean_single_num(match.group(1))
         dash_char = match.group(2) or ''
         second_num = clean_single_num(match.group(3)) if match.group(3) else ''
@@ -1135,7 +1229,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
 
     return number_re.sub(clean_match, text)
 
-def year2words(year_str, lang, lang_iso1, is_num2words_compat):
+def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str|bool:
     try:
         year = int(year_str)
         first_two = int(year_str[:2])
@@ -1157,24 +1251,23 @@ def year2words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
     time_rx = re.compile(r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?')
-    lang_lc = (lang or "").lower()
-    lc = language_clock.get(lang_lc) if 'language_clock' in globals() else None
+    lc = language_clock.get(lang) if 'language_clock' in globals() else None
     _n2w_cache = {}
 
-    def n2w(n: int) -> str:
-        key = (n, lang_lc, is_num2words_compat)
+    def n2w(n:int)->str:
+        key = (n, lang, is_num2words_compat)
         if key in _n2w_cache:
             return _n2w_cache[key]
         if is_num2words_compat:
-            word = num2words(n, lang=lang_lc)
+            word = num2words(n, lang=lang_iso1)
         else:
             word = math2words(n, lang, lang_iso1, tts_engine, is_num2words_compat)
         _n2w_cache[key] = word
         return word
 
-    def repl_num(m: re.Match) -> str:
+    def repl_num(m:re.Match)->str:
         # Parse hh[:mm[:ss]]
         try:
             h = int(m.group(1))
@@ -1207,7 +1300,7 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             phrase = lc["quarter_past"].format(hour=n2w(h))
         elif mnt == 30:
             # German "halb drei" (= 2:30) uses next hour
-            if lang_lc == "deu":
+            if lang == "deu":
                 phrase = lc["half_past"].format(next_hour=n2w(next_hour))
             else:
                 phrase = lc["half_past"].format(hour=n2w(h))
@@ -1226,9 +1319,8 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
     return time_rx.sub(repl_num, text)
 
-def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
-
-    def repl_ambiguous(match):
+def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
+    def repl_ambiguous(match:re.Match)->str:
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
             return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
@@ -1236,7 +1328,7 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
-    def _ordinal_to_words(m):
+    def _ordinal_to_words(m:re.Match)->str:
         n = int(m.group(1))
         if is_num2words_compat:
             try:
@@ -1274,12 +1366,11 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
-def roman2number(text):
-
-    def is_valid_roman(s):
+def roman2number(text:str)->str:
+    def is_valid_roman(s:str)->bool:
         return bool(valid_roman.fullmatch(s))
 
-    def to_int(s):
+    def to_int(s:str)->str:
         s = s.upper()
         i, result = 0, 0
         while i < len(s):
@@ -1289,24 +1380,24 @@ def roman2number(text):
                     i += len(roman)
                     break
             else:
-                return s  # Not even a sequence of roman letters
-        return result
+                return s
+        return str(result)
 
-    def repl_heading(m):
+    def repl_heading(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
         val = to_int(roman)
         return f"{val}{m.group(2)}{m.group(3)}"
 
-    def repl_standalone(m):
+    def repl_standalone(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
         val = to_int(roman)
         return f"{val}{m.group(2)}"
 
-    def repl_word(m):
+    def repl_word(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
@@ -1318,24 +1409,21 @@ def roman2number(text):
         r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
         re.IGNORECASE
     )
-
     # Your heading/standalone rules stay
     text = re.sub(r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)', repl_heading, text, flags=re.MULTILINE)
     text = re.sub(r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$', repl_standalone, text, flags=re.MULTILINE)
-
     # NEW: only convert whitespace-delimited tokens of length >= 2
     # This avoids: 19C, 19°C, °C, AC/DC, CD-ROM, single-letter "I"
     text = re.sub(r'(?<!\S)([IVXLCDM]{2,})(?!\S)', repl_word, text)
-
     return text
 
-def filter_sml(text):
+def filter_sml(text:str)->str:
     for key, value in TTS_SML.items():
         pattern = re.escape(key) if key == '###' else r'\[' + re.escape(key) + r'\]'
         text = re.sub(pattern, f" {value} ", text)
     return text
 
-def normalize_text(text, lang, lang_iso1, tts_engine):
+def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
@@ -1394,17 +1482,14 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = ' '.join(text.split())
     return text
 
-def convert_chapters2audio(id):
+def convert_chapters2audio(id:str)->bool:
     session = context.get_session(id)
     try:
         if session['cancellation_requested']:
-            print('Cancel requested')
+            msg = 'Cancel requested'
+            print(msg)
             return False
         tts_manager = TTSManager(session)
-        if not tts_manager:
-            error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
-            print(error)
-            return False
         resume_chapter = 0
         missing_chapters = []
         resume_sentence = 0
@@ -1429,7 +1514,7 @@ def convert_chapters2audio(id):
         )
         if existing_sentences:
             resume_sentence = max(int(re.search(r'\d+', f).group()) for f in existing_sentences)
-            msg = f"Resuming from sentence {resume_sentence}"
+            msg = f'Resuming from sentence {resume_sentence}'
             print(msg)
             existing_sentence_numbers = {int(re.search(r'\d+', f).group()) for f in existing_sentences}
             missing_sentences = [
@@ -1451,7 +1536,9 @@ def convert_chapters2audio(id):
         sentence_number = 0
         msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
         print(msg)
-        progress_bar = gr.Progress(track_tqdm=False)
+        if session['is_gui_process']:
+            progress_bar = gr.Progress(track_tqdm=False)
+        ebook_name = Path(session['ebook']).name
         with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
@@ -1474,25 +1561,26 @@ def convert_chapters2audio(id):
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
                         if success:
                             total_progress = (t.n + 1) / total_iterations
-                            progress_bar(total_progress)
+                            if session['is_gui_process']:
+                                progress_bar(progress=total_progress, desc=ebook_name)
                             is_sentence = sentence.strip() not in TTS_SML.values()
                             percentage = total_progress * 100
-                            t.set_description(f'{percentage:.2f}%')
-                            msg = f" | {sentence}" if is_sentence else f" | {sentence}"
+                            t.set_description(f"{percentage:.2f}%")
+                            msg = f' : {sentence}' if is_sentence else f' : {sentence}'
                             print(msg)
                         else:
                             return False
                     if sentence.strip() not in TTS_SML.values():
                         sentence_number += 1
-                    t.update(1)  # advance for every iteration, including SML
+                    t.update(1)
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
-                msg = f"End of Block {chapter_num}"
+                msg = f'End of Block {chapter_num}'
                 print(msg)
                 if chapter_num in missing_chapters or sentence_number > resume_sentence:
                     if chapter_num <= resume_chapter:
                         msg = f'**Recovering missing file block {chapter_num}'
                         print(msg)
-                    if combine_audio_sentences(chapter_audio_file, start, end, session):
+                    if combine_audio_sentences(chapter_audio_file, int(start), int(end), session):
                         msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
                         print(msg)
                     else:
@@ -1504,43 +1592,15 @@ def convert_chapters2audio(id):
         DependencyError(e)
         return False
 
-def assemble_chunks(txt_file, out_file):
-    try:
-        ffmpeg_cmd = [
-            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
-            '-safe', '0', '-f', 'concat', '-i', txt_file,
-            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
-        ]
-        process = subprocess.Popen(
-            ffmpeg_cmd,
-            env={},
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            encoding='utf-8',
-            errors='ignore'
-        )
-        for line in process.stdout:
-            print(line, end='')  # Print each line of stdout
-        process.wait()
-        if process.returncode == 0:
-            return True
-        else:
-            error = process.returncode
-            print(error, ffmpeg_cmd)
-            return False
-    except subprocess.CalledProcessError as e:
-        DependencyError(e)
-        return False
-    except Exception as e:
-        error = f"assemble_chanks() Error: Failed to process {txt_file} → {out_file}: {e}"
-        print(error)
-        return False
-
-def combine_audio_sentences(chapter_audio_file, start, end, session):
+def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:DictProxy[str,Any])->bool:
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
         batch_size = 1024
+        start = int(start)
+        end = int(end)
+        is_gui_process = session.get('is_gui_process')
+        id = session.get('id')
         sentence_files = [
             f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1556,47 +1616,49 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         if not selected_files:
             print('No audio files found in the specified range.')
             return False
-        with tempfile.TemporaryDirectory() as tmpdir:
+        temp_sentence = os.path.join(session['process_dir'], "sentence_chunks")
+        os.makedirs(temp_sentence, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
             chunk_list = []
             for i in range(0, len(selected_files), batch_size):
+                if session['cancellation_requested']:
+                    msg = 'Cancel requested'
+                    print(msg)
+                    return False
                 batch = selected_files[i:i + batch_size]
-                txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
-                out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
+                txt = os.path.join(temp_dir, f'chunk_{i:04d}.txt')
+                out = os.path.join(temp_dir, f'chunk_{i:04d}.{default_audio_proc_format}')
                 with open(txt, 'w') as f:
                     for file in batch:
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
-                chunk_list.append((txt, out))
+                chunk_list.append((txt, out, is_gui_process))
             try:
                 with Pool(cpu_count()) as pool:
                     results = pool.starmap(assemble_chunks, chunk_list)
             except Exception as e:
-                error = f"combine_audio_sentences() multiprocessing error: {e}"
+                error = f'combine_audio_sentences() multiprocessing error: {e}'
                 print(error)
                 return False
             if not all(results):
-                error = "combine_audio_sentences() One or more chunks failed."
+                error = 'combine_audio_sentences() One or more chunks failed.'
                 print(error)
                 return False
-            # Final merge
-            final_list = os.path.join(tmpdir, 'sentences_final.txt')
+            final_list = os.path.join(temp_dir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
-                for _, chunk_path in chunk_list:
+                for _, chunk_path, _ in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            if assemble_chunks(final_list, chapter_audio_file):
-                msg = f'********* Combined block audio file saved in {chapter_audio_file}'
-                print(msg)
+            if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
+                print(f'********* Combined block audio file saved in {chapter_audio_file}')
                 return True
             else:
-                error = "combine_audio_sentences() Final merge failed."
-                print(error)
+                print("combine_audio_sentences() Final merge failed.")
                 return False
     except Exception as e:
         DependencyError(e)
         return False
 
-def combine_audio_chapters(id):
-
-    def get_audio_duration(filepath):
+def combine_audio_chapters(id:str)->list[str]|None:
+    def get_audio_duration(filepath:str)->float:
         try:
             ffprobe_cmd = [
                 shutil.which('ffprobe'),
@@ -1614,11 +1676,11 @@ def combine_audio_chapters(id):
             DependencyError(e)
             return 0
         except Exception as e:
-            error = f"get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}"
+            error = f'get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}'
             print(error)
             return 0
 
-    def generate_ffmpeg_metadata(part_chapters, session, output_metadata_path, default_audio_proc_format):
+    def generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
         try:
             out_fmt = session['output_format']
             is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
@@ -1661,9 +1723,13 @@ def combine_audio_chapters(id):
                         ffmpeg_metadata += f"{tag('asin')}={asin}\n"
             start_time = 0
             for filename, chapter_title in part_chapters:
+                if session['cancellation_requested']:
+                    msg = 'Cancel requested'
+                    print(msg)
+                    return False
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
-                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), chapter_title.replace(TTS_SML['pause'], ''))
+                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), sanitize_meta_chapter_title(chapter_title))
                 ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
                 ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
                 ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
@@ -1672,89 +1738,112 @@ def combine_audio_chapters(id):
                 f.write(ffmpeg_metadata)
             return output_metadata_path
         except Exception as e:
-            error = f"generate_ffmpeg_metadata() Error: Failed to process {txt_file} → {out_file}: {e}"
+            error = f'generate_ffmpeg_metadata() Error: Failed to process {txt_file} → {out_file}: {e}'
             print(error)
             return False
 
-    def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file):
+    def export_audio(ffmpeg_combined_audio:str, ffmpeg_metadata_file:str, ffmpeg_final_file:str)->bool:
         try:
             if session['cancellation_requested']:
-                print('Cancel requested')
+                msg = 'Cancel requested'
+                print(msg)
                 return False
             cover_path = None
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
+            ffprobe_cmd = [
+                shutil.which('ffprobe'), '-v', 'error', '-select_streams', 'a:0',
+                '-show_entries', 'stream=codec_name,sample_rate,sample_fmt',
+                '-of', 'default=nokey=1:noprint_wrappers=1', ffmpeg_combined_audio
+            ]
+            probe = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+            codec_info = probe.stdout.strip().splitlines()
+            input_codec = codec_info[0] if len(codec_info) > 0 else None
+            input_rate = codec_info[1] if len(codec_info) > 1 else None
+            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
+            target_codec, target_rate = None, None
             if session['output_format'] == 'wav':
-                ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
-            elif session['output_format'] ==  'aac':
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
+                target_codec = 'pcm_s16le'
+                target_rate = '44100'
+                cmd += ['-map', '0:a', '-ar', target_rate, '-sample_fmt', 's16']
+            elif session['output_format'] == 'aac':
+                target_codec = 'aac'
+                target_rate = '44100'
+                cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart']
             elif session['output_format'] == 'flac':
-                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
+                target_codec = 'flac'
+                target_rate = '44100'
+                cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', target_rate]
             else:
-                ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
+                cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
-                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
+                    target_codec = 'aac'
+                    target_rate = '44100'
+                    cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart+use_metadata_tags']
                 elif session['output_format'] == 'mp3':
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
+                    target_codec = 'mp3'
+                    target_rate = '44100'
+                    cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', target_rate]
                 elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
+                    target_codec = 'opus'
+                    target_rate = '48000'
+                    cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', target_rate]
                 elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
-                ffmpeg_cmd += ['-map_metadata', '1']
-            ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70', '-strict', 'experimental', '-threads', '1', '-y', ffmpeg_final_file]
-            process = subprocess.Popen(
-                ffmpeg_cmd,
-                env={},
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                encoding='utf-8',
-                errors='ignore'
-            )
-            for line in process.stdout:
-                print(line, end='')
-            process.wait()
-            if process.returncode == 0:
-                if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
-                    if session['cover'] is not None:
-                        cover_path = session['cover']
-                        msg = f'Adding cover {cover_path} into the final audiobook file...'
-                        print(msg)
-                        if session['output_format'] == 'mp3':
-                            from mutagen.mp3 import MP3
-                            from mutagen.id3 import ID3, APIC, error
-                            audio = MP3(ffmpeg_final_file, ID3=ID3)
-                            try:
-                                audio.add_tags()
-                            except error:
-                                pass
-                            with open(cover_path, 'rb') as img:
-                                audio.tags.add(
-                                    APIC(
-                                        encoding=3,
-                                        mime='image/jpeg',
-                                        type=3,
-                                        desc='Cover',
-                                        data=img.read()
-                                    )
-                                )
-                        elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
-                            from mutagen.mp4 import MP4, MP4Cover
-                            audio = MP4(ffmpeg_final_file)
-                            with open(cover_path, 'rb') as f:
-                                cover_data = f.read()
-                            audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
-                        if audio:
-                            audio.save()
-                final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
-                proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
-                final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
-                shutil.move(proc_vtt_path, final_vtt_path)
-                return True
+                    target_codec = 'opus'
+                    target_rate = '48000'
+                    cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
+                cmd += ['-map_metadata', '1'] 
+            if input_codec == target_codec and input_rate == target_rate:
+                cmd = [
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio,
+                    '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
+                    '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
+                    '-y', ffmpeg_final_file
+                ]
             else:
-                error = process.returncode
-                print(error, ffmpeg_cmd)
-                return False
+                cmd += [
+                    '-filter_threads', '0',
+                    '-filter_complex_threads', '0',
+                    '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
+                    '-threads', '0',
+                    '-progress', 'pipe:2',
+                    '-y', ffmpeg_final_file
+                ]
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=session['is_gui_process'], total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export')
+            if proc_pipe:
+                if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
+                    if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
+                        if session['cover'] is not None:
+                            cover_path = session['cover']
+                            msg = f'Adding cover {cover_path} into the final audiobook file...'
+                            print(msg)
+                            if session['output_format'] == 'mp3':
+                                from mutagen.mp3 import MP3
+                                from mutagen.id3 import ID3, APIC, error
+                                audio = MP3(ffmpeg_final_file, ID3=ID3)
+                                try:
+                                    audio.add_tags()
+                                except error:
+                                    pass
+                                with open(cover_path, 'rb') as img:
+                                    audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=img.read()))
+                            elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
+                                from mutagen.mp4 import MP4, MP4Cover
+                                audio = MP4(ffmpeg_final_file)
+                                with open(cover_path, 'rb') as f:
+                                    cover_data = f.read()
+                                audio['covr'] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
+                            if audio:
+                                audio.save()
+                    final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
+                    proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
+                    final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
+                    shutil.move(proc_vtt_path, final_vtt_path)
+                    return True
+                else:
+                    error = f"{Path(ffmpeg_final_file).name} is corrupted or does not exist"
+                    print(error)
         except Exception as e:
-            DependencyError(e)
+            error = f'Export failed: {e}'
+            print(error)
             return False
 
     try:
@@ -1772,15 +1861,19 @@ def combine_audio_chapters(id):
             durations.append(get_audio_duration(filepath))
         total_duration = sum(durations)
         exported_files = []
-        if session.get('output_split'):
+        if session['output_split']:
             part_files = []
             part_chapter_indices = []
             cur_part = []
             cur_indices = []
             cur_duration = 0
-            max_part_duration = session['output_split_hours'] * 3600
+            max_part_duration = int(session['output_split_hours']) * 3600
             needs_split = total_duration > (int(session['output_split_hours']) * 2) * 3600
             for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
+                if session['cancellation_requested']:
+                    msg = 'Cancel requested'
+                    print(msg)
+                    return None
                 if cur_part and (cur_duration + dur > max_part_duration):
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
@@ -1793,81 +1886,155 @@ def combine_audio_chapters(id):
             if cur_part:
                 part_files.append(cur_part)
                 part_chapter_indices.append(cur_indices)
-
+            temp_export = os.path.join(session['process_dir'], "export")
+            os.makedirs(temp_export, exist_ok=True)
             for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                with tempfile.TemporaryDirectory() as tmpdir:
+                with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
+                    temp_dir = Path(temp_dir)
                     batch_size = 1024
                     chunk_list = []
                     for i in range(0, len(part_file_list), batch_size):
+                        if session.get('cancellation_requested'):
+                            msg = 'Cancel requested'
+                            print(msg)
+                            return None
                         batch = part_file_list[i:i + batch_size]
-                        txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
-                        out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
+                        txt = temp_dir / f'chunk_{i:04d}.txt'
+                        out = temp_dir / f'chunk_{i:04d}.{default_audio_proc_format}'
                         with open(txt, 'w') as f:
                             for file in batch:
-                                path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
-                                f.write(f"file '{path}'\n")
-                        chunk_list.append((txt, out))
+                                path = Path(session['chapters_dir']) / file
+                                f.write(f"file '{path.as_posix()}'\n")
+                        chunk_list.append((str(txt), str(out), session['is_gui_process']))
                     with Pool(cpu_count()) as pool:
                         results = pool.starmap(assemble_chunks, chunk_list)
                     if not all(results):
-                        print(f"assemble_segments() One or more chunks failed for part {part_idx+1}.")
+                        error = f'assemble_chunks() One or more chunks failed for part {part_idx+1}.'
+                        print(error)
                         return None
                     # Final merge for this part
-                    combined_chapters_file = os.path.join(
-                        session['process_dir'],
-                        f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
+                    combined_chapters_file = Path(session['process_dir']) / (
+                        f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}"
+                        if needs_split else
+                        f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
                     )
-                    final_list = os.path.join(tmpdir, f'part_{part_idx+1:02d}_final.txt')
+                    final_list = temp_dir / f'part_{part_idx+1:02d}_final.txt'
                     with open(final_list, 'w') as f:
-                        for _, chunk_path in chunk_list:
-                            f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-                    if not assemble_chunks(final_list, combined_chapters_file):
-                        print(f"assemble_segments() Final merge failed for part {part_idx+1}.")
+                        for _, chunk_path, _ in chunk_list:
+                            f.write(f"file '{Path(chunk_path).as_posix()}'\n")
+                    if not assemble_chunks(str(final_list), str(combined_chapters_file), session['is_gui_process']):
+                        error = f'assemble_chunks() Final merge failed for part {part_idx+1}.'
+                        print(error)
                         return None
-
-                    metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
+                    metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                    generate_ffmpeg_metadata(part_chapters, session, metadata_file, default_audio_proc_format)
-
-                    final_file = os.path.join(
-                        session['audiobooks_dir'],
-                        f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']
+                    generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
+                    final_file = Path(session['audiobooks_dir']) / (
+                        f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}"
+                        if needs_split else
+                        session['final_name']
                     )
-                    if export_audio(combined_chapters_file, metadata_file, final_file):
-                        exported_files.append(final_file)
+                    if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
+                        exported_files.append(str(final_file))
         else:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                # 1) build a single ffmpeg file list
-                txt = os.path.join(tmpdir, 'all_chapters.txt')
-                merged_tmp = os.path.join(tmpdir, f'all.{default_audio_proc_format}')
+            temp_export = os.path.join(session['process_dir'], "export")
+            os.makedirs(temp_export, exist_ok=True)
+            with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
+                txt = os.path.join(temp_dir, 'all_chapters.txt')
+                merged_tmp = os.path.join(temp_dir, f'all.{default_audio_proc_format}')
                 with open(txt, 'w') as f:
                     for file in chapter_files:
+                        if session['cancellation_requested']:
+                            msg = 'Cancel requested'
+                            print(msg)
+                            return None
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
-
-                # 2) merge into one temp file
-                if not assemble_chunks(txt, merged_tmp):
-                    print("assemble_segments() Final merge failed.")
+                if not assemble_chunks(txt, merged_tmp, session['is_gui_process']):
+                    print("assemble_chunks() Final merge failed.")
                     return None
-
-                # 3) generate metadata for entire book
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
                 all_chapters = list(zip(chapter_files, chapter_titles))
-                generate_ffmpeg_metadata(all_chapters, session, metadata_file, default_audio_proc_format)
-
-                # 4) export in one go
-                final_file = os.path.join(
-                    session['audiobooks_dir'],
-                    session['final_name']
-                )
+                generate_ffmpeg_metadata(all_chapters, metadata_file, default_audio_proc_format)
+                final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
                 if export_audio(merged_tmp, metadata_file, final_file):
                     exported_files.append(final_file)
         return exported_files if exported_files else None
     except Exception as e:
         DependencyError(e)
+        return None
+
+def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
+    try:
+        total_duration = 0.0
+        try:
+            with open(txt_file, 'r') as f:
+                for line in f:
+                    if line.strip().startswith("file"):
+                        file_path = line.strip().split("file ")[1].strip().strip("'").strip('"')
+                        if os.path.exists(file_path):
+                            result = subprocess.run(
+                                [shutil.which("ffprobe"), "-v", "error",
+                                 "-show_entries", "format=duration",
+                                 "-of", "default=noprint_wrappers=1:nokey=1", file_path],
+                                capture_output=True, text=True
+                            )
+                            try:
+                                total_duration += float(result.stdout.strip())
+                            except ValueError:
+                                pass
+        except Exception as e:
+            error = f'assemble_chunks() open file {txt_file} Error: {e}'
+            print(error)
+            return False
+        cmd = [
+            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
+            '-safe', '0', '-f', 'concat', '-i', txt_file,
+            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
+        ]
+        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble chunks')
+        if proc_pipe:
+            msg = f'Completed → {out_file}'
+            print(msg)
+            return True
+        else:
+            error = f'Failed (proc_pipe) → {out_file}'
+            return False
+    except subprocess.CalledProcessError as e:
+        DependencyError(e)
+        return False
+    except Exception as e:
+        error = f'assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}'
+        print(error)
         return False
 
-def delete_unused_tmp_dirs(web_dir, days, session):
+def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="...")->str:
+    s = "" if s is None else str(s)
+    if max_bytes <= 0:
+        return ""
+    raw = s.encode("utf-8")
+    e = ellipsis.encode("utf-8")
+    if len(raw) <= max_bytes:
+        return s
+    if len(e) >= max_bytes:
+        # return as many bytes of the ellipsis as fit
+        return e[:max_bytes].decode("utf-8", errors="ignore")
+    budget = max_bytes - len(e)
+    out = bytearray()
+    for ch in s:
+        b = ch.encode("utf-8")
+        if len(out) + len(b) > budget:
+            break
+        out.extend(b)
+    return out.decode("utf-8") + ellipsis
+
+def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
+    # avoid None and embedded NULs which some muxers accidentally keep
+    title = (title or '').replace('\x00', '')
+    title = title.replace(TTS_SML['pause'], '')
+    return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
+
+def delete_unused_tmp_dirs(web_dir:str, days:int, session:DictProxy[str,Any])->None:
     dir_array = [
         tmp_dir,
         web_dir,
@@ -1893,302 +2060,303 @@ def delete_unused_tmp_dirs(web_dir, days, session):
                             dir_ctime = os.path.getctime(full_dir_path)
                             if dir_mtime < threshold_time and dir_ctime < threshold_time:
                                 shutil.rmtree(full_dir_path, ignore_errors=True)
-                                msg = f"Deleted expired session: {full_dir_path}"
+                                msg = f'Deleted expired session: {full_dir_path}'
                                 print(msg)
                         except Exception as e:
-                            error = f"Error deleting {full_dir_path}: {e}"
+                            error = f'Error deleting {full_dir_path}: {e}'
                             print(error)
 
-def compare_file_metadata(f1, f2):
-    if os.path.getsize(f1) != os.path.getsize(f2):
-        return False
-    if os.path.getmtime(f1) != os.path.getmtime(f2):
-        return False
-    return True
-    
-def get_compatible_tts_engines(language):
+def get_compatible_tts_engines(language:str)->list:
     compatible_engines = [
         tts for tts in models.keys()
         if language in language_tts.get(tts, {})
     ]
     return compatible_engines
 
-def convert_ebook_batch(args, ctx=None):
+def convert_ebook_batch(args:dict)->tuple:
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, passed = convert_ebook(args, ctx)
+                progress_status, passed = convert_ebook(args)
                 if passed is False:
                     print(f'Conversion failed: {progress_status}')
-                    sys.exit(1)
+                    if not args['is_gui_process']:
+                        sys.exit(1)
                 args['ebook_list'].remove(file) 
-        reset_ebook_session(args['session'])
+        reset_session(args['session'])
         return progress_status, passed
     else:
         print(f'the ebooks source is not a list!')
-        sys.exit(1)       
+        if not args['is_gui_process']:
+            sys.exit(1)       
 
-def convert_ebook(args, ctx=None):
+def convert_ebook(args:dict)->tuple:
     try:
-        global is_gui_process, context        
-        error = None
-        id = None
-        info_session = None
-        if args['language'] is not None:
-            if not os.path.splitext(args['ebook'])[1]:
-                error = f"{args['ebook']} needs a format extension."
-                print(error)
-                return error, false
-            if not os.path.exists(args['ebook']):
-                error = 'File does not exist or Directory empty.'
-                print(error)
-                return error, false
-            try:
-                if len(args['language']) == 2:
-                    lang_array = languages.get(part1=args['language'])
-                    if lang_array:
-                        args['language'] = lang_array.part3
-                        args['language_iso1'] = lang_array.part1
-                elif len(args['language']) == 3:
-                    lang_array = languages.get(part3=args['language'])
-                    if lang_array:
-                        args['language'] = lang_array.part3
-                        args['language_iso1'] = lang_array.part1 
-                else:
-                    args['language_iso1'] = None
-            except Exception as e:
-                pass
-
-            if args['language'] not in language_mapping.keys():
-                error = 'The language you provided is not (yet) supported'
-                print(error)
-                return error, false
-
-            if ctx is not None:
-                context = ctx
-
-            is_gui_process = args['is_gui_process']
-            id = args['session'] if args['session'] is not None else str(uuid.uuid4())
-
-            session = context.get_session(id)
-            session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE   
-            session['ebook'] = args['ebook']
-            session['ebook_list'] = args['ebook_list']
-            session['device'] = args['device']
-            session['language'] = args['language']
-            session['language_iso1'] = args['language_iso1']
-            session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
-            session['custom_model'] = args['custom_model'] if not is_gui_process or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
-            session['fine_tuned'] = args['fine_tuned']
-            session['voice'] = args['voice']
-            session['temperature'] =  args['temperature']
-            session['length_penalty'] = args['length_penalty']
-            session['num_beams'] = args['num_beams']
-            session['repetition_penalty'] = args['repetition_penalty']
-            session['top_k'] =  args['top_k']
-            session['top_p'] = args['top_p']
-            session['speed'] = args['speed']
-            session['enable_text_splitting'] = args['enable_text_splitting']
-            session['text_temp'] =  args['text_temp']
-            session['waveform_temp'] =  args['waveform_temp']
-            session['audiobooks_dir'] = args['audiobooks_dir']
-            session['output_format'] = args['output_format']
-            session['output_split'] = args['output_split']    
-            session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
-
-            info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
-
-            if not is_gui_process:
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
-                os.makedirs(session['voice_dir'], exist_ok=True)
-                # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
-                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
-                session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
-                if session['custom_model'] is not None:
-                    if not os.path.exists(session['custom_model_dir']):
-                        os.makedirs(session['custom_model_dir'], exist_ok=True)
-                    src_path = Path(session['custom_model'])
-                    src_name = src_path.stem
-                    if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
-                        required_files = models[session['tts_engine']]['internal']['files']
-                        if analyze_uploaded_file(session['custom_model'], required_files):
-                            model = extract_custom_model(session['custom_model'], session)
-                            if model is not None:
-                                session['custom_model'] = model
-                            else:
-                                error = f"{model} could not be extracted or mandatory files are missing"
-                        else:
-                            error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
-                if session['voice'] is not None:                  
-                    voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
-                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
-                    if not os.path.exists(final_voice_file):
-                        extractor = VoiceExtractor(session, session['voice'], voice_name)
-                        status, msg = extractor.extract_voice()
-                        if status:
-                            session['voice'] = final_voice_file
-                        else:
-                            error = f'VoiceExtractor.extract_voice() failed! {msg}'
-                            print(error)
-            if error is None:
-                if session['script_mode'] == NATIVE:
-                    bool, e = check_programs('Calibre', 'ebook-convert', '--version')
-                    if not bool:
-                        error = f'check_programs() Calibre failed: {e}'
-                    bool, e = check_programs('FFmpeg', 'ffmpeg', '-version')
-                    if not bool:
-                        error = f'check_programs() FFMPEG failed: {e}'
-                if error is None:
-                    old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
-                    session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
-                    if os.path.isdir(old_session_dir):
-                        os.rename(old_session_dir, session['session_dir'])
-                    session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['ebook'].encode()).hexdigest()}")
-                    session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                    session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
-                    if prepare_dirs(args['ebook'], session):
-                        session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
-                        msg = ''
-                        msg_extra = ''
-                        vram_avail = get_vram()
-                        if vram_avail <= 4:
-                            msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
-                            if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
-                                msg_extra += f"Switching BARK to SMALL models - "
-                        else:
-                            if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
-                        if session['device'] == 'cuda':
-                            session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
-                            if session['device'] == 'cpu':
-                                msg += f"GPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
-                        elif session['device'] == 'mps':
-                            session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
-                            if session['device'] == 'cpu':
-                                msg += f"MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
-                        if session['device'] == 'cpu':
-                            if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                os.environ['SUNO_OFFLOAD_CPU'] = 'True'
-                        if default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] == True:
-                            try:
-                                import deepspeed
-                            except:
-                                default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] = False
-                                msg_extra += 'deepseed not installed or package is broken. set to False - '
-                            else: 
-                                msg_extra += 'deepspeed detected and ready!'
-                        if msg == '':
-                            msg = f"Using {session['device'].upper()} - "
-                        msg += msg_extra
-                        if is_gui_process:
-                            show_alert({"type": "warning", "msg": msg})
-                        print(msg)
-                        session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
-                        if convert2epub(id):
-                            epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
-                            metadata = dict(session['metadata'])
-                            for key, value in metadata.items():
-                                data = epubBook.get_metadata('DC', key)
-                                if data:
-                                    for value, attributes in data:
-                                        metadata[key] = value
-                            metadata['language'] = session['language']
-                            metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
-                            metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
-                            session['metadata'] = metadata                  
-                            try:
-                                if len(session['metadata']['language']) == 2:
-                                    lang_array = languages.get(part1=session['language'])
-                                    if lang_array:
-                                        session['metadata']['language'] = lang_array.part3
-                            except Exception as e:
-                                pass                         
-                            if session['metadata']['language'] != session['language']:
-                                error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                print(error)
-                            session['cover'] = get_cover(epubBook, session)
-                            if session['cover']:
-                                session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
-                                if session['chapters'] is not None:
-                                    if convert_chapters2audio(id):
-                                        msg = 'Conversion successful. Combining sentences and chapters...'
-                                        show_alert({"type": "info", "msg": msg})
-                                        exported_files = combine_audio_chapters(id)               
-                                        if exported_files is not None:
-                                            chapters_dirs = [
-                                                dir_name for dir_name in os.listdir(session['process_dir'])
-                                                if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
-                                            ]
-                                            shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
-                                            if is_gui_process:
-                                                if len(chapters_dirs) > 1:
-                                                    if os.path.exists(session['chapters_dir']):
-                                                        shutil.rmtree(session['chapters_dir'], ignore_errors=True)
-                                                    if os.path.exists(session['epub_path']):
-                                                        os.remove(session['epub_path'])
-                                                    if os.path.exists(session['cover']):
-                                                        os.remove(session['cover'])
-                                                else:
-                                                    if os.path.exists(session['process_dir']):
-                                                        shutil.rmtree(session['process_dir'], ignore_errors=True)
-                                            else:
-                                                if os.path.exists(session['voice_dir']):
-                                                    if not any(os.scandir(session['voice_dir'])):
-                                                        shutil.rmtree(session['voice_dir'], ignore_errors=True)
-                                                if os.path.exists(session['custom_model_dir']):
-                                                    if not any(os.scandir(session['custom_model_dir'])):
-                                                        shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
-                                                if os.path.exists(session['session_dir']):
-                                                    shutil.rmtree(session['session_dir'], ignore_errors=True)
-                                            progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
-                                            session['audiobook'] = exported_files[-1]
-                                            print(info_session)
-                                            return progress_status, True
-                                        else:
-                                            error = 'combine_audio_chapters() error: exported_files not created!'
-                                    else:
-                                        error = 'convert_chapters2audio() failed!'
-                                else:
-                                    error = 'get_chapters() failed!'
-                            else:
-                                error = 'get_cover() failed!'
-                        else:
-                            error = 'convert2epub() failed!'
+        if args.get('event') == 'blocks_confirmed':
+            return finalize_audiobook(args['id'])
+        else:
+            global context        
+            error = None
+            id = None
+            info_session = None
+            if args['language'] is not None:
+                if not os.path.splitext(args['ebook'])[1]:
+                    error = f"{args['ebook']} needs a format extension."
+                    print(error)
+                    return error, false
+                if not os.path.exists(args['ebook']):
+                    error = 'File does not exist or Directory empty.'
+                    print(error)
+                    return error, false
+                try:
+                    if len(args['language']) in (2, 3):
+                        lang_dict = Lang(args['language'])
+                        if lang_dict:
+                            args['language'] = lang_dict.pt3
+                            args['language_iso1'] = lang_dict.pt1
                     else:
-                        error = f"Temporary directory {session['process_dir']} not removed due to failure."
-        else:
-            error = f"Language {args['language']} is not supported."
+                        args['language_iso1'] = None
+                except Exception as e:
+                    pass
+                if args['language'] not in language_mapping.keys():
+                    error = 'The language you provided is not (yet) supported'
+                    print(error)
+                    return error, false
+                id = str(args['session']) if args['session'] is not None else str(uuid.uuid4())
+                session = context.get_session(id)
+                session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
+                session['is_gui_process'] = bool(args['is_gui_process'])
+                session['ebook'] = str(args['ebook']) if args.get('ebook') else None
+                session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
+                session['chapters_preview'] = bool(args['chapters_preview']) if args.get('chapters_preview') else False
+                session['device'] = str(args['device'])
+                session['language'] = str(args['language'])
+                session['language_iso1'] = str(args['language_iso1'])
+                session['tts_engine'] = str(args['tts_engine']) if args['tts_engine'] is not None else str(get_compatible_tts_engines(args['language'])[0])
+                session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if session['custom_model'] is not None else None
+                session['fine_tuned'] = str(args['fine_tuned'])
+                session['voice'] = str(args['voice']) if args['voice'] is not None else None
+                session['xtts_temperature'] =  float(args['xtts_temperature'])
+                session['xtts_length_penalty'] = float(args['xtts_length_penalty'])
+                session['xtts_num_beams'] = int(args['xtts_num_beams'])
+                session['xtts_repetition_penalty'] = float(args['xtts_repetition_penalty'])
+                session['xtts_top_k'] =  int(args['xtts_top_k'])
+                session['xtts_top_p'] = float(args['xtts_top_p'])
+                session['xtts_speed'] = float(args['xtts_speed'])
+                session['xtts_enable_text_splitting'] = bool(args['xtts_enable_text_splitting'])
+                session['bark_text_temp'] =  float(args['bark_text_temp'])
+                session['bark_waveform_temp'] =  float(args['bark_waveform_temp'])
+                session['audiobooks_dir'] = str(args['audiobooks_dir']) if args['audiobooks_dir'] else None
+                session['output_format'] = str(args['output_format'])
+                session['output_split'] = bool(args['output_split'])
+                session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
+                session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
+                cleanup_memory()
+                if not session['is_gui_process']:
+                    session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
+                    session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                    os.makedirs(session['voice_dir'], exist_ok=True)
+                    # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
+                    #[shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
+                    session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
+                    if session['custom_model'] is not None:
+                        if not os.path.exists(session['custom_model_dir']):
+                            os.makedirs(session['custom_model_dir'], exist_ok=True)
+                        src_path = Path(session['custom_model'])
+                        src_name = src_path.stem
+                        if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
+                            required_files = models[session['tts_engine']]['internal']['files']
+                            if analyze_uploaded_file(session['custom_model'], required_files):
+                                model = extract_custom_model(session['custom_model'], session)
+                                if model is not None:
+                                    session['custom_model'] = model
+                                else:
+                                    error = f"{model} could not be extracted or mandatory files are missing"
+                            else:
+                                error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                    if session['voice'] is not None:                  
+                        voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
+                        final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
+                        if not os.path.exists(final_voice_file):
+                            extractor = VoiceExtractor(session, session['voice'], voice_name)
+                            status, msg = extractor.extract_voice()
+                            if status:
+                                session['voice'] = final_voice_file
+                            else:
+                                error = f'VoiceExtractor.extract_voice() failed! {msg}'
+                                print(error)
+                if error is None:
+                    if session['script_mode'] == NATIVE:
+                        is_installed = check_programs('Calibre', 'ebook-convert', '--version')
+                        if not is_installed:
+                            error = f'check_programs() Calibre failed: {e}'
+                        is_installed = check_programs('FFmpeg', 'ffmpeg', '-version')
+                        if not is_installed:
+                            error = f'check_programs() FFMPEG failed: {e}'
+                    if error is None:
+                        old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
+                        if os.path.isdir(old_session_dir):
+                            os.rename(old_session_dir, session['session_dir'])
+                        session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
+                        session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
+                        session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                        session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
+                        if prepare_dirs(session['ebook'], session):
+                            session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
+                            msg = ''
+                            msg_extra = ''
+                            vram_dict = VRAMDetector().detect_vram(session['device'])
+                            total_vram_bytes = vram_dict.get('total_bytes', 4096)
+                            total_vram_gb = int(((total_vram_bytes / (1024 ** 3) * 100) / 100) + 0.1)
+                            free_vram_bytes = vram_dict.get('free_bytes', 0)
+                            session['free_vram_gb'] = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
+                            if session['free_vram_gb'] == 0:
+                                session['free_vram_gb'] = 1.0
+                                msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
+                            else:
+                                msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
+                                if session['free_vram_gb'] > 4.0:
+                                    if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                        os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
+                            if session['device'] == devices['CUDA']['proc']:
+                                session['device'] = session['device'] if devices['CUDA']['found'] else devices['CPU']['proc']
+                                if session['device'] == devices['CPU']['proc']:
+                                    msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            elif session['device'] == devices['MPS']['proc']:
+                                if not devices['MPS']['found']:
+                                    session['device'] = devices['CPU']['proc']
+                                    msg += f'MPS not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            elif session['device'] == devices['ROCM']['proc']:
+                                session['device'] = session['device'] if devices['ROCM']['found'] else devices['CPU']['proc']
+                                if session['device'] == devices['CPU']['proc']:
+                                    msg += f'ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            elif session['device'] == devices['XPU']['proc']:
+                                session['device'] = session['device'] if devices['XPU']['found'] else devices['CPU']['proc']
+                                if session['device'] == devices['CPU']['proc']:
+                                    msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
+                            if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                if session['free_vram_gb'] < 12.0:
+                                    os.environ["SUNO_OFFLOAD_CPU"] = "True"
+                                    os.environ["SUNO_USE_SMALL_MODELS"] = "True"
+                                    msg_extra += f"<br/>Switching BARK to SMALL models"  
+                                else:
+                                    os.environ["SUNO_OFFLOAD_CPU"] = "False"
+                                    os.environ["SUNO_USE_SMALL_MODELS"] = "False"
+                            if msg == '':
+                                msg = f"Using {session['device'].upper()}"
+                            msg += msg_extra;
+                            device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
+                            if float(total_vram_gb) >= float(device_vram_required):
+                                if session['is_gui_process']:
+                                    show_alert({"type": "warning", "msg": msg})
+                                print(msg.replace('<br/>','\n'))
+                                session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
+                                if convert2epub(id):
+                                    epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
+                                    if epubBook:
+                                        metadata = dict(session['metadata'])
+                                        for key, value in metadata.items():
+                                            data = epubBook.get_metadata('DC', key)
+                                            if data:
+                                                for value, attributes in data:
+                                                    metadata[key] = value
+                                        metadata['language'] = session['language']
+                                        metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
+                                        metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                        session['metadata'] = metadata                  
+                                        try:
+                                            if len(session['metadata']['language']) == 2:
+                                                lang_dict = Lang(session['language'])
+                                                if lang_dict:
+                                                    session['metadata']['language'] = lang_dict.pt3
+                                        except Exception as e:
+                                            pass                         
+                                        if session['metadata']['language'] != session['language']:
+                                            error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                            print(error)
+                                            if session['is_gui_process']:
+                                                show_alert({"type": "warning", "msg": error})
+                                        session['cover'] = get_cover(epubBook, session)
+                                        if session['cover']:
+                                            session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                            if session['chapters'] is not None:
+                                                #if session['chapters_preview']:
+                                                #    return 'confirm_blocks', True
+                                                #else:
+                                                #    return finalize_audiobook(id)
+                                                return finalize_audiobook(id)
+                                            else:
+                                                error = 'get_chapters() failed! '+session['toc']
+                                        else:
+                                            error = 'get_cover() failed!'
+                                    else:
+                                        error = 'epubBook.read_epub failed!'
+                                else:
+                                    error = 'convert2epub() failed!'
+                            else:
+                                error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
+                        else:
+                            error = f"Temporary directory {session['process_dir']} not removed due to failure."
+            else:
+                error = f"Language {args['language']} is not supported."
         if session['cancellation_requested']:
-            error = 'Cancelled'
-        else:
-            if not is_gui_process and id is not None:
-                error += info_session
+            error = 'Cancelled' if error is None else error + '. Cancelled'
         print(error)
+        if session['is_gui_process']:
+            show_alert({"type": "warning", "msg": error})
         return error, False
     except Exception as e:
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def restore_session_from_data(data, session):
+def finalize_audiobook(id:str)->tuple:
+    session = context.get_session(id)
+    if session['chapters'] is not None:
+        if convert_chapters2audio(session['id']):
+            msg = 'Conversion successful. Combining sentences and chapters...'
+            show_alert({"type": "info", "msg": msg})
+            exported_files = combine_audio_chapters(session['id'])               
+            if exported_files is not None:
+                progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
+                session['audiobook'] = exported_files[-1]
+                info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
+                print(info_session)
+                return progress_status, True
+            else:
+                error = 'combine_audio_chapters() error: exported_files not created!'
+        else:
+            error = 'convert_chapters2audio() failed!'
+    else:
+        error = 'get_chapters() failed!'
+    return error, False
+
+def restore_session_from_data(data:dict, session:dict)->None:
     try:
         for key, value in data.items():
-            if key in session:  # Check if the key exists in session
+            if key in session:
                 if isinstance(value, dict) and isinstance(session[key], dict):
                     restore_session_from_data(value, session[key])
                 else:
+                    if value is None and session[key] is not None:
+                        continue
                     session[key] = value
     except Exception as e:
         DependencyError(e)
 
-def reset_ebook_session(id):
+def cleanup_session(req:gr.Request)->None:
+    socket_hash = req.session_hash
+    if any(socket_hash in session for session in context.sessions.values()):
+        session_id = context.find_id_by_hash(socket_hash)
+        context_tracker.end_session(session_id, socket_hash)
+
+def reset_session(id:str)->None:
     session = context.get_session(id)
     data = {
         "ebook": None,
+        "toc": None,
         "chapters_dir": None,
         "chapters_dir_sentences": None,
         "epub_path": None,
@@ -2222,17 +2390,23 @@ def reset_ebook_session(id):
     }
     restore_session_from_data(data, session)
 
-def get_all_ip_addresses():
-    ip_addresses = []
-    for interface, addresses in psutil.net_if_addrs().items():
-        for address in addresses:
-            if address.family == socket.AF_INET:
-                ip_addresses.append(address.address)
-            elif address.family == socket.AF_INET6:
-                ip_addresses.append(address.address)  
-    return ip_addresses
+def cleanup_memory()->None:
+    try:
+        active_models = {
+            cache
+            for session in context.sessions.values()
+            for cache in (session.get('model_cache'), session.get('model_zs_cache'), session.get('stanza_cache'))
+            if cache is not None
+        }
+        for key in list(loaded_tts.keys()):
+            if key not in active_models:
+                del loaded_tts[key]
+        gc.collect()
+    except Exception as e:
+        error = f"unload_tts() error: {e}"
+        print(error)
 
-def show_alert(state):
+def show_alert(state:dict)->None:
     if isinstance(state, dict):
         if state['type'] is not None:
             if state['type'] == 'error':
@@ -2244,1130 +2418,1473 @@ def show_alert(state):
             elif state['type'] == 'success':
                 gr.Success(state['msg'])
 
-def web_interface(args, ctx):
-    global context, is_gui_process
-    context = ctx
-    script_mode = args['script_mode']
-    is_gui_process = args['is_gui_process']
-    is_gui_shared = args['share']
-    title = 'Ebook2Audiobook'
-    glass_mask_msg = 'Initialization, please wait...'
-    ebook_src = None
-    language_options = [
-        (
-            f"{details['name']} - {details['native_name']}" if details['name'] != details['native_name'] else details['name'],
-            lang
-        )
-        for lang, details in language_mapping.items()
-    ]
-    voice_options = []
-    tts_engine_options = []
-    custom_model_options = []
-    fine_tuned_options = []
-    audiobook_options = []
-    options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
-    
-    src_label_file = 'Select a File'
-    src_label_dir = 'Select a Directory'
-    
-    visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
-    visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
-    visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
-    visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
+def alert_exception(error:str, id:str|None)->None:
+    if id is not None:
+        session = context.get_session(id)
+        session['status'] = 'ready'
+    print(error)
+    gr.Error(error)
+    DependencyError(error)
 
-    theme = gr.themes.Origin(
-        primary_hue='green',
-        secondary_hue='amber',
-        neutral_hue='gray',
-        radius_size='lg',
-        font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
-    )
+def get_all_ip_addresses()->list:
+    ip_addresses = []
+    for interface, addresses in psutil.net_if_addrs().items():
+        for address in addresses:
+            if address.family in [socket.AF_INET, socket.AF_INET6]:
+                ip_addresses.append(address.address) 
+    return ip_addresses
 
-    header_css = '''
-        <style>
-            /* Global Scrollbar Customization */
-            /* The entire scrollbar */
-            ::-webkit-scrollbar {
-                width: 6px !important;
-                height: 6px !important;
-                cursor: pointer !important;;
-            }
-            /* The scrollbar track (background) */
-            ::-webkit-scrollbar-track {
-                background: none transparent !important;
-                border-radius: 6px !important;
-            }
-            /* The scrollbar thumb (scroll handle) */
-            ::-webkit-scrollbar-thumb {
-                background: #c09340 !important;
-                border-radius: 6px !important;
-            }
-            /* The scrollbar thumb on hover */
-            ::-webkit-scrollbar-thumb:hover {
-                background: #ff8c00 !important;
-            }
-            /* Firefox scrollbar styling */
-            html {
-                scrollbar-width: thin !important;
-                scrollbar-color: #c09340 none !important;
-            }
-            .svelte-1xyfx7i.center.boundedheight.flex{
-                height: 120px !important;
-            }
-            .wrap-inner {
-                border: 1px solid #666666;
-            }
-            .block.svelte-5y6bt2 {
-                padding: 10px !important;
-                margin: 0 !important;
-                height: auto !important;
-                font-size: 16px !important;
-            }
-            .wrap.svelte-12ioyct {
-                padding: 0 !important;
-                margin: 0 !important;
-                font-size: 12px !important;
-            }
-            .block.svelte-5y6bt2.padded {
-                height: auto !important;
-                padding: 10px !important;
-            }
-            .block.svelte-5y6bt2.padded.hide-container {
-                height: auto !important;
-                padding: 0 !important;
-            }
-            .waveform-container.svelte-19usgod {
-                height: 58px !important;
-                overflow: hidden !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            .component-wrapper.svelte-19usgod {
-                height: 110px !important;
-            }
-            .timestamps.svelte-19usgod {
-                display: none !important;
-            }
-            .controls.svelte-ije4bl {
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            .icon-btn {
-                font-size: 30px !important;
-            }
-            .small-btn {
-                font-size: 22px !important;
-                width: 60px !important;
-                height: 60px !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            .file-preview-holder {
-                height: 116px !important;
-                overflow: auto !important;
-            }
-            .selected {
-                color: orange !important;
-            }
-            .progress-bar.svelte-ls20lj {
-                background: orange !important;
-            }
-            #glass-mask {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important; 
-                height: 100vh !important;
-                background: rgba(0,0,0,0.6) !important;
-                display: flex !important;
-                text-align: center;
-                align-items: center !important;
-                justify-content: center !important;
-                font-size: 1.2rem !important;
-                color: #fff !important;
-                z-index: 9999 !important;
-                transition: opacity 2s ease-out 2s !important;
-                pointer-events: all !important;
-            }
-            #glass-mask.hide {
-                opacity: 0 !important;
-                pointer-events: none !important;
-            }
-            #gr_markdown_logo {
-                position: absolute !important; 
-                text-align: right !important;
-            }
-            #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
-                height: 140px !important;
-            }
-            #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
-                display: none !important;
-            }               
-            #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
-                height: 95px !important;
-            }
-            #gr_voice_list {
-                height: 60px !important;
-            }
-            #gr_voice_list span[data-testid="block-info"],
-            #gr_audiobook_list span[data-testid="block-info"]{
-                display: none !important;
-            }
-            ///////////////
-            #gr_voice_player {
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 60px !important;
-                height: 60px !important;
-            }
-            #gr_row_voice_player {
-                height: 60px !important;
-            }
-            #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
-                display: none !important;
-            }
-            #gr_voice_player .controls {
-                display: block !important;
-                position: absolute !important;
-                left: 15px !important;
-                top: 0 !important;
-            }
-            ///////////
-            #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
-                display: none !important;
-            }
-            #gr_audiobook_player label{
-                display: none !important;
-            }
-            #gr_audiobook_player audio {
-                width: 100% !important;
-                padding-top: 10px !important;
-                padding-bottom: 10px !important;
-                border-radius: 0px !important;
-                background-color: #ebedf0 !important;
-                color: #ffffff !important;
-            }
-            #gr_audiobook_player audio::-webkit-media-controls-panel {
-                width: 100% !important;
-                padding-top: 10px !important;
-                padding-bottom: 10px !important;
-                border-radius: 0px !important;
-                background-color: #ebedf0 !important;
-                color: #ffffff !important;
-            }
-            ////////////
-            .fade-in {
-                animation: fadeIn 1s ease-in;
-                display: inline-block;
-            }
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-        </style>
-    '''
-    
-    with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
-        with gr.Tabs(elem_id='gr_tabs'):
-            gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
-            with gr_tab_main:
-                with gr.Row(elem_id='gr_row_tab_main'):
-                    with gr.Column(elem_id='gr_col_1', scale=3):
-                        with gr.Group(elem_id='gr1'):
-                            gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
-                            gr_ebook_mode = gr.Radio(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], value='single', interactive=True)
-                        with gr.Group(elem_id='gr_group_language'):
-                            gr_language = gr.Dropdown(label='Language', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
-                        gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
-                        with gr_group_voice_file:
-                            gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
-                            gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
-                            with gr_row_voice_player:
-                                gr_voice_player = gr.Audio(elem_id='gr_voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
-                                gr_voice_list = gr.Dropdown(label='', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
-                                gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                            gr_optional_markdown = gr.Markdown(elem_id='gr_markdown_optional', value='<p>&nbsp;&nbsp;* Optional</p>')
-                        with gr.Group(elem_id='gr_group_device'):
-                            gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
-                            gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
-                                <div style="right:0;margin:auto;padding:10px;text-align:right">
-                                    <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
-                                    <b>{title}</b>&nbsp;<b style="color:orange">{prog_version}</b></a>
-                                </div>
-                                '''
-                            )
-                    with gr.Column(elem_id='gr_col_2', scale=3):
-                        with gr.Group(elem_id='gr_group_engine'):
-                            gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
-                            gr_tts_rating = gr.HTML()
-                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
-                            gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
-                            with gr_group_custom_model:
-                                gr_custom_model_file = gr.File(label=f"Upload Fine Tuned Model", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=140)
-                                with gr.Row(elem_id='gr_row_custom_model'):
-                                    gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
-                                    gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                                gr_custom_model_markdown = gr.Markdown(elem_id='gr_markdown_custom_model', value='<p>&nbsp;&nbsp;* Optional</p>')
-                        with gr.Group(elem_id='gr_group_output_format'):
-                            with gr.Row(elem_id='gr_row_output_format'):
-                                gr_output_format_list = gr.Dropdown(label='Output Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=2)
-                                gr_output_split = gr.Checkbox(label='Split Output File', elem_id='gr_output_split', value=default_output_split, interactive=True, scale=1)
-                                gr_output_split_hours = gr.Dropdown(label='Max hours / part', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True, visible=False, scale=2)
-                        gr_session = gr.Textbox(label='Session', elem_id='gr_session', interactive=False)
-            gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
-            with gr_tab_xtts_params:
-                gr.Markdown(
-                    elem_id='gr_markdown_tab_xtts_params',
-                    value='''
-                    ### Customize XTTSv2 Parameters
-                    Adjust the settings below to influence how the audio is generated. You can control the creativity, speed, repetition, and more.
-                    '''
-                )
-                gr_xtts_temperature = gr.Slider(
-                    label='Temperature',
-                    minimum=0.05,
-                    maximum=10.0,
-                    step=0.05,
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
-                    elem_id='gr_xtts_temperature',
-                    info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
-                )
-                gr_xtts_length_penalty = gr.Slider(
-                    label='Length Penalty',
-                    minimum=0.3,
-                    maximum=5.0,
-                    step=0.1,
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
-                    elem_id='gr_xtts_length_penalty',
-                    info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
-                    visible=False
-                )
-                gr_xtts_num_beams = gr.Slider(
-                    label='Number Beams',
-                    minimum=1,
-                    maximum=10,
-                    step=1,
-                    value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
-                    elem_id='gr_xtts_num_beams',
-                    info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
-                    visible=False
-                )
-                gr_xtts_repetition_penalty = gr.Slider(
-                    label='Repetition Penalty',
-                    minimum=1.0,
-                    maximum=10.0,
-                    step=0.1,
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
-                    elem_id='gr_xtts_repetition_penalty',
-                    info='Penalizes repeated phrases. Higher values reduce repetition.'
-                )
-                gr_xtts_top_k = gr.Slider(
-                    label='Top-k Sampling',
-                    minimum=10,
-                    maximum=100,
-                    step=1,
-                    value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
-                    elem_id='gr_xtts_top_k',
-                    info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
-                )
-                gr_xtts_top_p = gr.Slider(
-                    label='Top-p Sampling',
-                    minimum=0.1,
-                    maximum=1.0, 
-                    step=0.01,
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']),
-                    elem_id='gr_xtts_top_p',
-                    info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
-                )
-                gr_xtts_speed = gr.Slider(
-                    label='Speed', 
-                    minimum=0.5, 
-                    maximum=3.0, 
-                    step=0.1, 
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']),
-                    elem_id='gr_xtts_speed',
-                    info='Adjusts how fast the narrator will speak.'
-                )
-                gr_xtts_enable_text_splitting = gr.Checkbox(
-                    label='Enable Text Splitting', 
-                    value=default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
-                    elem_id='gr_xtts_enable_text_splitting',
-                    info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
-                    visible=False
-                )
-            gr_tab_bark_params = gr.TabItem('BARK fine Tuned Parameters', elem_id='gr_tab_bark_params', elem_classes='tab_item', visible=visible_gr_tab_bark_params)           
-            with gr_tab_bark_params:
-                gr.Markdown(
-                    elem_id='gr_markdown_tab_bark_params',
-                    value='''
-                    ### Customize BARK Parameters
-                    Adjust the settings below to influence how the audio is generated, emotional and voice behavior random or more conservative
-                    '''
-                )
-                gr_bark_text_temp = gr.Slider(
-                    label='Text Temperature', 
-                    minimum=0.0,
-                    maximum=1.0,
-                    step=0.01,
-                    value=float(default_engine_settings[TTS_ENGINES['BARK']]['text_temp']),
-                    elem_id='gr_bark_text_temp',
-                    info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
-                )
-                gr_bark_waveform_temp = gr.Slider(
-                    label='Waveform Temperature', 
-                    minimum=0.0,
-                    maximum=1.0,
-                    step=0.01,
-                    value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
-                    elem_id='gr_bark_waveform_temp',
-                    info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
-                )
-        gr_state_update = gr.State(value={"hash": None})
-        gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
-        gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
-        gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False)
-        gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
-        with gr_group_audiobook_list:
-            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
-            gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
-            gr_audiobook_player_playback_time = gr.Number(label='', interactive=False, visible=True, elem_id="gr_audiobook_player_playback_time", value=0.0)
-            with gr.Row(elem_id='gr_row_audiobook_list'):
-                gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
-                gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
-                gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
-        gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
+def build_interface(args:dict)->gr.Blocks:
+    try:
+        script_mode = args['script_mode']
+        is_gui_process = args['is_gui_process']
+        is_gui_shared = args['share']
+        title = 'Ebook2Audiobook'
+        gr_glassmask_msg = 'Initialization, please wait...'
+        ebook_src = None
+        language_options = [
+            (
+                f"{details['name']} - {details['native_name']}" if details['name'] != details['native_name'] else details['name'],
+                lang
+            )
+            for lang, details in language_mapping.items()
+        ]
+        voice_options = []
+        tts_engine_options = []
+        custom_model_options = []
+        fine_tuned_options = []
+        audiobook_options = []
+        options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
         
-        gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
-        gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
-        gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
+        src_label_file = 'Upload File'
+        src_label_dir = 'Select a Directory'
+        
+        visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
+        visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
+        visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
+        visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
 
-        def cleanup_session(req: gr.Request):
-            socket_hash = req.session_hash
-            if any(socket_hash in session for session in context.sessions.values()):
-                session_id = context.find_id_by_hash(socket_hash)
-                ctx_tracker.end_session(session_id, socket_hash)
+        theme = gr.themes.Origin(
+            primary_hue='green',
+            secondary_hue='amber',
+            neutral_hue='gray',
+            radius_size='lg',
+            font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
+        )
 
-        def load_vtt_data(path):
-            if not path or not os.path.exists(path):
-                return None
-            try:
-                vtt_path = Path(path).with_suffix('.vtt')
-                if not os.path.exists(vtt_path):
-                    return None
-                with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
-                    content = f.read()
-                return content
-            except Exception:
-                return None
-
-        def show_modal(type, msg):
-            return f'''
+        header_css = '''
             <style>
-                .modal {{
-                    display: none; /* Hidden by default */
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    z-index: 9999;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }}
-                .modal-content {{
-                    background-color: #333;
-                    padding: 20px;
-                    border-radius: 8px;
-                    text-align: center;
-                    max-width: 300px;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-                    border: 2px solid #FFA500;
-                    color: white;
-                    position: relative;
-                }}
-                .modal-content p {{
-                    margin: 10px 0;
-                }}
-                .confirm-buttons {{
-                    display: flex;
-                    justify-content: space-evenly;
-                    margin-top: 20px;
-                }}
-                .confirm-buttons button {{
-                    padding: 10px 20px;
-                    border: none;
-                    border-radius: 5px;
-                    font-size: 16px;
-                    cursor: pointer;
-                }}
-                .confirm-buttons .confirm_yes_btn {{
-                    background-color: #28a745;
-                    color: white;
-                }}
-                .confirm-buttons .confirm_no_btn {{
-                    background-color: #dc3545;
-                    color: white;
-                }}
-                .confirm-buttons .confirm_yes_btn:hover {{
-                    background-color: #34d058;
-                }}
-                .confirm-buttons .confirm_no_btn:hover {{
-                    background-color: #ff6f71;
-                }}
-                /* Spinner */
-                .spinner {{
-                    margin: 15px auto;
-                    border: 4px solid rgba(255, 255, 255, 0.2);
-                    border-top: 4px solid #FFA500;
-                    border-radius: 50%;
-                    width: 30px;
-                    height: 30px;
-                    animation: spin 1s linear infinite;
-                }}
-                @keyframes spin {{
-                    0% {{ transform: rotate(0deg); }}
-                    100% {{ transform: rotate(360deg); }}
-                }}
+                /* Global Scrollbar Customization */
+                /* The entire scrollbar */
+                ::-webkit-scrollbar {
+                    width: 6px !important;
+                    height: 6px !important;
+                    cursor: pointer !important;;
+                }
+                /* The scrollbar track (background) */
+                ::-webkit-scrollbar-track {
+                    background: none transparent !important;
+                    border-radius: 6px !important;
+                }
+                /* The scrollbar thumb (scroll handle) */
+                ::-webkit-scrollbar-thumb {
+                    background: #c09340 !important;
+                    border-radius: 6px !important;
+                }
+                /* The scrollbar thumb on hover */
+                ::-webkit-scrollbar-thumb:hover {
+                    background: #ff8c00 !important;
+                }
+                /* Firefox scrollbar styling */
+                html {
+                    scrollbar-width: thin !important;
+                    scrollbar-color: #c09340 none !important;
+                }
+                button div.wrap span {
+                    display: none !important;
+                }
+                button div.wrap::after {
+                    content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231E90FF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>") !important;
+                    width: 24px !important;
+                    height: 24px !important;
+                    display: inline-block !important;
+                    vertical-align: middle !important;
+                }
+                body:has(#gr_convert_btn:disabled) table.file-preview button.label-clear-button {
+                    display: none !important;
+                }
+                span[data-testid="block-info"] {
+                    font-size: 12px !important;
+                }
+                /////////////////////
+                .wrap-inner {
+                    border: 1px solid #666666;
+                }
+                .selected {
+                    color: var(--secondary-500) !important;
+                    text-shadow: 0.3px 0.3px 0.3px #303030;
+                }
+                .overflow-menu {
+                    display: none !important;
+                }
+                .gr-glass-mask {
+                    z-index: 9999 !important;
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100vw !important; 
+                    height: 100vh !important;
+                    background: rgba(0,0,0,0.5) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    font-size: 1.2rem !important;
+                    color: #ffffff !important;
+                    text-align: center !important;
+                    border: none !important;
+                    opacity: 1;
+                    pointer-events: all !important;
+                }
+                .gr-glass-mask.hide {
+                    animation: fadeOut 2s ease-out 2s forwards !important;
+                }
+                .small-btn{
+                    background: var(--block-background-fill) !important;
+                    font-size: 22px !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                .small-btn:hover {
+                    background: var(--button-primary-background-fill-hover) !important;
+                    font-size: 28px !important;
+                }
+                .small-btn-red{
+                    background: var(--block-background-fill) !important;
+                    font-size: 22px !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                .small-btn-red:hover {
+                    background-color: #ff5050 !important;
+                    font-size: 28px !important;
+                }
+                .small-btn:active, .small-btn-red:active {
+                    background: var(--body-text-color) !important;
+                    font-size: 30px !important;
+                    color: var(--body-background-fill) !important;
+                }
+                .file-preview-holder {
+                    height: 116px !important;
+                    overflow: auto !important;
+                }
+                .progress-bar.svelte-ls20lj {
+                    background: var(--secondary-500) !important;
+                }
+                .file-preview-holder {
+                    height: auto !important;
+                    min-height: 0 !important;
+                    max-height: none !important;
+                }
+                ///////////////////
+                .gr-tab {
+                    padding: 0 3px 0 3px !important;
+                    margin: 0 !important;
+                    border: none !important;
+                }
+                .gr-col {
+                    padding: 0 6px 0 6px !important;
+                    margin: 0 !important;
+                    border: none !important;
+                }
+                .gr-group-main > div {
+                    background: none !important;
+                    border-radius: var(--radius-md) !important;
+                }
+                .gr-group > div {
+                    background: none !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
+                }
+                .gr-group-sides-padded{
+                    background: none !important;
+                    margin: 0 var(--size-2) 0 var(--size-2)!important;;
+                    border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
+                }
+                .gr-group-convert-btn{
+                    margin: var(--size-2) !important;;
+                    border-radius: var(--radius-md) !important;
+                }
+                .gr-markdown p {
+                    margin-top: 8px !important;
+                    width: 90px !important;
+                    padding: 0 !important;
+                    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+                    background: var(--block-background-fill) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    text-align: center !important;
+                }
+                .gr-markdown-span {
+                    margin-top: 8px !important;
+                    width: 90px !important;
+                    padding: 0 !important;
+                    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+                    background: var(--block-background-fill) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    text-align: center !important;            
+                }
+                .gr-markdown-output-split-hours {
+                    overflow: hidden !important;
+                    background: var(--block-background-fill) !important;
+                    border-radius: 0; font-size: 12px !important;
+                    text-align: center !important;
+                    vertical-align: middle !important;
+                    padding-top: 4px !important;
+                    padding-bottom: 4px !important;
+                    white-space: nowrap !important;
+                }
+                .gr-voice-player {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                    background: var(--block-background-fill) !important;
+                }
+                .play-pause-button:hover svg {
+                    fill: #ffab00 !important;
+                    stroke: #ffab00 !important;
+                    transform: scale(1.2) !important;
+                }
+                .gr-convert-btn {
+                    font-size: 30px !important;
+                }
+                ////////////////////
+                #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
+                    height: 100px !important;
+                    min-height: 100px !important;
+                    max-height: 100px !important;
+                    display: flex  !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                }
+                #gr_ebook_file label, #gr_custom_model_file label, #gr_voice_file label {
+                    background: none !important;
+                    border: none !important;
+                }
+                #gr_audiobook_player label {
+                    display: none !important;
+                }
+                #gr_ebook_file button>div, #gr_custom_model_file button>div, #gr_voice_file button>div {
+                    font-size: 12px !important;
+                }
+                #gr_ebook_file .empty, #gr_custom_model_file .empty, #gr_voice_file .empty,
+                #gr_ebook_file .wrap, #gr_custom_model_file .wrap, #gr_voice_file .wrap {
+                    height: 100% !important;
+                    min-height: 100px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                }
+                #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
+                    display: none !important;
+                }               
+                #gr_fine_tuned_list {
+                    height: 95px !important;
+                }
+                #gr_voice_list {
+                    height: 60px !important;
+                }
+                #gr_output_format_list {
+                    height: 103px !important;
+                }
+                #gr_row_output_split_hours {
+                    border-radius: 0 !important;
+                }
+                #gr_progress .progress-bar {
+                    background: #ff7b00 !important;
+                }
+                #gr_audiobook_sentence textarea{
+                    margin: auto !important;
+                    text-align: center !important;
+                }
+                #gr_session textarea, #gr_progress textarea {
+                    overflow: hidden !important;
+                    overflow-y: auto !important;
+                    scrollbar-width: none !important;
+                }
+                #gr_session textarea::-webkit-scrollbar, #gr_progress textarea::-webkit-scrollbar {
+                    display: none !important; 
+                }
+                #gr_ebook_mode span[data-testid="block-info"],
+                #gr_language span[data-testid="block-info"],
+                #gr_voice_list span[data-testid="block-info"],
+                #gr_device span[data-testid="block-info"],
+                #gr_tts_engine_list span[data-testid="block-info"],
+                #gr_output_split_hours span[data-testid="block-info"],
+                #gr_session span[data-testid="block-info"],
+                #gr_audiobook_sentence span[data-testid="block-info"],
+                #gr_audiobook_list span[data-testid="block-info"],
+                #gr_progress span[data-testid="block-info"]{
+                    display: none !important;
+                }
+                #gr_row_ebook_mode { align-items: center !important; }
+                #gr_chapters_preview {
+                    align-self: center !important; 
+                    overflow: visible !important;
+                    padding: 20px 0 20px 10px !important;
+                }
+                #gr_group_output_split {
+                    border-radius: 0 !important;
+                }
+                #gr_tts_rating {
+                    overflow: hidden !important;
+                }
+                #gr_row_voice_player {
+                    height: 60px !important;
+                }  
+                #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
+                    display: none !important;
+                }
+                #gr_audiobook_player audio {
+                    width: 100% !important;
+                    padding-top: 10px !important;
+                    padding-bottom: 10px !important;
+                    border-radius: 0px !important;
+                    background-color: #ebedf0 !important;
+                    color: #ffffff !important;
+                }
+                #gr_audiobook_player audio::-webkit-media-controls-panel {
+                    width: 100% !important;
+                    padding-top: 10px !important;
+                    padding-bottom: 10px !important;
+                    border-radius: 0px !important;
+                    background-color: #ebedf0 !important;
+                    color: #ffffff !important;
+                }
+                #gr_voice_player_hidden {
+                    z-index: -100 !important;
+                    position: absolute !important;
+                    overflow: hidden !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                }
+                #gr_state_update, #gr_restore_session, #gr_save_session,
+                #gr_audiobook_vtt, #gr_playback_time {
+                    display: none !important;
+                }
+                ///////////
+                .fade-in {
+                    animation: fadeIn 1s ease-in !important;
+                    display: inline-block !important;
+                }
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        visibility: visible !important;
+                    }
+                    to {
+                        opacity: 1;
+                    }
+                }
+                @keyframes fadeOut {
+                    from {
+                        opacity: 1;
+                    }
+                    to {
+                        opacity: 0;
+                        visibility: hidden;
+                        pointer-events: none;
+                    }
+                }
+                //////////
+                #custom-gr-modal-container,
+                #custom-gr-modal-container .gr-modal {
+                    position: fixed !important;
+                }
+                .hide-elem {
+                    z-index: -1 !important;
+                    position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                }
+                .gr-modal {
+                    position: fixed !important;
+                    top: 0 !important; left: 0 !important;
+                    width: 100% !important; height: 100% !important;
+                    background-color: rgba(0, 0, 0, 0.5) !important;
+                    z-index: 9999 !important;
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                }
+                .gr-modal-content {
+                    background-color: #333 !important;
+                    padding: 20px !important;
+                    border-radius: 9px !important;
+                    text-align: center !important;
+                    max-width: 300px !important;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
+                    border: 2px solid #FFA500 !important;
+                    color: white !important;
+                    position: relative !important;
+                }
+                .confirm-buttons {
+                    display: flex !important;
+                    justify-content: space-evenly !important;
+                    margin-top: 20px !important;
+                }
+                .confirm-buttons button {
+                    padding: 10px 20px !important;
+                    border: none !important;
+                    border-radius: 6px !important;
+                    font-size: 16px !important;
+                    cursor: pointer !important;
+                }
+                .button-green { background-color: #28a745 !important; color: white !important; }
+                .button-green:hover { background-color: #34d058 !important; }
+                .button-red  { background-color: #dc3545 !important; color: white !important; }
+                .button-red:hover  { background-color: #ff6f71 !important; }
+                .button-green:active, .button-red:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
+                }
+                .spinner {
+                    margin: 15px auto !important;
+                    border: 4px solid rgba(255, 255, 255, 0.2) !important;
+                    border-top: 4px solid #FFA500 !important;
+                    border-radius: 50% !important;
+                    width: 30px !important;
+                    height: 30px !important;
+                    animation: spin 1s linear infinite !important;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
             </style>
-            <div id="custom-modal" class="modal">
-                <div class="modal-content">
-                    <p style="color:#ffffff">{msg}</p>            
-                    {show_confirm() if type == 'confirm' else '<div class="spinner"></div>'}
+        '''
+        
+        with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(604800, 86400)) as app:
+            with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
+                with gr.Tabs(elem_id='gr_tabs'):
+                    gr_tab_main = gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab')
+                    with gr_tab_main:
+                        with gr.Row(elem_id='gr_row_tab_main'):
+                            with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
+                                with gr.Group(elem_id='gr_group_ebook_file', elem_classes=['gr-group']):
+                                    gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
+                                    gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
+                                    gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
+                                    with gr_row_ebook_mode:
+                                        gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
+                                        gr_chapters_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_preview', value=False, interactive=True, scale=1)
+                                with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
+                                    gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
+                                    gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
+                                gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', elem_classes=['gr-group'], visible=visible_gr_group_voice_file)
+                                with gr_group_voice_file:
+                                    gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
+                                    gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
+                                    gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
+                                    with gr_row_voice_player:
+                                        gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
+                                        gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                        gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
+                                        gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
+                                    gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
+                                    gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[(k, v["proc"]) for k, v in devices.items()], type='value', value=default_device, interactive=True)
+                            with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
+                                with gr.Group(elem_id='gr_group_tts_engine', elem_classes=['gr-group']):
+                                    gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value='TTS Engine')
+                                    gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
+                                with gr.Group(elem_id='gr_group_models', elem_classes=['gr-group']):
+                                    gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', elem_classes=['gr-markdown'], value='Models')
+                                    gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
+                                    gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
+                                    with gr_group_custom_model:
+                                        gr_custom_model_file = gr.File(label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
+                                        with gr.Row(elem_id='gr_row_custom_model'):
+                                            gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
+                                            gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                with gr.Group(elem_id='gr_group_output_format'):
+                                    gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value='Output')
+                                    with gr.Row(elem_id='gr_row_output_format'):
+                                        gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
+                                        with gr.Group(elem_id='gr_group_output_split'):
+                                            gr_output_split = gr.Checkbox(label='Split File', elem_id='gr_output_split', value=default_output_split, interactive=True)
+                                            gr_row_output_split_hours = gr.Row(elem_id='gr_row_output_split_hours', visible=False)
+                                            with gr_row_output_split_hours:
+                                                gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown',elem_classes=['gr-markdown-output-split-hours'], value='Hours<br/>/ Part')
+                                                gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True, scale=1)
+                                with gr.Group(elem_id='gr_group_session', elem_classes=['gr-group']):
+                                    gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
+                                    gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
+                            
+                    gr_tab_xtts_params = gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=visible_gr_tab_xtts_params)           
+                    with gr_tab_xtts_params:
+                        with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
+                            gr_xtts_temperature = gr.Slider(
+                                label='Temperature',
+                                minimum=0.05,
+                                maximum=10.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
+                                elem_id='gr_xtts_temperature',
+                                info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
+                            )
+                            gr_xtts_length_penalty = gr.Slider(
+                                label='Length Penalty',
+                                minimum=0.3,
+                                maximum=5.0,
+                                step=0.1,
+                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
+                                elem_id='gr_xtts_length_penalty',
+                                info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
+                                visible=False
+                            )
+                            gr_xtts_num_beams = gr.Slider(
+                                label='Number Beams',
+                                minimum=1,
+                                maximum=10,
+                                step=1,
+                                value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
+                                elem_id='gr_xtts_num_beams',
+                                info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
+                                visible=False
+                            )
+                            gr_xtts_repetition_penalty = gr.Slider(
+                                label='Repetition Penalty',
+                                minimum=1.0,
+                                maximum=10.0,
+                                step=0.1,
+                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
+                                elem_id='gr_xtts_repetition_penalty',
+                                info='Penalizes repeated phrases. Higher values reduce repetition.'
+                            )
+                            gr_xtts_top_k = gr.Slider(
+                                label='Top-k Sampling',
+                                minimum=10,
+                                maximum=100,
+                                step=1,
+                                value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
+                                elem_id='gr_xtts_top_k',
+                                info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
+                            )
+                            gr_xtts_top_p = gr.Slider(
+                                label='Top-p Sampling',
+                                minimum=0.1,
+                                maximum=1.0, 
+                                step=0.01,
+                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']),
+                                elem_id='gr_xtts_top_p',
+                                info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
+                            )
+                            gr_xtts_speed = gr.Slider(
+                                label='Speed', 
+                                minimum=0.5, 
+                                maximum=3.0, 
+                                step=0.1, 
+                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']),
+                                elem_id='gr_xtts_speed',
+                                info='Adjusts how fast the narrator will speak.'
+                            )
+                            gr_xtts_enable_text_splitting = gr.Checkbox(
+                                label='Enable Text Splitting', 
+                                value=default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+                                elem_id='gr_xtts_enable_text_splitting',
+                                info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
+                                visible=False
+                            )
+                    gr_tab_bark_params = gr.Tab('Bark Settings', elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=visible_gr_tab_bark_params)           
+                    with gr_tab_bark_params:
+                        gr.Markdown(
+                            elem_id='gr_markdown_tab_bark_params',
+                            value='''
+                            ### Customize BARK Parameters
+                            Adjust the settings below to influence how the audio is generated, emotional and voice behavior random or more conservative
+                            '''
+                        )
+                        with gr.Group(elem_id='gr_group_bark_params', elem_classes=['gr-group']):
+                            gr_bark_text_temp = gr.Slider(
+                                label='Text Temperature', 
+                                minimum=0.0,
+                                maximum=1.0,
+                                step=0.01,
+                                value=float(default_engine_settings[TTS_ENGINES['BARK']]['text_temp']),
+                                elem_id='gr_bark_text_temp',
+                                info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
+                            )
+                            gr_bark_waveform_temp = gr.Slider(
+                                label='Waveform Temperature', 
+                                minimum=0.0,
+                                maximum=1.0,
+                                step=0.01,
+                                value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
+                                elem_id='gr_bark_waveform_temp',
+                                info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
+                            )
+                with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
+                    gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
+                    gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
+                gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True)
+                with gr_group_audiobook_list:
+                    gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
+                    gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
+                    gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
+                    gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, lines=3, max_lines=3)
+                    gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
+                    with gr.Row(elem_id='gr_row_audiobook_list', visible=True):
+                        gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
+                        gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
+                        gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
+                    gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
+                    gr_audiobook_files_toggled = gr.State(False)
+                with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
+                    gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
+
+            gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
+                <div style="right:0;margin:auto;padding:10px;text-align:center">
+                    <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
+                    <b>{title}</b>&nbsp;<b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
                 </div>
-            </div>
-            '''
-
-        def show_confirm():
-            return '''
-            <div class="confirm-buttons">
-                <button class="confirm_yes_btn" onclick="document.querySelector('#confirm_yes_btn').click()">✔</button>
-                <button class="confirm_no_btn" onclick="document.querySelector('#confirm_no_btn').click()">⨉</button>
-            </div>
-            '''
-
-        def show_rating(tts_engine):
-
-            def yellow_stars(n):
-                return "".join(
-                    "<span style='color:#f0bc00; font-size:12px'>★</span>" for _ in range(n)
-                )
-
-            def color_box(value):
-                if value <= 4:
-                    color = "#4CAF50"  # Green = low
-                elif value <= 8:
-                    color = "#FF9800"  # Orange = medium
-                else:
-                    color = "#F44336"  # Red = high
-                return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
-            
-            rating = default_engine_settings[tts_engine]['rating']
-
-            return f"""
-            <div style='margin:0; padding:0; font-size:12px; line-height:1.2; height:auto; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px;'>
-              <span style='display:inline-flex; white-space:nowrap; padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
-              <span style='display:inline-flex; white-space:nowrap; padding:0 10px'><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
-              <span style='display:inline-flex; white-space:nowrap; padding:0 10px'><b>RAM:</b> {color_box(rating["RAM"])}</span>
-              <span style='display:inline-flex; white-space:nowrap; padding:0 10px'><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
-            </div>
-            """
-
-        def alert_exception(error):
-            gr.Error(error)
-            DependencyError(error)
-
-        def restore_interface(id, req: gr.Request):
-            try:
-                session = context.get_session(id)
-                socket_hash = req.session_hash
-                if not session.get(socket_hash):
-                    outputs = tuple([gr.update() for _ in range(24)])
-                    return outputs
-                session = context.get_session(id)
-                ebook_data = None
-                file_count = session['ebook_mode']
-                if isinstance(session['ebook_list'], list) and file_count == 'directory':
-                    #ebook_data = session['ebook_list']
-                    ebook_data = None
-                elif isinstance(session['ebook'], str) and file_count == 'single':
-                    ebook_data = session['ebook']
-                else:
-                    ebook_data = None
-                ### XTTSv2 Params
-                session['temperature'] = session['temperature'] if session['temperature'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']
-                session['length_penalty'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']
-                session['num_beams'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']
-                session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']
-                session['top_k'] = session['top_k'] if session['top_k'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']
-                session['top_p'] = session['top_p'] if session['top_p'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']
-                session['speed'] = session['speed'] if session['speed'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']
-                session['enable_text_splitting'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting']
-                ### BARK Params
-                session['text_temp'] = session['text_temp'] if session['text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
-                session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
-                return (
-                    gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
-                    gr.update(value=session['language']), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id), gr.update(value=load_vtt_data(session['audiobook'])),
-                    gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
-                    gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
-                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id),
-                    gr.update(value=session['output_split']), gr.update(value=session['output_split_hours']), gr.update(active=True)
-                )
-            except Exception as e:
-                error = f'restore_interface(): {e}'
-                alert_exception(error)
-                outputs = tuple([gr.update() for _ in range(24)])
-                return outputs
-
-        def refresh_interface(id):
-            session = context.get_session(id)
-            return (
-                    gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
-                    gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id)
+                '''
             )
 
-        def change_gr_audiobook_list(selected, id):
-            session = context.get_session(id)
-            session['audiobook'] = selected
-            if selected is not None:
-                audio_info = mediainfo(selected)
-                session['duration'] = float(audio_info['duration'])
-            visible = True if len(audiobook_options) else False
-            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(visible=visible)
-        
-        def update_gr_glass_mask(str=glass_mask_msg, attr=''):
-            return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
-        
-        def state_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
-            try:
-                if session is None:
-                    return gr.update(variant='primary', interactive=False)
-                else:
-                    if hasattr(upload_file, 'name') and not hasattr(custom_model_file, 'name'):
-                        return gr.update(variant='primary', interactive=True)
-                    elif isinstance(upload_file, list) and len(upload_file) > 0 and upload_file_mode == 'directory' and not hasattr(custom_model_file, 'name'):
-                        return gr.update(variant='primary', interactive=True)
-                    else:
-                        return gr.update(variant='primary', interactive=False)
-            except Exception as e:
-                error = f'state_convert_btn(): {e}'
-                alert_exception(error)
-        
-        def disable_components():
-            outputs = tuple([gr.update(interactive=False) for _ in range(9)])
-            return outputs
-        
-        def enable_components():
-            outputs = tuple([gr.update(interactive=True) for _ in range(9)])
-            return outputs
+            with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes=['gr-group-main']) as gr_group_blocks:
+                gr.Markdown('### Confirm Blocks')
+                with gr.Group() as gr_group_blocks_content:
+                    pass
+                with gr.Row():
+                    gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
+                    gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
 
-        def change_gr_ebook_file(data, id):
-            try:
-                session = context.get_session(id)
-                session['ebook'] = None
-                session['ebook_list'] = None
-                if data is None:
-                    if session['status'] == 'converting':
-                        session['cancellation_requested'] = True
-                        msg = 'Cancellation requested, please wait...'
-                        yield gr.update(value=show_modal('wait', msg),visible=True)
-                        return
-                if isinstance(data, list):
-                    session['ebook_list'] = data
-                else:
-                    session['ebook'] = data
-                session['cancellation_requested'] = False
-            except Exception as e:
-                error = f'change_gr_ebook_file(): {e}'
-                alert_exception(error)
-            return gr.update(visible=False)
+            gr_modal = gr.HTML(visible=False)
+            gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
+            gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
+            gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
+            gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
+
+            gr_state_update = gr.State(value={'hash': None})
+            gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
+            gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden') 
+
+            def disable_components()->tuple:
+                outputs = tuple([gr.update(interactive=False) for _ in range(11)])
+                return outputs
             
-        def change_gr_ebook_mode(val, id):
-            session = context.get_session(id)
-            session['ebook_mode'] = val
-            if val == 'single':
-                return gr.update(label=src_label_file, value=None, file_count='single')
-            else:
-                return gr.update(label=src_label_dir, value=None, file_count='directory')
+            def enable_components(id:str)->tuple:
+                session = context.get_session(id)
+                if session['event'] == 'confirm_blocks':
+                    outputs = tuple([gr.update() for _ in range(11)])
+                else:
+                    outputs = tuple([gr.update(interactive=True) for _ in range(11)])
+                return outputs
 
-        def change_gr_voice_file(f, id):
-            if f is not None:
-                state = {}
-                if len(voice_options) > max_custom_voices:
-                    error = f'You are allowed to upload a max of {max_custom_voices} voices'
-                    state['type'] = 'warning'
-                    state['msg'] = error
-                elif os.path.splitext(f.name)[1] not in voice_formats:
-                    error = f'The audio file format selected is not valid.'
-                    state['type'] = 'warning'
-                    state['msg'] = error
-                else:                  
-                    session = context.get_session(id)
-                    voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
-                    voice_name = get_sanitized(voice_name)
-                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
-                    extractor = VoiceExtractor(session, f, voice_name)
-                    status, msg = extractor.extract_voice()
-                    if status:
-                        session['voice'] = final_voice_file
-                        msg = f"Voice {voice_name} added to the voices list"
-                        state['type'] = 'success'
-                        state['msg'] = msg
-                    else:
-                        error = 'failed! Check if you audio file is compatible.'
-                        state['type'] = 'warning'
-                        state['msg'] = error
-                show_alert(state)
-                return gr.update(value=None)
-            return gr.update()
+            def show_gr_modal(type:str, msg:str)->str:
+                return f'''
+                <div id="custom-gr_modal" class="gr-modal">
+                    <div class="gr-modal-content">
+                        <p style="color:#ffffff">{msg[:70]}...</p>            
+                        {show_confirm_buttons(type)}
+                    </div>
+                </div>
+                '''
 
-        def change_gr_voice_list(selected, id):
-            session = context.get_session(id)
-            session['voice'] = next((value for label, value in voice_options if value == selected), None)
-            visible = True if session['voice'] is not None else False
-            min_width = 60 if session['voice'] is not None else 0
-            return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible)
+            def show_confirm_buttons(mode:str)->str:
+                if mode in ['confirm_deletion', 'confirm_blocks']:
+                    button_yes = f'#gr_{mode}_yes_btn'
+                    button_no = f'#gr_{mode}_no_btn'
+                    return f'''
+                    <div class="confirm-buttons">
+                        <button class="button-green" onclick="document.querySelector('{button_yes}').click()">✔</button>
+                        <button class="button-red" onclick="document.querySelector('{button_no}').click()">⨉</button>
+                    </div>
+                    '''
+                else:
+                    return '<div class="spinner"></div>'
 
-        def click_gr_voice_del_btn(selected, id):
-            try:
-                if selected is not None:
-                    session = context.get_session(id)
-                    speaker_path = os.path.abspath(selected)
-                    speaker = re.sub(r'\.wav$|\.npz$', '', os.path.basename(selected))
-                    builtin_root = os.path.join(voices_dir, session['language'])
-                    sessions_root = os.path.join(voices_dir, '__sessions')
-                    is_in_sessions = os.path.commonpath([speaker_path, os.path.abspath(sessions_root)]) == os.path.abspath(sessions_root)
-                    is_in_builtin = os.path.commonpath([speaker_path, os.path.abspath(builtin_root)]) == os.path.abspath(builtin_root)
-                    # Check if voice is built-in
-                    is_builtin = any(
-                        speaker in settings.get('voices', {})
-                        for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
+            def show_rating(tts_engine:str)->str:
+                def yellow_stars(n:int):
+                    return "".join(
+                        "<span style='color:#f0bc00; font-size:12px'>★</span>" for _ in range(n)
                     )
-                    if is_builtin and is_in_builtin:
-                        error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
-                        show_alert({"type": "warning", "msg": error})
-                        return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
-                    try:
-                        selected_path = Path(selected).resolve()
-                        parent_path = Path(session['voice_dir']).parent.resolve()
-                        if parent_path in selected_path.parents:
-                            msg = f'Are you sure to delete {speaker}...'
-                            return (
-                                gr.update(value='confirm_voice_del'),
-                                gr.update(value=show_modal('confirm', msg), visible=True),
-                                gr.update(visible=True),
-                                gr.update(visible=True)
-                            )
-                        else:
-                            error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
-                            show_alert({"type": "warning", "msg": error})
-                            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
-                    except Exception as e:
-                        error = f'Could not delete the voice file {selected}!\n{e}'
-                        alert_exception(error)
-                        return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
-                # Fallback/default return if not selected or after errors
-                return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
-            except Exception as e:
-                error = f'click_gr_voice_del_btn(): {e}'
-                alert_exception(error)
-                return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
-        def click_gr_custom_model_del_btn(selected, id):
-            try:
-                if selected is not None:
-                    session = context.get_session(id)
-                    selected_name = os.path.basename(selected)
-                    msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
-            except Exception as e:
-                error = f'Could not delete the custom model {selected_name}!'
-                alert_exception(error)
-            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
-
-        def click_gr_audiobook_del_btn(selected, id):
-            try:
-                if selected is not None:
-                    session = context.get_session(id)
-                    selected_name = Path(selected).stem
-                    msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
-            except Exception as e:
-                error = f'Could not delete the audiobook {selected_name}!'
-                alert_exception(error)
-            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
-
-        def confirm_deletion(voice_path, custom_model, audiobook, id, method=None):
-            try:
-                if method is not None:
-                    session = context.get_session(id)
-                    if method == 'confirm_voice_del':
-                        selected_name = Path(voice_path).stem
-                        pattern = re.sub(r'\.wav$', '*.wav', voice_path)
-                        files2remove = glob(pattern)
-                        for file in files2remove:
-                            os.remove(file)
-                        shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
-                        msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
-                        session['voice'] = None
-                        show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
-                    elif method == 'confirm_custom_model_del':
-                        selected_name = os.path.basename(custom_model)
-                        shutil.rmtree(custom_model, ignore_errors=True)                           
-                        msg = f'Custom model {selected_name} deleted!'
-                        session['custom_model'] = None
-                        show_alert({"type": "warning", "msg": msg})
-                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
-                    elif method == 'confirm_audiobook_del':
-                        selected_name = Path(audiobook).stem
-                        if os.path.isdir(audiobook):
-                            shutil.rmtree(selected, ignore_errors=True)
-                        elif os.path.exists(audiobook):
-                            os.remove(audiobook)
-                        vtt_path = Path(audiobook).with_suffix('.vtt')
-                        if os.path.exists(vtt_path):
-                            os.remove(vtt_path)
-                        msg = f'Audiobook {selected_name} deleted!'
-                        session['audiobook'] = None
-                        show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
-                return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
-            except Exception as e:
-                error = f'confirm_deletion(): {e}!'
-                alert_exception(error)
-            return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                def color_box(value:int)->str:
+                    if value <= 4:
+                        color = "#4CAF50"  # Green = low
+                    elif value <= 8:
+                        color = "#FF9800"  # Orange = medium
+                    else:
+                        color = "#F44336"  # Red = high
+                    return f"<span style='background:{color};color:white; padding: 0 3px 0 3px; border-radius:3px; font-size:11px; white-space: nowrap'>{str(value)} GB</span>"
                 
-        def prepare_audiobook_download(selected):
-            if os.path.exists(selected):
-                return selected
-            return None           
+                rating = default_engine_settings[tts_engine]['rating']
+                return f'''
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                        <span class="gr-markdown-span">TTS Engine</span>
+                        <table style="
+                            display:inline-block;
+                            border-collapse:collapse;
+                            border:none;
+                            margin:0;
+                            padding:0;
+                            font-size:12px;
+                            line-height:1.2;   /* compact, but no clipping */
+                        ">
+                          <tr style="border:none; vertical-align:bottom;">
+                            <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
+                              <b>VRAM:</b> {color_box(int(rating["VRAM"]))}
+                            </td>
+                            <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
+                              <b>CPU:</b> {yellow_stars(int(rating["CPU"]))}
+                            </td>
+                            <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
+                              <b>RAM:</b> {color_box(int(rating["RAM"]))}
+                            </td>
+                            <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
+                              <b>Realism:</b> {yellow_stars(int(rating["Realism"]))}
+                            </td>
+                          </tr>
+                        </table>
+                    </div>
+                '''
 
-        def update_gr_voice_list(id):
-            try:
-                nonlocal voice_options
-                session = context.get_session(id)
-                lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                file_pattern = "*.wav"
-                eng_options = []
-                bark_options = []
-                builtin_options = [
-                    (os.path.splitext(f.name)[0], str(f))
-                    for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
-                ]
-                if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
-                    builtin_names = {t[0]: None for t in builtin_options}
-                    eng_dir = Path(os.path.join(voices_dir, "eng"))
-                    eng_options = [
-                        (base, str(f))
-                        for f in eng_dir.rglob(file_pattern)
-                        for base in [os.path.splitext(f.name)[0]]
-                        if base not in builtin_names
-                    ]
-                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                    lang_array = languages.get(part3=session['language'])
-                    if lang_array:
-                        lang_iso1 = lang_array.part1 
-                        lang = lang_iso1.lower()
-                        speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
-                        pattern_speaker = re.compile(r"^.*?_speaker_(\d+)$")
-                        bark_options = [
-                            (pattern_speaker.sub(r"Speaker \1", f.stem), str(f.with_suffix(".wav")))
-                            for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
-                        ]
-                voice_options = builtin_options + eng_options + bark_options
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
-                os.makedirs(session['voice_dir'], exist_ok=True)
-                if session['voice_dir'] is not None:
-                    parent_dir = Path(session['voice_dir']).parent
-                    voice_options += [
-                        (os.path.splitext(f.name)[0], str(f))
-                        for f in parent_dir.rglob(file_pattern)
-                        if f.is_file()
-                    ]
-                if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
-                    voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
-                else:
-                    voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
-                default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if session['voice'] is None:
-                    if voice_options[0][1] is not None:
-                        default_name = Path(default_voice_path).stem
-                        for name, value in voice_options:
-                            if name == default_name:
-                                session['voice'] = value
-                                break
-                        else:
-                            values = [v for _, v in voice_options]
-                            if default_voice_path in values:
-                                session['voice'] = default_voice_path
-                            else:
-                                session['voice'] = voice_options[0][1]
-                else:
-                    current_voice_name = Path(session['voice']).stem
-                    current_voice_path = next(
-                        (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
-                    )
-                    if current_voice_path:
-                        session['voice'] = current_voice_path
-                    else:
-                        session['voice'] = default_voice_path
-                return gr.update(choices=voice_options, value=session['voice'])
-            except Exception as e:
-                error = f'update_gr_voice_list(): {e}!'
-                alert_exception(error)
-                return gr.update()
-
-        def update_gr_tts_engine_list(id):
-            try:
-                nonlocal tts_engine_options
-                session = context.get_session(id)
-                tts_engine_options = get_compatible_tts_engines(session['language'])
-                session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
-                return gr.update(choices=tts_engine_options, value=session['tts_engine'])
-            except Exception as e:
-                error = f'update_gr_tts_engine_list(): {e}!'
-                alert_exception(error)              
-                return gr.update()
-
-        def update_gr_custom_model_list(id):
-            try:
-                nonlocal custom_model_options
-                session = context.get_session(id)
-                custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
-                custom_model_options = [('None', None)] + [
-                    (
-                        str(dir),
-                        os.path.join(custom_model_tts_dir, dir)
-                    )
-                    for dir in os.listdir(custom_model_tts_dir)
-                    if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
-                ]
-                session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-                return gr.update(choices=custom_model_options, value=session['custom_model'])
-            except Exception as e:
-                error = f'update_gr_custom_model_list(): {e}!'
-                alert_exception(error)
-                return gr.update()
-
-        def update_gr_fine_tuned_list(id):
-            try:
-                nonlocal fine_tuned_options
-                session = context.get_session(id)
-                fine_tuned_options = [
-                    name for name, details in models.get(session['tts_engine'],{}).items()
-                    if details.get('lang') == 'multi' or details.get('lang') == session['language']
-                ]
-                session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else default_fine_tuned
-                return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
-            except Exception as e:
-                error = f'update_gr_fine_tuned_list(): {e}!'
-                alert_exception(error)              
-                return gr.update()
-
-        def change_gr_device(device, id):
-            session = context.get_session(id)
-            session['device'] = device
-
-        def change_gr_language(selected, id):
-            if selected:
-                session = context.get_session(id)
-                prev = session['language']      
-                session['language'] = selected
-                return[
-                    gr.update(value=session['language']),
-                    update_gr_tts_engine_list(id),
-                    update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id)
-                ]
-            return (gr.update(), gr.update(), gr.update(), gr.update())
-
-        def check_custom_model_tts(custom_model_dir, tts_engine):
-            dir_path = None
-            if custom_model_dir is not None and tts_engine is not None:
-                dir_path = os.path.join(custom_model_dir, tts_engine)
-                if not os.path.isdir(dir_path):
-                    os.makedirs(dir_path, exist_ok=True)
-            return dir_path
-
-        def change_gr_custom_model_file(f, t, id):
-            if f is not None:
-                state = {}
+            def restore_interface(id:str, req:gr.Request)->tuple:
                 try:
-                    if len(custom_model_options) > max_custom_model:
-                        error = f'You are allowed to upload a max of {max_custom_models} models'   
+                    session = context.get_session(id)
+                    socket_hash = str(req.session_hash)
+                    if not session.get(socket_hash):
+                        outputs = tuple([gr.update() for _ in range(13)])
+                        return outputs
+                    ebook_data = None
+                    file_count = session['ebook_mode']
+                    if session['ebook_list'] is not None and file_count == 'directory':
+                        session['ebook'] = None
+                        ebook_data = [f for f in session["ebook_list"] if os.path.exists(f)]
+                        if not ebook_data:
+                            ebook_data = None
+                    elif isinstance(session['ebook'], str) and file_count == 'single':
+                        session['ebook_list'] = None
+                        if os.path.exists(session['ebook']):
+                            ebook_data = session['ebook']
+                        else:
+                            ebook_data = session['ebook'] = None
+                    else:
+                        ebook_data = session['ebook'] = None
+                    if ebook_data is not None:
+                        current_dir_cache = tempfile.gettempdir()
+                        current_dir_cache_norm = os.path.normpath(current_dir_cache)
+                        prev_cache_dir = os.path.normpath(os.path.dirname(ebook_data[0]) if isinstance(ebook_data, list) else os.path.dirname(ebook_data))
+                        if prev_cache_dir != current_dir_cache_norm:
+                            ebook_data = None
+                        session['ebook'] = ebook_data
+                    return (
+                        gr.update(value=ebook_data),
+                        gr.update(value=session['ebook_mode']),
+                        gr.update(value=bool(session['chapters_preview'])),
+                        gr.update(value=session['device']),
+                        gr.update(value=session['language']),
+                        update_gr_voice_list(id),
+                        update_gr_tts_engine_list(id),
+                        update_gr_custom_model_list(id),
+                        update_gr_fine_tuned_list(id),
+                        gr.update(value=session['output_format']),
+                        gr.update(value=bool(session['output_split'])),
+                        gr.update(value=session['output_split_hours']),
+                        update_gr_audiobook_list(id)
+                    )
+                except Exception as e:
+                    error = f'restore_interface(): {e}'
+                    alert_exception(error, id)
+                    outputs = tuple([gr.update() for _ in range(13)])
+                    return outputs
+
+            def restore_audiobook_player(audiobook:str|None)->tuple:
+                try:
+                    visible = True if audiobook is not None else False
+                    return gr.update(visible=visible), gr.update(value=audiobook), gr.update(active=True)
+                except Exception as e:
+                    error = f'restore_audiobook_player(): {e}'
+                    alert_exception(error, None)
+                    outputs = tuple([gr.update() for _ in range(3)])
+                    return outputs
+
+            def refresh_interface(id:str)->tuple:
+                session = context.get_session(id)
+                if session['event'] == 'confirm_blocks':
+                    outputs = tuple([gr.update() for _ in range(9)])
+                    return outputs
+                else:
+                    return (
+                        gr.update(interactive=False), gr.update(value=None), gr.update(value=session['device']), update_gr_audiobook_list(id), 
+                        gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
+                    )
+
+            def change_gr_audiobook_list(selected:str|None, id:str)->dict:
+                try:
+                    session = context.get_session(id)
+                    session['audiobook'] = selected
+                    group_visible = True if len(audiobook_options) > 0 else False
+                    return gr.update(visible=group_visible)
+                except Exception as e:
+                    error = f'change_gr_audiobook_list(): {e}'
+                    alert_exception(error, id)
+                return gr.update(visible=group_visible)
+
+            def update_audiobook_player(id:str)->tuple:
+                try:
+                    session = context.get_session(id)
+                    if session['audiobook'] is not None: 
+                        vtt = Path(session['audiobook']).with_suffix('.vtt')
+                        if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
+                            error = f"{Path(session['audiobook']).name} does not exist!"
+                            print(error)
+                            alert_exception(error, id)
+                            return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
+                        audio_info = mediainfo(session['audiobook'])
+                        duration = audio_info.get('duration', False)
+                        if duration:
+                            session['duration'] = float(audio_info['duration'])
+                            with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
+                                vtt_content = f.read()
+                            return gr.update(value=0.0), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
+                        else:
+                            error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
+                            print(error)
+                            alert_exception(error, id)
+                except Exception as e:
+                    error = f'update_audiobook_player(): {e}'
+                    print(error)
+                    alert_exception(error, id)
+                return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
+
+            def update_gr_glassmask(str:str=gr_glassmask_msg, attr:list=['gr-glass-mask'])->dict:
+                return gr.update(value=str, elem_id='gr_glassmask', elem_classes=attr)
+
+            def change_convert_btn(upload_file:str|None=None, upload_file_mode:str|None=None, custom_model_file:str|None=None, session:DictProxy=None)->dict:
+                try:
+                    if session is None:
+                        return gr.update(variant='primary', interactive=False)
+                    else:
+                        if hasattr(upload_file, 'name') and not hasattr(custom_model_file, 'name'):
+                            return gr.update(variant='primary', interactive=True)
+                        elif isinstance(upload_file, list) and len(upload_file) > 0 and upload_file_mode == 'directory' and not hasattr(custom_model_file, 'name'):
+                            return gr.update(variant='primary', interactive=True)
+                        else:
+                            return gr.update(variant='primary', interactive=False)
+                except Exception as e:
+                    error = f'change_convert_btn(): {e}'
+                    alert_exception(error, None)
+                    gr.update()
+
+            def change_gr_ebook_file(data:str|None, id:str)->tuple:
+                try:
+                    session = context.get_session(id)
+                    session["ebook"] = None
+                    session["ebook_list"] = None
+                    if data is None:
+                        if session.get("status") == "converting":
+                            session["cancellation_requested"] = True
+                            msg = "Cancellation requested, please wait..."
+                            yield gr.update(value=show_gr_modal("wait", msg), visible=True)
+                            return
+                    if isinstance(data, list):
+                        ebook_list = []
+                        for f in data:
+                            path = f.get("path") if isinstance(f, dict) else str(f)
+                            ebook_list.append(path)
+                        session["ebook_list"] = ebook_list
+                    else:
+                        session["ebook"] = data
+                    session["cancellation_requested"] = False
+                    return gr.update(value='', visible=False)
+                except Exception as e:
+                    error = f'change_gr_ebook_file(): {e}'
+                    alert_exception(error, id)
+                return gr.update(value='', visible=False)
+
+            def change_gr_ebook_mode(val:str, id:str)->tuple:
+                session = context.get_session(id)
+                session['ebook_mode'] = val
+                if val == 'single':
+                    return gr.update(label=src_label_file, file_count='single'), gr.update(visible=True)
+                else:
+                    return gr.update(label=src_label_dir, file_count='directory'), gr.update(visible=False)
+
+            def change_gr_voice_file(f:str|None, id:str)->tuple:
+                if f is not None:
+                    state = {}
+                    if len(voice_options) > max_custom_voices:
+                        error = f'You are allowed to upload a max of {max_custom_voices} voices'
                         state['type'] = 'warning'
                         state['msg'] = error
-                    else:
+                    elif os.path.splitext(f.name)[1] not in voice_formats:
+                        error = f'The audio file format selected is not valid.'
+                        state['type'] = 'warning'
+                        state['msg'] = error
+                    else:                  
                         session = context.get_session(id)
-                        session['tts_engine'] = t
-                        required_files = models[session['tts_engine']]['internal']['files']
-                        if analyze_uploaded_file(f, required_files):
-                            model = extract_custom_model(f, session)
-                            if model is None:
-                                error = f'Cannot extract custom model zip file {os.path.basename(f)}'
-                                state['type'] = 'warning'
-                                state['msg'] = error
-                            else:
-                                session['custom_model'] = model
-                                msg = f'{os.path.basename(model)} added to the custom models list'
-                                state['type'] = 'success'
-                                state['msg'] = msg
+                        voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
+                        voice_name = get_sanitized(voice_name)
+                        final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
+                        extractor = VoiceExtractor(session, f, voice_name)
+                        status, msg = extractor.extract_voice()
+                        if status:
+                            session['voice'] = final_voice_file
+                            msg = f'Voice {voice_name} added to the voices list'
+                            state['type'] = 'success'
+                            state['msg'] = msg
+                            show_alert(state)
                         else:
-                            error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                            error = 'failed! Check if you audio file is compatible.'
                             state['type'] = 'warning'
                             state['msg'] = error
+                    show_alert(state)
+                    return update_gr_voice_list(id)
+                else:
+                    return gr.update()
+
+            def change_gr_voice_list(selected:str|None, id:str)->tuple:
+                session = context.get_session(id)
+                session['voice'] = next((value for label, value in voice_options if value == selected), None)
+                visible = True if session['voice'] is not None else False
+                return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
+
+            def click_gr_voice_del_btn(selected:str, id:str)->tuple:
+                try:
+                    if selected is not None:
+                        session = context.get_session(id)
+                        speaker_path = os.path.abspath(selected)
+                        speaker = re.sub(r'\.wav$|\.npz|\.pth$', '', os.path.basename(selected))
+                        builtin_root = os.path.join(voices_dir, session['language'])
+                        sessions_root = os.path.join(voices_dir, '__sessions')
+                        is_in_sessions = os.path.commonpath([speaker_path, os.path.abspath(sessions_root)]) == os.path.abspath(sessions_root)
+                        is_in_builtin = os.path.commonpath([speaker_path, os.path.abspath(builtin_root)]) == os.path.abspath(builtin_root)
+                        # Check if voice is built-in
+                        is_builtin = any(
+                            speaker in settings.get('voices', {})
+                            for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
+                        )
+                        if is_builtin and is_in_builtin:
+                            error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
+                            show_alert({"type": "warning", "msg": error})
+                            return gr.update(), gr.update(visible=False)
+                        try:
+                            selected_path = Path(selected).resolve()
+                            parent_path = Path(session['voice_dir']).parent.resolve()
+                            if parent_path in selected_path.parents:
+                                msg = f'Are you sure to delete {speaker}...'
+                                return (
+                                    gr.update(value='confirm_voice_del'),
+                                    gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                                )
+                            else:
+                                error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
+                                show_alert({"type": "warning", "msg": error})
+                                return gr.update(), gr.update(visible=False)
+                        except Exception as e:
+                            error = f'Could not delete the voice file {selected}!\n{e}'
+                            alert_exception(error, id)
+                            return gr.update(), gr.update(visible=False)
+                    # Fallback/default return if not selected or after errors
+                    return gr.update(), gr.update(visible=False)
+                except Exception as e:
+                    error = f'click_gr_voice_del_btn(): {e}'
+                    alert_exception(error, id)
+                    return gr.update(), gr.update(visible=False)
+
+            def click_gr_custom_model_del_btn(selected:str, id:str)->tuple:
+                try:
+                    if selected is not None:
+                        session = context.get_session(id)
+                        selected_name = os.path.basename(selected)
+                        msg = f'Are you sure to delete {selected_name}...'
+                        return gr.update(value='confirm_custom_model_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                except Exception as e:
+                    error = f'Could not delete the custom model {selected_name}!'
+                    alert_exception(error, id)
+                return gr.update(), gr.update(visible=False)
+
+            def click_gr_audiobook_del_btn(selected:str, id:str)->tuple:
+                try:
+                    if selected is not None:
+                        session = context.get_session(id)
+                        selected_name = Path(selected).stem
+                        msg = f'Are you sure to delete {selected_name}...'
+                        return gr.update(value='confirm_audiobook_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                except Exception as e:
+                    error = f'Could not delete the audiobook {selected_name}!'
+                    alert_exception(error, id)
+                return gr.update(), gr.update(visible=False), gr.update(visible=False)
+
+            def confirm_deletion(voice_path:str, custom_model:str, audiobook:str, id:str, method:str|None=None)->tuple:
+                try:
+                    if method is not None:
+                        session = context.get_session(id)
+                        if method == 'confirm_voice_del':
+                            selected_name = Path(voice_path).stem
+                            pattern = re.sub(r'\.wav$', '*.wav', voice_path)
+                            files2remove = glob(pattern)
+                            for file in files2remove:
+                                os.remove(file)
+                            shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
+                            msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
+                            session['voice'] = None
+                            show_alert({"type": "warning", "msg": msg})
+                            return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(id)
+                        elif method == 'confirm_custom_model_del':
+                            selected_name = os.path.basename(custom_model)
+                            shutil.rmtree(custom_model, ignore_errors=True)                           
+                            msg = f'Custom model {selected_name} deleted!'
+                            session['custom_model'] = None
+                            show_alert({"type": "warning", "msg": msg})
+                            return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
+                        elif method == 'confirm_audiobook_del':
+                            selected_name = Path(audiobook).stem
+                            if os.path.isdir(audiobook):
+                                shutil.rmtree(selected, ignore_errors=True)
+                            elif os.path.exists(audiobook):
+                                os.remove(audiobook)
+                            vtt_path = Path(audiobook).with_suffix('.vtt')
+                            if os.path.exists(vtt_path):
+                                os.remove(vtt_path)
+                            process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], audiobook).encode()).hexdigest()}")
+                            shutil.rmtree(process_dir, ignore_errors=True)
+                            msg = f'Audiobook {selected_name} deleted!'
+                            session['audiobook'] = None
+                            show_alert({"type": "warning", "msg": msg})
+                            return gr.update(), update_gr_audiobook_list(id), gr.update(value='', visible=False), gr.update()
+                    return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
+                except Exception as e:
+                    error = f'confirm_deletion(): {e}!'
+                    alert_exception(error, id)
+                return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
+
+            def confirm_blocks(choice:str, id:str)->dict:
+                session = context.get_session(id)
+                if choice == 'yes':           
+                    session['event'] = 'blocks_confirmed'
+                else:
+                    session['status'] = 'ready'
+                return gr.update(value='', visible=False)
+
+            def update_gr_voice_list(id:str, fine_tuned:str=False)->dict:
+                try:
+                    nonlocal voice_options
+                    session = context.get_session(id)
+                    lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
+                    file_pattern = "*.wav"
+                    eng_options = []
+                    bark_options = []
+                    builtin_options = [
+                        (os.path.splitext(f.name)[0], str(f))
+                        for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
+                    ]
+                    if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
+                        builtin_names = {t[0]: None for t in builtin_options}
+                        eng_dir = Path(os.path.join(voices_dir, "eng"))
+                        eng_options = [
+                            (base, str(f))
+                            for f in eng_dir.rglob(file_pattern)
+                            for base in [os.path.splitext(f.name)[0]]
+                            if base not in builtin_names
+                        ]
+                    if session['tts_engine'] == TTS_ENGINES['BARK']:
+                        lang_dict = Lang(session['language'])
+                        if lang_dict:
+                            lang_iso1 = lang_dict.pt1
+                            lang = lang_iso1.lower()
+                            speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
+                            pattern_speaker = re.compile(r"^.*?_speaker_(\d+)$")
+                            bark_options = [
+                                (pattern_speaker.sub(r"Speaker \1", f.stem), str(f.with_suffix(".wav")))
+                                for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
+                            ]
+                    voice_options = builtin_options + eng_options + bark_options
+                    session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                    os.makedirs(session['voice_dir'], exist_ok=True)
+                    if session['voice_dir'] is not None:
+                        session_voice_dir = Path(session['voice_dir'])
+                        voice_options += [
+                            (os.path.splitext(f.name)[0], str(f))
+                            for f in session_voice_dir.rglob(file_pattern)
+                            if f.is_file()
+                        ]
+                    if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+                        voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
+                    else:
+                        voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
+                    if fine_tuned and fine_tuned != 'internal':
+                        session['voice'] = models[session['tts_engine']][fine_tuned]['voice']
+                    else:
+                        voice_paths = {v[1] for v in voice_options}
+                        if models[session['tts_engine']]['internal']['voice'] in voice_paths:
+                            default_voice_path = models[session['tts_engine']]['internal']['voice']
+                        else:
+                            default_voice_path = voice_options[0][1]
+                        if session['voice'] is None:
+                            if default_voice_path is not None:
+                                default_name = Path(default_voice_path).stem
+                                for name, value in voice_options:
+                                    if name == default_name and isinstance(value, str):
+                                        session['voice'] = value
+                                        break
+                                else:
+                                    values = [v for _, v in voice_options]
+                                    if default_voice_path in values:
+                                        session['voice'] = default_voice_path
+                                    else:
+                                        session['voice'] = voice_options[0][1]
+                        else:
+                            if session['voice'] not in voice_paths:
+                                session['voice'] = default_voice_path
+                    return gr.update(choices=voice_options, value=session['voice'])
+                except Exception as e:
+                    error = f'update_gr_voice_list(): {e}!'
+                    alert_exception(error, id)
+                    return gr.update()
+
+            def update_gr_tts_engine_list(id:str)->dict:
+                try:
+                    nonlocal tts_engine_options
+                    session = context.get_session(id)
+                    tts_engine_options = get_compatible_tts_engines(session['language'])
+                    session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
+                    return gr.update(choices=tts_engine_options, value=session['tts_engine'])
+                except Exception as e:
+                    error = f'update_gr_tts_engine_list(): {e}!'
+                    alert_exception(error, id)              
+                    return gr.update()
+
+            def update_gr_custom_model_list(id:str)->dict:
+                try:
+                    nonlocal custom_model_options
+                    session = context.get_session(id)
+                    custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
+                    custom_model_options = [('None', None)] + [
+                        (
+                            str(dir),
+                            os.path.join(custom_model_tts_dir, dir)
+                        )
+                        for dir in os.listdir(custom_model_tts_dir)
+                        if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
+                    ]
+                    session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
+                    model_paths = {v[1] for v in custom_model_options}
+                    if session['custom_model'] not in model_paths:
+                        return gr.update(choices=custom_model_options)
+                    return gr.update(choices=custom_model_options, value=session['custom_model'])
+                except Exception as e:
+                    error = f'update_gr_custom_model_list(): {e}!'
+                    alert_exception(error, id)
+                    return gr.update()
+
+            def update_gr_fine_tuned_list(id:str)->dict:
+                try:
+                    nonlocal fine_tuned_options
+                    session = context.get_session(id)
+                    fine_tuned_options = [
+                        name for name, details in models.get(session['tts_engine'], {}).items()
+                        if details.get('lang') in ('multi', session['language'])
+                    ]
+                    if session['fine_tuned'] in fine_tuned_options:
+                        fine_tuned = session['fine_tuned']
+                    else:
+                        fine_tuned = default_fine_tuned
+                    session['fine_tuned'] = fine_tuned
+                    return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
+                except Exception as e:
+                    error = f'update_gr_fine_tuned_list(): {e}!'
+                    alert_exception(error, id)              
+                    return gr.update()
+
+            def change_gr_device(selected:str, id:str)->None:
+                session = context.get_session(id)
+                session['device'] = selected
+
+            def change_gr_language(selected:str, id:str)->tuple:
+                if selected:
+                    session = context.get_session(id)
+                    prev = session['language']      
+                    session['language'] = selected
+                    return (
+                        gr.update(value=session['language']),
+                        update_gr_tts_engine_list(id),
+                        update_gr_custom_model_list(id),
+                        update_gr_fine_tuned_list(id),
+                        update_gr_voice_list(id)
+                    )
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+
+            def check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
+                dir_path = None
+                if custom_model_dir is not None and tts_engine is not None:
+                    dir_path = os.path.join(custom_model_dir, tts_engine)
+                    if not os.path.isdir(dir_path):
+                        os.makedirs(dir_path, exist_ok=True)
+                return dir_path
+
+            def change_gr_custom_model_file(f:str|None, t:str, id:str)->tuple:
+                try:
+                    session = context.get_session(id)
+                    if f is not None:
+                        state = {}
+                        if len(custom_model_options) > max_custom_model:
+                            error = f'You are allowed to upload a max of {max_custom_models} models'   
+                            state['type'] = 'warning'
+                            state['msg'] = error
+                        else:
+                            session['tts_engine'] = t
+                            required_files = models[session['tts_engine']]['internal']['files']
+                            if analyze_uploaded_file(f, required_files):
+                                model = extract_custom_model(f, session)
+                                if model is None:
+                                    error = f'Cannot extract custom model zip file {os.path.basename(f)}'
+                                    state['type'] = 'warning'
+                                    state['msg'] = error
+                                else:
+                                    session['custom_model'] = model
+                                    msg = f'{os.path.basename(model)} added to the custom models list'
+                                    state['type'] = 'success'
+                                    state['msg'] = msg
+                            else:
+                                error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                                state['type'] = 'warning'
+                                state['msg'] = error
+                        show_alert(state)
+                        return gr.update(value=None), update_gr_custom_model_list(id), gr.update(visible=False)
                 except ClientDisconnect:
                     error = 'Client disconnected during upload. Operation aborted.'
                     state['type'] = 'error'
                     state['msg'] = error
                 except Exception as e:
-                    error = f'change_gr_custom_model_file() exception: {str(e)}'
+                    error = f'change_gr_custom_model_file() error: {str(e)}'
                     state['type'] = 'error'
                     state['msg'] = error
-                show_alert(state)
-                return gr.update(value=None)
-            return gr.update()
+                return gr.update(), gr.update(), gr.update(visible=True)
 
-        def change_gr_tts_engine_list(engine, id):
-            session = context.get_session(id)
-            session['tts_engine'] = engine
-            default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-            if default_voice_path is None:
-                session['voice'] = default_voice_path
-            bark_visible = False
-            if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                visible_custom_model = True
-                if session['fine_tuned'] != 'internal':
-                    visible_custom_model = False
-                return (
-                       gr.update(value=show_rating(session['tts_engine'])), 
-                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
-                       gr.update(label=f"*Upload {session['tts_engine']} Model (Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
-                       gr.update(label=f"My {session['tts_engine']} custom models")
-                )
-            else:
-                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                    bark_visible = visible_gr_tab_bark_params
-                return (
-                        gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), 
-                        gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
-                )
-                
-        def change_gr_fine_tuned_list(selected, id):
-            if selected:
+            def change_gr_tts_engine_list(engine:str, id:str)->tuple:
                 session = context.get_session(id)
-                visible = False
+                session['tts_engine'] = engine
+                session['fine_tuned'] = default_fine_tuned
+                default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
+                if default_voice_path is None:
+                    session['voice'] = default_voice_path
+                bark_visible = False
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                    if selected == 'internal':
-                        visible = visible_gr_group_custom_model
-                session['fine_tuned'] = selected
-                return gr.update(visible=visible)
-            return gr.update()
-
-        def change_gr_custom_model_list(selected, id):
-            session = context.get_session(id)
-            session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
-            visible = True if session['custom_model'] is not None else False
-            return gr.update(visible=not visible), gr.update(visible=visible)
-        
-        def change_gr_output_format_list(val, id):
-            session = context.get_session(id)
-            session['output_format'] = val
-            return
-            
-        def change_gr_output_split(bool, id):
-            session = context.get_session(id)
-            session['output_split'] = bool
-            return gr.update(visible=bool)
-
-        def change_gr_output_split_hours(selected, id):
-            session = context.get_session(id)
-            session['output_split_hours'] = selected
-            return
-
-        def change_gr_audiobook_player_playback_time(str, id):
-            session = context.get_session(id)
-            session['playback_time'] = float(str)
-            return
-
-        def change_param(key, val, id, val2=None):
-            session = context.get_session(id)
-            session[key] = val
-            state = {}
-            if key == 'length_penalty':
-                if val2 is not None:
-                    if float(val) > float(val2):
-                        error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
-                        state['type'] = 'warning'
-                        state['msg'] = error
-                        show_alert(state)
-            elif key == 'num_beams':
-                if val2 is not None:
-                    if float(val) < float(val2):
-                        error = 'Num beams must be always higher than length penalty or equal if its value is 1.0'   
-                        state['type'] = 'warning'
-                        state['msg'] = error
-                        show_alert(state)
-            return
-
-        def submit_convert_btn(
-                id, device, ebook_file, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
-                length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp,
-                output_split, output_split_hours
-            ):
-            try:
-                session = context.get_session(id)
-                args = {
-                    "is_gui_process": is_gui_process,
-                    "session": id,
-                    "script_mode": script_mode,
-                    "device": device.lower(),
-                    "tts_engine": tts_engine,
-                    "ebook": ebook_file if isinstance(ebook_file, str) else None,
-                    "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
-                    "audiobooks_dir": session['audiobooks_dir'],
-                    "voice": voice,
-                    "language": language,
-                    "custom_model": custom_model,
-                    "fine_tuned": fine_tuned,
-                    "output_format": output_format,
-                    "temperature": float(temperature),
-                    "length_penalty": float(length_penalty),
-                    "num_beams": session['num_beams'],
-                    "repetition_penalty": float(repetition_penalty),
-                    "top_k": int(top_k),
-                    "top_p": float(top_p),
-                    "speed": float(speed),
-                    "enable_text_splitting": enable_text_splitting,
-                    "text_temp": float(text_temp),
-                    "waveform_temp": float(waveform_temp),
-                    "output_split": output_split,
-                    "output_split_hours": output_split_hours
-                }
-                error = None
-                if args['ebook'] is None and args['ebook_list'] is None:
-                    error = 'Error: a file or directory is required.'
-                    show_alert({"type": "warning", "msg": error})
-                elif args['num_beams'] < args['length_penalty']:
-                    error = 'Error: num beams must be greater or equal than length penalty.'
-                    show_alert({"type": "warning", "msg": error})                   
+                    visible_custom_model = True if session['fine_tuned'] == 'internal' else False
+                    return (
+                           gr.update(value=show_rating(session['tts_engine'])), 
+                           gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
+                           gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
+                           gr.update(label=f"My {session['tts_engine']} custom models"), update_gr_voice_list(id)
+                    )
                 else:
-                    session['status'] = 'converting'
-                    session['progress'] = len(audiobook_options)
-                    if isinstance(args['ebook_list'], list):
-                        ebook_list = args['ebook_list'][:]
+                    if session['tts_engine'] == TTS_ENGINES['BARK']:
+                        bark_visible = visible_gr_tab_bark_params
+                    return (
+                            gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), 
+                            gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"), gr.update(label=''), update_gr_voice_list(id)
+                    )
+                    
+            def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
+                if selected:
+                    session = context.get_session(id)
+                    visible = False
+                    if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                        if selected == 'internal':
+                            visible = visible_gr_group_custom_model
+                    session['fine_tuned'] = selected
+                    return gr.update(visible=visible), update_gr_voice_list(id, selected)
+                return gr.update(), gr.update()
+
+            def change_gr_custom_model_list(selected:str, id:str)->tuple:
+                session = context.get_session(id)
+                session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
+                visible = True if session['custom_model'] is not None else False
+                return gr.update(visible=not visible), gr.update(visible=visible)
+            
+            def change_gr_output_format_list(val:str, id:str)->None:
+                session = context.get_session(id)
+                session['output_format'] = val
+                return
+                
+            def change_gr_output_split(val:str, id:str)->dict:
+                session = context.get_session(id)
+                session['output_split'] = val
+                return gr.update(visible=val)
+
+            def change_gr_playback_time(time:float, id:str)->None:
+                session = context.get_session(id)
+                session['playback_time'] = time
+                return
+
+            def toggle_audiobook_files(audiobook:str, is_visible:bool)->tuple:
+                if not audiobook:
+                    error = 'No audiobook selected.'
+                    alert_exception(error, None)
+                    return gr.update(), False
+                if is_visible:
+                    return gr.update(visible=False, value=None), False
+                p = Path(audiobook)
+                if not p.exists():
+                    error = f'Audio not found: {p}'
+                    alert_exception(error, None)
+                    return gr.update(), False
+                files = [str(p)]
+                vtt = p.with_suffix(".vtt")
+                if vtt.exists():
+                    files.append(str(vtt))
+                return gr.update(visible=True, value=files), True
+
+            def change_param(key:str, val:Any, id:str, val2:Any=None)->None:
+                session = context.get_session(id)
+                session[key] = val
+                state = {}
+                if key == "chapters_preview":
+                    msg = 'Chapters preview feature will be available to the next version'   
+                    state['type'] = 'info'
+                    state['msg'] = msg
+                    show_alert(state)
+                elif key == 'xtts_length_penalty':
+                    if val2 is not None:
+                        if float(val) > float(val2):
+                            error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
+                            state['type'] = 'warning'
+                            state['msg'] = error
+                            show_alert(state)
+                elif key == 'xtts_num_beams':
+                    if val2 is not None:
+                        if float(val) < float(val2):
+                            error = 'Num beams must be always higher than length penalty or equal if its value is 1.0'   
+                            state['type'] = 'warning'
+                            state['msg'] = error
+                            show_alert(state)
+
+            def submit_convert_btn(
+                    id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, xtts_temperature:float, 
+                    xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
+                    output_split:bool, output_split_hours:str
+                )->tuple:
+                try:
+                    session = context.get_session(id)
+                    args = {
+                        "is_gui_process": session['is_gui_process'],
+                        "session": id,
+                        "script_mode": script_mode,
+                        "chapters_preview": chapters_preview,
+                        "device": device,
+                        "tts_engine": tts_engine,
+                        "ebook": ebook_file if isinstance(ebook_file, str) else None,
+                        "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
+                        "audiobooks_dir": session['audiobooks_dir'],
+                        "voice": voice,
+                        "language": language,
+                        "custom_model": custom_model,
+                        "fine_tuned": fine_tuned,
+                        "output_format": output_format,
+                        "xtts_temperature": float(xtts_temperature),
+                        "xtts_length_penalty": float(xtts_length_penalty),
+                        "xtts_num_beams": int(session['xtts_num_beams']),
+                        "xtts_repetition_penalty": float(xtts_repetition_penalty),
+                        "xtts_top_k": int(xtts_top_k),
+                        "xtts_top_p": float(xtts_top_p),
+                        "xtts_speed": float(xtts_speed),
+                        "xtts_enable_text_splitting": bool(xtts_enable_text_splitting),
+                        "bark_text_temp": float(bark_text_temp),
+                        "bark_waveform_temp": float(bark_waveform_temp),
+                        "output_split": bool(output_split),
+                        "output_split_hours": output_split_hours,
+                        "event": None
+                    }
+                    error = None
+                    if args['ebook'] is None and args['ebook_list'] is None:
+                        error = 'Error: a file or directory is required.'
+                        show_alert({"type": "warning", "msg": error})
+                    elif args['xtts_num_beams'] < args['xtts_length_penalty']:
+                        error = 'Error: num beams must be greater or equal than length penalty.'
+                        show_alert({"type": "warning", "msg": error})                   
+                    else:
+                        session['status'] = 'converting'
+                        session['progress'] = len(audiobook_options)
+                        if isinstance(args['ebook_list'], list):
+                            args['chapters_preview'] = None
+                            ebook_list = args['ebook_list'][:]
+                            for file in ebook_list:
+                                if any(file.endswith(ext) for ext in ebook_formats):
+                                    print(f'Processing eBook file: {os.path.basename(file)}')
+                                    args['ebook'] = file
+                                    progress_status, passed = convert_ebook(args)
+                                    if passed is False:
+                                        if session['status'] == 'converting':
+                                            error = 'Conversion cancelled.'
+                                            break
+                                        else:
+                                            error = 'Conversion failed.'
+                                            break
+                                    else:
+                                        show_alert({"type": "success", "msg": progress_status})
+                                        args['ebook_list'].remove(file)
+                                        reset_session(args['session'])
+                                        count_file = len(args['ebook_list'])
+                                        if count_file > 0:
+                                            msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                            yield gr.update(value=msg), gr.update()
+                                        else:
+                                            msg = 'Conversion successful!'
+                                            session['status'] = 'ready'
+                                            return gr.update(value=msg), gr.update()
+                        else:
+                            print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
+                            progress_status, passed = convert_ebook(args)
+                            if passed is False:
+                                if session['status'] == 'converting':
+                                    error = 'Conversion cancelled.'
+                                else:
+                                    error = 'Conversion failed.'
+                            else:
+                                if progress_status == 'confirm_blocks':
+                                    session['event'] = progress_status
+                                    msg = 'Select the blocks to convert:'
+                                    print(msg)
+                                    yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
+                                    return
+                                else:
+                                    show_alert({"type": "success", "msg": progress_status})
+                                    reset_session(args['session'])
+                                    msg = 'Conversion successful!'
+                                    session['status'] = 'ready'
+                                    return gr.update(value=msg), gr.update()
+                    if error is not None:
+                        show_alert({"type": "warning", "msg": error})
+                except Exception as e:
+                    error = f'submit_convert_btn(): {e}'
+                    alert_exception(error, id)
+                session['status'] = 'ready'
+                return gr.update(), gr.update()
+            
+            def submit_confirmed_blocks(id:str)->tuple:
+                try:
+                    session = context.get_session(id)
+                    error = None
+                    if isinstance(session['ebook_list'], list):
+                        ebook_list = session['ebook_list'][:]
                         for file in ebook_list:
                             if any(file.endswith(ext) for ext in ebook_formats):
                                 print(f'Processing eBook file: {os.path.basename(file)}')
-                                args['ebook'] = file
-                                progress_status, passed = convert_ebook(args)
+                                session['ebook'] = file
+                                progress_status, passed = convert_ebook(session)
                                 if passed is False:
                                     if session['status'] == 'converting':
                                         error = 'Conversion cancelled.'
@@ -3377,18 +3894,14 @@ def web_interface(args, ctx):
                                         break
                                 else:
                                     show_alert({"type": "success", "msg": progress_status})
-                                    args['ebook_list'].remove(file)
-                                    reset_ebook_session(args['session'])
-                                    count_file = len(args['ebook_list'])
-                                    if count_file > 0:
-                                        msg = f"{len(args['ebook_list'])} remaining..."
-                                    else: 
-                                        msg = 'Conversion successful!'
-                                    yield gr.update(value=msg)
-                        session['status'] = 'ready'
+                                    session['ebook_list'].remove(file)
+                                    reset_session(session['id'])
+                                    msg = 'Conversion successful!'
+                                    session['status'] = 'ready'
+                                    return gr.update(value=msg), gr.update()
                     else:
-                        print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
-                        progress_status, passed = convert_ebook(args)
+                        print(f"Processing eBook file: {os.path.basename(session['ebook'])}")
+                        progress_status, passed = convert_ebook(session)
                         if passed is False:
                             if session['status'] == 'converting':
                                 error = 'Conversion cancelled.'
@@ -3397,712 +3910,1071 @@ def web_interface(args, ctx):
                             session['status'] = 'ready'
                         else:
                             show_alert({"type": "success", "msg": progress_status})
-                            reset_ebook_session(args['session'])
+                            reset_session(session['id'])
                             msg = 'Conversion successful!'
-                            return gr.update(value=msg)
-                if error is not None:
-                    show_alert({"type": "warning", "msg": error})
-            except Exception as e:
-                error = f'submit_convert_btn(): {e}'
-                alert_exception(error)
-            return gr.update(value='')
+                            session['status'] = 'ready'
+                            return gr.update(value=msg), gr.update()
+                    if error is not None:
+                        show_alert({"type": "warning", "msg": error})
+                except Exception as e:
+                    error = f'submit_confirmed_blocks(): {e}'
+                    alert_exception(error, id)
+                return gr.update(), gr.update()          
 
-        def update_gr_audiobook_list(id):
-            try:
-                nonlocal audiobook_options
-                session = context.get_session(id)
-                audiobook_options = [
-                    (f, os.path.join(session['audiobooks_dir'], str(f)))
-                    for f in os.listdir(session['audiobooks_dir'])
-                    if not f.lower().endswith(".vtt")  # exclude VTT files
-                ]
-                audiobook_options.sort(
-                    key=lambda x: os.path.getmtime(x[1]),
-                    reverse=True
-                )
-                session['audiobook'] = (
-                    session['audiobook']
-                    if session['audiobook'] in [option[1] for option in audiobook_options]
-                    else None
-                )
-                if len(audiobook_options) > 0:
-                    if session['audiobook'] is not None:
-                        return gr.update(choices=audiobook_options, value=session['audiobook'])
+            def update_gr_audiobook_list(id:str)->dict:
+                try:
+                    nonlocal audiobook_options
+                    session = context.get_session(id)
+                    if session['audiobooks_dir'] is not None:
+                        audiobook_options = [
+                            (f, os.path.join(session['audiobooks_dir'], str(f)))
+                            for f in os.listdir(session['audiobooks_dir'])
+                            if not f.lower().endswith(".vtt")
+                        ]
+                    audiobook_options.sort(
+                        key=lambda x: os.path.getmtime(x[1]),
+                        reverse=True
+                    )
+                    session['audiobook'] = (
+                        session['audiobook']
+                        if session['audiobook'] in [option[1] for option in audiobook_options]
+                        else None
+                    )
+                    if len(audiobook_options) > 0:
+                        if session['audiobook'] is not None:
+                            return gr.update(choices=audiobook_options, value=session['audiobook'])
+                        else:
+                            return gr.update(choices=audiobook_options, value=audiobook_options[0][1])
                     else:
-                        return gr.update(choices=audiobook_options, value=audiobook_options[0][1])
-                gr.update(choices=audiobook_options)
-            except Exception as e:
-                error = f'update_gr_audiobook_list(): {e}!'
-                alert_exception(error)              
+                        return gr.update(choices=audiobook_options, value=None)
+                except Exception as e:
+                    error = f'update_gr_audiobook_list(): {e}!'
+                    alert_exception(error, id)              
                 return gr.update()
 
-        def change_gr_read_data(data, state, req: gr.Request):
-            try:
-                msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
-                if data is None:
-                    data = context.get_session(str(uuid.uuid4()))
-                session = context.get_session(data['id'])
-                if data.get('tab_id') == session.get('tab_id') or len(active_sessions) == 0:
-                    restore_session_from_data(data, session)
-                    session['status'] = None
-                if not ctx_tracker.start_session(session['id']):
-                    error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
-                    return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
-                else:
-                    active_sessions.add(req.session_hash)
-                    session[req.session_hash] = req.session_hash
-                    session['cancellation_requested'] = False
-                if isinstance(session['ebook'], str):
-                    if not os.path.exists(session['ebook']):
-                        session['ebook'] = None
-                if session['voice'] is not None:
-                    if not os.path.exists(session['voice']):
-                        session['voice'] = None
-                if session['custom_model'] is not None:
-                    if not os.path.exists(session['custom_model_dir']):
-                        session['custom_model'] = None 
-                if session['fine_tuned'] is not None:
-                    if session['tts_engine'] is not None:
-                        if session['tts_engine'] in models.keys():
-                            if session['fine_tuned'] not in models[session['tts_engine']].keys():
+            def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
+                try:
+                    msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
+                    if data is None or isinstance(data, str) or not data.get('id'):
+                        data = context.get_session(str(uuid.uuid4()))
+                    session = context.get_session(data['id'])
+                    if len(active_sessions) == 0 or session['status'] is None:
+                        restore_session_from_data(data, session)
+                        session['status'] = None
+                    if not context_tracker.start_session(session['id']):
+                        error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
+                        return gr.update(), gr.update(), gr.update(value=''), update_gr_glassmask(str=error)
+                    else:
+                        active_sessions.add(req.session_hash)
+                        session[req.session_hash] = req.session_hash
+                        session['cancellation_requested'] = False
+                    if isinstance(session['ebook'], str):
+                        if not os.path.exists(session['ebook']):
+                            session['ebook'] = None
+                    if session['voice'] is not None:
+                        if not os.path.exists(session['voice']):
+                            session['voice'] = None
+                    if session['custom_model'] is not None:
+                        if not os.path.exists(session['custom_model_dir']):
+                            session['custom_model'] = None 
+                    if session['fine_tuned'] is not None:
+                        if session['tts_engine'] is not None:
+                            if session['tts_engine'] in models.keys():
+                                if session['fine_tuned'] not in models[session['tts_engine']].keys():
+                                    session['fine_tuned'] = default_fine_tuned
+                            else:
+                                session['tts_engine'] = default_tts_engine
                                 session['fine_tuned'] = default_fine_tuned
-                        else:
-                            session['tts_engine'] = default_tts_engine
-                            session['fine_tuned'] = default_fine_tuned
-                if session['audiobook'] is not None:
-                    if not os.path.exists(session['audiobook']):
-                        session['audiobook'] = None
-                if session['status'] == 'converting':
-                    session['status'] = 'ready'
-                session['system'] = (f"{platform.system()}-{platform.release()}").lower()
-                session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
-                os.makedirs(session['custom_model_dir'], exist_ok=True)
-                os.makedirs(session['voice_dir'], exist_ok=True)
-                # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
-                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]                
-                if is_gui_shared:
-                    msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
-                    session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
-                    delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session)
-                else:
-                    msg = f' Note: if no activity is detected after {tmp_expire} days, your session will be cleaned up.'
-                    session['audiobooks_dir'] = os.path.join(audiobooks_host_dir, f"web-{session['id']}")
-                    delete_unused_tmp_dirs(audiobooks_host_dir, tmp_expire, session)
-                if not os.path.exists(session['audiobooks_dir']):
-                    os.makedirs(session['audiobooks_dir'], exist_ok=True)
-                previous_hash = state['hash']
-                new_hash = hash_proxy_dict(MappingProxyType(session))
-                state['hash'] = new_hash
-                session_dict = proxy2dict(session)
-                show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update()
-            except Exception as e:
-                error = f'change_gr_read_data(): {e}'
-                alert_exception(error)
-                return gr.update(), gr.update(), gr.update(), gr.update()
+                    if session['audiobook'] is not None:
+                        if not os.path.exists(session['audiobook']):
+                            session['audiobook'] = None
+                    if session['status'] == 'converting':
+                        session['status'] = 'ready'
+                    session['is_gui_process'] = is_gui_process
+                    session['system'] = (f"{platform.system()}-{platform.release()}").lower()
+                    session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
+                    session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
+                    session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                    os.makedirs(session['custom_model_dir'], exist_ok=True)
+                    os.makedirs(session['voice_dir'], exist_ok=True)
+                    # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
+                    #[shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]                
+                    if is_gui_shared:
+                        msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
+                        session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
+                        delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session)
+                    else:
+                        msg = f' Note: if no activity is detected after {tmp_expire} days, your session will be cleaned up.'
+                        session['audiobooks_dir'] = os.path.join(audiobooks_host_dir, f"web-{session['id']}")
+                        delete_unused_tmp_dirs(audiobooks_host_dir, tmp_expire, session)
+                    if not os.path.exists(session['audiobooks_dir']):
+                        os.makedirs(session['audiobooks_dir'], exist_ok=True)
+                    previous_hash = state['hash']
+                    new_hash = hash_proxy_dict(MappingProxyType(session))
+                    state['hash'] = new_hash
+                    show_alert({"type": "info", "msg": msg})
+                    return gr.update(value=json.dumps(session, cls=JSONDictProxyEncoder)), gr.update(value=state), gr.update(value=session['id']), gr.update()
+                except Exception as e:
+                    error = f'change_gr_restore_session(): {e}'
+                    alert_exception(error, None)
+                    return gr.update(), gr.update(), gr.update(), gr.update()
 
-        def save_session(id, state):
-            try:
-                if id:
-                    if id in context.sessions:
+            async def save_session(id:str, state:dict)->tuple:
+                try:
+                    if id and id in context.sessions:
                         session = context.get_session(id)
                         if session:
-                            if session['event'] == 'clear':
-                                session_dict = session
+                            previous_hash = state.get("hash")
+                            if session.get("status") == "converting":
+                                try:
+                                    if session.get("progress") != len(audiobook_options):
+                                        session["progress"] = len(audiobook_options)
+                                        new_hash = hash_proxy_dict(MappingProxyType(session))
+                                        state["hash"] = new_hash
+                                        session_dict = json.dumps(
+                                            session, cls=JSONDictProxyEncoder
+                                        )
+                                        yield (
+                                            gr.update(value=session_dict),
+                                            gr.update(value=state),
+                                            update_gr_audiobook_list(id),
+                                        )
+                                    else:
+                                        yield gr.update(), gr.update(), gr.update()
+                                except NameError:
+                                    new_hash = hash_proxy_dict(MappingProxyType(session))
+                                    state["hash"] = new_hash
+                                    session_dict = json.dumps(
+                                        session, cls=JSONDictProxyEncoder
+                                    )
+                                    yield (
+                                        gr.update(value=session_dict),
+                                        gr.update(value=state),
+                                        gr.update(),
+                                    )
                             else:
-                                previous_hash = state['hash']
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
                                 if previous_hash == new_hash:
-                                    return gr.update(), gr.update(), gr.update()
+                                    yield gr.update(), gr.update(), gr.update()
                                 else:
-                                    state['hash'] = new_hash
-                                    session_dict = proxy2dict(session)
-                            if session['status'] == 'converting':
-                                if session['progress'] != len(audiobook_options):
-                                    session['progress'] = len(audiobook_options)
-                                    return gr.update(value=json.dumps(session_dict, indent=4)), gr.update(value=state), update_gr_audiobook_list(id)
-                            return gr.update(value=json.dumps(session_dict, indent=4)), gr.update(value=state), gr.update()
-                return gr.update(), gr.update(), gr.update()
-            except Exception as e:
-                error = f'save_session(): {e}!'
-                alert_exception(error)              
-                return gr.update(), gr.update(value=e), gr.update()
-        
-        def clear_event(id):
-            if id:
-                session = context.get_session(id)
-                if session['event'] is not None:
-                    session['event'] = None
+                                    state["hash"] = new_hash
+                                    session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                                    yield (
+                                        gr.update(value=session_dict),
+                                        gr.update(value=state),
+                                        gr.update(),
+                                    )
+                    yield gr.update(), gr.update(), gr.update()
+                except Exception as e:
+                    error = f'save_session(): {e}!'
+                    alert_exception(error, id)
+                    yield gr.update(), gr.update(value=e), gr.update()
+            
+            def clear_event(id:str)->None:
+                if id:
+                    session = context.get_session(id)
+                    if session['event'] is not None:
+                        session['event'] = None
 
-        gr_ebook_file.change(
-            fn=state_convert_btn,
-            inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
-            outputs=[gr_convert_btn]
-        ).then(
-            fn=change_gr_ebook_file,
-            inputs=[gr_ebook_file, gr_session],
-            outputs=[gr_modal]
-        )
-        gr_ebook_mode.change(
-            fn=change_gr_ebook_mode,
-            inputs=[gr_ebook_mode, gr_session],
-            outputs=[gr_ebook_file]
-        )
-        gr_voice_file.upload(
-            fn=change_gr_voice_file,
-            inputs=[gr_voice_file, gr_session],
-            outputs=[gr_voice_file]
-        ).then(
-            fn=update_gr_voice_list,
-            inputs=[gr_session],
-            outputs=[gr_voice_list]
-        )
-        gr_voice_list.change(
-            fn=change_gr_voice_list,
-            inputs=[gr_voice_list, gr_session],
-            outputs=[gr_voice_player, gr_voice_del_btn]
-        )
-        gr_voice_del_btn.click(
-            fn=click_gr_voice_del_btn,
-            inputs=[gr_voice_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
-        )
-        gr_device.change(
-            fn=change_gr_device,
-            inputs=[gr_device, gr_session],
-            outputs=None
-        )
-        gr_language.change(
-            fn=change_gr_language,
-            inputs=[gr_language, gr_session],
-            outputs=[gr_language, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list]
-        ).then(
-            fn=update_gr_voice_list,
-            inputs=[gr_session],
-            outputs=[gr_voice_list]
-        )
-        gr_tts_engine_list.change(
-            fn=change_gr_tts_engine_list,
-            inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
-        ).then(
-            fn=update_gr_voice_list,
-            inputs=[gr_session],
-            outputs=[gr_voice_list]        
-        )
-        gr_fine_tuned_list.change(
-            fn=change_gr_fine_tuned_list,
-            inputs=[gr_fine_tuned_list, gr_session],
-            outputs=[gr_group_custom_model]
-        ).then(
-            fn=update_gr_voice_list,
-            inputs=[gr_session],
-            outputs=[gr_voice_list]        
-        )
-        gr_custom_model_file.upload(
-            fn=change_gr_custom_model_file,
-            inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
-            outputs=[gr_custom_model_file]
-        ).then(
-            fn=update_gr_custom_model_list,
-            inputs=[gr_session],
-            outputs=[gr_custom_model_list]
-        )
-        gr_custom_model_list.change(
-            fn=change_gr_custom_model_list,
-            inputs=[gr_custom_model_list, gr_session],
-            outputs=[gr_fine_tuned_list, gr_custom_model_del_btn]
-        )
-        gr_custom_model_del_btn.click(
-            fn=click_gr_custom_model_del_btn,
-            inputs=[gr_custom_model_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
-        )
-        gr_output_format_list.change(
-            fn=change_gr_output_format_list,
-            inputs=[gr_output_format_list, gr_session],
-            outputs=None
-        )
-        gr_output_split.change(
-            fn=change_gr_output_split,
-            inputs=[gr_output_split, gr_session],
-            outputs=gr_output_split_hours
-        )
-        gr_output_split_hours.change(
-            fn=change_gr_output_split_hours,
-            inputs=[gr_output_split_hours, gr_session],
-            outputs=None
-        )
-        gr_audiobook_vtt.change(
-            fn=lambda: gr.update(value=''),
-            inputs=[],
-            outputs=[gr_audiobook_sentence]
-        ).then(
-            fn=None,
-            inputs=[gr_audiobook_vtt],
-            js='(data)=>{window.load_vtt?.(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'         
-        )
-        gr_tab_progress.change(
-            fn=None,
-            inputs=[gr_tab_progress],
-            outputs=[],
-            js=f'() => {{ document.title = "{title}"; }}'
-        )
-        gr_audiobook_player_playback_time.change(
-            fn=change_gr_audiobook_player_playback_time,
-            inputs=[gr_audiobook_player_playback_time, gr_session],
-            outputs=[]
-        )
-        gr_audiobook_download_btn.click(
-            fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
-            inputs=[gr_audiobook_list],
-            outputs=None,
-            show_progress='minimal'
-        )
-        gr_audiobook_list.change(
-            fn=change_gr_audiobook_list,
-            inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_group_audiobook_list]
-        )
-        gr_audiobook_del_btn.click(
-            fn=click_gr_audiobook_del_btn,
-            inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
-        )
-        ########### XTTSv2 Params
-        gr_xtts_temperature.change(
-            fn=lambda val, id: change_param('temperature', val, id),
-            inputs=[gr_xtts_temperature, gr_session],
-            outputs=None
-        )
-        gr_xtts_length_penalty.change(
-            fn=lambda val, id, val2: change_param('length_penalty', val, id, val2),
-            inputs=[gr_xtts_length_penalty, gr_session, gr_xtts_num_beams],
-            outputs=None,
-        )
-        gr_xtts_num_beams.change(
-            fn=lambda val, id, val2: change_param('num_beams', val, id, val2),
-            inputs=[gr_xtts_num_beams, gr_session, gr_xtts_length_penalty],
-            outputs=None,
-        )
-        gr_xtts_repetition_penalty.change(
-            fn=lambda val, id: change_param('repetition_penalty', val, id),
-            inputs=[gr_xtts_repetition_penalty, gr_session],
-            outputs=None
-        )
-        gr_xtts_top_k.change(
-            fn=lambda val, id: change_param('top_k', val, id),
-            inputs=[gr_xtts_top_k, gr_session],
-            outputs=None
-        )
-        gr_xtts_top_p.change(
-            fn=lambda val, id: change_param('top_p', val, id),
-            inputs=[gr_xtts_top_p, gr_session],
-            outputs=None
-        )
-        gr_xtts_speed.change(
-            fn=lambda val, id: change_param('speed', val, id),
-            inputs=[gr_xtts_speed, gr_session],
-            outputs=None
-        )
-        gr_xtts_enable_text_splitting.change(
-            fn=lambda val, id: change_param('enable_text_splitting', val, id),
-            inputs=[gr_xtts_enable_text_splitting, gr_session],
-            outputs=None
-        )
-        ########### BARK Params
-        gr_bark_text_temp.change(
-            fn=lambda val, id: change_param('text_temp', val, id),
-            inputs=[gr_bark_text_temp, gr_session],
-            outputs=None
-        )
-        gr_bark_waveform_temp.change(
-            fn=lambda val, id: change_param('waveform_temp', val, id),
-            inputs=[gr_bark_waveform_temp, gr_session],
-            outputs=None
-        )
-        ############ Timer to save session to localStorage
-        gr_timer = gr.Timer(9, active=False)
-        gr_timer.tick(
-            fn=save_session,
-            inputs=[gr_session, gr_state_update],
-            outputs=[gr_write_data, gr_state_update, gr_audiobook_list]
-        ).then(
-            fn=clear_event,
-            inputs=[gr_session],
-            outputs=None
-        )
-        gr_convert_btn.click(
-            fn=state_convert_btn,
-            inputs=None,
-            outputs=[gr_convert_btn]
-        ).then(
-            fn=disable_components,
-            inputs=[],
-            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
-        ).then(
-            fn=submit_convert_btn,
-            inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, gr_voice_list,
-                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
-                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
-            ],
-            outputs=[gr_tab_progress]
-        ).then(
-            fn=enable_components,
-            inputs=[],
-            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
-        ).then(
-            fn=refresh_interface,
-            inputs=[gr_session],
-            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
-        )
-        gr_write_data.change(
-            fn=None,
-            inputs=[gr_write_data],
-            js="""
-                (data)=>{
-                    try{
-                        if(data){
-                            localStorage.clear();
-                            if(data['event'] != 'clear'){
-                                //console.log('save: ', data);
-                                window.localStorage.setItem('data', JSON.stringify(data));
-                            }
+            gr_ebook_file.change(
+                fn=change_convert_btn,
+                inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
+                outputs=[gr_convert_btn]
+            ).then(
+                fn=change_gr_ebook_file,
+                inputs=[gr_ebook_file, gr_session],
+                outputs=[gr_modal]
+            )
+            gr_ebook_mode.change(
+                fn=change_gr_ebook_mode,
+                inputs=[gr_ebook_mode, gr_session],
+                outputs=[gr_ebook_file, gr_chapters_preview]
+            )
+            gr_chapters_preview.select(
+                fn=lambda val, id: change_param('chapters_preview', bool(val), id),
+                inputs=[gr_chapters_preview, gr_session],
+                outputs=None
+            )
+            gr_voice_file.upload(
+                fn=change_gr_voice_file,
+                inputs=[gr_voice_file, gr_session],
+                outputs=[gr_voice_list]
+            ).then(
+                fn=lambda: gr.update(value=None),
+                inputs=None,
+                outputs=[gr_voice_file]
+            )
+            gr_voice_list.change(
+                fn=change_gr_voice_list,
+                inputs=[gr_voice_list, gr_session],
+                outputs=[gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn]
+            )
+            gr_voice_del_btn.click(
+                fn=click_gr_voice_del_btn,
+                inputs=[gr_voice_list, gr_session],
+                outputs=[gr_confirm_deletion_field_hidden, gr_modal]
+            )
+            gr_device.change(
+                fn=change_gr_device,
+                inputs=[gr_device, gr_session],
+                outputs=None
+            )
+            gr_language.change(
+                fn=change_gr_language,
+                inputs=[gr_language, gr_session],
+                outputs=[gr_language, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_voice_list]
+            )
+            gr_tts_engine_list.change(
+                fn=change_gr_tts_engine_list,
+                inputs=[gr_tts_engine_list, gr_session],
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_voice_list]
+            )
+            gr_fine_tuned_list.change(
+                fn=change_gr_fine_tuned_list,
+                inputs=[gr_fine_tuned_list, gr_session],
+                outputs=[gr_group_custom_model, gr_voice_list]
+            )
+            gr_custom_model_file.upload(
+                fn=change_gr_custom_model_file,
+                inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
+                outputs=[gr_custom_model_file, gr_custom_model_list, gr_row_voice_player]
+            )
+            gr_custom_model_list.change(
+                fn=change_gr_custom_model_list,
+                inputs=[gr_custom_model_list, gr_session],
+                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn]
+            )
+            gr_custom_model_del_btn.click(
+                fn=click_gr_custom_model_del_btn,
+                inputs=[gr_custom_model_list, gr_session],
+                outputs=[gr_confirm_deletion_field_hidden]
+            )
+            gr_output_format_list.change(
+                fn=change_gr_output_format_list,
+                inputs=[gr_output_format_list, gr_session],
+                outputs=None
+            )
+            gr_output_split.select(
+                fn=change_gr_output_split,
+                inputs=[gr_output_split, gr_session],
+                outputs=[gr_row_output_split_hours]
+            )
+            gr_output_split_hours.change(
+                fn=lambda val, id: change_param('output_split_hours', str(val), id),
+                inputs=[gr_output_split_hours, gr_session],
+                outputs=None
+            )
+            gr_progress.change(
+                fn=None,
+                inputs=[gr_progress],
+                js=r'''
+                    (filename)=>{
+                        const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                        const gr_ebook_file = gr_root.querySelector("#gr_ebook_file");
+                        if(!gr_ebook_file){
+                            return;
                         }
-                    }catch(e){
-                        console.log('gr_write_data.change error: '+e)
-                    }
-                }
-            """
-        )       
-        gr_read_data.change(
-            fn=change_gr_read_data,
-            inputs=[gr_read_data, gr_state_update],
-            outputs=[gr_write_data, gr_state_update, gr_session, gr_glass_mask]
-        ).then(
-            fn=restore_interface,
-            inputs=[gr_session],
-            outputs=[
-                gr_ebook_file, gr_ebook_mode, gr_device, gr_language,
-                gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
-                gr_output_format_list, gr_audiobook_list, gr_audiobook_vtt,
-                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
-                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp,
-                gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
-            ]
-        ).then(
-            fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
-            inputs=[gr_session],
-            outputs=[gr_glass_mask]
-        )
-        gr_confirm_yes_btn.click(
-            fn=confirm_deletion,
-            inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
-        )
-        gr_confirm_no_btn.click(
-            fn=confirm_deletion,
-            inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
-        )
-        app.load(
-            fn=None,
-            js=r'''
-                ()=>{
-                    try {
-                        if (typeof(window.init_elements) !== "function") {
-                            window.init_elements = () => {
-                                try {
-                                    let lastCue = null;
-                                    let fade_timeout = null;
-                                    let last_time = 0;
-                                    if (gr_root && gr_checkboxes && gr_radios && gr_audiobook_player_playback_time && gr_audiobook_sentence && gr_tab_progress) {
-                                        let set_playback_time = false;
-                                        gr_audiobook_player.addEventListener("loadedmetadata", () => {
-                                            //console.log("loadedmetadata:", window.playback_time);
-                                            if (window.playback_time > 0) {
-                                                gr_audiobook_player.currentTime = window.playback_time;
-                                            }
-                                            set_playback_time = true;
-                                        },{once: true});
-                                        gr_audiobook_player.addEventListener("timeupdate", () => {
-                                            if (set_playback_time == true) {
-                                                window.playback_time = gr_audiobook_player.currentTime;
-                                                const cue = findCue(window.playback_time);
-                                                if (cue && cue !== lastCue) {
-                                                    if (fade_timeout) {
-                                                        gr_audiobook_sentence.style.opacity = "1";
-                                                    } else {
-                                                        gr_audiobook_sentence.style.opacity = "0";
-                                                    }
-                                                    gr_audiobook_sentence.style.transition = "none";
-                                                    gr_audiobook_sentence.value = cue.text;
-                                                    clearTimeout(fade_timeout);
-                                                    fade_timeout = setTimeout(() => {
-                                                        gr_audiobook_sentence.style.transition = "opacity 0.1s ease-in";
-                                                        gr_audiobook_sentence.style.opacity = "1";
-                                                        fade_timeout = null;
-                                                    }, 33);
-                                                    lastCue = cue;
-                                                } else if (!cue && lastCue !== null) {
-                                                    gr_audiobook_sentence.value = "...";
-                                                    lastCue = null;
-                                                }
-                                                const now = performance.now();
-                                                if (now - last_time > 1000) {
-                                                    //console.log("timeupdate", window.playback_time);
-                                                    gr_audiobook_player_playback_time.value = String(window.playback_time);
-                                                    gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
-                                                    last_time = now;
-                                                }
-                                            }
-                                        });
-                                        gr_audiobook_player.addEventListener("ended", () => {
-                                            gr_audiobook_sentence.value = "...";
-                                            lastCue = null;
-                                        });
-                                        
-                                        ///////////////
-                                        
-                                        // Observe programmatic changes
-                                        new MutationObserver(tab_progress).observe(gr_tab_progress, { attributes: true, childList: true, subtree: true, characterData: true });
-                                        // Also catch user edits
-                                        gr_tab_progress.addEventListener("input", tab_progress);
-                                        
-                                        ///////////////
-                                        
-                                        const url = new URL(window.location);
-                                        const theme = url.searchParams.get("__theme");
-                                        let osTheme;
-                                        let audioFilter = "";
-                                        let elColor = "#666666";
-                                        if (theme) {
-                                            if (theme === "dark") {
-                                                if (gr_audiobook_player) {
-                                                    audioFilter = "invert(1) hue-rotate(180deg)";
-                                                }
-                                                elColor = "#fff";
-                                            }
-                                            gr_checkboxes.forEach(cb => { cb.style.border = "1px solid " + elColor; });
-                                            gr_radios.forEach(cb => { cb.style.border = "1px solid " + elColor; });
-                                        } else {
-                                            osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                            if (osTheme) {
-                                                if (gr_audiobook_player) {
-                                                    audioFilter = "invert(1) hue-rotate(180deg)";
-                                                }
-                                                elColor = "#fff";
-                                            }
-                                            gr_checkboxes.forEach(cb => { cb.style.border = "1px solid " + elColor; });
-                                            gr_radios.forEach(cb => { cb.style.border = "1px solid " + elColor; });
-                                        }
-                                        if (!gr_audiobook_player.style.transition) {
-                                            gr_audiobook_player.style.transition = "filter 1s ease";
-                                        }
-                                        gr_audiobook_player.style.filter = audioFilter;
-                                    }
-                                } catch (e) {
-                                    console.log("init_elements error:", e);
-                                }
-                            };
+                        function normalizeForGradio(name){
+                            return name
+                                .normalize("NFC")
+                                // Remove chars not supported by OS paths
+                                .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+                                // Remove Gradio-sanitized odd punctuation (including quotes)
+                                .replace(/[!(){}\[\]']/g, "")
+                                // Collapse multiple dots/spaces before extension
+                                .replace(/\s+\./g, ".")
+                                // Strip trailing spaces/dots (Windows forbids)
+                                .replace(/[. ]+$/, "")
+                                // Remove Arabic tatweel/harakat
+                                .replace(/[\u0640\u0651\u064B-\u065F]/g, "")
+                                .trim();
                         }
-                        if (typeof(window.load_vtt) !== "function") {
-                            window.load_vtt_timeout = null;
-                            window.load_vtt = (path) => {
-                                try {
-                                    if (gr_audiobook_player && gr_audiobook_player_playback_time && gr_audiobook_sentence) {
-                                        // Remove any <track> to bypass browser subtitle engine
-                                        let existing = gr_root.querySelector("#gr_audiobook_track");
-                                        if (existing) {
-                                            existing.remove();
-                                        }
-                                        gr_audiobook_sentence.style.fontSize = "14px";
-                                        gr_audiobook_sentence.style.fontWeight = "bold";
-                                        gr_audiobook_sentence.style.width = "100%";
-                                        gr_audiobook_sentence.style.height = "auto";
-                                        gr_audiobook_sentence.style.textAlign = "center";
-                                        gr_audiobook_sentence.style.margin = "0";
-                                        gr_audiobook_sentence.style.padding = "7px 0 7px 0";
-                                        gr_audiobook_sentence.style.lineHeight = "14px";
-                                        gr_audiobook_sentence.value = "...";
-                                        if (path) {
-                                            fetch(path).then(res => res.text()).then(vttText => {
-                                                parseVTTFast(vttText);
-                                            });
-                                        }
-                                        gr_audiobook_player.load();
-                                    } else {
-                                        clearTimeout(window.load_vtt_timeout);
-                                        window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
-                                    }
-                                } catch (e) {
-                                    console.log("load_vtt error:", e);
+                        const rows = gr_ebook_file.querySelectorAll("table.file-preview tr.file");
+                        rows.forEach((row, idx) => {
+                            const filenameCell = row.querySelector("td.filename");
+                            if (filenameCell) {
+                                const rowName = normalizeForGradio(filenameCell.getAttribute("aria-label"));
+                                filename = filename.split("/")[0].trim();
+                                if (rowName === filename) {
+                                    row.style.display = "none";
                                 }
-                            };
-                        }
-                        if (typeof(window.tab_progress) !== "function") {
-                            window.tab_progress = () => {
-                                const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
-                                const prct = val.trim().split(" ")[4];
-                                if (prct && /^\d+(\.\d+)?%$/.test(prct)) {
-                                    document.title = "Ebook2Audiobook: " + prct;
-                                }
-                            };
-                        }
-                        function parseVTTFast(vtt) {
-                            const lines = vtt.split(/\r?\n/);
-                            const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
-                            let start = null, end = null, textBuffer = [];
-                            cues = [];
-
-                            function pushCue() {
-                                if (start !== null && end !== null && textBuffer.length) {
-                                    cues.push({ start, end, text: textBuffer.join("\n") });
-                                }
-                                start = end = null;
-                                textBuffer.length = 0;
-                            }
-
-                            for (let i = 0, len = lines.length; i < len; i++) {
-                                const line = lines[i];
-                                if (!line.trim()) { pushCue(); continue; }
-                                if (line.includes("-->")) {
-                                    const [s, e] = line.split("-->").map(l => l.trim().split(" ")[0]);
-                                    if (timePattern.test(s) && timePattern.test(e)) {
-                                        start = toSeconds(s);
-                                        end = toSeconds(e);
-                                    }
-                                } else if (!timePattern.test(line)) {
-                                    textBuffer.push(line);
-                                }
-                            }
-                            pushCue();
-                        }
-                        
-                        function toSeconds(ts) {
-                            const parts = ts.split(":");
-                            if (parts.length === 3) {
-                                return parseInt(parts[0], 10) * 3600 +
-                                       parseInt(parts[1], 10) * 60 +
-                                       parseFloat(parts[2]);
-                            }
-                            return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
-                        }
-
-                        function findCue(time) {
-                            let lo = 0, hi = cues.length - 1;
-                            while (lo <= hi) {
-                                const mid = (lo + hi) >> 1;
-                                const cue = cues[mid];
-                                if (time < cue.start) {
-                                    hi = mid - 1;
-                                } else if (time >= cue.end) {
-                                    lo = mid + 1;
-                                } else {
-                                    return cue;
-                                }
-                            }
-                            return null;
-                        }
-                        
-                        //////////////////////
-                        
-                        let gr_root;
-                        let gr_checkboxes;
-                        let gr_radios;
-                        let gr_audiobook_player_playback_time;
-                        let gr_audiobook_sentence;
-                        let gr_audiobook_player;
-                        let gr_tab_progress;
-                        let load_timeout;
-                        let cues = [];
-
-                        function init() {
-                            try {
-                                gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                if (!gr_root) {
-                                    clearTimeout(load_timeout);
-                                    load_timeout = setTimeout(init, 1000);
-                                    return;
-                                }
-                                gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
-                                gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
-                                gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
-                                gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                // If key elements aren’t mounted yet, retry
-                                if (!gr_audiobook_player || !gr_audiobook_player_playback_time) {
-                                    clearTimeout(load_timeout);
-                                    //console.log("Componenents not ready... retrying");
-                                    load_timeout = setTimeout(init, 1000);
-                                    return;
-                                }
-                                // if container, get inner <audio>/<video>
-                                if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
-                                    const real = gr_audiobook_player.querySelector?.("audio,video");
-                                    if (real) gr_audiobook_player = real;
-                                }
-                                //console.log("Componenents ready!");
-                                window.init_elements();
-                            } catch (e) {
-                                console.log("init error:", e);
-                                clearTimeout(load_timeout);
-                                load_timeout = setTimeout(init, 1000);
-                            }
-                        }
-                        
-                        init();
-
-                        window.addEventListener("beforeunload", () => {
-                            try {
-                                const saved = JSON.parse(localStorage.getItem("data") || "{}");
-                                if (saved.tab_id == window.tab_id || !saved.tab_id) {
-                                    saved.tab_id = undefined;
-                                    saved.status = undefined;
-                                    localStorage.setItem("data", JSON.stringify(saved));
-                                }
-                            } catch (e) {
-                                console.log("Error updating status on unload:", e);
                             }
                         });
-
-                        window.playback_time = 0;
-                        const stored = window.localStorage.getItem("data");
-                        if (stored) {
-                            const parsed = JSON.parse(stored);
-                            parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
-                            window.playback_time = parsed.playback_time;
-                            //console.log("window.playback_time", window.playback_time);
-                            return parsed;
-                        }
-                    } catch (e) {
-                        console.log("gr_raed_data js error:", e);
                     }
-                    return null;
+                '''
+            )
+            gr_playback_time.change(
+                fn=change_gr_playback_time,
+                inputs=[gr_playback_time, gr_session],
+                outputs=None
+            )
+            gr_audiobook_download_btn.click(
+                fn=toggle_audiobook_files,
+                inputs=[gr_audiobook_list, gr_audiobook_files_toggled],
+                outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
+                show_progress="minimal",
+            )
+            gr_audiobook_list.change(
+                fn=change_gr_audiobook_list,
+                inputs=[gr_audiobook_list, gr_session],
+                outputs=[gr_group_audiobook_list]
+            ).then(
+                fn=update_audiobook_player,
+                inputs=[gr_session],
+                outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
+            ).then(
+                fn=None,
+                inputs=None,
+                js='()=>{window.load_vtt();}'
+            )
+            gr_audiobook_del_btn.click(
+                fn=click_gr_audiobook_del_btn,
+                inputs=[gr_audiobook_list, gr_session],
+                outputs=[gr_confirm_deletion_field_hidden, gr_modal]
+            )
+            ########### XTTSv2 Params
+            gr_tab_xtts_params.select(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='''
+                () => {
+                    if (!window._xtts_sliders_initialized) {
+                        const checkXttsExist = setInterval(() => {
+                            const slider = document.querySelector("#gr_xtts_speed input[type=range]");
+                            if(slider){
+                                clearInterval(checkXttsExist);
+                                window._xtts_sliders_initialized = true;
+                                init_xtts_sliders();
+                            }
+                        }, 500);
+                    }
                 }
-            ''',
-            outputs=[gr_read_data],
-        )
-        app.unload(cleanup_session)
-    try:
-        all_ips = get_all_ip_addresses()
-        msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
-        show_alert({"type": "info", "msg": msg})
-        os.environ['no_proxy'] = ' ,'.join(all_ips)
-        app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, favicon_path='./favicon.ico', server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
-    except OSError as e:
-        error = f'Connection error: {e}'
-        alert_exception(error)
-    except socket.error as e:
-        error = f'Socket error: {e}'
-        alert_exception(error)
-    except KeyboardInterrupt:
-        error = 'Server interrupted by user. Shutting down...'
-        alert_exception(error)
+                '''
+            )
+            gr_xtts_temperature.change(
+                fn=lambda val, id: change_param('xtts_temperature', float(val), id),
+                inputs=[gr_xtts_temperature, gr_session],
+                outputs=None
+            )
+            gr_xtts_length_penalty.change(
+                fn=lambda val, id, val2: change_param('xtts_length_penalty', int(val), id, int(val2)),
+                inputs=[gr_xtts_length_penalty, gr_session, gr_xtts_num_beams],
+                outputs=None,
+            )
+            gr_xtts_num_beams.change(
+                fn=lambda val, id, val2: change_param('xtts_num_beams', int(val), id, int(val2)),
+                inputs=[gr_xtts_num_beams, gr_session, gr_xtts_length_penalty],
+                outputs=None,
+            )
+            gr_xtts_repetition_penalty.change(
+                fn=lambda val, id: change_param('xtts_repetition_penalty', float(val), id),
+                inputs=[gr_xtts_repetition_penalty, gr_session],
+                outputs=None
+            )
+            gr_xtts_top_k.change(
+                fn=lambda val, id: change_param('xtts_top_k', int(val), id),
+                inputs=[gr_xtts_top_k, gr_session],
+                outputs=None
+            )
+            gr_xtts_top_p.change(
+                fn=lambda val, id: change_param('xtts_top_p', float(val), id),
+                inputs=[gr_xtts_top_p, gr_session],
+                outputs=None
+            )
+            gr_xtts_speed.change(
+                fn=lambda val, id: change_param('xtts_speed', float(val), id),
+                inputs=[gr_xtts_speed, gr_session],
+                outputs=None
+            )
+            gr_xtts_enable_text_splitting.select(
+                fn=lambda val, id: change_param('xtts_enable_text_splitting', bool(val), id),
+                inputs=[gr_xtts_enable_text_splitting, gr_session],
+                outputs=None
+            )
+            ########### BARK Params
+            gr_tab_bark_params.select(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='''
+                () => {
+                    if (!window._bark_sliders_initialized) {
+                        const checkBarkExist = setInterval(() => {
+                            const slider = document.querySelector("#gr_bark_waveform_temp input[type=range]");
+                            if(slider){
+                                clearInterval(checkBarkExist);
+                                window._bark_sliders_initialized = true;
+                                init_bark_sliders();
+                            }
+                        }, 500);
+                    }
+                }
+                '''
+            )
+            gr_bark_text_temp.change(
+                fn=lambda val, id: change_param('bark_text_temp', float(val), id),
+                inputs=[gr_bark_text_temp, gr_session],
+                outputs=None
+            )
+            gr_bark_waveform_temp.change(
+                fn=lambda val, id: change_param('bark_waveform_temp', float(val), id),
+                inputs=[gr_bark_waveform_temp, gr_session],
+                outputs=None
+            )
+            ############ Timer to save session to localStorage
+            gr_timer = gr.Timer(9, active=False)
+            gr_timer.tick(
+                fn=save_session,
+                inputs=[gr_session, gr_state_update],
+                outputs=[gr_save_session, gr_state_update, gr_audiobook_list]
+            ).then(
+                fn=clear_event,
+                inputs=[gr_session],
+                outputs=None
+            )
+            gr_convert_btn.click(
+                fn=change_convert_btn,
+                inputs=None,
+                outputs=[gr_convert_btn]
+            ).then(
+                fn=disable_components,
+                inputs=None,
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
+            ).then(
+                fn=submit_convert_btn,
+                inputs=[
+                    gr_session, gr_device, gr_ebook_file, gr_chapters_preview, gr_tts_engine_list, gr_language, gr_voice_list,
+                    gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
+                    gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
+                    gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
+                ],
+                outputs=[gr_progress, gr_modal]
+            ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
+            ).then(
+                fn=refresh_interface,
+                inputs=[gr_session],
+                outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+            )
+            gr_save_session.change(
+                fn=None,
+                inputs=[gr_save_session],
+                js='''
+                    (data)=>{
+                        try{
+                            if(data){
+                                localStorage.clear();
+                                data.playback_time = Number(window.session_storage.playback_time);
+                                data.playback_volume = parseFloat(window.session_storage.playback_volume);
+                                localStorage.setItem("data", JSON.stringify(data));
+                            }
+                        }catch(e){
+                            console.warn("gr_save_session.change error: "+e);
+                        }
+                    }
+                '''
+            )       
+            gr_restore_session.change(
+                fn=change_gr_restore_session,
+                inputs=[gr_restore_session, gr_state_update],
+                outputs=[gr_save_session, gr_state_update, gr_session, gr_glassmask]
+            ).then(
+                fn=restore_interface,
+                inputs=[gr_session],
+                outputs=[
+                    gr_ebook_file, gr_ebook_mode, gr_chapters_preview, gr_device, gr_language, gr_voice_list,
+                    gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
+                    gr_output_split, gr_output_split_hours, gr_audiobook_list
+                ]
+            ).then(
+                fn=restore_audiobook_player,
+                inputs=[gr_audiobook_list],
+                outputs=[
+                    gr_group_audiobook_list, gr_audiobook_player, gr_timer
+                ]
+            ).then(
+                fn=lambda session: update_gr_glassmask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
+                inputs=[gr_session],
+                outputs=[gr_glassmask]
+            ).then(
+                fn=None,
+                inputs=None,
+                js='()=>{init_interface();}'
+            )
+            gr_confirm_deletion_yes_btn.click(
+                fn=confirm_deletion,
+                inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_deletion_field_hidden],
+                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+            )
+            gr_confirm_deletion_no_btn.click(
+                fn=confirm_deletion,
+                inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
+                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+            )
+            gr_confirm_blocks_yes_btn.click(
+                fn=lambda session: confirm_blocks("yes", session),
+                inputs=[gr_session],
+                outputs=[gr_modal]
+            ).then(
+                fn=submit_confirmed_blocks,
+                inputs=[gr_session],
+                outputs=[gr_progress, gr_modal]
+            ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+            ).then(
+                fn=refresh_interface,
+                inputs=[gr_session],
+                outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+            )
+            gr_confirm_blocks_no_btn.click(
+                fn=lambda session: confirm_blocks("no", session),
+                inputs=[gr_session],
+                outputs=[gr_modal]
+            ).then(
+                fn=change_convert_btn,
+                inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
+                outputs=[gr_convert_btn]
+            ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+            )
+            ############
+            app.load(
+                fn=None,
+                js=r'''
+                    ()=>{
+                        try{
+                            let gr_root = (window.gradioApp && window.gradioApp()) || document;
+                            let gr_checkboxes;
+                            let gr_radios;
+                            let gr_voice_player_hidden;
+                            let gr_audiobook_vtt;
+                            let gr_audiobook_sentence;
+                            let gr_audiobook_player;
+                            let gr_playback_time;
+                            let gr_progress;
+                            let gr_voice_play;
+                            let tabs_opened = false;
+                            let init_elements_timeout;
+                            let init_audiobook_player_timeout;
+                            let audio_filter = "";
+                            let cues = [];
+                            if(typeof window.onElementAvailable !== "function"){
+                                window.onElementAvailable = (selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {})=> {
+                                    const seen = new WeakSet();
+                                    const fireFor = (context) => {
+                                        context.querySelectorAll(selector).forEach((el) => {
+                                            if (seen.has(el)) return;
+                                            const success = callback(el);
+                                            if (success !== false) {
+                                                // Mark as seen only if callback succeeded
+                                                seen.add(el);
+                                                if (once) return;
+                                            } else {
+                                                // Retry check later (in case conditions weren’t met yet)
+                                                setTimeout(() => fireFor(root), 300);
+                                            }
+                                        });
+                                    };
+                                    fireFor(root);
+                                    const observer = new MutationObserver((mutations) => {
+                                        for (const m of mutations) {
+                                            for (const n of m.addedNodes) {
+                                                if (n.nodeType !== 1) continue;
+                                                if (n.matches?.(selector)) {
+                                                    if (!seen.has(n)) {
+                                                        const success = callback(n);
+                                                        if (success !== false) {
+                                                            seen.add(n);
+                                                            if (once) {
+                                                                observer.disconnect();
+                                                                return;
+                                                            }
+                                                        } else {
+                                                            setTimeout(() => fireFor(root), 300);
+                                                        }
+                                                    }
+                                                } else {
+                                                    fireFor(n);
+                                                }
+                                            }
+                                        }
+                                    });
+                                    observer.observe(root, { childList: true, subtree: true });
+                                    return () => observer.disconnect();
+                                }
+                            }
+                            if(typeof window.init_interface !== "function"){
+                                window.init_interface = ()=>{
+                                    try {
+                                        gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                        gr_progress = gr_root.querySelector("#gr_progress");
+                                        if(!gr_root || !gr_progress){
+                                            clearTimeout(init_elements_timeout);
+                                            console.warn("Components not ready... retrying");
+                                            init_elements_timeout = setTimeout(init_interface, 1000);
+                                            return;
+                                        }
+                                        // Function to apply theme borders
+                                        function applyThemeBorders(){
+                                            const url = new URL(window.location);
+                                            const theme = url.searchParams.get("__theme");
+                                            let elColor = "#666666";
+                                            if(theme == "dark"){
+                                                elColor = "#fff";
+                                            }else if(!theme){
+                                                const osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+                                                if(osTheme){
+                                                    elColor = "#fff";
+                                                }
+                                            }
+                                            gr_root.querySelectorAll("input[type='checkbox'], input[type='radio']")
+                                                .forEach(cb => cb.style.border = "1px solid " + elColor);
+                                        }
+                                        // Run once on init
+                                        applyThemeBorders();
+                                        // Re-run when DOM changes (tabs, redraws, etc.)
+                                        new MutationObserver(applyThemeBorders).observe(gr_root, {
+                                            childList: true,
+                                            subtree: true
+                                        });
+                                        // Keep your progress observer too
+                                        new MutationObserver(tab_progress).observe(gr_progress, {
+                                            attributes: true,
+                                            childList: true,
+                                            subtree: true,
+                                            characterData: true
+                                        });
+                                        gr_progress.addEventListener("change", tab_progress);
+                                    }catch(e){
+                                        console.warn("init_interface error:", e);
+                                    }
+                                };
+                            }
+                            if(typeof(window.init_xtts_sliders) !== "function"){
+                                window.init_xtts_sliders = ()=>{
+                                    try{
+                                        const gr_xtts_temperature           = gr_root.querySelector("#gr_xtts_temperature input[type=number]");
+                                        const gr_xtts_repetition_penalty    = gr_root.querySelector("#gr_xtts_repetition_penalty input[type=number]");
+                                        const gr_xtts_top_k                 = gr_root.querySelector("#gr_xtts_top_k input[type=number]");
+                                        const gr_xtts_top_p                 = gr_root.querySelector("#gr_xtts_top_p input[type=number]");
+                                        const gr_xtts_speed                 = gr_root.querySelector("#gr_xtts_speed input[type=number]");
+                                        const sliders = [
+                                            gr_xtts_temperature,
+                                            gr_xtts_repetition_penalty,
+                                            gr_xtts_top_k,
+                                            gr_xtts_top_p,
+                                            gr_xtts_speed
+                                        ];
+                                        sliders.forEach(slider => {
+                                            if(!slider) return;
+                                            const key = slider.closest("div[id]").id.replace(/^gr_/, "");
+                                            const saved = window.session_storage[key];
+                                            slider.value = (slider === gr_xtts_top_k) ? parseInt(saved) : parseFloat(saved);
+                                            slider.dispatchEvent(new Event("input", { bubbles: true }));
+                                        });
+                                    }catch(e){
+                                        console.warn("init_xtts_sliders error:", e);
+                                    }
+                                };
+                            }
+                            if(typeof(window.init_bark_sliders) !== "function"){
+                                window.init_bark_sliders = ()=>{
+                                    try{
+                                        const gr_bark_text_temp_slider       = gr_root.querySelector("#gr_bark_text_temp input[type=number]");
+                                        const gr_bark_waveform_temp_slider   = gr_root.querySelector("#gr_bark_waveform_temp input[type=number]");
+                                        const sliders = [
+                                            gr_bark_text_temp_slider,
+                                            gr_bark_waveform_temp_slider
+                                        ];
+                                        sliders.forEach(slider => {
+                                            if(!slider) return;
+                                            const key = slider.closest("div[id]").id.replace(/^gr_/, "");
+                                            const saved = window.session_storage[key];
+                                            slider.value = parseFloat(saved);
+                                            slider.dispatchEvent(new Event("input", { bubbles: true }));
+                                        });
+                                    }catch(e){
+                                        console.warn("init_bark_sliders error:", e);
+                                    }
+                                };
+                            }
+                            if(typeof window.init_voice_player_hidden !== "function"){
+                                window.init_voice_player_hidden = ()=>{
+                                    try{
+                                        const gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
+                                        const gr_voice_play = gr_root.querySelector("#gr_voice_play");
+                                        if(gr_voice_player_hidden && gr_voice_play){
+                                            if(gr_voice_play.dataset.bound === "true") return;
+                                            gr_voice_play.dataset.bound = "true";
+                                            gr_voice_player_hidden.addEventListener("loadeddata", ()=>{
+                                                gr_voice_play.textContent = "▶";
+                                            });
+                                            gr_voice_play.addEventListener("click", ()=>{
+                                                if(gr_voice_player_hidden.paused){
+                                                    gr_voice_player_hidden.play().then(()=>{
+                                                        gr_voice_play.textContent = "⏸";
+                                                    }).catch(err => console.warn("Play failed:", err));
+                                                }else{
+                                                    gr_voice_player_hidden.pause();
+                                                    gr_voice_play.textContent = "▶";
+                                                }
+                                            });
+                                            gr_voice_player_hidden.addEventListener("pause", ()=>{
+                                                gr_voice_play.textContent = "▶";
+                                            });
+                                            gr_voice_player_hidden.addEventListener("ended", ()=>{
+                                                gr_voice_play.textContent = "▶";
+                                            });
+                                            gr_voice_player_hidden.addEventListener("play", ()=>{
+                                                const v = window.session_storage?.playback_volume ?? 1;
+                                                gr_voice_player_hidden.volume = v;
+                                            });
+                                            return true;
+                                        }else{
+                                            console.warn("Voice player not found yet, retrying...");
+                                            setTimeout(window.init_voice_player_hidden, 500);
+                                        }
+                                    }catch(e){
+                                        console.warn("init_voice_player_hidden error:", e);
+                                    }
+                                    return false;
+                                };
+                            }
+                            if(typeof(window.init_audiobook_player) !== "function"){
+                                window.init_audiobook_player = ()=>{
+                                    try{
+                                        if(gr_root){
+                                            gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
+                                            gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                            gr_playback_time = gr_root.querySelector("#gr_playback_time input");
+                                            let lastCue = null;
+                                            let fade_timeout = null;
+                                            let last_time = 0;
+                                            if(gr_audiobook_player && gr_audiobook_sentence && gr_playback_time){
+                                                function trackPlayback(){
+                                                    try {
+                                                        window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
+                                                        const cue = findCue(window.session_storage.playback_time);
+                                                        if(cue && cue !== lastCue){
+                                                            if(fade_timeout){
+                                                                gr_audiobook_sentence.style.opacity = "1";
+                                                            }else{
+                                                                gr_audiobook_sentence.style.opacity = "0";
+                                                            }
+                                                            gr_audiobook_sentence.style.transition = "none";
+                                                            gr_audiobook_sentence.value = cue.text;
+                                                            clearTimeout(fade_timeout);
+                                                            fade_timeout = setTimeout(() => {
+                                                                gr_audiobook_sentence.style.transition = "opacity 0.15s ease-in";
+                                                                gr_audiobook_sentence.style.opacity = "1";
+                                                                fade_timeout = null;
+                                                            }, 33);
+                                                            lastCue = cue;
+                                                        }else if(!cue && lastCue !== null){
+                                                            lastCue = null;
+                                                        }
+                                                        const now = performance.now();
+                                                        if(now - last_time > 1000){
+                                                            gr_playback_time.value = String(window.session_storage.playback_time);
+                                                            gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
+                                                            last_time = now;
+                                                        }
+                                                    }catch(e){
+                                                        console.warn("gr_audiobook_player tracking error:", e);
+                                                    }
+                                                    if(!gr_audiobook_player.ended){
+                                                        requestAnimationFrame(trackPlayback);
+                                                    }
+                                                }
+                                                gr_audiobook_player.addEventListener("loadeddata", ()=>{
+                                                    gr_audiobook_player.style.transition = "filter 1s ease";
+                                                    gr_audiobook_player.style.filter = audio_filter;
+                                                    gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
+                                                    gr_audiobook_player.volume = window.session_storage.playback_volume;
+                                                });
+                                                gr_audiobook_player.addEventListener("play", ()=>{
+                                                    requestAnimationFrame(trackPlayback);
+                                                });
+                                                gr_audiobook_player.addEventListener("seeked", ()=>{
+                                                    window.session_storage.playback_time = gr_audiobook_player.currentTime;
+                                                    requestAnimationFrame(trackPlayback);
+                                                });
+                                                gr_audiobook_player.addEventListener("ended", ()=>{
+                                                    gr_audiobook_sentence.value = "...";
+                                                    window.session_storage.playback_time = 0;
+                                                    lastCue = null;
+                                                });
+                                                gr_audiobook_player.addEventListener("volumechange", ()=>{
+                                                    window.session_storage.playback_volume = gr_audiobook_player.volume;
+                                                    gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
+                                                    if(gr_voice_player_hidden){
+                                                        gr_voice_player_hidden.volume = gr_audiobook_player.volume;
+                                                        gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
+                                                    }
+                                                });
+                                                const themURL = new URL(window.location);
+                                                const theme = themURL.searchParams.get("__theme");
+                                                let osTheme;
+                                                if(theme){
+                                                    if(theme == "dark"){
+                                                        audio_filter = "invert(1) hue-rotate(180deg)";
+                                                    }
+                                                }else{
+                                                    osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+                                                    if(osTheme){
+                                                        audio_filter = "invert(1) hue-rotate(180deg)";
+                                                    }
+                                                }
+                                                gr_audiobook_player.style.transition = "filter 1s ease";
+                                                gr_audiobook_player.style.filter = audio_filter;
+                                                gr_audiobook_player.volume = window.session_storage.playback_volume;
+                                                return true;
+                                            }
+                                        }
+                                    }catch(e){
+                                        console.warn("init_audiobook_player error:", e);
+                                    }
+                                    return false;
+                                };
+                            }
+                            if(typeof(window.tab_progress) !== "function"){
+                                window.tab_progress = ()=>{
+                                    try{
+                                        const val = gr_progress?.value || gr_progress?.textContent || "";
+                                        const valArray = splitAtLastDash(val);
+                                        if(valArray[1]){
+                                            const title = valArray[0].trim().split(/ (.*)/)[1].trim();
+                                            const percentage = valArray[1].trim();
+                                            const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
+                                            document.title = titleShort + ": " + percentage;
+                                        }else{
+                                            document.title = "Ebook2Audiobook";
+                                        }
+                                    }catch(e){
+                                        console.warn("tab_progress error:", e);
+                                    }
+                                };
+                            }
+                            if(typeof(splitAtLastDash) !== "function"){
+                                function splitAtLastDash(s){
+                                    const idx = s.lastIndexOf("-");
+                                    if(idx === -1){
+                                        return [s];
+                                    }
+                                    return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
+                                }
+                            }
+                            if(typeof(window.load_vtt) !== "function"){
+                                window.load_vtt = ()=>{
+                                    try{
+                                        gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
+                                        gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                        if(gr_audiobook_sentence){
+                                            gr_audiobook_sentence.style.fontSize = "14px";
+                                            gr_audiobook_sentence.style.fontWeight = "bold";
+                                            gr_audiobook_sentence.style.width = "100%";
+                                            gr_audiobook_sentence.style.height = "auto";
+                                            gr_audiobook_sentence.style.textAlign = "center";
+                                            gr_audiobook_sentence.style.margin = "0";
+                                            gr_audiobook_sentence.style.padding = "7px 0 7px 0";
+                                            gr_audiobook_sentence.style.lineHeight = "14px";
+                                            const txt = gr_audiobook_vtt.value;
+                                            if(txt == ""){
+                                                gr_audiobook_sentence.value = "...";
+                                            }else{
+                                                parseVTT(txt);
+                                            }
+                                        }
+                                    }catch(e){
+                                        console.warn("load_vtt error:", e);
+                                    }
+                                };
+                            }
+                            if(typeof(parseVTT) !== "function"){
+                                 window.parseVTT = (vtt)=>{
+                                    function pushCue(){
+                                        if(start !== null && end !== null && textBuffer.length){
+                                            cues.push({ start, end, text: textBuffer.join("\n") });
+                                        }
+                                        start = end = null;
+                                        textBuffer.length = 0;
+                                    }
+                                    const lines = vtt.split(/\r?\n/);
+                                    const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
+                                    let start = null, end = null;
+                                    cues = [];
+                                    textBuffer = [];
+                                    for(let i = 0, len = lines.length; i < len; i++){
+                                        const line = lines[i];
+                                        if(!line.trim()){ pushCue(); continue; }
+                                        if(line.includes("-->")){
+                                            const [s, e] = line.split("-->").map(l => l.trim().split(" ")[0]);
+                                            if(timePattern.test(s) && timePattern.test(e)){
+                                                start = toSeconds(s);
+                                                end = toSeconds(e);
+                                            }
+                                        }else if(!timePattern.test(line)){
+                                            textBuffer.push(line);
+                                        }
+                                    }
+                                    pushCue();
+                                }
+                            }
+                            if(typeof(toSeconds) !== "function"){
+                                function toSeconds(ts){
+                                    const parts = ts.split(":");
+                                    if(parts.length === 3){
+                                        return parseInt(parts[0], 10) * 3600 +
+                                               parseInt(parts[1], 10) * 60 +
+                                               parseFloat(parts[2]);
+                                    }
+                                    return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
+                                }
+                            }
+                            if(typeof(findCue) !== "function"){
+                                function findCue(time){
+                                    let lo = 0, hi = cues.length - 1;
+                                    while(lo <= hi){
+                                        const mid = (lo + hi) >> 1;
+                                        const cue = cues[mid];
+                                        if(time < cue.start){
+                                            hi = mid - 1;
+                                        }else if(time >= cue.end){
+                                            lo = mid + 1;
+                                        }else{
+                                            return cue;
+                                        }
+                                    }
+                                    return null;
+                                }
+                            }
+                            if(typeof(splitAtLastDash) !== "function"){
+                                function splitAtLastDash(s){
+                                    const idx = s.lastIndexOf("-");
+                                    if(idx === -1){
+                                        return [s];
+                                    }
+                                    return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
+                                }
+                            }
+                            if(typeof(show_glassmask) !== "function"){
+                                function show_glassmask(msg){
+                                    let glassmask = document.querySelector("#gr_glassmask");
+                                    if(!glassmask){
+                                        glassmask = document.createElement("div");
+                                        glassmask.id = "gr_glassmask";
+                                        document.body.appendChild(glassmask);
+                                    }
+                                    glassmask.className = "gr-glass-mask";
+                                    glassmask.innerHTML = `${msg}`;
+                                }
+                            }
+                            if(typeof(create_uuid) !== "function"){
+                                function create_uuid(){
+                                    try{
+                                        return crypto.randomUUID();
+                                    }catch(e){
+                                        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c =>{
+                                            const r = Math.random() * 16 | 0;
+                                            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                                            return v.toString(16);
+                                        });
+                                    }
+                                }
+                            }
+                            //////////////////////
+                            const bc = new BroadcastChannel("E2A-channel");
+                            const tab_id = create_uuid();
+                            bc.onmessage = (event)=>{
+                                try{
+                                    const msg = event.data;
+                                    if(!msg || msg.senderId === tab_id){
+                                        return;
+                                    }
+                                    switch (msg.type){
+                                        case "check-existing":
+                                            bc.postMessage({ type: "already-open", senderId: tab_id });
+                                            break;
+                                        case "already-open":
+                                            tabs_opened = true;
+                                            break;
+                                        case "new-tab-opened":
+                                            show_glassmask(msg.text);
+                                            break;
+                                    }
+                                }catch(e){
+                                    console.warn("bc.onmessage error:", e);
+                                }
+                            };
+                            window.addEventListener("beforeunload", ()=>{
+                                try{
+                                    const newStorage = JSON.parse(localStorage.getItem("data") || "{}");
+                                    if(newStorage.tab_id == window.tab_id || !newStorage.tab_id){
+                                        delete newStorage.tab_id;
+                                        delete newStorage.status;
+                                        newStorage.playback_time = Number(window.session_storage.playback_time);
+                                        newStorage.playback_volume = parseFloat(window.session_storage.playback_volume);
+                                        localStorage.setItem("data", JSON.stringify(newStorage));
+                                    }
+                                }catch(e){
+                                    console.warn("Error updating status on unload:", e);
+                                }
+                            });
+                            const currentStorage = localStorage.getItem("data");
+                            if(currentStorage){
+                                window.session_storage = JSON.parse(currentStorage);
+                                window.session_storage.tab_id = tab_id;
+                                if(window.session_storage.playback_volume === 0){
+                                    window.session_storage.playback_volume = 1.0;
+                                }
+                            }else{
+                                window.session_storage = {};
+                                window.session_storage.playback_time = 0;
+                                window.session_storage.playback_volume = 1.0;
+                            }
+                            window.onElementAvailable("#gr_voice_player_hidden audio", (el)=>{
+                                window.init_voice_player_hidden();
+                            }, {once: false});
+                            window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
+                                window.init_audiobook_player();
+                            }, {once: false});
+                            try{
+                                bc.postMessage({ type: "check-existing", senderId: tab_id });
+                                setTimeout(()=>{
+                                    if(tabs_opened){
+                                        bc.postMessage({
+                                            type: "new-tab-opened",
+                                            text: "Session expired.<br/>You can close this window",
+                                            senderId: tab_id
+                                        });
+                                    }
+                                }, 250);
+                            }catch(e){
+                                console.warn("bc.postMessage error:", e);
+                            }
+                            return window.session_storage;
+                        }catch(e){
+                            console.warn("gr_raed_data js error:", e);
+                        }
+                        return null;
+                    }
+                ''',
+                outputs=[gr_restore_session],
+            )
+            app.unload(cleanup_session)
+            all_ips = get_all_ip_addresses()
+            msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
+            show_alert({"type": "info", "msg": msg})
+            os.environ['no_proxy'] = ' ,'.join(all_ips)
+            return app
     except Exception as e:
         error = f'An unexpected error occurred: {e}'
-        alert_exception(error)
+        alert_exception(error, None)
+    return None

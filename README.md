@@ -1,6 +1,6 @@
 # 📚 ebook2audiobook
 CPU/GPU Converter from eBooks to audiobooks with chapters and metadata<br/>
-using XTTSv2, Bark, Vits, Fairseq, YourTTS, Tacotron and more. Supports voice cloning and +1110 languages!
+using XTTSv2, Bark, Vits, Fairseq, YourTTS, Tacotron2 and more. Supports voice cloning and +1110 languages!
 > [!IMPORTANT]
 **This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
@@ -83,18 +83,18 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Basic Headless Usage](#basic--usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
-  - [Run Remotely](#run-remotely)  
+  - [Run Remotely](#run-remotely)
+  - [Docker](#docker-compose)
+    - [Docker Compose (Recommended)](#docker-compose)
+    - [Docker Compose Headless](#compose-headless)
+    - [Compose Build Arguments](#compose-build-arguments)
+    - [Compose container file locations](#compose-container-file-locations)
+    - [Common Docker issues](#common-docker-issues)
+    - [Docker Build (Manual)](https://github.com/DrewThomasson/ebook2audiobook/wiki/Manual-Docker-Guide)
+  
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
-- [Docker](#docker-gpu-options) 
-  - [GPU options](#docker-gpu-options)
-  - [Docker Run](#running-the-pre-built-docker-container)
-  - [Docker Build](#building-the-docker-container)
-  - [Docker Compose](#docker-compose)
-  - [Docker headless guide](#docker-headless-guide)
-  - [Docker container file locations](#docker-container-file-locations)
-  - [Common Docker issues](#common-docker-issues)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-formats)
 - [Updating to Latest Version](#updating-to-latest-version)
@@ -125,7 +125,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ##  Hardware Requirements
-- 4gb RAM minimum, 8GB recommended
+- 2gb RAM minimum, 8GB recommended
 - Virtualization enabled if running on windows (Docker only)
 - CPU (intel, AMD, ARM), GPU (Nvidia, AMD*, Intel*) (Recommended), MPS (Apple Silicon CPU)
 *available very soon
@@ -147,39 +147,32 @@ cd ebook2audiobook
 ```
 
 ### Launching Gradio Web Interface  
-1. **Run ebook2audiobook**:  
+1. **Run ebook2audiobook**:
+
    - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.sh  # Run launch script
      ```
-
+     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     
    - **Mac Launcher**  
      Double click `Mac Ebook2Audiobook Launcher.command`
 
-  
+
    - **Windows**  
      ```bash
      ebook2audiobook.cmd  # Run launch script or double click on it
      ```
+     <i>Note for Windows users: scoop is installed to install missing programs without administrator privileges.</i>
      
    - **Windows Launcher**  
      Double click `ebook2audiobook.cmd`
-
-
-   - **Manual Python Install**
-     ```bash
-     # (for experts only!)
-     REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rust" "sox")
-     REQUIRED_PYTHON_VERSION="3.12"
-     pip install -r requirements.txt  # Install Python Requirements
-     python app.py  # Run Ebook2Audiobook
-     ```
    
 1. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks. `http://localhost:7860/`
 2. **For Public Link**:
-   `python app.py --share` (all OS)
    `./ebook2audiobook.sh --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
+   `python app.py --share` (all OS)
 
 > [!IMPORTANT]
 **If the script is stopped and run again, you need to refresh your gradio GUI interface<br>
@@ -209,13 +202,15 @@ to let the web page reconnect to the new connection socket.**
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.sh --headless --ebook <ebook_file_path> \
-         --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
+         --language <language> --custom_model <custom_model_path>
      ```
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
-         --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
+         --language <language> --custom_model <custom_model_path>
      ```
+     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     
 - **<custom_model_path>**: Path to `model_name.zip` file,
       which must contain (according to the tts engine) all the mandatory files<br>
       (see ./lib/models.py).
@@ -249,7 +244,8 @@ usage: app.py [-h] [--session SESSION] [--share] [--headless] [--ebook EBOOK]
               [--text_temp TEXT_TEMP] [--waveform_temp WAVEFORM_TEMP]
               [--output_dir OUTPUT_DIR] [--version]
 
-Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
+Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or
+run the script in headless mode for direct conversion.
 
 options:
   -h, --help            show this help message and exit
@@ -271,7 +267,7 @@ options:
                         Relative or absolute path of the directory containing the files to convert. 
                             Cannot be used when --ebook is present.
   --language LANGUAGE   Language of the e-book. Default language is set 
-                            in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py
+                  in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py
 
 optional parameters:
   --voice VOICE         (Optional) Path to the voice cloning file for TTS engine. 
@@ -280,8 +276,9 @@ optional parameters:
                         (Optional) Pprocessor unit type for the conversion. 
                             Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.
   --tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}
-                        (Optional) Preferred TTS engine (available are: ['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
-                            Default depends on the selected language. The tts engine should be compatible with the chosen language
+            (Optional) Preferred TTS engine (available are:
+['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
+            Default depends on the selected language. The tts engine should be compatible with the chosen language
   --custom_model CUSTOM_MODEL
                         (Optional) Path to the custom model zip file cntaining mandatory model files. 
                             Please refer to ./lib/models.py
@@ -296,7 +293,8 @@ optional parameters:
                         (xtts only, optional) A length penalty applied to the autoregressive decoder. 
                             Default to config.json model. Not applied to custom models.
   --num_beams NUM_BEAMS
-                        (xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
+                        (xtts only, optional) Controls how many alternative sequences the model explores.
+                            Must be equal or greater than length penalty. 
                             Default to config.json model.
   --repetition_penalty REPETITION_PENALTY
                         (xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
@@ -305,7 +303,8 @@ optional parameters:
                             Lower values mean more likely outputs and increased audio generation speed. 
                             Default to config.json model.
   --top_p TOP_P         (xtts only, optional) Top-p sampling. 
-                            Lower values mean more likely outputs and increased audio generation speed. Default to config.json model.
+                            Lower values mean more likely outputs and increased audio generation speed.
+                            Default to config.json model.
   --speed SPEED         (xtts only, optional) Speed factor for the speech generation. 
                             Default to config.json model.
   --enable_text_splitting
@@ -339,83 +338,15 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
 
-TIP: if it needs some more pauses, just add '###' or '[pause]' between the words you wish more pause. one [pause] equals to 1.4 seconds
-
-#### Docker GPU Options
-
-Available pre-build tags: `latest` (CUDA 11.8)
-#### Edit: IF GPU isn't detected then you'll have to build the image -> [Building the Docker Container](#building-the-docker-container)
-
-
-
-#### Running the pre-built Docker Container
-
- -Run with CPU only
-```powershell
-docker run --pull always --rm -p 7860:7860 athomasson2/ebook2audiobook
-```
- -Run with GPU Speedup (NVIDIA compatible only)
-```powershell
-docker run --pull always --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
-```
-
-This command will start the Gradio interface on port 7860.(localhost:7860)
-- For more options add the parameter `--help`
-
-
-#### Building the Docker Container
-- You can build the docker image with the command:
-```powershell
-docker build -t athomasson2/ebook2audiobook .
-```
-#### Avalible Docker Build Arguments
-
-`--build-arg TORCH_VERSION=cuda118` Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] 
-
-All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
-
-`--build-arg SKIP_XTTS_TEST=true` (Saves space by not baking XTTSv2 model into docker image)
-
-
-## Docker container file locations
-All ebook2audiobooks will have the base dir of `/app/`
-For example:
-`tmp` = `/app/tmp`
-`audiobooks` = `/app/audiobooks`
-
-
-## Docker headless guide
-
-- Before you do run this you need to create a dir named "input-folder" in your current dir
-  which will be linked, This is where you can put your input files for the docker image to see
-```bash
-mkdir input-folder && mkdir Audiobooks
-```
-- In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
-```bash
-docker run --pull always --rm \
-    -v $(pwd)/input-folder:/app/input_folder \
-    -v $(pwd)/audiobooks:/app/audiobooks \
-    athomasson2/ebook2audiobook \
-    --headless --ebook /input_folder/YOUR_EBOOK_FILE
-```
-- The output Audiobooks will be found in the Audiobook folder which will also be located
-  in your local dir you ran this docker command in
-
-
-## To get the help command for the other parameters this program has you can run this 
-
-```bash
-docker run --pull always --rm athomasson2/ebook2audiobook --help
-
-```
-That will output this 
-[Help command output](#help-command-output)
+TIP: if it needs some more pauses, just add '###' or 
+'[pause]' between the words you wish more pause. 
+one [pause] equals to 1.4 seconds
 
 
 ### Docker Compose
-This project uses Docker Compose to run locally. You can enable or disable GPU support 
-by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
+
+For pre-built image enable `#image: docker.io/athomasson2/ebook2audiobook:latest` in `docker-compose.yml`
+
 
 
 #### Steps to Run
@@ -426,44 +357,54 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
    ```
 2. **Set GPU Support (disabled by default)**
   To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
-3. **Start the service:**
+4. **Start the service:**
     ```bash
     # Docker
-    docker-compose up -d # To update add --build
+    docker-compose up -d # To rebuild add --build 
+    # To stop -> docker-compose down
 
     # Podman
-    podman compose -f podman-compose.yml up -d # To update add --build
+    podman compose -f podman-compose.yml up -d # To rebuild add --build
+    # To stop -> podman compose -f podman-compose.yml down
     ```
-4. **Access the service:**
+5. **Access the service:**
   The service will be available at http://localhost:7860.
 
 
-## Common Docker Issues
+### Compose Build Arguments
+
+```bash
+SKIP_XTTS_TEST: "true" # (Saves space by not baking xtts model into docker image)
+TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu]
+# All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
+```
+
+
+### Compose Headless
+
+[Headless Wiki for more info](https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide)
+```bash
+A headless example is already contained within the `docker-compose.yml` file.
+
+The `docker-compose.yml` file will act as the base dir for any headless commands added.
+```
+
+### Compose container file locations
+
+```bash
+By Default: All compose containers share the contents your local `ebook2audiobook` folder
+```
+
+
+### Common Docker Issues
 
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
-
-- `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory` (Just remove all post arguments as I replaced the `CMD` with `ENTRYPOINT` in the [Dockerfile](Dockerfile))
-  - Example: `docker run --pull always athomasson2/ebook2audiobook app.py --script_mode full_docker` - > corrected - > `docker run --pull always athomasson2/ebook2audiobook`
-  - Arguments can be easily added like this now `docker run --pull always athomasson2/ebook2audiobook --share`
-
-- Docker gets stuck downloading Fine-Tuned models.
-  (This does not happen for every computer but some appear to run into this issue)
-  Disabling the progress bar appears to fix the issue,
-  as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
-  Example of adding this fix in the `docker run` command
-```Dockerfile
-docker run --pull always --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
-    -p 7860:7860 athomasson2/ebook2audiobook
-```
 
 
 ## Fine Tuned TTS models
 #### Fine Tune your own XTTSv2 model
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
-
-
 
 
 #### De-noise training data
@@ -484,7 +425,6 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
-
 ## Output Formats
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
 
@@ -494,6 +434,12 @@ git pull # Locally/Compose
 
 docker pull athomasson2/ebook2audiobook:latest # For Pre-build docker images
 ```
+
+## Your own Ebook2Audiobook customization
+You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
+a copy of the original conf.py so on each ebook2audiobook update you will backup your modified conf.py and put
+back the original one. You must plan the same process for models.py. If you wish to make your own custom model
+as an official ebook2audiobook fine tuned model so please contact us and we'll ad it to the models.py list.
 
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)

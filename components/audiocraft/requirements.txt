@@ -1,0 +1,38 @@
+# --- Core AI stack ---
+torch==2.1.0
+torchaudio==2.1.0
+torchvision==0.16.0
+
+# --- Audiocraft + build helpers ---
+audiocraft==1.3.0
+Cython==3.0.10
+av==11.0.0
+ffmpeg-python==0.2.0
+
+# --- Transformers / HuggingFace stack ---
+transformers==4.44.2
+tokenizers==0.19.1
+sentencepiece==0.2.0
+accelerate==0.33.0
+huggingface-hub==0.25.2
+
+# --- Audio + DSP ---
+librosa==0.10.2.post1
+soundfile==0.12.1
+numpy==1.26.4
+scipy==1.12.0
+
+# --- NLP stack ---
+spacy==3.7.4
+thinc==8.2.5
+blis==0.7.11
+preshed==3.0.9
+srsly==2.4.8
+catalogue==2.0.10
+pydantic==1.10.14
+
+# --- Utilities ---
+tqdm==4.66.4
+requests==2.32.3
+urllib3==2.2.2
+packaging==24.1
