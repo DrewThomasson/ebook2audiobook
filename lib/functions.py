@@ -2222,7 +2222,7 @@ def convert_ebook(args:dict)->tuple:
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                         session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
-                        if prepare_dirs(id):
+                        if prepare_dirs(args['ebook'], id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
                             msg_extra = ''
