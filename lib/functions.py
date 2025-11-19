@@ -3494,7 +3494,7 @@ def build_interface(args:dict)->gr.Blocks:
                             msg = f'Custom model {selected_name} deleted!'
                             session['custom_model'] = None
                             if session['custom_model'] in session['voice']:
-                                session['voice'] = None if voice_options[0][1] == None else models[session['tts_engine']][session['fine_tuned']['voice']
+                                session['voice'] = None if voice_options[0][1] == None else models[session['tts_engine']][session['fine_tuned']]['voice']
                             show_alert({"type": "warning", "msg": msg})
                             return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
                         elif method == 'confirm_audiobook_del':
