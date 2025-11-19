@@ -4773,6 +4773,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                     }
                                                 });
                                                 gr_custom_model_file.addEventListener('change', (e)=>{
+                                                    console.log("gr_custom_model_file called: ", e);
                                                     gr_tts_engine_list.disabled = true;
                                                 });
                                                 const themURL = new URL(window.location);
