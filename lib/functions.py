@@ -3673,7 +3673,7 @@ def build_interface(args:dict)->gr.Blocks:
                             model = extract_custom_model(f, id, models[session['tts_engine']][default_fine_tuned]['files'])
                             if model is not None:
                                 session['custom_model'] = model
-                                session['voice'] = os.path.join(model, f'{model}.wav')
+                                session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(path))}.wav')
                                 msg = f'{os.path.basename(model)} added to the custom models list'
                                 state['type'] = 'success'
                                 state['msg'] = msg
