@@ -4,14 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       custom_command:
-        description: 'Enter a shell command to run on self-hosted Mac'
+        description: 'Enter a shell command to run'
         required: true
-        default: 'echo Hello from Mac!'
+        default: 'echo Hello from Runner!'
+      runner_os:
+        description: 'Select the operating system'
+        required: true
+        default: 'macos'
+        type: choice
+        options:
+          - macos
+          - linux
 
 jobs:
   CustomCommand:
-    runs-on: [self-hosted, macos]
+    # Dynamically sets the label based on your selection
+    runs-on: [self-hosted, "${{ github.event.inputs.runner_os }}"]
     steps:
       - name: Run Custom Command
         run: |
+          echo "Running on ${{ github.event.inputs.runner_os }}..."
           eval "${{ github.event.inputs.custom_command }}"
