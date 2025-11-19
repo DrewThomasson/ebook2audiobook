@@ -437,7 +437,7 @@ class Coqui:
             )
             if settings['voice_path'] is not None:
                 speaker = re.sub(r'\.wav$', '', os.path.basename(settings['voice_path']))
-                if settings['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and session['custom_model_dir'] not in settings['voice_path']:
+                if settings['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in settings['voice_path']:
                     self.session['voice'] = settings['voice_path'] = self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device'])
                     if not settings['voice_path']:
                         msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"

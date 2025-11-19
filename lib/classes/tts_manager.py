@@ -17,10 +17,10 @@ class TTSManager:
         else:
             print('Other TTS engines coming soon!')
 
-    def convert_sentence2audio(self,sentence_number:int,sentence:str)->bool:
+    def convert_sentence2audio(self,sentence_number:int, sentence:str)->bool:
         try:
             if self.session['tts_engine'] in TTS_ENGINES.values():
-                return self.engine.convert(sentence_number,sentence)
+                return self.engine.convert(sentence_number, sentence)
             else:
                 print('Other TTS engines coming soon!')
         except Exception as e:
