@@ -169,6 +169,7 @@ class SessionContext:
                 "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
                 "final_name": None,
                 "output_format": default_output_format,
+                "output_channel": default_output_channel,
                 "output_split": default_output_split,
                 "output_split_hours": default_output_split_hours,
                 "metadata": {
@@ -212,8 +213,9 @@ class JSONDictProxyEncoder(json.JSONEncoder):
             return list(o)
         return super().default(o)
 
-def prepare_dirs(src:str, session:DictProxy[str,Any])->bool:
+def prepare_dirs(src:str, id:str)->bool:
     try:
+        session = context.get_session(id)
         resume = False
         os.makedirs(os.path.join(models_dir,'tts'), exist_ok=True)
         os.makedirs(session['session_dir'], exist_ok=True)
@@ -285,27 +287,23 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         return not missing_files and not required_empty_files
     except zipfile.BadZipFile:
         error = 'The file is not a valid ZIP archive.'
-        raise ValueError(error)
+        print(error)
     except Exception as e:
         error = f'An error occurred: {e}'
-        raise RuntimeError(error)
+        print(error)
     return False
 
-def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_files:list|None)->str|None:
+def extract_custom_model(file_src:str, id, required_files:list)->str|None:
+    session = context.get_session(id)
+    model_path = None
+    model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
+    model_name = get_sanitized(model_name)
     try:
-        model_path = None
-        if required_files is None:
-            required_files = models[session['tts_engine']][default_fine_tuned]['files']
-        model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
-        model_name = get_sanitized(model_name)
         with zipfile.ZipFile(file_src, 'r') as zip_ref:
             files = zip_ref.namelist()
             files_length = len(files)
             tts_dir = session['tts_engine']
             model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
-            if os.path.exists(model_path):
-                print(f'{model_path} already exists, bypassing files extraction')
-                return model_path
             os.makedirs(model_path, exist_ok=True)
             required_files_lc = set(x.lower() for x in required_files)
             with tqdm(total=files_length, unit='files') as t:
@@ -316,25 +314,35 @@ def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_file
                         with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
                             shutil.copyfileobj(src, dst)
                     t.update(1)
-        if session['is_gui_process']:
-            os.remove(file_src)
         if model_path is not None:
-            msg = f'Extracted files to {model_path}'
+            msg = f'Extracted files to {model_path}. Normalizing ref.wav...'
             print(msg)
-            return model_path
+            voice_ref = os.path.join(model_path, 'ref.wav')
+            voice_output = os.path.join(model_path, f'{model_name}.wav')
+            extractor = VoiceExtractor(session, voice_ref, voice_output)
+            success, error = extractor.normalize_audio(voice_ref, voice_output, voice_output)
+            if success:
+                if os.path.exists(file_src):
+                    os.remove(file_src)
+                if os.path.exists(voice_ref):
+                    os.remove(voice_ref)
+                return model_path
+            error = f'normalize_audio {voice_ref} error: {error}'
+            print(error)
         else:
             error = f'An error occured when unzip {file_src}'
-            return None
     except asyncio.exceptions.CancelledError as e:
         DependencyError(e)
-        if session['is_gui_process']:
-            os.remove(file_src)
-        return None       
+        error = f'extract_custom_model asyncio.exceptions.CancelledError: {e}'
+        print(error)     
     except Exception as e:
         DependencyError(e)
-        if session['is_gui_process']:
+        error = f'extract_custom_model Exception: {e}'
+        print(error)
+    if session['is_gui_process']:
+        if os.path.exists(file_src):
             os.remove(file_src)
-        return None
+    return None
         
 def hash_proxy_dict(proxy_dict) -> str:
     try:
@@ -392,8 +400,9 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
                     data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
                 else:
                     raise RuntimeError(f'Failed to download traineddata for {lang} (HTTP {response.status_code})')
-            except Exception as ex:
-                print(f'Automatic download failed: {ex}')
+            except Exception as e:
+                error = f'Automatic download failed: {e}'
+                print(error)
                 raise
         data = data.dropna(subset=['text'])
         lines = []
@@ -450,9 +459,9 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
             print('========================')
         return '\n'.join(xhtml_parts)
     except Exception as e:
+        DependencyError(e)
         error = f'ocr2xhtml error: {e}'
         print(error)
-        DependencyError(e)
         return ''
 
 def convert2epub(id:str)-> bool:
@@ -578,19 +587,19 @@ def convert2epub(id:str)-> bool:
         print(result.stdout)
         return True
     except subprocess.CalledProcessError as e:
+        DependencyError(e)
         error = f'convert2epub subprocess.CalledProcessError: {e.stderr}'
         print(error)
-        DependencyError(e)
         return False
     except FileNotFoundError as e:
+        DependencyError(e)
         error = f'convert2epub FileNotFoundError: {e}'
         print(error)
-        DependencyError(e)
         return False
     except Exception as e:
+        DependencyError(e)
         error = f'convert2epub error: {e}'
         print(error)
-        DependencyError(e)
         return False
 
 def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
@@ -613,8 +622,9 @@ def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
                 return alt
     return None
 
-def get_cover(epubBook:EpubBook, session:DictProxy[str,Any])->bool|str:
+def get_cover(epubBook:EpubBook, id:str)->bool|str:
     try:
+        session = context.get_session(id)
         if session['cancellation_requested']:
             msg = 'Cancel requested'
             print(msg)
@@ -642,7 +652,7 @@ def get_cover(epubBook:EpubBook, session:DictProxy[str,Any])->bool|str:
         DependencyError(e)
         return False
 
-def get_chapters(epubBook:EpubBook, session:DictProxy[str,Any])->tuple[Any,Any]:
+def get_chapters(epubBook:EpubBook, id:str)->tuple[Any,Any]:
     try:
         msg = r'''
 *******************************************************************************
@@ -655,6 +665,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 *******************************************************************************
         '''
         print(msg)
+        session = context.get_session(id)
         if session['cancellation_requested']:
             msg = 'Cancel requested'
             return msg, None
@@ -1580,7 +1591,7 @@ def convert_chapters2audio(id:str)->bool:
                     if chapter_num <= resume_chapter:
                         msg = f'**Recovering missing file block {chapter_num}'
                         print(msg)
-                    if combine_audio_sentences(chapter_audio_file, int(start), int(end), session):
+                    if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
                         msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
                         print(msg)
                     else:
@@ -1592,8 +1603,9 @@ def convert_chapters2audio(id:str)->bool:
         DependencyError(e)
         return False
 
-def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:DictProxy[str,Any])->bool:
+def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, id:str)->bool:
     try:
+        session = context.get_session(id)
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
         batch_size = 1024
@@ -1791,6 +1803,11 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     target_rate = '48000'
                     cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
                 cmd += ['-map_metadata', '1'] 
+            if 'output_channel' in session:
+                if session['output_channel'] == 'mono':
+                    cmd += ['-ac', '1']
+                elif session['output_channel'] == 'stereo':
+                    cmd += ['-ac', '2']
             if input_codec == target_codec and input_rate == target_rate:
                 cmd = [
                     shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio,
@@ -2034,7 +2051,8 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(TTS_SML['pause'], '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
 
-def delete_unused_tmp_dirs(web_dir:str, days:int, session:DictProxy[str,Any])->None:
+def delete_unused_tmp_dirs(web_dir:str, days:int, id:str)->None:
+    session = context.get_session(id)
     dir_array = [
         tmp_dir,
         web_dir,
@@ -2168,17 +2186,17 @@ def convert_ebook(args:dict)->tuple:
                         src_path = Path(session['custom_model'])
                         src_name = src_path.stem
                         if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
-                            required_files = models[session['tts_engine']]['internal']['files']
-                            if analyze_uploaded_file(session['custom_model'], required_files):
-                                model = extract_custom_model(session['custom_model'], session)
+                            if analyze_uploaded_file(session['custom_model'], models[session['tts_engine']]['internal']['files']):
+                                model = extract_custom_model(session['custom_model'], id, models[session['tts_engine']][default_fine_tuned]['files'])
                                 if model is not None:
                                     session['custom_model'] = model
                                 else:
                                     error = f"{model} could not be extracted or mandatory files are missing"
                             else:
                                 error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
-                    if session['voice'] is not None:                  
-                        voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
+                    if session['voice'] is not None:
+                        voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
+                        voice_name = get_sanitized(voice_name)
                         final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
                         if not os.path.exists(final_voice_file):
                             extractor = VoiceExtractor(session, session['voice'], voice_name)
@@ -2204,7 +2222,7 @@ def convert_ebook(args:dict)->tuple:
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                         session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
-                        if prepare_dirs(session['ebook'], session):
+                        if prepare_dirs(id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
                             msg_extra = ''
@@ -2279,9 +2297,9 @@ def convert_ebook(args:dict)->tuple:
                                             print(error)
                                             if session['is_gui_process']:
                                                 show_alert({"type": "warning", "msg": error})
-                                        session['cover'] = get_cover(epubBook, session)
+                                        session['cover'] = get_cover(epubBook, id)
                                         if session['cover']:
-                                            session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                            session['toc'], session['chapters'] = get_chapters(epubBook, id)
                                             if session['chapters'] is not None:
                                                 #if session['chapters_preview']:
                                                 #    return 'confirm_blocks', True
@@ -2552,7 +2570,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                     font-size: 22px !important;
                     width: 60px !important;
-                    height: 60px !important;
+                    height: 100% !important;
                     margin: 0 !important;
                     padding: 0 !important;
                 }
@@ -2619,6 +2637,17 @@ def build_interface(args:dict)->gr.Blocks:
                     margin: var(--size-2) !important;;
                     border-radius: var(--radius-md) !important;
                 }
+                .gr-label textarea[data-testid="textbox"]{
+                    padding: 0 0 0 3px !important;
+                    margin: 0 !important;
+                    text-align: left !important;
+                    font-weight: normal !important;
+                    height: auto !important;
+                    font-size: 12px !important;
+                    border: none !important;
+                    overflow-y: hidden !important;
+                    line-height: 12px !important;
+                }
                 .gr-markdown p {
                     margin-top: 8px !important;
                     width: 90px !important;
@@ -2644,7 +2673,8 @@ def build_interface(args:dict)->gr.Blocks:
                 .gr-markdown-output-split-hours {
                     overflow: hidden !important;
                     background: var(--block-background-fill) !important;
-                    border-radius: 0; font-size: 12px !important;
+                    border-radius: 0 !important; 
+                    font-size: 12px !important;
                     text-align: center !important;
                     vertical-align: middle !important;
                     padding-top: 4px !important;
@@ -2730,6 +2760,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_tts_engine_list span[data-testid="block-info"],
                 #gr_output_split_hours span[data-testid="block-info"],
                 #gr_session span[data-testid="block-info"],
+                #gr_custom_model_list span[data-testid="block-info"],
                 #gr_audiobook_sentence span[data-testid="block-info"],
                 #gr_audiobook_list span[data-testid="block-info"],
                 #gr_progress span[data-testid="block-info"]{
@@ -2747,7 +2778,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_tts_rating {
                     overflow: hidden !important;
                 }
-                #gr_row_voice_player {
+                #gr_row_voice_player, #gr_row_custom_model_list {
                     height: 60px !important;
                 }  
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
@@ -2910,17 +2941,20 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
                                 with gr.Group(elem_id='gr_group_models', elem_classes=['gr-group']):
                                     gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', elem_classes=['gr-markdown'], value='Models')
-                                    gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
+                                    gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Preset Models', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                     gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                                     with gr_group_custom_model:
+                                        gr_custom_model_label = gr.Textbox(label='', elem_id='gr_custom_model_label', elem_classes=['gr-label'], interactive=False)
                                         gr_custom_model_file = gr.File(label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
-                                        with gr.Row(elem_id='gr_row_custom_model'):
+                                        gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
+                                        with gr_row_custom_model_list:
                                             gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                             gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 with gr.Group(elem_id='gr_group_output_format'):
                                     gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value='Output')
                                     with gr.Row(elem_id='gr_row_output_format'):
                                         gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
+                                        gr_output_channel_list = gr.Dropdown(label='Channel', elem_id='gr_output_channel_list', choices=['mono', 'stereo'], type='value', value=default_output_channel, interactive=True, scale=1)
                                         with gr.Group(elem_id='gr_group_output_split'):
                                             gr_output_split = gr.Checkbox(label='Split File', elem_id='gr_output_split', value=default_output_split, interactive=True)
                                             gr_row_output_split_hours = gr.Row(elem_id='gr_row_output_split_hours', visible=False)
@@ -3080,15 +3114,15 @@ def build_interface(args:dict)->gr.Blocks:
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden') 
 
             def disable_components()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(11)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(12)])
                 return outputs
             
             def enable_components(id:str)->tuple:
                 session = context.get_session(id)
                 if session['event'] == 'confirm_blocks':
-                    outputs = tuple([gr.update() for _ in range(11)])
+                    outputs = tuple([gr.update() for _ in range(12)])
                 else:
-                    outputs = tuple([gr.update(interactive=True) for _ in range(11)])
+                    outputs = tuple([gr.update(interactive=True) for _ in range(12)])
                 return outputs
 
             def show_gr_modal(type:str, msg:str)->str:
@@ -3165,7 +3199,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(id)
                     socket_hash = str(req.session_hash)
                     if not session.get(socket_hash):
-                        outputs = tuple([gr.update() for _ in range(13)])
+                        outputs = tuple([gr.update() for _ in range(15)])
                         return outputs
                     ebook_data = None
                     file_count = session['ebook_mode']
@@ -3189,6 +3223,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if prev_cache_dir != current_dir_cache_norm:
                             ebook_data = None
                         session['ebook'] = ebook_data
+                    visible_row_split_hours = True if session['output_split'] else False
                     return (
                         gr.update(value=ebook_data),
                         gr.update(value=session['ebook_mode']),
@@ -3200,14 +3235,16 @@ def build_interface(args:dict)->gr.Blocks:
                         update_gr_custom_model_list(id),
                         update_gr_fine_tuned_list(id),
                         gr.update(value=session['output_format']),
+                        gr.update(value=session['output_channel']),
                         gr.update(value=bool(session['output_split'])),
                         gr.update(value=session['output_split_hours']),
+                        gr.update(visible=visible_row_split_hours),
                         update_gr_audiobook_list(id)
                     )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
                     alert_exception(error, id)
-                    outputs = tuple([gr.update() for _ in range(13)])
+                    outputs = tuple([gr.update() for _ in range(15)])
                     return outputs
 
             def restore_audiobook_player(audiobook:str|None)->tuple:
@@ -3323,8 +3360,8 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(label=src_label_dir, file_count='directory'), gr.update(visible=False)
 
             def change_gr_voice_file(f:str|None, id:str)->tuple:
+                state = {}
                 if f is not None:
-                    state = {}
                     if len(voice_options) > max_custom_voices:
                         error = f'You are allowed to upload a max of {max_custom_voices} voices'
                         state['type'] = 'warning'
@@ -3346,14 +3383,13 @@ def build_interface(args:dict)->gr.Blocks:
                             state['type'] = 'success'
                             state['msg'] = msg
                             show_alert(state)
+                            return update_gr_voice_list(id)
                         else:
                             error = 'failed! Check if you audio file is compatible.'
                             state['type'] = 'warning'
                             state['msg'] = error
                     show_alert(state)
-                    return update_gr_voice_list(id)
-                else:
-                    return gr.update()
+                return gr.update()
 
             def change_gr_voice_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
@@ -3368,9 +3404,14 @@ def build_interface(args:dict)->gr.Blocks:
                         speaker_path = os.path.abspath(selected)
                         speaker = re.sub(r'\.wav$|\.npz|\.pth$', '', os.path.basename(selected))
                         builtin_root = os.path.join(voices_dir, session['language'])
-                        sessions_root = os.path.join(voices_dir, '__sessions')
-                        is_in_sessions = os.path.commonpath([speaker_path, os.path.abspath(sessions_root)]) == os.path.abspath(sessions_root)
-                        is_in_builtin = os.path.commonpath([speaker_path, os.path.abspath(builtin_root)]) == os.path.abspath(builtin_root)
+                        is_in_builtin = os.path.commonpath([
+                            speaker_path,
+                            os.path.abspath(builtin_root)
+                        ]) == os.path.abspath(builtin_root)
+                        is_in_models = os.path.commonpath([
+                            speaker_path,
+                            os.path.abspath(session['custom_model_dir'])
+                        ]) == os.path.abspath(session['custom_model_dir'])
                         # Check if voice is built-in
                         is_builtin = any(
                             speaker in settings.get('voices', {})
@@ -3380,6 +3421,10 @@ def build_interface(args:dict)->gr.Blocks:
                             error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                             show_alert({"type": "warning", "msg": error})
                             return gr.update(), gr.update(visible=False)
+                        if is_in_models:
+                            error = f'Voice file {speaker} is a voice of one of your custom model and cannot be deleted.'
+                            show_alert({"type": "warning", "msg": error})
+                            return gr.update(), gr.update(visible=False)                          
                         try:
                             selected_path = Path(selected).resolve()
                             parent_path = Path(session['voice_dir']).parent.resolve()
@@ -3447,6 +3492,8 @@ def build_interface(args:dict)->gr.Blocks:
                             selected_name = os.path.basename(custom_model)
                             shutil.rmtree(custom_model, ignore_errors=True)                           
                             msg = f'Custom model {selected_name} deleted!'
+                            if session['custom_model'] in session['voice']:
+                                session['voice'] = None if voice_options[0][1] == None else models[session['tts_engine']][session['fine_tuned']]['voice']
                             session['custom_model'] = None
                             show_alert({"type": "warning", "msg": msg})
                             return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
@@ -3465,7 +3512,6 @@ def build_interface(args:dict)->gr.Blocks:
                             session['audiobook'] = None
                             show_alert({"type": "warning", "msg": msg})
                             return gr.update(), update_gr_audiobook_list(id), gr.update(value='', visible=False), gr.update()
-                    return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
                 except Exception as e:
                     error = f'confirm_deletion(): {e}!'
                     alert_exception(error, id)
@@ -3479,7 +3525,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['status'] = 'ready'
                 return gr.update(value='', visible=False)
 
-            def update_gr_voice_list(id:str, fine_tuned:str=False)->dict:
+            def update_gr_voice_list(id:str)->dict:
                 try:
                     nonlocal voice_options
                     session = context.get_session(id)
@@ -3521,34 +3567,16 @@ def build_interface(args:dict)->gr.Blocks:
                             for f in session_voice_dir.rglob(file_pattern)
                             if f.is_file()
                         ]
+                    if session.get('custom_model_dir'):
+                        voice_options.extend(
+                            (f.stem, str(f))
+                            for f in Path(session['custom_model_dir']).rglob('*.wav')
+                            if f.is_file()
+                        )
                     if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                         voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                     else:
-                        voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
-                    if fine_tuned and fine_tuned != 'internal':
-                        session['voice'] = models[session['tts_engine']][fine_tuned]['voice']
-                    else:
-                        voice_paths = {v[1] for v in voice_options}
-                        if models[session['tts_engine']]['internal']['voice'] in voice_paths:
-                            default_voice_path = models[session['tts_engine']]['internal']['voice']
-                        else:
-                            default_voice_path = voice_options[0][1]
-                        if session['voice'] is None:
-                            if default_voice_path is not None:
-                                default_name = Path(default_voice_path).stem
-                                for name, value in voice_options:
-                                    if name == default_name and isinstance(value, str):
-                                        session['voice'] = value
-                                        break
-                                else:
-                                    values = [v for _, v in voice_options]
-                                    if default_voice_path in values:
-                                        session['voice'] = default_voice_path
-                                    else:
-                                        session['voice'] = voice_options[0][1]
-                        else:
-                            if session['voice'] not in voice_paths:
-                                session['voice'] = default_voice_path
+                        voice_options = sorted(voice_options, key=lambda x: x[0].lower())       
                     return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
@@ -3582,8 +3610,6 @@ def build_interface(args:dict)->gr.Blocks:
                     ]
                     session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
                     model_paths = {v[1] for v in custom_model_options}
-                    if session['custom_model'] not in model_paths:
-                        return gr.update(choices=custom_model_options)
                     return gr.update(choices=custom_model_options, value=session['custom_model'])
                 except Exception as e:
                     error = f'update_gr_custom_model_list(): {e}!'
@@ -3636,88 +3662,101 @@ def build_interface(args:dict)->gr.Blocks:
                 return dir_path
 
             def change_gr_custom_model_file(f:str|None, t:str, id:str)->tuple:
-                try:
-                    session = context.get_session(id)
-                    if f is not None:
-                        state = {}
-                        if len(custom_model_options) > max_custom_model:
-                            error = f'You are allowed to upload a max of {max_custom_models} models'   
-                            state['type'] = 'warning'
-                            state['msg'] = error
-                        else:
-                            session['tts_engine'] = t
-                            required_files = models[session['tts_engine']]['internal']['files']
-                            if analyze_uploaded_file(f, required_files):
-                                model = extract_custom_model(f, session)
-                                if model is None:
-                                    error = f'Cannot extract custom model zip file {os.path.basename(f)}'
-                                    state['type'] = 'warning'
-                                    state['msg'] = error
-                                else:
-                                    session['custom_model'] = model
-                                    msg = f'{os.path.basename(model)} added to the custom models list'
-                                    state['type'] = 'success'
-                                    state['msg'] = msg
+                if f is not None:
+                    state = {}
+                    if len(custom_model_options) > max_custom_model:
+                        error = f'You are allowed to upload a max of {max_custom_models} models'   
+                        state['type'] = 'warning'
+                        state['msg'] = error
+                    else:
+                        session = context.get_session(id)
+                        session['tts_engine'] = t
+                        if analyze_uploaded_file(f, models[session['tts_engine']]['internal']['files']):
+                            model = extract_custom_model(f, id, models[session['tts_engine']][default_fine_tuned]['files'])
+                            if model is not None:
+                                session['custom_model'] = model
+                                session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')
+                                msg = f'{os.path.basename(model)} added to the custom models list'
+                                state['type'] = 'success'
+                                state['msg'] = msg
+                                show_alert(state)
+                                return gr.update(value=None), update_gr_custom_model_list(id), update_gr_voice_list(id)
                             else:
-                                error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                                error = f'Cannot extract custom model zip file {os.path.basename(f)}'
                                 state['type'] = 'warning'
                                 state['msg'] = error
-                        show_alert(state)
-                        return gr.update(value=None), update_gr_custom_model_list(id), gr.update(visible=False)
-                except ClientDisconnect:
-                    error = 'Client disconnected during upload. Operation aborted.'
-                    state['type'] = 'error'
-                    state['msg'] = error
-                except Exception as e:
-                    error = f'change_gr_custom_model_file() error: {str(e)}'
-                    state['type'] = 'error'
-                    state['msg'] = error
-                return gr.update(), gr.update(), gr.update(visible=True)
+                        else:
+                            error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                            state['type'] = 'warning'
+                            state['msg'] = error
+                    show_alert(state)
+                return gr.update(), gr.update(), gr.update()
 
             def change_gr_tts_engine_list(engine:str, id:str)->tuple:
                 session = context.get_session(id)
                 session['tts_engine'] = engine
                 session['fine_tuned'] = default_fine_tuned
-                default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if default_voice_path is None:
-                    session['voice'] = default_voice_path
+                session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
+                if engine in [TTS_ENGINES['XTTSv2']]:
+                    if session['custom_model'] is not None:
+                        session['voice'] = os.path.join(session['custom_model'], f"{os.path.basename(session['custom_model'])}.wav")
                 bark_visible = False
                 if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                     visible_custom_model = True if session['fine_tuned'] == 'internal' else False
                     return (
-                           gr.update(value=show_rating(session['tts_engine'])), 
-                           gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
-                           gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
-                           gr.update(label=f"My {session['tts_engine']} custom models"), update_gr_voice_list(id)
+                        gr.update(value=show_rating(session['tts_engine'])), 
+                        gr.update(visible=visible_gr_tab_xtts_params),
+                        gr.update(visible=False),
+                        gr.update(visible=visible_custom_model),
+                        update_gr_fine_tuned_list(id),
+                        gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
+                        update_gr_voice_list(id),
+                        gr.update(value=f"My {session['tts_engine']} Custom Models")
                     )
                 else:
                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                         bark_visible = visible_gr_tab_bark_params
                     return (
-                            gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), 
-                            gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"), gr.update(label=''), update_gr_voice_list(id)
+                        gr.update(value=show_rating(session['tts_engine'])),
+                        gr.update(visible=False),
+                        gr.update(visible=bark_visible), 
+                        gr.update(visible=False),
+                        update_gr_fine_tuned_list(id),
+                        gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
+                        update_gr_voice_list(id),
+                        gr.update(value='')
                     )
                     
             def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
                 if selected:
                     session = context.get_session(id)
-                    visible = False
-                    if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                        if selected == 'internal':
-                            visible = visible_gr_group_custom_model
                     session['fine_tuned'] = selected
-                    return gr.update(visible=visible), update_gr_voice_list(id, selected)
+                    visible_custom_model = False
+                    if selected == 'internal':
+                        visible_custom_model = visible_gr_group_custom_model
+                    else:
+                        visible_custom_model = False
+                        session['voice'] = models[session['tts_engine']][selected]['voice']
+                    return gr.update(visible=visible_custom_model), update_gr_voice_list(id)
                 return gr.update(), gr.update()
 
-            def change_gr_custom_model_list(selected:str, id:str)->tuple:
+            def change_gr_custom_model_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
-                session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
-                visible = True if session['custom_model'] is not None else False
-                return gr.update(visible=not visible), gr.update(visible=visible)
+                session['custom_model'] = selected
+                if selected is not None:
+                    session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
+                visible_fine_tuned = True if selected is None else False
+                visible_del_btn = False if selected is None else True
+                return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(id)
             
             def change_gr_output_format_list(val:str, id:str)->None:
                 session = context.get_session(id)
                 session['output_format'] = val
+                return
+
+            def change_gr_output_channel_list(val:str, id:str)->None:
+                session = context.get_session(id)
+                session['output_channel'] = val
                 return
                 
             def change_gr_output_split(val:str, id:str)->dict:
@@ -3773,7 +3812,7 @@ def build_interface(args:dict)->gr.Blocks:
                             show_alert(state)
 
             def submit_convert_btn(
-                    id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, xtts_temperature:float, 
+                    id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
@@ -3794,6 +3833,7 @@ def build_interface(args:dict)->gr.Blocks:
                         "custom_model": custom_model,
                         "fine_tuned": fine_tuned,
                         "output_format": output_format,
+                        "output_channel": output_channel,
                         "xtts_temperature": float(xtts_temperature),
                         "xtts_length_penalty": float(xtts_length_penalty),
                         "xtts_num_beams": int(session['xtts_num_beams']),
@@ -4002,11 +4042,11 @@ def build_interface(args:dict)->gr.Blocks:
                     if is_gui_shared:
                         msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
                         session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
-                        delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session)
+                        delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session['id'])
                     else:
                         msg = f' Note: if no activity is detected after {tmp_expire} days, your session will be cleaned up.'
                         session['audiobooks_dir'] = os.path.join(audiobooks_host_dir, f"web-{session['id']}")
-                        delete_unused_tmp_dirs(audiobooks_host_dir, tmp_expire, session)
+                        delete_unused_tmp_dirs(audiobooks_host_dir, tmp_expire, session['id'])
                     if not os.path.exists(session['audiobooks_dir']):
                         os.makedirs(session['audiobooks_dir'], exist_ok=True)
                     previous_hash = state['hash']
@@ -4127,7 +4167,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_tts_engine_list.change(
                 fn=change_gr_tts_engine_list,
                 inputs=[gr_tts_engine_list, gr_session],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_voice_list]
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_voice_list, gr_custom_model_label]
             )
             gr_fine_tuned_list.change(
                 fn=change_gr_fine_tuned_list,
@@ -4137,21 +4177,27 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_file.upload(
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
-                outputs=[gr_custom_model_file, gr_custom_model_list, gr_row_voice_player]
+                outputs=[gr_custom_model_file, gr_custom_model_list, gr_voice_list],
+                show_progress_on=[gr_custom_model_list]
             )
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
                 inputs=[gr_custom_model_list, gr_session],
-                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn]
+                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn, gr_voice_list]
             )
             gr_custom_model_del_btn.click(
                 fn=click_gr_custom_model_del_btn,
                 inputs=[gr_custom_model_list, gr_session],
-                outputs=[gr_confirm_deletion_field_hidden]
+                outputs=[gr_confirm_deletion_field_hidden, gr_modal]
             )
             gr_output_format_list.change(
                 fn=change_gr_output_format_list,
                 inputs=[gr_output_format_list, gr_session],
+                outputs=None
+            )
+            gr_output_channel_list.change(
+                fn=change_gr_output_channel_list,
+                inputs=[gr_output_channel_list, gr_session],
                 outputs=None
             )
             gr_output_split.select(
@@ -4340,12 +4386,12 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=disable_components,
                 inputs=None,
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
                 fn=submit_convert_btn,
                 inputs=[
                     gr_session, gr_device, gr_ebook_file, gr_chapters_preview, gr_tts_engine_list, gr_language, gr_voice_list,
-                    gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
+                    gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                     gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                     gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
                 ],
@@ -4353,7 +4399,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
@@ -4386,8 +4432,8 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=[
                     gr_ebook_file, gr_ebook_mode, gr_chapters_preview, gr_device, gr_language, gr_voice_list,
-                    gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
-                    gr_output_split, gr_output_split_hours, gr_audiobook_list
+                    gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
+                    gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list
                 ]
             ).then(
                 fn=restore_audiobook_player,
