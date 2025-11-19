@@ -2297,19 +2297,26 @@ def convert_ebook(args:dict)->tuple:
                                             print(error)
                                             if session['is_gui_process']:
                                                 show_alert({"type": "warning", "msg": error})
-                                        session['cover'] = get_cover(epubBook, id)
-                                        if session['cover']:
-                                            session['toc'], session['chapters'] = get_chapters(epubBook, id)
-                                            if session['chapters'] is not None:
-                                                #if session['chapters_preview']:
-                                                #    return 'confirm_blocks', True
-                                                #else:
-                                                #    return finalize_audiobook(id)
-                                                return finalize_audiobook(id)
+                                        is_lang_in_tts_engine = (
+                                            session.get('tts_engine') in language_tts and
+                                            session.get('language') in language_tts[session['tts_engine']]
+                                        )
+                                        if is_lang_in_tts_engine:
+                                            session['cover'] = get_cover(epubBook, id)
+                                            if session['cover']:
+                                                session['toc'], session['chapters'] = get_chapters(epubBook, id)
+                                                if session['chapters'] is not None:
+                                                    #if session['chapters_preview']:
+                                                    #    return 'confirm_blocks', True
+                                                    #else:
+                                                    #    return finalize_audiobook(id)
+                                                    return finalize_audiobook(id)
+                                                else:
+                                                    error = 'get_chapters() failed! '+session['toc']
                                             else:
-                                                error = 'get_chapters() failed! '+session['toc']
+                                                error = 'get_cover() failed!'
                                         else:
-                                            error = 'get_cover() failed!'
+                                             error = f"language {session['language']} not supported by {session['tts_engine']}!"
                                     else:
                                         error = 'epubBook.read_epub failed!'
                                 else:
