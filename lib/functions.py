@@ -4179,6 +4179,10 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
                 outputs=[gr_custom_model_file, gr_custom_model_list, gr_voice_list],
                 show_progress_on=[gr_custom_model_list]
+            ).then(
+                fn=lambda: gr.update(interactive=True),
+                inputs=None,
+                outputs=[gr_tts_engine_list]
             )
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
@@ -4506,6 +4510,7 @@ def build_interface(args:dict)->gr.Blocks:
                             let gr_playback_time;
                             let gr_progress;
                             let gr_voice_play;
+                            let gr_custom_model_file;
                             let tabs_opened = false;
                             let init_elements_timeout;
                             let init_audiobook_player_timeout;
@@ -4700,10 +4705,12 @@ def build_interface(args:dict)->gr.Blocks:
                                             gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                             gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                             gr_playback_time = gr_root.querySelector("#gr_playback_time input");
+                                            gr_tts_engine_list = gr_root.querySelector("#gr_tts_engine_list input");
+                                            gr_custom_model_file = gr._root.querySelector("#gr_custom_model_file input");
                                             let lastCue = null;
                                             let fade_timeout = null;
                                             let last_time = 0;
-                                            if(gr_audiobook_player && gr_audiobook_sentence && gr_playback_time){
+                                            if(gr_audiobook_player && gr_audiobook_sentence && gr_playback_time && gr_custom_model_file && gr_tts_engine_list){
                                                 function trackPlayback(){
                                                     try {
                                                         window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
@@ -4764,6 +4771,9 @@ def build_interface(args:dict)->gr.Blocks:
                                                         gr_voice_player_hidden.volume = gr_audiobook_player.volume;
                                                         gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
                                                     }
+                                                });
+                                                gr_custom_model_file.addEventListener('change', (e)=>{
+                                                    gr_tts_engine_list.disabled = true;
                                                 });
                                                 const themURL = new URL(window.location);
                                                 const theme = themURL.searchParams.get("__theme");
