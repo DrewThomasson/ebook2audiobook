@@ -2805,10 +2805,13 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_tts_rating {
                     overflow: hidden !important;
                 }
-                #gr_row_voice_player, #gr_row_custom_model_list {
+                #gr_row_voice_player, #gr_row_custom_model_list, #gr_row_audiobook_list {
                     height: 60px !important;
-                }  
+                }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
+                    display: none !important;
+                }
+                #gr_audiobook_files label[data-testid="block-label"] {
                     display: none !important;
                 }
                 #gr_audiobook_player audio {
@@ -3105,11 +3108,12 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
                     gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, lines=3, max_lines=3)
                     gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
-                    with gr.Row(elem_id='gr_row_audiobook_list', visible=True):
+                    gr_row_audiobook_list = gr.Row(elem_id='gr_row_audiobook_list', visible=True)
+                    with gr_row_audiobook_list:
                         gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                         gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
                         gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
-                    gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
+                    gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
                     gr_audiobook_files_toggled = gr.State(False)
                 with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
