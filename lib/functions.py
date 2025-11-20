@@ -385,25 +385,38 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
         debug = True
         try:
             data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
-        except Exception as e:
+            # Handle silent OCR failures (empty or None result)
+            if data is None or data.empty:
+                error = f'Tesseract returned empty OCR data for language "{lang}".'
+                print(error)
+                return False
+        except (pytesseract.TesseractError, Exception) as e:
             print(f'The OCR {lang} trained model must be downloaded.')
             try:
                 tessdata_dir = os.environ['TESSDATA_PREFIX']
                 url = f'https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata'
                 dest_path = os.path.join(tessdata_dir, f'{lang}.traineddata')
-                print(f'Downloading {lang}.traineddata into {tessdata_dir}...')
+                msg = f'Downloading {lang}.traineddata into {tessdata_dir}...'
+                print(msg)
                 response = requests.get(url, timeout=15)
                 if response.status_code == 200:
                     with open(dest_path, 'wb') as f:
                         f.write(response.content)
-                    print(f'Downloaded and installed {lang}.traineddata successfully.')
+                    msg = f'Downloaded and installed {lang}.traineddata successfully.'
+                    print(msg)
                     data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
+                    if data is None or data.empty:
+                        error = f'Tesseract returned empty OCR data even after downloading {lang}.traineddata.'
+                        print(error)
+                        return False
                 else:
-                    raise RuntimeError(f'Failed to download traineddata for {lang} (HTTP {response.status_code})')
+                    error = f'Failed to download traineddata for {lang} (HTTP {response.status_code})'
+                    print(error)
+                    return False
             except Exception as e:
                 error = f'Automatic download failed: {e}'
                 print(error)
-                raise
+                return False
         data = data.dropna(subset=['text'])
         lines = []
         last_block = None
@@ -462,7 +475,7 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
         DependencyError(e)
         error = f'ocr2xhtml error: {e}'
         print(error)
-        return ''
+        return False
 
 def convert2epub(id:str)-> bool:
     session = context.get_session(id)
@@ -492,10 +505,10 @@ def convert2epub(id:str)-> bool:
             msg = 'File input is a PDF. flatten it in XHTML...'
             print(msg)
             doc = fitz.open(file_input)
-            pdf_metadata = doc.metadata
+            file_meta = doc.metadata
             filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
-            title = pdf_metadata.get('title') or filename_no_ext
-            author = pdf_metadata.get('author') or False
+            title = file_meta.get('title') or filename_no_ext
+            author = file_meta.get('author') or False
             xhtml_pages = []
             for i, page in enumerate(doc):
                 try:
@@ -513,22 +526,26 @@ def convert2epub(id:str)-> bool:
                     xhtml_content = ocr2xhtml(img, session['language'])
                 else:
                     xhtml_content = text
-                xhtml_pages.append(xhtml_content)
-            xhtml_body = '\n'.join(xhtml_pages)
-            xhtml_text = (
-                '<?xml version="1.0" encoding="utf-8"?>\n'
-                '<html xmlns="http://www.w3.org/1999/xhtml">\n'
-                '<head>\n'
-                f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
-                '</head>\n'
-                '<body>\n'
-                f'{xhtml_body}\n'
-                '</body>\n'
-                '</html>\n'
-            )
-            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
-            with open(file_input, 'w', encoding='utf-8') as html_file:
-                html_file.write(xhtml_text)
+                if xhtml_content:
+                    xhtml_pages.append(xhtml_content)
+            if xhtml_pages:
+                xhtml_body = '\n'.join(xhtml_pages)
+                xhtml_text = (
+                    '<?xml version="1.0" encoding="utf-8"?>\n'
+                    '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                    '<head>\n'
+                    f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                    '</head>\n'
+                    '<body>\n'
+                    f'{xhtml_body}\n'
+                    '</body>\n'
+                    '</html>\n'
+                )
+                file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+                with open(file_input, 'w', encoding='utf-8') as html_file:
+                    html_file.write(xhtml_text)
+            else:
+                return False
         elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
             filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
             msg = f'File input is an image ({file_ext}). Running OCR...'
@@ -541,22 +558,25 @@ def convert2epub(id:str)-> bool:
                 frame = frame.convert('RGB')
                 xhtml_content = ocr2xhtml(frame, session['language'])
                 xhtml_pages.append(xhtml_content)
-            xhtml_body = '\n'.join(xhtml_pages)
-            xhtml_text = (
-                '<?xml version="1.0" encoding="utf-8"?>\n'
-                '<html xmlns="http://www.w3.org/1999/xhtml">\n'
-                '<head>\n'
-                f'<meta charset="utf-8"/>\n<title>{filename_no_ext}</title>\n'
-                '</head>\n'
-                '<body>\n'
-                f'{xhtml_body}\n'
-                '</body>\n'
-                '</html>\n'
-            )
-            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
-            with open(file_input, 'w', encoding='utf-8') as html_file:
-                html_file.write(xhtml_text)
-            print(f'OCR completed for {page_count} image page(s).')
+            if xhtml_pages:
+                xhtml_body = '\n'.join(xhtml_pages)
+                xhtml_text = (
+                    '<?xml version="1.0" encoding="utf-8"?>\n'
+                    '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                    '<head>\n'
+                    f'<meta charset="utf-8"/>\n<title>{filename_no_ext}</title>\n'
+                    '</head>\n'
+                    '<body>\n'
+                    f'{xhtml_body}\n'
+                    '</body>\n'
+                    '</html>\n'
+                )
+                file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+                with open(file_input, 'w', encoding='utf-8') as html_file:
+                    html_file.write(xhtml_text)
+                print(f'OCR completed for {page_count} image page(s).')
+            else:
+                return False
         msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
         print(msg)
         cmd = [
@@ -2785,10 +2805,13 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_tts_rating {
                     overflow: hidden !important;
                 }
-                #gr_row_voice_player, #gr_row_custom_model_list {
+                #gr_row_voice_player, #gr_row_custom_model_list, #gr_row_audiobook_list {
                     height: 60px !important;
-                }  
+                }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
+                    display: none !important;
+                }
+                #gr_audiobook_files label[data-testid="block-label"] {
                     display: none !important;
                 }
                 #gr_audiobook_player audio {
@@ -3085,11 +3108,12 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
                     gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, lines=3, max_lines=3)
                     gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
-                    with gr.Row(elem_id='gr_row_audiobook_list', visible=True):
+                    gr_row_audiobook_list = gr.Row(elem_id='gr_row_audiobook_list', visible=True)
+                    with gr_row_audiobook_list:
                         gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                         gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
                         gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
-                    gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
+                    gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
                     gr_audiobook_files_toggled = gr.State(False)
                 with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
