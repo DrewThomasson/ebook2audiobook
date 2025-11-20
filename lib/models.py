@@ -41,7 +41,7 @@ default_engine_settings = {
         "temperature": 0.75,
         "length_penalty": 1.0,
         "num_beams": 1,
-        "repetition_penalty": 3.0,
+        "repetition_penalty": 2.0,
         "top_k": 50,
         "top_p": 0.85,
         "speed": 1.0,
