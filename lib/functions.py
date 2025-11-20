@@ -1460,53 +1460,62 @@ def foreign2latin(text: str, base_lang: str) -> str:
             lang = detect(word)
         except:
             lang = base_lang
+
         if lang == base_lang:
             return word
         try:
+            # --- Language-specific romanization handling ---
             if lang in ["zh", "zho"]:
                 from pypinyin import pinyin, Style
-                py = pinyin(word, style=Style.TONE3)
+                py = pinyin(word, style=Style.NORMAL)
                 return "".join([s[0] for s in py])
             elif lang in ["ja", "jpn"]:
                 import pykakasi
                 kakasi = pykakasi.kakasi()
-                return "".join([k["hepburn"] for k in kakasi.convert(word)])
+                kakasi.setMode("H", "a")  # Hiragana to ascii
+                kakasi.setMode("K", "a")  # Katakana to ascii
+                kakasi.setMode("J", "a")  # Kanji to ascii
+                kakasi.setMode("r", "Hepburn")  # Romanization style
+                conv = kakasi.getConverter()
+                return conv.do(word)
+            elif lang in ["ko", "kor"]:
+                # Korean → Hangul decomposition to Latin fallback
+                return unidecode(word)
             elif lang in ["ar", "ara"]:
                 ph = phonemize(word, language="ar", backend="espeak")
-                return unidecode(ph)
-            elif lang in ["ko", "kor"]:
-                ph = phonemize(word, language="ko", backend="espeak")
                 return unidecode(ph)
             elif lang in ["ru", "rus"]:
                 ph = phonemize(word, language="ru", backend="espeak")
                 return unidecode(ph)
             else:
+                # Default: simple romanization
                 ph = phonemize(word, language="en-us", backend="espeak")
                 return unidecode(ph)
         except Exception:
+            # Fallback if detection or library fails
             return unidecode(word)
 
-    # Collect all TTS markers
+    # --- Preserve TTS markers ---
     tts_markers = set(TTS_SML.values())
-    # Protect TTS markers by wrapping them in placeholders
     protected = {}
     for i, marker in enumerate(tts_markers):
         key = f"__TTS_MARKER_{i}__"
         protected[key] = marker
         text = text.replace(marker, key)
-    # Tokenize and romanize only non-protected parts
+    # --- Tokenize & romanize ---
     tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
     normalized = []
     for token in tokens:
         if token in protected:
-            normalized.append(token)  # Keep marker placeholder intact
+            normalized.append(token)
         elif re.match(r"^\w+$", token):
             normalized.append(romanize(token))
         else:
             normalized.append(token)
+    # --- Recombine ---
     text = " ".join(normalized)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
-    # Restore the original TTS markers
+    # --- Restore markers ---
     for key, marker in protected.items():
         text = text.replace(key, marker)
     return text
