@@ -1560,8 +1560,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
-    #pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
-    #text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
+    pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
+    text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
     # Replace multiple and spaces with single space
@@ -1572,14 +1572,14 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
-    # Reduce multiple consecutive punctuations
+    # Reduce multiple consecutive punctuations hard
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split_soft_set))
-    # Reduce multiple consecutive punctuations
+    # Reduce multiple consecutive punctuations soft
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     # Pattern 1: Add a space between UTF-8 characters and numbers
-    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+    #text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
     # Replace special chars with words
     specialchars = specialchars_mapping.get(lang, specialchars_mapping.get(default_language_code, specialchars_mapping['eng']))
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
