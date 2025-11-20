@@ -975,7 +975,7 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
-        #text = normalize_text(text, lang, lang_iso1, tts_engine)
+        text = normalize_text(text, lang, lang_iso1, tts_engine)
         sentences = get_sentences(text, lang, tts_engine)
         if len(sentences) == 0:
             error = 'No sentences found!'
@@ -1553,7 +1553,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Prepare SML tags
     text = filter_sml(text)
     # romanize foreign words
-    text = foreign2latin(text, lang)
+    #text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
