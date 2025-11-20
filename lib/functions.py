@@ -1486,23 +1486,29 @@ def foreign2latin(text: str, base_lang: str) -> str:
         except Exception:
             return unidecode(word)
 
-    # Get the special TTS markers in a set for quick lookup
+    # Collect all TTS markers
     tts_markers = set(TTS_SML.values())
-    # Split text into tokens while preserving punctuation
+    # Protect TTS markers by wrapping them in placeholders
+    protected = {}
+    for i, marker in enumerate(tts_markers):
+        key = f"__TTS_MARKER_{i}__"
+        protected[key] = marker
+        text = text.replace(marker, key)
+    # Tokenize and romanize only non-protected parts
     tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
     normalized = []
-
     for token in tokens:
-        # Skip TTS markers — keep them intact
-        if token in tts_markers:
-            normalized.append(token)
+        if token in protected:
+            normalized.append(token)  # Keep marker placeholder intact
         elif re.match(r"^\w+$", token):
             normalized.append(romanize(token))
         else:
             normalized.append(token)
-
-    text = ' '.join(normalized)
+    text = " ".join(normalized)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
+    # Restore the original TTS markers
+    for key, marker in protected.items():
+        text = text.replace(key, marker)
     return text
 
 def filter_sml(text:str)->str:
@@ -1538,7 +1544,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Prepare SML tags
     text = filter_sml(text)
     # romanize foreign words
-    #text = foreign2latin(text, lang)
+    text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
