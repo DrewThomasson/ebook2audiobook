@@ -972,7 +972,6 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
         text = roman2number(text)
         text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-        text = foreign2latin(text, lang)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
@@ -1450,11 +1449,11 @@ def roman2number(text:str)->str:
     text = re.sub(r'(?<!\S)([IVXLCDM]{2,})(?!\S)', repl_word, text)
     return text
     
-def is_latin(s:str)->bool:
+def is_latin(s: str) -> bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
-def foreign2latin(text:str, base_lang:str)->str:
-    def romanize(word:str)->str:
+def foreign2latin(text: str, base_lang: str) -> str:
+    def romanize(word: str) -> str:
         if is_latin(word):
             return word
         try:
@@ -1487,13 +1486,21 @@ def foreign2latin(text:str, base_lang:str)->str:
         except Exception:
             return unidecode(word)
 
+    # Get the special TTS markers in a set for quick lookup
+    tts_markers = set(TTS_SML.values())
+    # Split text into tokens while preserving punctuation
     tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
     normalized = []
+
     for token in tokens:
-        if re.match(r"^\w+$", token):
+        # Skip TTS markers — keep them intact
+        if token in tts_markers:
+            normalized.append(token)
+        elif re.match(r"^\w+$", token):
             normalized.append(romanize(token))
         else:
             normalized.append(token)
+
     text = " ".join(normalized)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     return text
@@ -1530,6 +1537,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Prepare SML tags
     text = filter_sml(text)
+    # romanize foreign words
+    text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
