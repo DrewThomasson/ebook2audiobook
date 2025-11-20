@@ -39,8 +39,9 @@ from pydub import AudioSegment
 from pydub.utils import mediainfo
 from queue import Queue, Empty
 from types import MappingProxyType
-from urllib.parse import urlparse
-from starlette.requests import ClientDisconnect
+from langdetect import detect
+from unidecode import unidecode
+from phonemizer import phonemize
 
 from lib import *
 from lib.classes.subprocess_pipe import SubprocessPipe
@@ -971,6 +972,7 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
         text = roman2number(text)
         text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+        text = foreign2latin(text, lang)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
@@ -1446,6 +1448,54 @@ def roman2number(text:str)->str:
     # NEW: only convert whitespace-delimited tokens of length >= 2
     # This avoids: 19C, 19°C, °C, AC/DC, CD-ROM, single-letter "I"
     text = re.sub(r'(?<!\S)([IVXLCDM]{2,})(?!\S)', repl_word, text)
+    return text
+    
+def is_latin(s:str)->bool:
+    return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
+
+def foreign2latin(text:str, base_lang:str)->str:
+    def romanize(word:str)->str:
+        if is_latin(word):
+            return word
+        try:
+            lang = detect(word)
+        except:
+            lang = base_lang
+        if lang == base_lang:
+            return word
+        try:
+            if lang in ["zh", "zho"]:
+                from pypinyin import pinyin, Style
+                py = pinyin(word, style=Style.TONE3)
+                return "".join([s[0] for s in py])
+            elif lang in ["ja", "jpn"]:
+                import pykakasi
+                kakasi = pykakasi.kakasi()
+                return "".join([k["hepburn"] for k in kakasi.convert(word)])
+            elif lang in ["ar", "ara"]:
+                ph = phonemize(word, language="ar", backend="espeak")
+                return unidecode(ph)
+            elif lang in ["ko", "kor"]:
+                ph = phonemize(word, language="ko", backend="espeak")
+                return unidecode(ph)
+            elif lang in ["ru", "rus"]:
+                ph = phonemize(word, language="ru", backend="espeak")
+                return unidecode(ph)
+            else:
+                ph = phonemize(word, language="en-us", backend="espeak")
+                return unidecode(ph)
+        except Exception:
+            return unidecode(word)
+
+    tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+    normalized = []
+    for token in tokens:
+        if re.match(r"^\w+$", token):
+            normalized.append(romanize(token))
+        else:
+            normalized.append(token)
+    text = " ".join(normalized)
+    text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     return text
 
 def filter_sml(text:str)->str:
