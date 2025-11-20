@@ -975,7 +975,7 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
-        text = normalize_text(text, lang, lang_iso1, tts_engine)
+        #text = normalize_text(text, lang, lang_iso1, tts_engine)
         sentences = get_sentences(text, lang, tts_engine)
         if len(sentences) == 0:
             error = 'No sentences found!'
@@ -1579,7 +1579,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Reduce multiple consecutive punctuations soft
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     # Pattern 1: Add a space between UTF-8 characters and numbers
-    #text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
     # Replace special chars with words
     specialchars = specialchars_mapping.get(lang, specialchars_mapping.get(default_language_code, specialchars_mapping['eng']))
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
@@ -2194,14 +2194,16 @@ def convert_ebook_batch(args:dict)->tuple:
                 print(f'Processing eBook file: {os.path.basename(file)}')
                 progress_status, passed = convert_ebook(args)
                 if passed is False:
-                    print(f'Conversion failed: {progress_status}')
+                    msg = f'Conversion failed: {progress_status}'
+                    print(msg)
                     if not args['is_gui_process']:
                         sys.exit(1)
                 args['ebook_list'].remove(file) 
         reset_session(args['session'])
         return progress_status, passed
     else:
-        print(f'the ebooks source is not a list!')
+        error = f'the ebooks source is not a list!'
+        print(error)
         if not args['is_gui_process']:
             sys.exit(1)       
 
