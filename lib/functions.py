@@ -1501,7 +1501,7 @@ def foreign2latin(text: str, base_lang: str) -> str:
         else:
             normalized.append(token)
 
-    text = " ".join(normalized)
+    text = ' '.join(normalized)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     return text
 
@@ -1538,7 +1538,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Prepare SML tags
     text = filter_sml(text)
     # romanize foreign words
-    text = foreign2latin(text, lang)
+    #text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
