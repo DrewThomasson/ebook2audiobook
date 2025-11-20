@@ -2805,7 +2805,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_tts_rating {
                     overflow: hidden !important;
                 }
-                #gr_row_voice_player, #gr_row_custom_model_list {
+                #gr_row_voice_player, #gr_row_custom_model_list, #gr_audiobook_list {
                     height: 60px !important;
                 }  
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
