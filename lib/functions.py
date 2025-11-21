@@ -1553,7 +1553,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Prepare SML tags
     text = filter_sml(text)
     # romanize foreign words
-    text = foreign2latin(text, lang)
+    #text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
@@ -1572,11 +1572,11 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
-    # Reduce multiple consecutive punctuations
+    # Reduce multiple consecutive punctuations hard
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split_soft_set))
-    # Reduce multiple consecutive punctuations
+    # Reduce multiple consecutive punctuations soft
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     # Pattern 1: Add a space between UTF-8 characters and numbers
     text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
@@ -2194,14 +2194,16 @@ def convert_ebook_batch(args:dict)->tuple:
                 print(f'Processing eBook file: {os.path.basename(file)}')
                 progress_status, passed = convert_ebook(args)
                 if passed is False:
-                    print(f'Conversion failed: {progress_status}')
+                    msg = f'Conversion failed: {progress_status}'
+                    print(msg)
                     if not args['is_gui_process']:
                         sys.exit(1)
                 args['ebook_list'].remove(file) 
         reset_session(args['session'])
         return progress_status, passed
     else:
-        print(f'the ebooks source is not a list!')
+        error = f'the ebooks source is not a list!'
+        print(error)
         if not args['is_gui_process']:
             sys.exit(1)       
 
