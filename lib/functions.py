@@ -1593,7 +1593,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
     text = text.translate(specialchars_table)
     # build a translation table mapping each bad char to a space
-    chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
+    chars_remove_table = str.maketrans({ch: '' for ch in chars_remove})
     text = text.translate(chars_remove_table)
     text = ' '.join(text.split())
     return text
