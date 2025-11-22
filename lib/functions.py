@@ -972,9 +972,6 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
         text = roman2number(text)
         text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-        # build a translation table mapping each bad char to a space
-        punctuations_remove_table = str.maketrans({ch: ' ' for ch in punctuations_remove})
-        text = text.translate(punctuations_remove_table)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
         sentences = get_sentences(text, lang, tts_engine)
         if len(sentences) == 0:
@@ -1537,6 +1534,10 @@ def filter_sml(text:str)->str:
     return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
+    # build a translation table mapping each bad char to a space
+    punctuations_remove_table = str.maketrans({ch: ' ' for ch in punctuations_remove})
+    text = text.translate(punctuations_remove_table)
+    text = text.replace('—', ',')
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
