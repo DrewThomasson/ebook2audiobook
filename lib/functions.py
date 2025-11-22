@@ -1535,8 +1535,8 @@ def filter_sml(text:str)->str:
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # build a translation table mapping each bad char to a space
-    punctuations_remove_table = str.maketrans({ch: ' ' for ch in punctuations_remove})
-    text = text.translate(punctuations_remove_table)
+    chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
+    text = text.translate(chars_remove_table)
     text = text.replace('—', ',')
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
