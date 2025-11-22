@@ -92,8 +92,8 @@ punctuation_switch = {
     
     # Global replacement
     '—': '.',
-    '(': ',',
-    ')': ','
+    '(': '"',
+    ')': '"'
 }
 
 punctuation_list = [
