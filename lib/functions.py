@@ -1576,8 +1576,6 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = re.sub(r'\s+', ' ', text)
     # Replace ok by 'Owkey'
     text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
-    # Replace parentheses with double quotes
-    text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
     # Reduce multiple consecutive punctuations hard

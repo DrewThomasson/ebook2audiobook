@@ -91,7 +91,9 @@ punctuation_switch = {
     '¶': '-',  # Pilcrow (paragraph mark) U+0086
     
     # Global replacement
-    "—": "."
+    '—': '.',
+    '(': ',',
+    ')': ','
 }
 
 punctuation_list = [
