@@ -3397,7 +3397,7 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, id)
                 return gr.update(visible=group_visible)
 
-            def update_audiobook_player(id:str)->tuple:
+            def update_gr_audiobook_player(id:str)->tuple:
                 try:
                     session = context.get_session(id)
                     if session['audiobook'] is not None: 
@@ -3419,7 +3419,7 @@ def build_interface(args:dict)->gr.Blocks:
                             print(error)
                             alert_exception(error, id)
                 except Exception as e:
-                    error = f'update_audiobook_player(): {e}'
+                    error = f'update_gr_audiobook_player(): {e}'
                     print(error)
                     alert_exception(error, id)
                 return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
@@ -4383,11 +4383,11 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_audiobook_list, gr_session],
                 outputs=[gr_group_audiobook_list]
             ).then(
-                fn=update_audiobook_player,
+                fn=update_gr_audiobook_player,
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
             )
-            audiobook_player.change(
+            gr_audiobook_player.change(
                 fn=None,
                 inputs=None,
                 js='()=>{window.load_vtt();}'
