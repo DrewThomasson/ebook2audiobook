@@ -1,6 +1,6 @@
 import gc
 import torch
-import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
+import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid, random
 import numpy as np, regex as re, soundfile as sf, torchaudio
 
 from typing import Any
@@ -546,8 +546,16 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
+                        sentence = ' '.join(sentence.split())
+                        if not sentence.endswith((".", "!", "?", "…")):
+                            sentence += "."
+                        seed = 123456
+                        random.seed(seed)
+                        np.random.seed(seed)
+                        torch.manual_seed(seed)
+                        if torch.cuda.is_available():
+                            torch.cuda.manual_seed_all(seed)
                         with torch.no_grad():
-                            #torch.manual_seed(67878789)
                             result = self.engine.synthesize(
                                 sentence,
                                 speaker=speaker,
