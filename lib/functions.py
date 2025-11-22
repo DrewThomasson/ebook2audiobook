@@ -4371,6 +4371,18 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=change_gr_playback_time,
                 inputs=[gr_playback_time, gr_session],
                 outputs=None
+            ).then(
+                fn=None,
+                inputs=[gr_playback_time],
+                js='''
+                    (time)=>{
+                        try{
+                            window.session_storage.playback_time = Number(time);
+                        }catch(e){
+                            console.warn("gr_playback_time.change error: "+e);
+                        }
+                    }
+                '''
             )
             gr_audiobook_download_btn.click(
                 fn=toggle_audiobook_files,
@@ -4386,8 +4398,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_audiobook_player,
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
-            )
-            gr_audiobook_player.change(
+            ).then
                 fn=None,
                 inputs=None,
                 js='()=>{window.load_vtt();}'
