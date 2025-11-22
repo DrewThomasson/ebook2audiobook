@@ -220,7 +220,9 @@ def check_and_install_requirements(file_path:str)->bool:
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
-        if torch_version_is_leq('2.2.2'):
+        import numpy as np
+        numpy_version = Version(np.__version__)
+        if torch_version_is_leq('2.2.2') and numpy_version >= Version('2.0.0'):
             try:
                 msg = 'torch version needs nump < 2. downgrading numpy to 1.26.4...'
                 print(msg)
