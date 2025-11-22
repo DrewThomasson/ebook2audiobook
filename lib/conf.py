@@ -6,7 +6,7 @@ import tempfile
 # Global configuration
 # ---------------------------------------------------------------------
 min_python_version = (3,10)
-max_python_version = (3,13)
+max_python_version = (3,12)
 
 components_dir = os.path.abspath('components')
 tmp_dir = os.path.abspath('tmp')
