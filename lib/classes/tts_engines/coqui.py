@@ -313,13 +313,13 @@ class Coqui:
                                 "xtts_length_penalty": float,
                                 "xtts_num_beams": int,
                                 "xtts_repetition_penalty": float,
-                                "xtts_cvvp_weight": float,
+                                #"xtts_cvvp_weight": float,
                                 "xtts_top_k": int,
                                 "xtts_top_p": float,
                                 "xtts_speed": float,
                                 #"xtts_gpt_cond_len": int,
                                 #"xtts_gpt_batch_size": int,
-                                #"xtts_enable_text_splitting": bool
+                                "xtts_enable_text_splitting": bool
                             }.items()
                             if self.session.get(key) is not None
                         }
@@ -506,13 +506,13 @@ class Coqui:
                                 "xtts_length_penalty": float,
                                 "xtts_num_beams": int,
                                 "xtts_repetition_penalty": float,
-                                "xtts_cvvp_weight": float,
+                                #"xtts_cvvp_weight": float,
                                 "xtts_top_k": int,
                                 "xtts_top_p": float,
                                 "xtts_speed": float,
                                 #"xtts_gpt_cond_len": int,
                                 #"xtts_gpt_batch_size": int,
-                                #"xtts_enable_text_splitting": bool
+                                "xtts_enable_text_splitting": bool
                             }.items()
                             if self.session.get(key) is not None
                         }
