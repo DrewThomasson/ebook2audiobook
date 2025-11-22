@@ -745,7 +745,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         msg = 'Analyzing numbers, maths signs, dates and time to convert in words...'
         print(msg)
         for doc in all_docs:
-            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
+            sentences_list = filter_chapter(doc, id, stanza_nlp, is_num2words_compat)
             if sentences_list is None:
                 break
             elif len(sentences_list) > 0:
@@ -759,7 +759,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return error, None
 
-def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
+def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
     def tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             for child in node.children:
@@ -802,6 +802,8 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
             return None
 
     try:
+        session = context.get_session(id)
+        lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
         heading_tags = [f'h{i}' for i in range(1, 5)]
         break_tags = ['br', 'p']
         pause_tags = ['div', 'span']
@@ -871,7 +873,7 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
                 if text:
                     text_list.append(text)
             prev_typ = typ
-        max_chars = language_mapping[lang]['max_chars'] - 4
+        max_chars = int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] == TTS_ENGINES['TACOTRON2'] else language_mapping[lang]['max_chars'] - 4
         clean_list = []
         i = 0
         while i < len(text_list):
@@ -1058,7 +1060,7 @@ def get_sentences(text:str, lang:str, tts_engine:str)->list|None:
                 yield buffer
 
     try:
-        max_chars = language_mapping[lang]['max_chars'] - 4
+        max_chars =  int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] == TTS_ENGINES['TACOTRON2'] else language_mapping[lang]['max_chars'] - 4
         min_tokens = 5
         # List or tuple of tokens that must never be appended to buffer
         sml_tokens = tuple(TTS_SML.values())
