@@ -24,7 +24,7 @@ from .lang import (
     language_math_phonemes, language_clock, language_tts, os, punctuation_list, 
     punctuation_list_set, punctuation_split_hard, punctuation_split_hard_set,
     punctuation_split_soft, punctuation_split_soft_set, punctuation_switch,
-    specialchars_mapping, specialchars_remove, year_to_decades_languages
+    specialchars_mapping, chars_remove, year_to_decades_languages
 )
 
 __all__ = [
@@ -53,5 +53,5 @@ __all__ = [
     "language_math_phonemes", "language_clock", "language_tts", "os", "punctuation_list", 
     "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
     "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
-    "specialchars_mapping", "specialchars_remove", "year_to_decades_languages"
+    "specialchars_mapping", "chars_remove", "year_to_decades_languages"
 ]
