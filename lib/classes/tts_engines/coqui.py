@@ -226,13 +226,21 @@ class Coqui:
                             model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                             self.tts_key = model_path
                             self.engine = self._load_api(self.tts_key, model_path, self.session['device'])
-                            self.engine.synthesizer.tts_model.decoder.max_decoder_steps = 800
-                            self.engine.synthesizer.tts_model.decoder.gate_threshold = 0.75
-                            self.engine.synthesizer.tts_model.decoder.prenet_dropout = 0.0
-                            self.engine.synthesizer.tts_model.attention.location_attention.dropout = 0.0
-                            self.engine.synthesizer.tts_model.decoder.attention_dropout = 0.0
-                            tas = self.engine.synthesizer.tts_model
-                            tas.decoder.attention_keeplast = True
+                            m = self.engine.synthesizer.tts_model
+                            d = m.decoder
+                            # Stability
+                            d.prenet_dropout = 0.0
+                            d.attention_dropout = 0.0
+                            d.decoder_dropout = 0.0
+                            m.attention.location_attention.dropout = 0.0
+                            # Stop-gate tuning
+                            d.gate_threshold = 0.5
+                            d.force_gate = True
+                            d.gate_delay = 10
+                            # Long-sentence fix
+                            d.max_decoder_steps = 1000
+                            # Prevent attention drift
+                            d.attention_keeplast = True
                         else:
                             msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                             print(msg)
