@@ -56,7 +56,7 @@ def torch_version_is_leq(target):
     return parsed <= Version(target)
 
 def check_and_install_requirements(file_path:str)->bool:
-    if not os.path.exists(file_path)
+    if not os.path.exists(file_path):
         error = f'Warning: File {file_path} not found. Skipping package check.'
         print(error)
         return False
