@@ -45,7 +45,7 @@ jobs:
   E2A-test:
     strategy:
       matrix:
-        os: [macos]
+        os: [macos, linux]
     runs-on: [self-hosted, "${{ matrix.os }}"]
     
 
