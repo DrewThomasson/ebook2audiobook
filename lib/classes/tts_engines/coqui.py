@@ -551,8 +551,7 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        sentence = ' '.join(sentence.split())
-                        if not sentence.endswith((".", "!", "?", "…")):
+                        if not sentence.endswith(('.', '!', '?', '…', '—')):
                             sentence += "."
                         with torch.no_grad():
                             result = self.engine.synthesize(
