@@ -156,6 +156,11 @@ punctuation_split_soft = [
 ]
 punctuation_split_soft_set = set(punctuation_split_soft)
 
+chars_remove = [
+    '\\', '|', '©', '®', '™',
+    '*', '`', '\u00A0', '"'
+]
+
 roman_numbers_tuples = [
     ('M',  1000), ('CM', 900), ('D',  500), ('CD', 400),
     ('C',  100),  ('XC', 90),  ('L',  50),  ('XL', 40),
@@ -823,11 +828,6 @@ specialchars_mapping = {
         "§": "apakan"
     }
 }
-
-specialchars_remove = [
-    '\\', '|', '©', '®', '™',
-    '*', '`', '\u00A0'
-]
 
 language_mapping = {
     "ara": {"name": "Arabic", "native_name": "العربية", "max_chars": 166},

@@ -972,9 +972,6 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
         text = roman2number(text)
         text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-        # build a translation table mapping each bad char to a space
-        specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
-        text = text.translate(specialchars_remove_table)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
         sentences = get_sentences(text, lang, tts_engine)
         if len(sentences) == 0:
@@ -1537,6 +1534,7 @@ def filter_sml(text:str)->str:
     return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
+    text = text.replace('—', ',')
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
@@ -1594,6 +1592,9 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     specialchars = specialchars_mapping.get(lang, specialchars_mapping.get(default_language_code, specialchars_mapping['eng']))
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
     text = text.translate(specialchars_table)
+    # build a translation table mapping each bad char to a space
+    chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
+    text = text.translate(chars_remove_table)
     text = ' '.join(text.split())
     return text
 
