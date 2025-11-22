@@ -1452,7 +1452,7 @@ def roman2number(text:str)->str:
 def is_latin(s: str) -> bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
-def foreign2latin(text: str, base_lang: str) -> str:
+def foreign2latin(text:str, base_lang:str)->str:
     def romanize(word: str) -> str:
         if is_latin(word):
             return word
@@ -1460,36 +1460,35 @@ def foreign2latin(text: str, base_lang: str) -> str:
             lang = detect(word)
         except:
             lang = base_lang
-
         if lang == base_lang:
             return word
         try:
             # --- Language-specific romanization handling ---
-            if lang in ["zh", "zho"]:
+            if lang in ['zh', 'zho']:
                 from pypinyin import pinyin, Style
                 py = pinyin(word, style=Style.NORMAL)
-                return "".join([s[0] for s in py])
-            elif lang in ["ja", "jpn"]:
+                return ''.join([s[0] for s in py])
+            elif lang in ['ja', 'jpn']:
                 import pykakasi
                 kakasi = pykakasi.kakasi()
-                kakasi.setMode("H", "a")  # Hiragana to ascii
-                kakasi.setMode("K", "a")  # Katakana to ascii
-                kakasi.setMode("J", "a")  # Kanji to ascii
-                kakasi.setMode("r", "Hepburn")  # Romanization style
+                kakasi.setMode('H', 'a')  # Hiragana to ascii
+                kakasi.setMode('K', 'a')  # Katakana to ascii
+                kakasi.setMode('J', 'a')  # Kanji to ascii
+                kakasi.setMode('r', 'Hepburn')  # Romanization style
                 conv = kakasi.getConverter()
                 return conv.do(word)
-            elif lang in ["ko", "kor"]:
+            elif lang in ['ko', 'kor']:
                 # Korean → Hangul decomposition to Latin fallback
                 return unidecode(word)
-            elif lang in ["ar", "ara"]:
-                ph = phonemize(word, language="ar", backend="espeak")
+            elif lang in ['ar', 'ara']:
+                ph = phonemize(word, language='ar', backend='espeak')
                 return unidecode(ph)
-            elif lang in ["ru", "rus"]:
-                ph = phonemize(word, language="ru", backend="espeak")
+            elif lang in ['ru', 'rus']:
+                ph = phonemize(word, language='ru', backend='espeak')
                 return unidecode(ph)
             else:
                 # Default: simple romanization
-                ph = phonemize(word, language="en-us", backend="espeak")
+                ph = phonemize(word, language='en-us', backend='espeak')
                 return unidecode(ph)
         except Exception:
             # Fallback if detection or library fails
@@ -1499,22 +1498,33 @@ def foreign2latin(text: str, base_lang: str) -> str:
     tts_markers = set(TTS_SML.values())
     protected = {}
     for i, marker in enumerate(tts_markers):
-        key = f"__TTS_MARKER_{i}__"
+        key = f'__TTS_MARKER_{i}__'
         protected[key] = marker
         text = text.replace(marker, key)
     # --- Tokenize & romanize ---
-    tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+    tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
     normalized = []
     for token in tokens:
         if token in protected:
             normalized.append(token)
-        elif re.match(r"^\w+$", token):
+        elif re.match(r'^\w+$', token):
             normalized.append(romanize(token))
         else:
             normalized.append(token)
-    # --- Recombine ---
-    text = " ".join(normalized)
-    text = re.sub(r"\s+([.,!?;:])", r"\1", text)
+    # --- Smart recombine (preserve punctuation spacing) ---
+    text = ''
+    for i, token in enumerate(normalized):
+        if i == 0:
+            text += token
+            continue
+        prev = normalized[i - 1]
+
+        # Add space only between words or after punctuation that needs it
+        if re.match(r'^\w+$', prev) and re.match(r'^\w+$', token):
+            text += ' '
+        elif re.match(r'^[({\[]$', token):
+            text += ' '
+        text += token
     # --- Restore markers ---
     for key, marker in protected.items():
         text = text.replace(key, marker)
@@ -1553,7 +1563,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Prepare SML tags
     text = filter_sml(text)
     # romanize foreign words
-    #text = foreign2latin(text, lang)
+    text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
