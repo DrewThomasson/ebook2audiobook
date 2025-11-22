@@ -4398,7 +4398,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_audiobook_player,
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
-            ).then
+            ).then(
                 fn=None,
                 inputs=None,
                 js='()=>{window.load_vtt();}'
