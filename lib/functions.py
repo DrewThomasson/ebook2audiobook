@@ -4370,10 +4370,6 @@ def build_interface(args:dict)->gr.Blocks:
             gr_playback_time.change(
                 fn=change_gr_playback_time,
                 inputs=[gr_playback_time, gr_session],
-                outputs=None
-            ).then(
-                fn=None,
-                inputs=[gr_playback_time],
                 js='''
                     (time)=>{
                         try{
