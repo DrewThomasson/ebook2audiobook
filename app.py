@@ -17,7 +17,8 @@ from lib import *
 
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
-    if str(os.path.basename(sys.prefix))=='python_env' or script_mode==FULL_DOCKER or current_version>=min_python_version and current_version<=max_python_version:
+    search_python_env = str(os.path.basename(sys.prefix))
+    if search_python_env == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
         return True
     error=f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
@@ -36,8 +37,8 @@ def check_python_version()->bool:
     if current_version < min_python_version or current_version > max_python_version:
         error = f'''***********
 Wrong launch: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
-In order to install and/or use ebook2audiobook correctly you must run 
-"./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
+In order to install and/or use ebook2audiobook correctly you must delete completly the folder python_env
+and run "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
 {install_info}
 ***********'''
         print(error)
