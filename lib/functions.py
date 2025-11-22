@@ -1458,83 +1458,88 @@ def roman2number(text:str)->str:
 def is_latin(s: str) -> bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
-def foreign2latin(text:str, base_lang:str)->str:
-    def romanize(word: str) -> str:
-        if is_latin(word):
-            return word
-        try:
-            lang = detect(word)
-        except:
-            lang = base_lang
-        if lang == base_lang:
-            return word
-        try:
-            # --- Language-specific romanization handling ---
-            if lang in ['zh', 'zho']:
-                from pypinyin import pinyin, Style
-                py = pinyin(word, style=Style.NORMAL)
-                return ''.join([s[0] for s in py])
-            elif lang in ['ja', 'jpn']:
-                import pykakasi
-                kakasi = pykakasi.kakasi()
-                kakasi.setMode('H', 'a')  # Hiragana to ascii
-                kakasi.setMode('K', 'a')  # Katakana to ascii
-                kakasi.setMode('J', 'a')  # Kanji to ascii
-                kakasi.setMode('r', 'Hepburn')  # Romanization style
-                conv = kakasi.getConverter()
-                return conv.do(word)
-            elif lang in ['ko', 'kor']:
-                # Korean → Hangul decomposition to Latin fallback
-                return unidecode(word)
-            elif lang in ['ar', 'ara']:
-                ph = phonemize(word, language='ar', backend='espeak')
-                return unidecode(ph)
-            elif lang in ['ru', 'rus']:
-                ph = phonemize(word, language='ru', backend='espeak')
-                return unidecode(ph)
-            else:
-                # Default: simple romanization
-                ph = phonemize(word, language='en-us', backend='espeak')
-                return unidecode(ph)
-        except Exception:
-            # Fallback if detection or library fails
-            return unidecode(word)
+def foreign2latin(text, base_lang):
+	def script_of(word):
+		for ch in word:
+			if ch.isalpha():
+				name = unicodedata.name(ch, "")
+				if "CYRILLIC" in name:
+					return "cyrillic"
+				if "LATIN" in name:
+					return "latin"
+				if "ARABIC" in name:
+					return "arabic"
+				if "HANGUL" in name:
+					return "hangul"
+				if "HIRAGANA" in name or "KATAKANA" in name:
+					return "japanese"
+				if "CJK" in name or "IDEOGRAPH" in name:
+					return "chinese"
+		return "unknown"
 
-    # --- Preserve TTS markers ---
-    tts_markers = set(TTS_SML.values())
-    protected = {}
-    for i, marker in enumerate(tts_markers):
-        key = f'__TTS_MARKER_{i}__'
-        protected[key] = marker
-        text = text.replace(marker, key)
-    # --- Tokenize & romanize ---
-    tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
-    normalized = []
-    for token in tokens:
-        if token in protected:
-            normalized.append(token)
-        elif re.match(r'^\w+$', token):
-            normalized.append(romanize(token))
-        else:
-            normalized.append(token)
-    # --- Smart recombine (preserve punctuation spacing) ---
-    text = ''
-    for i, token in enumerate(normalized):
-        if i == 0:
-            text += token
-            continue
-        prev = normalized[i - 1]
+	def romanize(word):
+		scr = script_of(word)
+		if scr == "latin":
+			return word
+		if base_lang in ["ru", "rus"] and scr == "cyrillic":
+			return word
+		if base_lang in ["ar", "ara"] and scr == "arabic":
+			return word
+		if base_lang in ["ko", "kor"] and scr == "hangul":
+			return word
+		if base_lang in ["ja", "jpn"] and scr == "japanese":
+			return word
+		if base_lang in ["zh", "zho"] and scr == "chinese":
+			return word
+		try:
+			if scr == "chinese":
+				from pypinyin import pinyin, Style
+				return "".join(x[0] for x in pinyin(word, style=Style.NORMAL))
+			if scr == "japanese":
+				import pykakasi
+				k = pykakasi.kakasi()
+				k.setMode("H", "a")
+				k.setMode("K", "a")
+				k.setMode("J", "a")
+				k.setMode("r", "Hepburn")
+				return k.getConverter().do(word)
+			if scr == "hangul":
+				return unidecode(word)
+			if scr == "arabic":
+				return unidecode(phonemize(word, language="ar", backend="espeak"))
+			if scr == "cyrillic":
+				return unidecode(phonemize(word, language="ru", backend="espeak"))
+			return unidecode(word)
+		except:
+			return unidecode(word)
 
-        # Add space only between words or after punctuation that needs it
-        if re.match(r'^\w+$', prev) and re.match(r'^\w+$', token):
-            text += ' '
-        elif re.match(r'^[({\[]$', token):
-            text += ' '
-        text += token
-    # --- Restore markers ---
-    for key, marker in protected.items():
-        text = text.replace(key, marker)
-    return text
+	tts_markers = set(TTS_SML.values())
+	protected = {}
+	for i, m in enumerate(tts_markers):
+		key = f"__TTS_MARKER_{i}__"
+		protected[key] = m
+		text = text.replace(m, key)
+	tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+	buf = []
+	for t in tokens:
+		if t in protected:
+			buf.append(t)
+		elif re.match(r"^\w+$", t):
+			buf.append(romanize(t))
+		else:
+			buf.append(t)
+	out = ""
+	for i, t in enumerate(buf):
+		if i == 0:
+			out += t
+		else:
+			if re.match(r"^\w+$", buf[i-1]) and re.match(r"^\w+$", t):
+				out += " " + t
+			else:
+				out += t
+	for k, v in protected.items():
+		out = out.replace(k, v)
+	return out
 
 def filter_sml(text:str)->str:
     for key, value in TTS_SML.items():
