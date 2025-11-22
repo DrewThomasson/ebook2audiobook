@@ -309,7 +309,7 @@ class Coqui:
                             key.removeprefix("xtts_"): cast_type(self.session[key])
                             for key, cast_type in {
                                 "xtts_temperature": float,
-                                "xtts_codec_temperature": float,
+                                #"xtts_codec_temperature": float,
                                 "xtts_length_penalty": float,
                                 "xtts_num_beams": int,
                                 "xtts_repetition_penalty": float,
@@ -317,9 +317,9 @@ class Coqui:
                                 "xtts_top_k": int,
                                 "xtts_top_p": float,
                                 "xtts_speed": float,
-                                "xtts_gpt_cond_len": int,
-                                "xtts_gpt_batch_size": int,
-                                "xtts_enable_text_splitting": bool
+                                #"xtts_gpt_cond_len": int,
+                                #"xtts_gpt_batch_size": int,
+                                #"xtts_enable_text_splitting": bool
                             }.items()
                             if self.session.get(key) is not None
                         }
@@ -502,7 +502,7 @@ class Coqui:
                             key.removeprefix("xtts_"): cast_type(self.session[key])
                             for key, cast_type in {
                                 "xtts_temperature": float,
-                                "xtts_codec_temperature": float,
+                                #"xtts_codec_temperature": float,
                                 "xtts_length_penalty": float,
                                 "xtts_num_beams": int,
                                 "xtts_repetition_penalty": float,
@@ -510,9 +510,9 @@ class Coqui:
                                 "xtts_top_k": int,
                                 "xtts_top_p": float,
                                 "xtts_speed": float,
-                                "xtts_gpt_cond_len": int,
-                                "xtts_gpt_batch_size": int,
-                                "xtts_enable_text_splitting": bool
+                                #"xtts_gpt_cond_len": int,
+                                #"xtts_gpt_batch_size": int,
+                                #"xtts_enable_text_splitting": bool
                             }.items()
                             if self.session.get(key) is not None
                         }
