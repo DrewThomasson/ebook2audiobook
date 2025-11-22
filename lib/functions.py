@@ -976,18 +976,18 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
         text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
-        sentences = get_sentences(text, lang, tts_engine)
-        if len(sentences) == 0:
+        sentences = get_sentences(text, id)
+        if sentences and len(sentences) == 0:
             error = 'No sentences found!'
             print(error)
             return None
-        return get_sentences(text, lang, tts_engine)
+        return get_sentences(text, id)
     except Exception as e:
         error = f'filter_chapter() error: {e}'
         DependencyError(error)
         return None
 
-def get_sentences(text:str, lang:str, tts_engine:str)->list|None:
+def get_sentences(text:str, id:str)->list|None:
     def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
         last_end = 0
@@ -1060,7 +1060,9 @@ def get_sentences(text:str, lang:str, tts_engine:str)->list|None:
                 yield buffer
 
     try:
-        max_chars =  int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] == TTS_ENGINES['TACOTRON2'] else language_mapping[lang]['max_chars'] - 4
+        session = context.get_session(id)
+        lang, tts_engine = session['language'], session['tts_engine']
+        max_chars = int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] == TTS_ENGINES['TACOTRON2'] else language_mapping[lang]['max_chars'] - 4
         min_tokens = 5
         # List or tuple of tokens that must never be appended to buffer
         sml_tokens = tuple(TTS_SML.values())
