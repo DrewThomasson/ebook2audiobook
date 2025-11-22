@@ -824,9 +824,9 @@ specialchars_mapping = {
     }
 }
 
-specialchars_remove = [
+punctuations_remove = [
     '\\', '|', '©', '®', '™',
-    '*', '`', '\u00A0'
+    '*', '`', '\u00A0', '"'
 ]
 
 language_mapping = {

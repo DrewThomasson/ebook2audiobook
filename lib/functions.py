@@ -973,8 +973,8 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
         text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
-        specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
-        text = text.translate(specialchars_remove_table)
+        punctuations_remove_table = str.maketrans({ch: ' ' for ch in punctuations_remove})
+        text = text.translate(punctuations_remove_table)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
         sentences = get_sentences(text, lang, tts_engine)
         if len(sentences) == 0:
