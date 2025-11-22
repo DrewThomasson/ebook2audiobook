@@ -222,6 +222,8 @@ def check_and_install_requirements(file_path:str)->bool:
             print(msg)
         if torch_version_is_leq('2.2.2'):
             try:
+                msg = 'torch version needs nump < 2. downgrading numpy to 1.26.4...'
+                print(msg)
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
                 t.update(1)
             except subprocess.CalledProcessError as e:
