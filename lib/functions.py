@@ -4177,7 +4177,7 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, None)
                     return gr.update(), gr.update(), gr.update(), gr.update()
 
-            async def save_session(id:str, state:dict)->tuple:
+            async def update_gr_save_session(id:str, state:dict)->tuple:
                 try:
                     if id and id in context.sessions:
                         session = context.get_session(id)
@@ -4224,7 +4224,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     )
                     yield gr.update(), gr.update(), gr.update()
                 except Exception as e:
-                    error = f'save_session(): {e}!'
+                    error = f'update_gr_save_session(): {e}!'
                     alert_exception(error, id)
                     yield gr.update(), gr.update(value=e), gr.update()
             
@@ -4501,7 +4501,7 @@ def build_interface(args:dict)->gr.Blocks:
             ############ Timer to save session to localStorage
             gr_timer = gr.Timer(9, active=False)
             gr_timer.tick(
-                fn=save_session,
+                fn=update_gr_save_session,
                 inputs=[gr_session, gr_state_update],
                 outputs=[gr_save_session, gr_state_update, gr_audiobook_list]
             ).then(
