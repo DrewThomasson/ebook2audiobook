@@ -28,9 +28,9 @@ demucs
 deepspeed
 unidecode
 langdetect
-pyannote-audio<=3.4.0
-stanza<=1.10.1
-argostranslate<=1.10.0
+stanza==1.10.1
+pyannote-audio==3.4.0
+argostranslate==1.10.0
 gradio==5.50.0
 torch<=2.7.1
 torchaudio<=2.7.1

@@ -44,9 +44,19 @@ In order to install and/or use ebook2audiobook correctly you must run
         return False
     else:
         return True
+        
+def torch_version_is_leq(target):
+    import torch
+    from packaging.version import Version, InvalidVersion
+	v = torch.__version__
+	try:
+		parsed = Version(v)
+	except InvalidVersion:
+		parsed = Version(v.split('+')[0])
+	return parsed <= Version(target)
 
 def check_and_install_requirements(file_path:str)->bool:
-    if not os.path.exists(file_path):
+    if not os.path.exists(file_path)
         error = f'Warning: File {file_path} not found. Skipping package check.'
         print(error)
         return False
@@ -210,6 +220,14 @@ def check_and_install_requirements(file_path:str)->bool:
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
+        if torch_version_is_leq('2.2.2'):
+            try:
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
+                t.update(1)
+            except subprocess.CalledProcessError as e:
+                error = f'Failed to downgrade to numpy < 2: {e}'
+                print(error)
+                return False
         return True
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
