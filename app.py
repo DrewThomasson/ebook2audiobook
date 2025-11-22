@@ -44,6 +44,16 @@ In order to install and/or use ebook2audiobook correctly you must run
         return False
     else:
         return True
+        
+def torch_version_is_leq(target):
+    import torch
+    from packaging.version import Version, InvalidVersion
+    v = torch.__version__
+    try:
+        parsed = Version(v)
+    except InvalidVersion:
+        parsed = Version(v.split('+')[0])
+    return parsed <= Version(target)
 
 def check_and_install_requirements(file_path:str)->bool:
     if not os.path.exists(file_path):
@@ -210,6 +220,17 @@ def check_and_install_requirements(file_path:str)->bool:
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
+        import numpy as np
+        numpy_version = Version(np.__version__)
+        if torch_version_is_leq('2.2.2') and numpy_version >= Version('2.0.0'):
+            try:
+                msg = 'torch version needs nump < 2. downgrading numpy to 1.26.4...'
+                print(msg)
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
+            except subprocess.CalledProcessError as e:
+                error = f'Failed to downgrade to numpy < 2: {e}'
+                print(error)
+                return False
         return True
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
