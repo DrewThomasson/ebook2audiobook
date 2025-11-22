@@ -48,12 +48,12 @@ In order to install and/or use ebook2audiobook correctly you must run
 def torch_version_is_leq(target):
     import torch
     from packaging.version import Version, InvalidVersion
-	v = torch.__version__
-	try:
-		parsed = Version(v)
-	except InvalidVersion:
-		parsed = Version(v.split('+')[0])
-	return parsed <= Version(target)
+    v = torch.__version__
+    try:
+        parsed = Version(v)
+    except InvalidVersion:
+        parsed = Version(v.split('+')[0])
+    return parsed <= Version(target)
 
 def check_and_install_requirements(file_path:str)->bool:
     if not os.path.exists(file_path)
