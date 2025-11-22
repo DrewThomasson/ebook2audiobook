@@ -318,24 +318,30 @@ exit /b
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
     call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
-    if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
-        call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
-        call %CONDA_ENV% activate base
-        call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-        call python -m pip cache purge >nul 2>&1
-        call python -m pip install --upgrade pip
-        for /f "usebackq delims=" %%p in ("requirements.txt") do (
-            echo Installing %%p...
-            call python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
-        )
-        echo All required packages are installed.
-    ) else (
-        call %CONDA_ENV% activate base
-        call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-    )
-    call :build_gui
-    call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-    call conda deactivate
+	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
+			call "%CONDA_INSTALL_DIR%\Scripts\activate.bat"
+			call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+			call conda activate base
+			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+
+			call python -m pip cache purge >nul 2>&1
+			call python -m pip install --upgrade pip
+
+			for /f "usebackq delims=" %%p in ("requirements.txt") do (
+				echo Installing %%p...
+				call python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
+			)
+
+			echo All required packages are installed.
+	) else (
+			call "%CONDA_INSTALL_DIR%\Scripts\activate.bat"
+			call conda activate base
+			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+	)
+
+	call :build_gui
+	call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+	call conda deactivate
 )
 exit /b
 
