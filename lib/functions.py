@@ -397,6 +397,7 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
                 tessdata_dir = os.environ['TESSDATA_PREFIX']
                 url = f'https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata'
                 dest_path = os.path.join(tessdata_dir, f'{lang}.traineddata')
+                os.makedirs(dest_path, exist_ok=True)
                 msg = f'Downloading {lang}.traineddata into {tessdata_dir}...'
                 print(msg)
                 response = requests.get(url, timeout=15)
