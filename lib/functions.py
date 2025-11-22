@@ -397,6 +397,7 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
                 tessdata_dir = os.environ['TESSDATA_PREFIX']
                 url = f'https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata'
                 dest_path = os.path.join(tessdata_dir, f'{lang}.traineddata')
+                os.makedirs(dest_path, exist_ok=True)
                 msg = f'Downloading {lang}.traineddata into {tessdata_dir}...'
                 print(msg)
                 response = requests.get(url, timeout=15)
@@ -1534,7 +1535,6 @@ def filter_sml(text:str)->str:
     return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
-    text = text.replace('—', ',')
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
@@ -1570,14 +1570,13 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
-    # Replace NBSP with a normal space
-    text = text.replace("\xa0", " ")
+    # remove unwanted chars
+    chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
+    text = text.translate(chars_remove_table)
     # Replace multiple and spaces with single space
     text = re.sub(r'\s+', ' ', text)
     # Replace ok by 'Owkey'
     text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
-    # Replace parentheses with double quotes
-    text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
     # Reduce multiple consecutive punctuations hard
@@ -1592,9 +1591,6 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     specialchars = specialchars_mapping.get(lang, specialchars_mapping.get(default_language_code, specialchars_mapping['eng']))
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
     text = text.translate(specialchars_table)
-    # build a translation table mapping each bad char to a space
-    chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
-    text = text.translate(chars_remove_table)
     text = ' '.join(text.split())
     return text
 
