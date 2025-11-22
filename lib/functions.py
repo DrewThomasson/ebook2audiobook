@@ -1062,7 +1062,7 @@ def get_sentences(text:str, id:str)->list|None:
     try:
         session = context.get_session(id)
         lang, tts_engine = session['language'], session['tts_engine']
-        max_chars = int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] == TTS_ENGINES['TACOTRON2'] else language_mapping[lang]['max_chars'] - 4
+        max_chars = int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] in [TTS_ENGINES['BARK'], TTS_ENGINES['TACOTRON2']] else language_mapping[lang]['max_chars'] - 4
         min_tokens = 5
         # List or tuple of tokens that must never be appended to buffer
         sml_tokens = tuple(TTS_SML.values())

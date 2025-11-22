@@ -43,6 +43,10 @@ class Coqui:
                 xtts_builtin_speakers_list = torch.load(self.speakers_path, weights_only=False)
                 using_gpu = self.session['device'] != devices['CPU']['proc']
                 enough_vram = self.session['free_vram_gb'] > 4.0
+                seed = 123456
+                random.seed(seed)
+                np.random.seed(seed)
+                torch.manual_seed(seed)
                 if using_gpu and enough_vram:
                     if devices['CUDA']['found'] or devices['ROCM']['found']:
                         torch.cuda.set_per_process_memory_fraction(0.95)
@@ -52,7 +56,7 @@ class Coqui:
                         torch.backends.cudnn.allow_tf32 = True
                         torch.backends.cuda.matmul.allow_tf32 = True
                         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-                        
+                        torch.cuda.manual_seed_all(seed)
                 else:
                     if devices['CUDA']['found'] or devices['ROCM']['found']:
                         torch.cuda.set_per_process_memory_fraction(0.7)
@@ -62,6 +66,7 @@ class Coqui:
                         torch.backends.cudnn.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
+                        torch.cuda.manual_seed_all(seed)
             self._load_engine()
             self._load_engine_zs()
         except Exception as e:
@@ -549,12 +554,6 @@ class Coqui:
                         sentence = ' '.join(sentence.split())
                         if not sentence.endswith((".", "!", "?", "…")):
                             sentence += "."
-                        seed = 123456
-                        random.seed(seed)
-                        np.random.seed(seed)
-                        torch.manual_seed(seed)
-                        if torch.cuda.is_available():
-                            torch.cuda.manual_seed_all(seed)
                         with torch.no_grad():
                             result = self.engine.synthesize(
                                 sentence,
