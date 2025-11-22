@@ -1534,7 +1534,6 @@ def filter_sml(text:str)->str:
     return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
-    text = text.replace('—', ',')
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
