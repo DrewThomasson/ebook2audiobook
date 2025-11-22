@@ -49,7 +49,7 @@ punctuation_switch = {
     '„': '"',   # German-style quote
 
     # Dashes, underscores & Hyphens that might cause weird pauses
-    '–': '—',  # En dash (Unicode U+2013)
+    '–': '.',  # En dash (Unicode U+2013)
 	"_": " ",   # U+005F LOW LINE
 	"‗": " ",   # U+2017 DOUBLE LOW LINE
 	"¯": " ",   # U+00AF MACRON (technically an overline)
@@ -84,11 +84,16 @@ punctuation_switch = {
     '፡': ':',  # Ethiopic colon
     '፤': ';',  # Ethiopic semicolon
     '।': '.',   # Hindi period
-    '•': '—', # bullet (Unicode: U+2022
+    '•': '.', # bullet (Unicode: U+2022
     '›': '',  # Single Right-Pointing Angle Quotation Mark U+200A
     '#': '-', # hashtag by Em Dash
     '†': '-', # Dagger (footnote marker) U+2020
-    '¶': '-'  # Pilcrow (paragraph mark) U+0086
+    '¶': '-',  # Pilcrow (paragraph mark) U+0086
+    
+    # Global replacement
+    '—': '.',
+    '(': ',',
+    ')': ','
 }
 
 punctuation_list = [
@@ -158,7 +163,7 @@ punctuation_split_soft_set = set(punctuation_split_soft)
 
 chars_remove = [
     '\\', '|', '©', '®', '™',
-    '*', '`', '\u00A0', '"'
+    '*', '`', '\u00A0', '"', '\xa0'
 ]
 
 roman_numbers_tuples = [
