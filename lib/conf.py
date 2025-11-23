@@ -57,6 +57,7 @@ if platform.system() == 'Windows':
 # Version and runtime config
 # ---------------------------------------------------------------------
 prog_version = (lambda: open('VERSION.txt').read().strip())()
+max_upload_size = '6GB'
 
 NATIVE = 'native'
 FULL_DOCKER = 'full_docker'

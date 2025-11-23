@@ -33,7 +33,6 @@ default_voice_detection_model = 'drewThomasson/segmentation'
 
 max_custom_model = 100
 max_custom_voices = 1000
-max_upload_size = '6GB'
 
 default_engine_settings = {
     TTS_ENGINES['XTTSv2']: {

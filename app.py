@@ -1,9 +1,20 @@
+import os
+import sysconfig
+import shutil
+
+from lib.conf import *
+
+########## sitecustomize.py
+site_packages_path = sysconfig.get_paths()['purelib']
+src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
+dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
+if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
+    shutil.copy2(src_pyfile, dst_pyfile)
+##############
+
 import argparse
 import filecmp
-import sysconfig
 import importlib.util
-import os
-import shutil
 import socket
 import subprocess
 import sys
@@ -13,7 +24,9 @@ import warnings
 
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
-from lib import *
+
+from lib.lang import default_language_code
+from lib.models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
@@ -62,24 +75,6 @@ def check_and_install_requirements(file_path:str)->bool:
         print(error)
         return False
     try:
-        ########## sitecustomize.py
-        site_packages_path = sysconfig.get_paths()['purelib']
-        src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
-        dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
-        src_mtime = os.path.getmtime(src_pyfile)
-        dst_mtime = os.path.getmtime(dst_pyfile) if os.path.exists(dst_pyfile) else 0
-        if dst_mtime < src_mtime:
-            shutil.copy2(src_pyfile, dst_pyfile)
-            try:
-                spec = importlib.util.spec_from_file_location('sitecustomize', dst_pyfile)
-                sitecustomize = importlib.util.module_from_spec(spec)
-                sys.modules['sitecustomize'] = sitecustomize
-                spec.loader.exec_module(sitecustomize)
-            except Exception as e:
-                error = f'sitecustomize.py copied but failed to load: {e}'
-                print(error)
-                return False
-        ##############
         try:
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version
@@ -483,9 +478,8 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
                 try:
-                    #script_name = os.path.basename(sys.argv[0])
-                    #kill_previous_instances(script_name)
-                    app = f.build_interface(args)
+                    from lib.gradio import build_interface
+                    app = build_interface(args)
                     if app is not None:
                         app.queue(
                             default_concurrency_limit=interface_concurrency_limit
