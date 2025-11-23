@@ -79,9 +79,13 @@ devices = {
     "ROCM": {"proc": "rocm", "found": False},
     "XPU": {"proc": "xpu", "found": False}
 }
+
 default_device = devices['CPU']['proc']
-default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
 default_chapters_preview = False
+
+default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
+default_pytorch_url = 'https://download.pytorch.org/whl/'
+default_jetson_url = 'https://developer.download.nvidia.com/compute/redist/jp/'
 
 # ---------------------------------------------------------------------
 # Python environment references
