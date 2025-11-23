@@ -139,29 +139,29 @@ def detect_gpu()->str:
     def warn(msg:str)->None:
         print(f'[WARNING] {msg}')
 
-	# ============================================================
-	# JETSON
-	# ============================================================
-	arch:str = platform.machine().lower()
-	if arch in ('aarch64', 'arm64'):
-		# Always read Tegra release if device looks like Jetson
-		raw = read_tegra()
-		# Detect JetPack version code
-		jp_code = jetpack_version(raw)
-		# Unsupported JetPack (<5.1)
-		if jp_code == 'unsupported':
-			return 'cpu'
-		# Direct Jetson detection mechanisms
-		if os.path.exists('/etc/nv_tegra_release'):
-			return f'jetson-{jp_code}'
-		if os.path.exists('/proc/device-tree/compatible'):
-			out = try_cmd('cat /proc/device-tree/compatible')
-			if 'tegra' in out:
-				return f'jetson-{jp_code}'
-		out = try_cmd('uname -a')
-		if 'tegra' in out:
+    # ============================================================
+    # JETSON
+    # ============================================================
+    arch:str = platform.machine().lower()
+    if arch in ('aarch64', 'arm64'):
+        # Always read Tegra release if device looks like Jetson
+        raw = read_tegra()
+        # Detect JetPack version code
+        jp_code = jetpack_version(raw)
+        # Unsupported JetPack (<5.1)
+        if jp_code == 'unsupported':
+            return 'cpu'
+        # Direct Jetson detection mechanisms
+        if os.path.exists('/etc/nv_tegra_release'):
+            return f'jetson-{jp_code}'
+        if os.path.exists('/proc/device-tree/compatible'):
+            out = try_cmd('cat /proc/device-tree/compatible')
+            if 'tegra' in out:
+                return f'jetson-{jp_code}'
+        out = try_cmd('uname -a')
+        if 'tegra' in out:
             print('Unknown Jetson device. Failing back to cpu'
-			return 'cpu'
+            return 'cpu'
 
     # ============================================================
     # CUDA
