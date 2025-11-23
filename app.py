@@ -26,7 +26,7 @@ from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 
 from lib.lang import default_language_code
-from lib.models import TTS_ENGINES
+from lib.models import TTS_ENGINES, default_fine_tuned
 
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
