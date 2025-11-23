@@ -195,6 +195,7 @@ else
 	}
 
 	function install_programs {
+		touch $INSTALLED_LOG
 		if [[ "$OSTYPE" = "darwin"* ]]; then
 			echo -e "\e[33mInstalling required programs...\e[0m"
 			if [ ! -d $TMPDIR ]; then
