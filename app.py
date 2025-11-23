@@ -69,6 +69,14 @@ def detect_platform_tag()->str:
 		return "manylinux"
 	return "unknown"
 
+def detect_arch_tag()->str:
+	m=platform.machine().lower()
+	if m in ("x86_64","amd64"):
+		return m
+	if m in ("aarch64","arm64"):
+		return m
+	return "unknown"
+
 def detect_gpu(max_cuda_version:tuple, max_rocm_version:tuple, max_xpu_version:tuple)->str:
 
 	def has_cmd(cmd:str)->bool:
