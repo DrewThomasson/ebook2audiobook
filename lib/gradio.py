@@ -1,3 +1,5 @@
+from lib.functions import *
+
 def build_interface(args:dict)->gr.Blocks:
     try:
         script_mode = args['script_mode']
