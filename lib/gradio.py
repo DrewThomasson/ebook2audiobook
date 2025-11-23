@@ -1132,7 +1132,7 @@ def build_interface(args:dict)->gr.Blocks:
                         voice_options = sorted(voice_options, key=lambda x: x[0].lower())    
                     if session['voice'] is not None and session['voice'] not in voice_options:
                         new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
-                        session['voice'] = new_voice_path if os.path.exists(new_voice_path) else models[session['tts_engine']]['voice']
+                        session['voice'] = new_voice_path if os.path.exists(new_voice_path) else models[session['tts_engine']][session['fine_tuned']]['voice']
                     return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
