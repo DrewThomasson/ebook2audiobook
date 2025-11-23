@@ -1,7 +1,6 @@
 import os
 import sysconfig
 import shutil
-from lib import *
 
 ########## sitecustomize.py
 components_dir = os.path.abspath('components')
