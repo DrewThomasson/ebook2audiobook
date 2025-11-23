@@ -61,124 +61,166 @@ and run "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Wi
         return True
 
 def detect_platform_tag()->str:
-	if sys.platform.startswith("win"):
-		return "win"
-	if sys.platform == "darwin":
-		return "macosx"
-	if sys.platform.startswith("linux"):
-		return "manylinux"
-	return "unknown"
+    if sys.platform.startswith('win'):
+        return 'win'
+    if sys.platform == 'darwin':
+        return 'macosx'
+    if sys.platform.startswith('linux'):
+        return 'manylinux'
+    return 'unknown'
 
 def detect_arch_tag()->str:
-	m=platform.machine().lower()
-	if m in ("x86_64","amd64"):
-		return m
-	if m in ("aarch64","arm64"):
-		return m
-	return "unknown"
+    m=platform.machine().lower()
+    if m in ('x86_64','amd64'):
+        return m
+    if m in ('aarch64','arm64'):
+        return m
+    return 'unknown'
 
 def detect_gpu()->str:
 
-	def has_cmd(cmd:str)->bool:
-		return shutil.which(cmd) is not None
+    def has_cmd(cmd:str)->bool:
+        return shutil.which(cmd) is not None
 
-	def try_cmd(cmd:str)->str:
-		try:
-			return subprocess.check_output(
-				cmd, shell=True, stderr=subprocess.DEVNULL
-			).decode().lower()
-		except Exception:
-			return ""
+    def try_cmd(cmd:str)->str:
+        try:
+            out = subprocess.check_output(
+                cmd,
+                shell = True,
+                stderr = subprocess.DEVNULL
+            )
+            return out.decode().lower()
+        except Exception:
+            return ''
 
-	def version_parse(text:str)->str|None:
-		import re as regex
-		m = regex.findall(r"\d+(?:\.\d+)+", text)
-		if not m:
-			return None
-		return m[0]
+    def version_parse(text:str)->str|None:
+        import re
+        m = re.findall(r'\d+(?:\.\d+)+', text)
+        return m[0] if m else None
 
-	def version_exceeds(version_str:str, max_tuple:tuple)->bool:
-		if max_tuple == (0,0) or version_str is None:
-			return False
-		parts = version_str.split(".")
-		major = int(parts[0])
-		minor = int(parts[1]) if len(parts) > 1 else 0
-		return (major, minor) > max_tuple
+    def version_exceeds(version_str:str|None, max_tuple:Tuple[int,int])->bool:
+        if max_tuple == (0, 0) or version_str is None:
+            return False
+        parts = version_str.split('.')
+        major = int(parts[0])
+        minor = int(parts[1]) if len(parts) > 1 else 0
+        return (major, minor) > max_tuple
 
-	def warn(msg:str)->None:
-		print(f"[WARNING] {msg}")
+    def warn(msg:str)->None:
+        print(f'[WARNING] {msg}')
 
-	# ============================================================
-	# CUDA
-	# ============================================================
-	if has_cmd("nvidia-smi"):
-		out = try_cmd("nvidia-smi")
-		version_str = version_parse(out)
-		if version_exceeds(version_str, max_cuda_version):
-			warn(f"CUDA {version_str} > max {max_cuda_version}. Falling back to CPU.")
-			return "cpu"
-		if version_str:
-			major, minor = version_str.split(".")[0], version_str.split(".")[1]
-			return f"cu{major}{minor}"
-		return "cu"  # rare fallback
-	if sys.platform.startswith("linux"):
-		out = try_cmd("lspci")
-		if "nvidia" in out:
-			warn("NVIDIA GPU detected but drivers missing → CPU")
-			return "cpu"
+    # ============================================================
+    # JETSON
+    # ============================================================
+    arch:str = platform.machine().lower()
+    if arch in ('aarch64', 'arm64'):
+        if os.path.exists('/etc/nv_tegra_release'):
+            return 'jetson'
+        if os.path.exists('/proc/device-tree/compatible'):
+            out = try_cmd('cat /proc/device-tree/compatible')
+            if 'tegra' in out:
+                return 'jetson'
+        out = try_cmd('uname -a')
+        if 'tegra' in out:
+            return 'jetson'
 
-	# ============================================================
-	# ROCm
-	# ============================================================
-	if has_cmd("rocminfo") or os.path.exists("/opt/rocm"):
-		out = try_cmd("rocminfo")
-		version_str = version_parse(out)
-		if version_exceeds(version_str, max_rocm_version):
-			warn(f"ROCm {version_str} > max {max_rocm_version} → CPU")
-			return "cpu"
-		if version_str:
-			return f"rocm{version_str}"
-		return "rocm"
-	if sys.platform.startswith("linux"):
-		out = try_cmd("lspci")
-		if "amd" in out and "vga" in out:
-			warn("AMD GPU detected but ROCm missing → CPU")
-			return "cpu"
+    # ============================================================
+    # CUDA
+    # ============================================================
+    if has_cmd('nvidia-smi'):
+        out = try_cmd('nvidia-smi')
+        version_str:str|None = version_parse(out)
 
-	# ============================================================
-	# Apple MPS
-	# ============================================================
-	if sys.platform == "darwin" and platform.machine().lower() in ("arm64", "aarch64"):
-		return "mps"
+        if version_exceeds(version_str, max_cuda_version):
+            msg = f'CUDA {version_str} > max {max_cuda_version}. Falling back to CPU.'
+            warn(msg)
+            return 'cpu'
 
-	# ============================================================
-	# Intel XPU
-	# ============================================================
-	if os.path.exists("/dev/dri/renderD128"):
-		out = try_cmd("lspci")
-		if "intel" in out:
-			out2 = try_cmd("sycl-ls") if has_cmd("sycl-ls") else ""
-			version_str = version_parse(out2)
-			if version_exceeds(version_str, max_xpu_version):
-				warn(f"XPU {version_str} > max {max_xpu_version} → CPU")
-				return "cpu"
-			if has_cmd("sycl-ls") or has_cmd("clinfo"):
-				return "xpu"
-			warn("Intel GPU detected but oneAPI runtime missing → CPU")
-			return "cpu"
-	if has_cmd("clinfo"):
-		out = try_cmd("clinfo")
-		if "intel" in out:
-			return "xpu"
-	out = try_cmd("lspci")
-	if "intel" in out and "vga" in out:
-		warn("Intel GPU detected but no XPU runtime → CPU")
-		return "cpu"
+        if version_str:
+            major = version_str.split('.')[0]
+            minor = version_str.split('.')[1]
+            return f'cu{major}{minor}'
 
-	# ============================================================
-	# CPU fallback
-	# ============================================================
-	return "cpu"
+        msg = 'No CUDA version found. Falling back to CPU.'
+        warn(msg)
+        return 'cpu'
+
+    # NVIDIA GPU present but no driver
+    if sys.platform.startswith('linux'):
+        out = try_cmd('lspci')
+        if 'nvidia' in out:
+            msg = 'NVIDIA GPU detected but drivers missing → CPU'
+            warn(msg)
+            return 'cpu'
+
+    # ============================================================
+    # ROCm
+    # ============================================================
+    if has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
+        out = try_cmd('rocminfo')
+        version_str = version_parse(out)
+
+        if version_exceeds(version_str, max_rocm_version):
+            msg = f'ROCm {version_str} > max {max_rocm_version} → CPU'
+            warn(msg)
+            return 'cpu'
+
+        if version_str:
+            return f'rocm{version_str}'
+
+        msg = 'No ROCm version found. Falling back to CPU.'
+        warn(msg)
+        return 'cpu'
+
+    if sys.platform.startswith('linux'):
+        out = try_cmd('lspci')
+        if 'amd' in out and 'vga' in out:
+            msg = 'AMD GPU detected but ROCm missing → CPU'
+            warn(msg)
+            return 'cpu'
+
+    # ============================================================
+    # APPLE MPS
+    # ============================================================
+    if sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
+        return 'mps'
+
+    # ============================================================
+    # INTEL XPU
+    # ============================================================
+    if os.path.exists('/dev/dri/renderD128'):
+        out = try_cmd('lspci')
+        if 'intel' in out:
+            oneapi_out:str = try_cmd('sycl-ls') if has_cmd('sycl-ls') else ''
+            version_str = version_parse(oneapi_out)
+
+            if version_exceeds(version_str, max_xpu_version):
+                msg = f'XPU {version_str} > max {max_xpu_version} → CPU'
+                warn(msg)
+                return 'cpu'
+
+            if has_cmd('sycl-ls') or has_cmd('clinfo'):
+                return 'xpu'
+
+            msg = 'Intel GPU detected but oneAPI runtime missing → CPU'
+            warn(msg)
+            return 'cpu'
+
+    if has_cmd('clinfo'):
+        out = try_cmd('clinfo')
+        if 'intel' in out:
+            return 'xpu'
+
+    out = try_cmd('lspci')
+    if 'intel' in out and 'vga' in out:
+        msg = 'Intel GPU detected but XPU runtime missing → CPU'
+        warn(msg)
+        return 'cpu'
+
+    # ============================================================
+    # CPU
+    # ============================================================
+    return 'cpu'
 
 def torch_version_is_leq(target:str)->str:
     import torch
