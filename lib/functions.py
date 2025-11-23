@@ -159,12 +159,16 @@ class SessionContext:
                 "custom_model": None,
                 "custom_model_dir": None,
                 "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
+                #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['codec_temperature'],
                 "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
                 "xtts_num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
                 "xtts_repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
+                #"xtts_cvvp_weight": default_engine_settings[TTS_ENGINES['XTTSv2']]['cvvp_weight'],
                 "xtts_top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
                 "xtts_top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'],
                 "xtts_speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
+                #"xtts_gpt_cond_len": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_cond_len'],
+                #"xtts_gpt_batch_size": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_batch_size'],
                 "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
                 "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
                 "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
@@ -745,7 +749,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         msg = 'Analyzing numbers, maths signs, dates and time to convert in words...'
         print(msg)
         for doc in all_docs:
-            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
+            sentences_list = filter_chapter(doc, id, stanza_nlp, is_num2words_compat)
             if sentences_list is None:
                 break
             elif len(sentences_list) > 0:
@@ -759,7 +763,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return error, None
 
-def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
+def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
     def tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             for child in node.children:
@@ -802,6 +806,8 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
             return None
 
     try:
+        session = context.get_session(id)
+        lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
         heading_tags = [f'h{i}' for i in range(1, 5)]
         break_tags = ['br', 'p']
         pause_tags = ['div', 'span']
@@ -871,7 +877,7 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
                 if text:
                     text_list.append(text)
             prev_typ = typ
-        max_chars = language_mapping[lang]['max_chars'] - 4
+        max_chars = int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] in [TTS_ENGINES['BARK'], TTS_ENGINES['TACOTRON2']] else language_mapping[lang]['max_chars'] - 4
         clean_list = []
         i = 0
         while i < len(text_list):
@@ -974,18 +980,18 @@ def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza
         text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
-        sentences = get_sentences(text, lang, tts_engine)
-        if len(sentences) == 0:
+        sentences = get_sentences(text, id)
+        if sentences and len(sentences) == 0:
             error = 'No sentences found!'
             print(error)
             return None
-        return get_sentences(text, lang, tts_engine)
+        return get_sentences(text, id)
     except Exception as e:
         error = f'filter_chapter() error: {e}'
         DependencyError(error)
         return None
 
-def get_sentences(text:str, lang:str, tts_engine:str)->list|None:
+def get_sentences(text:str, id:str)->list|None:
     def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
         last_end = 0
@@ -1058,7 +1064,9 @@ def get_sentences(text:str, lang:str, tts_engine:str)->list|None:
                 yield buffer
 
     try:
-        max_chars = language_mapping[lang]['max_chars'] - 4
+        session = context.get_session(id)
+        lang, tts_engine = session['language'], session['tts_engine']
+        max_chars = int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] in [TTS_ENGINES['BARK'], TTS_ENGINES['TACOTRON2']] else language_mapping[lang]['max_chars'] - 4
         min_tokens = 5
         # List or tuple of tokens that must never be appended to buffer
         sml_tokens = tuple(TTS_SML.values())
@@ -1450,83 +1458,88 @@ def roman2number(text:str)->str:
 def is_latin(s: str) -> bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
-def foreign2latin(text:str, base_lang:str)->str:
-    def romanize(word: str) -> str:
-        if is_latin(word):
-            return word
-        try:
-            lang = detect(word)
-        except:
-            lang = base_lang
-        if lang == base_lang:
-            return word
-        try:
-            # --- Language-specific romanization handling ---
-            if lang in ['zh', 'zho']:
-                from pypinyin import pinyin, Style
-                py = pinyin(word, style=Style.NORMAL)
-                return ''.join([s[0] for s in py])
-            elif lang in ['ja', 'jpn']:
-                import pykakasi
-                kakasi = pykakasi.kakasi()
-                kakasi.setMode('H', 'a')  # Hiragana to ascii
-                kakasi.setMode('K', 'a')  # Katakana to ascii
-                kakasi.setMode('J', 'a')  # Kanji to ascii
-                kakasi.setMode('r', 'Hepburn')  # Romanization style
-                conv = kakasi.getConverter()
-                return conv.do(word)
-            elif lang in ['ko', 'kor']:
-                # Korean → Hangul decomposition to Latin fallback
-                return unidecode(word)
-            elif lang in ['ar', 'ara']:
-                ph = phonemize(word, language='ar', backend='espeak')
-                return unidecode(ph)
-            elif lang in ['ru', 'rus']:
-                ph = phonemize(word, language='ru', backend='espeak')
-                return unidecode(ph)
-            else:
-                # Default: simple romanization
-                ph = phonemize(word, language='en-us', backend='espeak')
-                return unidecode(ph)
-        except Exception:
-            # Fallback if detection or library fails
-            return unidecode(word)
+def foreign2latin(text, base_lang):
+	def script_of(word):
+		for ch in word:
+			if ch.isalpha():
+				name = unicodedata.name(ch, "")
+				if "CYRILLIC" in name:
+					return "cyrillic"
+				if "LATIN" in name:
+					return "latin"
+				if "ARABIC" in name:
+					return "arabic"
+				if "HANGUL" in name:
+					return "hangul"
+				if "HIRAGANA" in name or "KATAKANA" in name:
+					return "japanese"
+				if "CJK" in name or "IDEOGRAPH" in name:
+					return "chinese"
+		return "unknown"
 
-    # --- Preserve TTS markers ---
-    tts_markers = set(TTS_SML.values())
-    protected = {}
-    for i, marker in enumerate(tts_markers):
-        key = f'__TTS_MARKER_{i}__'
-        protected[key] = marker
-        text = text.replace(marker, key)
-    # --- Tokenize & romanize ---
-    tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
-    normalized = []
-    for token in tokens:
-        if token in protected:
-            normalized.append(token)
-        elif re.match(r'^\w+$', token):
-            normalized.append(romanize(token))
-        else:
-            normalized.append(token)
-    # --- Smart recombine (preserve punctuation spacing) ---
-    text = ''
-    for i, token in enumerate(normalized):
-        if i == 0:
-            text += token
-            continue
-        prev = normalized[i - 1]
+	def romanize(word):
+		scr = script_of(word)
+		if scr == "latin":
+			return word
+		if base_lang in ["ru", "rus"] and scr == "cyrillic":
+			return word
+		if base_lang in ["ar", "ara"] and scr == "arabic":
+			return word
+		if base_lang in ["ko", "kor"] and scr == "hangul":
+			return word
+		if base_lang in ["ja", "jpn"] and scr == "japanese":
+			return word
+		if base_lang in ["zh", "zho"] and scr == "chinese":
+			return word
+		try:
+			if scr == "chinese":
+				from pypinyin import pinyin, Style
+				return "".join(x[0] for x in pinyin(word, style=Style.NORMAL))
+			if scr == "japanese":
+				import pykakasi
+				k = pykakasi.kakasi()
+				k.setMode("H", "a")
+				k.setMode("K", "a")
+				k.setMode("J", "a")
+				k.setMode("r", "Hepburn")
+				return k.getConverter().do(word)
+			if scr == "hangul":
+				return unidecode(word)
+			if scr == "arabic":
+				return unidecode(phonemize(word, language="ar", backend="espeak"))
+			if scr == "cyrillic":
+				return unidecode(phonemize(word, language="ru", backend="espeak"))
+			return unidecode(word)
+		except:
+			return unidecode(word)
 
-        # Add space only between words or after punctuation that needs it
-        if re.match(r'^\w+$', prev) and re.match(r'^\w+$', token):
-            text += ' '
-        elif re.match(r'^[({\[]$', token):
-            text += ' '
-        text += token
-    # --- Restore markers ---
-    for key, marker in protected.items():
-        text = text.replace(key, marker)
-    return text
+	tts_markers = set(TTS_SML.values())
+	protected = {}
+	for i, m in enumerate(tts_markers):
+		key = f"__TTS_MARKER_{i}__"
+		protected[key] = m
+		text = text.replace(m, key)
+	tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+	buf = []
+	for t in tokens:
+		if t in protected:
+			buf.append(t)
+		elif re.match(r"^\w+$", t):
+			buf.append(romanize(t))
+		else:
+			buf.append(t)
+	out = ""
+	for i, t in enumerate(buf):
+		if i == 0:
+			out += t
+		else:
+			if re.match(r"^\w+$", buf[i-1]) and re.match(r"^\w+$", t):
+				out += " " + t
+			else:
+				out += t
+	for k, v in protected.items():
+		out = out.replace(k, v)
+	return out
 
 def filter_sml(text:str)->str:
     for key, value in TTS_SML.items():
@@ -3393,7 +3406,7 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, id)
                 return gr.update(visible=group_visible)
 
-            def update_audiobook_player(id:str)->tuple:
+            def update_gr_audiobook_player(id:str)->tuple:
                 try:
                     session = context.get_session(id)
                     if session['audiobook'] is not None: 
@@ -3415,7 +3428,7 @@ def build_interface(args:dict)->gr.Blocks:
                             print(error)
                             alert_exception(error, id)
                 except Exception as e:
-                    error = f'update_audiobook_player(): {e}'
+                    error = f'update_gr_audiobook_player(): {e}'
                     print(error)
                     alert_exception(error, id)
                 return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
@@ -4173,7 +4186,7 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, None)
                     return gr.update(), gr.update(), gr.update(), gr.update()
 
-            async def save_session(id:str, state:dict)->tuple:
+            async def update_gr_save_session(id:str, state:dict)->tuple:
                 try:
                     if id and id in context.sessions:
                         session = context.get_session(id)
@@ -4220,7 +4233,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     )
                     yield gr.update(), gr.update(), gr.update()
                 except Exception as e:
-                    error = f'save_session(): {e}!'
+                    error = f'update_gr_save_session(): {e}!'
                     alert_exception(error, id)
                     yield gr.update(), gr.update(value=e), gr.update()
             
@@ -4366,7 +4379,15 @@ def build_interface(args:dict)->gr.Blocks:
             gr_playback_time.change(
                 fn=change_gr_playback_time,
                 inputs=[gr_playback_time, gr_session],
-                outputs=None
+                js='''
+                    (time)=>{
+                        try{
+                            window.session_storage.playback_time = Number(time);
+                        }catch(e){
+                            console.warn("gr_playback_time.change error: "+e);
+                        }
+                    }
+                '''
             )
             gr_audiobook_download_btn.click(
                 fn=toggle_audiobook_files,
@@ -4379,7 +4400,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_audiobook_list, gr_session],
                 outputs=[gr_group_audiobook_list]
             ).then(
-                fn=update_audiobook_player,
+                fn=update_gr_audiobook_player,
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
             ).then(
@@ -4485,7 +4506,7 @@ def build_interface(args:dict)->gr.Blocks:
             ############ Timer to save session to localStorage
             gr_timer = gr.Timer(9, active=False)
             gr_timer.tick(
-                fn=save_session,
+                fn=update_gr_save_session,
                 inputs=[gr_session, gr_state_update],
                 outputs=[gr_save_session, gr_state_update, gr_audiobook_list]
             ).then(

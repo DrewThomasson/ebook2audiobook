@@ -39,12 +39,16 @@ default_engine_settings = {
     TTS_ENGINES['XTTSv2']: {
         "samplerate": 24000,
         "temperature": 0.75,
+        #"codec_temperature": 0.3,
         "length_penalty": 1.0,
         "num_beams": 1,
         "repetition_penalty": 2.0,
+        #"cvvp_weight": 0.3,
         "top_k": 50,
         "top_p": 0.85,
         "speed": 1.0,
+		#"gpt_cond_len": 512,
+		#"gpt_batch_size": 1,
         "enable_text_splitting": False,
         "use_deepspeed": False,
         "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav'],
@@ -74,8 +78,8 @@ default_engine_settings = {
     },
     TTS_ENGINES['BARK']: {
         "samplerate": 24000,
-        "text_temp": 0.44,
-        "waveform_temp": 0.33,
+        "text_temp": 0.22,
+        "waveform_temp": 0.44,
         "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
         "speakers_path": os.path.join(voices_dir, '__bark'),
         "voices": {
