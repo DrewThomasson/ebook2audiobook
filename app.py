@@ -1,12 +1,13 @@
 import os
 import sysconfig
 import shutil
+
 ########## sitecustomize.py
 site_packages_path = sysconfig.get_paths()['purelib']
 src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
 dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
 if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
-shutil.copy2(src_pyfile, dst_pyfile)
+    shutil.copy2(src_pyfile, dst_pyfile)
 ##############
 
 import argparse
