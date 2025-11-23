@@ -49,7 +49,7 @@ class Coqui:
                 torch.manual_seed(seed)
                 if using_gpu and enough_vram:
                     if devices['CUDA']['found'] or devices['ROCM']['found']:
-                        #torch.cuda.set_per_process_memory_fraction(0.95)
+                        torch.cuda.set_per_process_memory_fraction(0.95)
                         torch.backends.cudnn.enabled = True
                         torch.backends.cudnn.benchmark = True
                         torch.backends.cudnn.deterministic = True
@@ -59,7 +59,7 @@ class Coqui:
                         torch.cuda.manual_seed_all(seed)
                 else:
                     if devices['CUDA']['found'] or devices['ROCM']['found']:
-                        #torch.cuda.set_per_process_memory_fraction(0.7)
+                        torch.cuda.set_per_process_memory_fraction(0.7)
                         torch.backends.cudnn.enabled = True
                         torch.backends.cudnn.benchmark = False
                         torch.backends.cudnn.deterministic = True
