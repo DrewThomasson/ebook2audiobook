@@ -8,7 +8,10 @@ import tempfile
 min_python_version = (3,10)
 max_python_version = (3,12)
 
-components_dir = os.path.abspath('components')
+max_cuda_version = (12,8)
+max_rocm_version = (0,0)
+max_xpu_version = (0,0)
+
 tmp_dir = os.path.abspath('tmp')
 tempfile.tempdir = tmp_dir
 tmp_expire = 7 # days
@@ -17,6 +20,7 @@ models_dir = os.path.abspath('models')
 ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
+components_dir = os.path.abspath('components')
 
 # ---------------------------------------------------------------------
 # Environment setup

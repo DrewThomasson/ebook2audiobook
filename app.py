@@ -12,6 +12,7 @@ if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getm
     shutil.copy2(src_pyfile, dst_pyfile)
 ##############
 
+import platform
 import argparse
 import filecmp
 import importlib.util
@@ -58,8 +59,120 @@ and run "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Wi
         return False
     else:
         return True
-        
-def torch_version_is_leq(target):
+
+def detect_platform_tag()->str:
+	if sys.platform.startswith("win"):
+		return "win"
+	if sys.platform == "darwin":
+		return "macosx"
+	if sys.platform.startswith("linux"):
+		return "manylinux"
+	return "unknown"
+
+def detect_gpu(max_cuda_version:tuple, max_rocm_version:tuple, max_xpu_version:tuple)->str:
+
+	def has_cmd(cmd:str)->bool:
+		return shutil.which(cmd) is not None
+
+	def try_cmd(cmd:str)->str:
+		try:
+			return subprocess.check_output(
+				cmd, shell=True, stderr=subprocess.DEVNULL
+			).decode().lower()
+		except Exception:
+			return ""
+
+	def version_parse(text:str)->str|None:
+		import re as regex
+		m = regex.findall(r"\d+(?:\.\d+)+", text)
+		if not m:
+			return None
+		return m[0]
+
+	def version_exceeds(version_str:str, max_tuple:tuple)->bool:
+		if max_tuple == (0,0) or version_str is None:
+			return False
+		parts = version_str.split(".")
+		major = int(parts[0])
+		minor = int(parts[1]) if len(parts) > 1 else 0
+		return (major, minor) > max_tuple
+
+	def warn(msg:str)->None:
+		print(f"[WARNING] {msg}")
+
+	# ============================================================
+	# CUDA
+	# ============================================================
+	if has_cmd("nvidia-smi"):
+		out = try_cmd("nvidia-smi")
+		version_str = version_parse(out)
+		if version_exceeds(version_str, max_cuda_version):
+			warn(f"CUDA {version_str} > max {max_cuda_version}. Falling back to CPU.")
+			return "cpu"
+		if version_str:
+			major, minor = version_str.split(".")[0], version_str.split(".")[1]
+			return f"cu{major}{minor}"
+		return "cu"  # rare fallback
+	if sys.platform.startswith("linux"):
+		out = try_cmd("lspci")
+		if "nvidia" in out:
+			warn("NVIDIA GPU detected but drivers missing → CPU")
+			return "cpu"
+
+	# ============================================================
+	# ROCm
+	# ============================================================
+	if has_cmd("rocminfo") or os.path.exists("/opt/rocm"):
+		out = try_cmd("rocminfo")
+		version_str = version_parse(out)
+		if version_exceeds(version_str, max_rocm_version):
+			warn(f"ROCm {version_str} > max {max_rocm_version} → CPU")
+			return "cpu"
+		if version_str:
+			return f"rocm{version_str}"
+		return "rocm"
+	if sys.platform.startswith("linux"):
+		out = try_cmd("lspci")
+		if "amd" in out and "vga" in out:
+			warn("AMD GPU detected but ROCm missing → CPU")
+			return "cpu"
+
+	# ============================================================
+	# Apple MPS
+	# ============================================================
+	if sys.platform == "darwin" and platform.machine().lower() in ("arm64", "aarch64"):
+		return "mps"
+
+	# ============================================================
+	# Intel XPU
+	# ============================================================
+	if os.path.exists("/dev/dri/renderD128"):
+		out = try_cmd("lspci")
+		if "intel" in out:
+			out2 = try_cmd("sycl-ls") if has_cmd("sycl-ls") else ""
+			version_str = version_parse(out2)
+			if version_exceeds(version_str, max_xpu_version):
+				warn(f"XPU {version_str} > max {max_xpu_version} → CPU")
+				return "cpu"
+			if has_cmd("sycl-ls") or has_cmd("clinfo"):
+				return "xpu"
+			warn("Intel GPU detected but oneAPI runtime missing → CPU")
+			return "cpu"
+	if has_cmd("clinfo"):
+		out = try_cmd("clinfo")
+		if "intel" in out:
+			return "xpu"
+	out = try_cmd("lspci")
+	if "intel" in out and "vga" in out:
+		warn("Intel GPU detected but no XPU runtime → CPU")
+		return "cpu"
+
+	# ============================================================
+	# CPU fallback
+	# ============================================================
+	return "cpu"
+
+def torch_version_is_leq(target:str)->str:
     import torch
     from packaging.version import Version, InvalidVersion
     v = torch.__version__
@@ -75,6 +188,7 @@ def check_and_install_requirements(file_path:str)->bool:
         print(error)
         return False
     try:
+        backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "env": sys.version_info[:2], "gpu": detect_gpu()}
         try:
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version
@@ -223,6 +337,7 @@ def check_and_install_requirements(file_path:str)->bool:
                 error = f'Failed to downgrade to numpy < 2: {e}'
                 print(error)
                 return False
+        
         import torch
         devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available() and not (hasattr(torch.version, "hip") and torch.version.hip is not None)
         devices['ROCM']['found'] = hasattr(torch.version, "hip") and torch.version.hip is not None and torch.cuda.is_available()
