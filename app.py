@@ -189,6 +189,7 @@ def check_and_install_requirements(file_path:str)->bool:
         return False
     try:
         backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "env": sys.version_info[:2], "gpu": detect_gpu()}
+        print(f'--------------- {backend_specs} -------------')
         try:
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version
