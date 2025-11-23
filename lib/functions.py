@@ -3520,7 +3520,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_voice_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
-                session['voice'] = next((value for label, value in voice_options if value == selected), None)
+                session['voice'] = next((value for label, value in voice_options if value == selected), voice_options[0][1])
                 visible = True if session['voice'] is not None else False
                 return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
 
@@ -3703,7 +3703,10 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                         voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                     else:
-                        voice_options = sorted(voice_options, key=lambda x: x[0].lower())       
+                        voice_options = sorted(voice_options, key=lambda x: x[0].lower())    
+                    if session['voice'] is not None and session['voice'] not in voice_options:
+                        new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
+                        session['voice'] = new_voice_path if os.path.exists(new_voice_path) else models[session['tts_engine']]['voice']
                     return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
