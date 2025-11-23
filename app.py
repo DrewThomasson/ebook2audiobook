@@ -77,7 +77,7 @@ def detect_arch_tag()->str:
 		return m
 	return "unknown"
 
-def detect_gpu(max_cuda_version:tuple, max_rocm_version:tuple, max_xpu_version:tuple)->str:
+def detect_gpu()->str:
 
 	def has_cmd(cmd:str)->bool:
 		return shutil.which(cmd) is not None
