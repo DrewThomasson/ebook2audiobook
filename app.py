@@ -95,11 +95,11 @@ def detect_gpu()->str:
         except Exception:
             return ''
 
-    def version_parse(text:str)->str|None:
+    def toolkit_version_parse(text:str)->str|None:
         m = re.findall(r'\d+(?:\.\d+)+', text)
         return m[0] if m else None
 
-    def version_exceeds(version_str:str|None, max_tuple:Tuple[int,int])->bool:
+    def is_toolkit_version_exceeds(version_str:str|None, max_tuple:Tuple[int,int])->bool:
         if max_tuple == (0, 0) or version_str is None:
             return False
         parts = version_str.split('.')
@@ -107,7 +107,7 @@ def detect_gpu()->str:
         minor = int(parts[1]) if len(parts) > 1 else 0
         return (major, minor) > max_tuple
 
-    def read_tegra()->str:
+    def tegra_version()->str:
         if os.path.exists('/etc/nv_tegra_release'):
             return try_cmd('cat /etc/nv_tegra_release')
         return ''
@@ -145,7 +145,7 @@ def detect_gpu()->str:
     arch:str = platform.machine().lower()
     if arch in ('aarch64', 'arm64'):
         # Always read Tegra release if device looks like Jetson
-        raw = read_tegra()
+        raw = tegra_version()
         # Detect JetPack version code
         jp_code = jetpack_version(raw)
         # Unsupported JetPack (<5.1)
@@ -168,8 +168,8 @@ def detect_gpu()->str:
     # ============================================================
     if has_cmd('nvidia-smi'):
         out = try_cmd('nvidia-smi')
-        version_str:str|None = version_parse(out)
-        if version_exceeds(version_str, max_cuda_version):
+        version_str:str|None = toolkit_version_parse(out)
+        if is_toolkit_version_exceeds(version_str, max_cuda_version):
             msg = f'CUDA {version_str} > max {max_cuda_version}. Falling back to CPU.'
             warn(msg)
             return 'cpu'
@@ -191,8 +191,8 @@ def detect_gpu()->str:
     # ============================================================
     if has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
         out = try_cmd('rocminfo')
-        version_str = version_parse(out)
-        if version_exceeds(version_str, max_rocm_version):
+        version_str = toolkit_version_parse(out)
+        if is_toolkit_version_exceeds(version_str, max_rocm_version):
             msg = f'ROCm {version_str} > max {max_rocm_version} → CPU'
             warn(msg)
             return 'cpu'
@@ -219,8 +219,8 @@ def detect_gpu()->str:
         out = try_cmd('lspci')
         if 'intel' in out:
             oneapi_out:str = try_cmd('sycl-ls') if has_cmd('sycl-ls') else ''
-            version_str = version_parse(oneapi_out)
-            if version_exceeds(version_str, max_xpu_version):
+            version_str = toolkit_version_parse(oneapi_out)
+            if is_toolkit_version_exceeds(version_str, max_xpu_version):
                 msg = f'XPU {version_str} > max {max_xpu_version} → CPU'
                 warn(msg)
                 return 'cpu'
@@ -258,7 +258,7 @@ def check_and_install_requirements(file_path:str)->bool:
         print(error)
         return False
     try:
-        backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "env": sys.version_info[:2], "gpu": detect_gpu()}
+        backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "gpu": detect_gpu()}
         print(f'--------------- {backend_specs} -------------')
         try:
             from packaging.specifiers import SpecifierSet
