@@ -394,6 +394,31 @@ else
 		if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
 			if [[ "$OSTYPE" = "darwin"* && "$ARCH" = "x86_64" ]]; then
 				PYTHON_VERSION="3.11"
+			elif [[ -r /proc/device-tree/model ]]; then
+				# Detect Jetson and select correct Python version
+				MODEL=$(tr -d '\0' </proc/device-tree/model | tr 'A-Z' 'a-z')
+				if [[ "$MODEL" == *jetson* ]]; then
+					# Detect JetPack (L4T version)
+					JP=$(dpkg-query --showformat='${Version}' --show nvidia-l4t-release 2>/dev/null | cut -d. -f1-2)
+					case "$JP" in
+						32.* | 35.*)
+							# JetPack 4.x  (Nano, TX2), JetPack 5.x  (Xavier NX, AGX Xavier, Orin Nano/NX/AGX)
+							PYTHON_VERSION="3.10"
+							;;
+						36.*)
+							# JetPack 6.x  (Orin)
+							if command -v python3.11 >/dev/null; then
+								PYTHON_VERSION="3.11"
+							else
+								PYTHON_VERSION="3.10"
+							fi
+							;;
+						*)
+							# Unknown JetPack -> safe default
+							PYTHON_VERSION="3.10"
+							;;
+					esac
+				fi
 			else
 				compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
 				case $? in
