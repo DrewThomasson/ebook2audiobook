@@ -130,21 +130,17 @@ def detect_gpu()->str:
     if has_cmd('nvidia-smi'):
         out = try_cmd('nvidia-smi')
         version_str:str|None = version_parse(out)
-
         if version_exceeds(version_str, max_cuda_version):
             msg = f'CUDA {version_str} > max {max_cuda_version}. Falling back to CPU.'
             warn(msg)
             return 'cpu'
-
         if version_str:
             major = version_str.split('.')[0]
             minor = version_str.split('.')[1]
             return f'cu{major}{minor}'
-
         msg = 'No CUDA version found. Falling back to CPU.'
         warn(msg)
         return 'cpu'
-
     # NVIDIA GPU present but no driver
     if sys.platform.startswith('linux'):
         out = try_cmd('lspci')
@@ -159,19 +155,15 @@ def detect_gpu()->str:
     if has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
         out = try_cmd('rocminfo')
         version_str = version_parse(out)
-
         if version_exceeds(version_str, max_rocm_version):
             msg = f'ROCm {version_str} > max {max_rocm_version} → CPU'
             warn(msg)
             return 'cpu'
-
         if version_str:
             return f'rocm{version_str}'
-
         msg = 'No ROCm version found. Falling back to CPU.'
         warn(msg)
         return 'cpu'
-
     if sys.platform.startswith('linux'):
         out = try_cmd('lspci')
         if 'amd' in out and 'vga' in out:
@@ -193,24 +185,19 @@ def detect_gpu()->str:
         if 'intel' in out:
             oneapi_out:str = try_cmd('sycl-ls') if has_cmd('sycl-ls') else ''
             version_str = version_parse(oneapi_out)
-
             if version_exceeds(version_str, max_xpu_version):
                 msg = f'XPU {version_str} > max {max_xpu_version} → CPU'
                 warn(msg)
                 return 'cpu'
-
             if has_cmd('sycl-ls') or has_cmd('clinfo'):
                 return 'xpu'
-
             msg = 'Intel GPU detected but oneAPI runtime missing → CPU'
             warn(msg)
             return 'cpu'
-
     if has_cmd('clinfo'):
         out = try_cmd('clinfo')
         if 'intel' in out:
             return 'xpu'
-
     out = try_cmd('lspci')
     if 'intel' in out and 'vga' in out:
         msg = 'Intel GPU detected but XPU runtime missing → CPU'
