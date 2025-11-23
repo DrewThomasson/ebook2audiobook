@@ -2,12 +2,12 @@ from .models import (
     TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, default_fine_tuned, default_tts_engine, 
     default_engine_settings, default_vc_model, default_voice_detection_model,
     loaded_tts, xtts_builtin_speakers_list, max_custom_model, max_custom_voices,
-    max_upload_size, models, os, voices_dir
+    models, os, voices_dir
 )
 
 from .conf import (
     FULL_DOCKER, NATIVE, audiobooks_cli_dir, audiobooks_gradio_dir,
-    audiobooks_host_dir, debug_mode, default_audio_proc_samplerate, 
+    audiobooks_host_dir, debug_mode, default_audio_proc_samplerate, max_upload_size,
     default_audio_proc_format, default_device, default_gpu_wiki, 
     default_chapters_preview, default_output_format, default_output_channel, devices, ebook_formats,
     ebooks_dir, interface_component_options, interface_concurrency_limit,
@@ -32,12 +32,11 @@ __all__ = [
     "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "default_fine_tuned", "default_tts_engine",
     "default_engine_settings", "default_vc_model", "default_voice_detection_model",
     "loaded_tts", "xtts_builtin_speakers_list", "max_custom_model",
-    "max_custom_voices", "max_upload_size",
-    "models", "os", "voices_dir",
+    "max_custom_voices", "models", "os", "voices_dir",
 
     # from conf
     "FULL_DOCKER", "NATIVE", "audiobooks_cli_dir", "audiobooks_gradio_dir",
-    "audiobooks_host_dir", "debug_mode", "default_audio_proc_samplerate",
+    "audiobooks_host_dir", "debug_mode", "default_audio_proc_samplerate", "max_upload_size",
     "default_audio_proc_format", "default_device", "default_gpu_wiki",
     "default_chapters_preview", "default_output_format", "default_output_channel", "devices", "ebook_formats",
     "ebooks_dir", "interface_component_options", "interface_concurrency_limit",
