@@ -478,9 +478,8 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
                 try:
-                    #script_name = os.path.basename(sys.argv[0])
-                    #kill_previous_instances(script_name)
-                    app = f.build_interface(args)
+                    from lib.gradio import build_interface
+                    app = build_interface(args)
                     if app is not None:
                         app.queue(
                             default_concurrency_limit=interface_concurrency_limit
