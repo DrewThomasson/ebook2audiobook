@@ -19,20 +19,10 @@ if not getattr(sys, "_sitecustomize_loaded", False):
 
             def wrapped_check_torch_load_is_safe(*args, **kwargs):
                 #print("[sitecustomize] Hook: transformers check called")
-                # Continue to call the original for correctness
-                #return original_check(*args, **kwargs)
-                pass
+                return True
 
             iu.check_torch_load_is_safe = wrapped_check_torch_load_is_safe
             iu._patch_applied = True
             #print("[sitecustomize] transformers hook installed")
     except ModuleNotFoundError:
         print("[sitecustomize] transformers not available; skipping patch")
-
-    # modify sys.path or environment variables
-    # sys.path.insert(0, "/path/to/custom/modules")
-
-    # 6add global diagnostics
-    # import warnings; warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-    #print("[sitecustomize] Initialization complete.")
