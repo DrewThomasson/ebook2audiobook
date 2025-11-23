@@ -1,11 +1,10 @@
 import os
 import sysconfig
 import shutil
-from lib.models import TTS_ENGINES
-from lib.lang import default_language_code
+
+from lib.conf import default_device, components_dir
 
 ########## sitecustomize.py
-components_dir = os.path.abspath('components')
 site_packages_path = sysconfig.get_paths()['purelib']
 src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
 dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
@@ -25,6 +24,9 @@ import warnings
 
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
+
+from lib.lang import default_language_code
+from lib.models import TTS_ENGINES
 
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
