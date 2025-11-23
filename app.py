@@ -113,43 +113,80 @@ def detect_gpu()->str:
         return ''
 
     def jetpack_version(text:str)->str:
-        # Parse L4T major: R35, R36...
-        m1 = re.search(r'r(\d+)', text)
-        # Parse REVISION: 4.1, 4.2, 2.0, 3.0...
-        m2 = re.search(r'revision:\s*([\d\.]+)', text)
+        m1 = re.search(r'r(\d+)', text) # R35, R36...
+        m2 = re.search(r'revision:\s*([\d\.]+)', text) # X.Y
         if not m1 or not m2:
+            warn(msg)
             return 'unknown'
         l4t_major = int(m1.group(1))
-        rev_clean = m2.group(1).replace('.', '')
-        rev_num = int(rev_clean)
-        # Mapping JetPack → version code
-        JETPACK_MAP = {
-            (35, 41): 'v512',
-            (35, 42): 'v513',
-            (36, 20): 'v60',
-            (36, 30): 'v61'
-        }
-        # JetPack version < 5.1 → unsupported
+        rev = m2.group(1)
+        parts = rev.split('.')
+        rev_major = int(parts[0])
+        rev_minor = int(parts[1]) if len(parts) > 1 else 0
+        # -------------------------------------------------------
+        # JetPack < 5.0 → CPU
+        # -------------------------------------------------------
         if l4t_major < 35:
             msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 5.1+. Falling back to CPU.'
             warn(msg)
             return 'unsupported'
-        return JETPACK_MAP.get((l4t_major, rev_num), 'unknown')
+        # -------------------------------------------------------
+        # JetPack 5.x (L4T 35)
+        # -------------------------------------------------------
+        if l4t_major == 35:
+            # JetPack 5.0 / 5.0.1
+            if rev_major == 0 and rev_minor <= 1:
+                msg = 'JetPack 5.0/5.0.1 detected. Please upgrade to JetPack 5.1+.'
+                warn(msg)
+                return '50'
+            # JetPack 5.0.2 / 5.0.x
+            if rev_major == 0 and rev_minor >= 2:
+                msg = 'JetPack 5.0.x detected. Please upgrade to JetPack 5.1+.'
+                warn(msg)
+                return '502'
+            # JetPack 5.1.0
+            if rev_major == 1 and rev_minor == 0:
+                msg = 'JetPack 5.1.0 detected. Please upgrade to JetPack 5.1.2 or newer.'
+                warn(msg)
+                return '51'
+            # JetPack 5.1.1
+            if rev_major == 1 and rev_minor == 1:
+                msg = 'JetPack 5.1.1 detected. Please upgrade to JetPack 5.1.2 or newer.'
+                warn(msg)
+                return '511'
+            # JetPack >= 5.1.2 AND < 6 → ALWAYS == 512
+            if (rev_major > 1) or (rev_major == 1 and rev_minor >= 2):
+                return '512'
+            msg = 'Unrecognized JetPack 5.x version. Falling back to CPU.'
+            warn(msg)
+            return 'unknown'
+        # -------------------------------------------------------
+        # JetPack 6.x (L4T 36)
+        # -------------------------------------------------------
+        if l4t_major == 36:
+            if rev_major == 2:
+                return '60'
+            if rev_major == 3:
+                return '61'
+            msg = 'Unrecognized JetPack 6.x version. Falling back to CPU.'
+            warn(msg)
+        return 'unknown'
 
     def warn(msg:str)->None:
         print(f'[WARNING] {msg}')
 
+    arch:str = platform.machine().lower()
+
     # ============================================================
     # JETSON
     # ============================================================
-    arch:str = platform.machine().lower()
-    if arch in ('aarch64', 'arm64'):
+    if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
         # Always read Tegra release if device looks like Jetson
         raw = tegra_version()
         # Detect JetPack version code
         jp_code = jetpack_version(raw)
         # Unsupported JetPack (<5.1)
-        if jp_code == 'unsupported':
+        if jp_code in ['unsupported', 'unknown']:
             return 'cpu'
         # Direct Jetson detection mechanisms
         if os.path.exists('/etc/nv_tegra_release'):
@@ -160,7 +197,8 @@ def detect_gpu()->str:
                 return f'jetson-{jp_code}'
         out = try_cmd('uname -a')
         if 'tegra' in out:
-            print('Unknown Jetson device. Failing back to cpu')
+            msg = 'Unknown Jetson device. Failing back to cpu'
+            warn(msg)
             return 'cpu'
 
     # ============================================================
