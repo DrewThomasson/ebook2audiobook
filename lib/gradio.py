@@ -1,3 +1,4 @@
+from __future__ import annotations
 from lib.functions import *
 
 def build_interface(args:dict)->gr.Blocks:

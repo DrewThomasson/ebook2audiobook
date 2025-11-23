@@ -12,6 +12,7 @@ import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvi
 import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, fitz
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
 
+from typing import Any
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
