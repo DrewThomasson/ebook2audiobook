@@ -160,7 +160,7 @@ def detect_gpu()->str:
                 return f'jetson-{jp_code}'
         out = try_cmd('uname -a')
         if 'tegra' in out:
-            print('Unknown Jetson device. Failing back to cpu'
+            print('Unknown Jetson device. Failing back to cpu')
             return 'cpu'
 
     # ============================================================
