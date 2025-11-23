@@ -2,7 +2,7 @@ import os
 import sysconfig
 import shutil
 
-from lib.conf import NATIVE, prog_version, default_device, components_dir, devices, default_output_format, default_output_channel, min_python_version, max_python_version, interface_port
+from lib.conf import *
 
 ########## sitecustomize.py
 site_packages_path = sysconfig.get_paths()['purelib']
