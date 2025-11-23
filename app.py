@@ -66,19 +66,8 @@ def check_and_install_requirements(file_path:str)->bool:
         site_packages_path = sysconfig.get_paths()['purelib']
         src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
         dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
-        src_mtime = os.path.getmtime(src_pyfile)
-        dst_mtime = os.path.getmtime(dst_pyfile) if os.path.exists(dst_pyfile) else 0
-        if dst_mtime < src_mtime:
+        if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
             shutil.copy2(src_pyfile, dst_pyfile)
-            try:
-                spec = importlib.util.spec_from_file_location('sitecustomize', dst_pyfile)
-                sitecustomize = importlib.util.module_from_spec(spec)
-                sys.modules['sitecustomize'] = sitecustomize
-                spec.loader.exec_module(sitecustomize)
-            except Exception as e:
-                error = f'sitecustomize.py copied but failed to load: {e}'
-                print(error)
-                return False
         ##############
         try:
             from packaging.specifiers import SpecifierSet
