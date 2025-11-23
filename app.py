@@ -3,6 +3,7 @@ import sysconfig
 import shutil
 
 ########## sitecustomize.py
+components_dir = os.path.abspath('components')
 site_packages_path = sysconfig.get_paths()['purelib']
 src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
 dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
