@@ -23,6 +23,7 @@ import tempfile
 import time
 import warnings
 
+from typing import Tuple
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 
