@@ -22,6 +22,7 @@ import sys
 import tempfile
 import time
 import warnings
+import re
 
 from typing import Tuple
 from importlib.metadata import version, PackageNotFoundError
@@ -95,7 +96,6 @@ def detect_gpu()->str:
             return ''
 
     def version_parse(text:str)->str|None:
-        import re
         m = re.findall(r'\d+(?:\.\d+)+', text)
         return m[0] if m else None
 
@@ -107,23 +107,61 @@ def detect_gpu()->str:
         minor = int(parts[1]) if len(parts) > 1 else 0
         return (major, minor) > max_tuple
 
+    def read_tegra()->str:
+        if os.path.exists('/etc/nv_tegra_release'):
+            return try_cmd('cat /etc/nv_tegra_release')
+        return ''
+
+    def jetpack_version(text:str)->str:
+        # Parse L4T major: R35, R36...
+        m1 = re.search(r'r(\d+)', text)
+        # Parse REVISION: 4.1, 4.2, 2.0, 3.0...
+        m2 = re.search(r'revision:\s*([\d\.]+)', text)
+        if not m1 or not m2:
+            return 'unknown'
+        l4t_major = int(m1.group(1))
+        rev_clean = m2.group(1).replace('.', '')
+        rev_num = int(rev_clean)
+        # Mapping JetPack → version code
+        JETPACK_MAP = {
+            (35, 41): 'v512',
+            (35, 42): 'v513',
+            (36, 20): 'v60',
+            (36, 30): 'v61'
+        }
+        # JetPack version < 5.1 → unsupported
+        if l4t_major < 35:
+            msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 5.1+. Falling back to CPU.'
+            warn(msg)
+            return 'unsupported'
+        return JETPACK_MAP.get((l4t_major, rev_num), 'unknown')
+
     def warn(msg:str)->None:
         print(f'[WARNING] {msg}')
 
-    # ============================================================
-    # JETSON
-    # ============================================================
-    arch:str = platform.machine().lower()
-    if arch in ('aarch64', 'arm64'):
-        if os.path.exists('/etc/nv_tegra_release'):
-            return 'jetson'
-        if os.path.exists('/proc/device-tree/compatible'):
-            out = try_cmd('cat /proc/device-tree/compatible')
-            if 'tegra' in out:
-                return 'jetson'
-        out = try_cmd('uname -a')
-        if 'tegra' in out:
-            return 'jetson'
+	# ============================================================
+	# JETSON
+	# ============================================================
+	arch:str = platform.machine().lower()
+	if arch in ('aarch64', 'arm64'):
+		# Always read Tegra release if device looks like Jetson
+		raw = read_tegra()
+		# Detect JetPack version code
+		jp_code = jetpack_version(raw)
+		# Unsupported JetPack (<5.1)
+		if jp_code == 'unsupported':
+			return 'cpu'
+		# Direct Jetson detection mechanisms
+		if os.path.exists('/etc/nv_tegra_release'):
+			return f'jetson-{jp_code}'
+		if os.path.exists('/proc/device-tree/compatible'):
+			out = try_cmd('cat /proc/device-tree/compatible')
+			if 'tegra' in out:
+				return f'jetson-{jp_code}'
+		out = try_cmd('uname -a')
+		if 'tegra' in out:
+            print('Unknown Jetson device. Failing back to cpu'
+			return 'cpu'
 
     # ============================================================
     # CUDA
@@ -233,7 +271,6 @@ def check_and_install_requirements(file_path:str)->bool:
             from packaging.version import Version
             from tqdm import tqdm
             from packaging.markers import Marker
-        import re as regex
         flexible_packages = {"torch", "torchaudio", "numpy"}
         torch_version = False
         try:
@@ -244,7 +281,7 @@ def check_and_install_requirements(file_path:str)->bool:
         cuda_only_packages = ('deepspeed')
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
-            packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and regex.search(r'[a-zA-Z0-9]', pkg)]
+            packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)]
         if sys.version_info >= (3, 11):
             packages.append("pymupdf-layout")
         missing_packages = []
@@ -262,7 +299,7 @@ def check_and_install_requirements(file_path:str)->bool:
                     print(error)
                 package = pkg_part.strip()
             if 'git+' in package or '://' in package:
-                pkg_name_match = regex.search(r'([\w\-]+)\s*@?\s*git\+', package)
+                pkg_name_match = re.search(r'([\w\-]+)\s*@?\s*git\+', package)
                 pkg_name = pkg_name_match.group(1) if pkg_name_match else None
                 if pkg_name:
                     spec = importlib.util.find_spec(pkg_name)
@@ -275,8 +312,8 @@ def check_and_install_requirements(file_path:str)->bool:
                     print(error)
                     missing_packages.append(package)
                 continue
-            clean_pkg = regex.sub(r'\[.*?\]', '', package)
-            pkg_name = regex.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
+            clean_pkg = re.sub(r'\[.*?\]', '', package)
+            pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
             if pkg_name in cuda_only_packages:
                 has_cuda_build = False
                 if torch_version:
@@ -298,13 +335,13 @@ def check_and_install_requirements(file_path:str)->bool:
                 spec_str = clean_pkg[len(pkg_name):].strip()
                 if spec_str:
                     spec = SpecifierSet(spec_str)
-                    norm_match = regex.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
+                    norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
                     short_version = norm_match.group(1) if norm_match else installed_version
                     try:
                         installed_v = Version(short_version)
                     except Exception:
                         installed_v = Version('0')
-                    req_match = regex.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
+                    req_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
                     if req_match:
                         req_v = Version(req_match.group(1))
                         imajor, iminor = installed_v.major, installed_v.minor
