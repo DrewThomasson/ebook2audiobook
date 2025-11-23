@@ -1,9 +1,17 @@
+import os
+import sysconfig
+import shutil
+########## sitecustomize.py
+site_packages_path = sysconfig.get_paths()['purelib']
+src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
+dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
+if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
+shutil.copy2(src_pyfile, dst_pyfile)
+##############
+
 import argparse
 import filecmp
-import sysconfig
 import importlib.util
-import os
-import shutil
 import socket
 import subprocess
 import sys
@@ -62,13 +70,6 @@ def check_and_install_requirements(file_path:str)->bool:
         print(error)
         return False
     try:
-        ########## sitecustomize.py
-        site_packages_path = sysconfig.get_paths()['purelib']
-        src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
-        dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
-        if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
-            shutil.copy2(src_pyfile, dst_pyfile)
-        ##############
         try:
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version
