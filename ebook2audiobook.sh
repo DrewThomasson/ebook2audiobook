@@ -405,7 +405,7 @@ else
 						32.*)
 							# JetPack 4.x  (Nano, TX2)
 							PYTHON_VERSION="3.10"
-							echo "[WARNING] Your Jetson device is too old to use its GPU. CPU will be used instead"
+							echo "[WARNING] JetPack installed is too old to use its GPU. Upgrade to version 5.1.x. CPU will be used instead"
 							;;
 						35.*)
 							# JetPack 5.x  (Xavier NX, AGX Xavier, Orin Nano/NX/AGX)
