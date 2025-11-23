@@ -2,7 +2,7 @@ import os
 import sysconfig
 import shutil
 
-from lib.conf import default_device, components_dir
+from lib.conf import default_device, components_dir, devices
 
 ########## sitecustomize.py
 site_packages_path = sysconfig.get_paths()['purelib']
