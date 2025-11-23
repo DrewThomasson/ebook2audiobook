@@ -16,7 +16,7 @@ if not getattr(sys, "_sitecustomize_loaded", False):
 
             def wrapped_check_torch_load_is_safe(*args, **kwargs):
                 #print("[sitecustomize] Hook: transformers check called")
-                return True
+                pass
 
             iu.check_torch_load_is_safe = wrapped_check_torch_load_is_safe
             iu._patch_applied = True
