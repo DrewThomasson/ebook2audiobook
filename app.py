@@ -146,8 +146,6 @@ def detect_gpu()->str:
     if sys.platform.startswith('linux'):
         out = try_cmd('lspci')
         if 'nvidia' in out:
-            msg = 'NVIDIA GPU detected but drivers missing → CPU'
-            warn(msg)
             return 'cpu'
 
     # ============================================================
@@ -168,8 +166,6 @@ def detect_gpu()->str:
     if sys.platform.startswith('linux'):
         out = try_cmd('lspci')
         if 'amd' in out and 'vga' in out:
-            msg = 'AMD GPU detected but ROCm missing → CPU'
-            warn(msg)
             return 'cpu'
 
     # ============================================================
@@ -201,8 +197,6 @@ def detect_gpu()->str:
             return 'xpu'
     out = try_cmd('lspci')
     if 'intel' in out and 'vga' in out:
-        msg = 'Intel GPU detected but XPU runtime missing → CPU'
-        warn(msg)
         return 'cpu'
 
     # ============================================================
