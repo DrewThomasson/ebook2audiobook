@@ -1,6 +1,6 @@
 import gc
 import torch
-import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
+import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid, random
 import numpy as np, regex as re, soundfile as sf, torchaudio
 
 from typing import Any
@@ -43,25 +43,30 @@ class Coqui:
                 xtts_builtin_speakers_list = torch.load(self.speakers_path, weights_only=False)
                 using_gpu = self.session['device'] != devices['CPU']['proc']
                 enough_vram = self.session['free_vram_gb'] > 4.0
+                seed = 123456
+                random.seed(seed)
+                np.random.seed(seed)
+                torch.manual_seed(seed)
                 if using_gpu and enough_vram:
                     if devices['CUDA']['found'] or devices['ROCM']['found']:
-                        torch.cuda.set_per_process_memory_fraction(0.95)
+                        #torch.cuda.set_per_process_memory_fraction(0.95)
                         torch.backends.cudnn.enabled = True
                         torch.backends.cudnn.benchmark = True
                         torch.backends.cudnn.deterministic = True
                         torch.backends.cudnn.allow_tf32 = True
                         torch.backends.cuda.matmul.allow_tf32 = True
                         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-                        
+                        torch.cuda.manual_seed_all(seed)
                 else:
                     if devices['CUDA']['found'] or devices['ROCM']['found']:
-                        torch.cuda.set_per_process_memory_fraction(0.7)
+                        #torch.cuda.set_per_process_memory_fraction(0.7)
                         torch.backends.cudnn.enabled = True
                         torch.backends.cudnn.benchmark = False
                         torch.backends.cudnn.deterministic = True
                         torch.backends.cudnn.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
+                        torch.cuda.manual_seed_all(seed)
             self._load_engine()
             self._load_engine_zs()
         except Exception as e:
@@ -226,13 +231,21 @@ class Coqui:
                             model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                             self.tts_key = model_path
                             self.engine = self._load_api(self.tts_key, model_path, self.session['device'])
-                            self.engine.synthesizer.tts_model.decoder.max_decoder_steps = 800
-                            self.engine.synthesizer.tts_model.decoder.gate_threshold = 0.75
-                            self.engine.synthesizer.tts_model.decoder.prenet_dropout = 0.0
-                            self.engine.synthesizer.tts_model.attention.location_attention.dropout = 0.0
-                            self.engine.synthesizer.tts_model.decoder.attention_dropout = 0.0
-                            tas = self.engine.synthesizer.tts_model
-                            tas.decoder.attention_keeplast = True
+                            m = self.engine.synthesizer.tts_model
+                            d = m.decoder
+                            # Stability
+                            d.prenet_dropout = 0.0
+                            d.attention_dropout = 0.0
+                            d.decoder_dropout = 0.0
+                            m.attention.location_attention.dropout = 0.0
+                            # Stop-gate tuning
+                            d.gate_threshold = 0.5
+                            d.force_gate = True
+                            d.gate_delay = 10
+                            # Long-sentence fix
+                            d.max_decoder_steps = 1000
+                            # Prevent attention drift
+                            d.attention_keeplast = True
                         else:
                             msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                             print(msg)
@@ -296,13 +309,17 @@ class Coqui:
                             key.removeprefix("xtts_"): cast_type(self.session[key])
                             for key, cast_type in {
                                 "xtts_temperature": float,
+                                #"xtts_codec_temperature": float,
                                 "xtts_length_penalty": float,
                                 "xtts_num_beams": int,
                                 "xtts_repetition_penalty": float,
+                                #"xtts_cvvp_weight": float,
                                 "xtts_top_k": int,
                                 "xtts_top_p": float,
                                 "xtts_speed": float,
-                                "xtts_enable_text_splitting": bool,
+                                #"xtts_gpt_cond_len": int,
+                                #"xtts_gpt_batch_size": int,
+                                "xtts_enable_text_splitting": bool
                             }.items()
                             if self.session.get(key) is not None
                         }
@@ -485,12 +502,16 @@ class Coqui:
                             key.removeprefix("xtts_"): cast_type(self.session[key])
                             for key, cast_type in {
                                 "xtts_temperature": float,
+                                #"xtts_codec_temperature": float,
                                 "xtts_length_penalty": float,
                                 "xtts_num_beams": int,
                                 "xtts_repetition_penalty": float,
+                                #"xtts_cvvp_weight": float,
                                 "xtts_top_k": int,
                                 "xtts_top_p": float,
                                 "xtts_speed": float,
+                                #"xtts_gpt_cond_len": int,
+                                #"xtts_gpt_batch_size": int,
                                 "xtts_enable_text_splitting": bool
                             }.items()
                             if self.session.get(key) is not None
@@ -538,8 +559,9 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
+                        if not sentence.endswith(('.', '!', '?', '…', '—')):
+                            sentence += "."
                         with torch.no_grad():
-                            #torch.manual_seed(67878789)
                             result = self.engine.synthesize(
                                 sentence,
                                 speaker=speaker,
