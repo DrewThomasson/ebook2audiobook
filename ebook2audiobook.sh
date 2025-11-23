@@ -400,9 +400,18 @@ else
 				if [[ "$MODEL" == *jetson* ]]; then
 					# Detect JetPack (L4T version)
 					JP=$(dpkg-query --showformat='${Version}' --show nvidia-l4t-release 2>/dev/null | cut -d. -f1-2)
+					L4T=$(awk -F' ' '/# R/ {print $2}' /etc/nv_tegra_release)
 					case "$JP" in
-						32.* | 35.*)
-							# JetPack 4.x  (Nano, TX2), JetPack 5.x  (Xavier NX, AGX Xavier, Orin Nano/NX/AGX)
+						32.*)
+							# JetPack 4.x  (Nano, TX2)
+							PYTHON_VERSION="3.10"
+							echo "[WARNING] Your Jetson device is too old to use its GPU. CPU will be used instead"
+							;;
+						35.*)
+							# JetPack 5.x  (Xavier NX, AGX Xavier, Orin Nano/NX/AGX)
+							if [ "$L4T" != "35.1" ]; then
+								echo "[WARNING] JetPack must be updated to the last version 5.1.x allowing to use the GPU. CPU will be used instead"
+							fi
 							PYTHON_VERSION="3.10"
 							;;
 						36.*)
