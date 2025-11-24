@@ -50,14 +50,14 @@ punctuation_switch = {
 
     # Dashes, underscores & Hyphens that might cause weird pauses
     '–': '.',  # En dash (Unicode U+2013)
-	"_": " ",   # U+005F LOW LINE
-	"‗": " ",   # U+2017 DOUBLE LOW LINE
-	"¯": " ",   # U+00AF MACRON (technically an overline)
-	"ˍ": " ",   # U+02CD MODIFIER LETTER LOW MACRON
-	"﹍": " ",  # U+FE4D DASHED LOW LINE
-	"﹎": " ",  # U+FE4E CENTRELINE LOW LINE
-	"﹏": " ",  # U+FE4F WAVY LOW LINE
-	"＿": " ",  # U+FF3F FULLWIDTH LOW LINE
+    "_": " ",   # U+005F LOW LINE
+    "‗": " ",   # U+2017 DOUBLE LOW LINE
+    "¯": " ",   # U+00AF MACRON (technically an overline)
+    "ˍ": " ",   # U+02CD MODIFIER LETTER LOW MACRON
+    "﹍": " ",  # U+FE4D DASHED LOW LINE
+    "﹎": " ",  # U+FE4E CENTRELINE LOW LINE
+    "﹏": " ",  # U+FE4F WAVY LOW LINE
+    "＿": " ",  # U+FF3F FULLWIDTH LOW LINE
 
     # Ellipsis (causes extreme long pauses in TTS)
     '...': '…',  # standard triple dots replaced with Unicode ellipsis (U+2026)
@@ -123,41 +123,41 @@ punctuation_list = [
 punctuation_list_set = set(punctuation_list)
 
 punctuation_split_hard = [
-	# Western
-	'.', '!', '?', '…', '‽', '—',    # sentence terminators
-	# Arabic–Persian
-	'؟',                             # Arabic question mark (hard)
-	# CJK (Chinese/Japanese/Korean)
-	'。',                             # full stop
-	'！', '？',                       # full-width exclamation/question (hard for zho/jpn/kor)
-	# Indic
-	'।', '॥',                           # danda, double danda
-	# Ethiopic
-	'።', '፧',                         # full stop, question mark
-	# Tibetan
-	'།',                                # shad (end of verse/sentence)
-	# Khmer
-	'។', '៕'                            # full stop, end sign
+    # Western
+    '.', '!', '?', '…', '‽', '—',    # sentence terminators
+    # Arabic–Persian
+    '؟',                             # Arabic question mark (hard)
+    # CJK (Chinese/Japanese/Korean)
+    '。',                             # full stop
+    '！', '？',                       # full-width exclamation/question (hard for zho/jpn/kor)
+    # Indic
+    '।', '॥',                           # danda, double danda
+    # Ethiopic
+    '።', '፧',                         # full stop, question mark
+    # Tibetan
+    '།',                                # shad (end of verse/sentence)
+    # Khmer
+    '។', '៕'                            # full stop, end sign
 ]
 punctuation_split_hard_set = set(punctuation_split_hard)
 
 punctuation_split_soft = [
-	# Western
-	',', ':', ';',
-	# Arabic–Persian
-	'،',
-	# CJK
-	'，', '、', '·',
-	# Thai
-	'ฯ',
-	# Ethiopic
-	'፡', '፣', '፤', '፥', '፦',
-	# Hebrew
-	'״',
-	# Tibetan
-	'༎',
-	# Lao
-	'໌', 'ໍ'
+    # Western
+    ',', ':', ';',
+    # Arabic–Persian
+    '،',
+    # CJK
+    '，', '、', '·',
+    # Thai
+    'ฯ',
+    # Ethiopic
+    '፡', '፣', '፤', '፥', '፦',
+    # Hebrew
+    '״',
+    # Tibetan
+    '༎',
+    # Lao
+    '໌', 'ໍ'
 ]
 punctuation_split_soft_set = set(punctuation_split_soft)
 
@@ -173,18 +173,18 @@ roman_numbers_tuples = [
 ]
 
 emojis_list = [
-	r"\U0001F600-\U0001F64F",  # Emoticons
-	r"\U0001F300-\U0001F5FF",  # Symbols & pictographs
-	r"\U0001F680-\U0001F6FF",  # Transport & map symbols
-	r"\U0001F1E0-\U0001F1FF",  # Flags
-	r"\U00002700-\U000027BF",  # Dingbats
-	r"\U0001F900-\U0001F9FF",  # Supplemental symbols
-	r"\U00002600-\U000026FF",  # Misc symbols
-	r"\U0001FA70-\U0001FAFF",  # Extended pictographs
-	r"\U00002480-\U00002BEF",  # Box drawing, etc.
-	r"\U0001F018-\U0001F270",
-	r"\U0001F650-\U0001F67F",
-	r"\U0001F700-\U0001F77F"
+    r"\U0001F600-\U0001F64F",  # Emoticons
+    r"\U0001F300-\U0001F5FF",  # Symbols & pictographs
+    r"\U0001F680-\U0001F6FF",  # Transport & map symbols
+    r"\U0001F1E0-\U0001F1FF",  # Flags
+    r"\U00002700-\U000027BF",  # Dingbats
+    r"\U0001F900-\U0001F9FF",  # Supplemental symbols
+    r"\U00002600-\U000026FF",  # Misc symbols
+    r"\U0001FA70-\U0001FAFF",  # Extended pictographs
+    r"\U00002480-\U00002BEF",  # Box drawing, etc.
+    r"\U0001F018-\U0001F270",
+    r"\U0001F650-\U0001F67F",
+    r"\U0001F700-\U0001F77F"
 ]
 
 language_math_phonemes = {

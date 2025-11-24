@@ -1,6 +1,7 @@
 import os
 import platform
 import tempfile
+import sys
 
 # ---------------------------------------------------------------------
 # Global configuration
@@ -8,7 +9,10 @@ import tempfile
 min_python_version = (3,10)
 max_python_version = (3,12)
 
-components_dir = os.path.abspath('components')
+max_cuda_version = (12,8)
+max_rocm_version = (0,0)
+max_xpu_version = (0,0)
+
 tmp_dir = os.path.abspath('tmp')
 tempfile.tempdir = tmp_dir
 tmp_expire = 7 # days
@@ -17,6 +21,7 @@ models_dir = os.path.abspath('models')
 ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
+components_dir = os.path.abspath('components')
 
 # ---------------------------------------------------------------------
 # Environment setup
@@ -75,9 +80,75 @@ devices = {
     "ROCM": {"proc": "rocm", "found": False},
     "XPU": {"proc": "xpu", "found": False}
 }
+
 default_device = devices['CPU']['proc']
-default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
 default_chapters_preview = False
+
+default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
+
+default_py_major = sys.version_info.major
+default_py_minor = sys.version_info.minor
+default_py_tag = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
+
+default_pytorch_url = 'https://download.pytorch.org/whl/'
+default_jetson_url = 'https://developer.download.nvidia.com/compute/redist/jp/'
+default_compiled_url = 'https://xxxxxxxxxx/compiled/xxxxxx.whl'
+
+default_jetson5_torch = ''
+default_jetson60_torch = '2.4.0a0+3bcc3cddb5.nv24.07.16234504'
+default_jetson61_torch = '2.5.0a0+872d972e41.nv24.08.17622132'
+
+torch_mapping = {
+
+    # CUDA
+    "cu113": {"tag": "cu113", "url": default_pytorch_url},
+    "cu114": {"tag": "cu114", "url": default_pytorch_url},
+    "cu115": {"tag": "cu115", "url": default_pytorch_url},
+    "cu116": {"tag": "cu116", "url": default_pytorch_url},
+    "cu117": {"tag": "cu117", "url": default_pytorch_url},
+    "cu118": {"tag": "cu118", "url": default_pytorch_url},
+    "cu121": {"tag": "cu121", "url": default_pytorch_url},
+    "cu124": {"tag": "cu124", "url": default_pytorch_url},
+    "cu126": {"tag": "cu126", "url": default_pytorch_url},
+    "cu128": {"tag": "cu128", "url": default_pytorch_url},
+    "cu129": {"tag": "cu129", "url": default_pytorch_url},
+    "cu130": {"tag": "cu130", "url": default_pytorch_url},
+    
+    # ROCm
+    "rocm3.10":  {"tag": "rocm3.10", "url": default_pytorch_url},
+    "rocm3.7":   {"tag": "rocm3.7", "url": default_pytorch_url},
+    "rocm3.8":   {"tag": "rocm3.8", "url": default_pytorch_url},
+    "rocm4.0.1": {"tag": "rocm4.0.1", "url": default_pytorch_url},
+    "rocm4.1":   {"tag": "rocm4.1", "url": default_pytorch_url},
+    "rocm4.2":   {"tag": "rocm4.2", "url": default_pytorch_url},
+    "rocm4.3.1": {"tag": "rocm4.3.1", "url": default_pytorch_url},
+    "rocm4.5.2": {"tag": "rocm4.5.2", "url": default_pytorch_url},
+    "rocm5.0":   {"tag": "rocm5.0", "url": default_pytorch_url},
+    "rocm5.1.1": {"tag": "rocm5.1.1", "url": default_pytorch_url},
+    "rocm5.2":   {"tag": "rocm5.2", "url": default_pytorch_url},
+    "rocm5.3":   {"tag": "rocm5.3", "url": default_pytorch_url},
+    "rocm5.4.2": {"tag": "rocm5.4.2", "url": default_pytorch_url},
+    "rocm5.5":   {"tag": "rocm5.5", "url": default_pytorch_url},
+    "rocm5.6":   {"tag": "rocm5.6", "url": default_pytorch_url},
+    "rocm5.7":   {"tag": "rocm5.7", "url": default_pytorch_url},
+    "rocm6.0":   {"tag": "rocm6.0", "url": default_pytorch_url},
+    "rocm6.1":   {"tag": "rocm6.1", "url": default_pytorch_url},
+    "rocm6.2":   {"tag": "rocm6.2", "url": default_pytorch_url},
+    "rocm6.2.4": {"tag": "rocm6.2.4", "url": default_pytorch_url},
+    "rocm6.3":   {"tag": "rocm6.3", "url": default_pytorch_url},
+    "rocm6.4":   {"tag": "rocm6.4", "url": default_pytorch_url},
+    
+    # MPS
+    "mps": {"tag": "mps", "url": default_pytorch_url},
+    
+    # XPU
+    "xpu": {"tag": "xpu", "url": default_pytorch_url},
+    
+    # JETSON
+    "jetson-jetpack5": {"tag": "xxxxxxxxxxxx", "url": default_compiled_url},
+    "jetson-60":       {"tag": "v60", "url": default_jetson_url},
+    "jetson-61":       {"tag": "v61", "url": default_jetson_url}
+}
 
 # ---------------------------------------------------------------------
 # Python environment references
