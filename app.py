@@ -434,8 +434,10 @@ def check_and_install_requirements(file_path:str)->bool:
             current_tag_pattern = re.search(r'\+(.+)$', torch_version)
             current_tag = current_tag_pattern.group(1)
             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
-            if non_standard_tag is None and current_tag != backend_specs['gpu'] or 
-               non_standard_tag is not None and backend_specs['gpu'] in ['jetson-jetpack5', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_mapping[backend_specs['gpu']]['tag']:
+            if (
+               non_standard_tag is None and current_tag != backend_specs['gpu'] or 
+               non_standard_tag is not None and backend_specs['gpu'] in ['jetson-jetpack5', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_mapping[backend_specs['gpu']]['tag']
+               ):
                 try:
                     backend_tag = torch_mapping[backend_specs['gpu']]['tag']
                     backend_os = backend_specs['os']
