@@ -268,12 +268,12 @@ def detect_gpu()->str:
     # ============================================================
     return 'cpu'
 
-def torch_version_is_leq(current:str, target:str)->str:
+def parse_torch_version(current:str)->str:
     try:
         parsed = Version(current)
     except InvalidVersion:
         parsed = Version(current.split('+')[0])
-    return parsed <= Version(target)
+    return parsed
 
 def check_and_install_requirements(file_path:str)->bool:
     if not os.path.exists(file_path):
@@ -281,7 +281,7 @@ def check_and_install_requirements(file_path:str)->bool:
         print(error)
         return False
     try:
-        backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "ref": detect_gpu()}
+        backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "gpu": detect_gpu()}
         print(f'--------------- {backend_specs} -------------')
         try:
             from packaging.specifiers import SpecifierSet
@@ -425,29 +425,43 @@ def check_and_install_requirements(file_path:str)->bool:
         import numpy as np
         torch_version = torch.__version__
         numpy_version = Version(np.__version__)
-
-        
-        if backend_specs['ref'] not in ['cpu', 'unknown', 'unsupported']:
-            pattern = re.search(r'\+(.+)$', torch_version)
-            tag = pattern.group(1)
-            match_tag = re.fullmatch(r'[0-9a-f]{7,40}', tag)
-            if match_tag is None or match_tag is not None and match_tag != torch_mapping['tag']:
-                if tag != backend_specs['ref']:
-                    torch_pkg = torch_mapping[backend_specs['ref']]
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
-            
-
-            
-        if torch_version_is_leq(torch_version, '2.2.2') and numpy_version >= Version('2.0.0'):
+        torch_version_parsed = parse_torch_version(torch_version)
+        if torch_version_parsed <= Version('2.2.2') and numpy_version >= Version('2.0.0'):
             try:
-                msg = 'torch version needs nump < 2. downgrading numpy to 1.26.4...'
+                msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
                 print(msg)
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
             except subprocess.CalledProcessError as e:
                 error = f'Failed to downgrade to numpy < 2: {e}'
                 print(error)
                 return False
-            
+        if backend_specs['gpu'] not in ['cpu', 'unknown', 'unsupported']:
+            current_tag_pattern = re.search(r'\+(.+)$', torch_version)
+            current_tag = current_tag_pattern.group(1)
+            non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
+            if non_standard_tag is None and current_tag != backend_specs['gpu'] or 
+               non_standard_tag is not None and backend_specs['gpu'] in ['jetson-jetpack5', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_mapping[backend_specs['gpu']]['tag']:
+                try:
+                    backend_tag = torch_mapping[backend_specs['gpu']]['tag']
+                    backend_os = backend_specs['os']
+                    backend_arch = backend_specs['arch']
+                    backend_url = torch_mapping[backend_specs['gpu']]['url']
+                    if backend-specs['gpu'] == 'jetson-jetpack5'
+                        torch_pkg = f''
+                    elif backend_specs['gpu'] in ['jetson-60', 'jetson-61']:
+                        jetson_torch_version = default_jetson60_torch if backend_specs['gpu'] == 'jetson-60' else default_jetson61_torch
+                        torch_pkg = f'{backend_url}/v{backend_tag}/pytorch/torch-{jetson_torch_version}-{default_py_tag}-linux_{backend_arch}.whl'                    
+                    else:
+                        torch_pkg = f'{gpu_url}/{backend_tag}/torch/torch-{torch_version_parsed}+{gpu_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
+                    import torch
+                    torch_version = torch.__version__
+                except subprocess.CalledProcessError as e:
+                    error = f'Failed to install {packages}: {e}'
+                    print(error)
+                    return False
+
+
         devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available() and not (hasattr(torch.version, "hip") and torch.version.hip is not None)
         devices['ROCM']['found'] = hasattr(torch.version, "hip") and torch.version.hip is not None and torch.cuda.is_available()
         devices['MPS']['found']  = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()

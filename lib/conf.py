@@ -1,6 +1,7 @@
 import os
 import platform
 import tempfile
+import sys
 
 # ---------------------------------------------------------------------
 # Global configuration
@@ -84,9 +85,18 @@ default_device = devices['CPU']['proc']
 default_chapters_preview = False
 
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
+
+default_py_major = sys.version_info.major
+default_py_minor = sys.version_info.minor
+default_py_tag = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
+
 default_pytorch_url = 'https://download.pytorch.org/whl/'
 default_jetson_url = 'https://developer.download.nvidia.com/compute/redist/jp/'
 default_compiled_url = 'https://xxxxxxxxxx/compiled/xxxxxx.whl'
+
+default_jetson5_torch = ''
+default_jetson60_torch = '2.4.0a0+3bcc3cddb5.nv24.07.16234504'
+default_jetson61_torch = '2.5.0a0+872d972e41.nv24.08.17622132'
 
 torch_mapping = {
 
