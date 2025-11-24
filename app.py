@@ -25,7 +25,7 @@ import warnings
 import re
 
 from typing import Tuple
-from importlib.metadata import version, PackageNotFoundError, InvalidVersion
+from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 
 from lib.lang import default_language_code
@@ -275,6 +275,7 @@ def detect_gpu()->str:
     return 'cpu'
 
 def parse_torch_version(current:str)->str:
+    from packaging.version import Version, InvalidVersion
     try:
         parsed = Version(current)
     except InvalidVersion:
