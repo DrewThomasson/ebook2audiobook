@@ -188,6 +188,7 @@ def detect_gpu()->str:
             warn(msg)
             return 'cpu'
         if version_str:
+            devices['CUDA']['found'] = True
             major = version_str.split('.')[0]
             minor = version_str.split('.')[1]
             return f'cu{major}{minor}'
@@ -206,6 +207,7 @@ def detect_gpu()->str:
             warn(msg)
             return 'cpu'
         if version_str:
+            devices['ROCM']['found'] = True
             return f'rocm{version_str}'
         msg = 'No ROCm version found. Falling back to CPU.'
         warn(msg)
@@ -215,6 +217,7 @@ def detect_gpu()->str:
     # APPLE MPS
     # ============================================================
     if sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
+        devices['MPS']['found'] = True
         return 'mps'
 
     # ============================================================
@@ -230,6 +233,7 @@ def detect_gpu()->str:
                 warn(msg)
                 return 'cpu'
             if has_cmd('sycl-ls') or has_cmd('clinfo'):
+                devices['XPU']['found']
                 return 'xpu'
             msg = 'Intel GPU detected but oneAPI runtime missing → CPU'
             warn(msg)
@@ -252,10 +256,12 @@ def detect_gpu()->str:
             return 'cpu'
         # Direct Jetson detection mechanisms
         if os.path.exists('/etc/nv_tegra_release'):
+            devices['CUDA']['found'] = True
             return f'jetson-{jp_code}'
         if os.path.exists('/proc/device-tree/compatible'):
             out = try_cmd('cat /proc/device-tree/compatible')
             if 'tegra' in out:
+                devices['CUDA']['found'] = True
                 return f'jetson-{jp_code}'
         out = try_cmd('uname -a')
         if 'tegra' in out:
@@ -419,22 +425,11 @@ def check_and_install_requirements(file_path:str)->bool:
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
-           
- 
         import torch
         import numpy as np
         torch_version = torch.__version__
         numpy_version = Version(np.__version__)
         torch_version_parsed = parse_torch_version(torch_version)
-        if torch_version_parsed <= Version('2.2.2') and numpy_version >= Version('2.0.0'):
-            try:
-                msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
-                print(msg)
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
-            except subprocess.CalledProcessError as e:
-                error = f'Failed to downgrade to numpy < 2: {e}'
-                print(error)
-                return False
         if backend_specs['gpu'] not in ['cpu', 'unknown', 'unsupported']:
             current_tag_pattern = re.search(r'\+(.+)$', torch_version)
             current_tag = current_tag_pattern.group(1)
@@ -460,12 +455,15 @@ def check_and_install_requirements(file_path:str)->bool:
                     error = f'Failed to install {packages}: {e}'
                     print(error)
                     return False
-
-
-        devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available() and not (hasattr(torch.version, "hip") and torch.version.hip is not None)
-        devices['ROCM']['found'] = hasattr(torch.version, "hip") and torch.version.hip is not None and torch.cuda.is_available()
-        devices['MPS']['found']  = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
-        devices['XPU']['found']  = getattr(torch, "xpu", None) is not None and torch.xpu.is_available()
+        if torch_version_parsed <= Version('2.2.2') and numpy_version >= Version('2.0.0'):
+            try:
+                msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
+                print(msg)
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
+            except subprocess.CalledProcessError as e:
+                error = f'Failed to downgrade to numpy < 2: {e}'
+                print(error)
+                return False
         return True
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
