@@ -136,27 +136,27 @@ def detect_gpu()->str:
         if l4t_major == 35:
             # JetPack 5.0 / 5.0.1
             if rev_major == 0 and rev_minor <= 1:
-                msg = 'JetPack 5.0/5.0.1 detected. Please upgrade to JetPack 5.1+.'
+                msg = 'JetPack 5.0/5.0.1 detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
                 warn(msg)
-                return '50'
+                return 'cpu'
             # JetPack 5.0.2 / 5.0.x
             if rev_major == 0 and rev_minor >= 2:
-                msg = 'JetPack 5.0.x detected. Please upgrade to JetPack 5.1+.'
+                msg = 'JetPack 5.0.x detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
                 warn(msg)
-                return '502'
+                return 'cpu'
             # JetPack 5.1.0
             if rev_major == 1 and rev_minor == 0:
                 msg = 'JetPack 5.1.0 detected. Please upgrade to JetPack 5.1.2 or newer.'
                 warn(msg)
-                return '51'
+                return 'jetpack5' # 51
             # JetPack 5.1.1
             if rev_major == 1 and rev_minor == 1:
                 msg = 'JetPack 5.1.1 detected. Please upgrade to JetPack 5.1.2 or newer.'
                 warn(msg)
-                return '511'
+                return 'jetpack5' # 511
             # JetPack >= 5.1.2 AND < 6 → ALWAYS == 512
             if (rev_major > 1) or (rev_major == 1 and rev_minor >= 2):
-                return '512'
+                return 'jetpack5' # 512
             msg = 'Unrecognized JetPack 5.x version. Falling back to CPU.'
             warn(msg)
             return 'unknown'
@@ -178,30 +178,6 @@ def detect_gpu()->str:
     arch:str = platform.machine().lower()
 
     # ============================================================
-    # JETSON
-    # ============================================================
-    if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
-        # Always read Tegra release if device looks like Jetson
-        raw = tegra_version()
-        # Detect JetPack version code
-        jp_code = jetpack_version(raw)
-        # Unsupported JetPack (<5.1)
-        if jp_code in ['unsupported', 'unknown']:
-            return 'cpu'
-        # Direct Jetson detection mechanisms
-        if os.path.exists('/etc/nv_tegra_release'):
-            return f'jetson-{jp_code}'
-        if os.path.exists('/proc/device-tree/compatible'):
-            out = try_cmd('cat /proc/device-tree/compatible')
-            if 'tegra' in out:
-                return f'jetson-{jp_code}'
-        out = try_cmd('uname -a')
-        if 'tegra' in out:
-            msg = 'Unknown Jetson device. Failing back to cpu'
-            warn(msg)
-            return 'cpu'
-
-    # ============================================================
     # CUDA
     # ============================================================
     if has_cmd('nvidia-smi'):
@@ -218,11 +194,6 @@ def detect_gpu()->str:
         msg = 'No CUDA version found. Falling back to CPU.'
         warn(msg)
         return 'cpu'
-    # NVIDIA GPU present but no driver
-    if sys.platform.startswith('linux'):
-        out = try_cmd('lspci')
-        if 'nvidia' in out:
-            return 'cpu'
 
     # ============================================================
     # ROCm
@@ -239,10 +210,6 @@ def detect_gpu()->str:
         msg = 'No ROCm version found. Falling back to CPU.'
         warn(msg)
         return 'cpu'
-    if sys.platform.startswith('linux'):
-        out = try_cmd('lspci')
-        if 'amd' in out and 'vga' in out:
-            return 'cpu'
 
     # ============================================================
     # APPLE MPS
@@ -271,23 +238,41 @@ def detect_gpu()->str:
         out = try_cmd('clinfo')
         if 'intel' in out:
             return 'xpu'
-    out = try_cmd('lspci')
-    if 'intel' in out and 'vga' in out:
-        return 'cpu'
+
+    # ============================================================
+    # JETSON
+    # ============================================================
+    if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
+        # Always read Tegra release if device looks like Jetson
+        raw = tegra_version()
+        # Detect JetPack version code
+        jp_code = jetpack_version(raw)
+        # Unsupported JetPack (<5.1)
+        if jp_code in ['unsupported', 'unknown']:
+            return 'cpu'
+        # Direct Jetson detection mechanisms
+        if os.path.exists('/etc/nv_tegra_release'):
+            return f'jetson-{jp_code}'
+        if os.path.exists('/proc/device-tree/compatible'):
+            out = try_cmd('cat /proc/device-tree/compatible')
+            if 'tegra' in out:
+                return f'jetson-{jp_code}'
+        out = try_cmd('uname -a')
+        if 'tegra' in out:
+            msg = 'Unknown Jetson device. Failing back to cpu'
+            warn(msg)
+            return 'cpu'
 
     # ============================================================
     # CPU
     # ============================================================
     return 'cpu'
 
-def torch_version_is_leq(target:str)->str:
-    import torch
-    from packaging.version import Version, InvalidVersion
-    v = torch.__version__
+def torch_version_is_leq(current:str, target:str)->str:
     try:
-        parsed = Version(v)
+        parsed = Version(current)
     except InvalidVersion:
-        parsed = Version(v.split('+')[0])
+        parsed = Version(current.split('+')[0])
     return parsed <= Version(target)
 
 def check_and_install_requirements(file_path:str)->bool:
@@ -296,17 +281,17 @@ def check_and_install_requirements(file_path:str)->bool:
         print(error)
         return False
     try:
-        backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "gpu": detect_gpu()}
+        backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "ref": detect_gpu()}
         print(f'--------------- {backend_specs} -------------')
         try:
             from packaging.specifiers import SpecifierSet
-            from packaging.version import Version
+            from packaging.version import Version, InvalidVersion
             from tqdm import tqdm
             from packaging.markers import Marker
         except ImportError:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging', 'tqdm'])
             from packaging.specifiers import SpecifierSet
-            from packaging.version import Version
+            from packaging.version import Version, InvalidVersion
             from tqdm import tqdm
             from packaging.markers import Marker
         flexible_packages = {"torch", "torchaudio", "numpy"}
@@ -434,9 +419,26 @@ def check_and_install_requirements(file_path:str)->bool:
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
+           
+ 
+        import torch
         import numpy as np
+        torch_version = torch.__version__
         numpy_version = Version(np.__version__)
-        if torch_version_is_leq('2.2.2') and numpy_version >= Version('2.0.0'):
+
+        
+        if backend_specs['ref'] not in ['cpu', 'unknown', 'unsupported']:
+            pattern = re.search(r'\+(.+)$', torch_version)
+            tag = pattern.group(1)
+            match_tag = re.fullmatch(r'[0-9a-f]{7,40}', tag)
+            if match_tag is None or match_tag is not None and match_tag != torch_mapping['tag']:
+                if tag != backend_specs['ref']:
+                    torch_pkg = torch_mapping[backend_specs['ref']]
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
+            
+
+            
+        if torch_version_is_leq(torch_version, '2.2.2') and numpy_version >= Version('2.0.0'):
             try:
                 msg = 'torch version needs nump < 2. downgrading numpy to 1.26.4...'
                 print(msg)
@@ -445,8 +447,7 @@ def check_and_install_requirements(file_path:str)->bool:
                 error = f'Failed to downgrade to numpy < 2: {e}'
                 print(error)
                 return False
-        
-        import torch
+            
         devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available() and not (hasattr(torch.version, "hip") and torch.version.hip is not None)
         devices['ROCM']['found'] = hasattr(torch.version, "hip") and torch.version.hip is not None and torch.cuda.is_available()
         devices['MPS']['found']  = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
