@@ -443,7 +443,7 @@ def check_and_install_requirements(file_path:str)->bool:
                     backend_os = backend_specs['os']
                     backend_arch = backend_specs['arch']
                     backend_url = torch_mapping[backend_specs['gpu']]['url']
-                    if backend-specs['gpu'] == 'jetson-jetpack5'
+                    if backend-specs['gpu'] == 'jetson-jetpack5':
                         torch_pkg = f''
                     elif backend_specs['gpu'] in ['jetson-60', 'jetson-61']:
                         jetson_torch_version = default_jetson60_torch if backend_specs['gpu'] == 'jetson-60' else default_jetson61_torch
