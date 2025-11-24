@@ -359,7 +359,7 @@ For pre-built image enable `#image: docker.io/athomasson2/ebook2audiobook:latest
     docker-compose up -d # To rebuild add --build 
     # To stop -> docker-compose down
 
-    # Podman
+    # Podman 
     podman compose -f podman-compose.yml up -d # To rebuild add --build
     # To stop -> podman compose -f podman-compose.yml down
     ```
@@ -447,6 +447,7 @@ athomasson2/ebook2audiobook:VERSION_NUM # For Pre-build docker images -> Example
 
 ## Common Issues:
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+- [The application won't start on Windows with Podman](https://github.com/DrewThomasson/ebook2audiobook/discussions/1194)
 -  CPU is slow (better on server smp CPU) while NVIDIA GPU can have almost real time conversion.
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    For faster multilingual generation I would suggest my other
