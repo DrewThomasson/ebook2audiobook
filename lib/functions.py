@@ -878,7 +878,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                 if text:
                     text_list.append(text)
             prev_typ = typ
-        max_chars = int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] in [TTS_ENGINES['BARK'], TTS_ENGINES['TACOTRON2']] else language_mapping[lang]['max_chars'] - 4
+        max_chars = int(language_mapping[lang]['max_chars'] / 2)
         clean_list = []
         i = 0
         while i < len(text_list):
