@@ -25,7 +25,7 @@ import warnings
 import re
 
 from typing import Tuple
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import version, PackageNotFoundError, InvalidVersion
 from pathlib import Path
 
 from lib.lang import default_language_code
