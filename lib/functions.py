@@ -878,7 +878,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                 if text:
                     text_list.append(text)
             prev_typ = typ
-        max_chars = int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] in [TTS_ENGINES['BARK'], TTS_ENGINES['TACOTRON2']] else language_mapping[lang]['max_chars'] - 4
+        max_chars = int(language_mapping[lang]['max_chars'] / 2)
         clean_list = []
         i = 0
         while i < len(text_list):
@@ -1460,87 +1460,87 @@ def is_latin(s: str) -> bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
 def foreign2latin(text, base_lang):
-	def script_of(word):
-		for ch in word:
-			if ch.isalpha():
-				name = unicodedata.name(ch, "")
-				if "CYRILLIC" in name:
-					return "cyrillic"
-				if "LATIN" in name:
-					return "latin"
-				if "ARABIC" in name:
-					return "arabic"
-				if "HANGUL" in name:
-					return "hangul"
-				if "HIRAGANA" in name or "KATAKANA" in name:
-					return "japanese"
-				if "CJK" in name or "IDEOGRAPH" in name:
-					return "chinese"
-		return "unknown"
+    def script_of(word):
+        for ch in word:
+            if ch.isalpha():
+                name = unicodedata.name(ch, "")
+                if "CYRILLIC" in name:
+                    return "cyrillic"
+                if "LATIN" in name:
+                    return "latin"
+                if "ARABIC" in name:
+                    return "arabic"
+                if "HANGUL" in name:
+                    return "hangul"
+                if "HIRAGANA" in name or "KATAKANA" in name:
+                    return "japanese"
+                if "CJK" in name or "IDEOGRAPH" in name:
+                    return "chinese"
+        return "unknown"
 
-	def romanize(word):
-		scr = script_of(word)
-		if scr == "latin":
-			return word
-		if base_lang in ["ru", "rus"] and scr == "cyrillic":
-			return word
-		if base_lang in ["ar", "ara"] and scr == "arabic":
-			return word
-		if base_lang in ["ko", "kor"] and scr == "hangul":
-			return word
-		if base_lang in ["ja", "jpn"] and scr == "japanese":
-			return word
-		if base_lang in ["zh", "zho"] and scr == "chinese":
-			return word
-		try:
-			if scr == "chinese":
-				from pypinyin import pinyin, Style
-				return "".join(x[0] for x in pinyin(word, style=Style.NORMAL))
-			if scr == "japanese":
-				import pykakasi
-				k = pykakasi.kakasi()
-				k.setMode("H", "a")
-				k.setMode("K", "a")
-				k.setMode("J", "a")
-				k.setMode("r", "Hepburn")
-				return k.getConverter().do(word)
-			if scr == "hangul":
-				return unidecode(word)
-			if scr == "arabic":
-				return unidecode(phonemize(word, language="ar", backend="espeak"))
-			if scr == "cyrillic":
-				return unidecode(phonemize(word, language="ru", backend="espeak"))
-			return unidecode(word)
-		except:
-			return unidecode(word)
+    def romanize(word):
+        scr = script_of(word)
+        if scr == "latin":
+            return word
+        if base_lang in ["ru", "rus"] and scr == "cyrillic":
+            return word
+        if base_lang in ["ar", "ara"] and scr == "arabic":
+            return word
+        if base_lang in ["ko", "kor"] and scr == "hangul":
+            return word
+        if base_lang in ["ja", "jpn"] and scr == "japanese":
+            return word
+        if base_lang in ["zh", "zho"] and scr == "chinese":
+            return word
+        try:
+            if scr == "chinese":
+                from pypinyin import pinyin, Style
+                return "".join(x[0] for x in pinyin(word, style=Style.NORMAL))
+            if scr == "japanese":
+                import pykakasi
+                k = pykakasi.kakasi()
+                k.setMode("H", "a")
+                k.setMode("K", "a")
+                k.setMode("J", "a")
+                k.setMode("r", "Hepburn")
+                return k.getConverter().do(word)
+            if scr == "hangul":
+                return unidecode(word)
+            if scr == "arabic":
+                return unidecode(phonemize(word, language="ar", backend="espeak"))
+            if scr == "cyrillic":
+                return unidecode(phonemize(word, language="ru", backend="espeak"))
+            return unidecode(word)
+        except:
+            return unidecode(word)
 
-	tts_markers = set(TTS_SML.values())
-	protected = {}
-	for i, m in enumerate(tts_markers):
-		key = f"__TTS_MARKER_{i}__"
-		protected[key] = m
-		text = text.replace(m, key)
-	tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
-	buf = []
-	for t in tokens:
-		if t in protected:
-			buf.append(t)
-		elif re.match(r"^\w+$", t):
-			buf.append(romanize(t))
-		else:
-			buf.append(t)
-	out = ""
-	for i, t in enumerate(buf):
-		if i == 0:
-			out += t
-		else:
-			if re.match(r"^\w+$", buf[i-1]) and re.match(r"^\w+$", t):
-				out += " " + t
-			else:
-				out += t
-	for k, v in protected.items():
-		out = out.replace(k, v)
-	return out
+    tts_markers = set(TTS_SML.values())
+    protected = {}
+    for i, m in enumerate(tts_markers):
+        key = f"__TTS_MARKER_{i}__"
+        protected[key] = m
+        text = text.replace(m, key)
+    tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+    buf = []
+    for t in tokens:
+        if t in protected:
+            buf.append(t)
+        elif re.match(r"^\w+$", t):
+            buf.append(romanize(t))
+        else:
+            buf.append(t)
+    out = ""
+    for i, t in enumerate(buf):
+        if i == 0:
+            out += t
+        else:
+            if re.match(r"^\w+$", buf[i-1]) and re.match(r"^\w+$", t):
+                out += " " + t
+            else:
+                out += t
+    for k, v in protected.items():
+        out = out.replace(k, v)
+    return out
 
 def filter_sml(text:str)->str:
     for key, value in TTS_SML.items():
