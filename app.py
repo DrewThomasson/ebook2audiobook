@@ -282,10 +282,11 @@ def parse_torch_version(current:str)->str:
         parsed = Version(current.split('+')[0])
     return parsed
     
-def recheck_torch()->bool
+def recheck_torch()->bool:
     try:
         import torch
         import numpy as np
+        from packaging.version import Version, InvalidVersion
         torch_version = getattr(torch, '__version__', False)
         if torch_version:
             torch_version_parsed = parse_torch_version(torch_version)
@@ -333,6 +334,10 @@ def recheck_torch()->bool
         error = f'torch not yet installed...'
         print(error)
         return False
+    except InvalidVersion:
+        error = f'Torch or Numpy error Version.'
+        print(error)
+        return False      
     except Exception as e:
         error = f'check_torch_numpy() error: {e}'
         print(error)
@@ -478,7 +483,7 @@ def check_and_install_requirements(file_path:str)->bool:
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
-        if recheck_torch()
+        if recheck_torch():
             return True
         return False
     except Exception as e:
