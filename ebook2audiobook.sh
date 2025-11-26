@@ -70,6 +70,10 @@ if [[ "$OSTYPE" != "linux"* && "$OSTYPE" != "darwin"* ]]; then
 	exit 1;
 fi
 
+if [[ ! -f "$INSTALLED_LOG" ]]; then
+	touch "$INSTALLED_LOG"
+fi
+
 if [[ "$OSTYPE" = "darwin"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
 	CONFIG_FILE="$HOME/.zshrc"
@@ -103,7 +107,7 @@ compare_versions() {
 }
 
 # Check if the current script is run inside a docker container
-if [[ -n "$container" || -f /.dockerenv ]]; then
+if [[ -n "$container" || -f "/.dockerenv" ]]; then
 	SCRIPT_MODE="$FULL_DOCKER"
 else
 	if [[ -n "${arguments['script_mode']+exists}" ]]; then
@@ -195,7 +199,6 @@ else
 	}
 
 	function install_programs {
-		touch $INSTALLED_LOG
 		if [[ "$OSTYPE" = "darwin"* ]]; then
 			echo -e "\e[33mInstalling required programs...\e[0m"
 			if [ ! -d $TMPDIR ]; then
