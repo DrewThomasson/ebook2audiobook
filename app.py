@@ -312,29 +312,31 @@ def recheck_torch()->bool
                         else:
                             torch_pkg = f'{gpu_url}/{backend_tag}/torch/torch-{torch_version_parsed}+{gpu_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
-                        numpy_version = Version(np.__version__)
-                        if torch_version_parsed <= Version('2.2.2') and numpy_version >= Version('2.0.0'):
-                            try:
-                                msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
-                                print(msg)
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
-                            except subprocess.CalledProcessError as e:
-                                error = f'Failed to downgrade to numpy < 2: {e}'
-                                print(error)
-                                return False
-                        return True
                     except subprocess.CalledProcessError as e:
                         error = f'Failed to install {packages}: {e}'
                         print(error)
-                else:
-                    return True
+                        return False
+        numpy_version = Version(np.__version__)
+        if torch_version_parsed <= Version('2.2.2') and numpy_version >= Version('2.0.0'):
+            try:
+                msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
+                print(msg)
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
+                return True
+            except subprocess.CalledProcessError as e:
+                error = f'Failed to downgrade to numpy < 2: {e}'
+                print(error)
+                return False
+        else:
+            return True
     except ImportError:
         error = f'torch not yet installed...'
         print(error)
+        return False
     except Exception as e:
         error = f'check_torch_numpy() error: {e}'
         print(error)
-    return False
+        return False
 
 def check_and_install_requirements(file_path:str)->bool:
     if not os.path.exists(file_path):
