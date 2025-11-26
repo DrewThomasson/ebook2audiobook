@@ -380,7 +380,6 @@ def check_and_install_requirements(file_path:str)->bool:
             from packaging.version import Version, InvalidVersion
             from tqdm import tqdm
             from packaging.markers import Marker
-        flexible_packages = {"torch", "torchaudio", "numpy"}
         torch_version = False
         if recheck_torch():
             import torch
@@ -433,8 +432,6 @@ def check_and_install_requirements(file_path:str)->bool:
                 error = f'{pkg_name} is not installed.'
                 print(error)
                 missing_packages.append(package)
-                continue
-            if pkg_name in flexible_packages:
                 continue
             if '+' in installed_version:
                 continue
