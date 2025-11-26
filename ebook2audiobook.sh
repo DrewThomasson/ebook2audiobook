@@ -107,7 +107,7 @@ compare_versions() {
 }
 
 # Check if the current script is run inside a docker container
-if [[ -n "$container" || -f "/.dockerenv" ]]; then
+if [[ -n "$container" || -f "/.dockerenv" ]]; then 
 	SCRIPT_MODE="$FULL_DOCKER"
 else
 	if [[ -n "${arguments['script_mode']+exists}" ]]; then
