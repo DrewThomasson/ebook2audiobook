@@ -293,13 +293,10 @@ def detect_device()->str:
 	# ============================================================
 	return 'cpu'
 
-def parse_torch_version(current:str)->str:
-    from packaging.version import Version, InvalidVersion
-    try:
-        parsed = Version(current)
-    except InvalidVersion:
-        parsed = Version(current.split('+')[0])
-    return parsed
+def parse_torch_version(current:str)->Version:
+    from packaging.version import Version
+    base = current.split('+')[0]
+    return Version(base)
     
 def recheck_torch()->bool:
     try:
@@ -334,7 +331,7 @@ def recheck_torch()->bool:
                                 torch_pkg = f'{backend_url}/{backend_tag}/torch/torch-{torch_version_parsed}+{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
                             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
                         except subprocess.CalledProcessError as e:
-                            error = f'Failed to install {packages}: {e}'
+                            error = f'Failed to install torch package: {e}'
                             print(error)
                             return False
         numpy_version = Version(np.__version__)
