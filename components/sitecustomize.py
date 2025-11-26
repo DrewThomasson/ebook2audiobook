@@ -22,4 +22,5 @@ if not getattr(sys, "_sitecustomize_loaded", False):
             iu._patch_applied = True
             #print("[sitecustomize] transformers hook installed")
     except ModuleNotFoundError:
-        print("[sitecustomize] transformers not available; skipping patch")
+        #print("[sitecustomize] transformers not available; skipping patch")
+        pass
