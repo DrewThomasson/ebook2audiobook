@@ -28,7 +28,7 @@ dependencies = [
 	"fugashi",
 	"sudachipy",
 	"sudachidict_core",
-	"PyMuPDF",
+	"pymupdf-layout",
 	"pytesseract",
 	"unidic",
 	"hangul-romanize",

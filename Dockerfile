@@ -38,10 +38,8 @@ ARG SKIP_XTTS_TEST="false"
 WORKDIR /app
 COPY . /app
 
-# ❗ FIXED: pip install must be inside RUN, your version was invalid
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# ❗ FIXED: this RUN block now works exactly as your code intended
 RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
         echo "Running XTTS test to pre-download models..."; \
         if [ "$TORCH_VERSION" = "xpu" ]; then \
