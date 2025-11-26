@@ -297,8 +297,7 @@ def detect_device()->str:
 	return 'cpu'
 
 def parse_torch_version(current:str)->Version:
-    base = current.split('+')[0]
-    return Version(base)
+    return Version(current).base_version
     
 def recheck_torch()->bool:
     try:
@@ -336,7 +335,7 @@ def recheck_torch()->bool:
                             print(error)
                             return False
         numpy_version = Version(np.__version__)
-        if torch_version_parsed <= Version('2.2.2') and numpy_version >= Version('2.0.0'):
+        if Version(torch_version_parsed) <= Version('2.2.2') and numpy_version >= Version('2.0.0'):
             try:
                 msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
                 print(msg)
