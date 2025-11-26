@@ -5,11 +5,15 @@ import shutil
 from lib.conf import *
 
 ########## sitecustomize.py
-site_packages_path = sysconfig.get_paths()['purelib']
-src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
-dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
-if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
-    shutil.copy2(src_pyfile, dst_pyfile)
+try:
+    iu = importlib.import_module("transformers.utils.import_utils")
+    site_packages_path = sysconfig.get_paths()['purelib']
+    src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
+    dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
+    if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
+        shutil.copy2(src_pyfile, dst_pyfile)
+except Exception as e:
+    pass
 ##############
 
 import platform
@@ -96,8 +100,10 @@ def detect_gpu()->str:
             return ''
 
     def toolkit_version_parse(text:str)->str|None:
-        m = re.findall(r'\d+(?:\.\d+)+', text)
-        return m[0] if m else None
+        m = re.search(r'cuda version:\s*([0-9]+\.[0-9]+)', text)
+        if m:
+            return m.group(1)
+        return None
 
     def is_toolkit_version_exceeds(version_str:str|None, max_tuple:Tuple[int,int])->bool:
         if max_tuple == (0, 0) or version_str is None:
@@ -281,6 +287,67 @@ def parse_torch_version(current:str)->str:
     except InvalidVersion:
         parsed = Version(current.split('+')[0])
     return parsed
+    
+def recheck_torch()->bool:
+    try:
+        import torch
+        import numpy as np
+        from packaging.version import Version, InvalidVersion
+        torch_version = getattr(torch, '__version__', False)
+        if torch_version:
+            torch_version_parsed = parse_torch_version(torch_version)
+            backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "gpu": detect_gpu()}
+            print(f'--------------- {backend_specs} -------------')
+            if backend_specs['gpu'] not in ['cpu', 'unknown', 'unsupported']:
+                current_tag_pattern = re.search(r'\+(.+)$', torch_version)
+                current_tag = current_tag_pattern.group(1)
+                non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
+                if (
+                    non_standard_tag is None and current_tag != backend_specs['gpu'] or 
+                    non_standard_tag is not None and backend_specs['gpu'] in ['jetson-jetpack5', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_mapping[backend_specs['gpu']]['tag']
+                   ):
+                    try:
+                        backend_tag = torch_mapping[backend_specs['gpu']]['tag']
+                        backend_os = backend_specs['os']
+                        backend_arch = backend_specs['arch']
+                        backend_url = torch_mapping[backend_specs['gpu']]['url']
+                        if backend_specs['gpu'] == 'jetson-jetpack5':
+                            torch_pkg = f''
+                        elif backend_specs['gpu'] in ['jetson-60', 'jetson-61']:
+                            jetson_torch_version = default_jetson60_torch if backend_specs['gpu'] == 'jetson-60' else default_jetson61_torch
+                            torch_pkg = f'{backend_url}/v{backend_tag}/pytorch/torch-{jetson_torch_version}-{default_py_tag}-linux_{backend_arch}.whl'                    
+                        else:
+                            torch_pkg = f'{gpu_url}/{backend_tag}/torch/torch-{torch_version_parsed}+{gpu_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
+                    except subprocess.CalledProcessError as e:
+                        error = f'Failed to install {packages}: {e}'
+                        print(error)
+                        return False
+        numpy_version = Version(np.__version__)
+        if torch_version_parsed <= Version('2.2.2') and numpy_version >= Version('2.0.0'):
+            try:
+                msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
+                print(msg)
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
+                return True
+            except subprocess.CalledProcessError as e:
+                error = f'Failed to downgrade to numpy < 2: {e}'
+                print(error)
+                return False
+        else:
+            return True
+    except ImportError:
+        error = f'torch not yet installed...'
+        print(error)
+        return False
+    except InvalidVersion:
+        error = f'Torch or Numpy error Version.'
+        print(error)
+        return False      
+    except Exception as e:
+        error = f'check_torch_numpy() error: {e}'
+        print(error)
+        return False
 
 def check_and_install_requirements(file_path:str)->bool:
     if not os.path.exists(file_path):
@@ -288,8 +355,6 @@ def check_and_install_requirements(file_path:str)->bool:
         print(error)
         return False
     try:
-        backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "gpu": detect_gpu()}
-        print(f'--------------- {backend_specs} -------------')
         try:
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version, InvalidVersion
@@ -303,11 +368,9 @@ def check_and_install_requirements(file_path:str)->bool:
             from packaging.markers import Marker
         flexible_packages = {"torch", "torchaudio", "numpy"}
         torch_version = False
-        try:
+        if recheck_torch():
             import torch
-            torch_version = getattr(torch, '__version__', '')
-        except ImportError:
-            pass
+            torch_version = torch.__version__            
         cuda_only_packages = ('deepspeed')
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
@@ -426,48 +489,9 @@ def check_and_install_requirements(file_path:str)->bool:
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
-        import torch
-        import numpy as np
-        torch_version = torch.__version__
-        numpy_version = Version(np.__version__)
-        torch_version_parsed = parse_torch_version(torch_version)
-        if backend_specs['gpu'] not in ['cpu', 'unknown', 'unsupported']:
-            current_tag_pattern = re.search(r'\+(.+)$', torch_version)
-            current_tag = current_tag_pattern.group(1)
-            non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
-            if (
-               non_standard_tag is None and current_tag != backend_specs['gpu'] or 
-               non_standard_tag is not None and backend_specs['gpu'] in ['jetson-jetpack5', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_mapping[backend_specs['gpu']]['tag']
-               ):
-                try:
-                    backend_tag = torch_mapping[backend_specs['gpu']]['tag']
-                    backend_os = backend_specs['os']
-                    backend_arch = backend_specs['arch']
-                    backend_url = torch_mapping[backend_specs['gpu']]['url']
-                    if backend-specs['gpu'] == 'jetson-jetpack5':
-                        torch_pkg = f''
-                    elif backend_specs['gpu'] in ['jetson-60', 'jetson-61']:
-                        jetson_torch_version = default_jetson60_torch if backend_specs['gpu'] == 'jetson-60' else default_jetson61_torch
-                        torch_pkg = f'{backend_url}/v{backend_tag}/pytorch/torch-{jetson_torch_version}-{default_py_tag}-linux_{backend_arch}.whl'                    
-                    else:
-                        torch_pkg = f'{gpu_url}/{backend_tag}/torch/torch-{torch_version_parsed}+{gpu_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
-                    import torch
-                    torch_version = torch.__version__
-                except subprocess.CalledProcessError as e:
-                    error = f'Failed to install {packages}: {e}'
-                    print(error)
-                    return False
-        if torch_version_parsed <= Version('2.2.2') and numpy_version >= Version('2.0.0'):
-            try:
-                msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
-                print(msg)
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
-            except subprocess.CalledProcessError as e:
-                error = f'Failed to downgrade to numpy < 2: {e}'
-                print(error)
-                return False
-        return True
+        if recheck_torch():
+            return True
+        return False
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
         raise SystemExit(error)
