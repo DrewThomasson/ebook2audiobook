@@ -310,7 +310,7 @@ def recheck_torch()->bool:
         if torch_version:
             torch_version_parsed = parse_torch_version(torch_version)
             backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "gpu": detect_gpu()}
-            print(f'--------------- {backend_specs} -------------')
+            print(backend_specs)
             if backend_specs['gpu'] not in ['cpu', 'unknown', 'unsupported']:
                 current_tag_pattern = re.search(r'\+(.+)$', torch_version)
                 current_tag = current_tag_pattern.group(1)
