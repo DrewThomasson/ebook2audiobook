@@ -61,6 +61,10 @@ if "%ARCH%"=="x86" (
     goto :failed
 )
 
+if not exist "%INSTALLED_LOG%" (
+	type nul > "%INSTALLED_LOG%"
+)
+
 :: Check if running inside Docker
 if defined CONTAINER (
     set "SCRIPT_MODE=%FULL_DOCKER%"
@@ -319,6 +323,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
     call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
+			echo Creating ./python_env version %PYTHON_ENV%...
 			call "%CONDA_INSTALL_DIR%\Scripts\activate.bat"
 			call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
 			call conda activate base

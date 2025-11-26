@@ -34,59 +34,8 @@ ARG SKIP_XTTS_TEST="false"
 WORKDIR /app
 COPY . /app
 
-# Install requirements.txt or PyTorch variants based on TORCH_VERSION
-RUN if [ ! -z "$TORCH_VERSION" ]; then \
-        # Check if TORCH_VERSION contains "cuda" and extract version number
-        if echo "$TORCH_VERSION" | grep -q "cuda"; then \
-            CUDA_VERSION=$(echo "$TORCH_VERSION" | sed 's/cuda//g') && \
-            echo "Detected CUDA version: $CUDA_VERSION" && \
-            \
-            # Special handling for CUDA 11.8
-            if [ "$CUDA_VERSION" = "118" ]; then \
-                echo "Installing PyTorch for CUDA 11.8..." && \
-                pip install --no-cache-dir --upgrade -r requirements.txt && pip install pyannote-audio==3.4.0 && pip install --no-cache-dir --upgrade torch==2.7.1 torchvision==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu118; \
-            elif [ "$CUDA_VERSION" = "128" ]; then \
-                echo "Installing PyTorch for CUDA 12.8..." && \
-                pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu128; \
-            else \
-                echo "Attempting to install stable PyTorch for CUDA $CUDA_VERSION..." && \
-                if ! pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
-                    echo "Stable build for CUDA $CUDA_VERSION not available or failed" && \
-                    echo "Trying nightly release for CUDA $CUDA_VERSION..." && \
-                    if pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
-                        echo "Successfully installed nightly PyTorch for CUDA $CUDA_VERSION"; \
-                    else \
-                        echo "Both stable and nightly builds failed for CUDA $CUDA_VERSION"; \
-                        echo "This CUDA version may not be supported by PyTorch"; \
-                        exit 1; \
-                    fi; \
-                else \
-                    echo "Successfully installed stable PyTorch for CUDA $CUDA_VERSION"; \
-                fi; \
-            fi; \
-        else \
-            # Handle non-CUDA cases
-            case "$TORCH_VERSION" in \
-                "rocm") \
-                    pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.2 \
-                    ;; \
-                "xpu") \
-                    pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio && \
-                    pip install --no-cache-dir intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/ \
-                    ;; \
-                "cpu") \
-                    pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
-                    ;; \
-                *) \
-                    echo "Installing custom PyTorch specification: $TORCH_VERSION" && \
-                    pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade $TORCH_VERSION \
-                    ;; \
-            esac; \
-        fi; \
-    else \
-        echo "No TORCH_VERSION specified, using packages from requirements.txt" && \
-        pip install --no-cache-dir --upgrade -r requirements.txt; \
-    fi
+# Install requirements.txt
+pip install --no-cache-dir --upgrade -r requirements.txt; \
 
 # Do a test run to pre-download and bake base models into the image, but only if SKIP_XTTS_TEST is not true
 RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
