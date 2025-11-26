@@ -441,6 +441,7 @@ else
 					2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
 				esac
 			fi
+			echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
 			# Use this condition to chmod writable folders once
 			chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
 			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y
