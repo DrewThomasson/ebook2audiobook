@@ -314,7 +314,7 @@ def recheck_torch()->bool:
             if backend_specs['gpu'] not in ['cpu', 'unknown', 'unsupported']:
                 m = re.search(r'\+(.+)$', torch_version)
                 current_tag = m.group(1) if m else None
-                if current_tage is not None:
+                if current_tag is not None:
                     non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
                     if (
                         non_standard_tag is None and current_tag != backend_specs['gpu'] or 
