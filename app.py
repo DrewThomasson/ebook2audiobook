@@ -96,8 +96,10 @@ def detect_gpu()->str:
             return ''
 
     def toolkit_version_parse(text:str)->str|None:
-        m = re.findall(r'\d+(?:\.\d+)+', text)
-        return m[0] if m else None
+        m = re.search(r'cuda version:\s*([0-9]+\.[0-9]+)', text)
+        if m:
+            return m.group(1)
+        return None
 
     def is_toolkit_version_exceeds(version_str:str|None, max_tuple:Tuple[int,int])->bool:
         if max_tuple == (0, 0) or version_str is None:
