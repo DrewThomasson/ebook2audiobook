@@ -88,7 +88,7 @@ default_py_tag = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{d
 
 default_pytorch_url = 'https://download.pytorch.org/whl/'
 default_jetson_url = 'https://developer.download.nvidia.com/compute/redist/jp/'
-default_compiled_url = 'https://xxxxxxxxxx/compiled/xxxxxx.whl'
+default_compiled_url = 'https://xxxxxxxxxx/compiled/xxxxxx.whl' # TODO: find a place where to upload the jetpack5 torch
 
 default_jetson5_torch = ''
 default_jetson60_torch = '2.4.0a0+3bcc3cddb5.nv24.07.16234504'
