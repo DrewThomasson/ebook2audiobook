@@ -351,11 +351,11 @@ def recheck_torch()->bool:
         else:
             return True
     except ImportError:
-        error = f'torch not yet installed...'
+        error = f'recheck_torch(): torch not yet installed...'
         print(error)
         return False
     except InvalidVersion:
-        error = f'Torch or Numpy error Version.'
+        error = f'recheck_torch(): Torch or Numpy error Version.'
         print(error)
         return False      
     except Exception as e:
