@@ -9,10 +9,6 @@ import sys
 min_python_version = (3,10)
 max_python_version = (3,12)
 
-max_cuda_version = (12,8)
-max_rocm_version = (0,0)
-max_xpu_version = (0,0)
-
 tmp_dir = os.path.abspath('tmp')
 tempfile.tempdir = tmp_dir
 tmp_expire = 7 # days
@@ -145,10 +141,16 @@ torch_mapping = {
     "xpu": {"tag": "xpu", "url": default_pytorch_url},
     
     # JETSON
-    "jetson-jetpack5": {"tag": "xxxxxxxxxxxx", "url": default_compiled_url},
-    "jetson-60":       {"tag": "v60", "url": default_jetson_url},
-    "jetson-61":       {"tag": "v61", "url": default_jetson_url}
+    "jetson-51": {"tag": "51", "url": default_compiled_url},
+    "jetson-60":       {"tag": "60", "url": default_jetson_url},
+    "jetson-61":       {"tag": "61", "url": default_jetson_url}
 }
+
+cuda_version_range = {"min": (11,3), "max": (12,8)}
+rocm_version_range = {"min": (3,10), "max": (6,4)}
+mps_version_range = {"min": (0,0), "max": (0,0)}
+xpu_version_range = {"min": (0,0), "max": (0,0)}
+jetson_version_range = {"min": (5,1), "max": (6,1)}
 
 # ---------------------------------------------------------------------
 # Python environment references
