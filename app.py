@@ -30,6 +30,9 @@ import re
 
 from typing import Tuple
 from importlib.metadata import version, PackageNotFoundError
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version, InvalidVersion
+from packaging.markers import Marker
 from pathlib import Path
 
 from lib.lang import default_language_code
@@ -294,7 +297,6 @@ def detect_device()->str:
 	return 'cpu'
 
 def parse_torch_version(current:str)->Version:
-    from packaging.version import Version
     base = current.split('+')[0]
     return Version(base)
     
@@ -302,7 +304,6 @@ def recheck_torch()->bool:
     try:
         import torch
         import numpy as np
-        from packaging.version import Version, InvalidVersion
         torch_version = getattr(torch, '__version__', False)
         if torch_version:
             torch_version_parsed = parse_torch_version(torch_version)
@@ -367,16 +368,10 @@ def check_and_install_requirements(file_path:str)->bool:
         return False
     try:
         try:
-            from packaging.specifiers import SpecifierSet
-            from packaging.version import Version, InvalidVersion
             from tqdm import tqdm
-            from packaging.markers import Marker
         except ImportError:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging', 'tqdm'])
-            from packaging.specifiers import SpecifierSet
-            from packaging.version import Version, InvalidVersion
             from tqdm import tqdm
-            from packaging.markers import Marker
         torch_version = ''
         if recheck_torch():
             import torch
