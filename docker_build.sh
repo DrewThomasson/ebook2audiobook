@@ -2,6 +2,14 @@
 set -euo pipefail
 
 ###############################################################################
+# Ensure required Python module exists (needed for detect_device)
+###############################################################################
+if ! python3 -c "import packaging" 2>/dev/null; then
+    echo "Installing missing Python module: packaging"
+    pip3 install --user packaging
+fi
+
+###############################################################################
 # CONFIG — exact URLs from your Python script
 ###############################################################################
 
