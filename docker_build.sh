@@ -18,10 +18,15 @@ DEFAULT_JETSON61_TORCH="2.5.0a0+872d972e41.nv24.08.17622132"
 ###############################################################################
 # Extract torch==VERSION from requirements.txt 
 ###############################################################################
-TORCH_VERSION=$(grep -i "^torch==" requirements.txt | head -n1 | cut -d'=' -f3)
+TORCH_VERSION=$(grep -i "^torch" requirements.txt \
+    | head -n1 \
+    | sed 's/[<>=!]*//g' \
+    | sed 's/torch//I' \
+    | sed 's/[[:space:]]*//g' \
+    | sed 's/+.*//')
 
 if [[ -z "$TORCH_VERSION" ]]; then
-    echo "ERROR: torch==X.Y.Z not found in requirements.txt"
+    echo "Could not extract torch version from requirements.txt"
     exit 1
 fi
 
