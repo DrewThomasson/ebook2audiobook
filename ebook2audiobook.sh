@@ -615,8 +615,6 @@ else
 			install_python_packages || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
-		local current_pyvenv
-
 		# Check if running in a Conda or Python virtual environment
 		if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
 			current_pyvenv="$CONDA_PREFIX"
