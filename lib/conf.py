@@ -86,44 +86,24 @@ default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
 default_py_tag = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
 
-default_pytorch_url = 'https://download.pytorch.org/whl/'
-default_jetson_url = 'https://developer.download.nvidia.com/compute/redist/jp/'
-default_compiled_url = 'https://xxxxxxxxxx/compiled/xxxxxx.whl' # TODO: find a place where to upload the jetpack5 torch
+default_pytorch_url = 'https://download.pytorch.org/whl'
+default_jetson_url = 'https://developer.download.nvidia.com/compute/redist/jp'
+default_compiled_url = 'https://xxxxxxxxxx/jetson/whl' # TODO: find a place where to upload the jetpack5 torch
 
-default_jetson5_torch = ''
+default_jetson5_torch = '2.1.0'
 default_jetson60_torch = '2.4.0a0+3bcc3cddb5.nv24.07.16234504'
 default_jetson61_torch = '2.5.0a0+872d972e41.nv24.08.17622132'
 
-torch_mapping = {
+torch_matrix = {
 
     # CUDA
-    "cu113": {"tag": "cu113", "url": default_pytorch_url},
-    "cu114": {"tag": "cu114", "url": default_pytorch_url},
-    "cu115": {"tag": "cu115", "url": default_pytorch_url},
-    "cu116": {"tag": "cu116", "url": default_pytorch_url},
-    "cu117": {"tag": "cu117", "url": default_pytorch_url},
     "cu118": {"tag": "cu118", "url": default_pytorch_url},
     "cu121": {"tag": "cu121", "url": default_pytorch_url},
     "cu124": {"tag": "cu124", "url": default_pytorch_url},
     "cu126": {"tag": "cu126", "url": default_pytorch_url},
     "cu128": {"tag": "cu128", "url": default_pytorch_url},
-    "cu129": {"tag": "cu129", "url": default_pytorch_url},
-    "cu130": {"tag": "cu130", "url": default_pytorch_url},
     
     # ROCm
-    "rocm3.10":  {"tag": "rocm3.10", "url": default_pytorch_url},
-    "rocm3.7":   {"tag": "rocm3.7", "url": default_pytorch_url},
-    "rocm3.8":   {"tag": "rocm3.8", "url": default_pytorch_url},
-    "rocm4.0.1": {"tag": "rocm4.0.1", "url": default_pytorch_url},
-    "rocm4.1":   {"tag": "rocm4.1", "url": default_pytorch_url},
-    "rocm4.2":   {"tag": "rocm4.2", "url": default_pytorch_url},
-    "rocm4.3.1": {"tag": "rocm4.3.1", "url": default_pytorch_url},
-    "rocm4.5.2": {"tag": "rocm4.5.2", "url": default_pytorch_url},
-    "rocm5.0":   {"tag": "rocm5.0", "url": default_pytorch_url},
-    "rocm5.1.1": {"tag": "rocm5.1.1", "url": default_pytorch_url},
-    "rocm5.2":   {"tag": "rocm5.2", "url": default_pytorch_url},
-    "rocm5.3":   {"tag": "rocm5.3", "url": default_pytorch_url},
-    "rocm5.4.2": {"tag": "rocm5.4.2", "url": default_pytorch_url},
     "rocm5.5":   {"tag": "rocm5.5", "url": default_pytorch_url},
     "rocm5.6":   {"tag": "rocm5.6", "url": default_pytorch_url},
     "rocm5.7":   {"tag": "rocm5.7", "url": default_pytorch_url},
@@ -146,8 +126,8 @@ torch_mapping = {
     "jetson-61":       {"tag": "61", "url": default_jetson_url}
 }
 
-cuda_version_range = {"min": (11,3), "max": (12,8)}
-rocm_version_range = {"min": (3,10), "max": (6,4)}
+cuda_version_range = {"min": (11,8), "max": (12,8)}
+rocm_version_range = {"min": (5,5), "max": (6,4)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
 jetson_version_range = {"min": (5,1), "max": (6,1)}

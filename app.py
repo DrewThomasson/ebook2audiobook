@@ -75,7 +75,7 @@ def detect_platform_tag()->str:
     if sys.platform == 'darwin':
         return 'macosx'
     if sys.platform.startswith('linux'):
-        return 'manylinux'
+        return 'manylinux_2_28'
     return 'unknown'
 
 def detect_arch_tag()->str:
@@ -103,7 +103,7 @@ def detect_device()->str:
 			return ''
 
 	def toolkit_version_parse(text:str)->str|None:
-		m = re.search(r'cuda version:\s*([0-9]+\.[0-9]+)', text)
+        m = re.search(r'cuda\s*version\s*:\s*([0-9]+\.[0-9]+)', text, re.IGNORECASE)
 		if m:
 			return m.group(1)
 		return None
@@ -299,7 +299,7 @@ def detect_device()->str:
 def parse_torch_version(current:str)->Version:
     return Version(current).base_version
     
-def recheck_torch()->bool:
+def check_torch()->bool:
     try:
         import torch
         import numpy as np
@@ -315,20 +315,22 @@ def recheck_torch()->bool:
                     non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
                     if (
                         non_standard_tag is None and current_tag != backend_specs['device'] or 
-                        non_standard_tag is not None and backend_specs['device'] in ['jetson-51', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_mapping[backend_specs['device']]['tag']
+                        non_standard_tag is not None and backend_specs['device'] in ['jetson-51', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_matrix[backend_specs['device']]['tag']
                        ):
                         try:
-                            backend_tag = torch_mapping[backend_specs['device']]['tag']
                             backend_os = backend_specs['os']
                             backend_arch = backend_specs['arch']
-                            backend_url = torch_mapping[backend_specs['device']]['url']
+                            backend_tag = torch_matrix[backend_specs['device']]['tag']
+                            backend_url = torch_matrix[backend_specs['device']]['url']
                             if backend_specs['device'] == 'jetson-51':
-                                torch_pkg = f''
+                                torch_pkg = f'' # TODO: custom E2A URL
+                                torchaudio_pkg = f'' # TODO: custom E2A URL
                             elif backend_specs['device'] in ['jetson-60', 'jetson-61']:
                                 jetson_torch_version = default_jetson60_torch if backend_specs['device'] == 'jetson-60' else default_jetson61_torch
-                                torch_pkg = f'{backend_url}/v{backend_tag}/pytorch/torch-{jetson_torch_version}-{default_py_tag}-linux_{backend_arch}.whl'                    
+                                torch_pkg = f'{backend_url}/v{backend_tag}/pytorch/torch-{jetson_torch_version}-{default_py_tag}-linux_{backend_arch}.whl'   
+                                
                             else:
-                                torch_pkg = f'{backend_url}/{backend_tag}/torch/torch-{torch_version_parsed}+{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                                torch_pkg = f'{backend_url}/torch/torch-{torch_version_parsed}+{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
                             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
@@ -348,15 +350,15 @@ def recheck_torch()->bool:
         else:
             return True
     except ImportError:
-        error = f'recheck_torch(): torch not yet installed...'
+        error = f'check_torch(): torch not yet installed...'
         print(error)
         return False
     except InvalidVersion:
-        error = f'recheck_torch(): Torch or Numpy error Version.'
+        error = f'check_torch(): Torch or Numpy error Version.'
         print(error)
         return False      
     except Exception as e:
-        error = f'recheck_torch() error: {e}'
+        error = f'check_torch() error: {e}'
         print(error)
         return False
 
@@ -372,7 +374,7 @@ def check_and_install_requirements(file_path:str)->bool:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging', 'tqdm'])
             from tqdm import tqdm
         torch_version = ''
-        if recheck_torch():
+        if check_torch():
             import torch
             torch_version = torch.__version__            
         cuda_only_packages = ('deepspeed')
@@ -491,7 +493,7 @@ def check_and_install_requirements(file_path:str)->bool:
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
-        return recheck_torch()
+        return check_torch()
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
         raise SystemExit(error)
