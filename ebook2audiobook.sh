@@ -594,7 +594,7 @@ function build_docker_image {
 	if docker compose version >/dev/null 2>&1; then
 		docker compose --progress plain build --no-cache || return 1
 	else
-		docker build --no-cache -t ebook2audiobook . || return 1
+		docker build --progress plain --no-cache -t ebook2audiobook . || return 1
 	fi
 }
 
