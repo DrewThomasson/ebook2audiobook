@@ -74,6 +74,11 @@ if [[ ! -f "$INSTALLED_LOG" ]]; then
 	touch "$INSTALLED_LOG"
 fi
 
+if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" == ($NATIVE|$FULL_DOCKER) ]]; then
+	SCRIPT_MODE="${arguments['script_mode']}"
+fi
+
+
 if [[ "$OSTYPE" = "darwin"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
 	CONFIG_FILE="$HOME/.zshrc"
@@ -106,44 +111,35 @@ compare_versions() {
 	return 0
 }
 
-# Check if the current script is run inside a docker container
-if [[ -n "$container" || -f "/.dockerenv" ]]; then
-	SCRIPT_MODE="$FULL_DOCKER"
-else
-	if [[ -n "${arguments['script_mode']+exists}" ]]; then
-		if [ "${arguments['script_mode']}" = "$NATIVE" ]; then
-			SCRIPT_MODE="${arguments['script_mode']}"
-		fi
-	fi
-fi
-
 if [[ -n "${arguments['help']+exists}" && ${arguments['help']} = true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
-	# Check if running in a Conda or Python virtual environment
-	if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
-		CURRENT_ENV="$CONDA_PREFIX"
-	elif [[ -n "$VIRTUAL_ENV" ]]; then
-		CURRENT_ENV="$VIRTUAL_ENV"
-	fi
+	if [ "$SCRIPT_MODE" = "$NAVITE" ]; then
+		# Check if running in a Conda or Python virtual environment
+		if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
+			CURRENT_ENV="$CONDA_PREFIX"
+		elif [[ -n "$VIRTUAL_ENV" ]]; then
+			CURRENT_ENV="$VIRTUAL_ENV"
+		fi
 
-	# If neither environment variable is set, check Python path
-	if [[ -z "$CURRENT_ENV" ]]; then
-		PYTHON_PATH=$(which python 2>/dev/null)
-		if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" = "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" = "$VIRTUAL_ENV/bin/python" ) ]]; then
-			CURRENT_ENV="${CONDA_PREFIX:-$VIRTUAL_ENV}"
+		# If neither environment variable is set, check Python path
+		if [[ -z "$CURRENT_ENV" ]]; then
+			PYTHON_PATH=$(which python 2>/dev/null)
+			if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" = "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" = "$VIRTUAL_ENV/bin/python" ) ]]; then
+				CURRENT_ENV="${CONDA_PREFIX:-$VIRTUAL_ENV}"
+			fi
+		fi
+
+		# Output result if a virtual environment is detected
+		if [[ -n "$CURRENT_ENV" ]]; then
+			echo -e "Current python virtual environment detected: $CURRENT_ENV."
+			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
+			echo -e "If you are using conda then you would type in:"
+			echo -e "conda deactivate"
+			exit 1
 		fi
 	fi
 
-	# Output result if a virtual environment is detected
-	if [[ -n "$CURRENT_ENV" ]]; then
-		echo -e "Current python virtual environment detected: $CURRENT_ENV."
-		echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
-		echo -e "If you are using conda then you would type in:"
-		echo -e "conda deactivate"
-		exit 1
-	fi
-	
 	# Check if .cache folder exists inside the eb2ab folder for Miniforge3
 	if [[ ! -d .cache ]]; then
 		mkdir .cache
@@ -400,7 +396,7 @@ else
 			elif [[ -r /proc/device-tree/model ]]; then
 				# Detect Jetson and select correct Python version
 				MODEL=$(tr -d '\0' </proc/device-tree/model | tr 'A-Z' 'a-z')
-				if [[ "$MODEL" == *jetson* ]]; then
+				if [[ "$MODEL" = *jetson* ]]; then
 					# Detect JetPack (L4T version)
 					JP=$(dpkg-query --showformat='${Version}' --show nvidia-l4t-release 2>/dev/null | cut -d. -f1-2)
 					L4T=$(awk -F' ' '/# R/ {print $2}' /etc/nv_tegra_release)
@@ -656,8 +652,6 @@ EOF
 
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
-		conda deactivate 2>&1 > /dev/null
-		conda deactivate 2>&1 > /dev/null
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
 		pass=true	   
 		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
@@ -681,6 +675,4 @@ EOF
 	fi
 fi
 
-exit 0
-exit 0
 exit 0
