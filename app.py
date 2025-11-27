@@ -2,6 +2,7 @@ import os
 import sysconfig
 import shutil
 
+from __future__ import annotations
 from lib.conf import *
 
 ########## sitecustomize.py
