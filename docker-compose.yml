@@ -13,9 +13,6 @@ services:
     #image: docker.io/athomasson2/ebook2audiobook:latest  # <-- Use prebuilt image instead of building
     build:
       context: .
-      args:
-        #TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] # All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
-        SKIP_XTTS_TEST: "true" # (Saves space by not baking xtts model into docker image)
     # To update ebook2audiobook to the latest you may have to rebuild  
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here

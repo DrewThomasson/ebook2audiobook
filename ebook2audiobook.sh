@@ -657,17 +657,12 @@ EOF
 		return 0
 	}
 
-	pass=true
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
-			if ! install_programs; then
-				pass=false
-			fi
-		fi
-		if [ "$pass" = true ]; then
-			python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+			install_programs
 		fi
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then  
+		pass=true
 		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
 			if ! install_programs; then
 				pass=false
