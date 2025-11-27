@@ -12,7 +12,7 @@ ARG SKIP_XTTS_TEST="false"
 WORKDIR /app
 COPY . /app
 
-RUN ./ebook2audiobook.sh
+RUN ./ebook2audiobook.sh --script_mode FULL_DOCKER
 
 RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
         echo "Running XTTS test to pre-download models..."; \
