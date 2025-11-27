@@ -37,6 +37,11 @@ SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
+CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
+BREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+MINIFORGE_MACOSX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
+MINIFORGE_LINUX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+RUST_INSTALLER_URL="https://sh.rustup.rs"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 INSTALL_PKG="none"
@@ -134,7 +139,7 @@ function install_programs {
 		PACK_MGR="brew install"
 			if ! command -v brew &> /dev/null; then
 				echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
-				/usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+				/usr/bin/env bash -c "$(curl -fsSL $BREW_INSTALLER_URL)"
 				echo >> $HOME/.zprofile
 				echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
 				eval "$(/usr/local/bin/brew shellenv)"
@@ -190,7 +195,11 @@ function install_programs {
 			if [[ "$OSTYPE" == "darwin"* ]]; then
 				eval "$PACK_MGR --cask calibre"
 			else
-				$SUDO -v && $WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | $SUDO sh /dev/stdin
+				if [[ "$SUDO" == "sudo" ]]; then
+					$SUDO -v && $WGET -nv -O- $CALIBRE_INSTALLER_URL | $SUDO sh /dev/stdin
+				else
+					$WGET -nv -O- $CALIBRE_INSTALLER_URL | sh /dev/stdin
+				fi
 			fi
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
@@ -203,7 +212,7 @@ function install_programs {
 				fi
 			fi	
 		elif [[ "$program" == "rust" || "$program" == "rustc" ]]; then
-			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+			curl --proto '=https' --tlsv1.2 -sSf $RUST_INSTALLER_URL | sh -s -- -y
 			source $HOME/.cargo/env
 			if command -v $program &>/dev/null; then
 				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
@@ -311,12 +320,12 @@ function conda_check {
 		echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
 
 		if [[ "$OSTYPE" == darwin* ]]; then
-			installer_url="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
+			installer_url="MINIFORGE_MACOSX_INSTALLER_URL"
 			config_path="$HOME/.zshrc"
 			curl -fsSLo "$installer_path" "$installer_url"
 			shell_name="zsh"
 		else
-			installer_url="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+			installer_url="MINIFORGE_LINUX_INSTALLER_URL"
 			config_path="$HOME/.bashrc"
 			wget -O "$installer_path" "$installer_url"
 			shell_name="bash"
