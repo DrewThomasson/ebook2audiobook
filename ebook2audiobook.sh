@@ -42,8 +42,6 @@ UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 INSTALL_PKG="none"
 WGET=$(which wget 2>/dev/null)
 
-[[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$FULL_DOCKER" ]] && SUDO="sudo" || SUDO=""
-
 declare -A arguments # associative array
 declare -a programs_missing # indexed array
 
@@ -76,6 +74,8 @@ fi
 if [[ -n "${arguments['install_pkg']+exists}" ]]; then
 	INSTALL_PKG="${arguments['install_pkg']}"
 fi
+
+[[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$FULL_DOCKER" ]] && SUDO="sudo" || SUDO=""
 
 ############### FUNCTIONS ##############
 
