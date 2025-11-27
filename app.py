@@ -174,7 +174,7 @@ def detect_device()->str:
         if l4t_major == 36:
             if rev_major == 2:
                 return '60'
-            if rev_major == 3:
+            else:
                 return '61'
             msg = 'Unrecognized JetPack 6.x version. Falling back to CPU.'
             warn(msg)

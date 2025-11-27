@@ -1,36 +1,10 @@
-# -----------------------------
-# BASE STAGE
-# -----------------------------
 ARG BASE=python:3.12
 ARG BASE_IMAGE=base
 
 FROM ${BASE} AS base
-
-ENV PATH="/root/.local/bin:$PATH"
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \
-    apt-get install -y gcc g++ make wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 libsndfile1-dev libc-dev curl espeak-ng sox && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
 WORKDIR /app
-
-RUN pip install --no-cache-dir unidic-lite unidic && \
-    python3 -m unidic download && \
-    mkdir -p /root/.local/share/unidic
-ENV UNIDIC_DIR=/root/.local/share/unidic
-
-
-# -----------------------------
-# PYTORCH STAGE
-# -----------------------------
-FROM $BASE_IMAGE AS pytorch
 
 ARG TORCH_VERSION=""
 ARG SKIP_XTTS_TEST="false"
@@ -38,7 +12,7 @@ ARG SKIP_XTTS_TEST="false"
 WORKDIR /app
 COPY . /app
 
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+RUN ./ebook2audiobook.sh
 
 RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
         echo "Running XTTS test to pre-download models..."; \
