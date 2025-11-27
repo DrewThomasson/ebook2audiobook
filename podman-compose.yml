@@ -28,6 +28,7 @@ services:
       - ./:/app  # Maps the local directory to the container.
 
 # Common Issues: ----
+# The application won't start on Windows with Podman --> https://github.com/DrewThomasson/ebook2audiobook/discussions/1194
 # --> `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory`
 # Removed all post arguments as CMD was replaced with ENTRYPOINT in the Dockerfile  
 # Example correction:  
