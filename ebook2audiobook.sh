@@ -31,6 +31,18 @@ ARGS=("$@")
 declare -A arguments # associative array
 declare -a programs_missing # indexed array
 
+NATIVE="native"
+FULL_DOCKER="full_docker"
+SCRIPT_MODE="$NATIVE"
+APP_NAME="ebook2audiobook"
+APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
+WGET=$(which wget 2>/dev/null)
+REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
+PYTHON_ENV="python_env"
+CURRENT_ENV=""
+INSTALLED_LOG="$SCRIPT_DIR/.installed"
+UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
+
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
 	case "$1" in
@@ -53,18 +65,6 @@ while [[ "$#" -gt 0 ]]; do
 	shift # Move to the next argument
 done
 
-NATIVE="native"
-FULL_DOCKER="full_docker"
-SCRIPT_MODE="$NATIVE"
-APP_NAME="ebook2audiobook"
-APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
-WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
-PYTHON_ENV="python_env"
-CURRENT_ENV=""
-INSTALLED_LOG="$SCRIPT_DIR/.installed"
-UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
-
 if [[ "$OSTYPE" != "linux"* && "$OSTYPE" != "darwin"* ]]; then
 	echo "Error: OS $OSTYPE unsupported."
 	exit 1;
@@ -77,6 +77,15 @@ fi
 if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" =~ ^(${NATIVE}|${FULL_DOCKER})$ ]]; then
     SCRIPT_MODE="${arguments['script_mode']}"
 fi
+
+if [[ "$SCRIPT_MODE" = "$FULL_DOCKER" ]]; then
+	SUDO=""
+else
+	SUDO="sudo"
+fi
+
+export SUDO
+export NO_DESKTOP_APP
 
 if [[ "$OSTYPE" = "darwin"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
@@ -212,7 +221,6 @@ else
 					fi
 				fi
 		else
-			SUDO="sudo"
 			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
 			PACK_MGR_OPTIONS=""
 			if command -v emerge &> /dev/null; then
@@ -541,7 +549,7 @@ else
 		local DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
 		local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
 		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
-		local OPEN_GUI_DEF=$(declare -f open_gui)
+		local OPEN_DESKTOP_APP_DEF=$(declare -f open_gui)
 		local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
 		if [[ -d "$APP_BUNDLE" ]]; then
 			open_gui
@@ -554,7 +562,7 @@ else
 		cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
-$OPEN_GUI_DEF
+$OPEN_DESKTOP_APP_DEF
 
 open_gui
 
@@ -637,7 +645,7 @@ EOF
 		open_gui
 	}
 
-	function build_gui {
+	function builld_desktop_app {
 		if [[ " ${ARGS[*]} " = *" --headless "* || has_no_display -eq 1 ]]; then
 			return 0
 		fi
@@ -670,7 +678,7 @@ EOF
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
-				build_gui
+				builld_desktop_app
 				python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate 2>&1 > /dev/null
 				conda deactivate 2>&1 > /dev/null
