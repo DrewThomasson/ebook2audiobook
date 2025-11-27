@@ -31,10 +31,10 @@ set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
 set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
-set "CONDA_INSTALL_DIR=%USERPROFILE%\Miniforge3"
+set "CONDA_HOME=%USERPROFILE%\Miniforge3"
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
-set "CONDA_ENV=%CONDA_INSTALL_DIR%\condabin\conda.bat"
-set "CONDA_PATH=%CONDA_INSTALL_DIR%\condabin"
+set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
+set "CONDA_PATH=%CONDA_HOME%\condabin"
 set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%" 2>&1 >nul
@@ -324,7 +324,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 ) else (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
 			echo Creating ./python_env version %PYTHON_ENV%...
-			call "%CONDA_INSTALL_DIR%\Scripts\activate.bat"
+			call "%CONDA_HOME%\Scripts\activate.bat"
 			call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
 			call conda activate base
 			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
@@ -339,7 +339,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 
 			echo All required packages are installed.
 	) else (
-			call "%CONDA_INSTALL_DIR%\Scripts\activate.bat"
+			call "%CONDA_HOME%\Scripts\activate.bat"
 			call conda activate base
 			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 	)

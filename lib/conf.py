@@ -90,7 +90,7 @@ default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://developer.download.nvidia.com/compute/redist/jp'
 default_compiled_url = 'https://xxxxxxxxxx/jetson/whl' # TODO: find a place where to upload the jetpack5 torch
 
-default_jetson5_torch = '2.1.0'
+default_jetson5_torch = '2.2.0'
 default_jetson60_torch = '2.4.0a0+3bcc3cddb5.nv24.07.16234504'
 default_jetson61_torch = '2.5.0a0+872d972e41.nv24.08.17622132'
 

@@ -1,9 +1,5 @@
 version: "3.9"
 
-# -------------------------------------------------------------------
-# GPU profiles (enabled/disabled)
-# These match your original layout
-# -------------------------------------------------------------------
 x-gpu-enabled: &gpu-enabled
   devices:
     - driver: nvidia
@@ -12,7 +8,6 @@ x-gpu-enabled: &gpu-enabled
 
 x-gpu-disabled: &gpu-disabled
   devices: []
-
 
 services:
   ebook2audiobook:
@@ -34,7 +29,6 @@ services:
     ports:
       - "7860:7860"
 
-    # GPU enablement — matches your earlier config
     deploy:
       resources:
         reservations:
