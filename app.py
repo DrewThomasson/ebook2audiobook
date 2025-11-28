@@ -341,7 +341,7 @@ def check_torch()->bool:
         try:
             import numpy as np
             return True
-        except Exception as e:
+        except ImportError:
             if Version(torch_version_parsed) <= Version('2.2.2'):
                 try:
                     msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
@@ -349,7 +349,6 @@ def check_torch()->bool:
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
                     python = sys.executable
                     os.execv(python, [python] + sys.argv)
-                    return True
                 except subprocess.CalledProcessError as e:
                     error = f'Failed to downgrade to numpy < 2: {e}'
                     print(error)
