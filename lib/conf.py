@@ -1,20 +1,7 @@
 import os
 import platform
 import tempfile
-import shutil
 import sys
-
-########## sitecustomize.py
-try:
-    iu = importlib.import_module("transformers.utils.import_utils")
-    site_packages_path = sysconfig.get_paths()['purelib']
-    src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
-    dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
-    if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
-        shutil.copy2(src_pyfile, dst_pyfile)
-except Exception as e:
-    pass
-##############
 
 # ---------------------------------------------------------------------
 # Global configuration
