@@ -349,6 +349,7 @@ def check_torch()->bool:
         return False
 
 def check_and_install_requirements(file_path:str)->bool:
+    print("check_and_install_requirements called")
     if not os.path.exists(file_path):
         error = f'Warning: File {file_path} not found. Skipping package check.'
         print(error)
