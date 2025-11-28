@@ -1,23 +1,6 @@
-from __future__ import annotations
-
 import os
 import sysconfig
 import shutil
-
-from lib.conf import *
-
-########## sitecustomize.py
-try:
-    iu = importlib.import_module("transformers.utils.import_utils")
-    site_packages_path = sysconfig.get_paths()['purelib']
-    src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
-    dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
-    if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
-        shutil.copy2(src_pyfile, dst_pyfile)
-except Exception as e:
-    pass
-##############
-
 import platform
 import argparse
 import filecmp
@@ -37,6 +20,7 @@ from packaging.version import Version, InvalidVersion
 from packaging.markers import Marker
 from pathlib import Path
 
+from lib.conf import *
 from lib.lang import default_language_code
 from lib.models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 
