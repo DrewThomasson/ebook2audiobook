@@ -338,23 +338,6 @@ def check_torch()->bool:
                             error = f'Failed to install torch package: {e}'
                             print(error)
                             return False
-        try:
-            import numpy as np
-            return True
-        except ImportError:
-            if Version(torch_version_parsed) <= Version('2.2.2'):
-                try:
-                    msg = 'torch version needs numpy < 2. downgrading numpy to 1.26.4...'
-                    print(msg)
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'numpy<2'])
-                    python = sys.executable
-                    os.execv(python, [python] + sys.argv)
-                except subprocess.CalledProcessError as e:
-                    error = f'Failed to downgrade to numpy < 2: {e}'
-                    print(error)
-                    return False
-            else:
-                return True
     except ImportError:
         error = f'check_torch(): torch not yet installed...'
         print(error)

@@ -86,7 +86,7 @@ fi
 
 ############### FUNCTIONS ##############
 
-function required_programs_check {
+function check_required_programs {
 	local programs=("$@")
 	programs_missing=()
 	for program in "${programs[@]}"; do
@@ -289,14 +289,14 @@ function install_programs {
 			fi
 		fi
 	done
-	if required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
+	if check_required_programs "${REQUIRED_PROGRAMS[@]}"; then
 		return 0
 	else
 		echo "Some programs didn't install successfuly, please report the log to the support"
 	fi
 }
 
-function conda_check {
+function check_conda {
 
 	function compare_versions {
 		local ver1=$1
@@ -389,11 +389,20 @@ function conda_check {
 
 function install_python_packages {
 	echo "[ebook2audiobook] Installing dependencies..."
+
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip > /dev/null 2>&1
 	python3 -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r "$SCRIPT_DIR/requirements.txt" || exit 1
-	python3 -m pip install --no-cache-dir unidic || exit 1
+
+	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
+
+	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
+		echo "torch version needs numpy < 2. downgrading numpy to 1.26.4..."
+		pip install --no-cache-dir --use-pep517 "numpy<2"
+	fi
+
 	python3 -m unidic download || exit 1
+
 	echo "[ebook2audiobook] Installation completed."
 }
 
@@ -620,7 +629,7 @@ else
 			fi
 			build_docker_image || exit 1
 		elif [[ "$INSTALL_PKG" == "all" ]];then
-			required_programs_check "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
+			check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 			install_python_packages || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
@@ -648,9 +657,9 @@ else
 			exit 1
 		fi
 
-		required_programs_check "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
+		check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 
-		conda_check || { echo "conda_check failed"; exit 1; }
+		check_conda || { echo "check_conda failed"; exit 1; }
 
 		source "$CONDA_ENV" || exit 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo "conda activate failed"; exit 1; }
