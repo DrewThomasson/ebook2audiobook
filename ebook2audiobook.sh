@@ -393,6 +393,24 @@ function install_python_packages {
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip > /dev/null 2>&1
 	python3 -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r "$SCRIPT_DIR/requirements.txt" || exit 1
+	
+	components_dir="$SCRIPT_DIR/components"
+	src_pyfile="$components_dir/sitecustomize.py"
+	site_packages_path="$(python3 - <<EOF
+import sysconfig
+print(sysconfig.get_paths()['purelib'])
+EOF
+	)"
+	dst_pyfile="$site_packages_path/sitecustomize.py"
+	if [ ! -f "$dst_pyfile" ] || [ "$src_pyfile" -nt "$dst_pyfile" ]; then
+		if ! cp -p "$src_pyfile" "$dst_pyfile"; then
+			echo "sitecustomize.py hook installation error: copy failed" >&2
+			exit 1
+		fi
+		echo "Installed sitecustomize.py hook → $dst_pyfile"
+	else
+		echo "sitecustomize.py is already up to date"
+	fi
 
 	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
 

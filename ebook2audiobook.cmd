@@ -337,6 +337,56 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 				call python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
 			)
 
+			set "components_dir=C:\path\to\components"
+			set "src_pyfile=%components_dir%\sitecustomize.py"
+			set "dst_pyfile=%site_packages_path%\sitecustomize.py"
+
+			for /f "usebackq delims=" %%A in (`python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"`) do (
+				set "site_packages_path=%%A"
+			)
+
+			if not exist "%dst_pyfile%" (
+				copy /Y "%src_pyfile%" "%dst_pyfile%"
+				echo Installed sitecustomize.py hook → %dst_pyfile%
+			)
+
+			for %%F in ("%src_pyfile%") do set "src_time=%%~tF"
+			for %%F in ("%dst_pyfile%") do set "dst_time=%%~tF"
+
+			:: If source is newer
+			if "!src_time!" GTR "!dst_time!" (
+				copy /Y "%src_pyfile%" "%dst_pyfile%"
+				echo Updated sitecustomize.py hook → %dst_pyfile%
+			)
+			
+			for /f "tokens=2 delims= " %%A in ('pip show torch 2^>nul ^| findstr /b /i "Version:"') do (
+				set "torch_ver=%%A"
+			)
+
+			echo Detected torch version: %torch_ver%
+
+			python - <<EOF >nul 2>&1
+			import sys
+			from packaging.version import Version
+			torch_ver = "%torch_ver%"
+			if Version(torch_ver) <= Version("2.2.2"):
+				sys.exit(0)  # means: needs numpy < 2
+			sys.exit(1)      # no downgrade needed
+			EOF
+
+			if %errorlevel%==0 (
+				echo torch version needs numpy^<2. Downgrading numpy to 1.26.4...
+				pip install --no-cache-dir --use-pep517 "numpy<2"
+			) else (
+				echo torch version is fine. No numpy downgrade required.
+			)
+
+			python -m unidic download
+			if %errorlevel% neq 0 (
+				echo Failed to download unidic.
+				goto :failed
+			)
+
 			echo All required packages are installed.
 	) else (
 			call "%CONDA_HOME%\Scripts\activate.bat"
