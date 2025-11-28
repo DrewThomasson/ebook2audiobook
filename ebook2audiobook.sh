@@ -320,14 +320,12 @@ function conda_check {
 		echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
 
 		if [[ "$OSTYPE" == darwin* ]]; then
-			installer_url="MINIFORGE_MACOSX_INSTALLER_URL"
 			config_path="$HOME/.zshrc"
-			curl -fsSLo "$installer_path" "$installer_url"
+			curl -fsSLo "$installer_path" "$MINIFORGE_MACOSX_INSTALLER_URL"
 			shell_name="zsh"
 		else
-			installer_url="MINIFORGE_LINUX_INSTALLER_URL"
 			config_path="$HOME/.bashrc"
-			wget -O "$installer_path" "$installer_url"
+			wget -O "$installer_path" "$MINIFORGE_LINUX_INSTALLER_URL"
 			shell_name="bash"
 		fi
 
