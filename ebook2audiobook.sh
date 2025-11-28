@@ -338,7 +338,6 @@ function conda_check {
 				[[ -f "$config_path" ]] || touch "$config_path"
 				grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
 				source "$config_path"
-				conda init "$SHELL_NAME" > /dev/null 2>&1 || return 1
 				echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 						echo "Miniforge3" >> "$INSTALLED_LOG"
@@ -376,7 +375,6 @@ function conda_check {
 		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
 		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y || return 1
 
-		conda init "SHELL_NAME" > /dev/null 2>&1 || return 1
 		source "$CONDA_ENV" || return 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
 		
@@ -646,10 +644,10 @@ else
 
 		required_programs_check "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 
-		conda_check || exit 1
-		conda init "SHELL_NAME" > /dev/null 2>&1 || exit 1
+		conda_check || { echo "conda_check failed"; exit 1; }
+
 		source "$CONDA_ENV" || exit 1
-		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || exit 1
+		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo "conda activate failed"; exit 1; }
 
 		check_desktop_app || exit 1
 
