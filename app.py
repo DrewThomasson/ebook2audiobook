@@ -340,6 +340,7 @@ def check_torch()->bool:
                             return False
         try:
             import numpy as np
+            return True
         except Exception as e:
             if Version(torch_version_parsed) <= Version('2.2.2'):
                 try:
