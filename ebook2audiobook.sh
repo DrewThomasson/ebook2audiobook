@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ "$OSTYPE" == "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
+if [[ "$OSTYPE" == darwin* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
 	exec env zsh "$0" "$@"
 fi
@@ -81,6 +81,7 @@ if [[ -n "${arguments['install_pkg']+exists}" ]]; then
 fi
 
 [[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$FULL_DOCKER" ]] && SUDO="sudo" || SUDO=""
+[[ $OSTYPE == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
 ############### FUNCTIONS ##############
 
@@ -134,7 +135,7 @@ function required_programs_check {
 }
 
 function install_programs {
-	if [[ "$OSTYPE" == "darwin"* ]]; then
+	if [[ "$OSTYPE" == darwin* ]]; then
 		echo -e "\e[33mInstalling required programs...\e[0m"
 		PACK_MGR="brew install"
 			if ! command -v brew &> /dev/null; then
@@ -192,7 +193,7 @@ function install_programs {
 			# avoid conflict with calibre builtin lxml
 			pip uninstall lxml -y 2>/dev/null
 			echo -e "\e[33mInstalling Calibre...\e[0m"
-			if [[ "$OSTYPE" == "darwin"* ]]; then
+			if [[ "$OSTYPE" == darwin* ]]; then
 				eval "$PACK_MGR --cask calibre"
 			else
 				if [[ "$SUDO" == "sudo" ]]; then
@@ -314,7 +315,6 @@ function conda_check {
 
 		local installer_url
 		local installer_path="/tmp/Miniforge3.sh"
-		local shell_name
 		local config_path
 
 		echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
@@ -322,11 +322,9 @@ function conda_check {
 		if [[ "$OSTYPE" == darwin* ]]; then
 			config_path="$HOME/.zshrc"
 			curl -fsSLo "$installer_path" "$MINIFORGE_MACOSX_INSTALLER_URL"
-			shell_name="zsh"
 		else
 			config_path="$HOME/.bashrc"
 			wget -O "$installer_path" "$MINIFORGE_LINUX_INSTALLER_URL"
-			shell_name="bash"
 		fi
 
 		if [[ -f "$installer_path" ]]; then
@@ -340,7 +338,7 @@ function conda_check {
 				[[ -f "$config_path" ]] || touch "$config_path"
 				grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
 				source "$config_path"
-				conda init "$shell_name" || return 1
+				conda init "$SHELL_NAME" > /dev/null 2>&1 || return 1
 				echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 						echo "Miniforge3" >> "$INSTALLED_LOG"
@@ -356,7 +354,7 @@ function conda_check {
 		fi
 	fi
 	if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
-		if [[ "$OSTYPE" == "darwin"* && "$ARCH" == "x86_64" ]]; then
+		if [[ "$OSTYPE" == darwin* && "$ARCH" == "x86_64" ]]; then
 			PYTHON_VERSION="3.11"
 		elif [[ -r /proc/device-tree/model ]]; then
 			# Detect Jetson and select correct Python version
@@ -378,7 +376,7 @@ function conda_check {
 		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
 		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y || return 1
 
-		conda init || return 1
+		conda init "SHELL_NAME" > /dev/null 2>&1 || return 1
 		source "$CONDA_ENV" || return 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
 		
@@ -401,7 +399,7 @@ function install_python_packages {
 }
 
 function has_no_display {
-	if [[ "$OSTYPE" == "darwin"* ]]; then
+	if [[ "$OSTYPE" == darwin* ]]; then
 		if pgrep -x WindowServer >/dev/null 2>&1 &&
 		   [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
 			return 0   # macOS GUI
@@ -461,7 +459,7 @@ function open_desktop_app {
 			fi
 		done
 
-		if [[ "$OSTYPE" == "darwin"* ]]; then
+		if [[ "$OSTYPE" == darwin* ]]; then
 			open "$url" >/dev/null 2>&1 &
 		elif command -v xdg-open >/dev/null 2>&1; then
 			xdg-open "$url" >/dev/null 2>&1 &
@@ -584,7 +582,7 @@ function check_desktop_app {
 	if [[ " ${ARGS[*]} " == *" --headless "* || has_no_display -eq 1 ]]; then
 		return 0
 	fi
-	if [[ "$OSTYPE" == "darwin"* ]]; then
+	if [[ "$OSTYPE" == darwin* ]]; then
 		mac_app
 	elif [[ "$OSTYPE" == "linux"* ]]; then
 		linux_app
@@ -649,7 +647,7 @@ else
 		required_programs_check "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 
 		conda_check || exit 1
-		conda init > /dev/null 2>&1 || exit 1
+		conda init "SHELL_NAME" > /dev/null 2>&1 || exit 1
 		source "$CONDA_ENV" || exit 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || exit 1
 
