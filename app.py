@@ -330,9 +330,10 @@ def check_torch()->bool:
                             elif backend_specs['device'] in ['jetson-60', 'jetson-61']:
                                 jetson_torch_version = default_jetson60_torch if backend_specs['device'] == 'jetson-60' else default_jetson61_torch
                                 torch_pkg = f'{backend_url}/v{backend_tag}/pytorch/torch-{jetson_torch_version}-{default_py_tag}-linux_{backend_arch}.whl'   
-                                
+                                torchaudio_pkg = f'' # TODO : custom E2A URL
                             else:
-                                torch_pkg = f'{backend_url}/torch/torch-{torch_version_parsed}+{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                                torch_pkg = f'{backend_url}/{backend_tag}/torch-{torch_version_parsed}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                                torchaudio_pkg = f'{backend_url}/{backend_tag}/torchaudio-{torch_version_parsed}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
                             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
