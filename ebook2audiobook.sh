@@ -404,7 +404,9 @@ function check_sitecustomized {
 	site_packages_path=$(python3 -c "import sysconfig;print(sysconfig.get_paths()['purelib'])")
 	dst_pyfile="$site_packages_path/sitecustomize.py"
 	if [ ! -f "$dst_pyfile" ] || [ "$src_pyfile" -nt "$dst_pyfile" ]; then
-		if ! cp -p "$src_pyfile" "$dst_pyfile"; then
+		if cp -p "$src_pyfile" "$dst_pyfile"; then
+			echo "Installed sitecustomize.py hook in $dst_pyfile"
+		else
 			echo "sitecustomize.py hook installation error: copy failed" >&2
 			exit 1
 		fi

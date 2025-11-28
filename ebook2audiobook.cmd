@@ -344,11 +344,13 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		set "dst_pyfile=%site_packages_path%\sitecustomize.py"
 		if not exist "%dst_pyfile%" (
 			call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
+			echo Installed sitecustomize.py hook in %dst_pyfile%
 		)
 		for %%F in ("%src_pyfile%") do set "src_time=%%~tF"
 		if exist "%dst_pyfile%" for %%F in ("%dst_pyfile%") do set "dst_time=%%~tF"
 		if "!src_time!" GTR "!dst_time!" (
 			call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
+			echo Updated sitecustomize.py hook in %dst_pyfile%
 		)
 		call python -m unidic download
 		if !errorlevel! neq 0 (
