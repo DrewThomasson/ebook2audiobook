@@ -1,9 +1,26 @@
-import argparse, socket
+import argparse, socket, multiprocessing, sys
 
 from lib.conf import *
 from lib.lang import default_language_code
 from lib.models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 from lib.utils import *
+
+def init_multiprocessing():
+    if sys.platform.startswith("darwin"):
+        try:
+            multiprocessing.set_start_method("fork")
+        except RuntimeError:
+            pass
+    elif sys.platform.startswith("linux"):
+        try:
+            multiprocessing.set_start_method("fork")
+        except RuntimeError:
+            pass
+    else:
+        try:
+            multiprocessing.set_start_method("spawn")
+        except RuntimeError:
+            pass
 
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
@@ -296,4 +313,5 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                 sys.exit(1)
 
 if __name__ == '__main__':
+    init_multiprocessing()
     main()
