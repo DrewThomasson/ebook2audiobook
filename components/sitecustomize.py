@@ -25,9 +25,7 @@ if not getattr(sys, "_sitecustomize_loaded", False):
         if not hasattr(iu, "_patch_applied"):
             iu.check_torch_load_is_safe = wrapped_check_torch_load_is_safe
             iu._patch_applied = True
-            warn("[sitecustomize] hook installation successful")
-        else:
-            warn("[sitecustomize] hook already installed!")
+            warn("[sitecustomize] hook initialization successful")
     except ModuleNotFoundError:
         warn("[sitecustomize] transformers not available; skipping patch")
         pass
