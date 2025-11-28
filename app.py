@@ -3,6 +3,8 @@ import shutil
 import importlib.util
 import sysconfig
 
+from lib.conf import *
+
 # ---------------------------------------------------------------------
 # Python Special Hook
 # ---------------------------------------------------------------------
@@ -36,7 +38,6 @@ from packaging.version import Version, InvalidVersion
 from packaging.markers import Marker
 from pathlib import Path
 
-from lib.conf import *
 from lib.lang import default_language_code
 from lib.models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 
