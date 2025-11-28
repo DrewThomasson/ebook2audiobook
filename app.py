@@ -1,5 +1,4 @@
 import os
-import sysconfig
 import shutil
 import importlib.util
 import platform

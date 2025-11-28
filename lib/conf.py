@@ -2,6 +2,7 @@ import os
 import platform
 import tempfile
 import sys
+import sysconfig
 import shutil
 import importlib.util
 
