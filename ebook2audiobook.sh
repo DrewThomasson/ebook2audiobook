@@ -397,11 +397,7 @@ function install_python_packages {
 		pip install --no-cache-dir --use-pep517 "numpy<2"
 	fi
 	src_pyfile="$$SCRIPT_DIR/components/sitecustomize.py"
-	site_packages_path="$(python3 - <<EOF
-import sysconfig
-print(sysconfig.get_paths()['purelib'])
-EOF
-	)"
+	site_packages_path=$(python3 -c "import sysconfig;print(sysconfig.get_paths()['purelib'])")
 	dst_pyfile="$site_packages_path/sitecustomize.py"
 	if [ ! -f "$dst_pyfile" ] || [ "$src_pyfile" -nt "$dst_pyfile" ]; then
 		if ! cp -p "$src_pyfile" "$dst_pyfile"; then
