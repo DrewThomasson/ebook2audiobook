@@ -9,6 +9,7 @@ try:
     src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
     dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
     if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
+        print(f"copy {dst_pyfile}")
         shutil.copy2(src_pyfile, dst_pyfile)
 except Exception as e:
     pass
