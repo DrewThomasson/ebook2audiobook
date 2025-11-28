@@ -22,7 +22,9 @@ voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
 
-########## sitecustomize.py
+# ---------------------------------------------------------------------
+# Python Special Hook
+# ---------------------------------------------------------------------
 try:
     iu = importlib.import_module("transformers.utils.import_utils")
     site_packages_path = sysconfig.get_paths()['purelib']
@@ -34,7 +36,6 @@ except Exception as e:
     error = f"sitecustomize.py hook installation error: {e}"
     print(error)
     pass
-##############
 
 # ---------------------------------------------------------------------
 # Environment setup
