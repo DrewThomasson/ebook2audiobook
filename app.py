@@ -304,40 +304,42 @@ def parse_torch_version(current:str)->Version:
     
 def check_torch()->bool:
     try:
-        import torch
-        torch_version = getattr(torch, '__version__', False)
-        if torch_version:
-            torch_version_parsed = parse_torch_version(torch_version)
-            backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "device": detect_device()}
-            print(backend_specs)
-            if backend_specs['device'] not in ['cpu', 'unknown', 'unsupported']:
-                m = re.search(r'\+(.+)$', torch_version)
-                current_tag = m.group(1) if m else None
-                if current_tag is not None:
-                    non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
-                    if (
-                        non_standard_tag is None and current_tag != backend_specs['device'] or 
-                        non_standard_tag is not None and backend_specs['device'] in ['jetson-51', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_matrix[backend_specs['device']]['tag']
-                       ):
-                        try:
-                            backend_os = backend_specs['os']
-                            backend_arch = backend_specs['arch']
-                            backend_tag = torch_matrix[backend_specs['device']]['tag']
-                            backend_url = torch_matrix[backend_specs['device']]['url']
-                            if backend_specs['device'] == 'jetson-51':
-                                torch_pkg = f'' # TODO: custom E2A URL
-                                torchaudio_pkg = f'' # TODO: custom E2A URL
-                            elif backend_specs['device'] in ['jetson-60', 'jetson-61']:
-                                jetson_torch_version = default_jetson60_torch if backend_specs['device'] == 'jetson-60' else default_jetson61_torch
-                                torch_pkg = f'{backend_url}/v{backend_tag}/pytorch/torch-{jetson_torch_version}-{default_py_tag}-linux_{backend_arch}.whl'   
-                                
-                            else:
-                                torch_pkg = f'{backend_url}/torch/torch-{torch_version_parsed}+{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
-                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
-                        except subprocess.CalledProcessError as e:
-                            error = f'Failed to install torch package: {e}'
-                            print(error)
-                            return False
+        try:
+            import torch
+        except ImportError:
+            torch_version = getattr(torch, '__version__', False)
+            if torch_version:
+                torch_version_parsed = parse_torch_version(torch_version)
+                backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "device": detect_device()}
+                print(backend_specs)
+                if backend_specs['device'] not in ['cpu', 'unknown', 'unsupported']:
+                    m = re.search(r'\+(.+)$', torch_version)
+                    current_tag = m.group(1) if m else None
+                    if current_tag is not None:
+                        non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
+                        if (
+                            non_standard_tag is None and current_tag != backend_specs['device'] or 
+                            non_standard_tag is not None and backend_specs['device'] in ['jetson-51', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_matrix[backend_specs['device']]['tag']
+                           ):
+                            try:
+                                backend_os = backend_specs['os']
+                                backend_arch = backend_specs['arch']
+                                backend_tag = torch_matrix[backend_specs['device']]['tag']
+                                backend_url = torch_matrix[backend_specs['device']]['url']
+                                if backend_specs['device'] == 'jetson-51':
+                                    torch_pkg = f'' # TODO: custom E2A URL
+                                    torchaudio_pkg = f'' # TODO: custom E2A URL
+                                elif backend_specs['device'] in ['jetson-60', 'jetson-61']:
+                                    jetson_torch_version = default_jetson60_torch if backend_specs['device'] == 'jetson-60' else default_jetson61_torch
+                                    torch_pkg = f'{backend_url}/v{backend_tag}/pytorch/torch-{jetson_torch_version}-{default_py_tag}-linux_{backend_arch}.whl'   
+                                    
+                                else:
+                                    torch_pkg = f'{backend_url}/torch/torch-{torch_version_parsed}+{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
+                            except subprocess.CalledProcessError as e:
+                                error = f'Failed to install torch package: {e}'
+                                print(error)
+                                return False
         try:
             import numpy as np
             return True
