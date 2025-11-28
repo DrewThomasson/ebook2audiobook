@@ -14,7 +14,8 @@ def warn(msg:str)->None:
         print(msg)
 
 def wrapped_check_torch_load_is_safe(*args, **kwargs):
-    warn("[sitecustomize] Hook: check called")
+    if debug:
+        warn("[sitecustomize] Hook: check called")
     pass
 
 if not getattr(sys, "_sitecustomize_loaded", False):
