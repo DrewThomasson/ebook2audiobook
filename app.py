@@ -9,9 +9,10 @@ try:
     src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
     dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
     if not os.path.exists(dst_pyfile) or os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
-        print(f"copy {dst_pyfile}")
         shutil.copy2(src_pyfile, dst_pyfile)
 except Exception as e:
+    error = f"sitecustomize.py hook installation error: {e}"
+    print(error)
     pass
 ##############
 
@@ -363,7 +364,6 @@ def check_torch()->bool:
         return False
 
 def check_and_install_requirements(file_path:str)->bool:
-    print("check_and_install_requirements called")
     if not os.path.exists(file_path):
         error = f'Warning: File {file_path} not found. Skipping package check.'
         print(error)
