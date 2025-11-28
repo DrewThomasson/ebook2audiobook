@@ -2372,14 +2372,14 @@ def convert_ebook(args:dict)->tuple:
                                 session['device'] = session['device'] if devices['XPU']['found'] else devices['CPU']['proc']
                                 if session['device'] == devices['CPU']['proc']:
                                     msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
-                            if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                #if session['free_vram_gb'] < 12.0:
-                                #    os.environ["SUNO_OFFLOAD_CPU"] = "True"
-                                #    os.environ["SUNO_USE_SMALL_MODELS"] = "True"
-                                #    msg_extra += f"<br/>Switching BARK to SMALL models"  
-                                #else:
-                                #    os.environ["SUNO_OFFLOAD_CPU"] = "False"
-                                #    os.environ["SUNO_USE_SMALL_MODELS"] = "False"
+                            #if session['tts_engine'] == TTS_ENGINES['BARK']:
+                            #    if session['free_vram_gb'] < 12.0:
+                            #        os.environ["SUNO_OFFLOAD_CPU"] = "True"
+                            #        os.environ["SUNO_USE_SMALL_MODELS"] = "True"
+                            #        msg_extra += f"<br/>Switching BARK to SMALL models"  
+                            #    else:
+                            #        os.environ["SUNO_OFFLOAD_CPU"] = "False"
+                            #        os.environ["SUNO_USE_SMALL_MODELS"] = "False"
                             if msg == '':
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;
