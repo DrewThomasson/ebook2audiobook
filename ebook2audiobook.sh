@@ -406,6 +406,7 @@ function install_python_packages {
 		fi
 	fi
 	python3 -m unidic download || exit 1
+	# TODO: install deepspeed if CUDA cuda detected
 	echo "[ebook2audiobook] Installation completed."
 }
 

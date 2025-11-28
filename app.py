@@ -1,6 +1,26 @@
 import os
 import shutil
 import importlib.util
+import sysconfig
+
+from lib.conf import *
+
+# ---------------------------------------------------------------------
+# Python Special Hook
+# ---------------------------------------------------------------------
+try:
+    iu = importlib.import_module("transformers.utils.import_utils")
+    site_packages_path = sysconfig.get_paths()['purelib']
+    src_pyfile = os.path.join(components_dir, 'sitecustomize.py')
+    dst_pyfile = os.path.join(site_packages_path, 'sitecustomize.py')
+    if os.path.exists(dst_pyfile):
+        if os.path.getmtime(dst_pyfile) < os.path.getmtime(src_pyfile):
+            shutil.copy2(src_pyfile, dst_pyfile)
+except Exception as e:
+    error = f"sitecustomize.py hook installation error: {e}"
+    print(error)
+    pass
+
 import platform
 import argparse
 import filecmp
@@ -19,7 +39,6 @@ from packaging.version import Version, InvalidVersion
 from packaging.markers import Marker
 from pathlib import Path
 
-from lib.conf import *
 from lib.lang import default_language_code
 from lib.models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 
@@ -350,7 +369,6 @@ def check_and_install_requirements(file_path:str)->bool:
         if check_torch():
             import torch
             torch_version = torch.__version__            
-        cuda_only_packages = ('deepspeed')
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
             packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)]
@@ -386,12 +404,6 @@ def check_and_install_requirements(file_path:str)->bool:
                 continue
             clean_pkg = re.sub(r'\[.*?\]', '', package)
             pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
-            if pkg_name in cuda_only_packages:
-                has_cuda_build = False
-                if torch_version:
-                    has_cuda_build = any(marker in torch_version for marker in cuda_markers)
-                if not has_cuda_build:
-                    continue
             try:
                 installed_version = version(pkg_name)
             except PackageNotFoundError:

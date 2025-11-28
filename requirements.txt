@@ -26,7 +26,6 @@ PyOpenGL
 phonemizer-fork
 pydub
 demucs
-deepspeed
 unidecode
 langdetect
 stanza==1.10.1
