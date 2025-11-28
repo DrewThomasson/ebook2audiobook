@@ -357,7 +357,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 			echo Failed to download unidic.
 			goto :failed
 		)
-		# TODO: install deepspeed if CUDA cuda detected
+		:: TODO: install deepspeed if CUDA cuda detected
 		echo All required packages are installed.
 	) else (
 			call "%CONDA_HOME%\Scripts\activate.bat"

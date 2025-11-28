@@ -1718,10 +1718,10 @@ def convert_chapters2audio(id:str)->bool:
         DependencyError(e)
         return False
 
-def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, id:str)->bool:
+def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
     try:
         session = context.get_session(id)
-        chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
+        audio_file = os.path.join(session['chapters_dir'], file)
         chapters_dir_sentences = session['chapters_dir_sentences']
         batch_size = 1024
         start = int(start)
@@ -1774,8 +1774,8 @@ def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, id:str)-
             with open(final_list, 'w') as f:
                 for _, chunk_path, _ in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
-                print(f'********* Combined block audio file saved in {chapter_audio_file}')
+            if assemble_chunks(final_list, audio_file, is_gui_process):
+                print(f'********* Combined block audio file saved in {audio_file}')
                 return True
             else:
                 print("combine_audio_sentences() Final merge failed.")
