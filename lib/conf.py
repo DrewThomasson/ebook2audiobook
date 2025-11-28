@@ -1,6 +1,7 @@
 import os
 import platform
 import tempfile
+import shutil
 import sys
 
 ########## sitecustomize.py
