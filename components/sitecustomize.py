@@ -7,7 +7,7 @@ Use for lightweight, idempotent environment patches.
 import sys
 import importlib
 
-debug = True
+debug = False
 
 def warn(msg:str)->None:
     if debug:
