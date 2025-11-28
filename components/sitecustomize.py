@@ -14,7 +14,7 @@ def warn(msg:str)->None:
         print(msg)
 
 def wrapped_check_torch_load_is_safe(*args, **kwargs):
-    warn("[sitecustomize] Hook: transformers check called")
+    warn("[sitecustomize] Hook: check called")
     pass
 
 if not getattr(sys, "_sitecustomize_loaded", False):
@@ -24,7 +24,9 @@ if not getattr(sys, "_sitecustomize_loaded", False):
         if not hasattr(iu, "_patch_applied"):
             iu.check_torch_load_is_safe = wrapped_check_torch_load_is_safe
             iu._patch_applied = True
-            warn("[sitecustomize] transformers hook installed")
+            warn("[sitecustomize] hook already installed")
+        else:
+            warn("[sitecustomize] 
     except ModuleNotFoundError:
         warn("[sitecustomize] transformers not available; skipping patch")
         pass
