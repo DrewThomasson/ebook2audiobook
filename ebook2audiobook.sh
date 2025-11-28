@@ -375,12 +375,9 @@ function check_conda {
 		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
 		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
 		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y || return 1
-
 		source "$CONDA_ENV" || return 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
-		
 		install_python_packages || return 1
-		
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
 	fi
@@ -394,9 +391,16 @@ function install_python_packages {
 	python3 -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r "$SCRIPT_DIR/requirements.txt" || exit 1
 	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
 	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
-		pip install --no-cache-dir --use-pep517 "numpy<2"
+		pip install --no-cache-dir --use-pep517 "numpy<2" || exit 1
 	fi
-	src_pyfile="$$SCRIPT_DIR/components/sitecustomize.py"
+	python3 -m unidic download || exit 1
+	# TODO: install deepspeed if CUDA cuda detected
+	echo "[ebook2audiobook] Installation completed."
+	return 0
+}
+
+function check_sitecustomized {
+	src_pyfile="$SCRIPT_DIR/components/sitecustomize.py"
 	site_packages_path=$(python3 -c "import sysconfig;print(sysconfig.get_paths()['purelib'])")
 	dst_pyfile="$site_packages_path/sitecustomize.py"
 	if [ ! -f "$dst_pyfile" ] || [ "$src_pyfile" -nt "$dst_pyfile" ]; then
@@ -405,9 +409,7 @@ function install_python_packages {
 			exit 1
 		fi
 	fi
-	python3 -m unidic download || exit 1
-	# TODO: install deepspeed if CUDA cuda detected
-	echo "[ebook2audiobook] Installation completed."
+	return 0
 }
 
 function has_no_display {
@@ -635,6 +637,7 @@ else
 		elif [[ "$INSTALL_PKG" == "all" ]];then
 			check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 			install_python_packages || exit 1
+			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 		# Check if running in a Conda or Python virtual environment
@@ -643,7 +646,6 @@ else
 		elif [[ -n "$VIRTUAL_ENV" ]]; then
 			current_pyvenv="$VIRTUAL_ENV"
 		fi
-
 		# If neither environment variable is set, check Python path
 		if [[ -z "$current_pyvenv" ]]; then
 			PYTHON_PATH=$(which python 2>/dev/null)
@@ -651,7 +653,6 @@ else
 				current_pyvenv="${CONDA_PREFIX:-$VIRTUAL_ENV}"
 			fi
 		fi
-
 		# Output result if a virtual environment is detected
 		if [[ -n "$current_pyvenv" ]]; then
 			echo -e "Current python virtual environment detected: $current_pyvenv."
@@ -660,18 +661,13 @@ else
 			echo -e "conda deactivate"
 			exit 1
 		fi
-
 		check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
-
 		check_conda || { echo "check_conda failed"; exit 1; }
-
 		source "$CONDA_ENV" || exit 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo "conda activate failed"; exit 1; }
-
+		check_sitecustomized || exit 1
 		check_desktop_app || exit 1
-
 		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
-
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
 	else
