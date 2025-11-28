@@ -408,8 +408,6 @@ EOF
 			exit 1
 		fi
 		echo "Installed sitecustomize.py hook → $dst_pyfile"
-	else
-		echo "sitecustomize.py is already up to date"
 	fi
 
 	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
