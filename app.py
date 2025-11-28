@@ -380,9 +380,9 @@ def check_and_install_requirements(file_path:str)->bool:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging', 'tqdm'])
             from tqdm import tqdm
         torch_version = ''
-        #if check_torch():
-        #    import torch
-        #    torch_version = torch.__version__            
+        if check_torch():
+            import torch
+            torch_version = torch.__version__            
         cuda_only_packages = ('deepspeed')
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
@@ -499,8 +499,7 @@ def check_and_install_requirements(file_path:str)->bool:
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
-        #return check_torch()
-        return True
+        return check_torch()
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
         raise SystemExit(error)
