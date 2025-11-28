@@ -76,7 +76,7 @@ def detect_platform_tag()->str:
     if sys.platform.startswith('win'):
         return 'win'
     if sys.platform == 'darwin':
-        return 'macosx'
+        return 'macosx_11_0'
     if sys.platform.startswith('linux'):
         return 'manylinux_2_28'
     return 'unknown'
