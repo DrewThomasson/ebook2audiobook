@@ -338,6 +338,7 @@ def check_torch()->bool:
                             error = f'Failed to install torch package: {e}'
                             print(error)
                             return False
+            return True
     except ImportError:
         error = f'check_torch(): torch not yet installed...'
         print(error)
