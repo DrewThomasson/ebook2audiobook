@@ -1074,7 +1074,12 @@ def get_sentences(text:str, id:str)->list|None:
         sml_list = re.split(rf"({'|'.join(map(re.escape, sml_tokens))})", text)
         sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
-        pattern = re.compile(rf"(.*?(?:{pattern_split}){''.join(punctuation_list_set)})(?=\s|$)", re.DOTALL)
+        pattern = re.compile(
+            rf"(.*?(?:{pattern_split})"  # Match text ending with hard punctuation
+            rf"['\"\u00BB\u201C\u201D\u2019]*)"  # Followed by optional closing quote(s): ' " » " " '
+            rf"(?:\s+|$)",  # Then whitespace or end of string
+            re.DOTALL
+        )
         hard_list = []
         for s in sml_list:
             if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
@@ -1092,7 +1097,8 @@ def get_sentences(text:str, id:str)->list|None:
                         hard_list.append(s)
         # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
-        pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
+        # Only split if followed by space and the accumulated text is substantial
+        pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s+\S)", re.DOTALL)
         soft_list = []
         for s in hard_list:
             if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
@@ -1113,9 +1119,15 @@ def get_sentences(text:str, id:str)->list|None:
                                 # Try to backtrack to last punctuation inside buffer
                                 last_punct_idx = max((buffer.rfind(p) for p in punctuation_split_soft_set if p in buffer), default=-1)
                                 if last_punct_idx != -1:
-                                    soft_list.append(buffer[:last_punct_idx+1].strip())
+                                    split_point = buffer[:last_punct_idx+1].strip()
                                     leftover = buffer[last_punct_idx+1:].strip()
-                                    buffer = leftover + ' ' + part if leftover else part
+                                    # Only split if the fragment is substantial (at least 20 chars or has 3+ words), preventing tiny fragments
+                                    if len(split_point) >= 20 or len(split_point.split()) >= 3:
+                                        soft_list.append(split_point)
+                                        buffer = leftover + ' ' + part if leftover else part
+                                    else:
+                                        # Fragment too small, keep it in buffer and try next split
+                                        buffer = (buffer + ' ' + part).strip()
                                 else:
                                     # No punctuation, just split as-is
                                     soft_list.append(buffer.strip())
@@ -1136,6 +1148,32 @@ def get_sentences(text:str, id:str)->list|None:
                 if any(ch.isalnum() for ch in cleaned):
                     soft_list.append(s.strip())
         soft_list = [s for s in soft_list if any(ch.isalnum() for ch in re.sub(r'[^\p{L}\p{N} ]+', '', s))]
+        
+        # Post-process to merge very short fragments (< 15 chars or < 3 words) with adjacent items
+        merged_list = []
+        i = 0
+        while i < len(soft_list):
+            item = soft_list[i]
+            # Check if this is a very short fragment
+            if item not in [TTS_SML['break'], TTS_SML['pause']] and (len(item) < 15 or len(item.split()) < 3):
+                # Try to merge with next item if available and combined length is reasonable
+                if i + 1 < len(soft_list) and soft_list[i+1] not in [TTS_SML['break'], TTS_SML['pause']]:
+                    combined = item + ' ' + soft_list[i+1]
+                    if len(combined) <= max_chars:
+                        merged_list.append(combined.strip())
+                        i += 2  # Skip next item as we merged it
+                        continue
+                # If can't merge with next, try to merge with previous
+                if merged_list and merged_list[-1] not in [TTS_SML['break'], TTS_SML['pause']]:
+                    combined = merged_list[-1] + ' ' + item
+                    if len(combined) <= max_chars:
+                        merged_list[-1] = combined.strip()
+                        i += 1
+                        continue
+            # If not merged, add as-is
+            merged_list.append(item)
+            i += 1
+        soft_list = merged_list
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:

@@ -163,7 +163,7 @@ punctuation_split_soft_set = set(punctuation_split_soft)
 
 chars_remove = [
     '\\', '|', '©', '®', '™',
-    '*', '`', '\u00A0', '"', '\xa0'
+    '*', '`', '\u00A0', '\xa0'
 ]
 
 roman_numbers_tuples = [

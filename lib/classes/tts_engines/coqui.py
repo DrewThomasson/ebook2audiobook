@@ -450,6 +450,29 @@ class Coqui:
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
         return tmp_path
 
+    @staticmethod
+    def _clean_text_for_tts(text:str)->str:
+        """
+        Cleans text for TTS by handling quotes and punctuation to prevent pronunciation issues.
+        - Preserves final period to prevent hallucination/repetition
+        - Removes opening quotes, replaces closing quotes with commas for natural pauses
+        """
+        text = text.rstrip()
+        
+        # Keep final period, replace internal periods with em dash for natural pauses
+        if text.endswith('.'):
+            text = text[:-1].replace('.', ' —') + '.'
+        else:
+            text = text.replace('.', ' —')
+        
+        # Handle quotes: opening removed, closing becomes comma (only if not already punctuated)
+        text = re.sub(r'(?<![,.;:!?])("(?=[\s,.;:!?\)—]|$))', ',', text)
+        text = text.replace('"', '')
+        text = re.sub(r"(?<![,.;:!?])('(?=[\s,.;:!?\)—]|$))", ',', text)
+        text = text.replace("'", '')
+        
+        return text
+
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
             speaker = None
@@ -518,7 +541,7 @@ class Coqui:
                         }
                         with torch.no_grad():
                             result = self.engine.inference(
-                                text=sentence.replace('.', ' —'),
+                                text=self._clean_text_for_tts(sentence),
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=settings['gpt_cond_latent'],
                                 speaker_embedding=settings['speaker_embedding'],
@@ -563,7 +586,7 @@ class Coqui:
                             sentence += "."
                         with torch.no_grad():
                             result = self.engine.synthesize(
-                                sentence,
+                                self._clean_text_for_tts(sentence),
                                 speaker=speaker,
                                 voice_dir=pth_voice_dir,
                                 silent=True,
@@ -587,7 +610,7 @@ class Coqui:
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             with torch.no_grad():
                                 self.engine.tts_to_file(
-                                    text=sentence,
+                                    text=self._clean_text_for_tts(sentence),
                                     file_path=tmp_in_wav,
                                     **speaker_argument
                                 )
@@ -646,7 +669,7 @@ class Coqui:
                         else:
                             with torch.no_grad():
                                 audio_sentence = self.engine.tts(
-                                    text=sentence,
+                                    text=self._clean_text_for_tts(sentence),
                                     **speaker_argument
                                 )
                     elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
