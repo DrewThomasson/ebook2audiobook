@@ -2,9 +2,15 @@ import threading
 import torch
 import torchaudio
 import random
+import gc
+import shutil
+import subprocess
+import tempfile
+import uuid
 
 import regex as re
 import numpy as np
+import soundfile as sf
 
 from multiprocessing.managers import DictProxy
 from typing import Any
@@ -415,7 +421,7 @@ class Coqui:
             return False
         
     def _tensor_type(self,audio_data:Any)->torch.Tensor:
-        if isinstance(audio_data,torch.Tensor):
+        if isinstance(audio_data, torch.Tensor):
             return audio_data
         elif isinstance(audio_data,np.ndarray):
             return torch.from_numpy(audio_data).float()
