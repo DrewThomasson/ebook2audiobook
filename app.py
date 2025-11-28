@@ -1,6 +1,7 @@
 import os
 import sysconfig
 import shutil
+import importlib.util
 
 ########## sitecustomize.py
 try:
@@ -19,7 +20,6 @@ except Exception as e:
 import platform
 import argparse
 import filecmp
-import importlib.util
 import socket
 import subprocess
 import sys
