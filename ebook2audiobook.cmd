@@ -365,20 +365,13 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 
 			echo Detected torch version: %torch_ver%
 
-			python - <<EOF >nul 2>&1
-			import sys
-			from packaging.version import Version
-			torch_ver = "%torch_ver%"
-			if Version(torch_ver) <= Version("2.2.2"):
-				sys.exit(0)  # means: needs numpy < 2
-			sys.exit(1)      # no downgrade needed
-			EOF
+			python -c "import sys;from packaging.version import Version as V;t='%torch_ver%';sys.exit(0 if V(t)<=V('2.2.2') else 1)" >nul 2>&1
 
 			if %errorlevel%==0 (
-				echo torch version needs numpy^<2. Downgrading numpy to 1.26.4...
+				echo torch version requires numpy^<2. Installing numpy 1.26.4...
 				pip install --no-cache-dir --use-pep517 "numpy<2"
 			) else (
-				echo torch version is fine. No numpy downgrade required.
+				echo torch version is fine. No numpy downgrade needed.
 			)
 
 			python -m unidic download
