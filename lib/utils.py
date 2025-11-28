@@ -3,6 +3,7 @@ import os, re, sys, platform, shutil, importlib
 from packaging.version import Version, InvalidVersion
 from importlib.metadata import version, PackageNotFoundError
 from packaging.specifiers import SpecifierSet
+from packaging.markers import Marker
 
 def detect_platform_tag()->str:
     if sys.platform.startswith('win'):

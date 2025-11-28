@@ -1,12 +1,4 @@
-import threading
-import torch
-import torchaudio
-import random
-import gc
-import shutil
-import subprocess
-import tempfile
-import uuid
+import threading, torch, torchaudio, random, gc, shutil, subprocess, tempfile, uuid
 
 import regex as re
 import numpy as np
