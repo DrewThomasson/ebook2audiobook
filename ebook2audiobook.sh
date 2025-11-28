@@ -46,6 +46,7 @@ INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 INSTALL_PKG="none"
 WGET=$(which wget 2>/dev/null)
+DOCKER_IMG_NAME="ebook2audiobook:latest"
 
 declare -A arguments # associative array
 declare -a programs_missing # indexed array
@@ -597,7 +598,7 @@ function build_docker_image {
 	if docker compose version >/dev/null 2>&1; then
 		docker compose --progress plain build --no-cache || return 1
 	else
-		docker build --progress plain --no-cache -t ebook2audiobook . || return 1
+		docker build --progress plain --no-cache -t "$DOCKER_IMG_NAME" . || return 1
 	fi
 }
 
@@ -612,6 +613,11 @@ if [[ -n "${arguments['help']+exists}" && ${arguments['help']} == true ]]; then
 else
 	if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
 		if [[ "$INSTALL_PKG" == "none" ]]; then
+			if docker image inspect "$DOCKER_IMG_NAME" >/dev/null 2>&1; then
+				echo "[STOP] Docker image '$DOCKER_IMG_NAME' already exists. Aborting build."
+				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
+				exit 1
+			fi
 			build_docker_image || exit 1
 		elif [[ "$INSTALL_PKG" == "all" ]];then
 			required_programs_check "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1

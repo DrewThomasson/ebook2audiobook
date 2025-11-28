@@ -5,23 +5,30 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        BASE: python:3.12
+
     container_name: ebook2audiobook
     working_dir: /app
 
-    # Runtime command NOT needed — ENTRYPOINT in Dockerfile already runs app.py
-    command: []
-
-    # Map port for Gradio
     ports:
       - "7860:7860"
 
-    # Optional: mount your local directory only if you want to override local files
-    # volumes:
-    #   - ./:/app
+    # ---------------------------------------------------
+    # UNIVERSAL GPU SUPPORT (NVIDIA + ROCm + Intel XPU)
+    # ---------------------------------------------------
+    # NVIDIA (WSL2 + Linux)
+    runtime: nvidia
 
-    # GPU support if present (auto-ignore on systems without GPUs)
+    # AMD ROCm + Intel XPU + NVIDIA /dev/dri path
+    devices:
+      - /dev/kfd      # AMD ROCm (ignored if missing)
+      - /dev/dri      # Intel XPU + NVIDIA (ignored if missing)
+
+    # Needed for ROCm (ignored if missing)
+    group_add:
+      - video
+      - render
+
+    # Additional optional NVIDIA request (ignored on non-NVIDIA)
     deploy:
       resources:
         reservations:
@@ -29,5 +36,3 @@ services:
             - driver: nvidia
               count: all
               capabilities: ["gpu"]
-
-    # On macOS or CPU-only → Docker silently ignores the GPU section
