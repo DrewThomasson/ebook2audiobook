@@ -1615,6 +1615,20 @@ def convert_chapters2audio(id:str)->bool:
             msg = 'Cancel requested'
             print(msg)
             return False
+            
+        # Attempt to restore session directories if they were lost (e.g., after hibernation)
+        if session['chapters_dir'] is None or session['chapters_dir_sentences'] is None:
+            if not restore_session_directories(session):
+                error_msg = "Session state lost and could not be restored. This can happen after hibernation or system interruption. Please restart the audiobook generation process."
+                print(error_msg)
+                return False
+        
+        # Verify critical session data still exists after restoration
+        if session['chapters'] is None:
+            error_msg = "Critical session data (chapters) was lost. The parsed text content is missing. This indicates severe session corruption. Please restart the audiobook generation process."
+            print(error_msg)
+            return False
+            
         tts_manager = TTSManager(session)
         resume_chapter = 0
         missing_chapters = []
@@ -1721,6 +1735,14 @@ def convert_chapters2audio(id:str)->bool:
 def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, id:str)->bool:
     try:
         session = context.get_session(id)
+        
+        # Attempt to restore session directories if they were lost (e.g., after hibernation)
+        if session['chapters_dir'] is None or session['chapters_dir_sentences'] is None:
+            if not restore_session_directories(session):
+                error_msg = "Session state lost and could not be restored. This can happen after hibernation or system interruption. Please restart the audiobook generation process."
+                print(error_msg)
+                raise ValueError(error_msg)
+            
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
         batch_size = 1024
@@ -1980,6 +2002,14 @@ def combine_audio_chapters(id:str)->list[str]|None:
 
     try:
         session = context.get_session(id)
+        
+        # Attempt to restore session directories if they were lost (e.g., after hibernation)
+        if session['chapters_dir'] is None or session['process_dir'] is None:
+            if not restore_session_directories(session):
+                error_msg = "Session state lost and could not be restored. This can happen after hibernation or system interruption. Please restart the audiobook generation process."
+                print(error_msg)
+                return None
+            
         chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
         chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
         chapter_titles = [c[0] for c in session['chapters']]
@@ -2474,6 +2504,72 @@ def finalize_audiobook(id:str)->tuple:
     else:
         error = 'get_chapters() failed!'
     return error, False
+
+def restore_session_directories(session:dict)->bool:
+    """
+    Restores lost session directory paths after hibernation by searching the filesystem.
+    Uses session ID to locate active working directories with generated audio files.
+    """
+    try:
+        # Already set - no restoration needed
+        if (session.get('chapters_dir') and session.get('chapters_dir_sentences') 
+            and session.get('process_dir')):
+            return True
+            
+        session_id = session.get('id')
+        if not session_id:
+            print('Cannot restore: session ID is None')
+            return False
+        
+        # Strategy 1: Search by known session directory pattern
+        if not session.get('session_dir'):
+            session['session_dir'] = os.path.join(tmp_dir, f"proc-{session_id}")
+        
+        if os.path.exists(session['session_dir']):
+            for subdir in os.listdir(session['session_dir']):
+                sentences_dir = os.path.join(session['session_dir'], subdir, "chapters", "sentences")
+                if os.path.isdir(sentences_dir):
+                    # Verify it has audio files
+                    audio_files = [f for f in os.listdir(sentences_dir) 
+                                 if f.endswith(f'.{default_audio_proc_format}')]
+                    if audio_files:
+                        session['process_dir'] = os.path.join(session['session_dir'], subdir)
+                        session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                        session['chapters_dir_sentences'] = sentences_dir
+                        print(f"Session directories restored: {session['process_dir']}")
+                        return True
+        
+        # Strategy 2: Deep scan of tmp directory
+        print('Performing deep scan of tmp directory...')
+        if os.path.exists(tmp_dir):
+            for folder in os.listdir(tmp_dir):
+                if not folder.startswith(f"proc-{session_id}"):
+                    continue
+                    
+                session_dir_path = os.path.join(tmp_dir, folder)
+                if not os.path.isdir(session_dir_path):
+                    continue
+                    
+                for subdir in os.listdir(session_dir_path):
+                    sentences_dir = os.path.join(session_dir_path, subdir, "chapters", "sentences")
+                    if os.path.isdir(sentences_dir):
+                        audio_files = [f for f in os.listdir(sentences_dir) 
+                                     if f.endswith(f'.{default_audio_proc_format}')]
+                        if audio_files:
+                            session['session_dir'] = session_dir_path
+                            session['process_dir'] = os.path.join(session_dir_path, subdir)
+                            session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                            session['chapters_dir_sentences'] = sentences_dir
+                            print(f"Session directories found via deep scan: {session['process_dir']}")
+                            return True
+        
+        print(f'Failed to restore session directories for session {session_id}')
+        return False
+        
+    except Exception as e:
+        print(f'restore_session_directories() error: {e}')
+        traceback.print_exc()
+        return False
 
 def restore_session_from_data(data:dict, session:dict)->None:
     try:
