@@ -51,14 +51,14 @@ set "DOCKER_CHECK=0"
 
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
-    set "PATH=%%B;%PATH%"
+	set "PATH=%%B;%PATH%"
 )
 
 cd /d "%SCRIPT_DIR%"
 
 if "%ARCH%"=="x86" (
-    echo Error: 32-bit architecture is not supported.
-    goto :failed
+	echo Error: 32-bit architecture is not supported.
+	goto :failed
 )
 
 if not exist "%INSTALLED_LOG%" (
@@ -67,8 +67,8 @@ if not exist "%INSTALLED_LOG%" (
 
 :: Check if running inside Docker
 if defined CONTAINER (
-    set "SCRIPT_MODE=%FULL_DOCKER%"
-    goto :main
+	set "SCRIPT_MODE=%FULL_DOCKER%"
+	goto :main
 )
 
 goto :scoop_check
@@ -76,9 +76,9 @@ goto :scoop_check
 :scoop_check
 where /Q scoop
 if %errorlevel% neq 0 (
-    echo Scoop is not installed. 
-    set "SCOOP_CHECK=1"
-    goto :install_components
+	echo Scoop is not installed. 
+	set "SCOOP_CHECK=1"
+	goto :install_components
 )
 goto :conda_check
 exit /b
@@ -86,36 +86,36 @@ exit /b
 :conda_check
 where /Q conda
 if %errorlevel% neq 0 (
-    echo Miniforge3 is not installed.
-    set "CONDA_CHECK=1"
-    goto :install_components
+	echo Miniforge3 is not installed.
+	set "CONDA_CHECK=1"
+	goto :install_components
 )
 
 :: Check if running in a Conda environment
 if defined CONDA_DEFAULT_ENV (
-    set "CURRENT_ENV=%CONDA_PREFIX%"
+	set "CURRENT_ENV=%CONDA_PREFIX%"
 )
 :: Check if running in a Python virtual environment
 if defined VIRTUAL_ENV (
-    set "CURRENT_ENV=%VIRTUAL_ENV%"
+	set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
 for /f "delims=" %%i in ('where /Q python') do (
-    if defined CONDA_PREFIX (
-        if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-            set "CURRENT_ENV=%CONDA_PREFIX%"
-            break
-        )
-    ) else if defined VIRTUAL_ENV (
-        if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-            set "CURRENT_ENV=%VIRTUAL_ENV%"
-            break
-        )
-    )
+	if defined CONDA_PREFIX (
+		if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
+			set "CURRENT_ENV=%CONDA_PREFIX%"
+			break
+		)
+	) else if defined VIRTUAL_ENV (
+		if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
+			set "CURRENT_ENV=%VIRTUAL_ENV%"
+			break
+		)
+	)
 )
 if not "%CURRENT_ENV%"=="" (
-    echo Current python virtual environment detected: %CURRENT_ENV%. 
-    echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-    goto :failed
+	echo Current python virtual environment detected: %CURRENT_ENV%. 
+	echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+	goto :failed
 )
 goto :programs_check
 exit /b
@@ -123,141 +123,141 @@ exit /b
 :programs_check
 set "missing_prog_array="
 for %%p in (%PROGRAMS_LIST%) do (
-    set "prog=%%p"
-    if "%%p"=="nodejs" set "prog=node"
-    if "%%p"=="calibre-normal" set "prog=calibre"
-    where /Q !prog!
-    if !errorlevel! neq 0 (
-        echo %%p is not installed.
-        set "missing_prog_array=!missing_prog_array! %%p"
-    )
+	set "prog=%%p"
+	if "%%p"=="nodejs" set "prog=node"
+	if "%%p"=="calibre-normal" set "prog=calibre"
+	where /Q !prog!
+	if !errorlevel! neq 0 (
+		echo %%p is not installed.
+		set "missing_prog_array=!missing_prog_array! %%p"
+	)
 )
 if not "%missing_prog_array%"=="" (
-    set "PROGRAMS_CHECK=1"
-    goto :install_components
+	set "PROGRAMS_CHECK=1"
+	goto :install_components
 )
 goto :dispatch
 exit /b
 
 :install_components
 if not "%SCOOP_CHECK%"=="0" (
-    echo Installing Scoop...
-    call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
-    call powershell -command "iwr -useb get.scoop.sh | iex"
-    where /Q scoop
-    if !errorlevel! equ 0 (
-        echo Scoop installed successfully.
-        call scoop install git
-        call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
-        call scoop bucket add extras
-        call scoop bucket add versions
-        if "%PROGRAMS_CHECK%"=="0" (
-            set "SCOOP_CHECK=0"
-        )
-        findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-        if errorlevel 1 (
-            echo scoop>>"%INSTALLED_LOG%"
-        )
-        start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0"
-    ) else (
-        echo Conda installation failed.
-        goto :failed
-    )
-    exit
+	echo Installing Scoop...
+	call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
+	call powershell -command "iwr -useb get.scoop.sh | iex"
+	where /Q scoop
+	if !errorlevel! equ 0 (
+		echo Scoop installed successfully.
+		call scoop install git
+		call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
+		call scoop bucket add extras
+		call scoop bucket add versions
+		if "%PROGRAMS_CHECK%"=="0" (
+			set "SCOOP_CHECK=0"
+		)
+		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo scoop>>"%INSTALLED_LOG%"
+		)
+		start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0"
+	) else (
+		echo Conda installation failed.
+		goto :failed
+	)
+	exit
 )
 if not "%CONDA_CHECK%"=="0" (
-    echo Installing Miniforge...
-    call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
-    call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
-    where /Q conda
-    if !errorlevel! equ 0 (
-        findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
-        if errorlevel 1 (
-            echo Miniforge3>>"%INSTALLED_LOG%"
-        )
-    ) else (
-        echo Conda installation failed.
-        goto :failed
-    )
-    if not exist "%USERPROFILE%\.condarc" (
-        call conda config --set auto_activate false
-    )
-    call conda update conda -y
-    del "%CONDA_INSTALLER%"
-    set "CONDA_CHECK=0"
-    echo Conda installed successfully.
-    start "" cmd /k cd /d "%CD%" ^& call "%~f0"
-    exit
+	echo Installing Miniforge...
+	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
+	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
+	where /Q conda
+	if !errorlevel! equ 0 (
+		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo Miniforge3>>"%INSTALLED_LOG%"
+		)
+	) else (
+		echo Conda installation failed.
+		goto :failed
+	)
+	if not exist "%USERPROFILE%\.condarc" (
+		call conda config --set auto_activate false
+	)
+	call conda update conda -y
+	del "%CONDA_INSTALLER%"
+	set "CONDA_CHECK=0"
+	echo Conda installed successfully.
+	start "" cmd /k cd /d "%CD%" ^& call "%~f0"
+	exit
 )
 if not "%PROGRAMS_CHECK%"=="0" (
-    echo Installing missing programs...
-    if "%SCOOP_CHECK%"=="0" (
-        call scoop bucket add muggle b https://github.com/hu3rror/scoop-muggle.git
-        call scoop bucket add extras
-        call scoop bucket add versions
-    )
-    for %%p in (%missing_prog_array%) do (
-        set "prog=%%p"
-        call scoop install %%p
-        if "%%p"=="tesseract" (
-            where /Q !prog!
-            if !errorlevel! equ 0 (
-                set "syslang=%LANG%"
-                if not defined syslang set "syslang=en"
-                set "syslang=!syslang:~0,2!"
-                set "tesslang=eng"
-                if /I "!syslang!"=="fr" set "tesslang=fra"
-                if /I "!syslang!"=="de" set "tesslang=deu"
-                if /I "!syslang!"=="it" set "tesslang=ita"
-                if /I "!syslang!"=="es" set "tesslang=spa"
-                if /I "!syslang!"=="pt" set "tesslang=por"
-                if /I "!syslang!"=="ar" set "tesslang=ara"
-                if /I "!syslang!"=="tr" set "tesslang=tur"
-                if /I "!syslang!"=="ru" set "tesslang=rus"
-                if /I "!syslang!"=="bn" set "tesslang=ben"
-                if /I "!syslang!"=="zh" set "tesslang=chi_sim"
-                if /I "!syslang!"=="fa" set "tesslang=fas"
-                if /I "!syslang!"=="hi" set "tesslang=hin"
-                if /I "!syslang!"=="hu" set "tesslang=hun"
-                if /I "!syslang!"=="id" set "tesslang=ind"
-                if /I "!syslang!"=="jv" set "tesslang=jav"
-                if /I "!syslang!"=="ja" set "tesslang=jpn"
-                if /I "!syslang!"=="ko" set "tesslang=kor"
-                if /I "!syslang!"=="pl" set "tesslang=pol"
-                if /I "!syslang!"=="ta" set "tesslang=tam"
-                if /I "!syslang!"=="te" set "tesslang=tel"
-                if /I "!syslang!"=="yo" set "tesslang=yor"
-                echo Detected system language: !syslang! ? downloading OCR language: !tesslang!
-                set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
-                if not exist "!tessdata!\!tesslang!.traineddata" (
-                    powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
-                )
-                if exist "!tessdata!\!tesslang!.traineddata" (
-                    echo Tesseract OCR language !tesslang! installed in !tessdata!
-                ) else (
-                    echo Failed to install OCR language !tesslang!
-                )
-            )
-        ) else if "%%p"=="nodejs" (
-            set "prog=node"
-        ) else if "%%p"=="calibre-normal" (
-            set "prog=calibre"
-        )
-        where /Q !prog!
-        if !errorlevel! equ 0 (
-            findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
-            if errorlevel 1 (
-                echo %%p>>"%INSTALLED_LOG%"
-            )
-        ) else (
-            echo %%p installation failed...
-            goto :failed
-        )
-    )
-    call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
-    set "SCOOP_CHECK=0"
-    set "PROGRAMS_CHECK=0"
-    set "missing_prog_array="
+	echo Installing missing programs...
+	if "%SCOOP_CHECK%"=="0" (
+		call scoop bucket add muggle b https://github.com/hu3rror/scoop-muggle.git
+		call scoop bucket add extras
+		call scoop bucket add versions
+	)
+	for %%p in (%missing_prog_array%) do (
+		set "prog=%%p"
+		call scoop install %%p
+		if "%%p"=="tesseract" (
+			where /Q !prog!
+			if !errorlevel! equ 0 (
+				set "syslang=%LANG%"
+				if not defined syslang set "syslang=en"
+				set "syslang=!syslang:~0,2!"
+				set "tesslang=eng"
+				if /I "!syslang!"=="fr" set "tesslang=fra"
+				if /I "!syslang!"=="de" set "tesslang=deu"
+				if /I "!syslang!"=="it" set "tesslang=ita"
+				if /I "!syslang!"=="es" set "tesslang=spa"
+				if /I "!syslang!"=="pt" set "tesslang=por"
+				if /I "!syslang!"=="ar" set "tesslang=ara"
+				if /I "!syslang!"=="tr" set "tesslang=tur"
+				if /I "!syslang!"=="ru" set "tesslang=rus"
+				if /I "!syslang!"=="bn" set "tesslang=ben"
+				if /I "!syslang!"=="zh" set "tesslang=chi_sim"
+				if /I "!syslang!"=="fa" set "tesslang=fas"
+				if /I "!syslang!"=="hi" set "tesslang=hin"
+				if /I "!syslang!"=="hu" set "tesslang=hun"
+				if /I "!syslang!"=="id" set "tesslang=ind"
+				if /I "!syslang!"=="jv" set "tesslang=jav"
+				if /I "!syslang!"=="ja" set "tesslang=jpn"
+				if /I "!syslang!"=="ko" set "tesslang=kor"
+				if /I "!syslang!"=="pl" set "tesslang=pol"
+				if /I "!syslang!"=="ta" set "tesslang=tam"
+				if /I "!syslang!"=="te" set "tesslang=tel"
+				if /I "!syslang!"=="yo" set "tesslang=yor"
+				echo Detected system language: !syslang! ? downloading OCR language: !tesslang!
+				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
+				if not exist "!tessdata!\!tesslang!.traineddata" (
+					powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
+				)
+				if exist "!tessdata!\!tesslang!.traineddata" (
+					echo Tesseract OCR language !tesslang! installed in !tessdata!
+				) else (
+					echo Failed to install OCR language !tesslang!
+				)
+			)
+		) else if "%%p"=="nodejs" (
+			set "prog=node"
+		) else if "%%p"=="calibre-normal" (
+			set "prog=calibre"
+		)
+		where /Q !prog!
+		if !errorlevel! equ 0 (
+			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
+			if errorlevel 1 (
+				echo %%p>>"%INSTALLED_LOG%"
+			)
+		) else (
+			echo %%p installation failed...
+			goto :failed
+		)
+	)
+	call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
+	set "SCOOP_CHECK=0"
+	set "PROGRAMS_CHECK=0"
+	set "missing_prog_array="
 )
 goto :dispatch
 exit /b
@@ -276,11 +276,11 @@ exit /b
 
 :build_gui
 if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
-    if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
-    if not exist "%STARTMENU_LNK%" (
-        call :make_shortcut "%STARTMENU_LNK%"
-        call :make_shortcut "%DESKTOP_LNK%"
-    )
+	if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
+	if not exist "%STARTMENU_LNK%" (
+		call :make_shortcut "%STARTMENU_LNK%"
+		call :make_shortcut "%DESKTOP_LNK%"
+	)
 	for /f "skip=1 delims=" %%L in ('tasklist /v /fo csv /fi "imagename eq powershell.exe" 2^>nul') do (
 		echo %%L | findstr /I "%APP_NAME%" >nul && (
 			for /f "tokens=2 delims=," %%A in ("%%L") do (
@@ -288,29 +288,29 @@ if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
 			)
 		)
 	)
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayName" /d "%APP_NAME%" /f >nul 2>&1
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayVersion" /d "%APP_VERSION%" /f >nul 2>&1
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "Publisher" /d "ebook2audiobook Team" /f >nul 2>&1
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "InstallLocation" /d "%SCRIPT_DIR%" /f >nul 2>&1
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "UninstallString" /d "\"%UNINSTALLER%\"" /f >nul 2>&1
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
-    start "%APP_NAME%" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%BROWSER_HELPER%" -HostName "%TEST_HOST%" -Port %TEST_PORT%
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayName" /d "%APP_NAME%" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayVersion" /d "%APP_VERSION%" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "Publisher" /d "ebook2audiobook Team" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "InstallLocation" /d "%SCRIPT_DIR%" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "UninstallString" /d "\"%UNINSTALLER%\"" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
+	start "%APP_NAME%" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%BROWSER_HELPER%" -HostName "%TEST_HOST%" -Port %TEST_PORT%
 )
 exit /b
 
 :dispatch
 if "%SCOOP_CHECK%"=="0" (
-    if "%PROGRAMS_CHECK%"=="0" (
-        if "%CONDA_CHECK%"=="0" (
-            if "%DOCKER_CHECK%"=="0" (
-                goto :main
-            ) else (
-                goto :failed
-            )
-        )
-    )
+	if "%PROGRAMS_CHECK%"=="0" (
+		if "%CONDA_CHECK%"=="0" (
+			if "%DOCKER_CHECK%"=="0" (
+				goto :main
+			) else (
+				goto :failed
+			)
+		)
+	)
 )
 echo PROGRAMS_CHECK: %PROGRAMS_CHECK%
 echo CONDA_CHECK: %CONDA_CHECK%
@@ -320,49 +320,42 @@ exit /b
 
 :main
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
-    call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
+	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
-			echo Creating ./python_env version %PYTHON_ENV%...
-			call "%CONDA_HOME%\Scripts\activate.bat"
-			call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
-			call conda activate base
-			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-			call python -m pip cache purge >nul 2>&1
-			call python -m pip install --upgrade pip
-			for /f "usebackq delims=" %%p in ("requirements.txt") do (
-				echo Installing %%p...
-				call python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
-			)
-			set "components_dir=C:\path\to\components"
-			set "src_pyfile=%components_dir%\sitecustomize.py"
-			for /f "usebackq delims=" %%A in (`python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"`) do set "site_packages_path=%%A"
-			set "dst_pyfile=%site_packages_path%\sitecustomize.py"
-			if not exist "%dst_pyfile%" (
-				copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
-				echo Installed sitecustomize.py hook -> %dst_pyfile%
-			)
-			for %%F in ("%src_pyfile%") do set "src_time=%%~tF"
-			if exist "%dst_pyfile%" for %%F in ("%dst_pyfile%") do set "dst_time=%%~tF"
-			if "!src_time!" GTR "!dst_time!" (
-				copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
-				echo Updated sitecustomize.py hook -> %dst_pyfile%
-			)
-			for /f "tokens=2 delims= " %%A in ('pip show torch 2^>nul ^| findstr /b /i "Version:"') do set "torch_ver=%%A"
-			echo Detected torch version: !torch_ver!
-			python -c "import sys;from packaging.version import Version as V;t='!torch_ver!';sys.exit(0 if V(t)<=V('2.2.2') else 1)" >nul 2>&1
-			if !errorlevel!==0 (
-				echo torch version requires numpy^<2. Installing numpy 1.26.4...
-				pip install --no-cache-dir --use-pep517 "numpy<2"
-			) else (
-				echo torch version is fine. No numpy downgrade needed.
-			)
-			python -m unidic download
-			if !errorlevel! neq 0 (
-				echo Failed to download unidic.
-				goto :failed
-			)
-			echo All required packages are installed.
+		echo Creating ./python_env version %PYTHON_ENV%...
+		call "%CONDA_HOME%\Scripts\activate.bat"
+		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+		call conda activate base
+		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+		call python -m pip cache purge >nul 2>&1
+		call python -m pip install --upgrade pip
+		for /f "usebackq delims=" %%p in (`type requirements.txt`) do (
+			echo Installing %%p...
+			call python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
+		)
+		for /f "tokens=2 delims= " %%A in ('pip show torch 2^>nul ^| findstr /b /i "Version:"') do set "torch_ver=%%A"
+		call python -c "import sys;from packaging.version import Version as V;t='!torch_ver!';sys.exit(0 if V(t)<=V('2.2.2') else 1)" >nul 2>&1
+		if !errorlevel!==0 (
+			call pip install --no-cache-dir --use-pep517 "numpy<2"
+		)
+		set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
+		for /f "usebackq delims=" %%A in (`python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"`) do set "site_packages_path=%%A"
+		set "dst_pyfile=%site_packages_path%\sitecustomize.py"
+		if not exist "%dst_pyfile%" (
+			call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
+		)
+		for %%F in ("%src_pyfile%") do set "src_time=%%~tF"
+		if exist "%dst_pyfile%" for %%F in ("%dst_pyfile%") do set "dst_time=%%~tF"
+		if "!src_time!" GTR "!dst_time!" (
+			call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
+		)
+		call python -m unidic download
+		if !errorlevel! neq 0 (
+			echo Failed to download unidic.
+			goto :failed
+		)
+		echo All required packages are installed.
 	) else (
 			call "%CONDA_HOME%\Scripts\activate.bat"
 			call conda activate base

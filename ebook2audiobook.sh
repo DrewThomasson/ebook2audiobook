@@ -389,13 +389,14 @@ function check_conda {
 
 function install_python_packages {
 	echo "[ebook2audiobook] Installing dependencies..."
-
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip > /dev/null 2>&1
 	python3 -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r "$SCRIPT_DIR/requirements.txt" || exit 1
-	
-	components_dir="$SCRIPT_DIR/components"
-	src_pyfile="$components_dir/sitecustomize.py"
+	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
+	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
+		pip install --no-cache-dir --use-pep517 "numpy<2"
+	fi
+	src_pyfile="$$SCRIPT_DIR/components/sitecustomize.py"
 	site_packages_path="$(python3 - <<EOF
 import sysconfig
 print(sysconfig.get_paths()['purelib'])
@@ -407,18 +408,8 @@ EOF
 			echo "sitecustomize.py hook installation error: copy failed" >&2
 			exit 1
 		fi
-		echo "Installed sitecustomize.py hook → $dst_pyfile"
 	fi
-
-	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
-
-	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
-		echo "torch version needs numpy < 2. downgrading numpy to 1.26.4..."
-		pip install --no-cache-dir --use-pep517 "numpy<2"
-	fi
-
 	python3 -m unidic download || exit 1
-
 	echo "[ebook2audiobook] Installation completed."
 }
 
