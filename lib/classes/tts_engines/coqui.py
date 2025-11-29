@@ -380,10 +380,10 @@ class Coqui:
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
                     fine_tuned_params = {
-                        key.removeprefix("bark_"): cast_type(self.session[key])
-                        for key, cast_type in {
-                            "bark_text_temp": float,
-                            "bark_waveform_temp": float
+                        key.removeprefix("bark_"):cast_type(self.session[key])
+                        for key,cast_type in{
+                            "bark_text_temp":float,
+                            "bark_waveform_temp":float
                         }.items()
                         if self.session.get(key) is not None
                     }
@@ -393,6 +393,7 @@ class Coqui:
                             speaker_wav=voice_path,
                             speaker=speaker,
                             voice_dir=pth_voice_dir,
+                            #silent=True,
                             **fine_tuned_params
                         )
                     os.remove(voice_temp)
@@ -542,10 +543,10 @@ class Coqui:
                             bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
                         else:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')       
-                            #if not self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
-                            #    error = 'Could not create pth voice file!'
-                            #    print(error)
-                            #    return False
+                            if not self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
+                                error = 'Could not create pth voice file!'
+                                print(error)
+                                return False
                         pth_voice_dir = os.path.join(bark_dir, speaker)
                         pth_voice_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
                         fine_tuned_params = {
@@ -561,8 +562,9 @@ class Coqui:
                         with torch.no_grad():
                             result = self.engine.synthesize(
                                 sentence,
-                                speaker_wav=settings['voice_path'],
+                                speaker=speaker,
                                 voice_dir=pth_voice_dir,
+                                #silent=True,
                                 **fine_tuned_params
                             )
                         audio_sentence = result.get('wav')
