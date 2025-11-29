@@ -82,7 +82,11 @@ class Coqui:
                 if not engine:
                     engine = TTSEngine(model_path)
                 if engine:
-                    loaded_tts[key] = engine
+                    vram_dict = VRAMDetector().detect_vram(self.session['device'])
+                    self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                    models_loaded_size_gb = loaded_tts_size_gb(loaded_tts)
+                    if self.session['free_vram_gb'] > models_loaded_size_gb:
+                        loaded_tts[key] = engine
                 return engine
         except Exception as e:
             error = f"_load_api() error: {e}"
@@ -146,7 +150,11 @@ class Coqui:
                             eval = True
                         )  
                 if engine:
-                    loaded_tts[key] = engine
+                  vram_dict = VRAMDetector().detect_vram(self.session['device'])
+                    self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                    models_loaded_size_gb = loaded_tts_size_gb(loaded_tts)
+                    if self.session['free_vram_gb'] > models_loaded_size_gb:
+                        loaded_tts[key] = engine
                 return engine
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
