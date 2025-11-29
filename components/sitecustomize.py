@@ -1,33 +1,49 @@
-import sys, types
-from typing import Any, Callable
+"""
+Global environment initialization hook.
+Executed automatically on Python startup before user code.
+Use for lightweight, idempotent environment patches.
+"""
 
-debug: bool = False
+import sys
+import importlib
+from types import ModuleType
+from typing import Any
+
+debug:bool=False
 
 def warn(msg:str)->None:
-	if debug: print(msg)
+	if debug:
+		print(msg)
 
-def patched_check(*args:Any, **kwargs:Any)->None:
-	if debug: warn("[sitecustomize] check called")
+def wrapped_check_torch_load_is_safe(*args:Any,**kwargs:Any)->None:
+	if debug:
+		warn("[sitecustomize] check_torch_load_is_safe patched call")
 	return None
 
-def apply_patch()->None:
-	targets: list[str] = [
-		"transformers.utils",
-		"transformers.utils.import_utils"
-	]
+def _patch_module_attr(mod:ModuleType,name:str)->None:
+	if hasattr(mod,name):
+		setattr(mod,name,wrapped_check_torch_load_is_safe)
+		if debug:
+			warn(f"[sitecustomize] patched {mod.__name__}.{name}")
 
-	for name, mod in sys.modules.items():
-		if not isinstance(mod, types.ModuleType): continue
-		if name.startswith("transformers"):
-			if hasattr(mod, "check_torch_load_is_safe"):
-				setattr(mod, "check_torch_load_is_safe", patched_check)
-				if debug: warn(f"[sitecustomize] patched {name}")
+def apply_transformers_patch()->None:
+	if getattr(sys,"_sitecustomize_torchload_patched",False):
+		return
+	sys._sitecustomize_torchload_patched=True
+	try:
+		iu=importlib.import_module("transformers.utils.import_utils")
+		_patch_module_attr(iu,"check_torch_load_is_safe")
+	except ModuleNotFoundError:
+		if debug:
+			warn("[sitecustomize] transformers.utils.import_utils not available")
+	try:
+		u=importlib.import_module("transformers.utils")
+		_patch_module_attr(u,"check_torch_load_is_safe")
+	except ModuleNotFoundError:
+		if debug:
+			warn("[sitecustomize] transformers.utils not available")
+	for name,mod in list(sys.modules.items()):
+		if isinstance(mod,ModuleType) and name.startswith("transformers"):
+			_patch_module_attr(mod,"check_torch_load_is_safe")
 
-	for t in targets:
-		mod = sys.modules.get(t)
-		if isinstance(mod, types.ModuleType):
-			setattr(mod, "check_torch_load_is_safe", patched_check)
-
-if not getattr(sys, "_sitecustomize_loaded", False):
-	sys._sitecustomize_loaded = True
-	apply_patch()
+apply_transformers_patch()
