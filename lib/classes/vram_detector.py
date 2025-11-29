@@ -107,4 +107,11 @@ class VRAMDetector:
             "free_human": self._fmt(mem.available),
             "total_human": self._fmt(mem.total),
         }
-        return json.dumps(info, indent=2) if as_json else info
+        
+        vram_dict = json.dumps(info, indent=2) if as_json else info
+        total_vram_bytes = vram_dict.get('total_bytes', 4096)
+        total_vram_gb = int(((total_vram_bytes / (1024 ** 3) * 100) / 100) + 0.1)
+        free_vram_bytes = vram_dict.get('free_bytes', 0)
+        free_vram_gb = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
+        
+        return {"total_vram_gb": total_vram_gb, "free_vram_gb": free_vram_gb}

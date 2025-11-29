@@ -10,6 +10,7 @@ from pathlib import Path
 from huggingface_hub import hf_hub_download
 
 from lib import *
+from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, ensure_safe_checkpoint
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
@@ -277,11 +278,7 @@ class Coqui:
     def _check_xtts_builtin_speakers(self, voice_path:str, speaker:str, device:str)->str|bool:
         try:
             voice_parts = Path(voice_path).parts
-            if (
-                self.session['language'] in voice_parts
-                or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices']
-                or self.session['language'] == 'eng'
-            ):
+            if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
                 return voice_path
             if self.session['language'] in language_tts[TTS_ENGINES['XTTSv2']].keys():
                 default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
@@ -293,6 +290,9 @@ class Coqui:
                     cleanup_memory()
                     engine = loaded_tts.get(key, False)
                     if not engine:
+                        vram_dict = VRAMDetector().detect_vram(self.session['device'])
+                        self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                        if session['free_vram_gb'] < :
                         hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
                         hf_sub = ''
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][0]}", cache_dir=self.cache_dir)

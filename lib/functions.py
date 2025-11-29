@@ -2344,10 +2344,8 @@ def convert_ebook(args:dict)->tuple:
                             msg = ''
                             msg_extra = ''
                             vram_dict = VRAMDetector().detect_vram(session['device'])
-                            total_vram_bytes = vram_dict.get('total_bytes', 4096)
-                            total_vram_gb = int(((total_vram_bytes / (1024 ** 3) * 100) / 100) + 0.1)
-                            free_vram_bytes = vram_dict.get('free_bytes', 0)
-                            session['free_vram_gb'] = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
+                            total_vram_gb = vram_dict.get('total_vram_gb', 0)
+                            session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                             if session['free_vram_gb'] == 0:
                                 session['free_vram_gb'] = 1.0
                                 msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
