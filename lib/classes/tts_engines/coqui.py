@@ -388,7 +388,7 @@ class Coqui:
                         if self.session.get(key) is not None
                     }
                     with torch.no_grad():
-                        audio_sentence = self.engine.synthesize(
+                        result = self.engine.synthesize(
                             default_text,
                             speaker_wav=voice_path,
                             speaker=speaker,
@@ -397,10 +397,9 @@ class Coqui:
                             **fine_tuned_params
                         )
                     os.remove(voice_temp)
-                    del audio_sentence
+                    del result
                     msg = f"Saved file: {pth_voice_file}"
                     print(msg)
-                    gc.collect()
                     return True
             else:
                 return True
@@ -544,7 +543,7 @@ class Coqui:
                         else:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')       
                             if not self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
-                                error = 'Could not create pth file!'
+                                error = 'Could not create pth voice file!'
                                 print(error)
                                 return False
                         pth_voice_dir = os.path.join(bark_dir, speaker)
