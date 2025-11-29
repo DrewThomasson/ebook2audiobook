@@ -397,7 +397,6 @@ class Coqui:
                     del result
                     msg = f"Saved file: {pth_voice_file}"
                     print(msg)
-                    gc.collect()
                     return True
             else:
                 return True
