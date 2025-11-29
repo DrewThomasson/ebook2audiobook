@@ -38,10 +38,32 @@ def detect_device()->str:
         except Exception:
             return ''
 
-    def toolkit_version_parse(text:str)->str|None:
-        m = re.search(r'cuda\s*version\s*:\s*([0-9]+\.[0-9]+)', text, re.IGNORECASE)
+    def toolkit_version_parse(text: str) -> str | None:
+        if not text:
+            return None
+        # ----- CUDA -----
+        m = re.search(r'cuda\s*version\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)', text, re.IGNORECASE)
         if m:
             return m.group(1)
+        # ----- ROCm -----
+        m = re.search(r'rocm\s*version\s*[:=]?\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
+        if m:
+            parts = m.group(1).split(".")
+            major = parts[0]
+            minor = parts[1] if len(parts) > 1 else "0"
+            return f"{major}.{minor}"
+        # HIP also implies ROCm
+        m = re.search(r'hip\s*version\s*[:=]?\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
+        if m:
+            parts = m.group(1).split(".")
+            major = parts[0]
+            minor = parts[1] if len(parts) > 1 else "0"
+            return f"{major}.{minor}"
+        # ----- XPU / oneAPI -----
+        m = re.search(r'(oneapi|xpu)\s*(toolkit\s*)?version\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)',
+                      text, re.IGNORECASE)
+        if m:
+            return m.group(3)
         return None
 
     def toolkit_version_compare(version_str:str|None, version_range:dict)->int|None:
@@ -255,12 +277,14 @@ def check_torch()->bool:
                             backend_tag = torch_matrix[backend_specs['device']]['tag']
                             backend_url = torch_matrix[backend_specs['device']]['url']
                             if backend_specs['device'] == 'jetson-51':
-                                torch_pkg = f'' # TODO: custom E2A URL
-                                torchaudio_pkg = f'' # TODO: custom E2A URL
-                            elif backend_specs['device'] in ['jetson-60', 'jetson-61']:
-                                jetson_torch_version = default_jetson60_torch if backend_specs['device'] == 'jetson-60' else default_jetson61_torch
-                                torch_pkg = f'{backend_url}/v{backend_tag}/pytorch/torch-{jetson_torch_version}-{default_py_tag}-linux_{backend_arch}.whl'   
-                                torchaudio_pkg = f'' # TODO : custom E2A URL
+                                torch_pkg = f'{backend_url}/v51/torch-{default_jetson51_torch}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                                torchaudio_pkg =   f'{backend_url}/v51/torchaudio-{default_jetson51_torch}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                            elif backend_specs['device'] == 'jetson-60':
+                                torch_pkg = f'{backend_url}/v60/torch-{default_jetson60_torch}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                                torchaudio_pkg =   f'{backend_url}/v60/torchaudio-{default_jetson60_torch}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                            elif backend_specs['device'] == 'jetson-61':
+                                torch_pkg = f'{backend_url}/v61/torch-{default_jetson60_torch}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
+                                torchaudio_pkg =   f'{backend_url}/v61/torchaudio-{default_jetson60_torch}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
                             else:
                                 torch_pkg = f'{backend_url}/{backend_tag}/torch-{torch_version_parsed}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
                                 torchaudio_pkg = f'{backend_url}/{backend_tag}/torchaudio-{torch_version_parsed}%28{backend_tag}-{default_py_tag}-{backend_os}_{backend_arch}.whl'
