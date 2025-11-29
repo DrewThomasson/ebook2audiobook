@@ -3,7 +3,6 @@ import argparse, socket, multiprocessing, sys
 from lib.conf import *
 from lib.lang import default_language_code
 from lib.models import TTS_ENGINES, default_fine_tuned, default_engine_settings
-from lib.utils import *
 
 def init_multiprocessing():
     if sys.platform.startswith("darwin"):
