@@ -296,7 +296,7 @@ def check_torch()->bool:
         print(error)
         sys.exit(1)
     except InvalidVersion:
-        error = f'check_torch(): Torch or Numpy error Version.'
+        error = f'check_torch(): Torch error Version.'
         print(error)
         sys.exit(1)      
     except Exception as e:
@@ -454,7 +454,7 @@ def check_dictionary()->bool:
     return True
 
 def main():
-	check_and_install_requirements(requirements_file)
+    check_and_install_requirements(requirements_file)
     
 if __name__ == "__main__":
-	main()
+    main()
