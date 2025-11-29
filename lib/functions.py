@@ -2289,7 +2289,7 @@ def convert_ebook(args:dict)->tuple:
                 session['output_split'] = bool(args['output_split'])
                 session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
                 session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
-                cleanup_memory()
+                cleanup_models_cache()
                 if not session['is_gui_process']:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -2530,7 +2530,7 @@ def reset_session(id:str)->None:
     }
     restore_session_from_data(data, session)
 
-def cleanup_memory()->None:
+def cleanup_models_cache()->None:
     try:
         active_models = {
             cache
@@ -2543,7 +2543,7 @@ def cleanup_memory()->None:
                 del loaded_tts[key]
         gc.collect()
     except Exception as e:
-        error = f"cleanup_memory() error: {e}"
+        error = f"cleanup_models_cache() error: {e}"
         print(error)
 
 def show_alert(state:dict)->None:

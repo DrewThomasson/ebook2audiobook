@@ -9,10 +9,10 @@ from typing import Any
 from pathlib import Path
 from huggingface_hub import hf_hub_download
 
-from lib import *
 from lib.classes.vram_detector import VRAMDetector
-from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, ensure_safe_checkpoint
+from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, loaded_tts_size_gb #, ensure_safe_checkpoint
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
+from lib import *
 
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
@@ -292,7 +292,9 @@ class Coqui:
                     if not engine:
                         vram_dict = VRAMDetector().detect_vram(self.session['device'])
                         self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-                        if session['free_vram_gb'] < :
+                        loaded_tts_size_gb(loaded_tts)
+                        if self.session['free_vram_gb'] < loaded_tts_size_gb:
+                            del loaded_tts[self.tts_key]
                         hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
                         hf_sub = ''
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][0]}", cache_dir=self.cache_dir)
@@ -344,6 +346,9 @@ class Coqui:
                                 del audio_sentence, sourceTensor, audio_tensor
                                 Path(proc_voice_path).unlink(missing_ok=True)
                                 gc.collect()
+                                self.engine = loaded_tts.get(self.tts_key, False)
+                                if not self.engine:
+                                    self._load_engine()
                                 return new_voice_path
                             else:
                                 error = 'normalize_audio() error:'

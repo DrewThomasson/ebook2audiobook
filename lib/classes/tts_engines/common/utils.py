@@ -4,16 +4,36 @@ import torch
 import shutil
 import regex as re
 
-from typing import Any, Union
+from typing import Any, Union, Dict
 from safetensors.torch import save_file
 from pathlib import Path
+from torch import Tensor
+from torch.nn import Module
 
-def cleanup_memory():
+def cleanup_memory()->None:
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
         torch.cuda.synchronize()
+
+def model_size_bytes(model:Module)->int:
+	total = 0
+	for t in list(model.parameters()) + list(model.buffers()):
+		if isinstance(t, Tensor):
+			total += t.nelement() * t.element_size()
+	return total
+
+def loaded_tts_size_gb(loaded_tts:Dict[str, Module])->float:
+	total_bytes = 0
+	for model in loaded_tts.values():
+		try:
+			total_bytes += model_size_bytes(model)
+		except Exception:
+			pass
+	gb = total_bytes / (1024 ** 3)
+	return round(gb, 2)
+
 
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 
