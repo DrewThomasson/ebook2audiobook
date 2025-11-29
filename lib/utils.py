@@ -231,16 +231,13 @@ def detect_device()->str:
     # CPU
     # ============================================================
     return 'cpu'
-
-def parse_torch_version(current:str)->Version:
-    return Version(current).base_version
     
 def check_torch()->bool:
     try:
         import torch
         torch_version = getattr(torch, '__version__', False)
         if torch_version:
-            torch_version_parsed = parse_torch_version(torch_version)
+            torch_version_parsed = Version(torch_version).base_version
             backend_specs = {"os": detect_platform_tag(), "arch": detect_arch_tag(), "pyvenv": sys.version_info[:2], "device": detect_device()}
             print(backend_specs)
             if backend_specs['device'] not in ['cpu', 'unknown', 'unsupported']:
@@ -296,11 +293,7 @@ def check_and_install_requirements(file_path:str)->bool:
             from tqdm import tqdm
         except ImportError:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging', 'tqdm'])
-            from tqdm import tqdm
-        torch_version = ''
-        if check_torch():
-            import torch
-            torch_version = torch.__version__            
+            from tqdm import tqdm          
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
             packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)]
