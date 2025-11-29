@@ -542,10 +542,10 @@ class Coqui:
                             bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
                         else:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')       
-                            if not self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
-                                error = 'Could not create pth voice file!'
-                                print(error)
-                                return False
+                            #if not self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
+                            #    error = 'Could not create pth voice file!'
+                            #    print(error)
+                            #    return False
                         pth_voice_dir = os.path.join(bark_dir, speaker)
                         pth_voice_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
                         fine_tuned_params = {
