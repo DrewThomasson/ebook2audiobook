@@ -2545,7 +2545,7 @@ def cleanup_memory()->None:
                 del loaded_tts[key]
         gc.collect()
     except Exception as e:
-        error = f"unload_tts() error: {e}"
+        error = f"cleanup_memory() error: {e}"
         print(error)
 
 def show_alert(state:dict)->None:

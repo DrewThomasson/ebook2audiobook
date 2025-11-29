@@ -7,10 +7,8 @@ import regex as re
 from typing import Any, Union
 from safetensors.torch import save_file
 from pathlib import Path
-from lib.models import loaded_tts, TTS_ENGINES
-from lib.functions import context
 
-def cleanup_garbage():
+def cleanup_memory():
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()

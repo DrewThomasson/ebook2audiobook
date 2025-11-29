@@ -10,7 +10,7 @@ from pathlib import Path
 from huggingface_hub import hf_hub_download
 
 from lib import *
-from lib.classes.tts_engines.common.utils import cleanup_garbage, append_sentence2vtt, ensure_safe_checkpoint
+from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, ensure_safe_checkpoint
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -156,7 +156,7 @@ class Coqui:
         try:
             msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
             print(msg)
-            cleanup_garbage()
+            cleanup_memory()
             self.engine = loaded_tts.get(self.tts_key, False)
             if not self.engine:
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
@@ -264,7 +264,7 @@ class Coqui:
         try:
             msg = f"Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient..."
             print(msg)
-            cleanup_garbage()
+            cleanup_memory()
             self.engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not self.engine_zs:
                 self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model, self.session['device'])
@@ -290,7 +290,7 @@ class Coqui:
                     print(msg)
                     key = f"{TTS_ENGINES['XTTSv2']}-internal"
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
-                    cleanup_garbage()
+                    cleanup_memory()
                     engine = loaded_tts.get(key, False)
                     if not engine:
                         hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
@@ -834,7 +834,7 @@ class Coqui:
                                 if self.sentence_idx:
                                     torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
                                     del audio_tensor
-                                    cleanup_garbage()
+                                    cleanup_memory()
                             self.audio_segments = []
                             if os.path.exists(final_sentence_file):
                                 return True
