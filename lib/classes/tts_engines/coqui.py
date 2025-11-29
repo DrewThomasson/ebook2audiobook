@@ -375,8 +375,6 @@ class Coqui:
                 else:
                     os.makedirs(pth_voice_dir,exist_ok=True)
                     key = f"{TTS_ENGINES['BARK']}-internal"
-                    voice_temp = os.path.splitext(pth_voice_file)[0]+'.wav'
-                    shutil.copy(voice_path,voice_temp)
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
                     fine_tuned_params = {
@@ -396,7 +394,6 @@ class Coqui:
                             #silent=True,
                             **fine_tuned_params
                         )
-                    os.remove(voice_temp)
                     del result
                     msg = f"Saved file: {pth_voice_file}"
                     print(msg)
