@@ -292,8 +292,8 @@ class Coqui:
                     if not engine:
                         vram_dict = VRAMDetector().detect_vram(self.session['device'])
                         self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-                        loaded_tts_size_gb(loaded_tts)
-                        if self.session['free_vram_gb'] < loaded_tts_size_gb:
+                        current_free_vram_gb = loaded_tts_size_gb(loaded_tts)
+                        if self.session['free_vram_gb'] <= current_free_vram_gb:
                             del loaded_tts[self.tts_key]
                         hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
                         hf_sub = ''
