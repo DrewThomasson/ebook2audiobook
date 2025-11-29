@@ -396,7 +396,6 @@ class Coqui:
                             speaker_wav=voice_path,
                             speaker=speaker,
                             voice_dir=pth_voice_dir,
-                            #silent=True,
                             **fine_tuned_params
                         )
                     del result
@@ -408,8 +407,6 @@ class Coqui:
         except Exception as e:
             error = f'_check_bark_npz() error: {e}'
             print(error)
-            if voice_temp:
-                os.remove(voice_temp)
             return False
         
     def _tensor_type(self,audio_data:Any)->torch.Tensor:
@@ -565,7 +562,6 @@ class Coqui:
                                 sentence,
                                 speaker=speaker,
                                 voice_dir=pth_voice_dir,
-                                #silent=True,
                                 **fine_tuned_params
                             )
                         audio_sentence = result.get('wav')
