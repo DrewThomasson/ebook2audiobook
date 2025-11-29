@@ -465,7 +465,6 @@ class Coqui:
                         return False
             if self.engine:
                 self.engine.to(self.session['device'])
-                trim_audio_buffer = 0.004
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 if sentence == TTS_SML['break']:
                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
@@ -478,12 +477,12 @@ class Coqui:
                     self.audio_segments.append(pause_tensor.clone())
                     return True
                 else:
-                    if sentence[-1].isalnum():
-                        sentence = f'{sentence} —'
-                    elif sentence.endswith("'"):
+                    if sentence.endswith("'"):
                         sentence = sentence[:-1]
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.008
+                        sentence = sentence.replace('.', ' —') if self.session['language'] != 'eng' else sentence
+                        sentence += ' ...' if sentence[-1].isalnum() else ''
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
                             settings['gpt_cond_latent'], settings['speaker_embedding'] = settings['latent_embedding'][settings['voice_path']]
                         else:
@@ -514,7 +513,7 @@ class Coqui:
                         }
                         with torch.no_grad():
                             result = self.engine.inference(
-                                text=sentence.replace('.', ' —'),
+                                text=sentence,
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=settings['gpt_cond_latent'],
                                 speaker_embedding=settings['speaker_embedding'],
@@ -525,6 +524,7 @@ class Coqui:
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['BARK']:
                         trim_audio_buffer = 0.002
+                        sentence += '…' if sentence[-1].isalnum() else ''
                         '''
                             [laughter]
                             [laughs]
@@ -555,8 +555,6 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        if not sentence.endswith(('.', '!', '?', '…', '—')):
-                            sentence += "."
                         with torch.no_grad():
                             result = self.engine.synthesize(
                                 sentence,
@@ -568,6 +566,8 @@ class Coqui:
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
+                        trim_audio_buffer = 0.004
+                        sentence += '—' if sentence[-1].isalnum() else ''
                         speaker_argument = {}
                         if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
                             if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
@@ -645,6 +645,8 @@ class Coqui:
                                     **speaker_argument
                                 )
                     elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
+                        trim_audio_buffer = 0.004
+                        sentence += '—' if sentence[-1].isalnum() else ''
                         speaker_argument = {}
                         not_supported_punc_pattern = re.compile(r"[.:—]")
                         if settings['voice_path'] is not None:
@@ -717,6 +719,8 @@ class Coqui:
                                     **speaker_argument
                                 )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
+                        trim_audio_buffer = 0.004
+                        sentence += '...' if sentence[-1].isalnum() else ''
                         speaker_argument = {}
                         if self.session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                             not_supported_punc_pattern = re.compile(r'\p{P}+')
@@ -793,6 +797,7 @@ class Coqui:
                                 )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
                         trim_audio_buffer = 0.002
+                        sentence += '...' if sentence[-1].isalnum() else ''
                         speaker_argument = {}
                         not_supported_punc_pattern = re.compile(r'[—]')
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
