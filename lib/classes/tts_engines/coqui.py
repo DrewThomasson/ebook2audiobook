@@ -562,6 +562,7 @@ class Coqui:
                             result = self.engine.synthesize(
                                 sentence,
                                 speaker_wav=settings['voice_path'],
+                                spaker=speaker,
                                 voice_dir=pth_voice_dir,
                                 **fine_tuned_params
                             )
