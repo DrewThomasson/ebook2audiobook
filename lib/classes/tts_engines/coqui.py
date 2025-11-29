@@ -380,10 +380,10 @@ class Coqui:
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
                     fine_tuned_params = {
-                        key.removeprefix("bark_"):cast_type(self.session[key])
-                        for key,cast_type in{
-                            "bark_text_temp":float,
-                            "bark_waveform_temp":float
+                        key.removeprefix("bark_"): cast_type(self.session[key])
+                        for key, cast_type in {
+                            "bark_text_temp": float,
+                            "bark_waveform_temp": float
                         }.items()
                         if self.session.get(key) is not None
                     }
@@ -393,13 +393,13 @@ class Coqui:
                             speaker_wav=voice_path,
                             speaker=speaker,
                             voice_dir=pth_voice_dir,
-                            silent=True,
                             **fine_tuned_params
                         )
                     os.remove(voice_temp)
                     del result
                     msg = f"Saved file: {pth_voice_file}"
                     print(msg)
+                    gc.collect()
                     return True
             else:
                 return True
@@ -563,7 +563,6 @@ class Coqui:
                                 sentence,
                                 speaker=speaker,
                                 voice_dir=pth_voice_dir,
-                                silent=True,
                                 **fine_tuned_params
                             )
                         audio_sentence = result.get('wav')
