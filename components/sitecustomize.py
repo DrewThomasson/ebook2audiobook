@@ -1,41 +1,77 @@
 """
 Global environment initialization hook.
-Executed on Python startup before user code.
+Executed automatically on Python startup before user code.
 """
 
 import sys
 import importlib
-import torch
-from typing import Any,Callable
+import importlib.abc
+import importlib.util
+from types import ModuleType
+from typing import Any
 
 debug:bool=False
 
 def warn(msg:str)->None:
-	if debug: print(msg)
+	if debug:
+		print(msg)
 
-def wrapped_check_torch_load_is_safe(*args:Any,**kwargs:Any)->None:
-	if debug: warn("[sitecustomize]check_called")
+def wrapped_check_torch_load_is_safe()->None:
+	if debug:
+		warn("[sitecustomize] check_torch_load_is_safe called")
 	return None
 
-# --- patch torch.load so the hook is reapplied after every load() ---
-_orig_load:Callable[...,Any]=torch.load
-
-def patched_load(*args:Any,**kwargs:Any)->Any:
-	obj=_orig_load(*args,**kwargs)
+def patch_all()->None:
+	target=wrapped_check_torch_load_is_safe
+	# patch transformers.utils.import_utils
 	try:
 		iu=importlib.import_module("transformers.utils.import_utils")
-		iu.check_torch_load_is_safe=wrapped_check_torch_load_is_safe
-	except Exception as e:
-		if debug: warn(f"[sitecustomize]patch_fail:{e}")
-	return obj
+		setattr(iu,"check_torch_load_is_safe",target)
+	except ModuleNotFoundError:
+		iu=None
+	# patch transformers.utils
+	try:
+		tu=importlib.import_module("transformers.utils")
+		setattr(tu,"check_torch_load_is_safe",target)
+	except ModuleNotFoundError:
+		tu=None
+	# patch any already-imported transformers.* module that has a global with that name
+	for name,module in list(sys.modules.items()):
+		if not name.startswith("transformers."):
+			continue
+		if not isinstance(module,ModuleType):
+			continue
+		if hasattr(module,"check_torch_load_is_safe"):
+			setattr(module,"check_torch_load_is_safe",target)
+	if debug:
+		warn("[sitecustomize] patch_all applied")
+
+class _Loader(importlib.abc.Loader):
+	def __init__(self,orig:importlib.abc.Loader)->None:
+		self.orig=orig
+	def create_module(self,spec:Any)->ModuleType|None:
+		if hasattr(self.orig,"create_module"):
+			return self.orig.create_module(spec)  # type: ignore[no-any-return]
+		return None
+	def exec_module(self,module:ModuleType)->None:
+		if hasattr(self.orig,"exec_module"):
+			self.orig.exec_module(module)  # type: ignore[arg-type]
+		patch_all()
+
+class _Finder(importlib.abc.MetaPathFinder):
+	def find_spec(self,fullname:str,path:list[str]|None,target:ModuleType|None=None)->Any:
+		if fullname in ("transformers.utils.import_utils","transformers.utils"):
+			spec=importlib.util.find_spec(fullname)
+			if spec and spec.loader:
+				spec.loader=_Loader(spec.loader)  # type: ignore[arg-type]
+				return spec
+		return None
 
 if not getattr(sys,"_sitecustomize_loaded",False):
 	sys._sitecustomize_loaded=True
-	torch.load=patched_load
-	# initial patch if transformers already imported
+	sys.meta_path.insert(0,_Finder())
 	try:
-		iu=importlib.import_module("transformers.utils.import_utils")
-		iu.check_torch_load_is_safe=wrapped_check_torch_load_is_safe
-		warn("[sitecustomize]init_patch_ok")
-	except Exception:
-		warn("[sitecustomize]transformers_not_yet_imported")
+		patch_all()
+	except Exception as e:
+		if debug:
+			warn(f"[sitecustomize] initial patch failed: {e!r}")
