@@ -1,9 +1,6 @@
 import os, re, sys, platform, shutil, importlib
 
-from packaging.version import Version, InvalidVersion
-from importlib.metadata import version, PackageNotFoundError
-from packaging.specifiers import SpecifierSet
-from packaging.markers import Marker
+from lib.conf import *
 
 def detect_platform_tag()->str:
     if sys.platform.startswith('win'):
@@ -292,27 +289,31 @@ def check_torch()->bool:
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
-                            return False
-            return True
+                            sys.exit(1)
+            sys.exit(0)
     except ImportError:
         error = f'check_torch(): torch not yet installed...'
         print(error)
-        return False
+        sys.exit(1)
     except InvalidVersion:
         error = f'check_torch(): Torch or Numpy error Version.'
         print(error)
-        return False      
+        sys.exit(1)      
     except Exception as e:
         error = f'check_torch() error: {e}'
         print(error)
-        return False
+        sys.exit(1)
 
 def check_and_install_requirements(file_path:str)->bool:
     if not os.path.exists(file_path):
         error = f'Warning: File {file_path} not found. Skipping package check.'
         print(error)
-        return False
+        sys.exit(1)
     try:
+        from packaging.version import Version, InvalidVersion
+        from importlib.metadata import version, PackageNotFoundError
+        from packaging.specifiers import SpecifierSet
+        from packaging.markers import Marker
         try:
             from tqdm import tqdm
         except ImportError:
@@ -424,14 +425,18 @@ def check_and_install_requirements(file_path:str)->bool:
                             continue
                         error = f'Failed to install {package}: {e}'
                         print(error)
-                        return False
+                        sys.exit(1)
             msg = '\nAll required packages are installed.'
             print(msg)
+            if not check_dictionary():
+                error = 'Could not load unidic dictionary'
+                print(error)
+                sys.exit(1)
         return check_torch()
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
-        raise SystemExit(error)
-        return False
+        print(error)
+        sys.exit(1)
        
 def check_dictionary()->bool:
     import unidic
@@ -444,6 +449,12 @@ def check_dictionary()->bool:
             subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
         except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
             error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting...'
-            raise SystemExit(error)
+            print(error)
             return False
     return True
+
+def main():
+	check_and_install_requirements(requirements_file)
+    
+if __name__ == "__main__":
+	main()
