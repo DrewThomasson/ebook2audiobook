@@ -561,7 +561,7 @@ class Coqui:
                         with torch.no_grad():
                             result = self.engine.synthesize(
                                 sentence,
-                                speaker=speaker,
+                                speaker_wav=settings['voice_path'],
                                 voice_dir=pth_voice_dir,
                                 **fine_tuned_params
                             )
