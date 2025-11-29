@@ -10,6 +10,30 @@ from lib.conf import *
 
 class EnvironmentInstaller():
 
+    @cached_property
+    def platform_tag(self)->str:
+        return self.detect_platform_tag()
+
+    @cached_property
+    def arch_tag(self)->str:
+        return self.detect_arch_tag()
+
+    @cached_property
+    def device_tag(self)->str:
+        return self.detect_device()
+
+    @cached_property
+    def torch_version(self)->str|bool:
+        try:
+            import torch
+            return getattr(torch, '__version__', False)
+        except Exception:
+            return False
+
+    @cached_property
+    def backend_specs(self)->dict:
+        return {"os": self.platform_tag, "arch": self.arch_tag, "pyvenv": sys.version_info[:2], "device": self.device_tag}
+
     def detect_platform_tag(self)->str:
         if sys.platform.startswith('win'):
             return 'win'
@@ -261,11 +285,10 @@ class EnvironmentInstaller():
         
     def check_torch(self)->bool:
         try:
-            import torch
-            torch_version = getattr(torch, '__version__', False)
+            torch_version = self.torch_version
             if torch_version:
                 torch_version_parsed = Version(torch_version).base_version
-                backend_specs = {"os": self.detect_platform_tag(), "arch": self.detect_arch_tag(), "pyvenv": sys.version_info[:2], "device": self.detect_device()}
+                backend_specs = self.backend_specs
                 print(backend_specs)
                 if backend_specs['device'] not in ['cpu', 'unknown', 'unsupported']:
                     m = re.search(r'\+(.+)$', torch_version)
@@ -299,9 +322,6 @@ class EnvironmentInstaller():
                                 print(error)
                                 return False
                 return True
-        except ImportError:
-            error = f'check_torch(): torch not yet installed...'
-            print(error)
             return False
         except InvalidVersion:
             error = f'check_torch(): Torch or Numpy error Version.'
@@ -437,7 +457,8 @@ class EnvironmentInstaller():
             return True
         except Exception as e:
             error = f'check_and_install_requirements() error: {e}'
-            raise SystemExit(error)
+            print(error)
+            return False
            
     def check_dictionary(self)->bool:
         import unidic
@@ -450,5 +471,6 @@ class EnvironmentInstaller():
                 subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
             except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
                 error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting...'
-                raise SystemExit(error)
+                print(error)
+                return False
         return True
