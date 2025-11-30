@@ -1727,7 +1727,6 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
         start = int(start)
         end = int(end)
         is_gui_process = session.get('is_gui_process')
-        id = session.get('id')
         sentence_files = [
             f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1747,7 +1746,11 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
         os.makedirs(temp_sentence, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
             chunk_list = []
-            for i in range(0, len(selected_files), batch_size):
+            total_batches = (len(selected_files)+batch_size-1)//batch_size
+            iterator = tqdm(range(0,len(selected_files),batch_size),total=total_batches,desc="Preparing batches",unit="batch")
+            for idx,i in enumerate(iterator):
+                if session.get('is_gui_progress') and gr_progress:
+                    gr_progress((idx+1)/total_batches,"Preparing batches")
                 if session['cancellation_requested']:
                     msg = 'Cancel requested'
                     print(msg)
@@ -1774,11 +1777,15 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
             with open(final_list, 'w') as f:
                 for _, chunk_path, _ in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
+            if session.get('is_gui_progress') and gr_progress:
+                gr_progress(1.0,"Final merge")
             if assemble_chunks(final_list, audio_file, is_gui_process):
-                print(f'********* Combined block audio file saved in {audio_file}')
+                msg = f'********* Combined block audio file saved in {audio_file}'
+                print(msg)
                 return True
             else:
-                print("combine_audio_sentences() Final merge failed.")
+                error = 'combine_audio_sentences() Final merge failed.'
+                print(error)
                 return False
     except Exception as e:
         DependencyError(e)
