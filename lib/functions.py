@@ -2129,7 +2129,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
         cmd = [
             shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
             '-safe', '0', '-f', 'concat', '-i', txt_file,
-            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
+            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '0', out_file
         ]
         proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble chunks')
         if proc_pipe:
