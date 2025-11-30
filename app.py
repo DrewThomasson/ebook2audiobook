@@ -185,6 +185,13 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         args['ebook_list'] = None
 
         print(f"v{prog_version} {args['script_mode']} mode")
+        
+        if args['script_mode'] == NATIVE:
+            from lib.classes.device_installer import DeviceInstaller
+            installer = DeviceInstaller()
+            device_info = installer.backend_specs()
+            if installer.check_and_install_requirements():
+                check_torch = installer.check_torch()
 
         import lib.functions as f
         f.context = f.SessionContext() if f.context is None else f.context

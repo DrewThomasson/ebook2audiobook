@@ -20,7 +20,7 @@ from lib import *
 lock = threading.Lock()
 
 class Coqui:
-    def __init__(self,session:DictProxy):
+    def __init__(self, session:DictProxy):
         try:
             global xtts_builtin_speakers_list
             self.session = session
