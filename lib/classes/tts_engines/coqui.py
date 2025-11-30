@@ -489,7 +489,7 @@ class Coqui:
                         sentence = sentence[:-1]
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.008
-                        sentence = sentence.replace('.', ' —') if self.session['language'] == 'deu' else sentence
+                        sentence = sentence.replace('.', ' —') if self.session['language'] in ['deu', 'ita', 'por'] else sentence
                         sentence += ' ...' if sentence[-1].isalnum() else ''
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
                             settings['gpt_cond_latent'], settings['speaker_embedding'] = settings['latent_embedding'][settings['voice_path']]
