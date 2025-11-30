@@ -595,7 +595,7 @@ function install_python_packages {
 check_device_info() {
 python3 - << 'EOF'
 import sys
-from lib.device_installer import DeviceInstaller
+from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 result = device.check_device_info()
 if result:
@@ -609,7 +609,7 @@ EOF
 install_device_packages() {
 python3 - << EOF
 import sys
-from lib.device_installer import DeviceInstaller
+from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 exit_code = device.install_device_packages("""${INSTALL_PKG}""")  # returns 0 or 1
 sys.exit(exit_code)
