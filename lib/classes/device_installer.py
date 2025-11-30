@@ -462,13 +462,13 @@ class DeviceInstaller():
                                     url = torch_matrix[device_info['tag']]['url']
                                     if device_info['tag'] == 'jetson-51':
                                         torch_pkg = f'{url}/v51/torch-{default_jetson51_torch}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg =   f'{url}/v51/torchaudio-{default_jetson51_torch}%2Bjetson-{default_py_tag}-{os}_{arch}.whl'
+                                        torchaudio_pkg =   f'{url}/v51/torchaudio-{default_jetson51_torch}%2Bjetson-{default_py_tag}-linux_{arch}.whl'
                                     elif device_info['tag'] == 'jetson-60':
                                         torch_pkg = f'{url}/v60/torch-{default_jetson60_torch}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg =   f'{url}/v60/torchaudio-{default_jetson60_torch}%2Bjetson-{default_py_tag}-{os}_{arch}.whl'
+                                        torchaudio_pkg =   f'{url}/v60/torchaudio-{default_jetson60_torch}%2Bjetson-{default_py_tag}-linux_{arch}.whl'
                                     elif device_info['tag'] == 'jetson-61':
                                         torch_pkg = f'{url}/v61/torch-{default_jetson60_torch}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg =   f'{url}/v61/torchaudio-{default_jetson60_torch}%2Bjetson-{default_py_tag}-{os}_{arch}.whl'
+                                        torchaudio_pkg =   f'{url}/v61/torchaudio-{default_jetson60_torch}%2Bjetson-{default_py_tag}-linux_{arch}.whl'
                                     else:
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_parsed}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_parsed}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
