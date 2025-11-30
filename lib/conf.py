@@ -98,33 +98,33 @@ torch_version_base = {
 torch_matrix = {
 
     # CUDA
-    "cu118": {"tag": "cu118", "url": default_pytorch_url},
-    "cu121": {"tag": "cu121", "url": default_pytorch_url},
-    "cu124": {"tag": "cu124", "url": default_pytorch_url},
-    "cu126": {"tag": "cu126", "url": default_pytorch_url},
-    "cu128": {"tag": "cu128", "url": default_pytorch_url},
+    "cu118": {"url": default_pytorch_url},
+    "cu121": {"url": default_pytorch_url},
+    "cu124": {"url": default_pytorch_url},
+    "cu126": {"url": default_pytorch_url},
+    "cu128": {"url": default_pytorch_url},
     
     # ROCm
-    "rocm5.5":   {"tag": "rocm5.5", "url": default_pytorch_url},
-    "rocm5.6":   {"tag": "rocm5.6", "url": default_pytorch_url},
-    "rocm5.7":   {"tag": "rocm5.7", "url": default_pytorch_url},
-    "rocm6.0":   {"tag": "rocm6.0", "url": default_pytorch_url},
-    "rocm6.1":   {"tag": "rocm6.1", "url": default_pytorch_url},
-    "rocm6.2":   {"tag": "rocm6.2", "url": default_pytorch_url},
-    "rocm6.2.4": {"tag": "rocm6.2.4", "url": default_pytorch_url},
-    "rocm6.3":   {"tag": "rocm6.3", "url": default_pytorch_url},
-    "rocm6.4":   {"tag": "rocm6.4", "url": default_pytorch_url},
+    "rocm5.5":   {"url": default_pytorch_url},
+    "rocm5.6":   {"url": default_pytorch_url},
+    "rocm5.7":   {"url": default_pytorch_url},
+    "rocm6.0":   {"url": default_pytorch_url},
+    "rocm6.1":   {"url": default_pytorch_url},
+    "rocm6.2":   {"url": default_pytorch_url},
+    "rocm6.2.4": {"url": default_pytorch_url},
+    "rocm6.3":   {"url": default_pytorch_url},
+    "rocm6.4":   {"url": default_pytorch_url},
     
     # MPS
-    "mps": {"tag": "mps", "url": default_pytorch_url},
+    "mps": {"url": default_pytorch_url},
     
     # XPU
-    "xpu": {"tag": "xpu", "url": default_pytorch_url},
+    "xpu": {"url": default_pytorch_url},
     
     # JETSON
-    "jetson51": {"tag": "jetson51", "url": default_jetson_url},
-    "jetson60": {"tag": "jetson60", "url": default_jetson_url},
-    "jetson61": {"tag": "jetson61", "url": default_jetson_url}
+    "jetson51": {"url": default_jetson_url},
+    "jetson60": {"url": default_jetson_url},
+    "jetson61": {"url": default_jetson_url}
 }
 
 cuda_version_range = {"min": (11,8), "max": (12,8)}

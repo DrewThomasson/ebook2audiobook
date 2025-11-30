@@ -449,12 +449,12 @@ class DeviceInstaller():
                             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
                             if (
                                 non_standard_tag is None and current_tag != device_info['tag'] or 
-                                non_standard_tag is not None and device_info['tag'] in ['jetson-51', 'jetson-60', 'jetson-61'] and non_standard_tag != torch_matrix[device_info['tag']]['tag']
+                                non_standard_tag is not None and device_info['tag'] in ['jetson51', 'jetson60', 'jetson61'] and non_standard_tag != device_info['tag']
                             ):
                                 try:
                                     os = device_info['os']
                                     arch = device_info['arch']
-                                    tag = torch_matrix[device_info['tag']]['tag']
+                                    tag = device_info['tag']
                                     url = torch_matrix[device_info['tag']]['url']
                                     toolkit_version = "".join(c for c in tag if c.isdigit())
                                     tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
