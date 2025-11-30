@@ -44,7 +44,7 @@ MINIFORGE_LINUX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases
 RUST_INSTALLER_URL="https://sh.rustup.rs"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
-INSTALL_PKG="none"
+INSTALL_PKG=""
 WGET=$(which wget 2>/dev/null)
 DOCKER_IMG_NAME="ebook2audiobook:latest"
 
@@ -85,6 +85,200 @@ fi
 [[ $OSTYPE == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
 ############### FUNCTIONS ##############
+
+###### DESKTOP APP
+function has_no_display {
+	if [[ "$OSTYPE" == darwin* ]]; then
+		if pgrep -x WindowServer >/dev/null 2>&1 &&
+		   [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
+			return 0   # macOS GUI
+		else
+			return 1   # SSH or console mode
+		fi
+	else
+		if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+			return 1
+		fi
+
+		if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
+			return 1   # No display server → headless
+		fi
+
+		if pgrep -x vncserver	>/dev/null 2>&1 || \
+		   pgrep -x Xvnc		 >/dev/null 2>&1 || \
+		   pgrep -x x11vnc	   >/dev/null 2>&1 || \
+		   pgrep -x Xtightvnc	>/dev/null 2>&1 || \
+		   pgrep -x Xtigervnc	>/dev/null 2>&1 || \
+		   pgrep -x Xrealvnc	 >/dev/null 2>&1; then
+			return 0
+		fi
+
+		if pgrep -x gnome-shell	   >/dev/null 2>&1 || \
+		   pgrep -x plasmashell	   >/dev/null 2>&1 || \
+		   pgrep -x xfce4-session	 >/dev/null 2>&1 || \
+		   pgrep -x cinnamon		  >/dev/null 2>&1 || \
+		   pgrep -x mate-session	  >/dev/null 2>&1 || \
+		   pgrep -x lxsession		 >/dev/null 2>&1 || \
+		   pgrep -x openbox		   >/dev/null 2>&1 || \
+		   pgrep -x i3				>/dev/null 2>&1 || \
+		   pgrep -x sway			  >/dev/null 2>&1 || \
+		   pgrep -x hyprland		  >/dev/null 2>&1 || \
+		   pgrep -x wayfire		   >/dev/null 2>&1 || \
+		   pgrep -x river			 >/dev/null 2>&1 || \
+		   pgrep -x fluxbox		   >/dev/null 2>&1; then
+			return 0   # Desktop environment detected
+		fi
+		return 1
+	fi
+}
+
+function open_desktop_app {
+	(
+		host=127.0.0.1
+		port=7860
+		url="http://$host:$port/"
+		timeout=30
+		start_time=$(date +%s)
+
+		while ! nc -z "$host" "$port" >/dev/null 2>&1; do
+			sleep 1
+			elapsed=$(( $(date +%s) - start_time ))
+			if [[ "$elapsed" -ge "$timeout" ]]; then
+				exit 0
+			fi
+		done
+
+		if [[ "$OSTYPE" == darwin* ]]; then
+			open "$url" >/dev/null 2>&1 &
+		elif command -v xdg-open >/dev/null 2>&1; then
+			xdg-open "$url" >/dev/null 2>&1 &
+		elif command -v gio >/dev/null 2>&1; then
+			gio open "$url" >/dev/null 2>&1 &
+		elif command -v x-www-browser >/dev/null 2>&1; then
+			x-www-browser "$url" >/dev/null 2>&1 &
+		else
+			echo "No method found to open the default web browser." >&2
+		fi
+		exit 0
+	) &
+}
+
+function mac_app {
+	local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
+	local CONTENTS="$APP_BUNDLE/Contents"
+	local MACOS="$CONTENTS/MacOS"
+	local RESOURCES="$CONTENTS/Resources"
+	local DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
+	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
+	local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
+	local OPEN_DESKTOP_APP_DEF=$(declare -f open_desktop_app)
+	local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
+	if [[ -d "$APP_BUNDLE" ]]; then
+		open_desktop_app
+		return 0
+	fi
+	[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
+	if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
+		mkdir -p "$MACOS" "$RESOURCES"
+	fi
+	cat > "$MACOS/$APP_NAME" << EOF
+#!/bin/zsh
+
+$OPEN_DESKTOP_APP_DEF
+
+open_desktop_app
+
+# TODO: replace osascript when log will be available in gradio with
+#
+# cd "$SCRIPT_DIR"
+# ./ebook2audiobook.sh
+
+osascript -e '
+tell application "Terminal"
+do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
+activate
+end tell
+'
+EOF
+	chmod +x "$MACOS/$APP_NAME"
+	cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
+	cat > "$CONTENTS/Info.plist" << 'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+<key>CFBundleDevelopmentRegion</key>
+<string>en</string>
+<key>CFBundleExecutable</key>
+<string>ebook2audiobook</string>
+<key>CFBundleIdentifier</key>
+<string>com.local.ebook2audiobook</string>
+<key>CFBundleInfoDictionaryVersion</key>
+<string>6.0</string>
+<key>CFBundleName</key>
+<string>ebook2audiobook</string>
+<key>CFBundlePackageType</key>
+<string>APPL</string>
+<key>CFBundleShortVersionString</key>
+<string>1.0</string>
+<key>CFBundleVersion</key>
+<string>1</string>
+<key>LSMinimumSystemVersion</key>
+<string>10.9</string>
+<key>NSPrincipalClass</key>
+<string>NSApplication</string>
+<key>CFBundleIconFile</key>
+<string>AppIcon</string>
+</dict>
+</plist>
+PLIST
+	ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
+	echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to the launchpad and click on ebook2audiobook icon."
+	open_desktop_app
+}
+
+function linux_app() {
+	local MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
+	local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
+	local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
+	if [[ -f "$MENU_ENTRY" ]]; then
+		open_desktop_app
+		return 0
+	fi
+	mkdir -p "$HOME/.local/share/applications"
+	cat > "$MENU_ENTRY" <<EOF
+[Desktop Entry]
+Type=Application
+Name=ebook2audiobook
+Exec=$SCRIPT_DIR/ebook2audiobook.sh
+Icon=$ICON_PATH
+Terminal=true
+Categories=Utility;
+EOF
+	chmod +x "$MENU_ENTRY"
+	mkdir -p "$HOME/Desktop" 2>&1 > /dev/null
+	cp "$MENU_ENTRY" "$DESKTOP_SHORTCUT"
+	chmod +x "$DESKTOP_SHORTCUT"
+	if command -v update-desktop-database >/dev/null 2>&1; then
+		update-desktop-database ~/.local/share/applications >/dev/null 2>&1
+	fi
+	echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to menu entry and click on ebook2audiobook icon."
+	open_desktop_app
+}
+
+function check_desktop_app {
+	if [[ " ${ARGS[*]} " == *" --headless "* || has_no_display -eq 1 ]]; then
+		return 0
+	fi
+	if [[ "$OSTYPE" == darwin* ]]; then
+		mac_app
+	elif [[ "$OSTYPE" == "linux"* ]]; then
+		linux_app
+	fi
+	return 0
+}
+#################
 
 function check_required_programs {
 	local programs=("$@")
@@ -391,26 +585,41 @@ function install_python_packages {
 	python3 -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r "$SCRIPT_DIR/requirements.txt" || exit 1
 	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
 	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
-		pip install --no-cache-dir --use-pep517 "numpy<2" || exit 1
+		python3 -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
 	fi
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
 	return 0
 }
 
-function check_device_info {
-	python3 - << 'EOF'
-import json
+check_device_info() {
+python3 - << 'EOF'
+import sys
 from lib.device_installer import DeviceInstaller
 device = DeviceInstaller()
-print(json.dumps(device.backend_specs()))
+result = device.check_device_info()
+if result:
+    print(result)
+    sys.exit(0)
+else:
+    sys.exit(1)
+EOF
+}
+
+install_device_packages() {
+python3 - << EOF
+import sys
+from lib.device_installer import DeviceInstaller
+device = DeviceInstaller()
+exit_code = device.install_device_packages("""${INSTALL_PKG}""")  # returns 0 or 1
+sys.exit(exit_code)
 EOF
 }
 
 function check_sitecustomized {
-	src_pyfile="$SCRIPT_DIR/components/sitecustomize.py"
-	site_packages_path=$(python3 -c "import sysconfig;print(sysconfig.get_paths()['purelib'])")
-	dst_pyfile="$site_packages_path/sitecustomize.py"
+	local src_pyfile="$SCRIPT_DIR/components/sitecustomize.py"
+	local site_packages_path=$(python3 -c "import sysconfig;print(sysconfig.get_paths()['purelib'])")
+	local dst_pyfile="$site_packages_path/sitecustomize.py"
 	if [ ! -f "$dst_pyfile" ] || [ "$src_pyfile" -nt "$dst_pyfile" ]; then
 		if cp -p "$src_pyfile" "$dst_pyfile"; then
 			echo "Installed sitecustomize.py hook in $dst_pyfile"
@@ -422,204 +631,12 @@ function check_sitecustomized {
 	return 0
 }
 
-function has_no_display {
-	if [[ "$OSTYPE" == darwin* ]]; then
-		if pgrep -x WindowServer >/dev/null 2>&1 &&
-		   [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
-			return 0   # macOS GUI
-		else
-			return 1   # SSH or console mode
-		fi
-	else
-		if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
-			return 1
-		fi
-
-		if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
-			return 1   # No display server → headless
-		fi
-
-		if pgrep -x vncserver	>/dev/null 2>&1 || \
-		   pgrep -x Xvnc		 >/dev/null 2>&1 || \
-		   pgrep -x x11vnc	   >/dev/null 2>&1 || \
-		   pgrep -x Xtightvnc	>/dev/null 2>&1 || \
-		   pgrep -x Xtigervnc	>/dev/null 2>&1 || \
-		   pgrep -x Xrealvnc	 >/dev/null 2>&1; then
-			return 0
-		fi
-
-		if pgrep -x gnome-shell	   >/dev/null 2>&1 || \
-		   pgrep -x plasmashell	   >/dev/null 2>&1 || \
-		   pgrep -x xfce4-session	 >/dev/null 2>&1 || \
-		   pgrep -x cinnamon		  >/dev/null 2>&1 || \
-		   pgrep -x mate-session	  >/dev/null 2>&1 || \
-		   pgrep -x lxsession		 >/dev/null 2>&1 || \
-		   pgrep -x openbox		   >/dev/null 2>&1 || \
-		   pgrep -x i3				>/dev/null 2>&1 || \
-		   pgrep -x sway			  >/dev/null 2>&1 || \
-		   pgrep -x hyprland		  >/dev/null 2>&1 || \
-		   pgrep -x wayfire		   >/dev/null 2>&1 || \
-		   pgrep -x river			 >/dev/null 2>&1 || \
-		   pgrep -x fluxbox		   >/dev/null 2>&1; then
-			return 0   # Desktop environment detected
-		fi
-		return 1
-	fi
-}
-
-function open_desktop_app {
-	(
-		host=127.0.0.1
-		port=7860
-		url="http://$host:$port/"
-		timeout=30
-		start_time=$(date +%s)
-
-		while ! nc -z "$host" "$port" >/dev/null 2>&1; do
-			sleep 1
-			elapsed=$(( $(date +%s) - start_time ))
-			if [[ "$elapsed" -ge "$timeout" ]]; then
-				exit 0
-			fi
-		done
-
-		if [[ "$OSTYPE" == darwin* ]]; then
-			open "$url" >/dev/null 2>&1 &
-		elif command -v xdg-open >/dev/null 2>&1; then
-			xdg-open "$url" >/dev/null 2>&1 &
-		elif command -v gio >/dev/null 2>&1; then
-			gio open "$url" >/dev/null 2>&1 &
-		elif command -v x-www-browser >/dev/null 2>&1; then
-			x-www-browser "$url" >/dev/null 2>&1 &
-		else
-			echo "No method found to open the default web browser." >&2
-		fi
-		exit 0
-	) &
-}
-
-function mac_app {
-	local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
-	local CONTENTS="$APP_BUNDLE/Contents"
-	local MACOS="$CONTENTS/MacOS"
-	local RESOURCES="$CONTENTS/Resources"
-	local DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
-	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
-	local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
-	local OPEN_DESKTOP_APP_DEF=$(declare -f open_desktop_app)
-	local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
-	if [[ -d "$APP_BUNDLE" ]]; then
-		open_desktop_app
-		return 0
-	fi
-	[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
-	if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
-		mkdir -p "$MACOS" "$RESOURCES"
-	fi
-	cat > "$MACOS/$APP_NAME" << EOF
-#!/bin/zsh
-
-$OPEN_DESKTOP_APP_DEF
-
-open_desktop_app
-
-# TODO: replace osascript when log will be available in gradio with
-#
-# cd "$SCRIPT_DIR"
-# ./ebook2audiobook.sh
-
-osascript -e '
-tell application "Terminal"
-do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
-activate
-end tell
-'
-EOF
-	chmod +x "$MACOS/$APP_NAME"
-	cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
-	cat > "$CONTENTS/Info.plist" << 'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-<key>CFBundleDevelopmentRegion</key>
-<string>en</string>
-<key>CFBundleExecutable</key>
-<string>ebook2audiobook</string>
-<key>CFBundleIdentifier</key>
-<string>com.local.ebook2audiobook</string>
-<key>CFBundleInfoDictionaryVersion</key>
-<string>6.0</string>
-<key>CFBundleName</key>
-<string>ebook2audiobook</string>
-<key>CFBundlePackageType</key>
-<string>APPL</string>
-<key>CFBundleShortVersionString</key>
-<string>1.0</string>
-<key>CFBundleVersion</key>
-<string>1</string>
-<key>LSMinimumSystemVersion</key>
-<string>10.9</string>
-<key>NSPrincipalClass</key>
-<string>NSApplication</string>
-<key>CFBundleIconFile</key>
-<string>AppIcon</string>
-</dict>
-</plist>
-PLIST
-	ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
-	echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to the launchpad and click on ebook2audiobook icon."
-	open_desktop_app
-}
-
-function linux_app() {
-	local MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
-	local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
-	local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
-	if [[ -f "$MENU_ENTRY" ]]; then
-		open_desktop_app
-		return 0
-	fi
-	mkdir -p "$HOME/.local/share/applications"
-	cat > "$MENU_ENTRY" <<EOF
-[Desktop Entry]
-Type=Application
-Name=ebook2audiobook
-Exec=$SCRIPT_DIR/ebook2audiobook.sh
-Icon=$ICON_PATH
-Terminal=true
-Categories=Utility;
-EOF
-	chmod +x "$MENU_ENTRY"
-	mkdir -p "$HOME/Desktop" 2>&1 > /dev/null
-	cp "$MENU_ENTRY" "$DESKTOP_SHORTCUT"
-	chmod +x "$DESKTOP_SHORTCUT"
-	if command -v update-desktop-database >/dev/null 2>&1; then
-		update-desktop-database ~/.local/share/applications >/dev/null 2>&1
-	fi
-	echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to menu entry and click on ebook2audiobook icon."
-	open_desktop_app
-}
-
-function check_desktop_app {
-	if [[ " ${ARGS[*]} " == *" --headless "* || has_no_display -eq 1 ]]; then
-		return 0
-	fi
-	if [[ "$OSTYPE" == darwin* ]]; then
-		mac_app
-	elif [[ "$OSTYPE" == "linux"* ]]; then
-		linux_app
-	fi
-	return 0
-}
-
 function build_docker_image {
-	local DEVICE_JSON="$1"
+	local DEVICE_INFO_STR="$1"
 	local OS="manylinux_2_28"
-	local NAME="$(echo "$DEVICE_JSON" | jq -r '.name')"
-	local TAG="$(echo "$DEVICE_JSON" | jq -r '.tag')"
-	local ARCH="$(echo "$DEVICE_JSON" | jq -r '.arch')"
+	local NAME="$(echo "$DEVICE_INFO_STR" | jq -r '.name')"
+	local TAG="$(echo "$DEVICE_INFO_STR" | jq -r '.tag')"
+	local ARCH="$(echo "$DEVICE_INFO_STR" | jq -r '.arch')"
 
 	if ! command -v docker >/dev/null 2>&1; then
 		echo "Error: Docker is not installed."
@@ -630,19 +647,13 @@ function build_docker_image {
 		docker compose build \
 			--no-cache \
 			--progress plain \
-			--build-arg DEVICE_OS="$OS" \
-			--build-arg DEVICE_NAME="$NAME" \
-			--build-arg DEVICE_TAG="$TAG" \
-			--build-arg DEVICE_ARCH="$ARCH" \
+			--build-arg DEVICE_INFO_STR="$DEVICE_INFO_STR" \
 			|| return 1
 	else
 		docker build \
 			--no-cache \
 			--progress plain \
-			--build-arg DEVICE_OS="$OS" \
-			--build-arg DEVICE_NAME="$NAME" \
-			--build-arg DEVICE_TAG="$TAG" \
-			--build-arg DEVICE_ARCH="$ARCH" \
+			--build-arg DEVICE_INFO_STR="$DEVICE_INFO_STR" \
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
 	fi
@@ -659,16 +670,17 @@ if [[ -n "${arguments['help']+exists}" && ${arguments['help']} == true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
-		if [[ "$INSTALL_PKG" == "none" ]]; then
+		if [[ "$INSTALL_PKG" == "" ]]; then
 			if docker image inspect "$DOCKER_IMG_NAME" >/dev/null 2>&1; then
 				echo "[STOP] Docker image '$DOCKER_IMG_NAME' already exists. Aborting build."
 				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
 				exit 1
 			fi
 			build_docker_image "$(check_device_info)" || exit 1
-		elif [[ "$INSTALL_PKG" == "all" ]];then
+		elif [[ "$INSTALL_PKG" != "" ]];then
 			check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 			install_python_packages || exit 1
+			install_device_packages || exit 1
 			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then

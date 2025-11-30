@@ -188,11 +188,14 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         
         if args['script_mode'] == NATIVE:
             from lib.classes.device_installer import DeviceInstaller
-            installer = DeviceInstaller()
+            manager = DeviceInstaller()
             device_info = installer.backend_specs()
-            if installer.check_and_install_requirements():
-                check_torch = installer.check_torch()
-
+            if manager.check_and_install_requirements():
+                device_info_str = manager.check_device_info()
+                if manager.install_device_packages(device_info_str) == 1:
+                    error = f'Error: Could not installed device packages!'
+                    print(error)
+                    sys.exit(1)
         import lib.functions as f
         f.context = f.SessionContext() if f.context is None else f.context
         f.context_tracker = f.SessionTracker() if f.context_tracker is None else f.context_tracker
