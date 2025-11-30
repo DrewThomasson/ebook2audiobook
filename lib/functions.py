@@ -2032,7 +2032,11 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     temp_dir = Path(temp_dir)
                     batch_size = 1024
                     chunk_list = []
-                    for i in range(0, len(part_file_list), batch_size):
+                    total_batches = (len(part_file_list)+batch_size-1)//batch_size
+                    iterator = tqdm(range(0,len(part_file_list),batch_size),total=total_batches,desc=f"Part {part_idx+1} batches",unit="batch")
+                    for idx,i in enumerate(iterator):
+                        if session.get('is_gui_progress') and gr_progress:
+                            gr_progress((idx+1)/total_batches,f"Part {part_idx+1} batches")
                         if session.get('cancellation_requested'):
                             msg = 'Cancel requested'
                             print(msg)
@@ -2051,16 +2055,13 @@ def combine_audio_chapters(id:str)->list[str]|None:
                         error = f'assemble_chunks() One or more chunks failed for part {part_idx+1}.'
                         print(error)
                         return None
-                    # Final merge for this part
-                    combined_chapters_file = Path(session['process_dir']) / (
-                        f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}"
-                        if needs_split else
-                        f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
-                    )
+                    combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
                     final_list = temp_dir / f'part_{part_idx+1:02d}_final.txt'
                     with open(final_list, 'w') as f:
                         for _, chunk_path, _ in chunk_list:
                             f.write(f"file '{Path(chunk_path).as_posix()}'\n")
+                    if session.get('is_gui_progress') and gr_progress:
+                        gr_progress(1.0,f"Part {part_idx+1} final merge")
                     if not assemble_chunks(str(final_list), str(combined_chapters_file), session['is_gui_process']):
                         error = f'assemble_chunks() Final merge failed for part {part_idx+1}.'
                         print(error)
@@ -2068,11 +2069,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                    final_file = Path(session['audiobooks_dir']) / (
-                        f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}"
-                        if needs_split else
-                        session['final_name']
-                    )
+                    final_file = Path(session['audiobooks_dir']) / (f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name'])
                     if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
         else:
