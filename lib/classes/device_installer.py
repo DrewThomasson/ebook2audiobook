@@ -463,17 +463,17 @@ class DeviceInstaller():
                                     tag = torch_matrix[device_info['tag']]['tag']
                                     url = torch_matrix[device_info['tag']]['url']
                                     if device_info['tag'] == 'jetson-51':
-                                        torch_pkg = f'{url}/v51/torch-{torch_version_base_jetson51}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg =   f'{url}/v51/torchaudio-{torch_version_base_jetson51}%2B{tag}-{default_py_tag}-linux_{arch}.whl'
+                                        torch_pkg = f'{url}/v51/torch-{torch_version_base_jetson51}+{tag}-{default_py_tag}-{os}_{arch}.whl'
+                                        torchaudio_pkg =   f'{url}/v51/torchaudio-{torch_version_base_jetson51}+{tag}-{default_py_tag}-linux_{arch}.whl'
                                     elif device_info['tag'] == 'jetson-60':
-                                        torch_pkg = f'{url}/v60/torch-{torch_version_base_jetson60}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg =   f'{url}/v60/torchaudio-{torch_version_base_jetson60}%2B{tag}-{default_py_tag}-linux_{arch}.whl'
+                                        torch_pkg = f'{url}/v60/torch-{torch_version_base_jetson60}+{tag}-{default_py_tag}-{os}_{arch}.whl'
+                                        torchaudio_pkg =   f'{url}/v60/torchaudio-{torch_version_base_jetson60}+{tag}-{default_py_tag}-linux_{arch}.whl'
                                     elif device_info['tag'] == 'jetson-61':
-                                        torch_pkg = f'{url}/v61/torch-{torch_version_base_jetson61}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg =   f'{url}/v61/torchaudio-{torch_version_base_jetson61}%2B{tag}-{default_py_tag}-linux_{arch}.whl'
+                                        torch_pkg = f'{url}/v61/torch-{torch_version_base_jetson61}+{tag}-{default_py_tag}-{os}_{arch}.whl'
+                                        torchaudio_pkg =   f'{url}/v61/torchaudio-{torch_version_base_jetson61}+{tag}-{default_py_tag}-linux_{arch}.whl'
                                     else:
-                                        torch_pkg = f'{url}/{tag}/torch-{torch_version_base}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}%2B{tag}-{default_py_tag}-{os}_{arch}.whl'
+                                        torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{default_py_tag}-{os}_{arch}.whl'
+                                        torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{default_py_tag}-{os}_{arch}.whl'
                                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
                                     if device_info['name'] == 'cuda':
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
