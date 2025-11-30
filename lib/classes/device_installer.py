@@ -257,7 +257,7 @@ class DeviceInstaller():
 
                 if cmp == 0 and (has_cmd('sycl-ls') or has_cmd('clinfo')):
                     devices['XPU']['found'] = True
-                    name 'xpu'
+                    name = 'xpu'
                     tag = 'xpu'
 
                 msg = 'Intel GPU detected but oneAPI runtime missing → CPU'
