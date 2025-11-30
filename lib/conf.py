@@ -85,7 +85,6 @@ default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wi
 
 default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
-default_py_tag = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
 
 default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a definitive place where to upload the jetpack5 torch

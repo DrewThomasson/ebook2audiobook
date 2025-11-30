@@ -456,13 +456,14 @@ class DeviceInstaller():
                                     arch = device_info['arch']
                                     tag = torch_matrix[device_info['tag']]['tag']
                                     url = torch_matrix[device_info['tag']]['url']
-                                    tookkit_version = "".join(c for c in tag if c.isdigit())
+                                    toolkit_version = "".join(c for c in tag if c.isdigit())
+                                    tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                     if device_info['name'] == 'jetson':
-                                        torch_pkg = f"{url}/v{tookkit_version}/torch-{torch_version_base['tag']}+{tag}-{default_py_tag}-{os}_{arch}.whl"
-                                        torchaudio_pkg =   f'{url}/v{tookkit_version}/torchaudio-{torch_version_base['tag']}+{tag}-{default_py_tag}-{os}_{arch}.whl'
+                                        torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_base['tag']}+{tag}-{tag_py}-{os}_{arch}.whl"
+                                        torchaudio_pkg =   f'{url}/v{toolkit_version}/torchaudio-{torch_version_base['tag']}+{tag}-{tag_py}-{os}_{arch}.whl'
                                     else:
-                                        torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{default_py_tag}-{os}_{arch}.whl'
+                                        torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{tag_py}-{os}_{arch}.whl'
+                                        torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{tag_py}-{os}_{arch}.whl'
                                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
                                     if device_info['name'] == 'cuda':
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
