@@ -986,7 +986,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
             error = 'No sentences found!'
             print(error)
             return None
-        return get_sentences(text, id)
+        return sentences
     except Exception as e:
         error = f'filter_chapter() error: {e}'
         DependencyError(error)
@@ -1154,6 +1154,10 @@ def get_sentences(text:str, id:str)->list|None:
             sentences = []
             for s in soft_list:
                 if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
+                    if sentences and s in (TTS_SML["break"], TTS_SML["pause"]):
+                        last = sentences[-1]
+                        if last and last[-1].isalnum():
+                            sentences[-1] = last + "."
                     sentences.append(s)
                 else:
                     words = s.split(' ')
