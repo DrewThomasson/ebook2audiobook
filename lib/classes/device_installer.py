@@ -417,7 +417,7 @@ class DeviceInstaller():
                             return False
                 msg = '\nAll required packages are installed.'
                 print(msg)
-            return check_dictionary()
+            return self.check_dictionary()
         except Exception as e:
             error = f'check_and_install_requirements() error: {e}'
             print(error)
