@@ -1157,7 +1157,7 @@ def get_sentences(text:str, id:str)->list|None:
                     if sentences and s in (TTS_SML["break"], TTS_SML["pause"]):
                         last = sentences[-1]
                         if last and last[-1].isalnum():
-                            sentences[-1] = last + "."
+                            sentences[-1] = last + ";\n"
                     sentences.append(s)
                 else:
                     words = s.split(' ')
