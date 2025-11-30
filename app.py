@@ -189,7 +189,6 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         if args['script_mode'] == NATIVE:
             from lib.classes.device_installer import DeviceInstaller
             manager = DeviceInstaller()
-            device_info = manager.backend_specs()
             if manager.check_and_install_requirements():
                 device_info_str = manager.check_device_info()
                 if manager.install_device_packages(device_info_str) == 1:
