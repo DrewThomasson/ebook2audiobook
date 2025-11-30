@@ -394,7 +394,6 @@ function install_python_packages {
 		pip install --no-cache-dir --use-pep517 "numpy<2" || exit 1
 	fi
 	python3 -m unidic download || exit 1
-	# TODO: install deepspeed if CUDA cuda detected
 	echo "[ebook2audiobook] Installation completed."
 	return 0
 }
