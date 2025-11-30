@@ -11,19 +11,19 @@ from lib.conf import *
 class DeviceInstaller():
 
     @cached_property
-    def platform_tag(self)->str:
+    def check_platform(self)->str:
         return self.detect_platform_tag()
 
     @cached_property
-    def arch_tag(self)->str:
+    def check_arch(self)->str:
         return self.detect_arch_tag()
 
     @cached_property
-    def device_tag(self)->tuple:
+    def check_device(self)->tuple:
         return self.detect_device()
 
     @cached_property
-    def torch_version(self)->str|bool:
+    def check_torch_version(self)->str|bool:
         try:
             import torch
             return getattr(torch, '__version__', False)
@@ -33,11 +33,11 @@ class DeviceInstaller():
             return False
 
     def check_device_info(self, mode:str)->str:
-        name, tag = self.device_tag
-        arch = self.arch_tag
+        name, tag = self.check_device
+        arch = self.check_arch
         pyenv = sys.version_info[:2]
         if mode == NATIVE:
-            os = 'linux' if tag in ['jetson51', 'jetson60', 'jetson61'] else self.platform_tag
+            os = 'linux' if tag in ['jetson51', 'jetson60', 'jetson61'] else self.check_platform
         elif mode == FULL_DOCKER:
             os = 'manylinux_2_28'
         if all([name, tag, os, arch, pyenv]):
@@ -439,7 +439,7 @@ class DeviceInstaller():
             device_info = json.loads(install_pkg)
             print(device_info)
             if device_info:
-                torch_version = self.torch_version
+                torch_version = self.check_torch_version
                 if torch_version:
                     torch_version_base = Version(torch_version).base_version
                     print(f"{device_info['name']} hardware found! Installing the right torch library...")
