@@ -437,6 +437,7 @@ class DeviceInstaller():
     def install_device_packages(self, install_pkg:str)->bool:
         try:
             device_info = json.loads(install_pkg)
+            print(device_info)
             if device_info:
                 torch_version = self.torch_version
                 if torch_version:
@@ -477,8 +478,8 @@ class DeviceInstaller():
                                     return 1
                     return 0
             return 1
-        except InvalidVersion:
-            error = f'install_device_packages(): Torch or Numpy error Version.'
+        except InvalidVersion as e:
+            error = f'install_device_packages() error: {e}'
             print(error)
             return 1      
         except Exception as e:
