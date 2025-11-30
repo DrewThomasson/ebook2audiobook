@@ -17,6 +17,7 @@ unidic
 hangul-romanize
 indic-nlp-library
 iso639-lang
+soynlp
 jieba
 pycantonese
 pypinyin
