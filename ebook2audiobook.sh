@@ -400,9 +400,10 @@ function install_python_packages {
 
 function check_device_info {
 	python3 - << 'EOF'
+import json
 from lib.device_installer import DeviceInstaller
 device = DeviceInstaller()
-print(device.backend_specs())
+print(json.dumps(device.backend_specs()))
 EOF
 }
 
@@ -642,7 +643,7 @@ else
 				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
 				exit 1
 			fi
-			build_docker_image check_device_info || exit 1
+			build_docker_image "$(check_device_info)" || exit 1
 		elif [[ "$INSTALL_PKG" == "all" ]];then
 			check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 			install_python_packages || exit 1
