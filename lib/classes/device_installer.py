@@ -460,8 +460,8 @@ class DeviceInstaller():
                                     toolkit_version = "".join(c for c in tag if c.isdigit())
                                     tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                     if device_info['name'] == 'jetson':
-                                        torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_base['tag']}+{tag}-{tag_py}-{os}_{arch}.whl"
-                                        torchaudio_pkg =   f"{url}/v{toolkit_version}/torchaudio-{torch_version_base['tag']}+{tag}-{tag_py}-{os}_{arch}.whl"
+                                        torch_pkg = f"{url}/v{toolkit_version}/torch-{jetson_torch_version_base['tag']}+{tag}-{tag_py}-{os}_{arch}.whl"
+                                        torchaudio_pkg =   f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base['tag']}+{tag}-{tag_py}-{os}_{arch}.whl"
                                     else:
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{tag_py}-{os}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{tag_py}-{os}_{arch}.whl'
