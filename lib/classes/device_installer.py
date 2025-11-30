@@ -40,9 +40,9 @@ class DeviceInstaller():
         arch = self.arch_tag
         pyenv = sys.version_info[:2]
         if mode == NATIVE:
-            os = 'manylinux_2_28' if name == 'cpu' and self.platform_tag == 'linux' else self.platform_tag
+            os = 'linux' if tag in ['jetson51', 'jetson60', 'jetson61'] else self.platform_tag
         elif mode == FULL_DOCKER:
-            os = 'manylinux_2_28' if name == 'cpu' else 'linux'
+            os = 'manylinux_2_28'
         if all([name, tag, os, arch, pyenv]):
             device_info = {"name": name, "os": os, "arch": arch, "pyvenv": pyenv, "tag": tag}
             return json.dumps(device_info)
