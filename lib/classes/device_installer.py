@@ -472,9 +472,9 @@ class DeviceInstaller():
                                     else:
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_parsed}%28{tag}-{default_py_tag}-{os}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_parsed}%28{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', , '--use-pep517', torch_pkg, torchaudio_pkg])
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
                                     if device_info['name'] == 'cuda':
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', , '--use-pep517', 'deepspeed'])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
                                 except subprocess.CalledProcessError as e:
                                     error = f'Failed to install torch package: {e}'
                                     print(error)
