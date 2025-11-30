@@ -461,7 +461,7 @@ class DeviceInstaller():
                                     tag = torch_matrix[device_info['tag']]['tag']
                                     url = torch_matrix[device_info['tag']]['url']
                                     if device_info['tag'] == 'jetson-51':
-                                        torch_pkg = f'{url}/v51/torch-{default_jetson51_torch}%2B{tag}-{default_py_tag}-linux_{arch}.whl'
+                                        torch_pkg = f'{url}/v51/torch-{default_jetson51_torch}%2Bjetson-{default_py_tag}-linux_{arch}.whl'
                                         torchaudio_pkg =   f'{url}/v51/torchaudio-{default_jetson51_torch}%2Bjetson-{default_py_tag}-linux_{arch}.whl'
                                     elif device_info['tag'] == 'jetson-60':
                                         torch_pkg = f'{url}/v60/torch-{default_jetson60_torch}%2B{tag}-{default_py_tag}-linux_{arch}.whl'
