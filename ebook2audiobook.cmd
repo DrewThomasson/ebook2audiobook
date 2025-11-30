@@ -1,5 +1,10 @@
 @echo off
+
 setlocal enabledelayedexpansion
+
+for /f "tokens=2 delims==" %%i in ('"wmic os get Caption /value"') do set OS=%%i
+reg query HKCU\Console /v VirtualTerminalLevel >nul 2>&1
+if %errorlevel% neq 0 reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul
 
 :: Capture all arguments into ARGS
 set "ARGS=%*"
@@ -57,7 +62,7 @@ for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Se
 cd /d "%SCRIPT_DIR%"
 
 if "%ARCH%"=="x86" (
-	echo Error: 32-bit architecture is not supported.
+	echo ^[[31m===============>>> Error: 32-bit architecture is not supported.^[[0m
 	goto :failed
 )
 
@@ -114,7 +119,7 @@ for /f "delims=" %%i in ('where /Q python') do (
 )
 if not "%CURRENT_ENV%"=="" (
 	echo Current python virtual environment detected: %CURRENT_ENV%. 
-	echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+	echo ^[[31m===============>>> This script runs with its own virtual env and must be out of any other virtual environment when it's launched.^[[0m
 	goto :failed
 )
 goto :programs_check
@@ -152,6 +157,7 @@ if not "%SCOOP_CHECK%"=="0" (
 		call scoop bucket add extras
 		call scoop bucket add versions
 		if "%PROGRAMS_CHECK%"=="0" (
+			echo ^[[32m===============>>> Scoop is installed! <<===============^[[0m
 			set "SCOOP_CHECK=0"
 		)
 		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
@@ -160,7 +166,7 @@ if not "%SCOOP_CHECK%"=="0" (
 		)
 		start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0"
 	) else (
-		echo Conda installation failed.
+		echo ^[[31m===============>>> Scoop installation failed.^[[0m
 		goto :failed
 	)
 	exit
@@ -171,12 +177,13 @@ if not "%CONDA_CHECK%"=="0" (
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where /Q conda
 	if !errorlevel! equ 0 (
+		echo ^[[32m===============>>> Miniforge3 is installed! <<===============^[[0m
 		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
 		if errorlevel 1 (
 			echo Miniforge3>>"%INSTALLED_LOG%"
 		)
 	) else (
-		echo Conda installation failed.
+		echo ^[[31m===============>>> Miniforge3 installation failed.^[[0m
 		goto :failed
 	)
 	if not exist "%USERPROFILE%\.condarc" (
@@ -245,12 +252,13 @@ if not "%PROGRAMS_CHECK%"=="0" (
 		)
 		where /Q !prog!
 		if !errorlevel! equ 0 (
+			echo -e "\e[32m===============>>> %%p is installed! <<===============\e[0m"
 			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
 			if errorlevel 1 (
 				echo %%p>>"%INSTALLED_LOG%"
 			)
 		) else (
-			echo %%p installation failed...
+			echo ^[[31m===============>>> %%p installation failed.^[[0m
 			goto :failed
 		)
 	)
@@ -353,11 +361,12 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 			echo Updated sitecustomize.py hook in %dst_pyfile%
 		)
 		call python -m unidic download
-		if !errorlevel! neq 0 (
-			echo Failed to download unidic.
+		if !errorlevel! eq 0 (
+			echo ^[[32m===============>>> unidic dictionary is installed! <<===============^[[0m
+		) else (
+			echo ^[[31m===============>>> Failed to download unidic dictionary.^[[0m
 			goto :failed
 		)
-		:: TODO: install deepspeed if CUDA cuda detected
 		echo All required packages are installed.
 	) else (
 			call "%CONDA_HOME%\Scripts\activate.bat"
@@ -372,7 +381,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 exit /b
 
 :failed
-echo ebook2audiobook is not correctly installed or run.
+echo ^[[31m===============>>> ebook2audiobook is not correctly installed.^[[0m
 exit /b
 
 endlocal

@@ -384,27 +384,28 @@ function install_programs {
 		fi
 	fi
 	for program in "${programs_missing[@]}"; do
-		if [[ "$program" == "calibre" ]]; then				
-			# avoid conflict with calibre builtin lxml
-			pip uninstall lxml -y 2>/dev/null
-			echo -e "\e[33mInstalling Calibre...\e[0m"
-			if [[ "$OSTYPE" == darwin* ]]; then
-				eval "$PACK_MGR --cask calibre"
-			else
-				if [[ "$SUDO" == "sudo" ]]; then
-					$SUDO -v && $WGET -nv -O- $CALIBRE_INSTALLER_URL | $SUDO sh /dev/stdin
-				else
-					$WGET -nv -O- $CALIBRE_INSTALLER_URL | sh /dev/stdin
-				fi
-			fi
+		if [[ "$program" == "calibre" ]]; then		
+			# TODO: check if ebook-convert installed with the right min version
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
 			else
+				# avoid conflict with calibre builtin lxml
+				pip uninstall lxml -y 2>/dev/null
+				echo -e "\e[33mInstalling Calibre...\e[0m"
+				if [[ "$OSTYPE" == darwin* ]]; then
+					eval "$PACK_MGR --cask calibre"
+				else
+					if [[ "$SUDO" == "sudo" ]]; then
+						$SUDO -v && $WGET -nv -O- $CALIBRE_INSTALLER_URL | $SUDO sh /dev/stdin
+					else
+						$WGET -nv -O- $CALIBRE_INSTALLER_URL | sh /dev/stdin
+					fi
+				fi
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 				else
-					echo "$program installation failed."
+					echo -e "\e[31m===============>>> $program installation failed.\e[0m"
 				fi
 			fi	
 		elif [[ "$program" == "rust" || "$program" == "rustc" ]]; then
@@ -413,7 +414,7 @@ function install_programs {
 			if command -v $program &>/dev/null; then
 				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 			else
-				echo "$program installation failed."
+				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
 			fi
 		elif [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
@@ -472,14 +473,14 @@ function install_programs {
 					fi
 				fi
 			else
-				echo "$program installation failed."
+				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
 			fi
 		else
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 			else
-				echo "$program installation failed."
+				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
 			fi
 		fi
 	done
@@ -533,17 +534,16 @@ function check_conda {
 				[[ -f "$config_path" ]] || touch "$config_path"
 				grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
 				source "$config_path"
-				echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
+				echo -e "\e[32m===============>>> Miniforge3 is installed! <<===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 						echo "Miniforge3" >> "$INSTALLED_LOG"
 					fi
 			else
-				echo -e "\e[31mconda installation failed.\e[0m"		
+				echo -e "\e[31m===============>>> Miniforge3 installation failed.\e[0m"
 				return 1
 			fi
 		else
-			echo -e "\e[31mFailed to download Miniforge3 installer.\e[0m"
-			echo -e "\e[33mI'ts better to use the install.sh to install everything needed.\e[0m"
+			echo -e "\e[31m===============>>> Miniforge3 installer not found!.\e[0m"
 			return 1
 		fi
 	fi
@@ -624,7 +624,7 @@ function check_sitecustomized {
 		if cp -p "$src_pyfile" "$dst_pyfile"; then
 			echo "Installed sitecustomize.py hook in $dst_pyfile"
 		else
-			echo "sitecustomize.py hook installation error: copy failed" >&2
+			echo -e "\e[31m===============>>> sitecustomize.py hook installation error: copy failed.\e[0m" >&2
 			exit 1
 		fi
 	fi
@@ -639,7 +639,7 @@ function build_docker_image {
 	local ARCH="$(echo "$DEVICE_INFO_STR" | jq -r '.arch')"
 
 	if ! command -v docker >/dev/null 2>&1; then
-		echo "Error: Docker is not installed."
+		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
 		return 1
 	fi
 
@@ -699,23 +699,23 @@ else
 		fi
 		# Output result if a virtual environment is detected
 		if [[ -n "$current_pyvenv" ]]; then
-			echo -e "Current python virtual environment detected: $current_pyvenv."
+			echo -e "\e[31m===============>>> Error: Current python virtual environment detected: $current_pyvenv..\e[0m"
 			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
 			echo -e "If you are using conda then you would type in:"
 			echo -e "conda deactivate"
 			exit 1
 		fi
 		check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
-		check_conda || { echo "check_conda failed"; exit 1; }
+		check_conda || { echo -e "\e[31m===============>>> check_conda() failed.\e[0m"; exit 1; }
 		source "$CONDA_ENV" || exit 1
-		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo "conda activate failed"; exit 1; }
+		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m===============>>> conda activate failed.\e[0m"; exit 1; }
 		check_sitecustomized || exit 1
 		check_desktop_app || exit 1
 		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
 	else
-		echo -e "\e[33mebook2audiobook is not correctly installed or run.\e[0m"
+		echo -e "\e[31m===============>>> ebook2audiobook is not correctly installed.\e[0m"
 	fi
 fi
 
