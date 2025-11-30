@@ -90,9 +90,11 @@ default_py_tag = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{d
 default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a definitive place where to upload the jetpack5 torch
 
-torch_version_base_jetson51 = '2.2.0'
-torch_version_base_jetson60 = '2.4.0'
-torch_version_base_jetson61 = '2.5.0'
+torch_version_base = {
+    "jetson51": "2.2.0",
+    "jetson60": "2.4.0",
+    "jetson61": "2.5.0"
+}
 
 torch_matrix = {
 
@@ -121,11 +123,9 @@ torch_matrix = {
     "xpu": {"tag": "xpu", "url": default_pytorch_url},
     
     # JETSON
-    "jetson-51": {"tag": "jetson51", "url": default_jetson_url},
-    "jetson-60": {"tag": "jetson60", "url": default_jetson_url},
-    "jetson-61": {"tag": "jetson61", "url": default_jetson_url},
-    "jetson-62": {"tag": "jetson61", "url": default_jetson_url},
-    "jetson-621": {"tag": "jetson61", "url": default_jetson_url}
+    "jetson51": {"tag": "jetson51", "url": default_jetson_url},
+    "jetson60": {"tag": "jetson60", "url": default_jetson_url},
+    "jetson61": {"tag": "jetson61", "url": default_jetson_url}
 }
 
 cuda_version_range = {"min": (11,8), "max": (12,8)}

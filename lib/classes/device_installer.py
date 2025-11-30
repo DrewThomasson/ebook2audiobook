@@ -10,9 +10,6 @@ from lib.conf import *
 
 class DeviceInstaller():
 
-    def __init__(self)->None:
-        print('Checking hardware devices...')
-
     @cached_property
     def platform_tag(self)->str:
         return self.detect_platform_tag()
@@ -199,18 +196,18 @@ class DeviceInstaller():
                 msg = f'CUDA {version_str} < min {cuda_version_range["min"]}. Please upgrade.'
                 warn(msg)
                 tag = 'cpu'
-            if cmp == 1:
+            elif cmp == 1:
                 msg = f'CUDA {version_str} > max {cuda_version_range["max"]}. Falling back to CPU.'
                 warn(msg)
                 tag = 'cpu'
-            if cmp == 0:
+            elif cmp == 0:
                 devices['CUDA']['found'] = True
                 major, minor = version_str.split('.')
                 name = 'cuda'
                 tage = f'cu{major}{minor}'
-            msg = 'No CUDA version found. Falling back to CPU.'
-            warn(msg)
-            tag = 'cpu'
+            else:
+                msg = 'No CUDA version found. Falling back to CPU.'
+                warn(msg)
 
         # ============================================================
         # ROCm
@@ -223,17 +220,17 @@ class DeviceInstaller():
                 msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
                 warn(msg)
                 tag = 'cpu'
-            if cmp == 1:
+            elif cmp == 1:
                 msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
                 warn(msg)
                 tag = 'cpu'
-            if cmp == 0:
+            elif cmp == 0:
                 devices['ROCM']['found'] = True
                 name = 'rocm'
                 tag = f'rocm{version_str}'
-            msg = 'No ROCm version found. Falling back to CPU.'
-            warn(msg)
-            tag = 'cpu'
+            else:
+                msg = 'No ROCm version found. Falling back to CPU.'
+                warn(msg)
 
         # ============================================================
         # APPLE MPS
@@ -256,17 +253,15 @@ class DeviceInstaller():
                     msg = f'XPU {version_str} out of supported range {xpu_version_range}. Falling back to CPU.'
                     warn(msg)
                     tag = 'cpu'
-
-                if cmp == 0 and (has_cmd('sycl-ls') or has_cmd('clinfo')):
+                elif cmp == 0 and (has_cmd('sycl-ls') or has_cmd('clinfo')):
                     devices['XPU']['found'] = True
                     name = 'xpu'
                     tag = 'xpu'
+                else:
+                    msg = 'Intel GPU detected but oneAPI runtime missing → CPU'
+                    warn(msg)
 
-                msg = 'Intel GPU detected but oneAPI runtime missing → CPU'
-                warn(msg)
-                tag = 'cpu'
-
-        if has_cmd('clinfo'):
+        elif has_cmd('clinfo'):
             out = try_cmd('clinfo')
             if 'intel' in out:
                 name = 'xpu'
@@ -280,21 +275,20 @@ class DeviceInstaller():
             jp_code = jetpack_version(raw)
             if jp_code in ['unsupported', 'unknown']:
                 tag = 'cpu'
-            if os.path.exists('/etc/nv_tegra_release'):
+            elif os.path.exists('/etc/nv_tegra_release'):
                 devices['CUDA']['found'] = True
                 name = 'jetson'
-                tag = f'jetson-{jp_code}'
-            if os.path.exists('/proc/device-tree/compatible'):
+                tag = f'jetson{jp_code}'
+            elif os.path.exists('/proc/device-tree/compatible'):
                 out = try_cmd('cat /proc/device-tree/compatible')
                 if 'tegra' in out:
                     devices['CUDA']['found'] = True
                     name = 'jetson'
-                    tag = f'jetson-{jp_code}'
+                    tag = f'jetson{jp_code}'
             out = try_cmd('uname - a')
             if 'tegra' in out:
                 msg = 'Unknown Jetson device. Failing back to cpu'
                 warn(msg)
-                tag = 'cpu'
 
         # ============================================================
         # CPU
@@ -462,15 +456,10 @@ class DeviceInstaller():
                                     arch = device_info['arch']
                                     tag = torch_matrix[device_info['tag']]['tag']
                                     url = torch_matrix[device_info['tag']]['url']
-                                    if device_info['tag'] == 'jetson-51':
-                                        torch_pkg = f'{url}/v51/torch-{torch_version_base_jetson51}+{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg =   f'{url}/v51/torchaudio-{torch_version_base_jetson51}+{tag}-{default_py_tag}-linux_{arch}.whl'
-                                    elif device_info['tag'] == 'jetson-60':
-                                        torch_pkg = f'{url}/v60/torch-{torch_version_base_jetson60}+{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg =   f'{url}/v60/torchaudio-{torch_version_base_jetson60}+{tag}-{default_py_tag}-linux_{arch}.whl'
-                                    elif device_info['tag'] == 'jetson-61':
-                                        torch_pkg = f'{url}/v61/torch-{torch_version_base_jetson61}+{tag}-{default_py_tag}-{os}_{arch}.whl'
-                                        torchaudio_pkg =   f'{url}/v61/torchaudio-{torch_version_base_jetson61}+{tag}-{default_py_tag}-linux_{arch}.whl'
+                                    tookkit_version = "".join(c for c in tag if c.isdigit())
+                                    if device_info['name'] == 'jetson':
+                                        torch_pkg = f"{url}/v{tookkit_version}/torch-{torch_version_base['tag']}+{tag}-{default_py_tag}-{os}_{arch}.whl"
+                                        torchaudio_pkg =   f'{url}/v{tookkit_version}/torchaudio-{torch_version_base['tag']}+{tag}-{default_py_tag}-{os}_{arch}.whl'
                                     else:
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{default_py_tag}-{os}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{default_py_tag}-{os}_{arch}.whl'
