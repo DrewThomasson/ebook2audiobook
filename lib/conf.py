@@ -90,9 +90,9 @@ default_py_tag = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{d
 default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a definitive place where to upload the jetpack5 torch
 
-default_jetson51_torch = '2.2.0'
-default_jetson60_torch = '2.4.0'
-default_jetson61_torch = '2.5.0'
+torch_version_base_jetson51 = '2.2.0'
+torch_version_base_jetson60 = '2.4.0'
+torch_version_base_jetson61 = '2.5.0'
 
 torch_matrix = {
 
