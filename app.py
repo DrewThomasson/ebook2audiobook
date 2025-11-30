@@ -190,7 +190,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             from lib.classes.device_installer import DeviceInstaller
             manager = DeviceInstaller()
             if manager.check_and_install_requirements():
-                device_info_str = manager.check_device_info
+                device_info_str = manager.check_device_info(args['script_mode'])
                 if manager.install_device_packages(device_info_str) == 1:
                     error = f'Error: Could not installed device packages!'
                     print(error)

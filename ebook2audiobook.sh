@@ -597,7 +597,7 @@ python3 - << 'EOF'
 import sys
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-result = device.check_device_info
+result = device.check_device_info($SCRIPT_MODE)
 if result:
     print(result)
     sys.exit(0)
