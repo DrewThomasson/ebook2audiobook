@@ -423,7 +423,7 @@ class DeviceInstaller():
             print(error)
             return False
           
-    def check_dictionary()->bool:
+    def check_dictionary(self)->bool:
         import unidic
         unidic_path = unidic.DICDIR
         dicrc = os.path.join(unidic_path, 'dicrc')
