@@ -615,17 +615,39 @@ function check_desktop_app {
 }
 
 function build_docker_image {
+	local DEVICE_JSON="$1"
+	local OS="manylinux_2_28"
+	local NAME="$(echo "$DEVICE_JSON" | jq -r '.name')"
+	local TAG="$(echo "$DEVICE_JSON" | jq -r '.tag')"
+	local ARCH="$(echo "$DEVICE_JSON" | jq -r '.arch')"
+
 	if ! command -v docker >/dev/null 2>&1; then
 		echo "Error: Docker is not installed."
 		return 1
 	fi
 
 	if docker compose version >/dev/null 2>&1; then
-		docker compose --progress plain build --no-cache || return 1
+		docker compose build \
+			--no-cache \
+			--progress plain \
+			--build-arg DEVICE_OS="$OS" \
+			--build-arg DEVICE_NAME="$NAME" \
+			--build-arg DEVICE_TAG="$TAG" \
+			--build-arg DEVICE_ARCH="$ARCH" \
+			|| return 1
 	else
-		docker build --progress plain --no-cache -t "$DOCKER_IMG_NAME" . || return 1
+		docker build \
+			--no-cache \
+			--progress plain \
+			--build-arg DEVICE_OS="$OS" \
+			--build-arg DEVICE_NAME="$NAME" \
+			--build-arg DEVICE_TAG="$TAG" \
+			--build-arg DEVICE_ARCH="$ARCH" \
+			-t "$DOCKER_IMG_NAME" \
+			. || return 1
 	fi
 }
+
 
 ########################################
 
