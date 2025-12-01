@@ -49,10 +49,10 @@ set "BROWSER_HELPER=%SCRIPT_DIR%\.bh.ps1"
 set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 
-set "SCOOP_CHECK=0"
-set "CONDA_CHECK=0"
-set "PROGRAMS_CHECK=0"
-set "DOCKER_CHECK=0"
+set "OK_SCOOP=0"
+set "OK_CONDA=0"
+set "OK_PROGRAMS=0"
+set "OK_DOCKER=0"
 
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
@@ -76,23 +76,23 @@ if defined CONTAINER (
 	goto :main
 )
 
-goto :scoop_check
+goto :check_scoop
 
-:scoop_check
+:check_scoop
 where /Q scoop
 if %errorlevel% neq 0 (
 	echo Scoop is not installed. 
-	set "SCOOP_CHECK=1"
+	set "OK_SCOOP=1"
 	goto :install_components
 )
-goto :conda_check
+goto :check_conda
 exit /b
 
-:conda_check
+:check_conda
 where /Q conda
 if %errorlevel% neq 0 (
 	echo Miniforge3 is not installed.
-	set "CONDA_CHECK=1"
+	set "OK_CONDA=1"
 	goto :install_components
 )
 
@@ -122,10 +122,10 @@ if not "%CURRENT_ENV%"=="" (
 	echo ^[[31m=============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.^[[0m
 	goto :failed
 )
-goto :programs_check
+goto :check_required_programs
 exit /b
 
-:programs_check
+:check_required_programs
 set "missing_prog_array="
 for %%p in (%PROGRAMS_LIST%) do (
 	set "prog=%%p"
@@ -138,14 +138,14 @@ for %%p in (%PROGRAMS_LIST%) do (
 	)
 )
 if not "%missing_prog_array%"=="" (
-	set "PROGRAMS_CHECK=1"
+	set "OK_PROGRAMS=1"
 	goto :install_components
 )
 goto :dispatch
 exit /b
 
 :install_components
-if not "%SCOOP_CHECK%"=="0" (
+if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
 	call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
 	call powershell -command "iwr -useb get.scoop.sh | iex"
@@ -156,9 +156,9 @@ if not "%SCOOP_CHECK%"=="0" (
 		call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
 		call scoop bucket add extras
 		call scoop bucket add versions
-		if "%PROGRAMS_CHECK%"=="0" (
+		if "%OK_PROGRAMS%"=="0" (
 			echo ^[[32m=============== Scoop is installed! ===============^[[0m
-			set "SCOOP_CHECK=0"
+			set "OK_SCOOP=0"
 		)
 		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
 		if errorlevel 1 (
@@ -171,7 +171,7 @@ if not "%SCOOP_CHECK%"=="0" (
 	)
 	exit
 )
-if not "%CONDA_CHECK%"=="0" (
+if not "%OK_CONDA%"=="0" (
 	echo Installing Miniforge...
 	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
@@ -193,14 +193,14 @@ if not "%CONDA_CHECK%"=="0" (
 	call conda clean --index-cache
 	call conda clean --packages --tarballs
 	del "%CONDA_INSTALLER%"
-	set "CONDA_CHECK=0"
+	set "OK_CONDA=0"
 	echo Conda installed successfully.
 	start "" cmd /k cd /d "%CD%" ^& call "%~f0"
 	exit
 )
-if not "%PROGRAMS_CHECK%"=="0" (
+if not "%OK_PROGRAMS%"=="0" (
 	echo Installing missing programs...
-	if "%SCOOP_CHECK%"=="0" (
+	if "%OK_SCOOP%"=="0" (
 		call scoop bucket add muggle b https://github.com/hu3rror/scoop-muggle.git
 		call scoop bucket add extras
 		call scoop bucket add versions
@@ -265,8 +265,8 @@ if not "%PROGRAMS_CHECK%"=="0" (
 		)
 	)
 	call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
-	set "SCOOP_CHECK=0"
-	set "PROGRAMS_CHECK=0"
+	set "OK_SCOOP=0"
+	set "OK_PROGRAMS=0"
 	set "missing_prog_array="
 )
 goto :dispatch
@@ -311,10 +311,10 @@ if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
 exit /b
 
 :dispatch
-if "%SCOOP_CHECK%"=="0" (
-	if "%PROGRAMS_CHECK%"=="0" (
-		if "%CONDA_CHECK%"=="0" (
-			if "%DOCKER_CHECK%"=="0" (
+if "%OK_SCOOP%"=="0" (
+	if "%OK_PROGRAMS%"=="0" (
+		if "%OK_CONDA%"=="0" (
+			if "%OK_DOCKER%"=="0" (
 				goto :main
 			) else (
 				goto :failed
@@ -322,9 +322,9 @@ if "%SCOOP_CHECK%"=="0" (
 		)
 	)
 )
-echo PROGRAMS_CHECK: %PROGRAMS_CHECK%
-echo CONDA_CHECK: %CONDA_CHECK%
-echo DOCKER_CHECK: %DOCKER_CHECK%
+echo OK_PROGRAMS: %OK_PROGRAMS%
+echo OK_CONDA: %OK_CONDA%
+echo OK_DOCKER: %OK_DOCKER%
 goto :install_components
 exit /b
 
