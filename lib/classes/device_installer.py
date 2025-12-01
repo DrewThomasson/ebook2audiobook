@@ -299,7 +299,6 @@ class DeviceInstaller():
             
         return (name, tag)
 
-    # TODO: pip install --no-binary scikit-learn scikit-learn --force-reinstall          if arch == arm64
     def check_and_install_requirements(self)->bool:
         if not os.path.exists(requirements_file):
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
@@ -467,6 +466,8 @@ class DeviceInstaller():
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{tag_py}-{os}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{tag_py}-{os}_{arch}.whl'
                                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
+                                    if device_info['name'] == 'jetson':
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', '--no-binary', '--force-reinstall', 'scikit-learn scikit-learn'])
                                     if device_info['name'] == 'cuda':
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
                                 except subprocess.CalledProcessError as e:
