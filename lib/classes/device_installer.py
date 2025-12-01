@@ -22,16 +22,6 @@ class DeviceInstaller():
     def check_device(self)->tuple:
         return self.detect_device()
 
-    @cached_property
-    def check_torch_version(self)->str|bool:
-        try:
-            import torch
-            return getattr(torch, '__version__', False)
-        except Exception:
-            error = 'Could not find torch version!'
-            print(error)
-            return False
-
     def check_device_info(self, mode:str)->str:
         name, tag = self.check_device
         arch = self.check_arch
@@ -44,6 +34,12 @@ class DeviceInstaller():
             device_info = {"name": name, "os": os, "arch": arch, "pyvenv": pyenv, "tag": tag}
             return json.dumps(device_info)
         return ''
+        
+    def get_package_version(pkg:str)->str|bool:
+        try:
+            return version(pkg)
+        except PackageNotFoundError:
+            return False
 
     def detect_platform_tag(self)->str:
         if sys.platform.startswith('win'):
@@ -438,7 +434,7 @@ class DeviceInstaller():
         try:
             device_info = json.loads(install_pkg)
             if device_info:
-                torch_version = self.check_torch_version
+                torch_version = self.get_package_version('torch')
                 if torch_version:
                     if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
                         m = re.search(r'\+(.+)$', torch_version)
@@ -470,9 +466,12 @@ class DeviceInstaller():
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--force-reinstall', '--no-cache-dir', '--use-pep517', '--no-binary', 'scikit-learn', 'scikit-learn'])
                                     if device_info['name'] == 'cuda':
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
-                                    msg = 'Relaunching app.py...'
-                                    print(msg)
-                                    os.execv(sys.executable, [sys.executable] + sys.argv)
+                                    numpy_version = Version(self.get_package_version('numpy'))
+                                    if Version(torch_version) <= Version('2.2.2') and nump_version and numpy version < Version('2.0.0'):
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'numpy<2'])
+                                    #msg = 'Relaunching app.py...'
+                                    #print(msg)
+                                    #os.execv(sys.executable, [sys.executable] + sys.argv)
                                 except subprocess.CalledProcessError as e:
                                     error = f'Failed to install torch package: {e}'
                                     print(error)
