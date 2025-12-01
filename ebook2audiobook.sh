@@ -678,7 +678,7 @@ else
 				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
 				exit 1
 			fi
-			build_docker_image "$(check_device_info $SCRIPT_MODE)" || exit 1
+			build_docker_image "$(check_device_info ${SCRIPT_MODE})" || exit 1
 		elif [[ "$INSTALL_PKG" != "" ]];then
 			check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 			install_python_packages || exit 1
