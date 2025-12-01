@@ -8,7 +8,7 @@ ARG DEVICE_INFO_STR
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:$PATH"
 
-RUN apt-get update && apt-get install -y bash && apt-get clean
+RUN apt-get update && apt-get install -y bash git && apt-get clean
 
 WORKDIR /app
 COPY . /app
