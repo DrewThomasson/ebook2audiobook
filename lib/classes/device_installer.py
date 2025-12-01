@@ -451,8 +451,8 @@ class DeviceInstaller():
                             ):
                                 try:
                                     torch_version_base = Version(torch_version).base_version
-                                    print(f"{device_info['name']} hardware found! Installing the right torch library...")
                                     print(device_info)
+                                    print(f"{device_info['name']} hardware found! Installing the right torch library...")
                                     os = device_info['os']
                                     arch = device_info['arch']
                                     tag = device_info['tag']
