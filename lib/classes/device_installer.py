@@ -35,7 +35,7 @@ class DeviceInstaller():
             return json.dumps(device_info)
         return ''
         
-    def get_package_version(pkg:str)->str|bool:
+    def get_package_version(self, pkg:str)->str|bool:
         try:
             return version(pkg)
         except PackageNotFoundError:
