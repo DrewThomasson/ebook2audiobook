@@ -1,7 +1,9 @@
 ARG BASE=python:3.12-slim
-ARG DEVICE_INFO_STR
 
-FROM ${BASE} AS base
+FROM ${BASE}
+
+# Build-time only variable
+ARG DEVICE_INFO_STR
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:$PATH"
@@ -13,7 +15,7 @@ COPY . /app
 
 RUN chmod +x ebook2audiobook.sh
 
-RUN echo "Building image for $DEVICE_INFO_STR"
+RUN echo "Building image for: $DEVICE_INFO_STR"
 RUN ./ebook2audiobook.sh --script_mode full_docker --install_pkg "$DEVICE_INFO_STR"
 
 EXPOSE 7860
