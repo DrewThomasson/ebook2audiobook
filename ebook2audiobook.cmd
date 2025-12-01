@@ -190,8 +190,8 @@ if not "%OK_CONDA%"=="0" (
 		call conda config --set auto_activate false
 	)
 	call conda update --all -y
-	call conda clean --index-cache
-	call conda clean --packages --tarballs
+	call conda clean --index-cache -y
+	call conda clean --packages --tarballs -y
 	del "%CONDA_INSTALLER%"
 	set "OK_CONDA=0"
 	echo Conda installed successfully.
