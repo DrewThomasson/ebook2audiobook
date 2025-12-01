@@ -189,7 +189,9 @@ if not "%CONDA_CHECK%"=="0" (
 	if not exist "%USERPROFILE%\.condarc" (
 		call conda config --set auto_activate false
 	)
-	call conda update conda -y
+	call conda update --all -y
+	call conda clean --index-cache
+	call conda clean --packages --tarballs
 	del "%CONDA_INSTALLER%"
 	set "CONDA_CHECK=0"
 	echo Conda installed successfully.

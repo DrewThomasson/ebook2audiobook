@@ -568,6 +568,9 @@ function check_conda {
 		fi
 		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
 		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
+		conda update --all
+		conda clean --index-cache
+		conda clean --packages --tarballs
 		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y || return 1
 		source "$CONDA_ENV" || return 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
