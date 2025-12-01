@@ -19,11 +19,11 @@ class DeviceInstaller():
         return self.detect_arch_tag()
 
     @cached_property
-    def check_device(self)->tuple:
+    def check_hardware(self)->tuple:
         return self.detect_device()
 
     def check_device_info(self, mode:str)->str:
-        name, tag = self.check_device
+        name, tag = self.check_hardware
         arch = self.check_arch
         pyenv = sys.version_info[:2]
         if mode == NATIVE:

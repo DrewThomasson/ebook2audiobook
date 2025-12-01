@@ -595,11 +595,11 @@ function install_python_packages {
 	return 0
 }
 
-check_device_info() {
+function check_device_info {
 python3 - << EOF
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-result = device.check_device_info("$SCRIPT_MODE")
+result = device.check_device_info("$1")
 if result:
     print(result)
     raise SystemExit(0)
@@ -607,12 +607,12 @@ raise SystemExit(1)
 EOF
 }
 
-install_device_packages() {
+function install_device_packages {
 python3 - << EOF
 import sys
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-exit_code = device.install_device_packages("${INSTALL_PKG}")
+exit_code = device.install_device_packages('''$1''')
 sys.exit(exit_code)
 EOF
 }
@@ -678,11 +678,11 @@ else
 				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
 				exit 1
 			fi
-			build_docker_image "$(check_device_info)" || exit 1
+			build_docker_image "$(check_device_info $SCRIPT_MODE)" || exit 1
 		elif [[ "$INSTALL_PKG" != "" ]];then
 			check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 			install_python_packages || exit 1
-			install_device_packages || exit 1
+			install_device_packages "${INSTALL_PKG}" || exit 1
 			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
