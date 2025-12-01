@@ -2352,6 +2352,7 @@ def convert_ebook(args:dict)->tuple:
                             msg = ''
                             msg_extra = ''
                             vram_dict = VRAMDetector().detect_vram(session['device'])
+                            print(f'vram_dict: {vram_dict}')
                             total_vram_gb = vram_dict.get('total_vram_gb', 0)
                             session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                             if session['free_vram_gb'] == 0:
