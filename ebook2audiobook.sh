@@ -645,9 +645,10 @@ function build_docker_image {
 	fi
 
 	if docker compose version >/dev/null 2>&1; then
-		docker compose build \
+		docker compose \
+			--progress=plain \
+			build \
 			--no-cache \
-			--progress plain \
 			--build-arg DEVICE_INFO_STR="$DEVICE_INFO_STR" \
 			|| return 1
 	else
