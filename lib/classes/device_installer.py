@@ -467,7 +467,7 @@ class DeviceInstaller():
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{tag_py}-{os}_{arch}.whl'
                                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
                                     if device_info['name'] == 'jetson':
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', '--no-binary', 'scikit-learn scikit-learn', '--force-reinstall'])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--force-reinstall', '--no-cache-dir', '--use-pep517', '--no-binary', 'scikit-learn'])
                                     if device_info['name'] == 'cuda':
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
                                     msg = 'Relaunching app.py...'
