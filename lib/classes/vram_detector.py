@@ -15,6 +15,43 @@ class VRAMDetector:
 
     def detect_vram(self, device:str, as_json:bool=False)->Any:
         info = {}
+
+        # ───────────────────────────── Jetson (Unified Memory)
+        if os.path.exists('/etc/nv_tegra_release'):
+            try:
+                out = subprocess.check_output(['tegrastats','--interval','1000'],timeout=3).decode()
+                m = re.search(r'RAM\s+(\d+)/(\d+)MB',out)
+                if m:
+                    used=int(m.group(1))*1024*1024
+                    total=int(m.group(2))*1024*1024
+                    free=total-used
+                    info={
+                        "os":self.system,
+                        "device_type":"jetson",
+                        "device_name":"NVIDIA Jetson (Unified Memory)",
+                        "used_bytes":used,
+                        "free_bytes":free,
+                        "total_bytes":total,
+                        "used_human":self._fmt(used),
+                        "free_human":self._fmt(free),
+                        "total_human":self._fmt(total),
+                        "note":"Jetson uses unified system RAM as VRAM."
+                    }
+                    return json.dumps(info,indent=2) if as_json else info
+            except Exception:
+                mem=psutil.virtual_memory()
+                info={
+                    "os":self.system,
+                    "device_type":"jetson",
+                    "device_name":"NVIDIA Jetson (Unified Memory)",
+                    "free_bytes":mem.available,
+                    "total_bytes":mem.total,
+                    "free_human":self._fmt(mem.available),
+                    "total_human":self._fmt(mem.total),
+                    "note":"tegrastats unavailable; reporting system RAM."
+                }
+                return json.dumps(info,indent=2) if as_json else info
+
         # ───────────────────────────── CUDA (NVIDIA)
         try:
             import torch
