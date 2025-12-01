@@ -596,7 +596,15 @@ function install_python_packages {
 }
 
 function check_device_info {
-echo $1
+python3 - << EOF
+from lib.classes.device_installer import DeviceInstaller
+device = DeviceInstaller()
+result = device.check_device_info("$1")
+if result:
+    print(result)
+    raise SystemExit(0)
+raise SystemExit(1)
+EOF
 }
 
 function install_device_packages {
@@ -670,7 +678,9 @@ else
 				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
 				exit 1
 			fi
-			build_docker_image "$(check_device_info "${SCRIPT_MODE}")" || exit 1
+			#build_docker_image "$(check_device_info "${SCRIPT_MODE}")" || exit 1
+			check_device_info "${SCRIPT_MODE}"
+			exit 0
 		elif [[ "$INSTALL_PKG" != "" ]];then
 			check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
 			install_python_packages || exit 1
