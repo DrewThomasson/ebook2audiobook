@@ -299,6 +299,7 @@ class DeviceInstaller():
             
         return (name, tag)
 
+    # TODO: pip install --no-binary scikit-learn scikit-learn --force-reinstall          if arch == arm64
     def check_and_install_requirements(self)->bool:
         if not os.path.exists(requirements_file):
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
