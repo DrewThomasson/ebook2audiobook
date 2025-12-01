@@ -284,49 +284,41 @@ function check_required_programs {
 	local programs=("$@")
 	programs_missing=()
 	for program in "${programs[@]}"; do
-		bin="$program"
-		if [[ "$program" == "nodejs" ]]; then
-			bin="node"
-		fi
-		if [[ "$program" == "rust" ]]; then
-			if command -v apt-get &>/dev/null; then
-				program="rustc"
-			fi
-			bin="rustc"
-		fi
+		local pkg="$program"
+		local bin="$program"
+		# Normalize special binaries
+		[[ "$program" == "nodejs" ]] && bin="node"
+		[[ "$program" == "rust" ]]   && bin="rustc"
+		# Special case: tesseract OCR
 		if [[ "$program" == "tesseract" ]]; then
-			if command -v brew &> /dev/null; then
-				program="tesseract"
-			elif command -v emerge &> /dev/null; then
-				program="tesseract"
-			elif command -v dnf &> /dev/null; then
-				program="tesseract"
-			elif command -v yum &> /dev/null; then
-				program="tesseract"
-			elif command -v zypper &> /dev/null; then
-				program="tesseract-ocr"
-			elif command -v pacman &> /dev/null; then
-				program="tesseract"
-			elif command -v apt-get &> /dev/null; then
-				program="tesseract-ocr"
-			elif command -v apk &> /dev/null; then
-				program="tesseract-ocr"
+			bin="tesseract"   # binary is always "tesseract"
+			if command -v brew &>/dev/null; then
+				pkg="tesseract"
+			elif command -v emerge &>/dev/null; then
+				pkg="tesseract"
+			elif command -v dnf &>/dev/null; then
+				pkg="tesseract"
+			elif command -v yum &>/dev/null; then
+				pkg="tesseract"
+			elif command -v pacman &>/dev/null; then
+				pkg="tesseract"
+			elif command -v zypper &>/dev/null; then
+				pkg="tesseract-ocr"
+			elif command -v apt-get &>/dev/null; then
+				pkg="tesseract-ocr"
+			elif command -v apk &>/dev/null; then
+				pkg="tesseract-ocr"
 			else
-				echo "Cannot recognize your applications package manager. Please install the required applications manually."
+				echo "Cannot detect your package manager. Install tesseract manually."
 				return 1
 			fi
 		fi
-		if ! command -v "$bin" >/dev/null 2>&1; then
-			echo -e "\e[33m$program is not installed.\e[0m"
-			programs_missing+=("$program")
+		if ! command -v "$bin" &>/dev/null; then
+			echo -e "\e[33m$pkg is not installed.\e[0m"
+			programs_missing+=("$pkg")
 		fi
 	done
-	local count=${#programs_missing[@]}
-	if [[ $count -eq 0 ]]; then
-		return 0
-	else
-		return 1
-	fi
+	(( ${#programs_missing[@]} == 0 ))
 }
 
 function install_programs {
