@@ -1,14 +1,16 @@
-ARG BASE=python:3.12
+ARG BASE=python:3.12-slim
 
 FROM ${BASE}
 
-# Build-time only variable
 ARG DEVICE_INFO_STR
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:$PATH"
 
-RUN apt-get update && apt-get install -y bash git && apt-get clean
+# Install git + bash BEFORE running your script
+RUN apt-get update \
+ && apt-get install -y bash git \
+ && apt-get clean
 
 WORKDIR /app
 COPY . /app
