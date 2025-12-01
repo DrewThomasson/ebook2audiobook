@@ -596,16 +596,14 @@ function install_python_packages {
 }
 
 check_device_info() {
-python3 - << 'EOF'
-import sys
+python3 - << EOF
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-result = device.check_device_info($SCRIPT_MODE)
+result = device.check_device_info("$SCRIPT_MODE")
 if result:
     print(result)
-    sys.exit(0)
-else:
-    sys.exit(1)
+    raise SystemExit(0)
+raise SystemExit(1)
 EOF
 }
 
@@ -614,7 +612,7 @@ python3 - << EOF
 import sys
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-exit_code = device.install_device_packages("""${INSTALL_PKG}""")  # returns 0 or 1
+exit_code = device.install_device_packages("${INSTALL_PKG}")
 sys.exit(exit_code)
 EOF
 }
