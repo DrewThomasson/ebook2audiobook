@@ -437,7 +437,6 @@ class DeviceInstaller():
     def install_device_packages(self, install_pkg:str)->bool:
         try:
             device_info = json.loads(install_pkg)
-            print(device_info)
             if device_info:
                 torch_version = self.check_torch_version
                 if torch_version:
@@ -451,9 +450,9 @@ class DeviceInstaller():
                                 (non_standard_tag is not None and non_standard_tag != device_info['tag'])
                             ):
                                 try:
-                                    print("OOOOOOOOOK")
                                     torch_version_base = Version(torch_version).base_version
                                     print(f"{device_info['name']} hardware found! Installing the right torch library...")
+                                    print(device_info)
                                     os = device_info['os']
                                     arch = device_info['arch']
                                     tag = device_info['tag']
