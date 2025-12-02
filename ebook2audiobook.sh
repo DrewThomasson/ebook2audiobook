@@ -24,8 +24,6 @@ export CONDA_BIN_PATH="$CONDA_HOME/bin"
 export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
 export PATH="$CONDA_BIN_PATH:$PATH"
 
-cd "$SCRIPT_DIR"
-
 NATIVE="native"
 BUILD_DOCKER="build_docker"
 ARCH=$(uname -m)
@@ -79,6 +77,8 @@ while [[ "$#" -gt 0 ]]; do
 	esac
 	shift # Move to the next argument
 done
+
+cd "$SCRIPT_DIR"
 
 if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" =~ ^(${NATIVE}|${BUILD_DOCKER})$ ]]; then
 	SCRIPT_MODE="${arguments['script_mode']}"
