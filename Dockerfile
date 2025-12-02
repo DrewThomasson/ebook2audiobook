@@ -13,6 +13,7 @@ ENV CALIBRE_DISABLE_CHECKS=1
 RUN apt-get update \
  && apt-get install -y --no-install-recommends --allow-change-held-packages \
       wget xz-utils bash git \
+      libegl1 libopengl0 \
       libx11-6 libglib2.0-0 libnss3 libdbus-1-3 \
       libatk1.0-0 libgdk-pixbuf-2.0-0 \
       tesseract-ocr tesseract-ocr-$ISO3_LANG \
@@ -22,6 +23,7 @@ RUN apt-get update \
  && ln -s /opt/calibre/ebook-convert /usr/bin/ebook-convert \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
+
 
 WORKDIR /app
 COPY . /app
