@@ -75,11 +75,8 @@ while [[ "$#" -gt 0 ]]; do
 	shift # Move to the next argument
 done
 
-if [[ "${arguments['script_mode']}" == "$NATIVE" || "${arguments['script_mode']}" == "$BUILD_DOCKER" ]]; then
+if [[ "${arguments['script_mode']}" == "$BUILD_DOCKER" ]]; then
 	SCRIPT_MODE="${arguments['script_mode']}"
-else
-	echo "--script_mode unknown"
-	exit 1
 fi
 
 if [[ -n "${arguments['docker_device']+exists}" ]]; then
