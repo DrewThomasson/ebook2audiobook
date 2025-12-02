@@ -354,16 +354,16 @@ if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		call conda clean --packages --tarballs -y
 		call conda activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-		call python3 -m pip3 cache purge >nul 2>&1
-		call python3 -m pip3 install --upgrade pip
+		call python3 -m pip cache purge >nul 2>&1
+		call python3 -m pip install --upgrade pip
 		for /f "usebackq delims=" %%p in (`type requirements.txt`) do (
 			echo Installing %%p...
-			call python3 -m pip3 install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
+			call python3 -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
 		)
-		for /f "tokens=2 delims= " %%A in ('pip3 show torch 2^>nul ^| findstr /b /i "Version:"') do set "torch_ver=%%A"
+		for /f "tokens=2 delims= " %%A in ('pip show torch 2^>nul ^| findstr /b /i "Version:"') do set "torch_ver=%%A"
 		call python3 -c "import sys;from packaging.version import Version as V;t='!torch_ver!';sys.exit(0 if V(t)<=V('2.2.2') else 1)" >nul 2>&1
 		if !errorlevel!==0 (
-			call pip3 install --no-cache-dir --use-pep517 "numpy<2"
+			call pip install --no-cache-dir --use-pep517 "numpy<2"
 		)
 		set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
 		for /f "usebackq delims=" %%A in (`python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"`) do set "site_packages_path=%%A"

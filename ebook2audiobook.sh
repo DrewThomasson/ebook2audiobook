@@ -402,7 +402,7 @@ function install_programs {
 				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
 			else
 				# avoid conflict with calibre builtin lxml
-				python3 -m pip3 uninstall lxml -y 2>/dev/null
+				python3 -m pip uninstall lxml -y 2>/dev/null
 				echo -e "\e[33mInstalling Calibre...\e[0m"
 				if [[ "$OSTYPE" == darwin* ]]; then
 					eval "$PACK_MGR --cask calibre"
@@ -595,12 +595,12 @@ function check_conda {
 
 function install_python_packages {
 	echo "[ebook2audiobook] Installing dependencies..."
-	python3 -m pip3 cache purge > /dev/null 2>&1
-	python3 -m pip3 install --upgrade pip > /dev/null 2>&1
-	python3 -m pip3 install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r "$SCRIPT_DIR/requirements.txt" || exit 1
-	torch_ver=$(pip3 show torch 2>/dev/null | awk '/^Version:/{print $2}')
+	python3 -m pip cache purge > /dev/null 2>&1
+	python3 -m pip install --upgrade pip > /dev/null 2>&1
+	python3 -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r "$SCRIPT_DIR/requirements.txt" || exit 1
+	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
 	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
-		python3 -m pip3 install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
+		python3 -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
 	fi
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
