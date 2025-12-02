@@ -5,7 +5,7 @@ setlocal enabledelayedexpansion
 :: Enable ANSI VT mode
 reg query HKCU\Console /v VirtualTerminalLevel >nul 2>&1
 if errorlevel 1 (
-    reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul
+	reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul
 )
 
 :: Real ESC byte via PowerShell (RELIABLE)
@@ -93,32 +93,32 @@ set "arg=%~1"
 set "FORWARD_ARGS=!FORWARD_ARGS! !arg!"
 :: Flag or key-value argument
 if "!arg:~0,2!"=="--" (
-    set "key=!arg:~2!"
-    :: Check for a value (next arg exists AND does not start with --)
-    if not "%~2"=="" (
-        echo %~2 | findstr "^--" >nul
-        if errorlevel 1 (
-            set "arguments.!key!=%~2"
-            shift & shift
-            goto parse_args
-        )
-    )
-    :: Boolean flag
-    set "arguments.!key!=true"
-    shift
-    goto parse_args
+	set "key=!arg:~2!"
+	:: Check for a value (next arg exists AND does not start with --)
+	if not "%~2"=="" (
+		echo %~2 | findstr "^--" >nul
+		if errorlevel 1 (
+			set "arguments.!key!=%~2"
+			shift & shift
+			goto parse_args
+		)
+	)
+	:: Boolean flag
+	set "arguments.!key!=true"
+	shift
+	goto parse_args
 )
 shift
 goto parse_args
 
 :parse_args_done
 if defined arguments.script_mode (
-    if /I "!arguments.script_mode!"=="%BUILD_DOCKER%" (
-        set "SCRIPT_MODE=!arguments.script_mode!"
-    )
+	if /I "!arguments.script_mode!"=="%BUILD_DOCKER%" (
+		set "SCRIPT_MODE=!arguments.script_mode!"
+	)
 )
 if defined arguments.docker_device (
-    set "DOCKER_DEVICE_STR=!arguments.docker_device!"
+	set "DOCKER_DEVICE_STR=!arguments.docker_device!"
 )
 goto :check_scoop
 
@@ -359,7 +359,7 @@ if "%CURRENT_ENV%"=="" (
 		call conda activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 		call :install_python_packages
-		if %errorlevel% neq 0 goto :failed
+		if errorlevel 1 goto :failed
 		call conda deactivate
 		call conda deactivate
 	)
@@ -373,9 +373,15 @@ exit /b 0
 
 :check_docker
 where /Q docker
-if %errorlevel% neq 0 (
-    echo %ESC%[31m=============== Docker is not installed or not running. Please install or run Docker manually.%ESC%[0m
-    exit /b 1
+if not errorlevel 1 (
+	docker info >nul 2>&1
+	if errorlevel 1 (
+		echo %ESC%[31m=============== Docker is installed but NOT running..%ESC%[0m
+		exit /b 1
+	)
+) else (
+	echo %ESC%[31m=============== Docker is not installed or not running. Please install or run Docker manually.%ESC%[0m
+	exit /b 1
 )
 exit /b 0
 
@@ -402,12 +408,12 @@ python -m pip install --upgrade pip >nul 2>&1
 python -m pip install --upgrade --no-cache-dir --progress-bar on --disable-pip-version-check --use-pep517 -r "%SCRIPT_DIR%\requirements.txt"
 if errorlevel 1 goto :failed
 for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
-    set "torch_ver=%%A"
+	set "torch_ver=%%A"
 )
 call :compare_versions "%torch_ver%" "2.2.2"
 if /I "%cmp_result%"=="LEQ" (
-    python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
-    if errorlevel 1 goto :failed
+	python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
+	if errorlevel 1 goto :failed
 )
 python -m unidic download
 if errorlevel 1 goto :failed
@@ -423,8 +429,8 @@ from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 result = device.check_device_info(r"%arg%")
 if result:
-    print(result)
-    raise SystemExit(0)
+	print(result)
+	raise SystemExit(0)
 raise SystemExit(1)
 EOF
 "@
@@ -447,12 +453,12 @@ exit /b %errorlevel%
 :check_sitecustomized
 set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
 for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
-    "$p = python - << 'EOF'
+	"$p = python - << 'EOF'
 import sysconfig
 print(sysconfig.get_paths()['purelib'])
 EOF
-    ; $p = $p.Trim(); Write-Output $p"') do (
-    set "site_packages=%%a"
+	; $p = $p.Trim(); Write-Output $p"') do (
+	set "site_packages=%%a"
 )
 set "dst_pyfile=%site_packages%\sitecustomize.py"
 powershell -nologo -noprofile -command ^
@@ -460,13 +466,13 @@ powershell -nologo -noprofile -command ^
 \$src = '%src_pyfile%'
 \$dst = '%dst_pyfile%'
 if (!(Test-Path \$dst) -or ((Get-Item \$src).LastWriteTime -gt (Get-Item \$dst).LastWriteTime)) {
-    try {
-        Copy-Item -Path \$src -Destination \$dst -Force -ErrorAction Stop
-        Write-Host "Installed sitecustomize.py hook in \$dst"
-    } catch {
-        Write-Host "=============== sitecustomize.py hook installation error: copy failed." -ForegroundColor Red
-        exit 1
-    }
+	try {
+		Copy-Item -Path \$src -Destination \$dst -Force -ErrorAction Stop
+		Write-Host "Installed sitecustomize.py hook in \$dst"
+	} catch {
+		Write-Host "=============== sitecustomize.py hook installation error: copy failed." -ForegroundColor Red
+		exit 1
+	}
 }
 "@
 exit /b %errorlevel%
@@ -475,8 +481,8 @@ exit /b %errorlevel%
 set "arg=%~1"
 powershell -nologo -noprofile -command ^
 @if (!(Get-Command docker -ErrorAction SilentlyContinue)) { ^
-    Write-Host "=============== Error: Docker must be installed and running!" -ForegroundColor Red; ^
-    exit 1 ^
+	Write-Host "=============== Error: Docker must be installed and running!" -ForegroundColor Red; ^
+	exit 1 ^
 }
 @if ($false) {}
 @
@@ -527,57 +533,57 @@ exit /b
 
 :main
 if defined arguments.help (
-    if /I "!arguments.help!"=="true" (
-        where /Q conda
-        if errorlevel 0 (
-            call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-            python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
-            call conda deactivate
-        ) else (
-            echo Ebook2Audiobook must be installed before to run --help.
-        )
-        goto :eof
-    )
+	if /I "!arguments.help!"=="true" (
+		where /Q conda
+		if errorlevel 0 (
+			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+			python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
+			call conda deactivate
+		) else (
+			echo Ebook2Audiobook must be installed before to run --help.
+		)
+		goto :eof
+	)
 ) else (
-    if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-        if "!DOCKER_DEVICE_STR!"=="" (
-            call :check_docker
-            if errorlevel 1 goto :failed
-            docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
-            if errorlevel 0 (
-                echo [STOP] Docker image '%DOCKER_IMG_NAME%' already exists. Aborting build.
-                echo Delete it using: docker rmi %DOCKER_IMG_NAME%
-                goto :failed
-            )
-            :: get deviceinfo via PowerShell
-            for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
-                "& { $result = (& { call :check_device_info \"%SCRIPT_MODE%\" } ^| Out-String).Trim(); if ($LASTEXITCODE -ne 0) { exit 1 }; Write-Output $result }"') do (
-                set "deviceinfo=%%a"
-            )
-            if errorlevel 1 goto :failed
-            call :build_docker_image "%deviceinfo%"
-            if errorlevel 1 goto :failed
+	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+		if "!DOCKER_DEVICE_STR!"=="" (
+			call :check_docker
+			if errorlevel 1 goto :failed
+			docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
+			if errorlevel 0 (
+				echo [STOP] Docker image '%DOCKER_IMG_NAME%' already exists. Aborting build.
+				echo Delete it using: docker rmi %DOCKER_IMG_NAME%
+				goto :failed
+			)
+			:: get deviceinfo via PowerShell
+			for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
+				"& { $result = (& { call :check_device_info \"%SCRIPT_MODE%\" } ^| Out-String).Trim(); if ($LASTEXITCODE -ne 0) { exit 1 }; Write-Output $result }"') do (
+				set "deviceinfo=%%a"
+			)
+			if errorlevel 1 goto :failed
+			call :build_docker_image "%deviceinfo%"
+			if errorlevel 1 goto :failed
 
-        ) else (
-            call :install_python_packages
-            if errorlevel 1 goto :failed
-            call :install_device_packages "%DOCKER_DEVICE_STR%"
-            if errorlevel 1 goto :failed
-            call :check_sitecustomized
-            if errorlevel 1 goto :failed
+		) else (
+			call :install_python_packages
+			if errorlevel 1 goto :failed
+			call :install_device_packages "%DOCKER_DEVICE_STR%"
+			if errorlevel 1 goto :failed
+			call :check_sitecustomized
+			if errorlevel 1 goto :failed
 
-        )
-    ) else (
-        call "%CONDA_HOME%\Scripts\activate.bat"
-        call conda activate base
-        call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-        call :check_sitecustomized
-        if errorlevel 1 goto :failed
-        call :build_gui
-        call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-        call conda deactivate
-        call conda deactivate
-    )
+		)
+	) else (
+		call "%CONDA_HOME%\Scripts\activate.bat"
+		call conda activate base
+		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+		call :check_sitecustomized
+		if errorlevel 1 goto :failed
+		call :build_gui
+		call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+		call conda deactivate
+		call conda deactivate
+	)
 )
 exit /b 0
 
