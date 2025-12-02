@@ -18,8 +18,6 @@ typeset -a programs_missing # indexed array
 
 ARGS=("$@")
 
-echo $ARGS
-
 # Parse arguments
 while (( $# > 0 )); do
     case "$1" in
@@ -40,6 +38,8 @@ while (( $# > 0 )); do
     esac
     shift
 done
+
+echo $arguments
 
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
