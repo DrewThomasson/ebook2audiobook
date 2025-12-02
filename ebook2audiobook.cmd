@@ -71,45 +71,45 @@ if not exist "%INSTALLED_LOG%" (
 
 cd /d "%SCRIPT_DIR%"
 
-:parse_args
-if "%~1"=="" goto :check_scoop
-set "arg=%~1"
-:: If not starting with --, treat as positional / forward arg
-if not "%arg:~0,2%"=="--" (
-    set "FORWARD_ARGS=!FORWARD_ARGS! "%~1""
-    shift
-    goto parse_args
-)
-:: Strip leading --
-set "key=%arg:~2%"
-:: Handle --script_mode <value>
-if /I "%key%"=="script_mode" (
-    shift
-    if "%~1"=="" goto parse_args
-    set "SCRIPT_MODE=%~1"
-    shift
-    goto parse_args
-)
-:: Handle --docker_device <value>
-if /I "%key%"=="docker_device" (
-    shift
-    if "%~1"=="" goto parse_args
-    set "DOCKER_DEVICE_STR=%~1"
-    shift
-    goto parse_args
-)
-:: Handle --help flag
-if /I "%key%"=="help" (
-    set "HELP=true"
-    shift
-    goto parse_args
-)
-exit /b
+:: Clear previous associative values
+for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
+set "FORWARD_ARGS="
 
-:: Unknown --option → forward it unchanged
+:parse_args
+if "%~1"=="" goto :parse_args_done
+set "arg=%~1"
+:: Flag or key-value argument
+if "%arg:~0,2%"=="--" (
+    set "key=%arg:~2%"
+    :: Check for a value (next arg exists AND does not start with --)
+    if not "%~2"=="" (
+        echo %~2 | findstr "^--" >nul
+        if errorlevel 1 (
+            set "arguments.%key%=%~2"
+            shift & shift
+            goto parse_args
+        )
+    )
+    :: Flag (boolean) style
+    set "arguments.%key%=true"
+    shift
+    goto parse_args
+)
+:: Positional or unknown options get forwarded
 set "FORWARD_ARGS=!FORWARD_ARGS! %arg%"
 shift
 goto parse_args
+
+:parse_args_done
+if defined arguments.script_mode (
+    if /I "!arguments.script_mode!"=="build_docker" (
+        set "SCRIPT_MODE=!arguments.script_mode!"
+    )
+)
+if defined arguments.docker_device (
+    set "DOCKER_DEVICE_STR=!arguments.docker_device!"
+)
+goto :check_scoop
 
 :check_scoop
 where /Q scoop

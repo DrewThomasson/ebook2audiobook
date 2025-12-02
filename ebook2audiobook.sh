@@ -13,32 +13,6 @@ else
 	script_path="$0"
 fi
 
-typeset -A arguments # associative array
-typeset -a programs_missing # indexed array
-
-ARGS=("$@")
-
-# Parse arguments
-while (( $# > 0 )); do
-    case "$1" in
-        --*)
-            key="${1#--}"
-            if [[ -n "$2" && "$2" != --* ]]; then
-                arguments[$key]="$2"
-                shift 2
-                continue
-            else
-                arguments[$key]=true
-            fi
-            ;;
-        *)
-            echo "Unknown option: $1"
-            exit 1
-            ;;
-    esac
-    shift
-done
-
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -73,6 +47,32 @@ UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 DOCKER_DEVICE_STR=""
 WGET=$(which wget 2>/dev/null)
 DOCKER_IMG_NAME="ebook2audiobook:latest"
+
+typeset -A arguments # associative array
+typeset -a programs_missing # indexed array
+
+ARGS=("$@")
+
+# Parse arguments
+while (( $# > 0 )); do
+    case "$1" in
+        --*)
+            key="${1#--}"
+            if [[ -n "$2" && "$2" != --* ]]; then
+                arguments[$key]="$2"
+                shift 2
+                continue
+            else
+                arguments[$key]=true
+            fi
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+    shift
+done
 
 if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 	SCRIPT_MODE="${arguments[script_mode]}"
