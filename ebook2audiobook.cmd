@@ -60,8 +60,6 @@ for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Se
 	set "PATH=%%B;%PATH%"
 )
 
-cd /d "%SCRIPT_DIR%"
-
 if "%ARCH%"=="x86" (
 	echo ^[[31m=============== Error: 32-bit architecture is not supported.^[[0m
 	goto :failed
@@ -71,20 +69,11 @@ if not exist "%INSTALLED_LOG%" (
 	type nul > "%INSTALLED_LOG%"
 )
 
-if "%arguments_script_mode%"=="" (
-    echo --script_mode unknown
-    goto :failed
-)
-if /i "%arguments_script_mode%"=="%NATIVE%" (
-    set SCRIPT_MODE=%arguments_script_mode%
-)
 if /i "%arguments_script_mode%"=="%BUILD_DOCKER%" (
     set SCRIPT_MODE=%arguments_script_mode%
 )
 
-REM Otherwise invalid
-echo --script_mode unknown
-exit /b 1
+cd /d "%SCRIPT_DIR%"
 
 goto :check_scoop
 
