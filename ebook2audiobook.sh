@@ -48,8 +48,8 @@ DOCKER_DEVICE_STR=""
 WGET=$(which wget 2>/dev/null)
 DOCKER_IMG_NAME="ebook2audiobook:latest"
 
-declare -A arguments # associative array
-declare -a programs_missing # indexed array
+typeset -A arguments # associative array
+typeset -a programs_missing # indexed array
 
 ARGS=("$@")
 
@@ -175,7 +175,7 @@ function mac_app {
 	local DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
 	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
 	local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
-	local OPEN_DESKTOP_APP_DEF=$(declare -f open_desktop_app)
+	local OPEN_DESKTOP_APP_DEF=$(typeset -f open_desktop_app)
 	local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
 	if [[ -d "$APP_BUNDLE" ]]; then
 		open_desktop_app
