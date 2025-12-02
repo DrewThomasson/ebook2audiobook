@@ -399,7 +399,7 @@ class DeviceInstaller():
                 with tqdm(total = len(packages), desc = 'Installation 0.00%', bar_format = '{desc}: {n_fmt}/{total_fmt} ', unit = 'step') as t:
                     for package in tqdm(missing_packages, desc = 'Installing', unit = 'pkg'):
                         try:
-                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', '--progress-bar', 'ascii', '--disable-pip-version-check', package])
+                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', '--progress-bar', 'raw', '--disable-pip-version-check', package])
                             t.update(1)
                         except subprocess.CalledProcessError as e:
                             if package in flexible_packages:

@@ -596,7 +596,7 @@ function install_python_packages {
 	echo "[ebook2audiobook] Installing dependencies..."
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip > /dev/null 2>&1
-	python3 -m pip install --upgrade --no-cache-dir --progress-bar ascii --disable-pip-version-check --use-pep517 -r "$SCRIPT_DIR/requirements.txt" || exit 1
+	python3 -m pip install --upgrade --no-cache-dir --progress-bar raw --disable-pip-version-check --use-pep517 -r "$SCRIPT_DIR/requirements.txt" || exit 1
 	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
 	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
 		python3 -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
