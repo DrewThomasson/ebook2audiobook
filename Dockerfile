@@ -9,6 +9,7 @@ ARG ISO3_LANG
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:$PATH"
 ENV CALIBRE_DISABLE_CHECKS=1
+ENV CALIBRE_DISABLE_GUI=1
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends --allow-change-held-packages \
