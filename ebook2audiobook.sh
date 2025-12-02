@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-if [[ "$OSTYPE" == darwin* && -z "$SWITCHED_TO_ZSH" ]]; then
+if [[ "$OSTYPE" == darwin* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
-	exec /bin/zsh "$0" "$@"
+	exec /bin/zsh "$0" "${=@}"
+	exit 0
 fi
 
 if [[ -n "$BASH_SOURCE" ]]; then
