@@ -1,18 +1,18 @@
-import gc
-import torch
-import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid, random
-import numpy as np, regex as re, soundfile as sf, torchaudio
+import threading, torch, torchaudio, random, gc, shutil, subprocess, tempfile, uuid
 
-from typing import Any
+import regex as re
+import numpy as np
+import soundfile as sf
+
 from multiprocessing.managers import DictProxy
-from torch import Tensor
-from huggingface_hub import hf_hub_download
+from typing import Any
 from pathlib import Path
-from pprint import pprint
+from huggingface_hub import hf_hub_download
 
-from lib import *
-from lib.classes.tts_engines.common.utils import cleanup_garbage, append_sentence2vtt, ensure_safe_checkpoint
+from lib.classes.vram_detector import VRAMDetector
+from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, loaded_tts_size_gb #, ensure_safe_checkpoint
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
+from lib import *
 
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
@@ -20,7 +20,7 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 lock = threading.Lock()
 
 class Coqui:
-    def __init__(self,session:DictProxy):
+    def __init__(self, session:DictProxy):
         try:
             global xtts_builtin_speakers_list
             self.session = session
@@ -82,7 +82,11 @@ class Coqui:
                 if not engine:
                     engine = TTSEngine(model_path)
                 if engine:
-                    loaded_tts[key] = engine
+                    vram_dict = VRAMDetector().detect_vram(self.session['device'])
+                    self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                    models_loaded_size_gb = loaded_tts_size_gb(loaded_tts)
+                    if self.session['free_vram_gb'] > models_loaded_size_gb:
+                        loaded_tts[key] = engine
                 return engine
         except Exception as e:
             error = f"_load_api() error: {e}"
@@ -146,7 +150,11 @@ class Coqui:
                             eval = True
                         )  
                 if engine:
-                    loaded_tts[key] = engine
+                    vram_dict = VRAMDetector().detect_vram(self.session['device'])
+                    self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                    models_loaded_size_gb = loaded_tts_size_gb(loaded_tts)
+                    if self.session['free_vram_gb'] > models_loaded_size_gb:
+                        loaded_tts[key] = engine
                 return engine
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
@@ -157,7 +165,7 @@ class Coqui:
         try:
             msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
             print(msg)
-            cleanup_garbage()
+            cleanup_memory()
             self.engine = loaded_tts.get(self.tts_key, False)
             if not self.engine:
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
@@ -265,7 +273,7 @@ class Coqui:
         try:
             msg = f"Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient..."
             print(msg)
-            cleanup_garbage()
+            cleanup_memory()
             self.engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not self.engine_zs:
                 self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model, self.session['device'])
@@ -278,11 +286,7 @@ class Coqui:
     def _check_xtts_builtin_speakers(self, voice_path:str, speaker:str, device:str)->str|bool:
         try:
             voice_parts = Path(voice_path).parts
-            if (
-                self.session['language'] in voice_parts
-                or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices']
-                or self.session['language'] == 'eng'
-            ):
+            if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
                 return voice_path
             if self.session['language'] in language_tts[TTS_ENGINES['XTTSv2']].keys():
                 default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
@@ -291,9 +295,14 @@ class Coqui:
                     print(msg)
                     key = f"{TTS_ENGINES['XTTSv2']}-internal"
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
-                    cleanup_garbage()
+                    cleanup_memory()
                     engine = loaded_tts.get(key, False)
                     if not engine:
+                        vram_dict = VRAMDetector().detect_vram(self.session['device'])
+                        self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                        models_loaded_size_gb = loaded_tts_size_gb(loaded_tts)
+                        if self.session['free_vram_gb'] <= models_loaded_size_gb:
+                            del loaded_tts[self.tts_key]
                         hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
                         hf_sub = ''
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][0]}", cache_dir=self.cache_dir)
@@ -345,6 +354,9 @@ class Coqui:
                                 del audio_sentence, sourceTensor, audio_tensor
                                 Path(proc_voice_path).unlink(missing_ok=True)
                                 gc.collect()
+                                self.engine = loaded_tts.get(self.tts_key, False)
+                                if not self.engine:
+                                    self._load_engine()
                                 return new_voice_path
                             else:
                                 error = 'normalize_audio() error:'
@@ -376,8 +388,6 @@ class Coqui:
                 else:
                     os.makedirs(pth_voice_dir,exist_ok=True)
                     key = f"{TTS_ENGINES['BARK']}-internal"
-                    voice_temp = os.path.splitext(pth_voice_file)[0]+'.wav'
-                    shutil.copy(voice_path,voice_temp)
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
                     fine_tuned_params = {
@@ -389,32 +399,26 @@ class Coqui:
                         if self.session.get(key) is not None
                     }
                     with torch.no_grad():
-                        #torch.manual_seed(67878789)
-                        audio_sentence = self.engine.synthesize(
+                        result = self.engine.synthesize(
                             default_text,
                             speaker_wav=voice_path,
                             speaker=speaker,
                             voice_dir=pth_voice_dir,
-                            silent=True,
                             **fine_tuned_params
                         )
-                    os.remove(voice_temp)
-                    del audio_sentence
+                    del result
                     msg = f"Saved file: {pth_voice_file}"
                     print(msg)
-                    gc.collect()
                     return True
             else:
                 return True
         except Exception as e:
             error = f'_check_bark_npz() error: {e}'
             print(error)
-            if voice_temp:
-                os.remove(voice_temp)
             return False
         
     def _tensor_type(self,audio_data:Any)->torch.Tensor:
-        if isinstance(audio_data,torch.Tensor):
+        if isinstance(audio_data, torch.Tensor):
             return audio_data
         elif isinstance(audio_data,np.ndarray):
             return torch.from_numpy(audio_data).float()
@@ -469,7 +473,6 @@ class Coqui:
                         return False
             if self.engine:
                 self.engine.to(self.session['device'])
-                trim_audio_buffer = 0.004
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 if sentence == TTS_SML['break']:
                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
@@ -482,12 +485,12 @@ class Coqui:
                     self.audio_segments.append(pause_tensor.clone())
                     return True
                 else:
-                    if sentence[-1].isalnum():
-                        sentence = f'{sentence} —'
-                    elif sentence.endswith("'"):
+                    if sentence.endswith("'"):
                         sentence = sentence[:-1]
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.008
+                        sentence = sentence.replace('.', ' ;\n')
+                        sentence += ' ...' if sentence[-1].isalnum() else ''
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
                             settings['gpt_cond_latent'], settings['speaker_embedding'] = settings['latent_embedding'][settings['voice_path']]
                         else:
@@ -518,7 +521,7 @@ class Coqui:
                         }
                         with torch.no_grad():
                             result = self.engine.inference(
-                                text=sentence.replace('.', ' —'),
+                                text=sentence,
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=settings['gpt_cond_latent'],
                                 speaker_embedding=settings['speaker_embedding'],
@@ -529,6 +532,7 @@ class Coqui:
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['BARK']:
                         trim_audio_buffer = 0.002
+                        sentence += '…' if sentence[-1].isalnum() else ''
                         '''
                             [laughter]
                             [laughs]
@@ -546,7 +550,7 @@ class Coqui:
                         else:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')       
                             if not self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
-                                error = 'Could not create pth file!'
+                                error = 'Could not create pth voice file!'
                                 print(error)
                                 return False
                         pth_voice_dir = os.path.join(bark_dir, speaker)
@@ -559,20 +563,20 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        if not sentence.endswith(('.', '!', '?', '…', '—')):
-                            sentence += "."
                         with torch.no_grad():
                             result = self.engine.synthesize(
                                 sentence,
+                                #speaker_wav=settings['voice_path'],
                                 speaker=speaker,
                                 voice_dir=pth_voice_dir,
-                                silent=True,
                                 **fine_tuned_params
                             )
                         audio_sentence = result.get('wav')
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
+                        trim_audio_buffer = 0.004
+                        sentence += '—' if sentence[-1].isalnum() else ''
                         speaker_argument = {}
                         if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
                             if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
@@ -650,6 +654,8 @@ class Coqui:
                                     **speaker_argument
                                 )
                     elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
+                        trim_audio_buffer = 0.004
+                        sentence += '—' if sentence[-1].isalnum() else ''
                         speaker_argument = {}
                         not_supported_punc_pattern = re.compile(r"[.:—]")
                         if settings['voice_path'] is not None:
@@ -722,6 +728,8 @@ class Coqui:
                                     **speaker_argument
                                 )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
+                        trim_audio_buffer = 0.004
+                        sentence += '...' if sentence[-1].isalnum() else ''
                         speaker_argument = {}
                         if self.session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                             not_supported_punc_pattern = re.compile(r'\p{P}+')
@@ -798,6 +806,7 @@ class Coqui:
                                 )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
                         trim_audio_buffer = 0.002
+                        sentence += '...' if sentence[-1].isalnum() else ''
                         speaker_argument = {}
                         not_supported_punc_pattern = re.compile(r'[—]')
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
@@ -840,7 +849,7 @@ class Coqui:
                                 if self.sentence_idx:
                                     torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
                                     del audio_tensor
-                                    cleanup_garbage()
+                                    cleanup_memory()
                             self.audio_segments = []
                             if os.path.exists(final_sentence_file):
                                 return True

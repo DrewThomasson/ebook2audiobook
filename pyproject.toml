@@ -17,6 +17,8 @@ authors = [
     { name = "Drew Thomasson" }
 ]
 dependencies = [
+	"packaging",
+	"tqdm",
 	"torchvggish",
 	"num2words @ git+https://github.com/savoirfairelinux/num2words.git",
 	"regex",
@@ -44,7 +46,6 @@ dependencies = [
 	"phonemizer-fork",
 	"pydub",
 	"demucs",
-	"deepspeed",
 	"unidecode",
 	"langdetect",
 	"stanza==1.10.1",

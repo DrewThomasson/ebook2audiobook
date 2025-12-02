@@ -1,563 +1,204 @@
 #!/usr/bin/env bash
 
-if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
+if [[ "$OSTYPE" == darwin* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
 	exec env zsh "$0" "$@"
 fi
 
-if [ -n "$BASH_SOURCE" ]; then
-    script_path="${BASH_SOURCE[0]}"
-elif [ -n "$ZSH_VERSION" ]; then
-    script_path="${(%):-%x}"
+if [[ -n "$BASH_SOURCE" ]]; then
+	script_path="${BASH_SOURCE[0]}"
+elif [[ -n "$ZSH_VERSION" ]]; then
+	script_path="${(%):-%x}"
 else
-    script_path="$0"
+	script_path="$0"
 fi
 
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
-
-ARCH=$(uname -m)
-
-PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
-
-MIN_PYTHON_VERSION="3.10"
-MAX_PYTHON_VERSION="3.12"
-
-cd "$SCRIPT_DIR"
-
-ARGS=("$@")
-
-declare -A arguments # associative array
-declare -a programs_missing # indexed array
-
-# Parse arguments
-while [[ "$#" -gt 0 ]]; do
-	case "$1" in
-		--*)
-			key="${1/--/}" # Remove leading '--'
-			if [[ -n "$2" && ! "$2" =~ ^-- ]]; then
-				# If the next argument is a value (not another option)
-				arguments[$key]="$2"
-				shift # Move past the value
-			else
-				# Set to true for flags without values
-				arguments[$key]=true
-			fi
-			;;
-		*)
-			echo "Unknown option: $1"
-			exit 1
-			;;
-	esac
-	shift # Move to the next argument
-done
+export TTS_CACHE="$SCRIPT_DIR/models"
+export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
+export TMPDIR="$SCRIPT_DIR/tmp"
+export CONDA_HOME="$HOME/Miniforge3"
+export CONDA_BIN_PATH="$CONDA_HOME/bin"
+export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
+export PATH="$CONDA_BIN_PATH:$PATH"
 
 NATIVE="native"
-FULL_DOCKER="full_docker"
+BUILD_DOCKER="build_docker"
+ARCH=$(uname -m)
+PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
+MIN_PYTHON_VERSION="3.10"
+MAX_PYTHON_VERSION="3.12"
+PYTHON_ENV="python_env"
 SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
-WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
-PYTHON_ENV="python_env"
-CURRENT_ENV=""
+OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
+HOST_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
+DOCKER_PROGRAMS=("curl" "pkg-config" "ffmpeg" "nodejs" "espeak-ng" "rustc" "sox" "tesseract-ocr")
+DOCKER_DEVICE_STR=""
+DOCKER_IMG_NAME="ebook2audiobook:latest"
+CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
+BREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+MINIFORGE_MACOSX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
+MINIFORGE_LINUX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+RUST_INSTALLER_URL="https://sh.rustup.rs"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
+WGET=$(which wget 2>/dev/null)
 
-if [[ "$OSTYPE" != "linux"* && "$OSTYPE" != "darwin"* ]]; then
-	echo "Error: OS $OSTYPE unsupported."
-	exit 1;
+typeset -A arguments # associative array
+typeset -a programs_missing # indexed array
+
+ARGS=("$@")
+
+# Parse arguments
+while (( $# > 0 )); do
+    case "$1" in
+        --*)
+            key="${1#--}"
+            if [[ -n "$2" && "$2" != --* ]]; then
+                arguments[$key]="$2"
+                shift 2
+                continue
+            else
+                arguments[$key]=true
+            fi
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
+	SCRIPT_MODE="${arguments[script_mode]}"
 fi
+
+if [[ "$SCRIPT_MODE" != "$NATIVE" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
+    echo "Error: Invalid script mode argument: $SCRIPT_MODE"
+    exit 1
+fi
+
+if [[ -n "${arguments[docker_device]+exists}" ]]; then
+	DOCKER_DEVICE_STR="${arguments[docker_device]}"
+fi
+
+[[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
+[[ $OSTYPE == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
+
+cd "$SCRIPT_DIR"
 
 if [[ ! -f "$INSTALLED_LOG" ]]; then
 	touch "$INSTALLED_LOG"
 fi
 
-if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" == ($NATIVE|$FULL_DOCKER) ]]; then
-	SCRIPT_MODE="${arguments['script_mode']}"
-fi
+############### FUNCTIONS ##############
 
+###### DESKTOP APP
+function has_no_display {
+	if [[ "$OSTYPE" == darwin* ]]; then
+		if pgrep -x WindowServer >/dev/null 2>&1 &&
+		   [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
+			return 0   # macOS GUI
+		else
+			return 1   # SSH or console mode
+		fi
+	else
+		if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+			return 1
+		fi
 
-if [[ "$OSTYPE" = "darwin"* ]]; then
-	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
-	CONFIG_FILE="$HOME/.zshrc"
-elif [[ "$OSTYPE" = "linux"* ]]; then
-	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
-	CONFIG_FILE="$HOME/.bashrc"
-fi
+		if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
+			return 1   # No display server → headless
+		fi
 
-CONDA_INSTALLER="/tmp/Miniforge3.sh"
-CONDA_INSTALL_DIR="$HOME/Miniforge3"
-CONDA_PATH="$CONDA_INSTALL_DIR/bin"
-CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
+		if pgrep -x vncserver	>/dev/null 2>&1 || \
+		   pgrep -x Xvnc		 >/dev/null 2>&1 || \
+		   pgrep -x x11vnc	   >/dev/null 2>&1 || \
+		   pgrep -x Xtightvnc	>/dev/null 2>&1 || \
+		   pgrep -x Xtigervnc	>/dev/null 2>&1 || \
+		   pgrep -x Xrealvnc	 >/dev/null 2>&1; then
+			return 0
+		fi
 
-export TTS_CACHE="$SCRIPT_DIR/models"
-export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
-export TMPDIR="$SCRIPT_DIR/.cache"
-export PATH="$CONDA_PATH:$PATH"
-
-compare_versions() {
-	local ver1=$1
-	local ver2=$2
-	# Pad each version to 3 parts
-	IFS='.' read -r v1_major v1_minor <<<"$ver1"
-	IFS='.' read -r v2_major v2_minor <<<"$ver2"
-
-	((v1_major < v2_major)) && return 1
-	((v1_major > v2_major)) && return 2
-	((v1_minor < v2_minor)) && return 1
-	((v1_minor > v2_minor)) && return 2
-	return 0
+		if pgrep -x gnome-shell	   >/dev/null 2>&1 || \
+		   pgrep -x plasmashell	   >/dev/null 2>&1 || \
+		   pgrep -x xfce4-session	 >/dev/null 2>&1 || \
+		   pgrep -x cinnamon		  >/dev/null 2>&1 || \
+		   pgrep -x mate-session	  >/dev/null 2>&1 || \
+		   pgrep -x lxsession		 >/dev/null 2>&1 || \
+		   pgrep -x openbox		   >/dev/null 2>&1 || \
+		   pgrep -x i3				>/dev/null 2>&1 || \
+		   pgrep -x sway			  >/dev/null 2>&1 || \
+		   pgrep -x hyprland		  >/dev/null 2>&1 || \
+		   pgrep -x wayfire		   >/dev/null 2>&1 || \
+		   pgrep -x river			 >/dev/null 2>&1 || \
+		   pgrep -x fluxbox		   >/dev/null 2>&1; then
+			return 0   # Desktop environment detected
+		fi
+		return 1
+	fi
 }
 
-if [[ -n "${arguments['help']+exists}" && ${arguments['help']} = true ]]; then
-	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
-else
-	if [ "$SCRIPT_MODE" = "$NAVITE" ]; then
-		# Check if running in a Conda or Python virtual environment
-		if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
-			CURRENT_ENV="$CONDA_PREFIX"
-		elif [[ -n "$VIRTUAL_ENV" ]]; then
-			CURRENT_ENV="$VIRTUAL_ENV"
-		fi
+function open_desktop_app {
+	(
+		host=127.0.0.1
+		port=7860
+		url="http://$host:$port/"
+		timeout=30
+		start_time=$(date +%s)
 
-		# If neither environment variable is set, check Python path
-		if [[ -z "$CURRENT_ENV" ]]; then
-			PYTHON_PATH=$(which python 2>/dev/null)
-			if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" = "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" = "$VIRTUAL_ENV/bin/python" ) ]]; then
-				CURRENT_ENV="${CONDA_PREFIX:-$VIRTUAL_ENV}"
-			fi
-		fi
-
-		# Output result if a virtual environment is detected
-		if [[ -n "$CURRENT_ENV" ]]; then
-			echo -e "Current python virtual environment detected: $CURRENT_ENV."
-			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
-			echo -e "If you are using conda then you would type in:"
-			echo -e "conda deactivate"
-			exit 1
-		fi
-	fi
-
-	# Check if .cache folder exists inside the eb2ab folder for Miniforge3
-	if [[ ! -d .cache ]]; then
-		mkdir .cache
-	fi
-
-	function required_programs_check {
-		local programs=("$@")
-		programs_missing=()
-		for program in "${programs[@]}"; do
-			bin="$program"
-			if [ "$program" = "nodejs" ]; then
-				bin="node"
-			fi
-			if [ "$program" = "rust" ]; then
-				if command -v apt-get &>/dev/null; then
-					program="rustc"
-				fi
-				bin="rustc"
-			fi
-			if [ "$program" = "tesseract" ]; then
-				if command -v brew &> /dev/null; then
-					program="tesseract"
-				elif command -v emerge &> /dev/null; then
-					program="tesseract"
-				elif command -v dnf &> /dev/null; then
-					program="tesseract"
-				elif command -v yum &> /dev/null; then
-					program="tesseract"
-				elif command -v zypper &> /dev/null; then
-					program="tesseract-ocr"
-				elif command -v pacman &> /dev/null; then
-					program="tesseract"
-				elif command -v apt-get &> /dev/null; then
-					program="tesseract-ocr"
-				elif command -v apk &> /dev/null; then
-					program="tesseract-ocr"
-				else
-					echo "Cannot recognize your applications package manager. Please install the required applications manually."
-					return 1
-				fi
-			fi
-			if ! command -v "$bin" >/dev/null 2>&1; then
-				echo -e "\e[33m$program is not installed.\e[0m"
-				programs_missing+=("$program")
+		while ! nc -z "$host" "$port" >/dev/null 2>&1; do
+			sleep 1
+			elapsed=$(( $(date +%s) - start_time ))
+			if [[ "$elapsed" -ge "$timeout" ]]; then
+				exit 0
 			fi
 		done
-		local count=${#programs_missing[@]}
-		if [[ $count -eq 0 ]]; then
-			return 0
-		else
-			return 1
-		fi
-	}
 
-	function install_programs {
-		if [[ "$OSTYPE" = "darwin"* ]]; then
-			echo -e "\e[33mInstalling required programs...\e[0m"
-			if [ ! -d $TMPDIR ]; then
-				mkdir -p $TMPDIR
-			fi
-			SUDO=""
-			PACK_MGR="brew install"
-				if ! command -v brew &> /dev/null; then
-					echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
-					/usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-					echo >> $HOME/.zprofile
-					echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
-					eval "$(/usr/local/bin/brew shellenv)"
-					if ! grep -iqFx "homebrew" "$INSTALLED_LOG"; then
-						echo "homebrew" >> "$INSTALLED_LOG"
-					fi
-				fi
+		if [[ "$OSTYPE" == darwin* ]]; then
+			open "$url" >/dev/null 2>&1 &
+		elif command -v xdg-open >/dev/null 2>&1; then
+			xdg-open "$url" >/dev/null 2>&1 &
+		elif command -v gio >/dev/null 2>&1; then
+			gio open "$url" >/dev/null 2>&1 &
+		elif command -v x-www-browser >/dev/null 2>&1; then
+			x-www-browser "$url" >/dev/null 2>&1 &
 		else
-			SUDO="sudo"
-			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
-			PACK_MGR_OPTIONS=""
-			if command -v emerge &> /dev/null; then
-				PACK_MGR="emerge"
-			elif command -v dnf &> /dev/null; then
-				PACK_MGR="dnf install"
-				PACK_MGR_OPTIONS="-y"
-			elif command -v yum &> /dev/null; then
-				PACK_MGR="yum install"
-				PACK_MGR_OPTIONS="-y"
-			elif command -v zypper &> /dev/null; then
-				PACK_MGR="zypper install"
-				PACK_MGR_OPTIONS="-y"
-			elif command -v pacman &> /dev/null; then
-				PACK_MGR="pacman -Sy --noconfirm"
-			elif command -v apt-get &> /dev/null; then
-				$SUDO apt-get update
-				PACK_MGR="apt-get install"
-				PACK_MGR_OPTIONS="-y"
-			elif command -v apk &> /dev/null; then
-				PACK_MGR="apk add"
-			else
-				echo "Cannot recognize your applications package manager. Please install the required applications manually."
-				return 1
-			fi
+			echo "No method found to open the default web browser." >&2
 		fi
-		if [ -z "$WGET" ]; then
-			echo -e "\e[33m wget is missing! trying to install it... \e[0m"
-			result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
-			result_code=$?
-			if [ $result_code -eq 0 ]; then
-				WGET=$(which wget 2>/dev/null)
-			else
-				echo "Cannot 'wget'. Please install 'wget'  manually."
-				return 1
-			fi
-		fi
-		for program in "${programs_missing[@]}"; do
-			if [ "$program" = "calibre" ]; then				
-				# avoid conflict with calibre builtin lxml
-				pip uninstall lxml -y 2>/dev/null
-				echo -e "\e[33mInstalling Calibre...\e[0m"
-				if [[ "$OSTYPE" = "darwin"* ]]; then
-					eval "$PACK_MGR --cask calibre"
-				else
-					sudo -v && $WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
-				fi
-				if command -v $program >/dev/null 2>&1; then
-					echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
-				else
-					eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
-					if command -v $program >/dev/null 2>&1; then
-						echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
-					else
-						echo "$program installation failed."
-					fi
-				fi	
-			elif [[ "$program" = "rust" || "$program" = "rustc" ]]; then
-				curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-				source $HOME/.cargo/env
-				if command -v $program &>/dev/null; then
-					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
-				else
-					echo "$program installation failed."
-				fi
-			elif [[ "$program" = "tesseract" || "$program" = "tesseract-ocr" ]]; then
-				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
-				if command -v $program >/dev/null 2>&1; then
-					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
-					sys_lang=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
-					case "$sys_lang" in
-						en) tess_lang="eng" ;;
-						fr) tess_lang="fra" ;;
-						de) tess_lang="deu" ;;
-						it) tess_lang="ita" ;;
-						es) tess_lang="spa" ;;
-						pt) tess_lang="por" ;;
-						ar) tess_lang="ara" ;;
-						tr) tess_lang="tur" ;;
-						ru) tess_lang="rus" ;;
-						bn) tess_lang="ben" ;;
-						zh) tess_lang="chi_sim" ;;
-						fa) tess_lang="fas" ;;
-						hi) tess_lang="hin" ;;
-						hu) tess_lang="hun" ;;
-						id) tess_lang="ind" ;;
-						jv) tess_lang="jav" ;;
-						ja) tess_lang="jpn" ;;
-						ko) tess_lang="kor" ;;
-						pl) tess_lang="pol" ;;
-						ta) tess_lang="tam" ;;
-						te) tess_lang="tel" ;;
-						yo) tess_lang="yor" ;;
-						*) tess_lang="eng" ;;
-					esac
-					echo "Detected system language: $sys_lang → installing Tesseract OCR language: $tess_lang"
-					langpack=""
-					if command -v brew &> /dev/null; then
-						langpack="tesseract-lang-$tess_lang"
-					elif command -v apt-get &>/dev/null; then
-						langpack="tesseract-ocr-$tess_lang"
-					elif command -v dnf &>/dev/null || command -v yum &>/dev/null; then
-						langpack="tesseract-langpack-$tess_lang"
-					elif command -v zypper &>/dev/null; then
-						langpack="tesseract-ocr-$tess_lang"
-					elif command -v pacman &>/dev/null; then
-						langpack="tesseract-data-$tess_lang"
-					elif command -v apk &>/dev/null; then
-						langpack="tesseract-ocr-$tess_lang"
-					else
-						echo "Cannot recognize your applications package manager. Please install the required applications manually."
-						return 1
-					fi
-					if [ -n "$langpack" ]; then
-						eval "$SUDO $PACK_MGR $langpack $PACK_MGR_OPTIONS"
-						if tesseract --list-langs | grep -q "$tess_lang"; then
-							echo "Tesseract OCR language '$tess_lang' successfully installed."
-						else
-							echo "Tesseract OCR language '$tess_lang' not installed properly."
-						fi
-					fi
-				else
-					echo "$program installation failed."
-				fi
-			else
-				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
-				if command -v $program >/dev/null 2>&1; then
-					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
-				else
-					echo "$program installation failed."
-				fi
-			fi
-		done
-		if required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
-			return 0
-		else
-			echo "Some programs didn't install successfuly, please report the log to the support"
-		fi
-	}
+		exit 0
+	) &
+}
 
-	function conda_check {
-		if ! command -v conda &> /dev/null || [ ! -f "$CONDA_ENV" ]; then
-			echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
-			if [[ "$OSTYPE" = darwin* ]]; then
-				curl -fsSLo "$CONDA_INSTALLER" "$CONDA_URL"
-				shell_name="zsh"
-			else
-				wget -O "$CONDA_INSTALLER" "$CONDA_URL"
-				shell_name="bash"
-			fi
-			if [[ -f "$CONDA_INSTALLER" ]]; then
-				echo -e "\e[33mInstalling Miniforge3...\e[0m"
-				bash "$CONDA_INSTALLER" -b -u -p "$CONDA_INSTALL_DIR"
-				rm -f "$CONDA_INSTALLER"
-				if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
-					if [ ! -f "$HOME/.condarc" ]; then
-						$CONDA_INSTALL_DIR/bin/conda config --set auto_activate false
-					fi
-					[ -f "$CONFIG_FILE" ] || touch "$CONFIG_FILE"
-					grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$CONFIG_FILE" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$CONFIG_FILE"
-					source "$CONFIG_FILE"
-					conda init "$shell_name"
-					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
-						if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
-							echo "Miniforge3" >> "$INSTALLED_LOG"
-						fi
-				else
-					echo -e "\e[31mconda installation failed.\e[0m"		
-					return 1
-				fi
-			else
-				echo -e "\e[31mFailed to download Miniforge3 installer.\e[0m"
-				echo -e "\e[33mI'ts better to use the install.sh to install everything needed.\e[0m"
-				return 1
-			fi
-		fi
-		if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
-			if [[ "$OSTYPE" = "darwin"* && "$ARCH" = "x86_64" ]]; then
-				PYTHON_VERSION="3.11"
-			elif [[ -r /proc/device-tree/model ]]; then
-				# Detect Jetson and select correct Python version
-				MODEL=$(tr -d '\0' </proc/device-tree/model | tr 'A-Z' 'a-z')
-				if [[ "$MODEL" = *jetson* ]]; then
-					# Detect JetPack (L4T version)
-					JP=$(dpkg-query --showformat='${Version}' --show nvidia-l4t-release 2>/dev/null | cut -d. -f1-2)
-					L4T=$(awk -F' ' '/# R/ {print $2}' /etc/nv_tegra_release)
-					case "$JP" in
-						32.*)
-							# JetPack 4.x  (Nano, TX2)
-							PYTHON_VERSION="3.10"
-							echo "[WARNING] JetPack installed is too old to use its GPU. Upgrade to version 5.1.x. CPU will be used instead"
-							;;
-						35.*)
-							# JetPack 5.x  (Xavier NX, AGX Xavier, Orin Nano/NX/AGX)
-							if [ "$L4T" != "35.1" ]; then
-								echo "[WARNING] JetPack must be updated to the last version 5.1.x allowing to use the GPU. CPU will be used instead"
-							fi
-							PYTHON_VERSION="3.10"
-							;;
-						36.*)
-							# JetPack 6.x  (Orin)
-							if command -v python3.11 >/dev/null; then
-								PYTHON_VERSION="3.11"
-							else
-								PYTHON_VERSION="3.10"
-							fi
-							;;
-						*)
-							# Unknown JetPack -> safe default
-							PYTHON_VERSION="3.10"
-							;;
-					esac
-				fi
-			else
-				compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
-				case $? in
-					1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;;
-				esac
-				compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
-				case $? in
-					2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
-				esac
-			fi
-			echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
-			# Use this condition to chmod writable folders once
-			chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
-			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y
-			conda init > /dev/null 2>&1
-			source $CONDA_ENV
-			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
-			python -m pip cache purge > /dev/null 2>&1
-			python -m pip install --upgrade pip
-			python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r requirements.txt
-			tts_version=$(python -c "import importlib.metadata; print(importlib.metadata.version('coqui-tts'))" 2>/dev/null)
-			if [[ -n "$tts_version" ]]; then
-				if [[ "$(printf '%s\n' "$tts_version" "0.26.1" | sort -V | tail -n1)" = "0.26.1" ]]; then
-					python -m pip install --no-cache-dir --use-pep517 --progress-bar=on 'transformers<=4.51.3'
-				fi
-			fi
-			conda deactivate 2>&1 > /dev/null
-		fi
+function mac_app {
+	local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
+	local CONTENTS="$APP_BUNDLE/Contents"
+	local MACOS="$CONTENTS/MacOS"
+	local RESOURCES="$CONTENTS/Resources"
+	local DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
+	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
+	local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
+	local OPEN_DESKTOP_APP_DEF=$(typeset -f open_desktop_app)
+	local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
+	if [[ -d "$APP_BUNDLE" ]]; then
+		open_desktop_app
 		return 0
-	}
-	
-	has_no_display() {
-		if [[ "$OSTYPE" = "darwin"* ]]; then
-			if pgrep -x WindowServer >/dev/null 2>&1 &&
-			   [[ "$(launchctl managername 2>/dev/null)" = "Aqua" ]]; then
-				return 0   # macOS GUI
-			else
-				return 1   # SSH or console mode
-			fi
-		else
-			if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
-				return 1
-			fi
-
-			if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
-				return 1   # No display server → headless
-			fi
-
-			if pgrep -x vncserver    >/dev/null 2>&1 || \
-			   pgrep -x Xvnc         >/dev/null 2>&1 || \
-			   pgrep -x x11vnc        >/dev/null 2>&1 || \
-			   pgrep -x Xtightvnc    >/dev/null 2>&1 || \
-			   pgrep -x Xtigervnc    >/dev/null 2>&1 || \
-			   pgrep -x Xrealvnc     >/dev/null 2>&1; then
-				return 0
-			fi
-
-			if pgrep -x gnome-shell       >/dev/null 2>&1 || \
-			   pgrep -x plasmashell       >/dev/null 2>&1 || \
-			   pgrep -x xfce4-session     >/dev/null 2>&1 || \
-			   pgrep -x cinnamon          >/dev/null 2>&1 || \
-			   pgrep -x mate-session      >/dev/null 2>&1 || \
-			   pgrep -x lxsession         >/dev/null 2>&1 || \
-			   pgrep -x openbox           >/dev/null 2>&1 || \
-			   pgrep -x i3                >/dev/null 2>&1 || \
-			   pgrep -x sway              >/dev/null 2>&1 || \
-			   pgrep -x hyprland          >/dev/null 2>&1 || \
-			   pgrep -x wayfire           >/dev/null 2>&1 || \
-			   pgrep -x river              >/dev/null 2>&1 || \
-			   pgrep -x fluxbox           >/dev/null 2>&1; then
-				return 0   # Desktop environment detected
-			fi
-			return 1
-		fi
-	}
-	
-	function open_gui() {
-		(
-			host=127.0.0.1
-			port=7860
-			url="http://$host:$port/"
-			timeout=30
-			start_time=$(date +%s)
-
-			while ! nc -z "$host" "$port" >/dev/null 2>&1; do
-				sleep 1
-				elapsed=$(( $(date +%s) - start_time ))
-				if [ "$elapsed" -ge "$timeout" ]; then
-					exit 0
-				fi
-			done
-
-			if [[ "$OSTYPE" = "darwin"* ]]; then
-				open "$url" >/dev/null 2>&1 &
-			elif command -v xdg-open >/dev/null 2>&1; then
-				xdg-open "$url" >/dev/null 2>&1 &
-			elif command -v gio >/dev/null 2>&1; then
-				gio open "$url" >/dev/null 2>&1 &
-			elif command -v x-www-browser >/dev/null 2>&1; then
-				x-www-browser "$url" >/dev/null 2>&1 &
-			else
-				echo "No method found to open the default web browser." >&2
-			fi
-			exit 0
-		) &
-	}
-
-	function mac_app {
-		local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
-		local CONTENTS="$APP_BUNDLE/Contents"
-		local MACOS="$CONTENTS/MacOS"
-		local RESOURCES="$CONTENTS/Resources"
-		local DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
-		local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
-		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
-		local OPEN_GUI_DEF=$(declare -f open_gui)
-		local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
-		if [[ -d "$APP_BUNDLE" ]]; then
-			open_gui
-			return 0
-		fi
-		[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
-		if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
-			mkdir -p "$MACOS" "$RESOURCES"
-		fi
-		cat > "$MACOS/$APP_NAME" << EOF
+	fi
+	[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
+	if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
+		mkdir -p "$MACOS" "$RESOURCES"
+	fi
+	cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 
-$OPEN_GUI_DEF
+$OPEN_DESKTOP_APP_DEF
 
-open_gui
+open_desktop_app
 
 # TODO: replace osascript when log will be available in gradio with
 #
@@ -566,59 +207,59 @@ open_gui
 
 osascript -e '
 tell application "Terminal"
-	do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
-	activate
+do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
+activate
 end tell
 '
 EOF
-		chmod +x "$MACOS/$APP_NAME"
-		cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
-		cat > "$CONTENTS/Info.plist" << 'PLIST'
+	chmod +x "$MACOS/$APP_NAME"
+	cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
+	cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
-	<key>CFBundleExecutable</key>
-	<string>ebook2audiobook</string>
-	<key>CFBundleIdentifier</key>
-	<string>com.local.ebook2audiobook</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>ebook2audiobook</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>10.9</string>
-	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
-	<key>CFBundleIconFile</key>
-	<string>AppIcon</string>
+<key>CFBundleDevelopmentRegion</key>
+<string>en</string>
+<key>CFBundleExecutable</key>
+<string>ebook2audiobook</string>
+<key>CFBundleIdentifier</key>
+<string>com.local.ebook2audiobook</string>
+<key>CFBundleInfoDictionaryVersion</key>
+<string>6.0</string>
+<key>CFBundleName</key>
+<string>ebook2audiobook</string>
+<key>CFBundlePackageType</key>
+<string>APPL</string>
+<key>CFBundleShortVersionString</key>
+<string>1.0</string>
+<key>CFBundleVersion</key>
+<string>1</string>
+<key>LSMinimumSystemVersion</key>
+<string>10.9</string>
+<key>NSPrincipalClass</key>
+<string>NSApplication</string>
+<key>CFBundleIconFile</key>
+<string>AppIcon</string>
 </dict>
 </plist>
 PLIST
-		ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
-		echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to the launchpad and click on ebook2audiobook icon."
-		open_gui
-	}
+	ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
+	echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to the launchpad and click on ebook2audiobook icon."
+	open_desktop_app
+}
 
-	function linux_app() {
-		local MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
-		local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-		local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
-		local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
-		if [[ -f "$MENU_ENTRY" ]]; then
-			open_gui
-			return 0
-		fi
-		mkdir -p "$HOME/.local/share/applications"
-		cat > "$MENU_ENTRY" <<EOF
+function linux_app() {
+	local MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
+	local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
+	local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
+	if [[ -f "$MENU_ENTRY" ]]; then
+		open_desktop_app
+		return 0
+	fi
+	mkdir -p "$HOME/.local/share/applications"
+	cat > "$MENU_ENTRY" <<EOF
 [Desktop Entry]
 Type=Application
 Name=ebook2audiobook
@@ -627,51 +268,481 @@ Icon=$ICON_PATH
 Terminal=true
 Categories=Utility;
 EOF
-		chmod +x "$MENU_ENTRY"
-		mkdir -p "$HOME/Desktop" 2>&1 > /dev/null
-		cp "$MENU_ENTRY" "$DESKTOP_SHORTCUT"
-		chmod +x "$DESKTOP_SHORTCUT"
-		if command -v update-desktop-database >/dev/null 2>&1; then
-			update-desktop-database ~/.local/share/applications >/dev/null 2>&1
-		fi
-		echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to menu entry and click on ebook2audiobook icon."
-		open_gui
-	}
+	chmod +x "$MENU_ENTRY"
+	mkdir -p "$HOME/Desktop" 2>&1 > /dev/null
+	cp "$MENU_ENTRY" "$DESKTOP_SHORTCUT"
+	chmod +x "$DESKTOP_SHORTCUT"
+	if command -v update-desktop-database >/dev/null 2>&1; then
+		update-desktop-database ~/.local/share/applications >/dev/null 2>&1
+	fi
+	echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to menu entry and click on ebook2audiobook icon."
+	open_desktop_app
+}
 
-	function build_gui {
-		if [[ " ${ARGS[*]} " = *" --headless "* || has_no_display -eq 1 ]]; then
-			return 0
+function check_desktop_app {
+	if [[ " ${ARGS[*]} " == *" --headless "* || has_no_display -eq 1 ]]; then
+		return 0
+	fi
+	if [[ "$OSTYPE" == darwin* ]]; then
+		mac_app
+	elif [[ "$OSTYPE" == "linux"* ]]; then
+		linux_app
+	fi
+	return 0
+}
+#################
+
+function get_iso3_lang() {
+	case "$1" in
+		en) echo "eng" ;;
+		fr) echo "fra" ;;
+		de) echo "deu" ;;
+		it) echo "ita" ;;
+		es) echo "spa" ;;
+		pt) echo "por" ;;
+		ar) echo "ara" ;;
+		tr) echo "tur" ;;
+		ru) echo "rus" ;;
+		bn) echo "ben" ;;
+		zh) echo "chi_sim" ;;
+		fa) echo "fas" ;;
+		hi) echo "hin" ;;
+		hu) echo "hun" ;;
+		id) echo "ind" ;;
+		jv) echo "jav" ;;
+		ja) echo "jpn" ;;
+		ko) echo "kor" ;;
+		pl) echo "pol" ;;
+		ta) echo "tam" ;;
+		te) echo "tel" ;;
+		yo) echo "yor" ;;
+		*)  echo "eng" ;;
+	esac
+}
+
+function check_required_programs {
+	local programs=("$@")
+	programs_missing=()
+	for program in "${programs[@]}"; do
+		local pkg="$program"
+		local bin="$program"
+		# Normalize special binaries
+		[[ "$program" == "nodejs" ]] && bin="node"
+		[[ "$program" == "rust" ]]   && bin="rustc"
+		# Special case: tesseract OCR
+		if [[ "$program" == "tesseract" ]]; then
+			bin="tesseract"
+			pkg="$program"
+			if command -v zypper >/dev/null 2>&1 || command -v apt-get >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then
+				pkg="tesseract-ocr"
+			else
+				echo "Cannot detect your package manager. Install tesseract manually."
+				return 1
+			fi
 		fi
-		if [[ "$OSTYPE" = "darwin"* ]]; then
-			mac_app
-		elif [[ "$OSTYPE" = "linux"* ]]; then
-			linux_app
+		if ! command -v "$bin" &>/dev/null; then
+			echo -e "\e[33m$pkg is not installed.\e[0m"
+			programs_missing+=("$pkg")
 		fi
+	done
+	(( ${#programs_missing[@]} == 0 ))
+}
+
+function install_programs {
+	if [[ "$OSTYPE" == darwin* ]]; then
+		echo -e "\e[33mInstalling required programs...\e[0m"
+		PACK_MGR="brew install"
+			if ! command -v brew &> /dev/null; then
+				echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
+				/usr/bin/env bash -c "$(curl -fsSL $BREW_INSTALLER_URL)"
+				echo >> $HOME/.zprofile
+				echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
+				eval "$(/usr/local/bin/brew shellenv)"
+				if ! grep -iqFx "homebrew" "$INSTALLED_LOG"; then
+					echo "homebrew" >> "$INSTALLED_LOG"
+				fi
+			fi
+	else
+		if [[ "$SUDO" == "sudo" ]]; then
+			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
+		fi
+		local PACK_MGR_OPTIONS=""
+		if command -v emerge &> /dev/null; then
+			PACK_MGR="emerge"
+		elif command -v dnf &> /dev/null; then
+			PACK_MGR="dnf install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v yum &> /dev/null; then
+			PACK_MGR="yum install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v zypper &> /dev/null; then
+			PACK_MGR="zypper install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v pacman &> /dev/null; then
+			PACK_MGR="pacman -Sy --noconfirm"
+		elif command -v apt-get &> /dev/null; then
+			$SUDO apt-get update
+			PACK_MGR="apt-get install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v apk &> /dev/null; then
+			PACK_MGR="apk add"
+		else
+			echo "Cannot recognize your applications package manager. Please install the required applications manually."
+			return 1
+		fi
+	fi
+	if [[ -z "$WGET" ]]; then
+		echo -e "\e[33m wget is missing! trying to install it... \e[0m"
+		result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
+		result_code=$?
+		if [[ $result_code -eq 0 ]]; then
+			WGET=$(which wget 2>/dev/null)
+		else
+			echo "Cannot 'wget'. Please install 'wget'  manually."
+			return 1
+		fi
+	fi
+	for program in "${programs_missing[@]}"; do
+		if [[ "$program" == "calibre" ]]; then		
+			# TODO: check if ebook-convert installed with the right min version
+			if command -v $program >/dev/null 2>&1; then
+				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
+			else
+				# avoid conflict with calibre builtin lxml
+				python3 -m pip uninstall lxml -y 2>/dev/null
+				echo -e "\e[33mInstalling Calibre...\e[0m"
+				if [[ "$OSTYPE" == darwin* ]]; then
+					eval "$PACK_MGR --cask calibre"
+				else
+					if [[ "$SUDO" == "sudo" ]]; then
+						$SUDO -v && $WGET -nv -O- $CALIBRE_INSTALLER_URL | $SUDO sh /dev/stdin
+					else
+						$WGET -nv -O- $CALIBRE_INSTALLER_URL | sh /dev/stdin
+					fi
+				fi
+				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
+				if command -v $program >/dev/null 2>&1; then
+					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+				else
+					echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+				fi
+			fi	
+		elif [[ "$program" == "rust" || "$program" == "rustc" ]]; then
+			curl --proto '=https' --tlsv1.2 -sSf $RUST_INSTALLER_URL | sh -s -- -y
+			source $HOME/.cargo/env
+			if command -v $program &>/dev/null; then
+				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+			else
+				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+			fi
+		elif [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
+			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
+			if command -v $program >/dev/null 2>&1; then
+				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+				case "$OS_LANG" in
+					en) tess_lang="eng" ;;
+					fr) tess_lang="fra" ;;
+					de) tess_lang="deu" ;;
+					it) tess_lang="ita" ;;
+					es) tess_lang="spa" ;;
+					pt) tess_lang="por" ;;
+					ar) tess_lang="ara" ;;
+					tr) tess_lang="tur" ;;
+					ru) tess_lang="rus" ;;
+					bn) tess_lang="ben" ;;
+					zh) tess_lang="chi_sim" ;;
+					fa) tess_lang="fas" ;;
+					hi) tess_lang="hin" ;;
+					hu) tess_lang="hun" ;;
+					id) tess_lang="ind" ;;
+					jv) tess_lang="jav" ;;
+					ja) tess_lang="jpn" ;;
+					ko) tess_lang="kor" ;;
+					pl) tess_lang="pol" ;;
+					ta) tess_lang="tam" ;;
+					te) tess_lang="tel" ;;
+					yo) tess_lang="yor" ;;
+					*) tess_lang="eng" ;;
+				esac
+				tess_lang="$(get_iso3_lang $OS_LANG)"
+				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $tess_lang"
+				langpack=""
+				if command -v brew &> /dev/null; then
+					langpack="tesseract-lang-$tess_lang"
+				elif command -v apt-get &>/dev/null; then
+					langpack="tesseract-ocr-$tess_lang"
+				elif command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+					langpack="tesseract-langpack-$tess_lang"
+				elif command -v zypper &>/dev/null; then
+					langpack="tesseract-ocr-$tess_lang"
+				elif command -v pacman &>/dev/null; then
+					langpack="tesseract-data-$tess_lang"
+				elif command -v apk &>/dev/null; then
+					langpack="tesseract-ocr-$tess_lang"
+				else
+					echo "Cannot recognize your applications package manager. Please install the required applications manually."
+					return 1
+				fi
+				if [[ -n "$langpack" ]]; then
+					eval "$SUDO $PACK_MGR $langpack $PACK_MGR_OPTIONS"
+					if tesseract --list-langs | grep -q "$tess_lang"; then
+						echo "Tesseract OCR language '$tess_lang' successfully installed."
+					else
+						echo "Tesseract OCR language '$tess_lang' not installed properly."
+					fi
+				fi
+			else
+				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+			fi
+		else
+			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
+			if command -v $program >/dev/null 2>&1; then
+				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+			else
+				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+			fi
+		fi
+	done
+	if check_required_programs "${HOST_PROGRAMS[@]}"; then
+		return 0
+	else
+		echo "Some programs didn't install successfuly, please report the log to the support"
+	fi
+}
+
+function check_conda {
+
+	function compare_versions {
+		local ver1=$1
+		local ver2=$2
+		# Pad each version to 3 parts
+		IFS='.' read -r v1_major v1_minor <<<"$ver1"
+		IFS='.' read -r v2_major v2_minor <<<"$ver2"
+
+		((v1_major < v2_major)) && return 1
+		((v1_major > v2_major)) && return 2
+		((v1_minor < v2_minor)) && return 1
+		((v1_minor > v2_minor)) && return 2
 		return 0
 	}
 
-	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
-		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
-	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
-		pass=true	   
-		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
-			if ! install_programs; then
-				pass=false
-			fi
+	if ! command -v conda &> /dev/null || [[ ! -f "$CONDA_ENV" ]]; then
+		local installer_url
+		local installer_path="/tmp/Miniforge3.sh"
+		local config_path
+		echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
+		if [[ "$OSTYPE" == darwin* ]]; then
+			config_path="$HOME/.zshrc"
+			curl -fsSLo "$installer_path" "$MINIFORGE_MACOSX_INSTALLER_URL"
+		else
+			config_path="$HOME/.bashrc"
+			wget -O "$installer_path" "$MINIFORGE_LINUX_INSTALLER_URL"
 		fi
-		if [ "$pass" = true ]; then
-			if conda_check; then
-				conda init > /dev/null 2>&1
-				source $CONDA_ENV
-				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
-				build_gui
-				python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
-				conda deactivate 2>&1 > /dev/null
-				conda deactivate 2>&1 > /dev/null
+		if [[ -f "$installer_path" ]]; then
+			echo -e "\e[33mInstalling Miniforge3...\e[0m"
+			bash "$installer_path" -b -u -p "$CONDA_HOME"
+			rm -f "$installer_path"
+			if [[ -f "$CONDA_HOME/bin/conda" ]]; then
+				if [[ ! -f "$HOME/.condarc" ]]; then
+					$CONDA_HOME/bin/conda config --set auto_activate false
+				fi
+				[[ -f "$config_path" ]] || touch "$config_path"
+				grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
+				source "$config_path"
+				echo -e "\e[32m===============>>> Miniforge3 is installed! <<===============\e[0m"
+					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
+						echo "Miniforge3" >> "$INSTALLED_LOG"
+					fi
+			else
+				echo -e "\e[31m===============>>> Miniforge3 installation failed.\e[0m"
+				return 1
 			fi
+		else
+			echo -e "\e[31m===============>>> Miniforge3 installer not found!.\e[0m"
+			return 1
+		fi
+	fi
+	if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+		if [[ "$OSTYPE" == darwin* && "$ARCH" == "x86_64" ]]; then
+			PYTHON_VERSION="3.11"
+		elif [[ -r /proc/device-tree/model ]]; then
+			# Detect Jetson and select correct Python version
+			MODEL=$(tr -d '\0' </proc/device-tree/model | tr 'A-Z' 'a-z')
+			if [[ "$MODEL" == *jetson* ]]; then
+				PYTHON_VERSION="3.10"
+			fi
+		else
+			compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
+			case $? in
+				1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;;
+			esac
+			compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
+			case $? in
+				2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
+			esac
+		fi
+		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
+		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
+		conda update --all -y
+		conda clean --index-cache -y
+		conda clean --packages --tarballs -y
+		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y || return 1
+		source "$CONDA_ENV" || return 1
+		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
+		install_python_packages || return 1
+		conda deactivate > /dev/null 2>&1
+		conda deactivate > /dev/null 2>&1
+	fi
+	return 0
+}
+
+function check_docker {
+	if command -v docker &> /dev/null; then
+		if ! docker info >/dev/null 2>&1; then
+			echo -e "\e[31m===============>>> Docker is installed but NOT running.\e[0m"
+			return 1
 		fi
 	else
-		echo -e "\e[33mebook2audiobook is not correctly installed or run.\e[0m"
+		echo -e "\e[31m===============>>> Docker is not installed or not running. Please install or run Docker manually.\e[0m"
+		return 1
+	fi
+	return 0
+}
+
+function install_python_packages {
+	echo "[ebook2audiobook] Installing dependencies..."
+	python3 -m pip cache purge > /dev/null 2>&1
+	python3 -m pip install --upgrade pip > /dev/null 2>&1
+	python3 -m pip install --upgrade --no-cache-dir --progress-bar on --disable-pip-version-check --use-pep517 -r "$SCRIPT_DIR/requirements.txt" || exit 1
+	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
+	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
+		python3 -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
+	fi
+	python3 -m unidic download || exit 1
+	echo "[ebook2audiobook] Installation completed."
+	return 0
+}
+
+function check_device_info {
+arg="$1"
+python3 - << EOF
+from lib.classes.device_installer import DeviceInstaller
+device = DeviceInstaller()
+result = device.check_device_info("$arg")
+if result:
+	print(result)
+	raise SystemExit(0)
+raise SystemExit(1)
+EOF
+}
+
+function install_device_packages {
+arg="$1"
+python3 - << EOF
+import sys
+from lib.classes.device_installer import DeviceInstaller
+device = DeviceInstaller()
+exit_code = device.install_device_packages('''$arg''')
+sys.exit(exit_code)
+EOF
+}
+
+function check_sitecustomized {
+	local src_pyfile="$SCRIPT_DIR/components/sitecustomize.py"
+	local site_packages_path=$(python3 -c "import sysconfig;print(sysconfig.get_paths()['purelib'])")
+	local dst_pyfile="$site_packages_path/sitecustomize.py"
+	if [ ! -f "$dst_pyfile" ] || [ "$src_pyfile" -nt "$dst_pyfile" ]; then
+		if cp -p "$src_pyfile" "$dst_pyfile"; then
+			echo "Installed sitecustomize.py hook in $dst_pyfile"
+		else
+			echo -e "\e[31m===============>>> sitecustomize.py hook installation error: copy failed.\e[0m" >&2
+			exit 1
+		fi
+	fi
+	return 0
+}
+
+function build_docker_image {
+	local arg="$1"
+	if ! command -v docker >/dev/null 2>&1; then
+		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
+		return 1
+	fi
+	if docker compose version >/dev/null 2>&1; then
+		docker compose \
+			--progress=plain \
+			build \
+			--no-cache \
+			--build-arg DOCKER_DEVICE_STR="$arg" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
+			--build-arg ISO3_LANG="$ISO3_LANG" \
+			|| return 1
+	else
+		docker build \
+			--no-cache \
+			--progress plain \
+			--build-arg DOCKER_DEVICE_STR="$arg" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
+			--build-arg ISO3_LANG="$ISO3_LANG" \
+			-t "$DOCKER_IMG_NAME" \
+			. || return 1
+	fi
+}
+
+########################################
+
+if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
+	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
+else
+	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
+		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
+			check_docker || exit 1
+			if docker image inspect "$DOCKER_IMG_NAME" >/dev/null 2>&1; then
+				echo "[STOP] Docker image '$DOCKER_IMG_NAME' already exists. Aborting build."
+				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
+				exit 1
+			fi
+			build_docker_image "$(check_device_info "${SCRIPT_MODE}")" || exit 1
+		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
+			install_python_packages || exit 1
+			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
+			check_sitecustomized || exit 1
+		fi
+	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
+		# Check if running in a Conda or Python virtual environment
+		if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
+			current_pyvenv="$CONDA_PREFIX"
+		elif [[ -n "$VIRTUAL_ENV" ]]; then
+			current_pyvenv="$VIRTUAL_ENV"
+		fi
+		# If neither environment variable is set, check Python path
+		if [[ -z "$current_pyvenv" ]]; then
+			PYTHON_PATH=$(which python 2>/dev/null)
+			if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" == "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" == "$VIRTUAL_ENV/bin/python" ) ]]; then
+				current_pyvenv="${CONDA_PREFIX:-$VIRTUAL_ENV}"
+			fi
+		fi
+		# Output result if a virtual environment is detected
+		if [[ -n "$current_pyvenv" ]]; then
+			echo -e "\e[31m===============>>> Error: Current python virtual environment detected: $current_pyvenv..\e[0m"
+			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
+			echo -e "If you are using conda then you would type in:"
+			echo -e "conda deactivate"
+			exit 1
+		fi
+		check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
+		check_conda || { echo -e "\e[31m===============>>> check_conda() failed.\e[0m"; exit 1; }
+		source "$CONDA_ENV" || exit 1
+		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m===============>>> conda activate failed.\e[0m"; exit 1; }
+		check_sitecustomized || exit 1
+		check_desktop_app || exit 1
+		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
+		conda deactivate > /dev/null 2>&1
+		conda deactivate > /dev/null 2>&1
+	else
+		echo -e "\e[31m===============>>> ebook2audiobook is not correctly installed.\e[0m"
 	fi
 fi
 

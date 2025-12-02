@@ -732,7 +732,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     msg = f"NLP model {stanza_model} loaded!"
                     print(msg)
                 else:
-                    use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
+                    #use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
+                    use_gpu = False
                     #stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
                     stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
                     if stanza_nlp:
@@ -986,7 +987,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
             error = 'No sentences found!'
             print(error)
             return None
-        return get_sentences(text, id)
+        return sentences
     except Exception as e:
         error = f'filter_chapter() error: {e}'
         DependencyError(error)
@@ -1067,7 +1068,7 @@ def get_sentences(text:str, id:str)->list|None:
     try:
         session = context.get_session(id)
         lang, tts_engine = session['language'], session['tts_engine']
-        max_chars = int(language_mapping[lang]['max_chars'] / 2) if session['tts_engine'] in [TTS_ENGINES['BARK'], TTS_ENGINES['TACOTRON2']] else language_mapping[lang]['max_chars'] - 4
+        max_chars = int(language_mapping[lang]['max_chars'] / 2)
         min_tokens = 5
         # List or tuple of tokens that must never be appended to buffer
         sml_tokens = tuple(TTS_SML.values())
@@ -1154,6 +1155,10 @@ def get_sentences(text:str, id:str)->list|None:
             sentences = []
             for s in soft_list:
                 if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
+                    if sentences and s in (TTS_SML["break"], TTS_SML["pause"]):
+                        last = sentences[-1]
+                        if last and last[-1].isalnum():
+                            sentences[-1] = last + ";\n"
                     sentences.append(s)
                 else:
                     words = s.split(' ')
@@ -1718,16 +1723,15 @@ def convert_chapters2audio(id:str)->bool:
         DependencyError(e)
         return False
 
-def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, id:str)->bool:
+def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
     try:
         session = context.get_session(id)
-        chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
+        audio_file = os.path.join(session['chapters_dir'], file)
         chapters_dir_sentences = session['chapters_dir_sentences']
         batch_size = 1024
         start = int(start)
         end = int(end)
         is_gui_process = session.get('is_gui_process')
-        id = session.get('id')
         sentence_files = [
             f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1747,7 +1751,11 @@ def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, id:str)-
         os.makedirs(temp_sentence, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
             chunk_list = []
-            for i in range(0, len(selected_files), batch_size):
+            total_batches = (len(selected_files)+batch_size-1)//batch_size
+            iterator = tqdm(range(0,len(selected_files),batch_size),total=total_batches,desc="Preparing batches",unit="batch")
+            for idx,i in enumerate(iterator):
+                if session.get('is_gui_progress') and gr_progress:
+                    gr_progress((idx+1)/total_batches,"Preparing batches")
                 if session['cancellation_requested']:
                     msg = 'Cancel requested'
                     print(msg)
@@ -1774,11 +1782,15 @@ def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, id:str)-
             with open(final_list, 'w') as f:
                 for _, chunk_path, _ in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
-                print(f'********* Combined block audio file saved in {chapter_audio_file}')
+            if session.get('is_gui_progress') and gr_progress:
+                gr_progress(1.0,"Final merge")
+            if assemble_chunks(final_list, audio_file, is_gui_process):
+                msg = f'********* Combined block audio file saved in {audio_file}'
+                print(msg)
                 return True
             else:
-                print("combine_audio_sentences() Final merge failed.")
+                error = 'combine_audio_sentences() Final merge failed.'
+                print(error)
                 return False
     except Exception as e:
         DependencyError(e)
@@ -2025,7 +2037,11 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     temp_dir = Path(temp_dir)
                     batch_size = 1024
                     chunk_list = []
-                    for i in range(0, len(part_file_list), batch_size):
+                    total_batches = (len(part_file_list)+batch_size-1)//batch_size
+                    iterator = tqdm(range(0,len(part_file_list),batch_size),total=total_batches,desc=f"Part {part_idx+1} batches",unit="batch")
+                    for idx,i in enumerate(iterator):
+                        if session.get('is_gui_progress') and gr_progress:
+                            gr_progress((idx+1)/total_batches,f"Part {part_idx+1} batches")
                         if session.get('cancellation_requested'):
                             msg = 'Cancel requested'
                             print(msg)
@@ -2044,16 +2060,13 @@ def combine_audio_chapters(id:str)->list[str]|None:
                         error = f'assemble_chunks() One or more chunks failed for part {part_idx+1}.'
                         print(error)
                         return None
-                    # Final merge for this part
-                    combined_chapters_file = Path(session['process_dir']) / (
-                        f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}"
-                        if needs_split else
-                        f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
-                    )
+                    combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
                     final_list = temp_dir / f'part_{part_idx+1:02d}_final.txt'
                     with open(final_list, 'w') as f:
                         for _, chunk_path, _ in chunk_list:
                             f.write(f"file '{Path(chunk_path).as_posix()}'\n")
+                    if session.get('is_gui_progress') and gr_progress:
+                        gr_progress(1.0,f"Part {part_idx+1} final merge")
                     if not assemble_chunks(str(final_list), str(combined_chapters_file), session['is_gui_process']):
                         error = f'assemble_chunks() Final merge failed for part {part_idx+1}.'
                         print(error)
@@ -2061,11 +2074,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                    final_file = Path(session['audiobooks_dir']) / (
-                        f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}"
-                        if needs_split else
-                        session['final_name']
-                    )
+                    final_file = Path(session['audiobooks_dir']) / (f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name'])
                     if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
         else:
@@ -2122,9 +2131,9 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
         cmd = [
             shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
             '-safe', '0', '-f', 'concat', '-i', txt_file,
-            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
+            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '0', out_file
         ]
-        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble chunks')
+        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble')
         if proc_pipe:
             msg = f'Completed → {out_file}'
             print(msg)
@@ -2289,7 +2298,7 @@ def convert_ebook(args:dict)->tuple:
                 session['output_split'] = bool(args['output_split'])
                 session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
                 session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
-                cleanup_memory()
+                cleanup_models_cache()
                 if not session['is_gui_process']:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -2344,10 +2353,9 @@ def convert_ebook(args:dict)->tuple:
                             msg = ''
                             msg_extra = ''
                             vram_dict = VRAMDetector().detect_vram(session['device'])
-                            total_vram_bytes = vram_dict.get('total_bytes', 4096)
-                            total_vram_gb = int(((total_vram_bytes / (1024 ** 3) * 100) / 100) + 0.1)
-                            free_vram_bytes = vram_dict.get('free_bytes', 0)
-                            session['free_vram_gb'] = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
+                            print(f'vram_dict: {vram_dict}')
+                            total_vram_gb = vram_dict.get('total_vram_gb', 0)
+                            session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                             if session['free_vram_gb'] == 0:
                                 session['free_vram_gb'] = 1.0
                                 msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
@@ -2532,7 +2540,7 @@ def reset_session(id:str)->None:
     }
     restore_session_from_data(data, session)
 
-def cleanup_memory()->None:
+def cleanup_models_cache()->None:
     try:
         active_models = {
             cache
@@ -2545,7 +2553,7 @@ def cleanup_memory()->None:
                 del loaded_tts[key]
         gc.collect()
     except Exception as e:
-        error = f"unload_tts() error: {e}"
+        error = f"cleanup_models_cache() error: {e}"
         print(error)
 
 def show_alert(state:dict)->None:
