@@ -2,10 +2,8 @@
 
 if [[ "$OSTYPE" == darwin* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
-	exec env zsh "$0" "$@"
+	exec env zsh "$0" -- "$@"
 fi
-
-echo $SHELL
 
 if [[ -n "$BASH_SOURCE" ]]; then
 	script_path="${BASH_SOURCE[0]}"
