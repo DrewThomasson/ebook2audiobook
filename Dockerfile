@@ -10,11 +10,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:$PATH"
 
 RUN apt-get update \
- && apt-get install -y \
+ && apt-get install -y --no-install-recommends --allow-change-held-packages \
       wget xz-utils bash git \
       libgl1 libegl1 libxcb1 libxkbcommon0 libdbus-1-3 \
       tesseract-ocr tesseract-ocr-$ISO3_LANG \
- && apt-get install -y $DOCKER_PROGRAMS \
+ && apt-get install -y --no-install-recommends --allow-change-held-packages $DOCKER_PROGRAMS \
  && wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin \
  && ln -s /opt/calibre/ebook-convert /usr/bin/ebook-convert \
  && apt-get clean \
