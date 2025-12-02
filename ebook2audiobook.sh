@@ -39,7 +39,7 @@ while (( $# > 0 )); do
     shift
 done
 
-echo $arguments
+echo "${arguments}[*]"
 
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
