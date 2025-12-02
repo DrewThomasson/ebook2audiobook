@@ -74,6 +74,8 @@ while (( $# > 0 )); do
     shift
 done
 
+echo "script_mode: ${arguments['script_mode']}"
+
 if [[ "${arguments['script_mode']}" == "$BUILD_DOCKER" ]]; then
 	SCRIPT_MODE="${arguments['script_mode']}"
 fi
