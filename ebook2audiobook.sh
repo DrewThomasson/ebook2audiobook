@@ -18,6 +18,8 @@ typeset -a programs_missing # indexed array
 
 ARGS=("$@")
 
+echo $ARGS
+
 # Parse arguments
 while (( $# > 0 )); do
     case "$1" in
