@@ -79,7 +79,7 @@ if [[ "${arguments['script_mode']}" == "$BUILD_DOCKER" ]]; then
 	SCRIPT_MODE="${arguments['script_mode']}"
 fi
 
-echo "SCRIPT_MODE"
+echo "$SCRIPT_MODE"
 
 if [[ -n "${arguments['docker_device']+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments['docker_device']}"
