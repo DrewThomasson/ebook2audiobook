@@ -37,6 +37,8 @@ APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 DOCKER_PROGRAMS=("curl" "pkg-config" "ffmpeg" "nodejs" "espeak-ng" "rustc" "sox" "tesseract-ocr")
+DOCKER_DEVICE_STR=""
+DOCKER_IMG_NAME="ebook2audiobook:latest"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 BREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 MINIFORGE_MACOSX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
@@ -44,9 +46,7 @@ MINIFORGE_LINUX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases
 RUST_INSTALLER_URL="https://sh.rustup.rs"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
-DOCKER_DEVICE_STR=""
 WGET=$(which wget 2>/dev/null)
-DOCKER_IMG_NAME="ebook2audiobook:latest"
 
 typeset -A arguments # associative array
 typeset -a programs_missing # indexed array
@@ -606,10 +606,11 @@ function install_python_packages {
 }
 
 function check_device_info {
+arg="$1"
 python3 - << EOF
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-result = device.check_device_info("$1")
+result = device.check_device_info("$arg")
 if result:
 	print(result)
 	raise SystemExit(0)
@@ -618,11 +619,12 @@ EOF
 }
 
 function install_device_packages {
+arg="$1"
 python3 - << EOF
 import sys
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-exit_code = device.install_device_packages('''$1''')
+exit_code = device.install_device_packages('''$arg''')
 sys.exit(exit_code)
 EOF
 }
@@ -643,22 +645,17 @@ function check_sitecustomized {
 }
 
 function build_docker_image {
-	local OS="manylinux_2_28"
-	local NAME="$(echo "$DOCKER_DEVICE_STR" | jq -r '.name')"
-	local TAG="$(echo "$DOCKER_DEVICE_STR" | jq -r '.tag')"
-	local ARCH="$(echo "$DOCKER_DEVICE_STR" | jq -r '.arch')"
-
+	local arg="$1"
 	if ! command -v docker >/dev/null 2>&1; then
 		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
 		return 1
 	fi
-
 	if docker compose version >/dev/null 2>&1; then
 		docker compose \
 			--progress=plain \
 			build \
 			--no-cache \
-			--build-arg DOCKER_DEVICE_STR="$1" \
+			--build-arg DOCKER_DEVICE_STR="$arg" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
@@ -667,7 +664,7 @@ function build_docker_image {
 		docker build \
 			--no-cache \
 			--progress plain \
-			--build-arg DOCKER_DEVICE_STR="$1" \
+			--build-arg DOCKER_DEVICE_STR="$arg" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
@@ -675,7 +672,6 @@ function build_docker_image {
 			. || return 1
 	fi
 }
-
 
 ########################################
 

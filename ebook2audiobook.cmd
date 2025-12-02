@@ -29,7 +29,10 @@ set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "PROGRAMS_LIST=calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
+set "HOST_PROGRAMS=calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
+set "DOCKER_PROGRAMS=curl pkg-config ffmpeg nodejs espeak-ng rustc sox tesseract-ocr"
+set "DOCKER_DEVICE_STR="
+set "DOCKER_IMG_NAME=ebook2audiobook:latest"
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
@@ -75,6 +78,8 @@ cd /d "%SCRIPT_DIR%"
 for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 set "FORWARD_ARGS="
 
+::::::::::::::::::::::::::::::: FUNCTIONS
+
 :parse_args
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
@@ -102,7 +107,7 @@ goto parse_args
 
 :parse_args_done
 if defined arguments.script_mode (
-    if /I "!arguments.script_mode!"=="build_docker" (
+    if /I "!arguments.script_mode!"=="%BUILD_DOCKER%" (
         set "SCRIPT_MODE=!arguments.script_mode!"
     )
 )
@@ -111,52 +116,45 @@ if defined arguments.docker_device (
 )
 goto :check_scoop
 
-:check_scoop
-where /Q scoop
-if %errorlevel% neq 0 (
-	echo Scoop is not installed. 
-	set "OK_SCOOP=1"
-	goto :install_components
-)
-goto :check_conda
+::::::::::::::: DESKTOP APP
+:make_shortcut
+set "shortcut=%~1"
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$s = New-Object -ComObject WScript.Shell; " ^
+  "$sc = $s.CreateShortcut('%shortcut%'); " ^
+  "$sc.TargetPath = 'cmd.exe'; " ^
+  "$sc.Arguments = '/k ""cd /d """"%SCRIPT_DIR%"""" && """"%APP_FILE%""""""'; " ^
+  "$sc.WorkingDirectory = '%SCRIPT_DIR%'; " ^
+  "$sc.IconLocation = '%ICON_PATH%'; " ^
+  "$sc.Save()"
 exit /b
 
-:check_conda
-where /Q conda
-if %errorlevel% neq 0 (
-	echo Miniforge3 is not installed.
-	set "OK_CONDA=1"
-	goto :install_components
-)
-
-:: Check if running in a Conda environment
-if defined CONDA_DEFAULT_ENV (
-	set "CURRENT_ENV=%CONDA_PREFIX%"
-)
-:: Check if running in a Python virtual environment
-if defined VIRTUAL_ENV (
-	set "CURRENT_ENV=%VIRTUAL_ENV%"
-)
-for /f "delims=" %%i in ('where /Q python') do (
-	if defined CONDA_PREFIX (
-		if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-			set "CURRENT_ENV=%CONDA_PREFIX%"
-			break
-		)
-	) else if defined VIRTUAL_ENV (
-		if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-			set "CURRENT_ENV=%VIRTUAL_ENV%"
-			break
+:build_gui
+if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
+	if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
+	if not exist "%STARTMENU_LNK%" (
+		call :make_shortcut "%STARTMENU_LNK%"
+		call :make_shortcut "%DESKTOP_LNK%"
+	)
+	for /f "skip=1 delims=" %%L in ('tasklist /v /fo csv /fi "imagename eq powershell.exe" 2^>nul') do (
+		echo %%L | findstr /I "%APP_NAME%" >nul && (
+			for /f "tokens=2 delims=," %%A in ("%%L") do (
+				taskkill /PID %%~A /F >nul 2>&1
+			)
 		)
 	)
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayName" /d "%APP_NAME%" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayVersion" /d "%APP_VERSION%" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "Publisher" /d "ebook2audiobook Team" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "InstallLocation" /d "%SCRIPT_DIR%" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "UninstallString" /d "\"%UNINSTALLER%\"" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
+	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
+	start "%APP_NAME%" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%BROWSER_HELPER%" -HostName "%TEST_HOST%" -Port %TEST_PORT%
 )
-if not "%CURRENT_ENV%"=="" (
-	echo Current python virtual environment detected: %CURRENT_ENV%. 
-	echo ^[[31m=============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.^[[0m
-	goto :failed
-)
-goto :check_required_programs
 exit /b
+:::::: END OF DESKTOP APP
 
 :get_iso3_lang
 set "arg=%~1"
@@ -185,9 +183,19 @@ if /i "%arg%"=="yo"  echo yor& goto :eof
 echo eng
 exit /b
 
+:check_scoop
+where /Q scoop
+if %errorlevel% neq 0 (
+	echo Scoop is not installed. 
+	set "OK_SCOOP=1"
+	goto :install_programs
+)
+goto :check_conda
+exit /b
+
 :check_required_programs
 set "missing_prog_array="
-for %%p in (%PROGRAMS_LIST%) do (
+for %%p in (%HOST_PROGRAMS%) do (
 	set "prog=%%p"
 	if "%%p"=="nodejs" set "prog=node"
 	if "%%p"=="calibre-normal" set "prog=calibre"
@@ -199,12 +207,12 @@ for %%p in (%PROGRAMS_LIST%) do (
 )
 if not "%missing_prog_array%"=="" (
 	set "OK_PROGRAMS=1"
-	goto :install_components
+	goto :install_programs
 )
 goto :dispatch
 exit /b
 
-:install_components
+:install_programs
 if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
 	call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
@@ -308,43 +316,170 @@ if not "%OK_PROGRAMS%"=="0" (
 goto :dispatch
 exit /b
 
-:make_shortcut
-set "shortcut=%~1"
-powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$s = New-Object -ComObject WScript.Shell; " ^
-  "$sc = $s.CreateShortcut('%shortcut%'); " ^
-  "$sc.TargetPath = 'cmd.exe'; " ^
-  "$sc.Arguments = '/k ""cd /d """"%SCRIPT_DIR%"""" && """"%APP_FILE%""""""'; " ^
-  "$sc.WorkingDirectory = '%SCRIPT_DIR%'; " ^
-  "$sc.IconLocation = '%ICON_PATH%'; " ^
-  "$sc.Save()"
-exit /b
+:check_conda
+where /Q conda
+if %errorlevel% neq 0 (
+	echo Miniforge3 is not installed.
+	set "OK_CONDA=1"
+	goto :install_programs
+)
 
-:build_gui
-if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
-	if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
-	if not exist "%STARTMENU_LNK%" (
-		call :make_shortcut "%STARTMENU_LNK%"
-		call :make_shortcut "%DESKTOP_LNK%"
-	)
-	for /f "skip=1 delims=" %%L in ('tasklist /v /fo csv /fi "imagename eq powershell.exe" 2^>nul') do (
-		echo %%L | findstr /I "%APP_NAME%" >nul && (
-			for /f "tokens=2 delims=," %%A in ("%%L") do (
-				taskkill /PID %%~A /F >nul 2>&1
-			)
+:: Check if running in a Conda environment
+if defined CONDA_DEFAULT_ENV (
+	set "CURRENT_ENV=%CONDA_PREFIX%"
+)
+:: Check if running in a Python virtual environment
+if defined VIRTUAL_ENV (
+	set "CURRENT_ENV=%VIRTUAL_ENV%"
+)
+for /f "delims=" %%i in ('where /Q python') do (
+	if defined CONDA_PREFIX (
+		if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
+			set "CURRENT_ENV=%CONDA_PREFIX%"
+			break
+		)
+	) else if defined VIRTUAL_ENV (
+		if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
+			set "CURRENT_ENV=%VIRTUAL_ENV%"
+			break
 		)
 	)
-	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayName" /d "%APP_NAME%" /f >nul 2>&1
-	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayVersion" /d "%APP_VERSION%" /f >nul 2>&1
-	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "Publisher" /d "ebook2audiobook Team" /f >nul 2>&1
-	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "InstallLocation" /d "%SCRIPT_DIR%" /f >nul 2>&1
-	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "UninstallString" /d "\"%UNINSTALLER%\"" /f >nul 2>&1
-	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
-	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
-	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
-	start "%APP_NAME%" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%BROWSER_HELPER%" -HostName "%TEST_HOST%" -Port %TEST_PORT%
 )
-exit /b
+if not "%CURRENT_ENV%"=="" (
+	echo Current python virtual environment detected: %CURRENT_ENV%. 
+	echo ^[[31m=============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.^[[0m
+	goto :failed
+)
+goto :check_required_programs
+exit /b 0
+
+:compare_versions
+setlocal EnableDelayedExpansion
+set "v1=%~1"
+set "v2=%~2"
+:: Remove dots
+set "v1_n=%v1:.=%"
+set "v2_n=%v2:.=%"
+:: Pad with zeros
+set "v1_n=000000%v1_n%"
+set "v2_n=000000%v2_n%"
+set "v1_n=!v1_n:~-6!"
+set "v2_n=!v2_n:~-6!"
+if !v1_n! LSS !v2_n! (endlocal & set cmp_result=LEQ & exit /b)
+if !v1_n! EQU !v2_n! (endlocal & set cmp_result=LEQ & exit /b)
+endlocal & set cmp_result=GTR & exit /b
+
+:install_python_packages
+echo [ebook2audiobook] Installing dependencies...
+python -m pip cache purge >nul 2>&1
+python -m pip install --upgrade pip >nul 2>&1
+python -m pip install --upgrade --no-cache-dir --progress-bar on --disable-pip-version-check --use-pep517 -r "%SCRIPT_DIR%\requirements.txt"
+if errorlevel 1 goto :failed
+for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
+    set "torch_ver=%%A"
+)
+call :compare_versions "%torch_ver%" "2.2.2"
+if %cmp_result%==LEQ (
+    python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
+    if errorlevel 1 goto :failed
+)
+python -m unidic download
+if errorlevel 1 goto :failed
+echo [ebook2audiobook] Installation completed.
+exit /b 0
+
+:check_device_info
+set "arg=%~1"
+powershell -NoLogo -NoProfile -Command ^
+@"
+python - << 'EOF'
+from lib.classes.device_installer import DeviceInstaller
+device = DeviceInstaller()
+result = device.check_device_info(r"%arg%")
+if result:
+    print(result)
+    raise SystemExit(0)
+raise SystemExit(1)
+EOF
+"@
+exit /b %errorlevel%
+
+:install_device_packages
+set "arg=%~1"
+powershell -NoLogo -NoProfile -Command ^
+@"
+python - << 'EOF'
+import sys
+from lib.classes.device_installer import DeviceInstaller
+device = DeviceInstaller()
+exit_code = device.install_device_packages(r"%arg%")
+sys.exit(exit_code)
+EOF
+"@
+exit /b %errorlevel%
+
+:check_sitecustomized
+set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
+:: get python site-packages path (lowercase var)
+for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
+    "python - << 'EOF'
+import sysconfig
+print(sysconfig.get_paths()['purelib'])
+EOF"') do (
+    set "site_packages=%%a"
+)
+set "dst_pyfile=%site_packages%\sitecustomize.py"
+:: run powershell for timestamp comparison + copy
+powershell -nologo -noprofile -command ^
+@"
+\$src = '%src_pyfile%'
+\$dst = '%dst_pyfile%'
+if (!(Test-Path \$dst) -or ((Get-Item \$src).LastWriteTime -gt (Get-Item \$dst).LastWriteTime)) {
+    try {
+        Copy-Item -Path \$src -Destination \$dst -Force -ErrorAction Stop
+        Write-Host "Installed sitecustomize.py hook in \$dst"
+    } catch {
+        Write-Host "===============>>> sitecustomize.py hook installation error: copy failed." -ForegroundColor Red
+        exit 1
+    }
+}
+"@
+exit /b %errorlevel%
+
+:build_docker_image
+set "arg=%~1"
+powershell -nologo -noprofile -command ^
+@if (!(Get-Command docker -ErrorAction SilentlyContinue)) { ^
+    Write-Host "===============>>> Error: Docker must be installed and running!" -ForegroundColor Red; ^
+    exit 1 ^
+}
+@if ($false) {}
+@
+if errorlevel 1 exit /b 1
+powershell -nologo -noprofile -command ^
+@if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }
+@if ($false) {}
+@
+set "compose_available=%errorlevel%"
+if "%compose_available%"=="0" (
+	:: Use docker compose v2
+	docker compose --progress=plain build --no-cache ^
+		--build-arg DOCKER_DEVICE_STR="%arg%" ^
+		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
+		--build-arg CALIBRE_INSTALLER_URL="%CALIBRE_INSTALLER_URL%" ^
+		--build-arg ISO3_LANG="%ISO3_LANG%"
+	if errorlevel 1 exit /b 1
+) else (
+	:: Use docker build (fallback)
+	docker build --no-cache --progress plain ^
+		--build-arg DOCKER_DEVICE_STR="%arg%" ^
+		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
+		--build-arg CALIBRE_INSTALLER_URL="%CALIBRE_INSTALLER_URL%" ^
+		--build-arg ISO3_LANG="%ISO3_LANG%" ^
+		-t "%DOCKER_IMG_NAME%" .
+	if errorlevel 1 exit /b 1
+)
+exit /b 0
 
 :dispatch
 if "%OK_SCOOP%"=="0" (
@@ -361,60 +496,88 @@ if "%OK_SCOOP%"=="0" (
 echo OK_PROGRAMS: %OK_PROGRAMS%
 echo OK_CONDA: %OK_CONDA%
 echo OK_DOCKER: %OK_DOCKER%
-goto :install_components
+goto :install_programs
 exit /b
 
 :main
-if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
+if defined arguments.help (
+    if /I "!arguments.help!"=="true" (
+        python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
+        goto :eof
+    )
 ) else (
-	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
-		echo Creating ./python_env version %PYTHON_ENV%...
-		call "%CONDA_HOME%\Scripts\activate.bat"
-		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
-		call conda update --all -y
-		call conda clean --index-cache -y
-		call conda clean --packages --tarballs -y
-		call conda activate base
-		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-		call python3 -m pip cache purge >nul 2>&1
-		call python3 -m pip install --upgrade pip
-		call python3 -m pip install --upgrade --no-cache-dir --progress-bar on --disable-pip-version-check --use-pep517 -r "%SCRIPT_DIR%\requirements.txt"
-		for /f "tokens=2 delims= " %%A in ('pip show torch 2^>nul ^| findstr /b /i "Version:"') do set "torch_ver=%%A"
-		call python3 -c "import sys;from packaging.version import Version as V;t='!torch_ver!';sys.exit(0 if V(t)<=V('2.2.2') else 1)" >nul 2>&1
-		if !errorlevel!==0 (
-			call pip install --no-cache-dir --use-pep517 "numpy<2"
-		)
-		set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
-		for /f "usebackq delims=" %%A in (`python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"`) do set "site_packages_path=%%A"
-		set "dst_pyfile=%site_packages_path%\sitecustomize.py"
-		if not exist "%dst_pyfile%" (
-			call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
-			echo Installed sitecustomize.py hook in %dst_pyfile%
-		)
-		for %%F in ("%src_pyfile%") do set "src_time=%%~tF"
-		if exist "%dst_pyfile%" for %%F in ("%dst_pyfile%") do set "dst_time=%%~tF"
-		if "!src_time!" GTR "!dst_time!" (
-			call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
-			echo Updated sitecustomize.py hook in %dst_pyfile%
-		)
-		call python -m unidic download
-		if !errorlevel! equ 0 (
-			echo ^[[32m=============== unidic dictionary is installed! ===============^[[0m
+	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+		if "!DOCKER_DEVICE_STR!"=="" (
+			:: Check if Docker image already exists
+			docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
+			if %errorlevel%==0 (
+				echo [STOP] Docker image '%DOCKER_IMG_NAME%' already exists. Aborting build.
+				echo Delete it using: docker rmi %DOCKER_IMG_NAME%
+				goto :failed
+			)
+			call :check_device_info "%SCRIPT_MODE%" > "%TEMP%\deviceinfo.tmp"
+			set /p DEVICEINFO=<"%TEMP%\deviceinfo.tmp"
+			del "%TEMP%\deviceinfo.tmp"
+			call :build_docker_image "%DEVICEINFO%"
+			if %errorlevel% neq 0 goto :failed
 		) else (
-			echo ^[[31m=============== Failed to download unidic dictionary.^[[0m
-			goto :failed
+			:: DOCKER_DEVICE_STR is NOT empty
+			call :install_python_packages
+			if %errorlevel% neq 0 goto :failed
+			call :install_device_packages "%DOCKER_DEVICE_STR%"
+			if %errorlevel% neq 0 goto :failed
+			call :check_sitecustomized
+			if %errorlevel% neq 0 goto :failed
 		)
-		echo All required packages are installed.
 	) else (
+		if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
+			echo Creating ./python_env version %PYTHON_ENV%...
 			call "%CONDA_HOME%\Scripts\activate.bat"
+			call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+			call conda update --all -y
+			call conda clean --index-cache -y
+			call conda clean --packages --tarballs -y
 			call conda activate base
 			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-	)
+			call python3 -m pip cache purge >nul 2>&1
+			call python3 -m pip install --upgrade pip
+			call python3 -m pip install --upgrade --no-cache-dir --progress-bar on --disable-pip-version-check --use-pep517 -r "%SCRIPT_DIR%\requirements.txt"
+			for /f "tokens=2 delims= " %%A in ('pip show torch 2^>nul ^| findstr /b /i "Version:"') do set "torch_ver=%%A"
+			call python3 -c "import sys;from packaging.version import Version as V;t='!torch_ver!';sys.exit(0 if V(t)<=V('2.2.2') else 1)" >nul 2>&1
+			if !errorlevel!==0 (
+				call pip install --no-cache-dir --use-pep517 "numpy<2"
+			)
+			set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
+			for /f "usebackq delims=" %%A in (`python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"`) do set "site_packages_path=%%A"
+			set "dst_pyfile=%site_packages_path%\sitecustomize.py"
+			if not exist "%dst_pyfile%" (
+				call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
+				echo Installed sitecustomize.py hook in %dst_pyfile%
+			)
+			for %%F in ("%src_pyfile%") do set "src_time=%%~tF"
+			if exist "%dst_pyfile%" for %%F in ("%dst_pyfile%") do set "dst_time=%%~tF"
+			if "!src_time!" GTR "!dst_time!" (
+				call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
+				echo Updated sitecustomize.py hook in %dst_pyfile%
+			)
+			call python -m unidic download
+			if !errorlevel! equ 0 (
+				echo ^[[32m=============== unidic dictionary is installed! ===============^[[0m
+			) else (
+				echo ^[[31m=============== Failed to download unidic dictionary.^[[0m
+				goto :failed
+			)
+			echo All required packages are installed.
+		) else (
+				call "%CONDA_HOME%\Scripts\activate.bat"
+				call conda activate base
+				call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+		)
 
-	call :build_gui
-	call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-	call conda deactivate
+		call :build_gui
+		call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+		call conda deactivate
+	)
 )
 exit /b
 
