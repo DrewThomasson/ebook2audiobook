@@ -16,6 +16,7 @@ RUN apt-get update \
       libegl1 libopengl0 \
       libx11-6 libglib2.0-0 libnss3 libdbus-1-3 \
       libatk1.0-0 libgdk-pixbuf-2.0-0 \
+      libxcb-cursor0 \
       tesseract-ocr tesseract-ocr-$ISO3_LANG \
  && apt-get install -y --no-install-recommends --allow-change-held-packages \
       $DOCKER_PROGRAMS \
@@ -23,7 +24,6 @@ RUN apt-get update \
  && ln -s /opt/calibre/ebook-convert /usr/bin/ebook-convert \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
-
 
 WORKDIR /app
 COPY . /app
