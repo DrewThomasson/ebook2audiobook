@@ -86,10 +86,6 @@ if [[ -n "${arguments['docker_device']+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments['docker_device']}"
 fi
 
-if [[ -n "${arguments['docker_programs']+exists}" ]]; then
-	DOCKER_PROGRAMS="${arguments['docker_programs']}"
-fi
-
 [[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
 [[ $OSTYPE == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
@@ -665,7 +661,7 @@ function build_docker_image {
 			build \
 			--no-cache \
 			--build-arg DOCKER_DEVICE_STR="$1" \
-			--build-arg DOCKER_PROGRAMS="${DOCKER_PROGRAMS[*]}" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
@@ -674,7 +670,7 @@ function build_docker_image {
 			--no-cache \
 			--progress plain \
 			--build-arg DOCKER_DEVICE_STR="$1" \
-			--build-arg DOCKER_PROGRAMS="${DOCKER_PROGRAMS[*]}" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			-t "$DOCKER_IMG_NAME" \

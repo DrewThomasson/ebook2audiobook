@@ -1,8 +1,8 @@
 ARG BASE=python:3.12-slim
 FROM ${BASE}
 
-ARG DOCKER_DEVICE
-ARG DOCKER_PROGRAMS
+ARG DOCKER_DEVICE_STR
+ARG DOCKER_PROGRAMS_STR
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG
 
@@ -20,7 +20,7 @@ RUN apt-get update \
       libxcb-cursor0 \
       tesseract-ocr tesseract-ocr-$ISO3_LANG \
  && apt-get install -y --no-install-recommends --allow-change-held-packages \
-      $DOCKER_PROGRAMS \
+      $DOCKER_PROGRAMS_STR \
  && wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
@@ -29,8 +29,8 @@ WORKDIR /app
 COPY . /app
 RUN chmod +x ebook2audiobook.sh
 
-RUN echo "Building image for: $DOCKER_DEVICE"
-RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE"
+RUN echo "Building image for: $DOCKER_DEVICE_STR"
+RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR"
 
 EXPOSE 7860
 ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]
