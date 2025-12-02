@@ -53,9 +53,6 @@ declare -a programs_missing # indexed array
 
 ARGS=("$@")
 
-declare -A arguments # associative array
-declare -a programs_missing # indexed array
-
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
 	case "$1" in
