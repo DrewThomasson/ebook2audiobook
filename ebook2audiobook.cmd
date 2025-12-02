@@ -2,9 +2,14 @@
 
 setlocal enabledelayedexpansion
 
-for /f "tokens=2 delims==" %%i in ('"wmic os get Caption /value"') do set OS=%%i
+:: Enable ANSI VT mode
 reg query HKCU\Console /v VirtualTerminalLevel >nul 2>&1
-if %errorlevel% neq 0 reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul
+if errorlevel 1 (
+    reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul
+)
+
+:: Real ESC byte via PowerShell (RELIABLE)
+for /f "delims=" %%e in ('powershell -NoLogo -NoProfile -Command "[char]27"') do set "ESC=%%e"
 
 :: Capture all arguments into ARGS
 set "ARGS=%*"
@@ -29,8 +34,9 @@ set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
+set "HOST_PROGRAMS=python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
 set "DOCKER_PROGRAMS=curl pkg-config ffmpeg nodejs espeak-ng rustc sox tesseract-ocr"
+set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=ebook2audiobook:latest"
 set "TMP=%SCRIPT_DIR%\tmp"
@@ -46,7 +52,7 @@ set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
 set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
-set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%" 2>&1 >nul
+set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%"
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SCRIPT_DIR%\.bh.ps1"
@@ -64,7 +70,7 @@ for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Se
 )
 
 if "%ARCH%"=="x86" (
-	echo ^[[31m=============== Error: 32-bit architecture is not supported.^[[0m
+	echo %ESC%[31m=============== Error: 32-bit architecture is not supported.%ESC%[0m
 	goto :failed
 )
 
@@ -78,30 +84,30 @@ cd /d "%SCRIPT_DIR%"
 for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 set "FORWARD_ARGS="
 
-::::::::::::::::::::::::::::::: FUNCTIONS
+::::::::::::::::::::::::::::::: CORE FUNCTIONS
 
 :parse_args
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
+:: ALWAYS forward args
+set "FORWARD_ARGS=!FORWARD_ARGS! !arg!"
 :: Flag or key-value argument
-if "%arg:~0,2%"=="--" (
-    set "key=%arg:~2%"
+if "!arg:~0,2!"=="--" (
+    set "key=!arg:~2!"
     :: Check for a value (next arg exists AND does not start with --)
     if not "%~2"=="" (
         echo %~2 | findstr "^--" >nul
         if errorlevel 1 (
-            set "arguments.%key%=%~2"
+            set "arguments.!key!=%~2"
             shift & shift
             goto parse_args
         )
     )
-    :: Flag (boolean) style
-    set "arguments.%key%=true"
+    :: Boolean flag
+    set "arguments.!key!=true"
     shift
     goto parse_args
 )
-:: Positional or unknown options get forwarded
-set "FORWARD_ARGS=!FORWARD_ARGS! %arg%"
 shift
 goto parse_args
 
@@ -185,8 +191,8 @@ exit /b
 
 :check_scoop
 where /Q scoop
-if %errorlevel% neq 0 (
-	echo Scoop is not installed. 
+if errorlevel 1 (
+	echo Scoop is not installed.
 	set "OK_SCOOP=1"
 	goto :install_programs
 )
@@ -200,7 +206,7 @@ for %%p in (%HOST_PROGRAMS%) do (
 	if "%%p"=="nodejs" set "prog=node"
 	if "%%p"=="calibre-normal" set "prog=calibre"
 	where /Q !prog!
-	if !errorlevel! neq 0 (
+	if errorlevel 1 (
 		echo %%p is not installed.
 		set "missing_prog_array=!missing_prog_array! %%p"
 	)
@@ -218,14 +224,13 @@ if not "%OK_SCOOP%"=="0" (
 	call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
 	call powershell -command "iwr -useb get.scoop.sh | iex"
 	where /Q scoop
-	if !errorlevel! equ 0 (
-		echo Scoop installed successfully.
+	if not errorlevel 1 (
 		call scoop install git
 		call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
 		call scoop bucket add extras
 		call scoop bucket add versions
 		if "%OK_PROGRAMS%"=="0" (
-			echo ^[[32m=============== Scoop is installed! ===============^[[0m
+			echo %ESC%[32m=============== Scoop is installed! ===============%ESC%[0m
 			set "OK_SCOOP=0"
 		)
 		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
@@ -234,7 +239,7 @@ if not "%OK_SCOOP%"=="0" (
 		)
 		start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0"
 	) else (
-		echo ^[[31m=============== Scoop installation failed.^[[0m
+		echo %ESC%[31m=============== Scoop installation failed.%ESC%[0m
 		goto :failed
 	)
 	exit
@@ -244,14 +249,14 @@ if not "%OK_CONDA%"=="0" (
 	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where /Q conda
-	if !errorlevel! equ 0 (
-		echo ^[[32m=============== Miniforge3 is installed! ===============^[[0m
+	if not errorlevel 1 (
+		echo %ESC%[32m=============== Miniforge3 is installed! ===============%ESC%[0m
 		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
 		if errorlevel 1 (
 			echo Miniforge3>>"%INSTALLED_LOG%"
 		)
 	) else (
-		echo ^[[31m=============== Miniforge3 installation failed.^[[0m
+		echo %ESC%[31m=============== Miniforge3 installation failed.%ESC%[0m
 		goto :failed
 	)
 	if not exist "%USERPROFILE%\.condarc" (
@@ -262,7 +267,6 @@ if not "%OK_CONDA%"=="0" (
 	call conda clean --packages --tarballs -y
 	del "%CONDA_INSTALLER%"
 	set "OK_CONDA=0"
-	echo Conda installed successfully.
 	start "" cmd /k cd /d "%CD%" ^& call "%~f0"
 	exit
 )
@@ -278,9 +282,9 @@ if not "%OK_PROGRAMS%"=="0" (
 		call scoop install %%p
 		if "%%p"=="tesseract" (
 			where /Q !prog!
-			if !errorlevel! equ 0 (
-				for /f %%i in ('call :get_iso3_lang %syslang%') do set "tesslang=%%i"
-				echo Detected system language: !syslang! ? downloading OCR language: !tesslang!
+			if not errorlevel 1 (
+				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "tesslang=%%i"
+				echo Detected system language: !OS_LANG! ? downloading OCR language: !tesslang!
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 				if not exist "!tessdata!\!tesslang!.traineddata" (
 					powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
@@ -297,14 +301,14 @@ if not "%OK_PROGRAMS%"=="0" (
 			set "prog=calibre"
 		)
 		where /Q !prog!
-		if !errorlevel! equ 0 (
-			echo -e "\e[32m=============== %%p is installed! ===============\e[0m"
+		if not errorlevel 1 (
+			echo %ESC%[32m=============== %%p is installed! ===============%ESC%[0m
 			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
 			if errorlevel 1 (
 				echo %%p>>"%INSTALLED_LOG%"
 			)
 		) else (
-			echo ^[[31m=============== %%p installation failed.^[[0m
+			echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
 			goto :failed
 		)
 	)
@@ -318,12 +322,11 @@ exit /b
 
 :check_conda
 where /Q conda
-if %errorlevel% neq 0 (
+if errorlevel 1 (
 	echo Miniforge3 is not installed.
 	set "OK_CONDA=1"
 	goto :install_programs
 )
-
 :: Check if running in a Conda environment
 if defined CONDA_DEFAULT_ENV (
 	set "CURRENT_ENV=%CONDA_PREFIX%"
@@ -332,7 +335,7 @@ if defined CONDA_DEFAULT_ENV (
 if defined VIRTUAL_ENV (
 	set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
-for /f "delims=" %%i in ('where /Q python') do (
+for /f "delims=" %%i in ('where python') do (
 	if defined CONDA_PREFIX (
 		if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
 			set "CURRENT_ENV=%CONDA_PREFIX%"
@@ -345,12 +348,35 @@ for /f "delims=" %%i in ('where /Q python') do (
 		)
 	)
 )
-if not "%CURRENT_ENV%"=="" (
+if "%CURRENT_ENV%"=="" (
+	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
+		echo Creating ./python_env version %PYTHON_ENV%...
+		call "%CONDA_HOME%\Scripts\activate.bat"
+		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+		call conda update --all -y
+		call conda clean --index-cache -y
+		call conda clean --packages --tarballs -y
+		call conda activate base
+		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+		call :install_python_packages
+		if %errorlevel% neq 0 goto :failed
+		call conda deactivate
+		call conda deactivate
+	)
+) else (
 	echo Current python virtual environment detected: %CURRENT_ENV%. 
-	echo ^[[31m=============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.^[[0m
+	echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
 	goto :failed
 )
 goto :check_required_programs
+exit /b 0
+
+:check_docker
+where /Q docker
+if %errorlevel% neq 0 (
+    echo %ESC%[31m=============== Docker is not installed or not running. Please install or run Docker manually.%ESC%[0m
+    exit /b 1
+)
 exit /b 0
 
 :compare_versions
@@ -379,7 +405,7 @@ for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Ver
     set "torch_ver=%%A"
 )
 call :compare_versions "%torch_ver%" "2.2.2"
-if %cmp_result%==LEQ (
+if /I "%cmp_result%"=="LEQ" (
     python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
     if errorlevel 1 goto :failed
 )
@@ -420,16 +446,15 @@ exit /b %errorlevel%
 
 :check_sitecustomized
 set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
-:: get python site-packages path (lowercase var)
 for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
-    "python - << 'EOF'
+    "$p = python - << 'EOF'
 import sysconfig
 print(sysconfig.get_paths()['purelib'])
-EOF"') do (
+EOF
+    ; $p = $p.Trim(); Write-Output $p"') do (
     set "site_packages=%%a"
 )
 set "dst_pyfile=%site_packages%\sitecustomize.py"
-:: run powershell for timestamp comparison + copy
 powershell -nologo -noprofile -command ^
 @"
 \$src = '%src_pyfile%'
@@ -439,7 +464,7 @@ if (!(Test-Path \$dst) -or ((Get-Item \$src).LastWriteTime -gt (Get-Item \$dst).
         Copy-Item -Path \$src -Destination \$dst -Force -ErrorAction Stop
         Write-Host "Installed sitecustomize.py hook in \$dst"
     } catch {
-        Write-Host "===============>>> sitecustomize.py hook installation error: copy failed." -ForegroundColor Red
+        Write-Host "=============== sitecustomize.py hook installation error: copy failed." -ForegroundColor Red
         exit 1
     }
 }
@@ -450,7 +475,7 @@ exit /b %errorlevel%
 set "arg=%~1"
 powershell -nologo -noprofile -command ^
 @if (!(Get-Command docker -ErrorAction SilentlyContinue)) { ^
-    Write-Host "===============>>> Error: Docker must be installed and running!" -ForegroundColor Red; ^
+    Write-Host "=============== Error: Docker must be installed and running!" -ForegroundColor Red; ^
     exit 1 ^
 }
 @if ($false) {}
@@ -460,13 +485,12 @@ powershell -nologo -noprofile -command ^
 @if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }
 @if ($false) {}
 @
-set "compose_available=%errorlevel%"
-if "%compose_available%"=="0" (
+if not errorlevel 1 (
 	:: Use docker compose v2
 	docker compose --progress=plain build --no-cache ^
 		--build-arg DOCKER_DEVICE_STR="%arg%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
-		--build-arg CALIBRE_INSTALLER_URL="%CALIBRE_INSTALLER_URL%" ^
+		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
 		--build-arg ISO3_LANG="%ISO3_LANG%"
 	if errorlevel 1 exit /b 1
 ) else (
@@ -474,12 +498,14 @@ if "%compose_available%"=="0" (
 	docker build --no-cache --progress plain ^
 		--build-arg DOCKER_DEVICE_STR="%arg%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
-		--build-arg CALIBRE_INSTALLER_URL="%CALIBRE_INSTALLER_URL%" ^
+		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
 		--build-arg ISO3_LANG="%ISO3_LANG%" ^
 		-t "%DOCKER_IMG_NAME%" .
 	if errorlevel 1 exit /b 1
 )
 exit /b 0
+
+:::::::::::: END CORE FUNCTIONS
 
 :dispatch
 if "%OK_SCOOP%"=="0" (
@@ -502,88 +528,62 @@ exit /b
 :main
 if defined arguments.help (
     if /I "!arguments.help!"=="true" (
-        python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
+        where /Q conda
+        if errorlevel 0 (
+            call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+            python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
+            call conda deactivate
+        ) else (
+            echo Ebook2Audiobook must be installed before to run --help.
+        )
         goto :eof
     )
 ) else (
-	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-		if "!DOCKER_DEVICE_STR!"=="" (
-			:: Check if Docker image already exists
-			docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
-			if %errorlevel%==0 (
-				echo [STOP] Docker image '%DOCKER_IMG_NAME%' already exists. Aborting build.
-				echo Delete it using: docker rmi %DOCKER_IMG_NAME%
-				goto :failed
-			)
-			call :check_device_info "%SCRIPT_MODE%" > "%TEMP%\deviceinfo.tmp"
-			set /p DEVICEINFO=<"%TEMP%\deviceinfo.tmp"
-			del "%TEMP%\deviceinfo.tmp"
-			call :build_docker_image "%DEVICEINFO%"
-			if %errorlevel% neq 0 goto :failed
-		) else (
-			:: DOCKER_DEVICE_STR is NOT empty
-			call :install_python_packages
-			if %errorlevel% neq 0 goto :failed
-			call :install_device_packages "%DOCKER_DEVICE_STR%"
-			if %errorlevel% neq 0 goto :failed
-			call :check_sitecustomized
-			if %errorlevel% neq 0 goto :failed
-		)
-	) else (
-		if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
-			echo Creating ./python_env version %PYTHON_ENV%...
-			call "%CONDA_HOME%\Scripts\activate.bat"
-			call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
-			call conda update --all -y
-			call conda clean --index-cache -y
-			call conda clean --packages --tarballs -y
-			call conda activate base
-			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-			call python3 -m pip cache purge >nul 2>&1
-			call python3 -m pip install --upgrade pip
-			call python3 -m pip install --upgrade --no-cache-dir --progress-bar on --disable-pip-version-check --use-pep517 -r "%SCRIPT_DIR%\requirements.txt"
-			for /f "tokens=2 delims= " %%A in ('pip show torch 2^>nul ^| findstr /b /i "Version:"') do set "torch_ver=%%A"
-			call python3 -c "import sys;from packaging.version import Version as V;t='!torch_ver!';sys.exit(0 if V(t)<=V('2.2.2') else 1)" >nul 2>&1
-			if !errorlevel!==0 (
-				call pip install --no-cache-dir --use-pep517 "numpy<2"
-			)
-			set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
-			for /f "usebackq delims=" %%A in (`python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"`) do set "site_packages_path=%%A"
-			set "dst_pyfile=%site_packages_path%\sitecustomize.py"
-			if not exist "%dst_pyfile%" (
-				call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
-				echo Installed sitecustomize.py hook in %dst_pyfile%
-			)
-			for %%F in ("%src_pyfile%") do set "src_time=%%~tF"
-			if exist "%dst_pyfile%" for %%F in ("%dst_pyfile%") do set "dst_time=%%~tF"
-			if "!src_time!" GTR "!dst_time!" (
-				call copy /Y "%src_pyfile%" "%dst_pyfile%" >nul
-				echo Updated sitecustomize.py hook in %dst_pyfile%
-			)
-			call python -m unidic download
-			if !errorlevel! equ 0 (
-				echo ^[[32m=============== unidic dictionary is installed! ===============^[[0m
-			) else (
-				echo ^[[31m=============== Failed to download unidic dictionary.^[[0m
-				goto :failed
-			)
-			echo All required packages are installed.
-		) else (
-				call "%CONDA_HOME%\Scripts\activate.bat"
-				call conda activate base
-				call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-		)
+    if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+        if "!DOCKER_DEVICE_STR!"=="" (
+            call :check_docker
+            if errorlevel 1 goto :failed
+            docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
+            if errorlevel 0 (
+                echo [STOP] Docker image '%DOCKER_IMG_NAME%' already exists. Aborting build.
+                echo Delete it using: docker rmi %DOCKER_IMG_NAME%
+                goto :failed
+            )
+            :: get deviceinfo via PowerShell
+            for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
+                "& { $result = (& { call :check_device_info \"%SCRIPT_MODE%\" } ^| Out-String).Trim(); if ($LASTEXITCODE -ne 0) { exit 1 }; Write-Output $result }"') do (
+                set "deviceinfo=%%a"
+            )
+            if errorlevel 1 goto :failed
+            call :build_docker_image "%deviceinfo%"
+            if errorlevel 1 goto :failed
 
-		call :build_gui
-		call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-		call conda deactivate
-	)
+        ) else (
+            call :install_python_packages
+            if errorlevel 1 goto :failed
+            call :install_device_packages "%DOCKER_DEVICE_STR%"
+            if errorlevel 1 goto :failed
+            call :check_sitecustomized
+            if errorlevel 1 goto :failed
+
+        )
+    ) else (
+        call "%CONDA_HOME%\Scripts\activate.bat"
+        call conda activate base
+        call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+        call :check_sitecustomized
+        if errorlevel 1 goto :failed
+        call :build_gui
+        call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+        call conda deactivate
+        call conda deactivate
+    )
 )
-exit /b
+exit /b 0
 
 :failed
-echo ^[[31m=============== ebook2audiobook is not correctly installed.^[[0m
-exit /b
+echo =============== ebook2audiobook is not correctly installed.
+exit /b 1
 
 endlocal
 pause

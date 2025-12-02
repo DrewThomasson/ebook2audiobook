@@ -87,6 +87,10 @@ fi
 
 cd "$SCRIPT_DIR"
 
+if [[ ! -f "$INSTALLED_LOG" ]]; then
+	touch "$INSTALLED_LOG"
+fi
+
 ############### FUNCTIONS ##############
 
 ###### DESKTOP APP
@@ -518,13 +522,10 @@ function check_conda {
 	}
 
 	if ! command -v conda &> /dev/null || [[ ! -f "$CONDA_ENV" ]]; then
-
 		local installer_url
 		local installer_path="/tmp/Miniforge3.sh"
 		local config_path
-
 		echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
-
 		if [[ "$OSTYPE" == darwin* ]]; then
 			config_path="$HOME/.zshrc"
 			curl -fsSLo "$installer_path" "$MINIFORGE_MACOSX_INSTALLER_URL"
@@ -532,7 +533,6 @@ function check_conda {
 			config_path="$HOME/.bashrc"
 			wget -O "$installer_path" "$MINIFORGE_LINUX_INSTALLER_URL"
 		fi
-
 		if [[ -f "$installer_path" ]]; then
 			echo -e "\e[33mInstalling Miniforge3...\e[0m"
 			bash "$installer_path" -b -u -p "$CONDA_HOME"
@@ -587,6 +587,19 @@ function check_conda {
 		install_python_packages || return 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
+	fi
+	return 0
+}
+
+function check_docker {
+	if command -v docker &> /dev/null; then
+		if ! docker info >/dev/null 2>&1; then
+			echo -e "\e[31m===============>>> Docker is installed but NOT running.\e[0m"
+			return 1
+		fi
+	else
+		echo -e "\e[31m===============>>> Docker is not installed or not running. Please install or run Docker manually.\e[0m"
+		return 1
 	fi
 	return 0
 }
@@ -675,15 +688,12 @@ function build_docker_image {
 
 ########################################
 
-if [[ ! -f "$INSTALLED_LOG" ]]; then
-	touch "$INSTALLED_LOG"
-fi
-
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
+			check_docker || exit 1
 			if docker image inspect "$DOCKER_IMG_NAME" >/dev/null 2>&1; then
 				echo "[STOP] Docker image '$DOCKER_IMG_NAME' already exists. Aborting build."
 				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
