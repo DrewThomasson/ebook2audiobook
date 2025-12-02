@@ -75,7 +75,7 @@ while [[ "$#" -gt 0 ]]; do
 	shift # Move to the next argument
 done
 
-if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" =~ ^(${NATIVE}|${BUILD_DOCKER})$ ]]; then
+if [[ "${arguments['script_mode']}" == "$NATIVE" || "${arguments['script_mode']}" == "$BUILD_DOCKER" ]]; then
 	SCRIPT_MODE="${arguments['script_mode']}"
 else
 	echo "--script_mode unknown"
