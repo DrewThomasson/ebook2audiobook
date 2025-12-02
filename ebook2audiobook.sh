@@ -78,8 +78,6 @@ while [[ "$#" -gt 0 ]]; do
 	shift # Move to the next argument
 done
 
-cd "$SCRIPT_DIR"
-
 if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" =~ ^(${NATIVE}|${BUILD_DOCKER})$ ]]; then
 	SCRIPT_MODE="${arguments['script_mode']}"
 else
@@ -93,6 +91,8 @@ fi
 
 [[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
 [[ $OSTYPE == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
+
+cd "$SCRIPT_DIR"
 
 ############### FUNCTIONS ##############
 
