@@ -75,11 +75,11 @@ while [[ "$#" -gt 0 ]]; do
 	shift # Move to the next argument
 done
 
-echo "${arguments}"
-
 if [[ "${arguments['script_mode']}" == "$BUILD_DOCKER" ]]; then
 	SCRIPT_MODE="${arguments['script_mode']}"
 fi
+
+echo "SCRIPT_MODE"
 
 if [[ -n "${arguments['docker_device']+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments['docker_device']}"
