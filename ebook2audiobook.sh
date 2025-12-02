@@ -54,34 +54,29 @@ typeset -a programs_missing # indexed array
 ARGS=("$@")
 
 # Parse arguments
-while [[ "$#" -gt 0 ]]; do
-	case "$1" in
-		--*)
-			key="${1/--/}" # Remove leading '--'
-			if [[ -n "$2" && ! "$2" =~ ^-- ]]; then
-				# If the next argument is a value (not another option)
-				arguments[$key]="$2"
-				shift # Move past the value
-			else
-				# Set to true for flags without values
-				arguments[$key]=true
-			fi
-			;;
-		*)
-			echo "Unknown option: $1"
-			exit 1
-			;;
-	esac
-	shift # Move to the next argument
+while (( $# > 0 )); do
+    case "$1" in
+        --*)
+            key="${1#--}"
+            if [[ -n "$2" && "$2" != --* ]]; then
+                arguments[$key]="$2"
+                shift 2
+                continue
+            else
+                arguments[$key]=true
+            fi
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+    shift
 done
-
-echo "${arguments['script_mode']}"
 
 if [[ "${arguments['script_mode']}" == "$BUILD_DOCKER" ]]; then
 	SCRIPT_MODE="${arguments['script_mode']}"
 fi
-
-echo "$SCRIPT_MODE"
 
 if [[ -n "${arguments['docker_device']+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments['docker_device']}"
