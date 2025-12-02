@@ -78,6 +78,11 @@ if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 	SCRIPT_MODE="${arguments[script_mode]}"
 fi
 
+if [[ "$SCRIPT_MODE" != "$NATIVE" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
+    echo "Error: Invalid script mode argument: $SCRIPT_MODE"
+    exit 1
+fi
+
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments[docker_device]}"
 fi

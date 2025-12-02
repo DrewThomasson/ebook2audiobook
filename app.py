@@ -82,16 +82,21 @@ def main()->None:
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
         epilog='''
 Example usage:    
-Windows:
+Windows native mode:
     Gradio/GUI:
     ebook2audiobook.cmd
     Headless mode:
     ebook2audiobook.cmd --headless --ebook '/path/to/file' --language eng
-Linux/Mac:
+Linux/Mac natvie mode:
     Gradio/GUI:
     ./ebook2audiobook.sh
     Headless mode:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file' --language eng
+Docker build image mode:
+    Windows:
+    ebook2audiobook.cmd --script_mode build_docker
+    Linux/Mac
+    ./ebook2audiobook.sh --script_mode build_docker
     
 Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         ''',

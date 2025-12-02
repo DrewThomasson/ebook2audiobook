@@ -115,6 +115,9 @@ goto parse_args
 if defined arguments.script_mode (
 	if /I "!arguments.script_mode!"=="%BUILD_DOCKER%" (
 		set "SCRIPT_MODE=!arguments.script_mode!"
+	) else (
+		echo Error: Invalid script mode argument: !arguments.script_mode!
+		goto :failed
 	)
 )
 if defined arguments.docker_device (
