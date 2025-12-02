@@ -12,9 +12,13 @@ ENV PATH="/root/.local/bin:$PATH"
 RUN apt-get update \
  && apt-get install -y --no-install-recommends --allow-change-held-packages \
       wget xz-utils bash git \
-      libgl1 libegl1 libxcb1 libxkbcommon0 libdbus-1-3 \
-      libopengl0 libglu1-mesa libxrender1 libfontconfig1 \
-      libxcomposite1 libxi6 libxtst6 libsm6 libice6 \
+      libgl1 libegl1 libopengl0 libglu1-mesa \
+      libxrender1 libfontconfig1 libxcomposite1 \
+      libxi6 libxtst6 libsm6 libice6 libdbus-1-3 \
+      libxcb1 libxcb-cursor0 libxcb-xinerama0 libxcb-shape0 libxrandr2 \
+      libxdamage1 libxfixes3 libx11-xcb1 \
+      libatk1.0-0 libgtk-3-0 libgdk-pixbuf2.0-0 libglib2.0-0 \
+      libnss3 libasound2 \
       tesseract-ocr tesseract-ocr-$ISO3_LANG \
  && apt-get install -y --no-install-recommends --allow-change-held-packages \
       $DOCKER_PROGRAMS \
