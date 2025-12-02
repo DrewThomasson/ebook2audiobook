@@ -36,7 +36,9 @@ PYTHON_ENV="python_env"
 SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
-REQUIRED_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
+OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
+HOST_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
+DOCKER_PROGRAMS=("curl" "pkg-config" "ffmpeg" "nodejs" "espeak-ng" "rustc" "sox" "tesseract-ocr")
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 BREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 MINIFORGE_MACOSX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
@@ -44,7 +46,7 @@ MINIFORGE_LINUX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases
 RUST_INSTALLER_URL="https://sh.rustup.rs"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
-INSTALL_PKG=""
+DOCKER_DEVICE_STR=""
 WGET=$(which wget 2>/dev/null)
 DOCKER_IMG_NAME="ebook2audiobook:latest"
 
@@ -77,8 +79,12 @@ if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" =
 	SCRIPT_MODE="${arguments['script_mode']}"
 fi
 
-if [[ -n "${arguments['install_pkg']+exists}" ]]; then
-	INSTALL_PKG="${arguments['install_pkg']}"
+if [[ -n "${arguments['docker_device']+exists}" ]]; then
+	DOCKER_DEVICE_STR="${arguments['docker_device']}"
+fi
+
+if [[ -n "${arguments['docker_programs']+exists}" ]]; then
+	DOCKER_PROGRAMS="${arguments['docker_programs']}"
 fi
 
 [[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$FULL_DOCKER" ]] && SUDO="sudo" || SUDO=""
@@ -280,6 +286,34 @@ function check_desktop_app {
 }
 #################
 
+function get_iso3_lang() {
+	case "$1" in
+		en) echo "eng" ;;
+		fr) echo "fra" ;;
+		de) echo "deu" ;;
+		it) echo "ita" ;;
+		es) echo "spa" ;;
+		pt) echo "por" ;;
+		ar) echo "ara" ;;
+		tr) echo "tur" ;;
+		ru) echo "rus" ;;
+		bn) echo "ben" ;;
+		zh) echo "chi_sim" ;;
+		fa) echo "fas" ;;
+		hi) echo "hin" ;;
+		hu) echo "hun" ;;
+		id) echo "ind" ;;
+		jv) echo "jav" ;;
+		ja) echo "jpn" ;;
+		ko) echo "kor" ;;
+		pl) echo "pol" ;;
+		ta) echo "tam" ;;
+		te) echo "tel" ;;
+		yo) echo "yor" ;;
+		*)  echo "eng" ;;
+	esac
+}
+
 function check_required_programs {
 	local programs=("$@")
 	programs_missing=()
@@ -291,22 +325,9 @@ function check_required_programs {
 		[[ "$program" == "rust" ]]   && bin="rustc"
 		# Special case: tesseract OCR
 		if [[ "$program" == "tesseract" ]]; then
-			bin="tesseract"   # binary is always "tesseract"
-			if command -v brew &>/dev/null; then
-				pkg="tesseract"
-			elif command -v emerge &>/dev/null; then
-				pkg="tesseract"
-			elif command -v dnf &>/dev/null; then
-				pkg="tesseract"
-			elif command -v yum &>/dev/null; then
-				pkg="tesseract"
-			elif command -v pacman &>/dev/null; then
-				pkg="tesseract"
-			elif command -v zypper &>/dev/null; then
-				pkg="tesseract-ocr"
-			elif command -v apt-get &>/dev/null; then
-				pkg="tesseract-ocr"
-			elif command -v apk &>/dev/null; then
+			bin="tesseract"
+			pkg="$program"
+			if command -v zypper >/dev/null 2>&1 || command -v apt-get >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then
 				pkg="tesseract-ocr"
 			else
 				echo "Cannot detect your package manager. Install tesseract manually."
@@ -412,8 +433,7 @@ function install_programs {
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
-				sys_lang=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
-				case "$sys_lang" in
+				case "$OS_LANG" in
 					en) tess_lang="eng" ;;
 					fr) tess_lang="fra" ;;
 					de) tess_lang="deu" ;;
@@ -438,7 +458,8 @@ function install_programs {
 					yo) tess_lang="yor" ;;
 					*) tess_lang="eng" ;;
 				esac
-				echo "Detected system language: $sys_lang → installing Tesseract OCR language: $tess_lang"
+				tess_lang="$(get_iso3_lang $OS_LANG)"
+				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $tess_lang"
 				langpack=""
 				if command -v brew &> /dev/null; then
 					langpack="tesseract-lang-$tess_lang"
@@ -476,7 +497,7 @@ function install_programs {
 			fi
 		fi
 	done
-	if check_required_programs "${REQUIRED_PROGRAMS[@]}"; then
+	if check_required_programs "${HOST_PROGRAMS[@]}"; then
 		return 0
 	else
 		echo "Some programs didn't install successfuly, please report the log to the support"
@@ -593,8 +614,8 @@ from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 result = device.check_device_info("$1")
 if result:
-    print(result)
-    raise SystemExit(0)
+	print(result)
+	raise SystemExit(0)
 raise SystemExit(1)
 EOF
 }
@@ -625,11 +646,10 @@ function check_sitecustomized {
 }
 
 function build_docker_image {
-	local DEVICE_INFO_STR="$1"
 	local OS="manylinux_2_28"
-	local NAME="$(echo "$DEVICE_INFO_STR" | jq -r '.name')"
-	local TAG="$(echo "$DEVICE_INFO_STR" | jq -r '.tag')"
-	local ARCH="$(echo "$DEVICE_INFO_STR" | jq -r '.arch')"
+	local NAME="$(echo "$DOCKER_DEVICE_STR" | jq -r '.name')"
+	local TAG="$(echo "$DOCKER_DEVICE_STR" | jq -r '.tag')"
+	local ARCH="$(echo "$DOCKER_DEVICE_STR" | jq -r '.arch')"
 
 	if ! command -v docker >/dev/null 2>&1; then
 		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
@@ -641,13 +661,19 @@ function build_docker_image {
 			--progress=plain \
 			build \
 			--no-cache \
-			--build-arg DEVICE_INFO_STR="$DEVICE_INFO_STR" \
+			--build-arg DOCKER_DEVICE_STR="$1" \
+			--build-arg DOCKER_PROGRAMS="${DOCKER_PROGRAMS[*]}" \
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
+			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
 	else
 		docker build \
 			--no-cache \
 			--progress plain \
-			--build-arg DEVICE_INFO_STR="$DEVICE_INFO_STR" \
+			--build-arg DOCKER_DEVICE_STR="$1" \
+			--build-arg DOCKER_PROGRAMS="${DOCKER_PROGRAMS[*]}" \
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
+			--build-arg ISO3_LANG="$ISO3_LANG" \
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
 	fi
@@ -664,17 +690,16 @@ if [[ -n "${arguments['help']+exists}" && ${arguments['help']} == true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
-		if [[ "$INSTALL_PKG" == "" ]]; then
+		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
 			if docker image inspect "$DOCKER_IMG_NAME" >/dev/null 2>&1; then
 				echo "[STOP] Docker image '$DOCKER_IMG_NAME' already exists. Aborting build."
 				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
 				exit 1
 			fi
 			build_docker_image "$(check_device_info "${SCRIPT_MODE}")" || exit 1
-		elif [[ "$INSTALL_PKG" != "" ]];then
-			check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
+		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
-			install_device_packages "${INSTALL_PKG}" || exit 1
+			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
 			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
@@ -699,7 +724,7 @@ else
 			echo -e "conda deactivate"
 			exit 1
 		fi
-		check_required_programs "${REQUIRED_PROGRAMS[@]}" || install_programs || exit 1
+		check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
 		check_conda || { echo -e "\e[31m===============>>> check_conda() failed.\e[0m"; exit 1; }
 		source "$CONDA_ENV" || exit 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m===============>>> conda activate failed.\e[0m"; exit 1; }

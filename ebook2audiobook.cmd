@@ -16,6 +16,7 @@ if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "APP_NAME=ebook2audiobook"
 set /p APP_VERSION=<"%SCRIPT_DIR%\VERSION.txt"
 set "APP_FILE=%APP_NAME%.cmd"
+set "OS_LANG=%LANG%"& if "!OS_LANG!"=="" set "OS_LANG=en"& set "OS_LANG=!OS_LANG:~0,2!"
 set "TEST_HOST=127.0.0.1"
 set "TEST_PORT=7860"
 set "ICON_PATH=%SCRIPT_DIR%\tools\icons\windows\appIcon.ico"
@@ -125,6 +126,33 @@ if not "%CURRENT_ENV%"=="" (
 goto :check_required_programs
 exit /b
 
+:get_iso3_lang
+set "arg=%~1"
+if /i "%arg%"=="en"  echo eng& goto :eof
+if /i "%arg%"=="fr"  echo fra& goto :eof
+if /i "%arg%"=="de"  echo deu& goto :eof
+if /i "%arg%"=="it"  echo ita& goto :eof
+if /i "%arg%"=="es"  echo spa& goto :eof
+if /i "%arg%"=="pt"  echo por& goto :eof
+if /i "%arg%"=="ar"  echo ara& goto :eof
+if /i "%arg%"=="tr"  echo tur& goto :eof
+if /i "%arg%"=="ru"  echo rus& goto :eof
+if /i "%arg%"=="bn"  echo ben& goto :eof
+if /i "%arg%"=="zh"  echo chi_sim& goto :eof
+if /i "%arg%"=="fa"  echo fas& goto :eof
+if /i "%arg%"=="hi"  echo hin& goto :eof
+if /i "%arg%"=="hu"  echo hun& goto :eof
+if /i "%arg%"=="id"  echo ind& goto :eof
+if /i "%arg%"=="jv"  echo jav& goto :eof
+if /i "%arg%"=="ja"  echo jpn& goto :eof
+if /i "%arg%"=="ko"  echo kor& goto :eof
+if /i "%arg%"=="pl"  echo pol& goto :eof
+if /i "%arg%"=="ta"  echo tam& goto :eof
+if /i "%arg%"=="te"  echo tel& goto :eof
+if /i "%arg%"=="yo"  echo yor& goto :eof
+echo eng
+exit /b
+
 :check_required_programs
 set "missing_prog_array="
 for %%p in (%PROGRAMS_LIST%) do (
@@ -211,31 +239,7 @@ if not "%OK_PROGRAMS%"=="0" (
 		if "%%p"=="tesseract" (
 			where /Q !prog!
 			if !errorlevel! equ 0 (
-				set "syslang=%LANG%"
-				if not defined syslang set "syslang=en"
-				set "syslang=!syslang:~0,2!"
-				set "tesslang=eng"
-				if /I "!syslang!"=="fr" set "tesslang=fra"
-				if /I "!syslang!"=="de" set "tesslang=deu"
-				if /I "!syslang!"=="it" set "tesslang=ita"
-				if /I "!syslang!"=="es" set "tesslang=spa"
-				if /I "!syslang!"=="pt" set "tesslang=por"
-				if /I "!syslang!"=="ar" set "tesslang=ara"
-				if /I "!syslang!"=="tr" set "tesslang=tur"
-				if /I "!syslang!"=="ru" set "tesslang=rus"
-				if /I "!syslang!"=="bn" set "tesslang=ben"
-				if /I "!syslang!"=="zh" set "tesslang=chi_sim"
-				if /I "!syslang!"=="fa" set "tesslang=fas"
-				if /I "!syslang!"=="hi" set "tesslang=hin"
-				if /I "!syslang!"=="hu" set "tesslang=hun"
-				if /I "!syslang!"=="id" set "tesslang=ind"
-				if /I "!syslang!"=="jv" set "tesslang=jav"
-				if /I "!syslang!"=="ja" set "tesslang=jpn"
-				if /I "!syslang!"=="ko" set "tesslang=kor"
-				if /I "!syslang!"=="pl" set "tesslang=pol"
-				if /I "!syslang!"=="ta" set "tesslang=tam"
-				if /I "!syslang!"=="te" set "tesslang=tel"
-				if /I "!syslang!"=="yo" set "tesslang=yor"
+				for /f %%i in ('call :get_iso3_lang %syslang%') do set "tesslang=%%i"
 				echo Detected system language: !syslang! ? downloading OCR language: !tesslang!
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 				if not exist "!tessdata!\!tesslang!.traineddata" (
