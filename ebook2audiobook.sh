@@ -21,21 +21,14 @@ ARGS=("$@")
 # Parse arguments
 while (( $# > 0 )); do
     case "$1" in
-        --*=*)
-            key="${1%%=*}"
-            key="${key#--}"
-            val="${1#*=}"
-            arguments[$key]="$val"
-            shift
-            ;;
         --*)
             key="${1#--}"
-            if [[ $# -gt 1 && "$2" != --* ]]; then
+            if [[ -n "$2" && "$2" != --* ]]; then
                 arguments[$key]="$2"
                 shift 2
+                continue
             else
                 arguments[$key]=true
-                shift
             fi
             ;;
         *)
@@ -43,6 +36,7 @@ while (( $# > 0 )); do
             exit 1
             ;;
     esac
+    shift
 done
 
 echo $arguments
