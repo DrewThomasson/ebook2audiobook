@@ -21,7 +21,6 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends --allow-change-held-packages \
       $DOCKER_PROGRAMS \
  && wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin \
- && ln -s /opt/calibre/ebook-convert /usr/bin/ebook-convert \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
