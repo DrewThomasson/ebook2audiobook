@@ -25,7 +25,6 @@ class PostInstallCommand(install):
         except Exception:
             print("unidic download failed during installation, but it will be re-attempted a diffrent way when the app itself runs.")
 
-
 setup(
     name='ebook2audiobook',
     version=get_version(),

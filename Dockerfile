@@ -1,56 +1,36 @@
-# -----------------------------
-# BASE STAGE
-# -----------------------------
-ARG BASE=python:3.12
-ARG BASE_IMAGE=base
+ARG BASE=python:3.12-slim
+FROM ${BASE}
 
-FROM ${BASE} AS base
+ARG DOCKER_DEVICE_STR
+ARG DOCKER_PROGRAMS_STR
+ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
+ARG ISO3_LANG
 
-ENV PATH="/root/.local/bin:$PATH"
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/root/.local/bin:$PATH"
+ENV CALIBRE_DISABLE_CHECKS=1
+ENV CALIBRE_DISABLE_GUI=1
 
-RUN apt-get update && \
-    apt-get install -y gcc g++ make wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 libsndfile1-dev libc-dev curl espeak-ng sox && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-WORKDIR /app
-
-RUN pip install --no-cache-dir unidic-lite unidic && \
-    python3 -m unidic download && \
-    mkdir -p /root/.local/share/unidic
-ENV UNIDIC_DIR=/root/.local/share/unidic
-
-
-# -----------------------------
-# PYTORCH STAGE
-# -----------------------------
-FROM $BASE_IMAGE AS pytorch
-
-ARG TORCH_VERSION=""
-ARG SKIP_XTTS_TEST="false"
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends --allow-change-held-packages \
+      wget xz-utils bash git \
+      libegl1 libopengl0 \
+      libx11-6 libglib2.0-0 libnss3 libdbus-1-3 \
+      libatk1.0-0 libgdk-pixbuf-2.0-0 \
+      libxcb-cursor0 \
+      tesseract-ocr tesseract-ocr-$ISO3_LANG \
+ && apt-get install -y --no-install-recommends --allow-change-held-packages \
+      $DOCKER_PROGRAMS_STR \
+ && wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . /app
+RUN chmod +x ebook2audiobook.sh
 
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
-
-RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
-        echo "Running XTTS test to pre-download models..."; \
-        if [ "$TORCH_VERSION" = "xpu" ]; then \
-            TORCH_DEVICE_BACKEND_AUTOLOAD=0 python app.py --headless --ebook test.txt --script_mode full_docker; \
-        else \
-            python app.py --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --script_mode full_docker; \
-        fi; \
-    else \
-        echo "Skipping XTTS test run as requested."; \
-    fi
+RUN echo "Building image for Ebook2Audiobook on Linux Debian Slim"
+RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR"
 
 EXPOSE 7860
-
-ENTRYPOINT ["python", "app.py", "--script_mode", "full_docker"]
+ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]
