@@ -53,8 +53,13 @@ DOCKER_IMG_NAME="ebook2audiobook:latest"
 declare -A arguments # associative array
 declare -a programs_missing # indexed array
 
+# Normalize arguments for zsh compatibility
+ARGS=()
+for a in "$@"; do
+    [[ -n "$a" ]] && ARGS+=("$a")
+done
+
 # Parse arguments
-ARGS=("$@")
 for ((i=0; i<${#ARGS[@]}; i++)); do
 	arg="${ARGS[i]}"
 	case "$arg" in
