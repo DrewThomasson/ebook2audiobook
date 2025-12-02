@@ -29,7 +29,7 @@ WORKDIR /app
 COPY . /app
 RUN chmod +x ebook2audiobook.sh
 
-RUN echo "Building image for: $DOCKER_DEVICE_STR"
+RUN echo "Building image for Ebook2Audiobook on Linux Debian Slim"
 RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR"
 
 EXPOSE 7860
