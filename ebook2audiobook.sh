@@ -39,9 +39,6 @@ while (( $# > 0 )); do
     shift
 done
 
-echo "Keys: ${(@k)arguments}" 2>/dev/null || echo "Keys: ${!arguments[@]}"
-echo "Values: ${arguments[@]}"
-
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -77,14 +74,14 @@ DOCKER_DEVICE_STR=""
 WGET=$(which wget 2>/dev/null)
 DOCKER_IMG_NAME="ebook2audiobook:latest"
 
-echo "script_mode: ${arguments['script_mode']}"
+echo "script_mode: ${arguments[script_mode]}"
 
-if [[ "${arguments['script_mode']}" == "$BUILD_DOCKER" ]]; then
-	SCRIPT_MODE="${arguments['script_mode']}"
+if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
+	SCRIPT_MODE="${arguments[script_mode]}"
 fi
 
-if [[ -n "${arguments['docker_device']+exists}" ]]; then
-	DOCKER_DEVICE_STR="${arguments['docker_device']}"
+if [[ -n "${arguments[docker_device]+exists}" ]]; then
+	DOCKER_DEVICE_STR="${arguments[docker_device]}"
 fi
 
 [[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
@@ -688,7 +685,7 @@ if [[ ! -f "$INSTALLED_LOG" ]]; then
 	touch "$INSTALLED_LOG"
 fi
 
-if [[ -n "${arguments['help']+exists}" && ${arguments['help']} == true ]]; then
+if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
