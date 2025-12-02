@@ -27,7 +27,7 @@ export PATH="$CONDA_BIN_PATH:$PATH"
 cd "$SCRIPT_DIR"
 
 NATIVE="native"
-FULL_DOCKER="full_docker"
+BUILD_DOCKER="build_docker"
 ARCH=$(uname -m)
 PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
 MIN_PYTHON_VERSION="3.10"
@@ -75,8 +75,11 @@ for ((i=0; i<${#ARGS[@]}; i++)); do
 	esac
 done
 
-if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" =~ ^(${NATIVE}|${FULL_DOCKER})$ ]]; then
+if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" =~ ^(${NATIVE}|${BUILD_DOCKER})$ ]]; then
 	SCRIPT_MODE="${arguments['script_mode']}"
+else
+	echo "--script_mode unknown"
+	exit 1
 fi
 
 if [[ -n "${arguments['docker_device']+exists}" ]]; then
@@ -87,7 +90,7 @@ if [[ -n "${arguments['docker_programs']+exists}" ]]; then
 	DOCKER_PROGRAMS="${arguments['docker_programs']}"
 fi
 
-[[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$FULL_DOCKER" ]] && SUDO="sudo" || SUDO=""
+[[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
 [[ $OSTYPE == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
 ############### FUNCTIONS ##############
@@ -403,7 +406,7 @@ function install_programs {
 				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
 			else
 				# avoid conflict with calibre builtin lxml
-				pip uninstall lxml -y 2>/dev/null
+				python3 -m pip3 uninstall lxml -y 2>/dev/null
 				echo -e "\e[33mInstalling Calibre...\e[0m"
 				if [[ "$OSTYPE" == darwin* ]]; then
 					eval "$PACK_MGR --cask calibre"
@@ -596,12 +599,12 @@ function check_conda {
 
 function install_python_packages {
 	echo "[ebook2audiobook] Installing dependencies..."
-	python3 -m pip cache purge > /dev/null 2>&1
-	python3 -m pip install --upgrade pip > /dev/null 2>&1
-	python3 -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r "$SCRIPT_DIR/requirements.txt" || exit 1
-	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
+	python3 -m pip3 cache purge > /dev/null 2>&1
+	python3 -m pip3 install --upgrade pip > /dev/null 2>&1
+	python3 -m pip3 install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r "$SCRIPT_DIR/requirements.txt" || exit 1
+	torch_ver=$(pip3 show torch 2>/dev/null | awk '/^Version:/{print $2}')
 	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
-		python3 -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
+		python3 -m pip3 install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
 	fi
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
@@ -689,7 +692,7 @@ fi
 if [[ -n "${arguments['help']+exists}" && ${arguments['help']} == true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
-	if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
+	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
 			if docker image inspect "$DOCKER_IMG_NAME" >/dev/null 2>&1; then
 				echo "[STOP] Docker image '$DOCKER_IMG_NAME' already exists. Aborting build."

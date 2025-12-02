@@ -25,7 +25,7 @@ COPY . /app
 RUN chmod +x ebook2audiobook.sh
 
 RUN echo "Building image for: $DOCKER_DEVICE"
-RUN ./ebook2audiobook.sh --script_mode full_docker --docker_device "$DOCKER_DEVICE"
+RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE"
 
 EXPOSE 7860
 ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]

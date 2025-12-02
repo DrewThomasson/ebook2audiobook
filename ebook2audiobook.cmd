@@ -9,7 +9,7 @@ if %errorlevel% neq 0 reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD 
 :: Capture all arguments into ARGS
 set "ARGS=%*"
 set "NATIVE=native"
-set "FULL_DOCKER=full_docker"
+set "BUILD_DOCKER=build_docker"
 set "SCRIPT_MODE=%NATIVE%"
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
@@ -71,11 +71,20 @@ if not exist "%INSTALLED_LOG%" (
 	type nul > "%INSTALLED_LOG%"
 )
 
-:: Check if running inside Docker
-if defined CONTAINER (
-	set "SCRIPT_MODE=%FULL_DOCKER%"
-	goto :main
+if "%arguments_script_mode%"=="" (
+    echo --script_mode unknown
+    goto :failed
 )
+if /i "%arguments_script_mode%"=="%NATIVE%" (
+    set SCRIPT_MODE=%arguments_script_mode%
+)
+if /i "%arguments_script_mode%"=="%BUILD_DOCKER%" (
+    set SCRIPT_MODE=%arguments_script_mode%
+)
+
+REM Otherwise invalid
+echo --script_mode unknown
+exit /b 1
 
 goto :check_scoop
 
@@ -333,25 +342,28 @@ goto :install_components
 exit /b
 
 :main
-if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
+if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
 		echo Creating ./python_env version %PYTHON_ENV%...
 		call "%CONDA_HOME%\Scripts\activate.bat"
 		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+		call conda update --all -y
+		call conda clean --index-cache -y
+		call conda clean --packages --tarballs -y
 		call conda activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-		call python -m pip cache purge >nul 2>&1
-		call python -m pip install --upgrade pip
+		call python3 -m pip3 cache purge >nul 2>&1
+		call python3 -m pip3 install --upgrade pip
 		for /f "usebackq delims=" %%p in (`type requirements.txt`) do (
 			echo Installing %%p...
-			call python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
+			call python3 -m pip3 install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
 		)
-		for /f "tokens=2 delims= " %%A in ('pip show torch 2^>nul ^| findstr /b /i "Version:"') do set "torch_ver=%%A"
-		call python -c "import sys;from packaging.version import Version as V;t='!torch_ver!';sys.exit(0 if V(t)<=V('2.2.2') else 1)" >nul 2>&1
+		for /f "tokens=2 delims= " %%A in ('pip3 show torch 2^>nul ^| findstr /b /i "Version:"') do set "torch_ver=%%A"
+		call python3 -c "import sys;from packaging.version import Version as V;t='!torch_ver!';sys.exit(0 if V(t)<=V('2.2.2') else 1)" >nul 2>&1
 		if !errorlevel!==0 (
-			call pip install --no-cache-dir --use-pep517 "numpy<2"
+			call pip3 install --no-cache-dir --use-pep517 "numpy<2"
 		)
 		set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
 		for /f "usebackq delims=" %%A in (`python -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"`) do set "site_packages_path=%%A"
