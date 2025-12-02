@@ -53,31 +53,31 @@ DOCKER_IMG_NAME="ebook2audiobook:latest"
 declare -A arguments # associative array
 declare -a programs_missing # indexed array
 
-# Normalize arguments for zsh compatibility
-ARGS=()
-for a in "$@"; do
-    [[ -n "$a" ]] && ARGS+=("$a")
-done
+ARGS=("$@")
+
+declare -A arguments # associative array
+declare -a programs_missing # indexed array
 
 # Parse arguments
-for ((i=0; i<${#ARGS[@]}; i++)); do
-	arg="${ARGS[i]}"
-	case "$arg" in
+while [[ "$#" -gt 0 ]]; do
+	case "$1" in
 		--*)
-			key="${arg/--/}"
-			next="${ARGS[i+1]}"
-			if [[ -n "$next" && ! "$next" =~ ^-- ]]; then
-				arguments[$key]="$next"
-				((i++))
+			key="${1/--/}" # Remove leading '--'
+			if [[ -n "$2" && ! "$2" =~ ^-- ]]; then
+				# If the next argument is a value (not another option)
+				arguments[$key]="$2"
+				shift # Move past the value
 			else
+				# Set to true for flags without values
 				arguments[$key]=true
 			fi
 			;;
 		*)
-			echo "Unknown option: $arg"
+			echo "Unknown option: $1"
 			exit 1
 			;;
 	esac
+	shift # Move to the next argument
 done
 
 if [[ -n "${arguments['script_mode']+exists}" && "${arguments['script_mode']}" =~ ^(${NATIVE}|${BUILD_DOCKER})$ ]]; then
