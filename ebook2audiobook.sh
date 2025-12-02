@@ -39,7 +39,7 @@ while (( $# > 0 )); do
     shift
 done
 
-echo "${arguments}[*]"
+( [[ -n "$ZSH_VERSION" ]] && printf "%s=%s " "${(@kv)arguments}" || for k in "${!arguments[@]}"; do printf "%s=%s " "$k" "${arguments[$k]}"; done ); echo
 
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
