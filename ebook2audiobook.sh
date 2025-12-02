@@ -74,8 +74,6 @@ DOCKER_DEVICE_STR=""
 WGET=$(which wget 2>/dev/null)
 DOCKER_IMG_NAME="ebook2audiobook:latest"
 
-echo "script_mode: ${arguments[script_mode]}"
-
 if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 	SCRIPT_MODE="${arguments[script_mode]}"
 fi

@@ -69,10 +69,47 @@ if not exist "%INSTALLED_LOG%" (
 	type nul > "%INSTALLED_LOG%"
 )
 
-
 cd /d "%SCRIPT_DIR%"
 
-goto :check_scoop
+:parse_args
+if "%~1"=="" goto :check_scoop
+set "arg=%~1"
+:: If not starting with --, treat as positional / forward arg
+if not "%arg:~0,2%"=="--" (
+    set "FORWARD_ARGS=!FORWARD_ARGS! "%~1""
+    shift
+    goto parse_args
+)
+:: Strip leading --
+set "key=%arg:~2%"
+:: Handle --script_mode <value>
+if /I "%key%"=="script_mode" (
+    shift
+    if "%~1"=="" goto parse_args
+    set "SCRIPT_MODE=%~1"
+    shift
+    goto parse_args
+)
+:: Handle --docker_device <value>
+if /I "%key%"=="docker_device" (
+    shift
+    if "%~1"=="" goto parse_args
+    set "DOCKER_DEVICE_STR=%~1"
+    shift
+    goto parse_args
+)
+:: Handle --help flag
+if /I "%key%"=="help" (
+    set "HELP=true"
+    shift
+    goto parse_args
+)
+exit /b
+
+:: Unknown --option → forward it unchanged
+set "FORWARD_ARGS=!FORWARD_ARGS! %arg%"
+shift
+goto parse_args
 
 :check_scoop
 where /Q scoop
