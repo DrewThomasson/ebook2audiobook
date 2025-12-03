@@ -429,13 +429,15 @@ class DeviceInstaller():
                 return False
         return True
           
-    def install_device_packages(self, install_pkg:str)->bool:
+    def install_device_packages(self, device_info_str:str)->bool:
         try:
-            device_info = json.loads(install_pkg)
+            device_info = json.loads(device_info_str)
             if device_info:
                 torch_version = self.get_package_version('torch')
                 if torch_version:
+                    print(f'torch version installed: {torch_version}')
                     if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
+                        print(f"Hardware detected: {device_info['tag']}")
                         m = re.search(r'\+(.+)$', torch_version)
                         current_tag = m.group(1) if m else None
                         if current_tag is not None:
@@ -446,7 +448,6 @@ class DeviceInstaller():
                             ):
                                 try:
                                     torch_version_base = Version(torch_version).base_version
-                                    print(device_info)
                                     print(f"{device_info['name']} hardware found! Installing the right torch library...")
                                     os_env = device_info['os']
                                     arch = device_info['arch']
