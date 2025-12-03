@@ -203,6 +203,28 @@ class DeviceInstaller():
             if 'tegra' in out:
                 msg = 'Unknown Jetson device. Failing back to cpu'
                 warn(msg)
+        # ============================================================
+        # ROCm
+        # ============================================================
+        elif has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
+            out = try_cmd('rocminfo')
+            version_str = toolkit_version_parse(out)
+            cmp = toolkit_version_compare(version_str, rocm_version_range)
+            if cmp == -1:
+                msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
+                warn(msg)
+                tag = 'cpu'
+            elif cmp == 1:
+                msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
+                warn(msg)
+                tag = 'cpu'
+            elif cmp == 0:
+                devices['ROCM']['found'] = True
+                name = 'rocm'
+                tag = f'rocm{version_str}'
+            else:
+                msg = 'No ROCm version found. Falling back to CPU.'
+                warn(msg)
 
         # ============================================================
         # CUDA
@@ -226,29 +248,6 @@ class DeviceInstaller():
                 tage = f'cu{major}{minor}'
             else:
                 msg = 'No CUDA version found. Falling back to CPU.'
-                warn(msg)
-
-        # ============================================================
-        # ROCm
-        # ============================================================
-        elif has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
-            out = try_cmd('rocminfo')
-            version_str = toolkit_version_parse(out)
-            cmp = toolkit_version_compare(version_str, rocm_version_range)
-            if cmp == -1:
-                msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
-                warn(msg)
-                tag = 'cpu'
-            elif cmp == 1:
-                msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
-                warn(msg)
-                tag = 'cpu'
-            elif cmp == 0:
-                devices['ROCM']['found'] = True
-                name = 'rocm'
-                tag = f'rocm{version_str}'
-            else:
-                msg = 'No ROCm version found. Falling back to CPU.'
                 warn(msg)
 
         # ============================================================
