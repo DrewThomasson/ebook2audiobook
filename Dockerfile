@@ -10,20 +10,29 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:$PATH"
 ENV CALIBRE_DISABLE_CHECKS=1
 ENV CALIBRE_DISABLE_GUI=1
-
-RUN apt-get update \
- && apt-get install -y --no-install-recommends --allow-change-held-packages \
-      wget xz-utils bash git \
-      libegl1 libopengl0 \
-      libx11-6 libglib2.0-0 libnss3 libdbus-1-3 \
-      libatk1.0-0 libgdk-pixbuf-2.0-0 \
-      libxcb-cursor0 \
-      tesseract-ocr tesseract-ocr-$ISO3_LANG \
- && apt-get install -y --no-install-recommends --allow-change-held-packages \
-      $DOCKER_PROGRAMS_STR \
- && wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+ 
+ RUN apt-get update && \
+	apt-get install -y --no-install-recommends --allow-change-held-packages \
+    gcc g++ make build-essential python3-dev pkg-config \
+	wget xz-utils bash git \
+	libegl1 libopengl0 \
+	libx11-6 libglib2.0-0 libnss3 libdbus-1-3 \
+	libatk1.0-0 libgdk-pixbuf-2.0-0 \
+	libxcb-cursor0 \
+	tesseract-ocr tesseract-ocr-$ISO3_LANG \
+	$DOCKER_PROGRAMS_STR && \
+    apt-get purge -y gcc g++ make build-essential pkg-config \
+	wget xz-utils bash git \
+	libegl1 libopengl0 \
+	libx11-6 libglib2.0-0 libnss3 libdbus-1-3 \
+	libatk1.0-0 libgdk-pixbuf-2.0-0 \
+	libxcb-cursor0 \
+	tesseract-ocr tesseract-ocr-$ISO3_LANG \
+	$DOCKER_PROGRAMS_STR && \
+	wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin && \
+	apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . /app
