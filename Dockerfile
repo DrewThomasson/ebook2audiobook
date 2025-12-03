@@ -11,23 +11,28 @@ ENV PATH="/root/.local/bin:$PATH"
 ENV CALIBRE_DISABLE_CHECKS=1
 ENV CALIBRE_DISABLE_GUI=1
  
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends --allow-change-held-packages \
-        gcc g++ make build-essential python3-dev pkg-config cargo rustc && \
-    apt-get install -y --no-install-recommends --allow-change-held-packages \
-        wget xz-utils bash git \
-        libegl1 libopengl0 \
-        libx11-6 libglib2.0-0 libnss3 libdbus-1-3 \
-        libatk1.0-0 libgdk-pixbuf-2.0-0 \
-        libxcb-cursor0 \
-        tesseract-ocr tesseract-ocr-$ISO3_LANG \
-        $DOCKER_PROGRAMS_STR && \
-    apt-get purge -y \
-        gcc g++ make build-essential python3-dev pkg-config cargo rustc && \
-    apt-get autoremove -y --purge && \
-    wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN set -ex && \
+	BUILD_DEPS="gcc g++ make build-essential python3-dev pkg-config cargo rustc" && \
+	RUNTIME_DEPS="wget xz-utils bash git \
+		libegl1 libopengl0 \
+		libx11-6 libglib2.0-0 libnss3 libdbus-1-3 \
+		libatk1.0-0 libgdk-pixbuf-2.0-0 \
+		libxcb-cursor0 \
+		tesseract-ocr tesseract-ocr-$ISO3_LANG \
+		$DOCKER_PROGRAMS_STR" && \
+	apt-get update && \
+	apt-get install -y --no-install-recommends --allow-change-held-packages \
+		$BUILD_DEPS \
+		$RUNTIME_DEPS && \
+	echo "Building image for Ebook2Audiobook on Linux Debian Slim" && \
+	./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR" && \
+	# Install Calibre (needs runtime libs, which we keep)
+	wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin && \
+	# Remove build-time-only dependencies
+	apt-get purge -y $BUILD_DEPS && \
+	apt-get autoremove -y --purge && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . /app

@@ -35,7 +35,7 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 set "HOST_PROGRAMS=python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
-set "DOCKER_PROGRAMS=curl ffmpeg nodejs espeak-ng cargo rustc sox tesseract-ocr"
+set "DOCKER_PROGRAMS=curl ffmpeg nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=ebook2audiobook:latest"
@@ -586,6 +586,8 @@ exit /b 0
 
 :failed
 echo =============== ebook2audiobook is not correctly installed.
+call conda deactivate >nul 2>&1
+call conda deactivate >nul 2>&1
 exit /b 1
 
 endlocal
