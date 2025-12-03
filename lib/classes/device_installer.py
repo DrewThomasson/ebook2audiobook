@@ -182,9 +182,54 @@ class DeviceInstaller():
         arch = platform.machine().lower()
 
         # ============================================================
+        # JETSON
+        # ============================================================
+        if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
+            raw = tegra_version()
+            jp_code = jetpack_version(raw)
+            if jp_code in ['unsupported', 'unknown']:
+                tag = 'cpu'
+            elif os.path.exists('/etc/nv_tegra_release'):
+                devices['CUDA']['found'] = True
+                name = 'jetson'
+                tag = f'jetson{jp_code}'
+            elif os.path.exists('/proc/device-tree/compatible'):
+                out = try_cmd('cat /proc/device-tree/compatible')
+                if 'tegra' in out:
+                    devices['CUDA']['found'] = True
+                    name = 'jetson'
+                    tag = f'jetson{jp_code}'
+            out = try_cmd('uname - a')
+            if 'tegra' in out:
+                msg = 'Unknown Jetson device. Failing back to cpu'
+                warn(msg)
+        # ============================================================
+        # ROCm
+        # ============================================================
+        elif has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
+            out = try_cmd('rocminfo')
+            version_str = toolkit_version_parse(out)
+            cmp = toolkit_version_compare(version_str, rocm_version_range)
+            if cmp == -1:
+                msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
+                warn(msg)
+                tag = 'cpu'
+            elif cmp == 1:
+                msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
+                warn(msg)
+                tag = 'cpu'
+            elif cmp == 0:
+                devices['ROCM']['found'] = True
+                name = 'rocm'
+                tag = f'rocm{version_str}'
+            else:
+                msg = 'No ROCm version found. Falling back to CPU.'
+                warn(msg)
+
+        # ============================================================
         # CUDA
         # ============================================================
-        if has_cmd('nvcc'):
+        elif has_cmd('nvcc'):
             out = try_cmd('nvcc --version')
             version_str = toolkit_version_parse(out)
             cmp = toolkit_version_compare(version_str, cuda_version_range)
@@ -206,32 +251,9 @@ class DeviceInstaller():
                 warn(msg)
 
         # ============================================================
-        # ROCm
-        # ============================================================
-        if has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
-            out = try_cmd('rocminfo')
-            version_str = toolkit_version_parse(out)
-            cmp = toolkit_version_compare(version_str, rocm_version_range)
-            if cmp == -1:
-                msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
-                warn(msg)
-                tag = 'cpu'
-            elif cmp == 1:
-                msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
-                warn(msg)
-                tag = 'cpu'
-            elif cmp == 0:
-                devices['ROCM']['found'] = True
-                name = 'rocm'
-                tag = f'rocm{version_str}'
-            else:
-                msg = 'No ROCm version found. Falling back to CPU.'
-                warn(msg)
-
-        # ============================================================
         # APPLE MPS
         # ============================================================
-        if sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
+        elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
             devices['MPS']['found'] = True
             name = 'mps'
             tag = 'mps'
@@ -239,7 +261,7 @@ class DeviceInstaller():
         # ============================================================
         # INTEL XPU
         # ============================================================
-        if os.path.exists('/dev/dri/renderD128'):
+        elif os.path.exists('/dev/dri/renderD128'):
             out = try_cmd('lspci')
             if 'intel' in out:
                 oneapi_out:str = try_cmd('sycl-ls') if has_cmd('sycl-ls') else ''
@@ -262,29 +284,6 @@ class DeviceInstaller():
             if 'intel' in out:
                 name = 'xpu'
                 tag = 'xpu'
-
-        # ============================================================
-        # JETSON
-        # ============================================================
-        if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
-            raw = tegra_version()
-            jp_code = jetpack_version(raw)
-            if jp_code in ['unsupported', 'unknown']:
-                tag = 'cpu'
-            elif os.path.exists('/etc/nv_tegra_release'):
-                devices['CUDA']['found'] = True
-                name = 'jetson'
-                tag = f'jetson{jp_code}'
-            elif os.path.exists('/proc/device-tree/compatible'):
-                out = try_cmd('cat /proc/device-tree/compatible')
-                if 'tegra' in out:
-                    devices['CUDA']['found'] = True
-                    name = 'jetson'
-                    tag = f'jetson{jp_code}'
-            out = try_cmd('uname - a')
-            if 'tegra' in out:
-                msg = 'Unknown Jetson device. Failing back to cpu'
-                warn(msg)
 
         # ============================================================
         # CPU
@@ -467,7 +466,7 @@ class DeviceInstaller():
                                     if device_info['name'] == 'cuda':
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
                                     numpy_version = Version(self.get_package_version('numpy'))
-                                    if Version(torch_version) <= Version('2.2.2') and nump_version and numpy_version < Version('2.0.0'):
+                                    if Version(torch_version) <= Version('2.2.2') and nump_version and numpy_version >= Version('2.0.0'):
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'numpy<2'])
                                     #msg = 'Relaunching app.py...'
                                     #print(msg)

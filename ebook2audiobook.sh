@@ -74,13 +74,13 @@ while (( $# > 0 )); do
     shift
 done
 
-if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
-	SCRIPT_MODE="${arguments[script_mode]}"
-fi
-
-if [[ "$SCRIPT_MODE" != "$NATIVE" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
-    echo "Error: Invalid script mode argument: $SCRIPT_MODE"
-    exit 1
+if [[ "${arguments[script_mode]}" != "" ]]; then
+	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
+		SCRIPT_MODE="${arguments[script_mode]}"
+	else
+		echo "Error: Invalid script mode argument: $SCRIPT_MODE"
+		exit 1
+	fi
 fi
 
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
@@ -330,14 +330,12 @@ function check_required_programs {
 		[[ "$program" == "nodejs" ]] && bin="node"
 		[[ "$program" == "rust" ]]   && bin="rustc"
 		# Special case: tesseract OCR
-		if [[ "$program" == "tesseract" ]]; then
+		if [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			bin="tesseract"
-			pkg="$program"
 			if command -v zypper >/dev/null 2>&1 || command -v apt-get >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then
 				pkg="tesseract-ocr"
 			else
-				echo "Cannot detect your package manager. Install tesseract manually."
-				return 1
+				pkg="$program"
 			fi
 		fi
 		if ! command -v "$bin" &>/dev/null; then
@@ -597,12 +595,7 @@ function check_conda {
 }
 
 function check_docker {
-	if command -v docker &> /dev/null; then
-		if ! docker info >/dev/null 2>&1; then
-			echo -e "\e[31m===============>>> Docker is installed but NOT running.\e[0m"
-			return 1
-		fi
-	else
+	if ! command -v docker &> /dev/null; then
 		echo -e "\e[31m===============>>> Docker is not installed or not running. Please install or run Docker manually.\e[0m"
 		return 1
 	fi
@@ -670,7 +663,7 @@ function build_docker_image {
 	fi
 	if docker compose version >/dev/null 2>&1; then
 		docker compose \
-			--progress=plain \
+			--progress plain \
 			build \
 			--no-cache \
 			--build-arg DOCKER_DEVICE_STR="$arg" \
