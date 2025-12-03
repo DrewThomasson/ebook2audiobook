@@ -663,7 +663,7 @@ function build_docker_image {
 	fi
 	if docker compose version >/dev/null 2>&1; then
 		docker compose \
-			--progress=plain \
+			--progress plain \
 			build \
 			--no-cache \
 			--build-arg DOCKER_DEVICE_STR="$arg" \
