@@ -184,8 +184,8 @@ class DeviceInstaller():
         # ============================================================
         # CUDA
         # ============================================================
-        if has_cmd('nvidia-smi'):
-            out = try_cmd('nvidia-smi')
+        if has_cmd('nvcc'):
+            out = try_cmd('nvcc --version')
             version_str = toolkit_version_parse(out)
             cmp = toolkit_version_compare(version_str, cuda_version_range)
             if cmp == -1:
