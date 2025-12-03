@@ -38,7 +38,7 @@ set "HOST_PROGRAMS=python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
 set "DOCKER_PROGRAMS=curl ffmpeg nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
-set "DOCKER_IMG_NAME=ebook2audiobook:latest"
+set "DOCKER_IMG_NAME=ebook2audiobook"
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
@@ -476,7 +476,12 @@ if "%src_time%" GTR "%dst_time%" (
 exit /b 0
 
 :build_docker_image
-set "arg=%~1"
+set "ARG=%~1"
+for /f "usebackq delims=" %%A in (
+    `python -c "import json,sys; print(json.loads(sys.argv[1])['tag'])" "%ARG%"`
+) do (
+    set TAG=%%A
+)
 powershell -nologo -noprofile -command ^
 @if (!(Get-Command docker -ErrorAction SilentlyContinue)) { ^
 	Write-Host "=============== Error: Docker must be installed and running!" -ForegroundColor Red; ^
@@ -489,10 +494,11 @@ powershell -nologo -noprofile -command ^
 @if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }
 @if ($false) {}
 @
+set "final_name=%DOCKER_IMG_NAME%:%TAG%"
 if not errorlevel 1 (
 	:: Use docker compose v2
-	docker compose --progress=plain build --no-cache ^
-		--build-arg DOCKER_DEVICE_STR="%arg%" ^
+	BUILD_NAME="%final_name%" docker compose --progress=plain build --no-cache ^
+		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
 		--build-arg ISO3_LANG="%ISO3_LANG%"
@@ -500,11 +506,11 @@ if not errorlevel 1 (
 ) else (
 	:: Use docker build (fallback)
 	docker build --no-cache --progress plain ^
-		--build-arg DOCKER_DEVICE_STR="%arg%" ^
+		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
 		--build-arg ISO3_LANG="%ISO3_LANG%" ^
-		-t "%DOCKER_IMG_NAME%" .
+		-t "%final_name%" .
 	if errorlevel 1 exit /b 1
 )
 exit /b 0
@@ -561,7 +567,7 @@ if defined arguments.help (
 			if errorlevel 1 goto :failed
 			call :build_docker_image "%deviceinfo%"
 			if errorlevel 1 goto :failed
-			echo Docker image ready! to run your docker: docker run -it --rm -p 7860:7860 ebook2audiobook:jetson51
+			echo Docker image ready! to run your docker: docker run -it --rm -p 7860:7860 ebook2audiobook:latest
 		) else (
 			call :install_python_packages
 			if errorlevel 1 goto :failed
@@ -569,7 +575,6 @@ if defined arguments.help (
 			if errorlevel 1 goto :failed
 			call :check_sitecustomized
 			if errorlevel 1 goto :failed
-
 		)
 	) else (
 		call "%CONDA_HOME%\Scripts\activate.bat"
