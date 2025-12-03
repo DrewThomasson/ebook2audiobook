@@ -10,7 +10,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:$PATH"
 ENV CALIBRE_DISABLE_CHECKS=1
 ENV CALIBRE_DISABLE_GUI=1
- 
+
+WORKDIR /app
+COPY . /app
+RUN chmod +x /app/ebook2audiobook.sh
+
 RUN set -ex && \
 	BUILD_DEPS="gcc g++ make build-essential python3-dev pkg-config cargo rustc" && \
 	RUNTIME_DEPS="wget xz-utils bash git \
@@ -24,22 +28,13 @@ RUN set -ex && \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
 		$BUILD_DEPS \
 		$RUNTIME_DEPS && \
-	# Install Calibre (needs runtime libs, which we keep)
 	wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin && \
 	echo "Building image for Ebook2Audiobook on Linux Debian Slim" && \
-	./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR" && \
-	# Remove build-time-only dependencies
+	/app/ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR" && \
 	apt-get purge -y $BUILD_DEPS && \
 	apt-get autoremove -y --purge && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-COPY . /app
-RUN chmod +x ebook2audiobook.sh
-
-RUN echo "Building image for Ebook2Audiobook on Linux Debian Slim"
-RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR"
 
 EXPOSE 7860
 ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]
