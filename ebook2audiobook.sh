@@ -38,7 +38,7 @@ OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 DOCKER_PROGRAMS=("curl" "ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr")
 DOCKER_DEVICE_STR=""
-DOCKER_IMG_NAME="ebook2audiobook"
+DOCKER_IMG_NAME="$APP_NAME"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 BREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 MINIFORGE_MACOSX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
@@ -662,9 +662,9 @@ function build_docker_image {
 		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
 		return 1
 	fi
-	final_name="${DOCKER_IMG_NAME}:${TAG}"
+	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
 	if docker compose version >/dev/null 2>&1; then
-		BUILD_NAME="$final_name" docker compose \
+		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
 			--progress plain \
 			build \
 			--no-cache \
@@ -681,7 +681,7 @@ function build_docker_image {
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
-			-t "$final_name" \
+			-t "$DOCKER_IMG_NAME" \
 			. || return 1
 	fi
 }
@@ -700,6 +700,7 @@ else
 				exit 1
 			fi
 			build_docker_image "$(check_device_info "${SCRIPT_MODE}")" || exit 1
+			echo "Docker image ready! to run your docker: docker run -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1

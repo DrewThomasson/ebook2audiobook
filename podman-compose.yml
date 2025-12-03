@@ -1,7 +1,7 @@
 services:
   ebook2audiobook:
     #image: docker.io/athomasson2/ebook2audiobook:latest  # <-- Use prebuilt image instead of building
-    image: ebook2audiobook:latest
+    image: ${BUILD_NAME}
     build:
       context: .
       dockerfile: Dockerfile
