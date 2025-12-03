@@ -24,10 +24,10 @@ RUN set -ex && \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
 		$BUILD_DEPS \
 		$RUNTIME_DEPS && \
-	echo "Building image for Ebook2Audiobook on Linux Debian Slim" && \
-	./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR" && \
 	# Install Calibre (needs runtime libs, which we keep)
 	wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin && \
+	echo "Building image for Ebook2Audiobook on Linux Debian Slim" && \
+	./ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR" && \
 	# Remove build-time-only dependencies
 	apt-get purge -y $BUILD_DEPS && \
 	apt-get autoremove -y --purge && \
