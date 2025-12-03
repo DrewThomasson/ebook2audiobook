@@ -335,9 +335,6 @@ function check_required_programs {
 			pkg="$program"
 			if command -v zypper >/dev/null 2>&1 || command -v apt-get >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then
 				pkg="tesseract-ocr"
-			else
-				echo "Cannot detect your package manager. Install tesseract manually."
-				return 1
 			fi
 		fi
 		if ! command -v "$bin" &>/dev/null; then
