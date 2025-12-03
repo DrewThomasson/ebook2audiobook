@@ -449,38 +449,31 @@ exit /b %errorlevel%
 
 :check_sitecustomized
 set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
-:: Always use the Python of the active conda environment
-set "PY_EXE=%CONDA_PREFIX%\python.exe"
+set "tmpfile=%TEMP%\purelib_path.txt"
+del "%tmpfile%" >nul 2>&1
+:: Get purelib using Python
+python -c "import sysconfig,sys; sys.stdout.write(sysconfig.get_paths().get('purelib',''))" > "%tmpfile%"
 set "site_packages="
-for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
-    "$p = & '%PY_EXE%' - << 'EOF'
-import sysconfig
-print(sysconfig.get_paths().get('purelib',''))
-EOF
-    ; $p = $p.Trim(); Write-Output $p" 2^>nul') do (
-    set "site_packages=%%a"
-)
+for /f "delims=" %%a in (%tmpfile%) do set "site_packages=%%a"
+del "%tmpfile%" >nul 2>&1
 if "%site_packages%"=="" (
-    echo [WARN] Could not detect Python site-packages from %PY_EXE%
-    exit /b 0
+	echo [WARN] Could not detect Python site-packages
+	exit /b 0
 )
 set "dst_pyfile=%site_packages%\sitecustomize.py"
-powershell -nologo -noprofile -command ^
-@"
-\$src = '%src_pyfile%'
-\$dst = '%dst_pyfile%'
-if (!(Test-Path \$src)) { exit 0 }
-if (!(Test-Path \$dst) -or ((Get-Item \$src).LastWriteTime -gt (Get-Item \$dst).LastWriteTime)) {
-    try {
-        Copy-Item -Path \$src -Destination \$dst -Force -ErrorAction Stop
-        Write-Host "Installed sitecustomize.py hook in \$dst"
-    } catch {
-        Write-Host "=============== sitecustomize.py hook installation error: copy failed." -ForegroundColor Red
-        exit 1
-    }
-}
-"@
-exit /b %errorlevel%
+:: Batch file copy with timestamp check
+if not exist "%dst_pyfile%" (
+	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+	::echo Installed sitecustomize.py in %dst_pyfile%
+	exit /b 0
+)
+for %%I in ("%src_pyfile%") do set "src_time=%%~tI"
+for %%I in ("%dst_pyfile%") do set "dst_time=%%~tI"
+if "%src_time%" GTR "%dst_time%" (
+	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+	::echo Updated sitecustomize.py in %dst_pyfile%
+)
+exit /b 0
 
 :build_docker_image
 set "arg=%~1"
@@ -568,7 +561,7 @@ if defined arguments.help (
 			if errorlevel 1 goto :failed
 			call :build_docker_image "%deviceinfo%"
 			if errorlevel 1 goto :failed
-
+			echo Docker image ready! to run your docker: docker run -it --rm -p 7860:7860 ebook2audiobook:jetson51
 		) else (
 			call :install_python_packages
 			if errorlevel 1 goto :failed
