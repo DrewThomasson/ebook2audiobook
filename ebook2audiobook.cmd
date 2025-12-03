@@ -449,27 +449,35 @@ exit /b %errorlevel%
 
 :check_sitecustomized
 set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
+:: Always use the Python of the active conda environment
+set "PY_EXE=%CONDA_PREFIX%\python.exe"
+set "site_packages="
 for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
-	"$p = python - << 'EOF'
+    "$p = & '%PY_EXE%' - << 'EOF'
 import sysconfig
-print(sysconfig.get_paths()['purelib'])
+print(sysconfig.get_paths().get('purelib',''))
 EOF
-	; $p = $p.Trim(); Write-Output $p"') do (
-	set "site_packages=%%a"
+    ; $p = $p.Trim(); Write-Output $p" 2^>nul') do (
+    set "site_packages=%%a"
+)
+if "%site_packages%"=="" (
+    echo [WARN] Could not detect Python site-packages from %PY_EXE%
+    exit /b 0
 )
 set "dst_pyfile=%site_packages%\sitecustomize.py"
 powershell -nologo -noprofile -command ^
 @"
 \$src = '%src_pyfile%'
 \$dst = '%dst_pyfile%'
+if (!(Test-Path \$src)) { exit 0 }
 if (!(Test-Path \$dst) -or ((Get-Item \$src).LastWriteTime -gt (Get-Item \$dst).LastWriteTime)) {
-	try {
-		Copy-Item -Path \$src -Destination \$dst -Force -ErrorAction Stop
-		Write-Host "Installed sitecustomize.py hook in \$dst"
-	} catch {
-		Write-Host "=============== sitecustomize.py hook installation error: copy failed." -ForegroundColor Red
-		exit 1
-	}
+    try {
+        Copy-Item -Path \$src -Destination \$dst -Force -ErrorAction Stop
+        Write-Host "Installed sitecustomize.py hook in \$dst"
+    } catch {
+        Write-Host "=============== sitecustomize.py hook installation error: copy failed." -ForegroundColor Red
+        exit 1
+    }
 }
 "@
 exit /b %errorlevel%
