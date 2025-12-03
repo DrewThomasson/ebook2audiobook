@@ -283,7 +283,7 @@ if not "%OK_PROGRAMS%"=="0" (
 	for %%p in (%missing_prog_array%) do (
 		set "prog=%%p"
 		call scoop install %%p
-		if "%%p"=="tesseract" (
+		if [[ "%%p"=="tesseract" || "%%p"=="tesseract-ocr" ]] (
 			where /Q !prog!
 			if not errorlevel 1 (
 				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "tesslang=%%i"
