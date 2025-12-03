@@ -663,7 +663,7 @@ function build_docker_image {
 	fi
 	if docker compose version >/dev/null 2>&1; then
 		docker compose \
-			--progress plain \
+			#--progress plain \
 			build \
 			--no-cache \
 			--build-arg DOCKER_DEVICE_STR="$arg" \
@@ -674,7 +674,7 @@ function build_docker_image {
 	else
 		docker build \
 			--no-cache \
-			--progress plain \
+			#--progress plain \
 			--build-arg DOCKER_DEVICE_STR="$arg" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
