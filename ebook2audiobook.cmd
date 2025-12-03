@@ -376,13 +376,7 @@ exit /b 0
 
 :check_docker
 where /Q docker
-if not errorlevel 1 (
-	docker info >nul 2>&1
-	if errorlevel 1 (
-		echo %ESC%[31m=============== Docker is installed but NOT running..%ESC%[0m
-		exit /b 1
-	)
-) else (
+if errorlevel 1 (
 	echo %ESC%[31m=============== Docker is not installed or not running. Please install or run Docker manually.%ESC%[0m
 	exit /b 1
 )
