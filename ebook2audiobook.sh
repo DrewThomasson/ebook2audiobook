@@ -330,11 +330,12 @@ function check_required_programs {
 		[[ "$program" == "nodejs" ]] && bin="node"
 		[[ "$program" == "rust" ]]   && bin="rustc"
 		# Special case: tesseract OCR
-		if [[ "$program" == "tesseract" ]]; then
+		if [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			bin="tesseract"
-			pkg="$program"
 			if command -v zypper >/dev/null 2>&1 || command -v apt-get >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then
 				pkg="tesseract-ocr"
+			else
+				pkg="$program"
 			fi
 		fi
 		if ! command -v "$bin" &>/dev/null; then
