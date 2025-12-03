@@ -182,9 +182,32 @@ class DeviceInstaller():
         arch = platform.machine().lower()
 
         # ============================================================
+        # JETSON
+        # ============================================================
+        if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
+            raw = tegra_version()
+            jp_code = jetpack_version(raw)
+            if jp_code in ['unsupported', 'unknown']:
+                tag = 'cpu'
+            elif os.path.exists('/etc/nv_tegra_release'):
+                devices['CUDA']['found'] = True
+                name = 'jetson'
+                tag = f'jetson{jp_code}'
+            elif os.path.exists('/proc/device-tree/compatible'):
+                out = try_cmd('cat /proc/device-tree/compatible')
+                if 'tegra' in out:
+                    devices['CUDA']['found'] = True
+                    name = 'jetson'
+                    tag = f'jetson{jp_code}'
+            out = try_cmd('uname - a')
+            if 'tegra' in out:
+                msg = 'Unknown Jetson device. Failing back to cpu'
+                warn(msg)
+
+        # ============================================================
         # CUDA
         # ============================================================
-        if has_cmd('nvcc'):
+        elif has_cmd('nvcc'):
             out = try_cmd('nvcc --version')
             version_str = toolkit_version_parse(out)
             cmp = toolkit_version_compare(version_str, cuda_version_range)
@@ -208,7 +231,7 @@ class DeviceInstaller():
         # ============================================================
         # ROCm
         # ============================================================
-        if has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
+        elif has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
             out = try_cmd('rocminfo')
             version_str = toolkit_version_parse(out)
             cmp = toolkit_version_compare(version_str, rocm_version_range)
@@ -231,7 +254,7 @@ class DeviceInstaller():
         # ============================================================
         # APPLE MPS
         # ============================================================
-        if sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
+        elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
             devices['MPS']['found'] = True
             name = 'mps'
             tag = 'mps'
@@ -239,7 +262,7 @@ class DeviceInstaller():
         # ============================================================
         # INTEL XPU
         # ============================================================
-        if os.path.exists('/dev/dri/renderD128'):
+        elif os.path.exists('/dev/dri/renderD128'):
             out = try_cmd('lspci')
             if 'intel' in out:
                 oneapi_out:str = try_cmd('sycl-ls') if has_cmd('sycl-ls') else ''
@@ -264,32 +287,9 @@ class DeviceInstaller():
                 tag = 'xpu'
 
         # ============================================================
-        # JETSON
-        # ============================================================
-        if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
-            raw = tegra_version()
-            jp_code = jetpack_version(raw)
-            if jp_code in ['unsupported', 'unknown']:
-                tag = 'cpu'
-            elif os.path.exists('/etc/nv_tegra_release'):
-                devices['CUDA']['found'] = True
-                name = 'jetson'
-                tag = f'jetson{jp_code}'
-            elif os.path.exists('/proc/device-tree/compatible'):
-                out = try_cmd('cat /proc/device-tree/compatible')
-                if 'tegra' in out:
-                    devices['CUDA']['found'] = True
-                    name = 'jetson'
-                    tag = f'jetson{jp_code}'
-            out = try_cmd('uname - a')
-            if 'tegra' in out:
-                msg = 'Unknown Jetson device. Failing back to cpu'
-                warn(msg)
-
-        # ============================================================
         # CPU
         # ============================================================
-        if tag is None:
+        else:
             name = 'cpu'
             tag = 'cpu'
             
