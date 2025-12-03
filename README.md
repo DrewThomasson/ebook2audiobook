@@ -328,6 +328,12 @@ Linux/Mac:
     Headless mode:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file' --language eng
 
+Docker build image mode:
+    Windows:
+    ebook2audiobook.cmd --script_mode build_docker
+    Linux/Mac
+    ./ebook2audiobook.sh --script_mode build_docker
+
 Tip: to add of silence (random between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
 
 ```
