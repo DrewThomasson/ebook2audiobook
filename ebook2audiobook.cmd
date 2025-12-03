@@ -578,16 +578,14 @@ if defined arguments.help (
 		if errorlevel 1 goto :failed
 		call :build_gui
 		call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-		call conda deactivate
-		call conda deactivate
+		call conda deactivate >nul && call conda deactivate >nul
 	)
 )
 exit /b 0
 
 :failed
 echo =============== ebook2audiobook is not correctly installed.
-call conda deactivate >nul 2>&1
-call conda deactivate >nul 2>&1
+where conda >nul 2>&1 && call conda deactivate >nul 2>&1 && call conda deactivate >nul
 exit /b 1
 
 endlocal
