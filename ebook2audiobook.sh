@@ -723,7 +723,11 @@ else
 				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
 				exit 1
 			fi
-			build_docker_image "$(check_device_info "${SCRIPT_MODE}")" || exit 1
+			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
+			if [[ "$device_info_str" == "" ]]; then
+				echo "check_device_info() error: result is empty"
+			fi
+			build_docker_image "$device_info_str" || exit 1
 			echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
