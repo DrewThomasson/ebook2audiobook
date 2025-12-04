@@ -444,7 +444,7 @@ class DeviceInstaller():
                         if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                             try:
                                 torch_version_base = Version(torch_version).base_version
-                                print(f"{device_info['name']} hardware found! Installing the right torch library...")
+                                print(f"{device_info['name']} hardware found! Installing the right library packages...")
                                 os_env = device_info['os']
                                 arch = device_info['arch']
                                 tag = device_info['tag']
