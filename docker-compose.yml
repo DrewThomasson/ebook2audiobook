@@ -23,20 +23,12 @@ services:
 
     # NVIDIA (WSL2 + Linux)
     # NOTE: Podman DOES NOT support "runtime: nvidia"
-    # It only supports direct /dev/nvidia* mappings below.
-    devices:
-      # NVIDIA (ignored if missing)
-      - /dev/nvidia0:/dev/nvidia0
-      - /dev/nvidiactl:/dev/nvidiactl
-      - /dev/nvidia-uvm:/dev/nvidia-uvm
+    # Instead of explicit /dev/nvidia* mappings (which fail when devices are absent),
+    # we run the container in privileged mode so that existing GPU devices on the host
+    # are visible inside the container, and on non-GPU systems it still runs fine.
+    privileged: true
 
-      # AMD ROCm (ignored if missing)
-      - /dev/kfd:/dev/kfd
-
-      # Intel XPU + also used by NVIDIA/AMD Mesa (ignored if missing)
-      - /dev/dri:/dev/dri
-
-    # Needed for ROCm + Intel iGPU (ignored if groups do not exist)
+    # Needed for ROCm + Intel iGPU (ignored if groups do not exist inside the container)
     group_add:
       - video
       - render
