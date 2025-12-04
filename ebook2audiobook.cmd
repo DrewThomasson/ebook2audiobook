@@ -311,7 +311,9 @@ if not "%OK_PROGRAMS%"=="0" (
 			)
 		)
 		if "%%p"=="rustup" (
-			call "%USERPROFILE%\scoop\apps\rustup\current\env.cmd"
+			if exist "%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
+				set "PATH=%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;%PATH%"
+			)
 		)
 		where /Q !prog!
 		if not errorlevel 1 (
@@ -460,29 +462,29 @@ exit /b %errorlevel%
 :check_sitecustomized
 set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
 for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths()[\"purelib\"])"') do (
-    set "site_packages_path=%%a"
+	set "site_packages_path=%%a"
 )
 if "%site_packages_path%"=="" (
-    echo [WARN] Could not detect Python site-packages
-    exit /b 0
+	echo [WARN] Could not detect Python site-packages
+	exit /b 0
 )
 set "dst_pyfile=%site_packages_path%\sitecustomize.py"
 if not exist "%dst_pyfile%" (
-    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
-    if errorlevel 1 (
-        echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
-        exit /b 1
-    )
-    exit /b 0
+	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+	if errorlevel 1 (
+		echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
+		exit /b 1
+	)
+	exit /b 0
 )
 for %%I in ("%src_pyfile%") do set "src_time=%%~tI"
 for %%I in ("%dst_pyfile%") do set "dst_time=%%~tI"
 if "%src_time%" GTR "%dst_time%" (
-    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
-    if errorlevel 1 (
-        echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
-        exit /b 1
-    )
+	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+	if errorlevel 1 (
+		echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
+		exit /b 1
+	)
 )
 exit /b 0
 

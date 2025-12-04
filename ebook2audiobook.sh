@@ -55,23 +55,23 @@ ARGS=("$@")
 
 # Parse arguments
 while (( $# > 0 )); do
-    case "$1" in
-        --*)
-            key="${1#--}"
-            if [[ -n "$2" && "$2" != --* ]]; then
-                arguments[$key]="$2"
-                shift 2
-                continue
-            else
-                arguments[$key]=true
-            fi
-            ;;
-        *)
-            echo "Unknown option: $1"
-            exit 1
-            ;;
-    esac
-    shift
+	case "$1" in
+		--*)
+			key="${1#--}"
+			if [[ -n "$2" && "$2" != --* ]]; then
+				arguments[$key]="$2"
+				shift 2
+				continue
+			else
+				arguments[$key]=true
+			fi
+			;;
+		*)
+			echo "Unknown option: $1"
+			exit 1
+			;;
+	esac
+	shift
 done
 
 if [[ "${arguments[script_mode]}" != "" ]]; then
