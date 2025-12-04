@@ -453,7 +453,9 @@ exit /b %errorlevel%
 
 :check_sitecustomized
 set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
-for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths().get(''purelib''))"') do set "site_packages_path=%%a"
+for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths()[\"purelib\"])"') do (
+    set "site_packages_path=%%a"
+)
 if "%site_packages_path%"=="" (
     echo [WARN] Could not detect Python site-packages
     exit /b 0
@@ -465,10 +467,8 @@ if not exist "%dst_pyfile%" (
         echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
         exit /b 1
     )
-    echo Installed sitecustomize.py hook in "%dst_pyfile%"
     exit /b 0
 )
-:: CASE 2 — file exists ➤ compare timestamps (Bash `-nt`)
 for %%I in ("%src_pyfile%") do set "src_time=%%~tI"
 for %%I in ("%dst_pyfile%") do set "dst_time=%%~tI"
 if "%src_time%" GTR "%dst_time%" (
@@ -477,7 +477,6 @@ if "%src_time%" GTR "%dst_time%" (
         echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
         exit /b 1
     )
-    echo Updated sitecustomize.py hook in "%dst_pyfile%"
 )
 exit /b 0
 
