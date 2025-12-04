@@ -1,9 +1,6 @@
-import os, re, sys, platform, shutil, importlib, subprocess, json
+import os, re, sys, platform, shutil, subprocess, json
 
-from packaging.version import Version, InvalidVersion
 from importlib.metadata import version, PackageNotFoundError
-from packaging.specifiers import SpecifierSet
-from packaging.markers import Marker
 from functools import cached_property
 
 from lib.conf import *
@@ -300,6 +297,10 @@ class DeviceInstaller():
             print(error)
             return False
         try:
+            import importlib
+            from packaging.version import Version, InvalidVersion
+            from packaging.specifiers import SpecifierSet
+            from packaging.markers import Marker
             from tqdm import tqdm        
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
