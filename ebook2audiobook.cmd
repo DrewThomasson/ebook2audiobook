@@ -283,11 +283,11 @@ if not "%OK_PROGRAMS%"=="0" (
 	for %%p in (%missing_prog_array%) do (
 		set "prog=%%p"
 		call scoop install %%p
-		if [[ "%%p"=="tesseract" ]] (
+		if "%%p"=="tesseract" (
 			where /Q !prog!
 			if not errorlevel 1 (
 				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "tesslang=%%i"
-				echo Detected system language: !OS_LANG! ? downloading OCR language: !tesslang!
+				echo Detected system language: !OS_LANG! → downloading OCR language: !tesslang!
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 				if not exist "!tessdata!\!tesslang!.traineddata" (
 					powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
@@ -298,10 +298,14 @@ if not "%OK_PROGRAMS%"=="0" (
 					echo Failed to install OCR language !tesslang!
 				)
 			)
-		) else if "%%p"=="nodejs" (
-			set "prog=node"
-		) else if "%%p"=="calibre-normal" (
-			set "prog=calibre"
+		) else (
+			if "%%p"=="nodejs" (
+				set "prog=node"
+			) else (
+				if "%%p"=="calibre-normal" (
+					set "prog=calibre"
+				)
+			)
 		)
 		where /Q !prog!
 		if not errorlevel 1 (
@@ -475,29 +479,36 @@ if "%src_time%" GTR "%dst_time%" (
 )
 exit /b 0
 
+:check_sitecustomized (
+	set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
+	set "site_packages_path=python -c \"import sysconfig;print(sysconfig.get_paths()['purelib'])\")"
+	set "dst_pyfile="%site_packages_path%/sitecustomize.py"
+	if [ ! -f "$dst_pyfile" ] || [ "$src_pyfile" -nt "$dst_pyfile" ]; then
+		if cp -p "$src_pyfile" "$dst_pyfile"; then
+			echo "Installed sitecustomize.py hook in $dst_pyfile"
+		else
+			echo -e "\e[31m===============>>> sitecustomize.py hook installation error: copy failed.\e[0m" >&2
+			exit 1
+		fi
+	fi
+	return 0
+)
+
 :build_docker_image
 set "ARG=%~1"
-for /f "usebackq delims=" %%A in (
-    `python -c "import json,sys; print(json.loads(sys.argv[1])['tag'])" "%ARG%"`
-) do (
-    set TAG=%%A
-)
-powershell -nologo -noprofile -command ^
-@if (!(Get-Command docker -ErrorAction SilentlyContinue)) { ^
-	Write-Host "=============== Error: Docker must be installed and running!" -ForegroundColor Red; ^
-	exit 1 ^
-}
-@if ($false) {}
-@
+:: Extract TAG from JSON (PowerShell)
+for /f %%A in ('powershell -NoLogo -Command "(ConvertFrom-Json ''%ARG%'').tag"') do set "TAG=%%A"
+:: Check Docker installed
+powershell -nologo -noprofile -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
-powershell -nologo -noprofile -command ^
-@if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }
-@if ($false) {}
-@
-set "final_name=%DOCKER_IMG_NAME%:%TAG%"
-if not errorlevel 1 (
+:: Check if docker compose exists
+powershell -nologo -noprofile -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
+set "HAS_COMPOSE=%errorlevel%"
+:: Build image name
+set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
+if %HAS_COMPOSE%==0 (
 	:: Use docker compose v2
-	BUILD_NAME="%final_name%" docker compose --progress=plain build --no-cache ^
+	BUILD_NAME="%DOCKER_IMG_NAME%" docker compose --progress=plain build --no-cache ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
@@ -510,7 +521,7 @@ if not errorlevel 1 (
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
 		--build-arg ISO3_LANG="%ISO3_LANG%" ^
-		-t "%final_name%" .
+		-t "%DOCKER_IMG_NAME%" .
 	if errorlevel 1 exit /b 1
 )
 exit /b 0
@@ -559,11 +570,8 @@ if defined arguments.help (
 				echo Delete it using: docker rmi %DOCKER_IMG_NAME%
 				goto :failed
 			)
-			:: get deviceinfo via PowerShell
-			for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
-				"& { $result = (& { call :check_device_info \"%SCRIPT_MODE%\" } ^| Out-String).Trim(); if ($LASTEXITCODE -ne 0) { exit 1 }; Write-Output $result }"') do (
-				set "deviceinfo=%%a"
-			)
+			call :check_device_info "%SCRIPT_MODE%"
+			set "deviceinfo=%errorlevel%"
 			if errorlevel 1 goto :failed
 			call :build_docker_image "%deviceinfo%"
 			if errorlevel 1 goto :failed
