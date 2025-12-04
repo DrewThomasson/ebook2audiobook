@@ -85,6 +85,10 @@ fi
 
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments[docker_device]}"
+	if [[ $DOCKER_DEVICE_STR == true ]]; then
+		echo "Error: --docker_device has no value!"
+		exit 1
+	fi
 fi
 
 [[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""

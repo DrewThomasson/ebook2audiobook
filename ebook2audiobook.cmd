@@ -122,6 +122,10 @@ if defined arguments.script_mode (
 )
 if defined arguments.docker_device (
 	set "DOCKER_DEVICE_STR=!arguments.docker_device!"
+	if /i "!arguments.script_mode!"=="true" (
+		echo Error: --docker_device has no value!
+		goto :failed
+	)
 )
 goto :check_scoop
 
