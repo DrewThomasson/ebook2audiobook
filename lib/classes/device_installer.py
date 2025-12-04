@@ -1,8 +1,6 @@
 import os, re, sys, platform, shutil, subprocess, json
 
-from importlib.metadata import version, PackageNotFoundError
 from functools import cached_property
-
 from lib.conf import *
 
 class DeviceInstaller():
@@ -34,6 +32,7 @@ class DeviceInstaller():
         
     def get_package_version(self, pkg:str)->str|bool:
         try:
+            from importlib.metadata import version, PackageNotFoundError
             return version(pkg)
         except PackageNotFoundError:
             return False
