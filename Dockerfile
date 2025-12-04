@@ -7,7 +7,7 @@ ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh
 ARG ISO3_LANG
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH" 
+ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 ENV CALIBRE_DISABLE_CHECKS=1
 ENV CALIBRE_DISABLE_GUI=1
 
@@ -31,12 +31,16 @@ RUN apt-get purge -y gcc g++ make python3-dev pkg-config curl && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* ~/.cache/pip ~/.cargo/registry ~/.cargo/git
 
+############################
+# RUNTIME IMAGE
+############################
 FROM ${BASE}
 ENV PATH="/root/.local/bin:$PATH"
 ENV CALIBRE_DISABLE_CHECKS=1
 ENV CALIBRE_DISABLE_GUI=1
+
 COPY --from=build /usr/local/ /usr/local/
-COPY --from=build /root/.local /root/.local
+# /root/.local removed here
 COPY --from=build /app /app
 
 WORKDIR /app
