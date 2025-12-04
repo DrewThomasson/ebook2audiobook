@@ -641,11 +641,11 @@ function install_python_packages {
 }
 
 function check_device_info {
-arg="$1"
-python3 - << EOF
+	local ARG="$1"
+	python3 - << EOF
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-result = device.check_device_info("$arg")
+result = device.check_device_info("$ARG")
 if result:
 	print(result)
 	raise SystemExit(0)
@@ -654,12 +654,13 @@ EOF
 }
 
 function install_device_packages {
-arg="$1"
-python3 - << EOF
-import sys
+	local ARG="$1"
+	python3 - "$ARG" << 'EOF'
+import sys,json
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-exit_code = device.install_device_packages('''$arg''')
+data = sys.argv[1]  # <-- JSON string received safely
+exit_code = device.install_device_packages(data)
 sys.exit(exit_code)
 EOF
 }
