@@ -35,10 +35,10 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 set "HOST_PROGRAMS=python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
-set "DOCKER_PROGRAMS=curl ffmpeg nodejs espeak-ng cargo rustc sox tesseract-ocr"
+set "DOCKER_PROGRAMS=curl ffmpeg nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
-set "DOCKER_IMG_NAME=ebook2audiobook:latest"
+set "DOCKER_IMG_NAME=ebook2audiobook"
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
@@ -283,11 +283,11 @@ if not "%OK_PROGRAMS%"=="0" (
 	for %%p in (%missing_prog_array%) do (
 		set "prog=%%p"
 		call scoop install %%p
-		if [[ "%%p"=="tesseract" ]] (
+		if "%%p"=="tesseract" (
 			where /Q !prog!
 			if not errorlevel 1 (
 				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "tesslang=%%i"
-				echo Detected system language: !OS_LANG! ? downloading OCR language: !tesslang!
+				echo Detected system language: !OS_LANG! → downloading OCR language: !tesslang!
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 				if not exist "!tessdata!\!tesslang!.traineddata" (
 					powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
@@ -298,10 +298,14 @@ if not "%OK_PROGRAMS%"=="0" (
 					echo Failed to install OCR language !tesslang!
 				)
 			)
-		) else if "%%p"=="nodejs" (
-			set "prog=node"
-		) else if "%%p"=="calibre-normal" (
-			set "prog=calibre"
+		) else (
+			if "%%p"=="nodejs" (
+				set "prog=node"
+			) else (
+				if "%%p"=="calibre-normal" (
+					set "prog=calibre"
+				)
+			)
 		)
 		where /Q !prog!
 		if not errorlevel 1 (
@@ -449,49 +453,49 @@ exit /b %errorlevel%
 
 :check_sitecustomized
 set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
-for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
-	"$p = python - << 'EOF'
-import sysconfig
-print(sysconfig.get_paths()['purelib'])
-EOF
-	; $p = $p.Trim(); Write-Output $p"') do (
-	set "site_packages=%%a"
+for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths()[\"purelib\"])"') do (
+    set "site_packages_path=%%a"
 )
-set "dst_pyfile=%site_packages%\sitecustomize.py"
-powershell -nologo -noprofile -command ^
-@"
-\$src = '%src_pyfile%'
-\$dst = '%dst_pyfile%'
-if (!(Test-Path \$dst) -or ((Get-Item \$src).LastWriteTime -gt (Get-Item \$dst).LastWriteTime)) {
-	try {
-		Copy-Item -Path \$src -Destination \$dst -Force -ErrorAction Stop
-		Write-Host "Installed sitecustomize.py hook in \$dst"
-	} catch {
-		Write-Host "=============== sitecustomize.py hook installation error: copy failed." -ForegroundColor Red
-		exit 1
-	}
-}
-"@
-exit /b %errorlevel%
+if "%site_packages_path%"=="" (
+    echo [WARN] Could not detect Python site-packages
+    exit /b 0
+)
+set "dst_pyfile=%site_packages_path%\sitecustomize.py"
+if not exist "%dst_pyfile%" (
+    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+    if errorlevel 1 (
+        echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
+        exit /b 1
+    )
+    exit /b 0
+)
+for %%I in ("%src_pyfile%") do set "src_time=%%~tI"
+for %%I in ("%dst_pyfile%") do set "dst_time=%%~tI"
+if "%src_time%" GTR "%dst_time%" (
+    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+    if errorlevel 1 (
+        echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
+        exit /b 1
+    )
+)
+exit /b 0
 
 :build_docker_image
-set "arg=%~1"
-powershell -nologo -noprofile -command ^
-@if (!(Get-Command docker -ErrorAction SilentlyContinue)) { ^
-	Write-Host "=============== Error: Docker must be installed and running!" -ForegroundColor Red; ^
-	exit 1 ^
-}
-@if ($false) {}
-@
+set "ARG=%~1"
+:: Extract TAG from JSON (PowerShell)
+for /f %%A in ('powershell -NoLogo -Command "(ConvertFrom-Json ''%ARG%'').tag"') do set "TAG=%%A"
+:: Check Docker installed
+powershell -nologo -noprofile -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
-powershell -nologo -noprofile -command ^
-@if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }
-@if ($false) {}
-@
-if not errorlevel 1 (
+:: Check if docker compose exists
+powershell -nologo -noprofile -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
+set "HAS_COMPOSE=%errorlevel%"
+:: Build image name
+set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
+if %HAS_COMPOSE%==0 (
 	:: Use docker compose v2
-	docker compose --progress=plain build --no-cache ^
-		--build-arg DOCKER_DEVICE_STR="%arg%" ^
+	BUILD_NAME="%DOCKER_IMG_NAME%" docker compose --progress=plain build --no-cache ^
+		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
 		--build-arg ISO3_LANG="%ISO3_LANG%"
@@ -499,7 +503,7 @@ if not errorlevel 1 (
 ) else (
 	:: Use docker build (fallback)
 	docker build --no-cache --progress plain ^
-		--build-arg DOCKER_DEVICE_STR="%arg%" ^
+		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
 		--build-arg ISO3_LANG="%ISO3_LANG%" ^
@@ -552,15 +556,12 @@ if defined arguments.help (
 				echo Delete it using: docker rmi %DOCKER_IMG_NAME%
 				goto :failed
 			)
-			:: get deviceinfo via PowerShell
-			for /f "delims=" %%a in ('powershell -nologo -noprofile -command ^
-				"& { $result = (& { call :check_device_info \"%SCRIPT_MODE%\" } ^| Out-String).Trim(); if ($LASTEXITCODE -ne 0) { exit 1 }; Write-Output $result }"') do (
-				set "deviceinfo=%%a"
-			)
+			call :check_device_info "%SCRIPT_MODE%"
+			set "deviceinfo=%errorlevel%"
 			if errorlevel 1 goto :failed
 			call :build_docker_image "%deviceinfo%"
 			if errorlevel 1 goto :failed
-
+			echo Docker image ready! to run your docker: docker run -it --rm -p 7860:7860 %DOCKER_IMG_NAME%
 		) else (
 			call :install_python_packages
 			if errorlevel 1 goto :failed
@@ -568,7 +569,6 @@ if defined arguments.help (
 			if errorlevel 1 goto :failed
 			call :check_sitecustomized
 			if errorlevel 1 goto :failed
-
 		)
 	) else (
 		call "%CONDA_HOME%\Scripts\activate.bat"
@@ -578,14 +578,14 @@ if defined arguments.help (
 		if errorlevel 1 goto :failed
 		call :build_gui
 		call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-		call conda deactivate
-		call conda deactivate
+		call conda deactivate >nul && call conda deactivate >nul
 	)
 )
 exit /b 0
 
 :failed
 echo =============== ebook2audiobook is not correctly installed.
+where conda >nul 2>&1 && call conda deactivate >nul 2>&1 && call conda deactivate >nul
 exit /b 1
 
 endlocal
