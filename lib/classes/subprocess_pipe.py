@@ -1,7 +1,7 @@
 import subprocess, re, sys, gradio as gr
 
 class SubprocessPipe:
-    def __init__(self,cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing'):
+    def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing'):
         self.cmd = cmd
         self.is_gui_process = is_gui_process
         self.total_duration = total_duration

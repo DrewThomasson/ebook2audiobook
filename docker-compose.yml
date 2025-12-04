@@ -1,6 +1,7 @@
 services:
   ebook2audiobook:
     #image: docker.io/athomasson2/ebook2audiobook:latest  # <-- Use prebuilt image instead of building
+    image: ${BUILD_NAME}
     build:
       context: .
       dockerfile: Dockerfile
@@ -21,19 +22,27 @@ services:
     # ---------------------------------------------------
 
     # NVIDIA (WSL2 + Linux)
-    runtime: nvidia
-
-    # AMD ROCm + Intel XPU + NVIDIA /dev/dri path
+    # NOTE: Podman DOES NOT support "runtime: nvidia"
+    # It only supports direct /dev/nvidia* mappings below.
     devices:
-      - /dev/kfd      # AMD ROCm (ignored if missing)
-      - /dev/dri      # Intel XPU + NVIDIA (ignored if missing)
+      # NVIDIA (ignored if missing)
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
 
-    # Needed for ROCm (ignored if missing)
+      # AMD ROCm (ignored if missing)
+      - /dev/kfd:/dev/kfd
+
+      # Intel XPU + also used by NVIDIA/AMD Mesa (ignored if missing)
+      - /dev/dri:/dev/dri
+
+    # Needed for ROCm + Intel iGPU (ignored if groups do not exist)
     group_add:
       - video
       - render
 
     # Additional optional NVIDIA request (ignored on non-NVIDIA)
+    # NOTE: Podman ignores `deploy` entirely, but we preserve it for symmetry
     deploy:
       resources:
         reservations:
