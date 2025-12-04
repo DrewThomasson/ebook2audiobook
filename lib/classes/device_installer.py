@@ -255,7 +255,7 @@ class DeviceInstaller():
                     name = 'xpu'
                     tag = 'xpu'
                 else:
-                    msg = 'Intel GPU detected but not compoatible or oneAPI runtime is missing.'
+                    msg = 'Intel GPU detected but not compotible or oneAPI runtime is missing.'
 
         elif has_cmd('clinfo'):
             out = try_cmd('clinfo')
