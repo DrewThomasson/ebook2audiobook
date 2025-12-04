@@ -302,14 +302,16 @@ if not "%OK_PROGRAMS%"=="0" (
 					echo Failed to install OCR language !tesslang!
 				)
 			)
+		)
+		if "%%p"=="nodejs" (
+			set "prog=node"
 		) else (
-			if "%%p"=="nodejs" (
-				set "prog=node"
-			) else (
-				if "%%p"=="calibre-normal" (
-					set "prog=calibre"
-				)
+			if "%%p"=="calibre-normal" (
+				set "prog=calibre"
 			)
+		)
+		if "%%p"=="rustup" (
+			call "%USERPROFILE%\scoop\apps\rustup\current\env.cmd"
 		)
 		where /Q !prog!
 		if not errorlevel 1 (
