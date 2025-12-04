@@ -18,7 +18,7 @@ class DeviceInstaller():
         return self.detect_device()
 
     def check_device_info(self, mode:str)->str:
-        name, tag = self.check_hardware
+        name, tag, msg = self.check_hardware
         arch = self.check_arch
         pyenv = sys.version_info[:2]
         if mode == NATIVE:
@@ -26,7 +26,7 @@ class DeviceInstaller():
         elif mode == 'build_docker':
             os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
         if all([name, tag, os_env, arch, pyenv]):
-            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyenv, "tag": tag}
+            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyenv, "tag": tag, "note": msg}
             return json.dumps(device_info)
         return ''
         
