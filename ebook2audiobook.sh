@@ -91,6 +91,20 @@ if [[ -n "${arguments[docker_device]+exists}" ]]; then
 	fi
 fi
 
+if [[ -v arguments[script_mode] ]]; then
+	if [[ "${arguments[script_mode]}" == "true" || -z "${arguments[script_mode]}" ]]; then
+		echo "Error: --script_mode requires a value"
+		exit 1
+	fi
+
+	for key in "${!arguments[@]}"; do
+		if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
+			echo "Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --$key"
+			exit 1
+		fi
+	done
+fi
+
 [[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
 [[ $OSTYPE == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
