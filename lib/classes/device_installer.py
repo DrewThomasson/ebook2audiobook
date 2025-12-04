@@ -440,8 +440,7 @@ class DeviceInstaller():
                             print(f"Hardware detected: {device_info['tag']}")
                             m = re.search(r'\+(.+)$', torch_version)
                             current_tag = m.group(1) if m else None
-                            if current_tag is not None:
-                                non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
+                            non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
                                     torch_version_base = Version(torch_version).base_version
