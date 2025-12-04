@@ -40,6 +40,7 @@ os.environ['TTS_CACHE'] = tts_dir
 os.environ['TORCH_HOME'] = tts_dir
 os.environ['TTS_HOME'] = models_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
+os.environ['MPLCONFIGDIR'] = f'{models_dir}/matplotlib'
 os.environ['TESSDATA_PREFIX'] = f'{models_dir}/tessdata'
 os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
