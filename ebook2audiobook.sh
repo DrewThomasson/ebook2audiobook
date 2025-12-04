@@ -715,7 +715,7 @@ else
 				exit 1
 			fi
 			build_docker_image "$(check_device_info "${SCRIPT_MODE}")" || exit 1
-			echo "Docker image ready! to run your docker: docker run -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
+			echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1

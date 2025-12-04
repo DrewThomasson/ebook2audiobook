@@ -589,7 +589,7 @@ if defined arguments.help (
 			if errorlevel 1 goto :failed
 			call :build_docker_image "%deviceinfo%"
 			if errorlevel 1 goto :failed
-			echo Docker image ready! to run your docker: docker run -it --rm -p 7860:7860 %DOCKER_IMG_NAME%
+			echo Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 %DOCKER_IMG_NAME%
 		) else (
 			call :install_python_packages
 			if errorlevel 1 goto :failed
