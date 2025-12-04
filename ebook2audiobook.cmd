@@ -453,46 +453,33 @@ exit /b %errorlevel%
 
 :check_sitecustomized
 set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
-set "tmpfile=%TEMP%\purelib_path.txt"
-del "%tmpfile%" >nul 2>&1
-:: Get purelib using Python
-python -c "import sysconfig,sys; sys.stdout.write(sysconfig.get_paths().get('purelib',''))" > "%tmpfile%"
-set "site_packages="
-for /f "delims=" %%a in (%tmpfile%) do set "site_packages=%%a"
-del "%tmpfile%" >nul 2>&1
-if "%site_packages%"=="" (
-	echo [WARN] Could not detect Python site-packages
-	exit /b 0
+for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths().get(''purelib''))"') do set "site_packages_path=%%a"
+if "%site_packages_path%"=="" (
+    echo [WARN] Could not detect Python site-packages
+    exit /b 0
 )
-set "dst_pyfile=%site_packages%\sitecustomize.py"
-:: Batch file copy with timestamp check
+set "dst_pyfile=%site_packages_path%\sitecustomize.py"
 if not exist "%dst_pyfile%" (
-	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
-	::echo Installed sitecustomize.py in %dst_pyfile%
-	exit /b 0
+    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+    if errorlevel 1 (
+        echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
+        exit /b 1
+    )
+    echo Installed sitecustomize.py hook in "%dst_pyfile%"
+    exit /b 0
 )
+:: CASE 2 — file exists ➤ compare timestamps (Bash `-nt`)
 for %%I in ("%src_pyfile%") do set "src_time=%%~tI"
 for %%I in ("%dst_pyfile%") do set "dst_time=%%~tI"
 if "%src_time%" GTR "%dst_time%" (
-	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
-	::echo Updated sitecustomize.py in %dst_pyfile%
+    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+    if errorlevel 1 (
+        echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
+        exit /b 1
+    )
+    echo Updated sitecustomize.py hook in "%dst_pyfile%"
 )
 exit /b 0
-
-:check_sitecustomized (
-	set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
-	set "site_packages_path=python -c \"import sysconfig;print(sysconfig.get_paths()['purelib'])\")"
-	set "dst_pyfile="%site_packages_path%/sitecustomize.py"
-	if [ ! -f "$dst_pyfile" ] || [ "$src_pyfile" -nt "$dst_pyfile" ]; then
-		if cp -p "$src_pyfile" "$dst_pyfile"; then
-			echo "Installed sitecustomize.py hook in $dst_pyfile"
-		else
-			echo -e "\e[31m===============>>> sitecustomize.py hook installation error: copy failed.\e[0m" >&2
-			exit 1
-		fi
-	fi
-	return 0
-)
 
 :build_docker_image
 set "ARG=%~1"
