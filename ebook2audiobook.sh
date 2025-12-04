@@ -685,7 +685,7 @@ function build_docker_image {
 		echo "build_docker_image() error: ARG is empt"
 		return 1
 	fi 
-	local TAG=$(python3 -c 'import json, sys; print(sys.argv[1])' "$ARG")
+	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
 	if ! command -v docker >/dev/null 2>&1; then
 		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
 		return 1
@@ -733,8 +733,8 @@ else
 				echo "check_device_info() error: result is empty"
 				exit 1
 			fi
-			build_docker_image "$device_info_str" || exit 1
-			echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
+			#build_docker_image "$device_info_str" || exit 1
+			#echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
