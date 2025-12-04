@@ -34,7 +34,7 @@ set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
+set "HOST_PROGRAMS=rustup python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
 set "DOCKER_PROGRAMS=curl ffmpeg nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
@@ -122,6 +122,30 @@ if defined arguments.script_mode (
 )
 if defined arguments.docker_device (
 	set "DOCKER_DEVICE_STR=!arguments.docker_device!"
+	if /i "!arguments.docker_device!"=="true" (
+		echo Error: --docker_device has no value!
+		goto :failed
+	)
+)
+if defined arguments.script_mode (
+	if /I "!arguments.script_mode!"=="true" (
+		echo Error: --script_mode requires a value
+		goto :failed
+	)
+	for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
+		set "argname=%%A"
+		set "argname=!argname:arguments.=!"
+		if /I not "!argname!"=="script_mode" if /I not "!argname!"=="docker_device" (
+			echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --!argname!
+			goto :failed
+		)
+	)
+)
+if defined arguments.docker_device (
+	if /I "!arguments.docker_device!"=="true" (
+		echo Error: --docker_device requires a value
+		goto :failed
+	)
 )
 goto :check_scoop
 
@@ -298,13 +322,17 @@ if not "%OK_PROGRAMS%"=="0" (
 					echo Failed to install OCR language !tesslang!
 				)
 			)
+		)
+		if "%%p"=="nodejs" (
+			set "prog=node"
 		) else (
-			if "%%p"=="nodejs" (
-				set "prog=node"
-			) else (
-				if "%%p"=="calibre-normal" (
-					set "prog=calibre"
-				)
+			if "%%p"=="calibre-normal" (
+				set "prog=calibre"
+			)
+		)
+		if "%%p"=="rustup" (
+			if exist "%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
+				set "PATH=%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;%PATH%"
 			)
 		)
 		where /Q !prog!
@@ -454,29 +482,29 @@ exit /b %errorlevel%
 :check_sitecustomized
 set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
 for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths()[\"purelib\"])"') do (
-    set "site_packages_path=%%a"
+	set "site_packages_path=%%a"
 )
 if "%site_packages_path%"=="" (
-    echo [WARN] Could not detect Python site-packages
-    exit /b 0
+	echo [WARN] Could not detect Python site-packages
+	exit /b 0
 )
 set "dst_pyfile=%site_packages_path%\sitecustomize.py"
 if not exist "%dst_pyfile%" (
-    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
-    if errorlevel 1 (
-        echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
-        exit /b 1
-    )
-    exit /b 0
+	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+	if errorlevel 1 (
+		echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
+		exit /b 1
+	)
+	exit /b 0
 )
 for %%I in ("%src_pyfile%") do set "src_time=%%~tI"
 for %%I in ("%dst_pyfile%") do set "dst_time=%%~tI"
 if "%src_time%" GTR "%dst_time%" (
-    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
-    if errorlevel 1 (
-        echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
-        exit /b 1
-    )
+	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+	if errorlevel 1 (
+		echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
+		exit /b 1
+	)
 )
 exit /b 0
 
@@ -561,7 +589,7 @@ if defined arguments.help (
 			if errorlevel 1 goto :failed
 			call :build_docker_image "%deviceinfo%"
 			if errorlevel 1 goto :failed
-			echo Docker image ready! to run your docker: docker run -it --rm -p 7860:7860 %DOCKER_IMG_NAME%
+			echo Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 %DOCKER_IMG_NAME%
 		) else (
 			call :install_python_packages
 			if errorlevel 1 goto :failed

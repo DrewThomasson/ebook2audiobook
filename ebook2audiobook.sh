@@ -35,7 +35,7 @@ SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
-HOST_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
+HOST_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
 DOCKER_PROGRAMS=("curl" "ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr")
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="$APP_NAME"
@@ -55,36 +55,51 @@ ARGS=("$@")
 
 # Parse arguments
 while (( $# > 0 )); do
-    case "$1" in
-        --*)
-            key="${1#--}"
-            if [[ -n "$2" && "$2" != --* ]]; then
-                arguments[$key]="$2"
-                shift 2
-                continue
-            else
-                arguments[$key]=true
-            fi
-            ;;
-        *)
-            echo "Unknown option: $1"
-            exit 1
-            ;;
-    esac
-    shift
+	case "$1" in
+		--*)
+			key="${1#--}"
+			if [[ -n "$2" && "$2" != --* ]]; then
+				arguments[$key]="$2"
+				shift 2
+				continue
+			else
+				arguments[$key]=true
+			fi
+			;;
+		*)
+			echo "Unknown option: $1"
+			exit 1
+			;;
+	esac
+	shift
 done
 
 if [[ "${arguments[script_mode]}" != "" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 		SCRIPT_MODE="${arguments[script_mode]}"
 	else
-		echo "Error: Invalid script mode argument: $SCRIPT_MODE"
+		echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
 		exit 1
 	fi
 fi
-
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments[docker_device]}"
+	if [[ "$DOCKER_DEVICE_STR" == "true" ]]; then
+		echo "Error: --docker_device has no value!"
+		exit 1
+	fi
+fi
+if [[ -v arguments[script_mode] ]]; then
+	if [[ "${arguments[script_mode]}" == "true" || -z "${arguments[script_mode]}" ]]; then
+		echo "Error: --script_mode requires a value"
+		exit 1
+	fi
+	for key in "${!arguments[@]}"; do
+		if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
+			echo "Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --$key"
+			exit 1
+		fi
+	done
 fi
 
 [[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
@@ -700,7 +715,7 @@ else
 				exit 1
 			fi
 			build_docker_image "$(check_device_info "${SCRIPT_MODE}")" || exit 1
-			echo "Docker image ready! to run your docker: docker run -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
+			echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
