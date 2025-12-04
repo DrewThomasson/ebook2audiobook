@@ -197,7 +197,7 @@ class DeviceInstaller():
                     tag = f'jetson{jp_code}'
             out = try_cmd('uname - a')
             if 'tegra' in out:
-                msg = 'Unknown Jetson device. Failing back to cpu'
+                msg = 'Jetson GPU detected but not (yes) compatible'
                 warn(msg)
         # ============================================================
         # ROCm
@@ -219,7 +219,7 @@ class DeviceInstaller():
                 name = 'rocm'
                 tag = f'rocm{version_str}'
             else:
-                msg = 'No ROCm version found. Falling back to CPU.'
+                msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
                 warn(msg)
 
         # ============================================================
@@ -243,7 +243,7 @@ class DeviceInstaller():
                 name = 'cuda'
                 tage = f'cu{major}{minor}'
             else:
-                msg = 'No CUDA version found. Falling back to CPU.'
+                msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
                 warn(msg)
 
         # ============================================================
@@ -272,7 +272,7 @@ class DeviceInstaller():
                     name = 'xpu'
                     tag = 'xpu'
                 else:
-                    msg = 'Intel GPU detected but oneAPI runtime missing → CPU'
+                    msg = 'Intel GPU detected but not compoatible or oneAPI runtime is missing.'
                     warn(msg)
 
         elif has_cmd('clinfo'):
