@@ -685,8 +685,7 @@ function build_docker_image {
 		echo "build_docker_image() error: ARG is empt"
 		return 1
 	fi 
-	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
-	echo "-------------- $TAG"
+	local TAG=$(python3 -c 'import json, sys; print(sys.argv[1])' "$ARG")
 	if ! command -v docker >/dev/null 2>&1; then
 		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
 		return 1
