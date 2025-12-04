@@ -122,8 +122,28 @@ if defined arguments.script_mode (
 )
 if defined arguments.docker_device (
 	set "DOCKER_DEVICE_STR=!arguments.docker_device!"
-	if /i "!arguments.script_mode!"=="true" (
+	if /i "!arguments.docker_device!"=="true" (
 		echo Error: --docker_device has no value!
+		goto :failed
+	)
+)
+if defined arguments.script_mode (
+	if /I "!arguments.script_mode!"=="true" (
+		echo Error: --script_mode requires a value
+		goto :failed
+	)
+	for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
+		set "argname=%%A"
+		set "argname=!argname:arguments.=!"
+		if /I not "!argname!"=="script_mode" if /I not "!argname!"=="docker_device" (
+			echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --!argname!
+			goto :failed
+		)
+	)
+)
+if defined arguments.docker_device (
+	if /I "!arguments.docker_device!"=="true" (
+		echo Error: --docker_device requires a value
 		goto :failed
 	)
 )
