@@ -78,25 +78,22 @@ if [[ "${arguments[script_mode]}" != "" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 		SCRIPT_MODE="${arguments[script_mode]}"
 	else
-		echo "Error: Invalid script mode argument: $SCRIPT_MODE"
+		echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
 		exit 1
 	fi
 fi
-
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments[docker_device]}"
-	if [[ $DOCKER_DEVICE_STR == true ]]; then
+	if [[ "$DOCKER_DEVICE_STR" == "true" ]]; then
 		echo "Error: --docker_device has no value!"
 		exit 1
 	fi
 fi
-
 if [[ -v arguments[script_mode] ]]; then
 	if [[ "${arguments[script_mode]}" == "true" || -z "${arguments[script_mode]}" ]]; then
 		echo "Error: --script_mode requires a value"
 		exit 1
 	fi
-
 	for key in "${!arguments[@]}"; do
 		if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
 			echo "Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --$key"
