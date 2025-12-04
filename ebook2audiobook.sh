@@ -728,6 +728,7 @@ else
 				exit 1
 			fi
 			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
+			echo "========== $device_info_str ============="
 			if [[ "$device_info_str" == "" ]]; then
 				echo "check_device_info() error: result is empty"
 				exit 1
