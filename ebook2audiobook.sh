@@ -713,6 +713,7 @@ function build_docker_image {
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
 	fi
+	echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 }
 
 ########################################
@@ -729,13 +730,11 @@ else
 				exit 1
 			fi
 			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
-			echo "========== $device_info_str ============="
 			if [[ "$device_info_str" == "" ]]; then
 				echo "check_device_info() error: result is empty"
 				exit 1
 			fi
-			#build_docker_image "$device_info_str" || exit 1
-			#echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
+			build_docker_image "$device_info_str" || exit 1
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
