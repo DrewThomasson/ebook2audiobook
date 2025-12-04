@@ -437,14 +437,14 @@ class DeviceInstaller():
                     torch_version = self.get_package_version('torch')
                     if torch_version:
                         if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
-                            print(f"Hardware detected: {device_info['tag']}")
+                            print(f"Hardware detected: {device_info['name']}")
                             m = re.search(r'\+(.+)$', torch_version)
                             current_tag = m.group(1) if m else None
                             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
                                     torch_version_base = Version(torch_version).base_version
-                                    print(f"{device_info['name']} hardware found! Installing the right library packages...")
+                                    print(f"Installing the right library packages for {device_info['name']}...")
                                     os_env = device_info['os']
                                     arch = device_info['arch']
                                     tag = device_info['tag']
