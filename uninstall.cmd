@@ -115,6 +115,7 @@ rd /s /q "%REAL_INSTALL_DIR%" >nul 2>&1
 echo.
 echo Uninstall complete.
 del "%TEMP_UNINSTALL%" >nul 2>&1"
+cd ..\
 
 timeout /t 2 >nul
 exit /b

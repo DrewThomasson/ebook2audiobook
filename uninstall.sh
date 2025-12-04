@@ -114,5 +114,6 @@ rm -f "$TEMP_UNINSTALLER" || true
 
 echo
 echo "Uninstall complete."
+cd ../
 
 exit 0
