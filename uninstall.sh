@@ -63,6 +63,8 @@ echo "  Uninstalling $APP_NAME"
 echo "========================================"
 echo
 
+cd ..
+
 if [[ "$SCRIPT_NAME" == "UNINSTALLER"* ]]; then
     echo "Copying uninstaller to temp and relaunching..."
     cp "$0" "$TEMP_UNINSTALLER"
@@ -114,6 +116,5 @@ rm -f "$TEMP_UNINSTALLER" || true
 
 echo
 echo "Uninstall complete."
-cd ../
 
 exit 0
