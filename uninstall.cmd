@@ -114,9 +114,11 @@ rd /s /q "%REAL_INSTALL_DIR%" >nul 2>&1
 :: ---------------------------------------
 :: CLEAN UP SELF COPY
 :: ---------------------------------------
-echo.
+echo ===================
 echo Uninstall complete.
+
 del "%TEMP_UNINSTALL%" >nul 2>&1"
 
 timeout /t 2 >nul
+
 exit /b
