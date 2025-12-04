@@ -435,7 +435,6 @@ class DeviceInstaller():
             if device_info:
                 torch_version = self.get_package_version('torch')
                 if torch_version:
-                    print(f'torch version installed: {torch_version}')
                     if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
                         print(f"Hardware detected: {device_info['tag']}")
                         m = re.search(r'\+(.+)$', torch_version)
