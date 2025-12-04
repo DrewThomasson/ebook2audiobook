@@ -22,10 +22,13 @@ services:
     # ---------------------------------------------------
 
     # NVIDIA (WSL2 + Linux)
-    # NOTE: Podman DOES NOT support "runtime: nvidia"
-    # Instead of explicit /dev/nvidia* mappings (which fail when devices are absent),
-    # we run the container in privileged mode so that existing GPU devices on the host
-    # are visible inside the container, and on non-GPU systems it still runs fine.
+    # NOTE:
+    # - Docker: we do NOT use "runtime: nvidia" or "gpus: all" here, because those will fail
+    #   when nvidia-container-toolkit is not installed.
+    # - Podman: does not support "runtime: nvidia" either.
+    # Instead we run the container in privileged mode so that any existing GPU devices
+    # (/dev/nvidia*, /dev/kfd, /dev/dri, etc.) are visible automatically.
+    # On systems without those devices, the container still starts and just runs on CPU.
     privileged: true
 
     # Needed for ROCm + Intel iGPU (ignored if groups do not exist inside the container)
@@ -34,7 +37,10 @@ services:
       - render
 
     # Additional optional NVIDIA request (ignored on non-NVIDIA)
-    # NOTE: Podman ignores `deploy` entirely, but we preserve it for symmetry
+    # NOTE:
+    # - Docker Swarm understands `deploy.resources.*` with "driver: nvidia".
+    # - Regular docker-compose and Podman ignore `deploy` completely.
+    # We keep this block only for symmetry with Swarm / future use.
     deploy:
       resources:
         reservations:
