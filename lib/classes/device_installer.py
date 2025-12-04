@@ -123,10 +123,10 @@ class DeviceInstaller():
         def jetpack_version(text:str)->str:
             m1 = re.search(r'r(\d+)', text)
             m2 = re.search(r'revision:\s*([\d\.]+)', text)
+            msg = ''
             if not m1 or not m2:
                 msg = 'Unrecognized JetPack version. Falling back to CPU.'
-                warn(msg)
-                return 'unknown'
+                return ('unknown', msg)
             l4t_major = int(m1.group(1))
             rev = m2.group(1)
             parts = rev.split('.')
@@ -135,46 +135,37 @@ class DeviceInstaller():
 
             if l4t_major < 35:
                 msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 5.1+. Falling back to CPU.'
-                warn(msg)
-                return 'unsupported'
+                return ('unsupported', msg)
 
             if l4t_major == 35:
                 if rev_major == 0 and rev_minor <= 1:
                     msg = 'JetPack 5.0/5.0.1 detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
-                    warn(msg)
-                    return 'cpu'
+                    return ('cpu', msg)
                 if rev_major == 0 and rev_minor >= 2:
                     msg = 'JetPack 5.0.x detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
-                    warn(msg)
-                    return 'cpu'
+                    return ('cpu', msg)
                 if rev_major == 1 and rev_minor == 0:
                     msg = 'JetPack 5.1.0 detected. Please upgrade to JetPack 5.1.2 or newer.'
-                    warn(msg)
-                    return '51'
+                    return ('51', msg)
                 if rev_major == 1 and rev_minor == 1:
                     msg = 'JetPack 5.1.1 detected. Please upgrade to JetPack 5.1.2 or newer.'
-                    warn(msg)
-                    return '51'
+                    return ('51', msg)
                 if (rev_major > 1) or (rev_major == 1 and rev_minor >= 2):
-                    return '51'
+                    return ('51', msg)
                 msg = 'Unrecognized JetPack 5.x version. Falling back to CPU.'
-                warn(msg)
-                return 'unknown'
+                return ('unknown', msg)
 
             if l4t_major == 36:
                 if rev_major == 2:
-                    return '60'
+                    return ('60', msg)
                 else:
-                    return '61'
+                    return ('61', msg)
                 msg = 'Unrecognized JetPack 6.x version. Falling back to CPU.'
-                warn(msg)
-            return 'unknown'
-
-        def warn(msg:str)->None:
-            print(f'[WARNING] {msg}')
+            return ('unknown', msg)
 
         name = None
         tag = None
+        msg = ''
         arch = platform.machine().lower()
 
         # ============================================================
@@ -182,7 +173,7 @@ class DeviceInstaller():
         # ============================================================
         if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
             raw = tegra_version()
-            jp_code = jetpack_version(raw)
+            jp_code, msg = jetpack_version(raw)
             if jp_code in ['unsupported', 'unknown']:
                 tag = 'cpu'
             elif os.path.exists('/etc/nv_tegra_release'):
@@ -198,7 +189,6 @@ class DeviceInstaller():
             out = try_cmd('uname - a')
             if 'tegra' in out:
                 msg = 'Jetson GPU detected but not (yes) compatible'
-                warn(msg)
         # ============================================================
         # ROCm
         # ============================================================
@@ -208,11 +198,9 @@ class DeviceInstaller():
             cmp = toolkit_version_compare(version_str, rocm_version_range)
             if cmp == -1:
                 msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
-                warn(msg)
                 tag = 'cpu'
             elif cmp == 1:
                 msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
-                warn(msg)
                 tag = 'cpu'
             elif cmp == 0:
                 devices['ROCM']['found'] = True
@@ -220,7 +208,6 @@ class DeviceInstaller():
                 tag = f'rocm{version_str}'
             else:
                 msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
-                warn(msg)
 
         # ============================================================
         # CUDA
@@ -231,11 +218,9 @@ class DeviceInstaller():
             cmp = toolkit_version_compare(version_str, cuda_version_range)
             if cmp == -1:
                 msg = f'CUDA {version_str} < min {cuda_version_range["min"]}. Please upgrade.'
-                warn(msg)
                 tag = 'cpu'
             elif cmp == 1:
                 msg = f'CUDA {version_str} > max {cuda_version_range["max"]}. Falling back to CPU.'
-                warn(msg)
                 tag = 'cpu'
             elif cmp == 0:
                 devices['CUDA']['found'] = True
@@ -244,7 +229,6 @@ class DeviceInstaller():
                 tage = f'cu{major}{minor}'
             else:
                 msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
-                warn(msg)
 
         # ============================================================
         # APPLE MPS
@@ -265,7 +249,6 @@ class DeviceInstaller():
                 cmp = toolkit_version_compare(version_str, xpu_version_range)
                 if cmp == -1 or cmp == 1:
                     msg = f'XPU {version_str} out of supported range {xpu_version_range}. Falling back to CPU.'
-                    warn(msg)
                     tag = 'cpu'
                 elif cmp == 0 and (has_cmd('sycl-ls') or has_cmd('clinfo')):
                     devices['XPU']['found'] = True
@@ -273,7 +256,6 @@ class DeviceInstaller():
                     tag = 'xpu'
                 else:
                     msg = 'Intel GPU detected but not compoatible or oneAPI runtime is missing.'
-                    warn(msg)
 
         elif has_cmd('clinfo'):
             out = try_cmd('clinfo')
@@ -288,7 +270,7 @@ class DeviceInstaller():
             name = 'cpu'
             tag = 'cpu'
             
-        return (name, tag)
+        return (name, tag, msg)
 
     def check_and_install_requirements(self)->bool:
         if not os.path.exists(requirements_file):
