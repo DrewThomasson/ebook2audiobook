@@ -730,6 +730,7 @@ else
 			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
 			if [[ "$device_info_str" == "" ]]; then
 				echo "check_device_info() error: result is empty"
+				exit 1
 			fi
 			build_docker_image "$device_info_str" || exit 1
 			echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
