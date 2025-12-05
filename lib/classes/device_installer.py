@@ -87,14 +87,16 @@ class DeviceInstaller():
             if m:
                 parts = m.group(1).split(".")
                 major = parts[0]
-                minor = parts[1] if len(parts) > 1 else "0"
+                minor = parts[1] if len(parts) > 1 else 0
+                patch = parts[2] if len(parts) > 2 else 0
                 return f"{major}.{minor}"
             # HIP also implies ROCm
             m = re.search(r'hip\s*version\s*[:=]?\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
             if m:
                 parts = m.group(1).split(".")
                 major = parts[0]
-                minor = parts[1] if len(parts) > 1 else "0"
+                minor = parts[1] if len(parts) > 1 else 0
+                patch = parts[2] if len(parts) > 2 else 0
                 return f"{major}.{minor}"
             # ----- XPU / oneAPI -----
             m = re.search(r'(oneapi|xpu)\s*(toolkit\s*)?version\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)',
@@ -113,6 +115,7 @@ class DeviceInstaller():
             parts = version_str.split('.')
             major = int(parts[0])
             minor = int(parts[1]) if len(parts) > 1 else 0
+            patch = int(parts[2]) if len(parts) > 2 else 0
             current = (major, minor)
             if min_tuple != (0, 0) and current < min_tuple:
                 return -1
@@ -232,7 +235,8 @@ class DeviceInstaller():
                 devices['CUDA']['found'] = True
                 parts = version_str.split(".")
                 major = parts[0]
-                minor = parts[1] if len(parts) > 1 else "0"
+                minor = parts[1] if len(parts) > 1 else 0
+                patch = parts[2] if len(parts) > 2 else 0
                 name = 'cuda'
                 tage = f'cu{major}{minor}'
             else:
