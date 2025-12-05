@@ -31,9 +31,12 @@ RUN chmod +x /app/ebook2audiobook.sh
 RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'"
 
 RUN apt-get purge -y gcc g++ make python3-dev pkg-config curl && \
-	apt-get autoremove -y --purge && \
-	apt-get clean && \
-	rm -rf /var/lib/apt/lists/* ~/.cache/pip ~/.cargo/registry ~/.cargo/git
+    apt-get autoremove -y --purge && apt-get clean && \
+    rm -rf /var/lib/apt/lists/* ~/.cache/pip ~/.cargo/registry ~/.cargo/git \
+           /usr/share/doc/* /usr/share/man/* /usr/share/info/* /usr/share/locale/* \
+           /usr/local/share/doc/* /root/.cache/* \
+           /usr/local/lib/python*/dist-packages/*/tests /usr/local/lib/python*/site-packages/*/tests \
+           /usr/local/lib/python*/__pycache__ /usr/lib/python*/__pycache__
 
 ############################
 FROM ${BASE}
