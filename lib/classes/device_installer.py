@@ -2,6 +2,9 @@ import os, re, sys, platform, shutil, subprocess, json
 
 from functools import cached_property
 from typing import Union
+from packaging.version import Version, InvalidVersion
+from packaging.specifiers import SpecifierSet
+from packaging.markers import Marker
 from lib.conf import *
 
 class DeviceInstaller():
@@ -280,9 +283,6 @@ class DeviceInstaller():
             return False
         try:
             import importlib
-            from packaging.version import Version, InvalidVersion
-            from packaging.specifiers import SpecifierSet
-            from packaging.markers import Marker
             from tqdm import tqdm        
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
