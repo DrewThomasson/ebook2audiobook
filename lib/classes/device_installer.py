@@ -2,6 +2,7 @@ import os, re, sys, platform, shutil, subprocess, json
 
 from functools import cached_property
 from typing import Union
+from importlib.metadata import version, PackageNotFoundError
 from packaging.version import Version, InvalidVersion
 from packaging.specifiers import SpecifierSet
 from packaging.markers import Marker
@@ -37,7 +38,6 @@ class DeviceInstaller():
         
     def get_package_version(self, pkg:str)->Union[str, bool]:
         try:
-            from importlib.metadata import version, PackageNotFoundError
             return version(pkg)
         except PackageNotFoundError:
             return False
