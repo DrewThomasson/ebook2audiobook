@@ -23,6 +23,8 @@ RUN set -ex && \
     . "$HOME/.cargo/env" && \
     wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin
 
+ENV PATH="/opt/calibre:${PATH}"
+
 WORKDIR /app
 COPY . /app
 RUN chmod +x /app/ebook2audiobook.sh
