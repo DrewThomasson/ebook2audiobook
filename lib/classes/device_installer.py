@@ -1,6 +1,7 @@
 import os, re, sys, platform, shutil, subprocess, json
 
 from functools import cached_property
+from typing import Union
 from lib.conf import *
 
 class DeviceInstaller():
@@ -30,7 +31,7 @@ class DeviceInstaller():
             return json.dumps(device_info)
         return ''
         
-    def get_package_version(self, pkg:str)->str|bool:
+    def get_package_version(self, pkg:str)->Union[str, bool]:
         try:
             from importlib.metadata import version, PackageNotFoundError
             return version(pkg)
@@ -70,7 +71,7 @@ class DeviceInstaller():
             except Exception:
                 return ''
 
-        def toolkit_version_parse(text:str)->str|None:
+        def toolkit_version_parse(text:str)->Union[str, None]:
             if not text:
                 return None
             # ----- CUDA -----
@@ -98,7 +99,7 @@ class DeviceInstaller():
                 return m.group(3)
             return None
 
-        def toolkit_version_compare(version_str:str|None, version_range:dict)->int|None:
+        def toolkit_version_compare(version_str:Union[str, None], version_range:dict)->Union[int, None]:
             if version_str is None:
                 return None
             min_tuple = tuple(version_range.get('min', (0, 0)))
