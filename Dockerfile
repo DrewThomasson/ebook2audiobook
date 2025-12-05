@@ -14,14 +14,14 @@ ENV CALIBRE_DISABLE_CHECKS=1
 ENV CALIBRE_DISABLE_GUI=1
 
 RUN set -ex && \
-	apt-get update && \
-	apt-get install -y --allow-change-held-packages --no-install-recommends \
-		gcc g++ make python3-dev pkg-config curl wget xz-utils bash git \
-		libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 \
-		tesseract-ocr tesseract-ocr-$ISO3_LANG $DOCKER_PROGRAMS_STR && \
-	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-	. "$HOME/.cargo/env" && \
-	wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin
+    apt-get update && \
+    apt-get install -y --allow-change-held-packages --no-install-recommends \
+        gcc g++ make python3-dev python3-pip pkg-config curl wget xz-utils bash git \
+        libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 \
+        tesseract-ocr tesseract-ocr-$ISO3_LANG $DOCKER_PROGRAMS_STR && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    . "$HOME/.cargo/env" && \
+    wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin
 
 ENV PATH="/opt/calibre:/usr/bin:${PATH}"
 
