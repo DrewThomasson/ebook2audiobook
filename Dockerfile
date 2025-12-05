@@ -1,6 +1,6 @@
-ARG PYTHON_VERSION
-
+ARG PYTHON_VERSION=3.12
 ARG BASE=python:${PYTHON_VERSION}-slim
+
 FROM ${BASE} AS build
 
 ARG DOCKER_DEVICE_STR
@@ -9,7 +9,7 @@ ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh
 ARG ISO3_LANG
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
+ENV PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
 ENV CALIBRE_DISABLE_CHECKS=1
 ENV CALIBRE_DISABLE_GUI=1
 
@@ -23,6 +23,8 @@ RUN set -ex && \
 	. "$HOME/.cargo/env" && \
 	wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin
 
+ENV PATH="/opt/calibre:/usr/bin:${PATH}"
+
 WORKDIR /app
 COPY . /app
 RUN chmod +x /app/ebook2audiobook.sh
@@ -34,15 +36,12 @@ RUN apt-get purge -y gcc g++ make python3-dev pkg-config curl && \
 	rm -rf /var/lib/apt/lists/* ~/.cache/pip ~/.cargo/registry ~/.cargo/git
 
 ############################
-# RUNTIME IMAGE
-############################
 FROM ${BASE}
-ENV PATH="/root/.local/bin:$PATH"
+ENV PATH="/root/.local/bin:/opt/calibre:/usr/bin:${PATH}"
 ENV CALIBRE_DISABLE_CHECKS=1
 ENV CALIBRE_DISABLE_GUI=1
 
 COPY --from=build /usr/local/ /usr/local/
-# /root/.local removed here
 COPY --from=build /app /app
 
 WORKDIR /app

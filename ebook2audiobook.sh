@@ -692,12 +692,12 @@ function build_docker_image {
 	fi
 	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
 	local cmd_options=""
-	local py_vers="$PYTHON_VERSION"
+	local py_vers="$PYTHON_VERSION "
 	case "$TAG" in
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
-		jetson*)	cmd_options="--runtime nvidia"; py_vers="3.10" ;;
+		jetson*)	cmd_options="--runtime nvidia"; py_vers="3.10 " ;;
 		xpu)		cmd_options="--device=/dev/dri" ;;
 		mps)		cmd_options="" ;;
 		*)			cmd_options="" ;;
@@ -726,7 +726,7 @@ function build_docker_image {
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
 	fi
-	echo "Docker image ready! to run your docker: docker run $cmd_options -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
+	echo "Docker image ready! to run your docker: docker run ${cmd_options}-it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 }
 
 ########################################

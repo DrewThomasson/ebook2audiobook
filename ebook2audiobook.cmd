@@ -520,10 +520,10 @@ powershell -nologo -noprofile -command "if (!(Get-Command docker -ErrorAction Si
 if errorlevel 1 exit /b 1
 powershell -nologo -noprofile -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
 set "cmd_options="
-set "py_vers=%PYTHON_VERSION%"
+set "py_vers=%PYTHON_VERSION% "
 if /i "%TAG:~0,6%"=="jetson" (
 	set "cmd_options=--runtime nvidia"
-	set "py_vers=3.10"
+	set "py_vers=3.10 "
 ) else if /i "%TAG:~0,8%"=="rocm" (
 	set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 ) else if /i "%TAG:~0,2%"=="cu" (
@@ -557,7 +557,7 @@ if %HAS_COMPOSE%==0 (
 		-t "%DOCKER_IMG_NAME%" .
 	if errorlevel 1 exit /b 1
 )
-echo Docker image ready! to run your docker: docker run %cmd_options% -it --rm -p 7860:7860 %DOCKER_IMG_NAME%
+echo Docker image ready! to run your docker: docker run %cmd_options%-it --rm -p 7860:7860 %DOCKER_IMG_NAME%
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS
