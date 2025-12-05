@@ -713,7 +713,8 @@ function build_docker_image {
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
 	fi
-	echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
+	cmd_options=""
+	echo "Docker image ready! to run your docker: docker run $cmd_options -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 }
 
 ########################################
