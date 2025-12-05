@@ -30,7 +30,7 @@ set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "ARCH=%PROCESSOR_ARCHITECTURE%"
 set "PYTHON_VERSION=3.12"
-set "PYTHON_SCOOP_PKG=312"
+set "PYTHON_SCOOP=python%PYTHON_VERSION:.=%"
 set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
@@ -458,7 +458,7 @@ exit /b 0
 set "arg=%~1"
 powershell -NoLogo -NoProfile -Command ^
 @"
-python - << 'EOF'
+%PYTHON_SCOOP% - << 'EOF'
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 result = device.check_device_info(r"%arg%")
@@ -515,15 +515,11 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-:: Extract TAG from JSON (PowerShell)
 for /f %%A in ('powershell -NoLogo -Command "(ConvertFrom-Json ''%ARG%'').tag"') do set "TAG=%%A"
-:: Check Docker installed
 powershell -nologo -noprofile -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
-:: Check if docker compose exists
 powershell -nologo -noprofile -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
 set "HAS_COMPOSE=%errorlevel%"
-:: Build image name
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 if %HAS_COMPOSE%==0 (
 	:: Use docker compose v2
@@ -544,6 +540,12 @@ if %HAS_COMPOSE%==0 (
 	if errorlevel 1 exit /b 1
 )
 set "cmd_options="
+if /i "%TAG%"=="cpu"      set "cmd_options="
+if /i "%TAG:~0,2%"=="cu"  set "cmd_options=--gpus all"
+if /i "%TAG%"=="mps"      set "cmd_options="
+if /i "%TAG%"=="xpu"      set "cmd_options=--device=/dev/dri"
+if /i "%TAG:~0,4%"=="rocm" set "cmd_options=--device=/dev/kfd --device=/dev/dri"
+if /i "%TAG:~0,6%"=="jetson" set "cmd_options=--runtime nvidia"
 echo Docker image ready! to run your docker: docker run %cmd_options% -it --rm -p 7860:7860 %DOCKER_IMG_NAME%
 exit /b 0
 
@@ -583,10 +585,10 @@ if defined arguments.help (
 ) else (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		if "!DOCKER_DEVICE_STR!"=="" (
-			call python --version 2>$null || call scoop install python%PYTHON_SCOOP_PKG%
-			where /Q python
+			call %PYTHON_SCOOP% --version >null 2>&1 || call scoop install %PYTHON_SCOOP% 2>null
+			where /Q %PYTHON_SCOOP%
 			if errorlevel 1 (
-				echo %ESC%[31m=============== Python installation failed.%ESC%[0m
+				echo %ESC%[31m=============== %PYTHON_SCOOP% installation failed.%ESC%[0m
 				goto :failed
 			)
 			call :check_docker
