@@ -4,13 +4,13 @@ ARG DOCKER_PROGRAMS_STR
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG
 
+ARG BASE=python:${PYTHON_VERSION}-slim
+FROM ${BASE} AS build
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
 ENV CALIBRE_DISABLE_CHECKS=1
 ENV CALIBRE_DISABLE_GUI=1
-
-ARG BASE=python:${PYTHON_VERSION}-slim
-FROM ${BASE} AS build
 
 RUN set -ex && \
 	apt-get update && \
