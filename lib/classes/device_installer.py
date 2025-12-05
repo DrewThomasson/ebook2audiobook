@@ -29,7 +29,7 @@ class DeviceInstaller():
             os_env = 'linux' if name == 'jetson' else self.check_platform
         elif mode == 'build_docker':
             os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
-            pyvenv = '3.10' if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
+            pyvenv = [3,10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
         if all([name, tag, os_env, arch, pyvenv]):
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
             return json.dumps(device_info)
@@ -441,13 +441,13 @@ class DeviceInstaller():
                                     tag = device_info['tag']
                                     url = torch_matrix[device_info['tag']]['url']
                                     toolkit_version = "".join(c for c in tag if c.isdigit())
-                                    tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                     if device_info['name'] == 'jetson':
                                         py_major, py_minor = device_info['pyvenv']
                                         tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                         torch_pkg = f"{url}/v{toolkit_version}/torch-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
                                         torchaudio_pkg =   f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
                                     else:
+                                        tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
                                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
