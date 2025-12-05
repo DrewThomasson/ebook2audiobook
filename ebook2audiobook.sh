@@ -27,9 +27,9 @@ export PATH="$CONDA_BIN_PATH:$PATH"
 NATIVE="native"
 BUILD_DOCKER="build_docker"
 ARCH=$(uname -m)
-PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.12"
+PYTHON_VERSION="$MAX_PYTHON_VERSION"
 PYTHON_ENV="python_env"
 SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
@@ -692,12 +692,23 @@ function build_docker_image {
 	fi
 	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
 	local cmd_options=""
+	local py_vers="$PYTHON_VERSION"
+	case "$TAG" in
+		cpu)		cmd_options="";;
+		cu*)		cmd_options="--gpus all" ;;
+		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
+		jetson*)	cmd_options="--runtime nvidia"; py_vers="3.10" ;;
+		xpu)		cmd_options="--device=/dev/dri" ;;
+		mps)		cmd_options="" ;;
+		*)			cmd_options="" ;;
+	esac
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
 	if docker compose version >/dev/null 2>&1; then
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
 			--progress plain \
 			build \
 			--no-cache \
+			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
@@ -707,6 +718,7 @@ function build_docker_image {
 		docker build \
 			--no-cache \
 			--progress plain \
+			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
@@ -714,15 +726,6 @@ function build_docker_image {
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
 	fi
-	case "$TAG" in
-		cpu)       cmd_options="" ;;
-		cu*)       cmd_options="--gpus all" ;;
-		rocm*)     cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
-		jetson*)   cmd_options="--runtime nvidia" ;;
-		xpu)       cmd_options="--device=/dev/dri" ;;
-		mps)       cmd_options="" ;;
-		*)         cmd_options="" ;;
-	esac
 	echo "Docker image ready! to run your docker: docker run $cmd_options -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 }
 

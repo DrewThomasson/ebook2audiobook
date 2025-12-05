@@ -519,11 +519,28 @@ for /f %%A in ('powershell -NoLogo -Command "(ConvertFrom-Json ''%ARG%'').tag"')
 powershell -nologo -noprofile -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
 powershell -nologo -noprofile -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
+set "cmd_options="
+set "py_vers=%PYTHON_VERSION%"
+if /i "%TAG:~0,6%"=="jetson" (
+	set "cmd_options=--runtime nvidia"
+	set "py_vers=3.10"
+) else if /i "%TAG:~0,8%"=="rocm" (
+	set "cmd_options=--device=/dev/kfd --device=/dev/dri"
+) else if /i "%TAG:~0,2%"=="cu" (
+	set "cmd_options=--gpus all"
+) else if /i "%TAG%"=="xpu" (
+	set "cmd_options=--device=/dev/dri"
+) else if /i "%TAG%"=="mps" (
+	set "cmd_options="
+) else if /i "%TAG%"=="cpu" (
+	set "cmd_options="
+)
 set "HAS_COMPOSE=%errorlevel%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 if %HAS_COMPOSE%==0 (
 	:: Use docker compose v2
 	BUILD_NAME="%DOCKER_IMG_NAME%" docker compose --progress=plain build --no-cache ^
+		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
@@ -532,6 +549,7 @@ if %HAS_COMPOSE%==0 (
 ) else (
 	:: Use docker build (fallback)
 	docker build --no-cache --progress plain ^
+		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
@@ -539,13 +557,6 @@ if %HAS_COMPOSE%==0 (
 		-t "%DOCKER_IMG_NAME%" .
 	if errorlevel 1 exit /b 1
 )
-set "cmd_options="
-if /i "%TAG%"=="cpu"      set "cmd_options="
-if /i "%TAG:~0,2%"=="cu"  set "cmd_options=--gpus all"
-if /i "%TAG%"=="mps"      set "cmd_options="
-if /i "%TAG%"=="xpu"      set "cmd_options=--device=/dev/dri"
-if /i "%TAG:~0,4%"=="rocm" set "cmd_options=--device=/dev/kfd --device=/dev/dri"
-if /i "%TAG:~0,6%"=="jetson" set "cmd_options=--runtime nvidia"
 echo Docker image ready! to run your docker: docker run %cmd_options% -it --rm -p 7860:7860 %DOCKER_IMG_NAME%
 exit /b 0
 
