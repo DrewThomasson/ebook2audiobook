@@ -685,12 +685,13 @@ function build_docker_image {
 	if [[ "$ARG" == "" ]]; then
 		echo "build_docker_image() error: ARG is empt"
 		return 1
-	fi 
-	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
+	fi
 	if ! command -v docker >/dev/null 2>&1; then
 		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
 		return 1
 	fi
+	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
+	local cmd_options=""
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
 	if docker compose version >/dev/null 2>&1; then
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
@@ -713,7 +714,15 @@ function build_docker_image {
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
 	fi
-	cmd_options=""
+	case "$TAG" in
+		cpu)       cmd_options="" ;;
+		cu*)       cmd_options="--gpus all" ;;
+		rocm*)     cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
+		jetson*)   cmd_options="--runtime nvidia" ;;
+		xpu)       cmd_options="--device=/dev/dri" ;;
+		mps)       cmd_options="" ;;
+		*)         cmd_options="" ;;
+	esac
 	echo "Docker image ready! to run your docker: docker run $cmd_options -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
 }
 
