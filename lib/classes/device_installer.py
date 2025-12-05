@@ -29,7 +29,7 @@ class DeviceInstaller():
             os_env = 'linux' if name == 'jetson' else self.check_platform
         elif mode == 'build_docker':
             os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
-            pyenv = '3.10' if name == 'jetson' else pyenv
+            pyenv = '3.10' if tag in ['jetson51', 'jetson60', 'jetson61'] else pyenv
         if all([name, tag, os_env, arch, pyenv]):
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyenv, "tag": tag, "note": msg}
             return json.dumps(device_info)
