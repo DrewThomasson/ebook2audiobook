@@ -1,11 +1,12 @@
 ARG PYTHON_VERSION
+
+ARG BASE=python:${PYTHON_VERSION}-slim
+FROM ${BASE} AS build
+
 ARG DOCKER_DEVICE_STR
 ARG DOCKER_PROGRAMS_STR
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG
-
-ARG BASE=python:${PYTHON_VERSION}-slim
-FROM ${BASE} AS build
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
