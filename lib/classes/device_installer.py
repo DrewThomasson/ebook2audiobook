@@ -29,6 +29,7 @@ class DeviceInstaller():
             os_env = 'linux' if name == 'jetson' else self.check_platform
         elif mode == 'build_docker':
             os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
+            pyenv = '3.10' if name == 'jetson' else pyenv
         if all([name, tag, os_env, arch, pyenv]):
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyenv, "tag": tag, "note": msg}
             return json.dumps(device_info)
@@ -435,6 +436,7 @@ class DeviceInstaller():
                                     toolkit_version = "".join(c for c in tag if c.isdigit())
                                     tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                     if device_info['name'] == 'jetson':
+                                        tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                         torch_pkg = f"{url}/v{toolkit_version}/torch-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
                                         torchaudio_pkg =   f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
                                     else:
