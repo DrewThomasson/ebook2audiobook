@@ -229,7 +229,9 @@ class DeviceInstaller():
                 tag = 'cpu'
             elif cmp == 0:
                 devices['CUDA']['found'] = True
-                major, minor = version_str.split('.')
+                parts = version_str.split(".")
+                major = parts[0]
+                minor = parts[1] if len(parts) > 1 else "0"
                 name = 'cuda'
                 tage = f'cu{major}{minor}'
             else:
@@ -438,7 +440,6 @@ class DeviceInstaller():
                                     if device_info['name'] == 'jetson':
                                         py_major, py_minor = device_info['pyvenv']
                                         tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
-                                        print(tag_py)
                                         torch_pkg = f"{url}/v{toolkit_version}/torch-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
                                         torchaudio_pkg =   f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
                                     else:
