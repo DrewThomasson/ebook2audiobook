@@ -30,6 +30,7 @@ set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "ARCH=%PROCESSOR_ARCHITECTURE%"
 set "PYTHON_VERSION=3.12"
+set "PYTHON_SCOOP_PKG=312"
 set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
@@ -223,7 +224,11 @@ if errorlevel 1 (
 	set "OK_SCOOP=1"
 	goto :install_programs
 )
-goto :check_conda
+if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+	goto :check_required_programs
+) else (
+	goto :check_conda
+)
 exit /b
 
 :check_required_programs
@@ -568,7 +573,7 @@ if defined arguments.help (
 		where /Q conda
 		if errorlevel 0 (
 			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-			python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
+			call python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
 			call conda deactivate
 		) else (
 			echo Ebook2Audiobook must be installed before to run --help.
@@ -578,9 +583,15 @@ if defined arguments.help (
 ) else (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		if "!DOCKER_DEVICE_STR!"=="" (
+			call python --version 2>$null || call scoop install python%PYTHON_SCOOP_PKG%
+			where /Q python
+			if errorlevel 1 (
+				echo %ESC%[31m=============== Python installation failed.%ESC%[0m
+				goto :failed
+			)
 			call :check_docker
 			if errorlevel 1 goto :failed
-			docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
+			call docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
 			if errorlevel 0 (
 				echo [STOP] Docker image '%DOCKER_IMG_NAME%' already exists. Aborting build.
 				echo Delete it using: docker rmi %DOCKER_IMG_NAME%
