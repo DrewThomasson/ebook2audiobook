@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Added windows to the matrix
+        #  windows and linux can be added to the matrix when good runners for those are made available for this repo
         os: [macos]
     runs-on: [self-hosted, "${{ matrix.os }}"]
     
