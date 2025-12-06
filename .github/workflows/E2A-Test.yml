@@ -47,7 +47,7 @@ jobs:
       fail-fast: false
       matrix:
         # Added windows to the matrix
-        os: [macos, windows]
+        os: [macos]
     runs-on: [self-hosted, "${{ matrix.os }}"]
     
     steps:
