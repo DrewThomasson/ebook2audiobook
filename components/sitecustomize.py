@@ -52,6 +52,7 @@ def apply_transformers_patch()->None:
 			_patch_module_attr(mod,"check_torch_load_is_safe")
 
 # NVIDIA CUDA (Linux desktop)
+'''
 _add_gpu_paths([
 	"/usr/local/cuda/lib64",
 	"/usr/local/cuda/lib",
@@ -89,5 +90,5 @@ if "CONDA_PREFIX" in os.environ:
 		f"{os.environ['CONDA_PREFIX']}/lib",
 		f"{os.environ['CONDA_PREFIX']}/lib64"
 	])
-
+'''
 apply_transformers_patch()
