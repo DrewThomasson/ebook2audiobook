@@ -52,7 +52,6 @@ def apply_transformers_patch()->None:
 			_patch_module_attr(mod,"check_torch_load_is_safe")
 
 # NVIDIA CUDA (Linux desktop)
-'''
 _add_gpu_paths([
 	"/usr/local/cuda/lib64",
 	"/usr/local/cuda/lib",
@@ -63,7 +62,7 @@ _add_gpu_paths([
 
 # NVIDIA Jetson / aarch64
 _add_gpu_paths([
-	"/usr/local/cuda-*/targets/aarch64-linux/lib",
+	"/usr/local/cuda-*/targets/aarch64-linux",
 	"/usr/lib/aarch64-linux-gnu",
 	"/usr/lib/aarch64-linux-gnu/tegra",
 ])
@@ -90,5 +89,5 @@ if "CONDA_PREFIX" in os.environ:
 		f"{os.environ['CONDA_PREFIX']}/lib",
 		f"{os.environ['CONDA_PREFIX']}/lib64"
 	])
-'''
+
 apply_transformers_patch()
