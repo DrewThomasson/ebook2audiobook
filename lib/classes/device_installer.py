@@ -456,10 +456,9 @@ class DeviceInstaller():
                                     #    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--force-reinstall', '--no-cache-dir', '--use-pep517', '--no-binary', 'scikit-learn', 'scikit-learn'])
                                     if device_info['name'] == 'cuda':
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
-                                    numpy_version = Version(self.get_package_version('numpy'))
-                                    msg = 'Relaunching app.py...'
-                                    print(msg)
-                                    os.execv(sys.executable, [sys.executable] + sys.argv)
+                                    #msg = 'Relaunching app.py...'
+                                    #print(msg)
+                                    #os.execv(sys.executable, [sys.executable] + sys.argv)
                                 except subprocess.CalledProcessError as e:
                                     error = f'Failed to install torch package: {e}'
                                     print(error)
