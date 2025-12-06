@@ -20,11 +20,12 @@ RUN set -ex && \
     apt-get update && \
     apt-get install -y --allow-change-held-packages --no-install-recommends \
         gcc g++ make python3-dev pkg-config curl wget xz-utils bash git \
-        libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 \
-        tesseract-ocr tesseract-ocr-$ISO3_LANG $DOCKER_PROGRAMS_STR && \
+        libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     . "$HOME/.cargo/env" && \
-    wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin
+    wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin && \
+    apt-get purge -y --auto-remove && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
@@ -43,6 +44,14 @@ ENV DEBIAN_FRONTEND=noninteractive \
     CALIBRE_DISABLE_CHECKS=1 \
     CALIBRE_DISABLE_GUI=1 \
     PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
+
+RUN RUN apt-get update && \
+	apt-get install -y \
+		libgomp1 libfontconfig1 libsndfile1 \
+		$DOCKER_PROGRAMS_STR tesseract-ocr-$ISO3_LANG && \
+	apt-get purge -y --auto-remove && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
 
 # Copy all runtime binaries
 COPY --from=build /usr/bin/ /usr/bin/
