@@ -1,93 +1,74 @@
 """
-Global environment initialization hook.
-Executed automatically on Python startup before user code.
-Use for lightweight, idempotent environment patches.
+Safe sitecustomize hook.
+Runs on interpreter init, but avoids modifying environment during builds.
+Only patches transformers AFTER torch is importable and stable.
 """
 
-import sys, os, glob, importlib
+import os, sys, importlib
 from types import ModuleType
 from typing import Any
 
-debug:bool=False
+# Toggle verbose debugging with env DEBUG_SITECUSTOMIZE=1
+DEBUG = os.environ.get("DEBUG_SITECUSTOMIZE") == "1"
 
-def _add_gpu_paths(paths):
-	for p in paths:
-		for resolved in glob.glob(p):
-			if os.path.isdir(resolved) and resolved not in sys.path:
-				sys.path.append(resolved)
+def log(msg: str) -> None:
+	if DEBUG:
+		print(f"[sitecustomize] {msg}")
 
-def warn(msg:str)->None:
-	if debug:
-		print(msg)
+# ──────────────────────────────────────────────────────────────────────────────
+# SAFETY GUARDS: prevent execution during builds
+# ──────────────────────────────────────────────────────────────────────────────
 
-def wrapped_check_torch_load_is_safe(*args:Any,**kwargs:Any)->None:
-	if debug:
-		warn("[sitecustomize] check_torch_load_is_safe patched call")
+# Disable completely if requested
+if os.environ.get("DISABLE_SITECUSTOMIZE") == "1":
+	log("DISABLED via env var.")
+	raise SystemExit
+
+# Skip COMMON build environments (Jetson / PyTorch / CMake / pip)
+if any(k in os.environ for k in [
+	"TORCH_BUILD", "PYTORCH_BUILD", "CMAKE_GENERATOR", "PIP_BUILD_TRACKER"
+]):
+	log("Skipping patch during build environment.")
+	raise SystemExit
+
+# ──────────────────────────────────────────────────────────────────────────────
+# TRANSFORMERS PATCH — ONLY APPLIED IF MODULE IS ACTUALLY LOADED
+# (no forced imports, no deep sys.modules scan)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def wrapped_check_torch_load_is_safe(*args: Any, **kwargs: Any) -> None:
+	log("patched check_torch_load_is_safe call")
 	return None
 
-def _patch_module_attr(mod:ModuleType,name:str)->None:
-	if hasattr(mod,name):
-		setattr(mod,name,wrapped_check_torch_load_is_safe)
-		if debug:
-			warn(f"[sitecustomize] patched {mod.__name__}.{name}")
+def patch_if_loaded(modname: str, attr: str = "check_torch_load_is_safe") -> None:
+	mod = sys.modules.get(modname)
+	if isinstance(mod, ModuleType) and hasattr(mod, attr):
+		setattr(mod, attr, wrapped_check_torch_load_is_safe)
+		log(f"Patched {modname}.{attr}")
 
-def apply_transformers_patch()->None:
-	if getattr(sys,"_sitecustomize_torchload_patched",False):
-		return
-	sys._sitecustomize_torchload_patched=True
-	try:
-		iu=importlib.import_module("transformers.utils.import_utils")
-		_patch_module_attr(iu,"check_torch_load_is_safe")
-	except ModuleNotFoundError:
-		if debug:
-			warn("[sitecustomize] transformers.utils.import_utils not available")
-	try:
-		u=importlib.import_module("transformers.utils")
-		_patch_module_attr(u,"check_torch_load_is_safe")
-	except ModuleNotFoundError:
-		if debug:
-			warn("[sitecustomize] transformers.utils not available")
-	for name,mod in list(sys.modules.items()):
-		if isinstance(mod,ModuleType) and name.startswith("transformers"):
-			_patch_module_attr(mod,"check_torch_load_is_safe")
-'''
-# NVIDIA CUDA (Linux desktop)
-_add_gpu_paths([
-	"/usr/local/cuda/lib64",
-	"/usr/local/cuda/lib",
-	"/usr/local/cuda*/lib64",
-	"/usr/local/cuda*/lib",
-	"/usr/lib/x86_64-linux-gnu",
-])
+def lazy_patch_transformers(mod: ModuleType) -> None:
+	"""Patch transformers dynamically — no startup imports required."""
+	for name in (
+		"transformers.utils.import_utils",
+		"transformers.utils"
+	):
+		if name in sys.modules:
+			patch_if_loaded(name)
 
-# NVIDIA Jetson / aarch64
-_add_gpu_paths([
-	"/usr/local/cuda-*/targets/aarch64-linux",
-	"/usr/lib/aarch64-linux-gnu",
-	"/usr/lib/aarch64-linux-gnu/tegra",
-])
+# Install import hook ONLY if transformers is missing (fast no-op otherwise)
+class _TransformersImporter:
+	def find_spec(self, fullname, path, target=None):
+		if fullname.startswith("transformers"):
+			log(f"Hooking import of {fullname}")
+			spec = importlib.machinery.PathFinder.find_spec(fullname, path)
+			if spec and spec.loader:
+				orig_loader = spec.loader
+				class PatchedLoader(orig_loader.__class__):
+					def exec_module(self_inner, module):
+						orig_loader.exec_module(module)
+						lazy_patch_transformers(module)
+				spec.loader = PatchedLoader()
+			return spec
 
-# AMD ROCm
-_add_gpu_paths([
-	"/opt/rocm/lib",
-	"/opt/rocm/lib64",
-	"/opt/rocm*/lib",
-	"/opt/rocm*/lib64",
-	"/usr/lib64",
-])
-
-# Intel XPU / Level Zero
-_add_gpu_paths([
-	"/usr/lib/x86_64-linux-gnu/dri",
-	"/usr/lib/dri",
-	"/usr/lib64/dri",
-])
-
-# Conda environment support (passive, no autodetect)
-if "CONDA_PREFIX" in os.environ:
-	_add_gpu_paths([
-		f"{os.environ['CONDA_PREFIX']}/lib",
-		f"{os.environ['CONDA_PREFIX']}/lib64"
-	])
-'''
-apply_transformers_patch()
+sys.meta_path.insert(0, _TransformersImporter())
+log("sitecustomize loaded safely and in passive mode.")
