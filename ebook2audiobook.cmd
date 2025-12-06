@@ -444,11 +444,11 @@ if errorlevel 1 goto :failed
 for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
 	set "torch_ver=%%A"
 )
-call :compare_versions "%torch_ver%" "2.2.2"
-if /I "%cmp_result%"=="LEQ" (
-	python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
-	if errorlevel 1 goto :failed
-)
+::call :compare_versions "%torch_ver%" "2.2.2"
+::if /I "%cmp_result%"=="LEQ" (
+::	python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
+::	if errorlevel 1 goto :failed
+::)
 python -m unidic download
 if errorlevel 1 goto :failed
 echo [ebook2audiobook] Installation completed.

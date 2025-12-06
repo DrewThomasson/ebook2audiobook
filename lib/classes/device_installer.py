@@ -456,8 +456,6 @@ class DeviceInstaller():
                                     if device_info['name'] == 'cuda':
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
                                     numpy_version = Version(self.get_package_version('numpy'))
-                                    if Version(torch_version) <= Version('2.2.2') and numpy_version and numpy_version >= Version('2.0.0'):
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'numpy<2'])
                                     msg = 'Relaunching app.py...'
                                     print(msg)
                                     os.execv(sys.executable, [sys.executable] + sys.argv)
