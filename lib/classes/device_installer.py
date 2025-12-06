@@ -454,8 +454,8 @@ class DeviceInstaller():
                                     #subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
                                     #if device_info['name'] == 'jetson':
                                     #    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--force-reinstall', '--no-cache-dir', '--use-pep517', '--no-binary', 'scikit-learn', 'scikit-learn'])
-                                    if device_info['name'] == 'cuda':
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
+                                    #if device_info['name'] == 'cuda':
+                                    #    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
                                     #msg = 'Relaunching app.py...'
                                     #print(msg)
                                     #os.execv(sys.executable, [sys.executable] + sys.argv)
