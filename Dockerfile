@@ -19,13 +19,20 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN set -ex && \
     apt-get update && \
     apt-get install -y --allow-change-held-packages --no-install-recommends \
-        gcc g++ make python3-dev python3-pip pkg-config curl wget xz-utils bash git \
+        gcc g++ make python3-dev pkg-config curl wget xz-utils bash git \
         libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 \
-        tesseract-ocr tesseract-ocr-$ISO3_LANG $DOCKER_PROGRAMS_STR && \
-    curl https://sh.rustup.rs -sSf | sh -s -- -y && . "$HOME/.cargo/env" && \
+        tesseract-ocr tesseract-ocr-$ISO3_LANG $DOCKER_PROGRAMS_STR \
+		fonts-dejavu-core fonts-liberation2 fonts-noto-core fonts-noto-extra fonts-noto-mono \
+		fonts-noto-cjk fonts-noto-cjk-extra fonts-ipafont-gothic fonts-ipafont-mincho \
+		fonts-noto-arabic fonts-noto-naskh-arabic fonts-noto-kufi-arabic fonts-noto-hebrew fonts-noto-syriac fonts-noto-armenian fonts-noto-georgian \
+		fonts-noto-devanagari fonts-noto-bengali fonts-noto-gujarati fonts-noto-gurmukhi fonts-noto-oriya fonts-noto-tamil fonts-noto-telugu fonts-noto-kannada fonts-noto-malayalam \
+		fonts-noto-thai fonts-noto-lao fonts-noto-khmer fonts-noto-buhid fonts-noto-tagbanwa fonts-noto-batak fonts-noto-balinese fonts-noto-javanese \
+		fonts-noto-ethiopic fonts-noto-tifinagh fonts-noto-cherokee fonts-noto-osage fonts-STIX fonts-STIX-two \
+		fonts-noto-math fonts-noto-color-emoji fonts-symbola && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    . "$HOME/.cargo/env" && \
     wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin
 
-# Add calibre binaries to PATH
 ENV PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
 WORKDIR /app
