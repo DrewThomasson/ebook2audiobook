@@ -11,6 +11,9 @@ if errorlevel 1 (
 :: Real ESC byte via PowerShell (RELIABLE)
 for /f "delims=" %%e in ('powershell -NoLogo -NoProfile -Command "[char]27"') do set "ESC=%%e"
 
+:: OS lang in iso3
+for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
+
 :: Capture all arguments into ARGS
 set "ARGS=%*"
 set "NATIVE=native"
@@ -315,16 +318,15 @@ if not "%OK_PROGRAMS%"=="0" (
 		if "%%p"=="tesseract" (
 			where /Q !prog!
 			if not errorlevel 1 (
-				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "tesslang=%%i"
-				echo Detected system language: !OS_LANG! → downloading OCR language: !tesslang!
+				echo Detected system language: !OS_LANG! → downloading OCR language: %ISO3_LANG%
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
-				if not exist "!tessdata!\!tesslang!.traineddata" (
-					powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
+				if not exist "!tessdata!\%ISO3_LANG%.traineddata" (
+					powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
 				)
-				if exist "!tessdata!\!tesslang!.traineddata" (
-					echo Tesseract OCR language !tesslang! installed in !tessdata!
+				if exist "!tessdata!\%ISO3_LANG%.traineddata" (
+					echo Tesseract OCR language %ISO3_LANG% installed in !tessdata!
 				) else (
-					echo Failed to install OCR language !tesslang!
+					echo Failed to install OCR language %ISO3_LANG%
 				)
 			)
 		)

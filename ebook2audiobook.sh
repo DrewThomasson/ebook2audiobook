@@ -24,6 +24,8 @@ export CONDA_BIN_PATH="$CONDA_HOME/bin"
 export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
 export PATH="$CONDA_BIN_PATH:$PATH"
 
+ISO3_LANG="$(get_iso3_lang $OS_LANG)"
+
 NATIVE="native"
 BUILD_DOCKER="build_docker"
 ARCH=$(uname -m)
