@@ -58,7 +58,6 @@ RUN apt-get update && \
 
 # Copy all runtime binaries
 COPY --from=build /usr/local/ /usr/local/
-COPY --from=build /opt/calibre/ /opt/calibre/
 COPY --from=build /root/.local/ /root/.local/
 COPY --from=build /app /app
 
