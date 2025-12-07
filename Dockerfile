@@ -21,7 +21,7 @@ RUN set -ex && apt-get update && \
     apt-get install -y --no-install-recommends --allow-change-held-packages \
         gcc g++ make python3-dev pkg-config curl wget xz-utils bash git \
         libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 \
-        libgdk-pixbuf-2.0-0 libxcb-cursor0 && \
+        libgdk-pixbuf-2.0-0 libxcb-cursor0
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -46,7 +46,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN set -ex && apt-get update && apt-get install -y --no-install-recommends --allow-change-held-packages \
     libgomp1 libfontconfig1 libsndfile1 libxrender1 libxext6 libxi6 libxcb1 \
     ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG} && \
-    wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin && \
+    wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin
 	
 RUN chmod +x /app/ebook2audiobook.sh
 RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'"
