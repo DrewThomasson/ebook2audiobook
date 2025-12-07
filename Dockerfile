@@ -62,6 +62,7 @@ RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/*
 
 # Copy all runtime binaries and app
+COPY --from=build /usr/bin/ /usr/bin/
 COPY --from=build /usr/local/ /usr/local/
 COPY --from=build /app /app
 
