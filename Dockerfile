@@ -52,14 +52,14 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	NVIDIA_DRIVER_CAPABILITIES=compute,utility \
     PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
-RUN apt-get update && \
-	apt-get install -y libgomp1 libfontconfig1 libsndfile1 && \
-	apt-get install -y ${DOCKER_PROGRAMS_STR} && \
-	apt-get install -y tesseract-ocr-${ISO3_LANG} && \
-    wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin && \
-	apt-get purge -y --auto-remove && \
-	apt-get clean && \
-	rm -rf /var/lib/apt/lists/*
+RUN apt-get update
+RUN apt-get install -y libgomp1 libfontconfig1 libsndfile1
+RUN apt-get install -y ${DOCKER_PROGRAMS_STR}
+RUN apt-get install -y tesseract-ocr-${ISO3_LANG}
+RUN wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin
+RUN apt-get purge -y --auto-remove
+RUN apt-get clean
+RUN rm -rf /var/lib/apt/lists/*
 
 # Copy all runtime binaries and app
 COPY --from=build /usr/local/ /usr/local/
