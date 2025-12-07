@@ -19,7 +19,7 @@ ENV PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin
 
 # Install everything needed for building + runtime deps that calibre might need
 RUN set -ex && apt-get update
-RUN apt-get install -y --no-install-recommends --allow-change-held-packages gcc g++ make python3-dev pkg-config curl wget xz-utils bash git libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 libgomp1 libfontconfig1 libsndfile1 libxrender1 libxext6 libxi6 libxcb1 \
+RUN apt-get install -y --no-install-recommends --allow-change-held-packages gcc g++ make python3-dev pkg-config curl wget xz-utils bash git libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 libgomp1 libfontconfig1 libsndfile1 libxrender1 libxext6 libxi6 libxcb1
 RUN apt-get install -y --no-install-recommends --allow-change-held-packages ${DOCKER_PROGRAMS_STR}
 RUN apt-get install -y --no-install-recommends --allow-change-held-packages tesseract-ocr-${ISO3_LANG}
 RUN rm -rf /var/lib/apt/lists/*
