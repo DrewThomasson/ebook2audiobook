@@ -53,8 +53,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
 RUN apt-get update && \
-	apt-get install -y \
-		libgomp1 libfontconfig1 libsndfile1 && \
+	apt-get install -y libgomp1 libfontconfig1 libsndfile1 && \
 	apt-get install -y ${DOCKER_PROGRAMS_STR} && \
 	apt-get install -y tesseract-ocr-${ISO3_LANG} && \
     wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin && \
