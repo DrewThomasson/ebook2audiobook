@@ -19,12 +19,13 @@ ENV PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin
 
 RUN set -ex && apt-get update
 RUN apt-get install -y --no-install-recommends --allow-change-held-packages gcc g++ make python3-dev pkg-config curl wget xz-utils bash git libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0
-RUN chmod +x /app/ebook2audiobook.sh
-RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'"
-RUN apt-get purge -y --auto-remove && apt-get clean && rm -rf /var/lib/apt/lists/
 
 WORKDIR /app
 COPY . /app
+
+RUN chmod +x /app/ebook2audiobook.sh
+RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'"
+RUN apt-get purge -y --auto-remove && apt-get clean && rm -rf /var/lib/apt/lists/
 
 ############################
 # RUNTIME IMAGE
