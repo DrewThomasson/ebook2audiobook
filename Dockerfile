@@ -54,8 +54,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update && \
 	apt-get install -y \
-		libgomp1 libfontconfig1 libsndfile1 \
-		${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG} && \
+		libgomp1 libfontconfig1 libsndfile1 && \
+	apt-get install -y ${DOCKER_PROGRAMS_STR} && \
+	apt-get install -y tesseract-ocr-${ISO3_LANG} && \
     wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin && \
 	apt-get purge -y --auto-remove && \
 	apt-get clean && \
