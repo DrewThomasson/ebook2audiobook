@@ -60,9 +60,6 @@ set "BROWSER_HELPER=%SCRIPT_DIR%\.bh.ps1"
 set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 
-:: OS lang in iso3
-for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
-
 set "OK_SCOOP=0"
 set "OK_CONDA=0"
 set "OK_PROGRAMS=0"
@@ -318,6 +315,7 @@ if not "%OK_PROGRAMS%"=="0" (
 		if "%%p"=="tesseract" (
 			where /Q !prog!
 			if not errorlevel 1 (
+				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
 				echo Detected system language: !OS_LANG! → downloading OCR language: %ISO3_LANG%
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 				if not exist "!tessdata!\%ISO3_LANG%.traineddata" (
