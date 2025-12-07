@@ -14,34 +14,26 @@ ARG ISO3_LANG
 ENV DEBIAN_FRONTEND=noninteractive \
     CALIBRE_DISABLE_CHECKS=1 \
     CALIBRE_DISABLE_GUI=1 \
-	PYTHONUNBUFFERED=1 \
-    PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
+    PYTHONUNBUFFERED=1 \
+    PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
-RUN set -ex && \
-    apt-get update && \
-    apt-get install -y --allow-change-held-packages --no-install-recommends \
+RUN set -ex && apt-get update && \
+    apt-get install -y --no-install-recommends \
         gcc g++ make python3-dev pkg-config curl wget xz-utils bash git \
-        libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . "$HOME/.cargo/env" && \
-
-ENV PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
+        libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 \
+        libgdk-pixbuf-2.0-0 libxcb-cursor0 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . /app
 RUN chmod +x /app/ebook2audiobook.sh
-
 RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'"
 
-RUN apt-get purge -y --auto-remove && \
-	rm -rf /var/lib/apt/lists/*
-	
 ############################
 # RUNTIME IMAGE
 ############################
 FROM ${BASE}
 
-# ✅ Re-declare args here so they are visible in this stage
 ARG DOCKER_PROGRAMS_STR
 ARG CALIBRE_INSTALLER_URL
 ARG ISO3_LANG
@@ -49,21 +41,17 @@ ARG ISO3_LANG
 ENV DEBIAN_FRONTEND=noninteractive \
     CALIBRE_DISABLE_CHECKS=1 \
     CALIBRE_DISABLE_GUI=1 \
-	NVIDIA_VISIBLE_DEVICES=all \
-	NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
     PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
-RUN set -ex && apt-get update
-RUN apt-get install -y libgomp1 libfontconfig1 libsndfile1
-RUN apt-get install -y ${DOCKER_PROGRAMS_STR}
-RUN apt-get install -y tesseract-ocr-${ISO3_LANG}
-RUN wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin
-RUN apt-get purge -y --auto-remove
-RUN apt-get clean
-RUN rm -rf /var/lib/apt/lists/*
+RUN set -ex && apt-get update && apt-get install -y \
+    libgomp1 libfontconfig1 libsndfile1 libxrender1 libxext6 libxi6 libxcb1 \
+    ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG} && \
+    wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin && \
+    apt-get purge -y --auto-remove && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy all runtime binaries and app
-COPY --from=build /usr/bin/ /usr/bin/
 COPY --from=build /usr/local/ /usr/local/
 COPY --from=build /app /app
 
