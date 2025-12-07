@@ -26,8 +26,6 @@ RUN set -ex && apt-get update && \
 
 WORKDIR /app
 COPY . /app
-RUN chmod +x /app/ebook2audiobook.sh
-RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'"
 
 ############################
 # RUNTIME IMAGE
@@ -51,6 +49,9 @@ RUN set -ex && apt-get update && apt-get install -y --no-install-recommends --al
     wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin && \
     apt-get purge -y --auto-remove && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+	
+RUN chmod +x /app/ebook2audiobook.sh
+RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'"
 
 COPY --from=build /usr/local/ /usr/local/
 COPY --from=build /app /app
