@@ -52,7 +52,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	NVIDIA_DRIVER_CAPABILITIES=compute,utility \
     PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
-RUN apt-get update
+RUN set -ex && apt-get update
 RUN apt-get install -y libgomp1 libfontconfig1 libsndfile1
 RUN apt-get install -y ${DOCKER_PROGRAMS_STR}
 RUN apt-get install -y tesseract-ocr-${ISO3_LANG}
