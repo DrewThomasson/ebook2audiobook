@@ -24,8 +24,6 @@ RUN set -ex && \
         libegl1 libopengl0 libx11-6 libglib2.0-0 libnss3 libdbus-1-3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     . "$HOME/.cargo/env" && \
-    apt-get purge -y --auto-remove && \
-    rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
@@ -35,6 +33,9 @@ RUN chmod +x /app/ebook2audiobook.sh
 
 RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'"
 
+RUN apt-get purge -y --auto-remove && \
+	rm -rf /var/lib/apt/lists/*
+	
 ############################
 # RUNTIME IMAGE
 ############################
