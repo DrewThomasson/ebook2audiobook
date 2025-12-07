@@ -24,8 +24,6 @@ export CONDA_BIN_PATH="$CONDA_HOME/bin"
 export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
 export PATH="$CONDA_BIN_PATH:$PATH"
 
-ISO3_LANG="$(get_iso3_lang $OS_LANG)"
-
 NATIVE="native"
 BUILD_DOCKER="build_docker"
 ARCH=$(uname -m)
@@ -49,6 +47,8 @@ RUST_INSTALLER_URL="https://sh.rustup.rs"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 WGET=$(which wget 2>/dev/null)
+
+ISO3_LANG="$(get_iso3_lang $OS_LANG)"
 
 typeset -A arguments # associative array
 typeset -a programs_missing # indexed array
