@@ -428,7 +428,7 @@ function install_programs {
 		if [[ "$program" == "calibre" ]]; then		
 			# TODO: check if the right ebook-convert is installed
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
+				echo -e "\e[32m=============== Calibre is installed! ===============\e[0m"
 			else
 				# avoid conflict with calibre builtin lxml
 				python3 -m pip uninstall lxml -y 2>/dev/null
@@ -444,23 +444,23 @@ function install_programs {
 				fi
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
 				if command -v $program >/dev/null 2>&1; then
-					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+					echo -e "\e[32m=============== $program is installed! ===============\e[0m"
 				else
-					echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+					echo -e "\e[31m=============== $program installation failed.\e[0m"
 				fi
 			fi	
 		elif [[ "$program" == "rust" || "$program" == "rustc" ]]; then
 			curl --proto '=https' --tlsv1.2 -sSf $RUST_INSTALLER_URL | sh -s -- -y
 			source $HOME/.cargo/env
 			if command -v $program &>/dev/null; then
-				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
 			else
-				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+				echo -e "\e[31m=============== $program installation failed.\e[0m"
 			fi
 		elif [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
 				ISO3_LANG="$(get_iso3_lang $OS_LANG)"
 				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $ISO3_LANG"
 				langpack=""
@@ -489,14 +489,14 @@ function install_programs {
 					fi
 				fi
 			else
-				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+				echo -e "\e[31m=============== $program installation failed.\e[0m"
 			fi
 		else
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
 			else
-				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+				echo -e "\e[31m=============== $program installation failed.\e[0m"
 			fi
 		fi
 	done
@@ -546,16 +546,16 @@ function check_conda {
 				[[ -f "$config_path" ]] || touch "$config_path"
 				grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
 				source "$config_path"
-				echo -e "\e[32m===============>>> Miniforge3 is installed! <<===============\e[0m"
+				echo -e "\e[32m=============== Miniforge3 is installed! ===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 						echo "Miniforge3" >> "$INSTALLED_LOG"
 					fi
 			else
-				echo -e "\e[31m===============>>> Miniforge3 installation failed.\e[0m"
+				echo -e "\e[31m=============== Miniforge3 installation failed.\e[0m"
 				return 1
 			fi
 		else
-			echo -e "\e[31m===============>>> Miniforge3 installer not found!.\e[0m"
+			echo -e "\e[31m=============== Miniforge3 installer not found!.\e[0m"
 			return 1
 		fi
 	fi
@@ -595,7 +595,7 @@ function check_conda {
 
 function check_docker {
 	if ! command -v docker &> /dev/null; then
-		echo -e "\e[31m===============>>> Docker is not installed or not running. Please install or run Docker manually.\e[0m"
+		echo -e "\e[31m=============== Docker is not installed or not running. Please install or run Docker manually.\e[0m"
 		return 1
 	fi
 	return 0
@@ -648,7 +648,7 @@ function check_sitecustomized {
 		if cp -p "$src_pyfile" "$dst_pyfile"; then
 			echo "Installed sitecustomize.py hook in $dst_pyfile"
 		else
-			echo -e "\e[31m===============>>> sitecustomize.py hook installation error: copy failed.\e[0m" >&2
+			echo -e "\e[31m=============== sitecustomize.py hook installation error: copy failed.\e[0m" >&2
 			exit 1
 		fi
 	fi
@@ -662,7 +662,7 @@ function build_docker_image {
 		return 1
 	fi
 	if ! command -v docker >/dev/null 2>&1; then
-		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
+		echo -e "\e[31m=============== Error: Docker must be installed and running!.\e[0m"
 		return 1
 	fi
 	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
@@ -749,23 +749,23 @@ else
 		fi
 		# Output result if a virtual environment is detected
 		if [[ -n "$current_pyvenv" ]]; then
-			echo -e "\e[31m===============>>> Error: Current python virtual environment detected: $current_pyvenv..\e[0m"
+			echo -e "\e[31m=============== Error: Current python virtual environment detected: $current_pyvenv..\e[0m"
 			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
 			echo -e "If you are using conda then you would type in:"
 			echo -e "conda deactivate"
 			exit 1
 		fi
 		check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
-		check_conda || { echo -e "\e[31m===============>>> check_conda() failed.\e[0m"; exit 1; }
+		check_conda || { echo -e "\e[31m=============== check_conda() failed.\e[0m"; exit 1; }
 		source "$CONDA_ENV" || exit 1
-		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m===============>>> conda activate failed.\e[0m"; exit 1; }
+		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m=============== conda activate failed.\e[0m"; exit 1; }
 		#check_sitecustomized || exit 1
 		check_desktop_app || exit 1
 		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
 	else
-		echo -e "\e[31m===============>>> ebook2audiobook is not correctly installed.\e[0m"
+		echo -e "\e[31m=============== ebook2audiobook is not correctly installed.\e[0m"
 	fi
 fi
 
