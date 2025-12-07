@@ -51,8 +51,8 @@ RUN set -ex && apt-get update && apt-get install -y --no-install-recommends --al
 RUN chmod +x /app/ebook2audiobook.sh
 RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'"
 
-RUN apt-get purge -y --auto-remove && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get purge -y --auto-remove
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /usr/local/ /usr/local/
 COPY --from=build /app /app
