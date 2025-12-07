@@ -33,7 +33,7 @@ RUN /bin/bash -c "/app/ebook2audiobook.sh --script_mode build_docker --docker_de
 RUN wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin
 
 # Clean up build tools we no longer need
-RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
+#RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 
 ############################
 # RUNTIME IMAGE
@@ -51,7 +51,6 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
 # Only copy what's needed from build stage
-COPY --from=build /usr/local/ /usr/local/
 COPY --from=build /usr/local/ /usr/local/
 COPY --from=build /opt/calibre/ /opt/calibre/
 COPY --from=build /app /app
