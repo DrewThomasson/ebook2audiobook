@@ -48,8 +48,6 @@ INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 WGET=$(which wget 2>/dev/null)
 
-ISO3_LANG="$(get_iso3_lang $OS_LANG)"
-
 typeset -A arguments # associative array
 typeset -a programs_missing # indexed array
 
@@ -428,7 +426,7 @@ function install_programs {
 	fi
 	for program in "${programs_missing[@]}"; do
 		if [[ "$program" == "calibre" ]]; then		
-			# TODO: check if ebook-convert installed with the right min version
+			# TODO: check if the right ebook-convert is installed
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
 			else
@@ -463,31 +461,31 @@ function install_programs {
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
-				tess_lang="$(get_iso3_lang $OS_LANG)"
-				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $tess_lang"
+				ISO3_LANG="$(get_iso3_lang $OS_LANG)"
+				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $ISO3_LANG"
 				langpack=""
 				if command -v brew &> /dev/null; then
-					langpack="tesseract-lang-$tess_lang"
+					langpack="tesseract-lang-$ISO3_LANG"
 				elif command -v apt-get &>/dev/null; then
-					langpack="tesseract-ocr-$tess_lang"
+					langpack="tesseract-ocr-$ISO3_LANG"
 				elif command -v dnf &>/dev/null || command -v yum &>/dev/null; then
-					langpack="tesseract-langpack-$tess_lang"
+					langpack="tesseract-langpack-$ISO3_LANG"
 				elif command -v zypper &>/dev/null; then
-					langpack="tesseract-ocr-$tess_lang"
+					langpack="tesseract-ocr-$ISO3_LANG"
 				elif command -v pacman &>/dev/null; then
-					langpack="tesseract-data-$tess_lang"
+					langpack="tesseract-data-$ISO3_LANG"
 				elif command -v apk &>/dev/null; then
-					langpack="tesseract-ocr-$tess_lang"
+					langpack="tesseract-ocr-$ISO3_LANG"
 				else
 					echo "Cannot recognize your applications package manager. Please install the required applications manually."
 					return 1
 				fi
 				if [[ -n "$langpack" ]]; then
 					eval "$SUDO $PACK_MGR $langpack $PACK_MGR_OPTIONS"
-					if tesseract --list-langs | grep -q "$tess_lang"; then
-						echo "Tesseract OCR language '$tess_lang' successfully installed."
+					if tesseract --list-langs | grep -q "$ISO3_LANG"; then
+						echo "Tesseract OCR language '$ISO3_LANG' successfully installed."
 					else
-						echo "Tesseract OCR language '$tess_lang' not installed properly."
+						echo "Tesseract OCR language '$ISO3_LANG' not installed properly."
 					fi
 				fi
 			else
@@ -680,6 +678,7 @@ function build_docker_image {
 		mps)		cmd_options="" ;;
 		*)			cmd_options="" ;;
 	esac
+	ISO3_LANG="$(get_iso3_lang $OS_LANG)"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
 	if docker compose version >/dev/null 2>&1; then
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
@@ -760,7 +759,7 @@ else
 		check_conda || { echo -e "\e[31m===============>>> check_conda() failed.\e[0m"; exit 1; }
 		source "$CONDA_ENV" || exit 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m===============>>> conda activate failed.\e[0m"; exit 1; }
-		check_sitecustomized || exit 1
+		#check_sitecustomized || exit 1
 		check_desktop_app || exit 1
 		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 		conda deactivate > /dev/null 2>&1
