@@ -44,7 +44,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     CALIBRE_DISABLE_CHECKS=1 \
     CALIBRE_DISABLE_GUI=1 \
 	NVIDIA_VISIBLE_DEVICES=all \
-	NVIDIA_DRIVER_CAPABILITIES=compute,utility
+	NVIDIA_DRIVER_CAPABILITIES=compute,utility \
     PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:${PATH}"
 
 RUN apt-get update && \
