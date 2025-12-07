@@ -55,7 +55,7 @@ ENV PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin
 COPY --from=build /usr/local/ /usr/local/
 COPY --from=build /opt/calibre/ /opt/calibre/
 COPY --from=build /root/.local/ /root/.local/
-COPY --from=build /root/.cargo/ /root/.cargo/
+#COPY --from=build /root/.cargo/ /root/.cargo/
 COPY --from=build /app /app
 
 WORKDIR /app
