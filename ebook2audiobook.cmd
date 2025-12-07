@@ -11,9 +11,6 @@ if errorlevel 1 (
 :: Real ESC byte via PowerShell (RELIABLE)
 for /f "delims=" %%e in ('powershell -NoLogo -NoProfile -Command "[char]27"') do set "ESC=%%e"
 
-:: OS lang in iso3
-for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
-
 :: Capture all arguments into ARGS
 set "ARGS=%*"
 set "NATIVE=native"
@@ -62,6 +59,9 @@ set "UNINSTALLER=%SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SCRIPT_DIR%\.bh.ps1"
 set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
+
+:: OS lang in iso3
+for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
 
 set "OK_SCOOP=0"
 set "OK_CONDA=0"

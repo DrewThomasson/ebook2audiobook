@@ -275,7 +275,7 @@ PLIST
 	open_desktop_app
 }
 
-function linux_app() {
+function linux_app {
 	local MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
 	local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
 	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
@@ -318,7 +318,7 @@ function check_desktop_app {
 }
 #################
 
-function get_iso3_lang() {
+function get_iso3_lang {
 	case "$1" in
 		en) echo "eng" ;;
 		fr) echo "fra" ;;
@@ -463,31 +463,6 @@ function install_programs {
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
-				case "$OS_LANG" in
-					en) tess_lang="eng" ;;
-					fr) tess_lang="fra" ;;
-					de) tess_lang="deu" ;;
-					it) tess_lang="ita" ;;
-					es) tess_lang="spa" ;;
-					pt) tess_lang="por" ;;
-					ar) tess_lang="ara" ;;
-					tr) tess_lang="tur" ;;
-					ru) tess_lang="rus" ;;
-					bn) tess_lang="ben" ;;
-					zh) tess_lang="chi_sim" ;;
-					fa) tess_lang="fas" ;;
-					hi) tess_lang="hin" ;;
-					hu) tess_lang="hun" ;;
-					id) tess_lang="ind" ;;
-					jv) tess_lang="jav" ;;
-					ja) tess_lang="jpn" ;;
-					ko) tess_lang="kor" ;;
-					pl) tess_lang="pol" ;;
-					ta) tess_lang="tam" ;;
-					te) tess_lang="tel" ;;
-					yo) tess_lang="yor" ;;
-					*) tess_lang="eng" ;;
-				esac
 				tess_lang="$(get_iso3_lang $OS_LANG)"
 				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $tess_lang"
 				langpack=""
