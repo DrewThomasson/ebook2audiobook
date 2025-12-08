@@ -83,9 +83,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/*
 
 # Copy calibre + its root-local binaries
-COPY --from=build /opt/calibre /opt/calibre
-COPY --from=build /root/.local /root/.local
-COPY --from=build /root/.cargo /root/.cargo
+COPY --from=build --chown=root:root /opt/calibre /opt/calibre
+COPY --from=build /root/.local /root/.local || true
+COPY --from=build /root/.cargo /root/.cargo || true
+COPY --from=build /app /app
 
 # Copy your entire project (all folders: assets, ebooks, voices, models, etc.)
 COPY --from=build /app /app
