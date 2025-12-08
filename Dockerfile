@@ -47,7 +47,7 @@ RUN find /app -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 
 WORKDIR /app
-COPY --from=build . /app
+COPY . /app
 
 EXPOSE 7860
 
