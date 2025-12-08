@@ -27,7 +27,7 @@ dependencies = [
 	"ebooklib",
 	"fastapi",
 	"beautifulsoup4",
-	"fugashi",
+	"nagisa",
 	"pymupdf-layout",
 	"pytesseract",
 	"unidic",

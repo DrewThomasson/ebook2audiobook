@@ -76,9 +76,23 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         tesseract-ocr tesseract-ocr-${ISO3_LANG} || true; \
     rm -rf /var/lib/apt/lists/*
 
-# Copy ONLY the 3 things that are NOT installed via apt
 COPY --from=build /opt/calibre       /opt/calibre
 COPY --from=build /app              /app
+
+# 2. Remove documentation, man pages, locales, icons, etc. (saves ~40–70 MB)
+RUN set -ex; \
+    find /usr -type d -name "__pycache__" -exec rm -rf {} +; \
+    rm -rf \
+        /usr/share/doc/* \
+        /usr/share/man/* \
+        /usr/share/locale/* \
+        /usr/share/icons/* \
+        /usr/share/fonts/* \
+        /var/cache/fontconfig/* \
+        /opt/calibre/*.txt \
+        /opt/calibre/*.md \
+        /opt/calibre/resources/man-pages || true
+RUN find /app -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 WORKDIR /app
 EXPOSE 7860

@@ -1021,9 +1021,8 @@ def get_sentences(text:str, id:str)->list|None:
                         jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
                         result.extend([t for t in jieba.cut(segment) if t.strip()])
                     elif lang == 'jpn':
-                        from fugashi import Tagger
-                        tagger = Tagger("-Owakati")  # fine-grained segmentation like SplitMode.C
-                        result.extend([t.surface for t in tagger(segment) if t.surface.strip()])
+                        import nagisa
+                        result.extend([w for w in nagisa.tagging(segment).words if w.strip()])
                     elif lang == 'kor':
                         from soynlp.tokenizer import LTokenizer
                         ltokenizer = LTokenizer()
