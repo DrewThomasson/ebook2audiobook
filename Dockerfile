@@ -76,8 +76,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         tesseract-ocr tesseract-ocr-${ISO3_LANG} || true; \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /opt/calibre       /opt/calibre
-COPY --from=build /app              /app
+COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /opt/calibre /opt/calibre
+COPY --from=build /app /app
 
 # 2. Remove documentation, man pages, locales, icons, etc. (saves ~40–70 MB)
 RUN set -ex; \
