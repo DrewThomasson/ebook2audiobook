@@ -28,8 +28,6 @@ dependencies = [
 	"fastapi",
 	"beautifulsoup4",
 	"fugashi",
-	"sudachipy",
-	"sudachidict_core",
 	"pymupdf-layout",
 	"pytesseract",
 	"unidic",

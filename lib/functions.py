@@ -13,9 +13,6 @@ import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, 
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
 
 from typing import Any
-from soynlp.tokenizer import LTokenizer
-from pythainlp.tokenize import word_tokenize
-from sudachipy import dictionary, tokenizer
 from PIL import Image, ImageSequence
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -1024,13 +1021,15 @@ def get_sentences(text:str, id:str)->list|None:
                         jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
                         result.extend([t for t in jieba.cut(segment) if t.strip()])
                     elif lang == 'jpn':
-                        sudachi = dictionary.Dictionary().create()
-                        mode = tokenizer.Tokenizer.SplitMode.C
-                        result.extend([m.surface() for m in sudachi.tokenize(segment, mode) if m.surface().strip()])
+                        from fugashi import Tagger
+                        tagger = Tagger("-Owakati")  # fine-grained segmentation like SplitMode.C
+                        result.extend([t.surface for t in tagger(segment) if t.surface.strip()])
                     elif lang == 'kor':
+                        from soynlp.tokenizer import LTokenizer
                         ltokenizer = LTokenizer()
                         result.extend([t for t in ltokenizer.tokenize(segment) if t.strip()])
                     elif lang in ['tha','lao','mya','khm']:
+                        from pythainlp.tokenize import word_tokenize
                         result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
                     else:
                         result.append(segment.strip())
