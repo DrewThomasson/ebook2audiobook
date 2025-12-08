@@ -82,6 +82,9 @@ RUN set -ex; \
     rm -rf \
         /usr/share/doc/* \
         /usr/share/man/* \
+		/usr/share/locale/* \
+        /usr/share/icons/* \
+        /usr/share/fonts/* \
         /var/cache/fontconfig/* \
         /opt/calibre/*.txt \
         /opt/calibre/*.md \
