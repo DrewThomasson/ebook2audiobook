@@ -63,7 +63,7 @@ RUN set -ex; \
 RUN find /app -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 WORKDIR /app
-COPY . /app
+COPY --from=build . /app
 
 EXPOSE 7860
 
