@@ -1,7 +1,6 @@
 ARG PYTHON_VERSION=3.12
-ARG BASE=python:${PYTHON_VERSION}-slim-bookworm
+ARG BASE=python:${PYTHON_VERSION}-slim
 
-# ========================= BUILD STAGE =========================
 FROM ${BASE} AS build
 
 MAINTAINER Ebbok2Audiobook version: 25.12.9
@@ -14,6 +13,9 @@ ARG ISO3_LANG=eng
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
+	
+WORKDIR /app
+COPY . .
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,target=/root/.cache set -eux
 RUN apt-get update
@@ -22,7 +24,7 @@ RUN apt-get install -y --no-install-recommends --allow-change-held-packages ${DO
 RUN apt-get install -y --no-install-recommends tesseract-ocr-${ISO3_LANG} || true
 RUN rm -rf /var/lib/apt/lists/*
 
-RUN --mount=type=cache,target=/root/.cache/pip ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN --mount=type=cache,target=/root/.cache/pip ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 # Install calibre (latest stable)
 RUN set -ex
@@ -45,9 +47,6 @@ RUN find /app -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # Remove everything that is NOT needed at runtime
 RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
-
-WORKDIR /app
-COPY . /app
 
 EXPOSE 7860
 
