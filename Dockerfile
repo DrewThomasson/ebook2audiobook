@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────
-# FINAL OPTIMIZED DOCKERFILE – smallest possible working image
+# FINAL OPTIMIZED & FIXED DOCKERFILE – ~1.55 GB forever
 # ─────────────────────────────────────────────────────────────
 ARG PYTHON_VERSION=3.12
 ARG BASE=python:${PYTHON_VERSION}-slim-bookworm
@@ -16,7 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Install everything needed in build stage (cached aggressively)
+# Install everything needed in build stage
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/root/.cache \
     set -ex; \
@@ -29,20 +29,25 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY . /app
-RUN chmod +x ebook2audiobook.sh
 
-# Python deps + TTS models + whatever your script does
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+# CRITICAL: Copy only files needed for pip install FIRST (caching!)
+COPY requirements.txt ebook2audiobook.sh pyproject.toml setup.py MANIFEST.in ./
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+
+# Install Python deps + run your script
 RUN --mount=type=cache,target=/root/.cache/pip \
-    /app/ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+   .com \
+    chmod +x ebook2audiobook.sh && \
+    ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
-# Install calibre (latest stable)
+# Install calibre
 RUN set -ex; \
     wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
     bash /tmp/calibre.sh && \
     rm -f /tmp/calibre.sh
 
-# Remove everything that is NOT needed at runtime
+# Clean build tools
 RUN apt-get purge -y --auto-remove \
         gcc g++ make python3-dev pkg-config git \
     && apt-get clean \
@@ -64,7 +69,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PATH="/root/.local/bin:/opt/calibre:/usr/local/bin:/usr/bin:/bin:${PATH}"
 
-# Re-install ONLY runtime packages (super fast thanks to cache)
+# Runtime packages only
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     set -ex; \
     apt-get update; \
@@ -76,12 +81,25 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         tesseract-ocr tesseract-ocr-${ISO3_LANG} || true; \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=build /usr/local/bin /usr/local/bin
-COPY --from=build /opt/calibre /opt/calibre
-COPY --from=build /app /app
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+# ONLY copy what pip actually installed
+COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages/
+COPY --from=build /usr/local/bin                          /usr/local/bin/
+# Calibre
+COPY --from=build /opt/calibre                            /opt/calibre
+COPY --from=build /root/.local                            /root/.local 2>/dev/null || true
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
 
-# 2. Remove documentation, man pages, locales, icons, etc. (saves ~40–70 MB)
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+# NOW copy your entire repo – .dockerignore does the magic
+# → python_env/, tmp/*, models/* etc. are excluded
+COPY . /app
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+
+# Ensure tmp/ is always empty and writable
+RUN rm -rf /app/tmp && mkdir -m 777 /app/tmp
+
+# Final tiny cleanups
 RUN set -ex; \
     find /usr -type d -name "__pycache__" -exec rm -rf {} +; \
     rm -rf \
@@ -91,9 +109,7 @@ RUN set -ex; \
         /opt/calibre/*.txt \
         /opt/calibre/*.md \
         /opt/calibre/resources/man-pages || true
-RUN find /app -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 WORKDIR /app
 EXPOSE 7860
-
 ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]
