@@ -731,7 +731,7 @@ else
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
-			#check_sitecustomized || exit 1
+			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 		# Check if running in a Conda or Python virtual environment
@@ -759,7 +759,7 @@ else
 		check_conda || { echo -e "\e[31m=============== check_conda() failed.\e[0m"; exit 1; }
 		source "$CONDA_ENV" || exit 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m=============== conda activate failed.\e[0m"; exit 1; }
-		#check_sitecustomized || exit 1
+		check_sitecustomized || exit 1
 		check_desktop_app || exit 1
 		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 		conda deactivate > /dev/null 2>&1

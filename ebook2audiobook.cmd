@@ -622,14 +622,14 @@ if defined arguments.help (
 			if errorlevel 1 goto :failed
 			call :install_device_packages "%DOCKER_DEVICE_STR%"
 			if errorlevel 1 goto :failed
-			::call :check_sitecustomized
+			call :check_sitecustomized
 			if errorlevel 1 goto :failed
 		)
 	) else (
 		call "%CONDA_HOME%\Scripts\activate.bat"
 		call conda activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-		::call :check_sitecustomized
+		call :check_sitecustomized
 		if errorlevel 1 goto :failed
 		call :build_gui
 		call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
