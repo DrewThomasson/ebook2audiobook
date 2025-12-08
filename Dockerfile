@@ -22,9 +22,7 @@ RUN apt-get install -y --no-install-recommends --allow-change-held-packages ${DO
 RUN apt-get install -y --no-install-recommends tesseract-ocr-${ISO3_LANG} || true
 RUN rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
-RUN --mount=type=cache,target=/root/.cache/pip /app/ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN --mount=type=cache,target=/root/.cache/pip ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 # Install calibre (latest stable)
 RUN set -ex
@@ -48,6 +46,7 @@ RUN find /app -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 # Remove everything that is NOT needed at runtime
 RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 
+WORKDIR /app
 COPY --from=build . /app
 
 EXPOSE 7860
