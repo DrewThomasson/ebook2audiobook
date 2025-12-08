@@ -78,7 +78,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # Copy ONLY the 3 things that are NOT installed via apt
 COPY --from=build /opt/calibre       /opt/calibre
-COPY --from=build /root/.local       /root/.local 2>/dev/null || true
 COPY --from=build /app              /app
 
 WORKDIR /app
