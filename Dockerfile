@@ -28,24 +28,6 @@ RUN --mount=type=cache,target=/root/.cache/pip /app/ebook2audiobook.sh --script_
 RUN set -ex
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
-# Remove everything that is NOT needed at runtime
-RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
-
-# ========================= FINAL STAGE =========================
-FROM ${BASE}
-
-ARG DOCKER_PROGRAMS_STR
-ARG ISO3_LANG=eng
-
-ENV DEBIAN_FRONTEND=noninteractive \
-    CALIBRE_DISABLE_CHECKS=1 \
-    CALIBRE_DISABLE_GUI=1 \
-    NVIDIA_VISIBLE_DEVICES=all \
-    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PATH="/root/.local/bin:/opt/calibre:/usr/local/bin:/usr/bin:/bin:${PATH}"
-
 # 2. Remove documentation, man pages, locales, icons, etc. (saves ~40–70 MB)
 RUN set -ex; \
     find /usr -type d -name "__pycache__" -exec rm -rf {} +; \
@@ -60,6 +42,9 @@ RUN set -ex; \
         /opt/calibre/*.md \
         /opt/calibre/resources/man-pages || true
 RUN find /app -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+# Remove everything that is NOT needed at runtime
+RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 
 WORKDIR /app
 COPY --from=build . /app
