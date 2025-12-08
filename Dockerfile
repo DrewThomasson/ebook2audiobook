@@ -15,12 +15,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,target=/root/.cache \
-    set -ex; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends --allow-change-held-packages gcc g++ make python3-dev pkg-config git wget bash xz-utils libglib2.0-0 libnss3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 libx11-6 libegl1 libopengl0 libxrender1 libxext6 libxi6 libxcb1
-    apt-get install -y --no-install-recommends --allow-change-held-packages ${DOCKER_PROGRAMS_STR}
-    apt-get install -y --no-install-recommends tesseract-ocr-${ISO3_LANG} || true
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked --mount=type=cache,target=/root/.cache set -eux
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends --allow-change-held-packages gcc g++ make python3-dev pkg-config git wget bash xz-utils libglib2.0-0 libnss3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 libx11-6 libegl1 libopengl0 libxrender1 libxext6 libxi6 libxcb1
+RUN apt-get install -y --no-install-recommends --allow-change-held-packages ${DOCKER_PROGRAMS_STR}
+RUN apt-get install -y --no-install-recommends tesseract-ocr-${ISO3_LANG} || true
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,target=/root/.cache/pip /app/ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
