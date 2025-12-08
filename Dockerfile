@@ -24,7 +24,7 @@ RUN apt-get install -y --no-install-recommends --allow-change-held-packages ${DO
 RUN apt-get install -y --no-install-recommends tesseract-ocr-${ISO3_LANG} || true
 RUN rm -rf /var/lib/apt/lists/*
 
-RUN --mount=type=cache,target=/root/.cache/pip ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN --mount=type=cache,target=/root/.cache/pip /app/ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 # Install calibre (latest stable)
 RUN set -ex
