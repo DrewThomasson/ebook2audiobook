@@ -70,7 +70,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/root/.local/bin:/root/.cargo/bin:/opt/calibre:/usr/local/bin:/usr/bin:/bin:${PATH}"
 
-# Install only runtime packages
+# Runtime packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     set -ex; \
     apt-get update; \
@@ -82,13 +82,17 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         tesseract-ocr tesseract-ocr-${ISO3_LANG} || true; \
     rm -rf /var/lib/apt/lists/*
 
-# Copy calibre + its root-local binaries
-COPY --from=build --chown=root:root /opt/calibre /opt/calibre
-COPY --from=build /root/.local /root/.local || true
-COPY --from=build /root/.cargo /root/.cargo || true
-COPY --from=build /app /app
+# Copy calibre
+COPY --from=build /opt/calibre /opt/calibre
 
-# Copy your entire project (all folders: assets, ebooks, voices, models, etc.)
+# Safely copy .local and .cargo only if they exist
+RUN --mount=type=bind,from=build,source=/root/.local,target=/build-root/.local \
+    test -d /build-root/.local && cp -a /build-root/.local /root/ || true
+
+RUN --mount=type=bind,from=build,source=/root/.cargo,target=/build-root/.cargo \
+    test -d /build-root/.cargo && cp -a /build-root/.cargo /root/ || true
+
+# Copy your entire project
 COPY --from=build /app /app
 
 WORKDIR /app
