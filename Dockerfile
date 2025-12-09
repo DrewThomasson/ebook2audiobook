@@ -22,7 +22,7 @@ WORKDIR /app
 COPY . .
 RUN chmod +x ebook2audiobook.sh
 
-# --- Install OS build dependencies (only in stage 1) ---
+# --- Install OS build dependencies ---
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends --allow-change-held-packages \
         gcc g++ make python3-dev pkg-config git wget bash xz-utils \
@@ -31,7 +31,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
         ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
-# --- Run your build script (installs Python modules, models...) ---
+# --- Run build script ---
 RUN --mount=type=cache,target=/root/.cache/pip \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
@@ -39,14 +39,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh \
  && bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
-# --- Cleanup build stage (reduce copy size) ---
+# --- Cleanup build stage ---
 RUN find /usr -type d -name "__pycache__" -exec rm -rf {} + && \
     rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* /usr/share/icons/* && \
     rm -rf /usr/share/fonts/* /var/cache/fontconfig/* && \
     rm -rf /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages || true && \
     find /app -type d -name "__pycache__" -exec rm -rf {} + || true
-
-
 
 ###############################
 #       STAGE 2: RUNTIME
@@ -63,7 +61,6 @@ WORKDIR /app
 
 ############################################
 #      MINIMAL COPY FROM BUILD STAGE
-#   (HIGHLY OPTIMIZED, NO BIG SYSTEM DIRS)
 ############################################
 
 # Python site-packages only (pip installs from build)
@@ -78,21 +75,6 @@ COPY --from=build /app /app
 #######################################################
 #  GPU Auto-Detection: CUDA (nvcc), ROCm, Intel XPU
 #######################################################
-ENTRYPOINT ["bash", "-c", "\
-echo '🔍 Detecting GPU backend...'; \
-if command -v nvcc >/dev/null 2>&1; then \
-    echo '▶ CUDA detected via nvcc — enabling CUDA backend'; \
-    export GPU_BACKEND=cuda; \
-elif command -v rocminfo >/dev/null 2>&1; then \
-    echo '▶ ROCm detected via rocminfo — enabling HIP backend'; \
-    export GPU_BACKEND=rocm; \
-elif command -v sycl-ls >/dev/null 2>&1; then \
-    echo '▶ Intel XPU detected via SYCL — enabling XPU backend'; \
-    export GPU_BACKEND=xpu; \
-else \
-    echo '▶ No GPU detected — CPU fallback enabled'; \
-    export GPU_BACKEND=cpu; \
-fi; \
-python3 app.py --script_mode full_docker"]
+ENTRYPOINT ["python3", "app.py --script_mode full_docker"]
 
 EXPOSE 7860
