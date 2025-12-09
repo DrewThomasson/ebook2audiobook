@@ -75,6 +75,7 @@ COPY --from=build /app /app
 #######################################################
 #  GPU Auto-Detection: CUDA (nvcc), ROCm, Intel XPU
 #######################################################
-ENTRYPOINT ["python3", "app.py --script_mode full_docker"]
 
 EXPOSE 7860
+
+ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]
