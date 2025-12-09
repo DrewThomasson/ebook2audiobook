@@ -19,3 +19,4 @@ Notebooks/
 audiobooks/cli/*
 audiobooks/gui/gradio/*
 audiobooks/gui/host/*
+tools/dev
