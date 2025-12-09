@@ -64,7 +64,7 @@ WORKDIR /app
 ############################################
 
 # Python site-packages only (pip installs from build)
-COPY --from=build /usr/local/lib/python3.* /usr/local/lib/
+COPY --from=build /usr/local/lib/python3.*/ /usr/local/lib/
 
 # Calibre runtime
 COPY --from=build /opt/calibre /opt/calibre
