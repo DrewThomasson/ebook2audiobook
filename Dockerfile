@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION=3.12
-ARG BASE=python:${PYTHON_VERSION}-slim-bookworm
+ARG BASE=python:${PYTHON_VERSION}-slim
 
 FROM ${BASE}
 
