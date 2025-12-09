@@ -7,23 +7,22 @@ FROM ${BASE} AS build
 
 MAINTAINER Ebbok2Audiobook version: 25.12.9
 
-# ─────────────── ARG (build-time only) ───────────────
+# Build-time ARGs
 ARG DOCKER_DEVICE_STR
 ARG DOCKER_PROGRAMS_STR
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
 
-# ─────────────── ENV (persists inside container) ───────────────
+# ENV
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# ─────────────── App source ───────────────
 WORKDIR /app
 COPY . .
 RUN chmod +x ebook2audiobook.sh
 
-# ─────────────── Install OS Dependencies ───────────────
+# --- Install OS build dependencies (only in stage 1) ---
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends --allow-change-held-packages \
         gcc g++ make python3-dev pkg-config git wget bash xz-utils \
@@ -32,31 +31,29 @@ RUN --mount=type=cache,target=/var/cache/apt \
         ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
-# ─────────────── Your build script ───────────────
+# --- Run your build script (installs Python modules, models...) ---
 RUN --mount=type=cache,target=/root/.cache/pip \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
-# ─────────────── Install Calibre ───────────────
-RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
-    bash /tmp/calibre.sh && \
-	rm -f /tmp/calibre.sh
+# --- Install Calibre ---
+RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh \
+ && bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
-# ─────────────── Cleanup (shrink image) ───────────────
+# --- Cleanup build stage (reduce copy size) ---
 RUN find /usr -type d -name "__pycache__" -exec rm -rf {} + && \
-    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* && \
-    rm -rf /usr/share/icons/* /usr/share/fonts/* /var/cache/fontconfig/* && \
+    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* /usr/share/icons/* && \
+    rm -rf /usr/share/fonts/* /var/cache/fontconfig/* && \
     rm -rf /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages || true && \
     find /app -type d -name "__pycache__" -exec rm -rf {} + || true
 
-RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
+
 
 ###############################
-#      STAGE 2: RUNTIME
+#       STAGE 2: RUNTIME
 ###############################
 FROM python:${PYTHON_VERSION}-slim AS runtime
 
-# Same ENV
+# Runtime ENV
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -64,16 +61,25 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR /app
 
-# Copy only results from build stage
-COPY --from=build /app /app
-COPY --from=build /opt/calibre /opt/calibre
-COPY --from=build /usr/bin /usr/bin
-COPY --from=build /usr/lib /usr/lib
-COPY --from=build /lib /lib
+############################################
+#      MINIMAL COPY FROM BUILD STAGE
+#   (HIGHLY OPTIMIZED, NO BIG SYSTEM DIRS)
+############################################
 
-# ─────────────── Universal GPU Auto-Detection (nvcc / rocminfo / sycl-ls) ───────────────
+# Python site-packages only (pip installs from build)
+COPY --from=build /usr/local/lib/python${PYTHON_VERSION} /usr/local/lib/python${PYTHON_VERSION}
+
+# Calibre runtime
+COPY --from=build /opt/calibre /opt/calibre
+
+# Your application files
+COPY --from=build /app /app
+
+#######################################################
+#  GPU Auto-Detection: CUDA (nvcc), ROCm, Intel XPU
+#######################################################
 ENTRYPOINT ["bash", "-c", "\
-echo 'Detecting GPU backend...'; \
+echo '🔍 Detecting GPU backend...'; \
 if command -v nvcc >/dev/null 2>&1; then \
     echo '▶ CUDA detected via nvcc — enabling CUDA backend'; \
     export GPU_BACKEND=cuda; \
