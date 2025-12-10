@@ -1,5 +1,7 @@
 ARG PYTHON_VERSION=3.12
-FROM python:${PYTHON_VERSION}-slim-bookworm
+ARG BASE=python:${PYTHON_VERSION}-slim-bookworm
+
+FROM ${BASE}
 
 MAINTAINER Ebbok2Audiobook version: 25.12.10
 
@@ -10,55 +12,33 @@ ARG ISO3_LANG=eng
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
+
 COPY . .
 
-# ────────────────────────────────
-# Install runtime dependencies
-# ────────────────────────────────
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends --allow-change-held-packages \
-        gcc g++ make python3-dev pkg-config git wget bash xz-utils \
-        libglib2.0-0 libnss3 libatk1.0-0 libgdk-pixbuf-2.0-0 \
-        libx11-6 libegl1 libopengl0 libxrender1 libxext6 libxi6 libxcb1 \
-        libxcb-cursor0 libxcb-shape0 libxcb-randr0 libxcb-xfixes0 \
-        ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG} || true && \
+RUN apt-get update && apt-get install -y --no-install-recommends --allow-change-held-packages \
+    gcc g++ make python3-dev pkg-config git wget bash xz-utils \
+    libglib2.0-0 libnss3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 \
+    libx11-6 libegl1 libopengl0 libxrender1 libxext6 libxi6 libxcb1 \
+    ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
-# ────────────────────────────────
-# Build step (your script installs pip deps)
-# ────────────────────────────────
-RUN chmod +x ebook2audiobook.sh && \
-    ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN chmod +x ebook2audiobook.sh
+RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
-# ────────────────────────────────
-# Install Calibre (headless safe)
-# ────────────────────────────────
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
     bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
-# ────────────────────────────────
-# CLEANUP — MASSIVE SIZE REDUCTION
-# ────────────────────────────────
-RUN set -eux; \
-    # Remove Python caches
-    find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
-    # Remove documentation, locales, icons, fonts
-    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/*; \
-    rm -rf /usr/share/icons/* /usr/share/fonts/* /var/cache/fontconfig/*; \
-    # Remove calibre docs
-    rm -rf /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages || true; \
-    # Remove QML tests, examples, translations (HUGE)
-    rm -rf /opt/calibre/resources/translation; \
-    # Strip binaries
-    find /usr/local -type f -executable -exec strip --strip-unneeded {} + 2>/dev/null || true; \
-    # Remove build tools
-    apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
+RUN find /usr -type d -name "__pycache__" -exec rm -rf {} + && \
+    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* && \
+    rm -rf /usr/share/icons/* /usr/share/fonts/* /var/cache/fontconfig/* && \
+    rm -rf /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages || true && \
+    find /app -type d -name "__pycache__" -exec rm -rf {} + || true
+
+RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 
 EXPOSE 7860
 
