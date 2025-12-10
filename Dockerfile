@@ -6,8 +6,7 @@ LABEL org.opencontainers.image.title="ebook2audiobook" \
       org.opencontainers.image.version="25.12.10" \
       org.opencontainers.image.authors="Ebbok2Audiobook" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook" \
-      org.opencontainers.image.created="${BUILD_DATE}"
+      org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook"
 
 ARG DOCKER_DEVICE_STR
 ARG DOCKER_PROGRAMS_STR
