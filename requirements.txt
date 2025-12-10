@@ -8,7 +8,8 @@ docker
 ebooklib
 fastapi
 beautifulsoup4
-nagisa
+sudachipy
+sudachidict-core
 pymupdf
 pymupdf-layout
 pytesseract
