@@ -538,17 +538,15 @@ if /i "%TAG:~0,6%"=="jetson" (
 )
 set "HAS_COMPOSE=%errorlevel%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
-::if %HAS_COMPOSE%==0 (
-	:: Use docker compose v2
-::	BUILD_NAME="%DOCKER_IMG_NAME%" docker compose --progress=plain build --no-cache ^
-::		--build-arg PYTHON_VERSION="%py_vers%" ^
-::		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
-::		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
-::		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
-::		--build-arg ISO3_LANG="%ISO3_LANG%"
-::	if errorlevel 1 exit /b 1
-::) else (
-	:: Use docker build (fallback)
+if %HAS_COMPOSE%==0 (
+	BUILD_NAME="%DOCKER_IMG_NAME%" docker compose --progress=plain build --no-cache ^
+		--build-arg PYTHON_VERSION="%py_vers%" ^
+		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
+		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
+		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
+		--build-arg ISO3_LANG="%ISO3_LANG%"
+	if errorlevel 1 exit /b 1
+) else (
 	docker build --no-cache --progress plain ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
@@ -557,9 +555,9 @@ set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 		--build-arg ISO3_LANG="%ISO3_LANG%" ^
 		-t "%DOCKER_IMG_NAME%" .
 	if errorlevel 1 exit /b 1
-::)
+)
 if defined cmd_options set "cmd_extra=%cmd_options% "
-echo Docker image ready! to run your docker: docker run %cmd_extra%-it --rm -p 7860:7860 %DOCKER_IMG_NAME%
+echo Docker image ready! to run your docker: docker run %cmd_extra%--rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME%
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS

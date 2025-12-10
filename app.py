@@ -92,12 +92,23 @@ Linux/Mac natvie mode:
     ./ebook2audiobook.sh
     Headless mode:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file' --language eng
-Docker build image mode:
+Docker build image:
     Windows:
     ebook2audiobook.cmd --script_mode build_docker
     Linux/Mac
     ./ebook2audiobook.sh --script_mode build_docker
-    
+Docker run image:
+    Cpu:
+    docker run --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu
+    Cuda:
+    docker run --gpus all --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cu[118/121/128 etc..]
+    Rocm:
+    docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..]
+    Xpu:
+    docker run --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu
+    Jetson:
+    docker run --runtime nvidia  --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]
+
 Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         ''',
         formatter_class=argparse.RawTextHelpFormatter

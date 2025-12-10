@@ -680,18 +680,18 @@ function build_docker_image {
 	esac
 	ISO3_LANG="$(get_iso3_lang $OS_LANG)"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
-	#if docker compose version >/dev/null 2>&1; then
-	#	BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
-	#		--progress plain \
-	#		build \
-	#		--no-cache \
-	#		--build-arg PYTHON_VERSION="$py_vers" \
-	#		--build-arg DOCKER_DEVICE_STR="$ARG" \
-	#		--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
-	#		--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
-	#		--build-arg ISO3_LANG="$ISO3_LANG" \
-	#		|| return 1
-	#else
+	if docker compose version >/dev/null 2>&1; then
+		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
+			--progress plain \
+			build \
+			--no-cache \
+			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg DOCKER_DEVICE_STR="$ARG" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
+			--build-arg ISO3_LANG="$ISO3_LANG" \
+			|| return 1
+	else
 		docker build \
 			--no-cache \
 			--progress plain \
@@ -706,7 +706,7 @@ function build_docker_image {
 	if [[ -n "$cmd_options" ]]; then
 		cmd_extra="$cmd_options "
 	fi
-	echo "Docker image ready! to run your docker: docker run ${cmd_extra}-it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
+	echo "Docker image ready! to run your docker: docker run ${cmd_extra}--rm -it -v \"$(pwd)/audiobooks:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME [--help]"
 }
 
 ########################################
