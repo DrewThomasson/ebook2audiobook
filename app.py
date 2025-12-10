@@ -111,15 +111,15 @@ Docker run image:
         docker run --runtime nvidia  --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]
     Headless mode:
         CPU:
-        docker run --rm -it -p 7860:7860 ebook2audiobook:cpu --headless -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+        docker run --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
         CUDA:
-        docker run --gpus all --rm -it -p 7860:7860 ebook2audiobook::cu[118/121/128 etc..] --headless -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+        docker run --gpus all --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook::cu[118/121/128 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
         ROCM:
-        docker run --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..] --headless -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+        docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
         XPU:
-        docker run --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu --headless -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+        docker run --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
         JETSON:
-        docker run --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+        docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
     
     * MPS is not exposed in docker so CPU must be used.
 
