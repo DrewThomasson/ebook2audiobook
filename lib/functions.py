@@ -1484,16 +1484,6 @@ def foreign2latin(text, base_lang):
         scr = script_of(word)
         if scr == "latin":
             return word
-        if base_lang in ["ru", "rus"] and scr == "cyrillic":
-            return word
-        if base_lang in ["ar", "ara"] and scr == "arabic":
-            return word
-        if base_lang in ["ko", "kor"] and scr == "hangul":
-            return word
-        if base_lang in ["ja", "jpn"] and scr == "japanese":
-            return word
-        if base_lang in ["zh", "zho"] and scr == "chinese":
-            return word
         try:
             if scr == "chinese":
                 from pypinyin import pinyin, Style
@@ -1577,7 +1567,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Prepare SML tags
     text = filter_sml(text)
     # romanize foreign words
-    text = foreign2latin(text, lang)
+    if language_mapping[lang]['script'] == 'latin':
+        text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
