@@ -115,6 +115,4 @@ rm -f "$TEMP_UNINSTALLER" || true
 echo "==================="
 echo "Uninstall complete."
 
-exec $SHELL
-
 exit 0
