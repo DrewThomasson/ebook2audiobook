@@ -26,8 +26,8 @@ RUN apk add --no-cache \
     curl ffmpeg nodejs espeak-ng sox tesseract-ocr tesseract-ocr-data-eng || true && \
     rm -rf /var/cache/apk/*
 
-# This single line fixes torchvggish + pymupdf-layout + any other manylinux-only packages
-ENV PIP_NO_BINARY=:all:
+# ONLY these packages have no musl wheels → compile them from source, everything else uses fast wheels
+ENV PIP_NO_BINARY=pymupdf-layout,torchvggish,PyMuPDF,cryptography,regex,numpy,pillow
 
 RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
