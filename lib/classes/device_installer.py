@@ -392,8 +392,6 @@ class DeviceInstaller():
                             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', '--progress-bar', 'on', '--disable-pip-version-check', package])
                             t.update(1)
                         except subprocess.CalledProcessError as e:
-                            if package in flexible_packages:
-                                continue
                             error = f'Failed to install {package}: {e}'
                             print(error)
                             return False
