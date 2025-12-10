@@ -18,14 +18,15 @@ WORKDIR /app
 
 COPY . .
 
+RUN chmod +x ebook2audiobook.sh
+
 RUN apk add --no-cache \
-    bash gcc g++ make python3-dev pkgconfig git wget xz-utils \
-    glib libx11 libegl1 libopengl0 libxrender1 libxext6 libxi6 libxcb1 \
-    mesa-gl mesa-egl \
+    bash gcc g++ make python3-dev pkgconfig git wget xz \
+    glib libx11 mesa-gl mesa-egl mesa-gbm \
+    fontconfig libsnd \
     ${DOCKER_PROGRAMS_STR} tesseract-ocr tesseract-ocr-data-${ISO3_LANG} || true && \
     rm -rf /var/cache/apk/*
 
-RUN chmod +x ebook2audiobook.sh
 RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
