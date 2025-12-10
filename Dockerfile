@@ -2,11 +2,11 @@ ARG PYTHON_VERSION=3.12
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
 LABEL org.opencontainers.image.title="ebook2audiobook" \
-      org.opencontainers.image.description="Ebook to Audiobook converter – Calibre + TTS + OCR" \
+      org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages" \
       org.opencontainers.image.version="25.12.10" \
       org.opencontainers.image.authors="Ebbok2Audiobook" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.source="https://github.com/your-repo-if-any" \
+      org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook" \
       org.opencontainers.image.created="${BUILD_DATE}"
 
 ARG DOCKER_DEVICE_STR
@@ -32,7 +32,6 @@ RUN apt-get update && \
         tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
-# ARM64/Jetson fix – does nothing on x86_64
 RUN if [ "$(dpkg --print-architecture)" = "arm64" ]; then \
         dpkg --add-architecture arm64 && \
         apt-get update && \
