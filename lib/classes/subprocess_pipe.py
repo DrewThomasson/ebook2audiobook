@@ -20,13 +20,13 @@ class SubprocessPipe:
             self.progress_bar(percent/100, desc=self.msg)
 
     def _on_complete(self)->None:
-        msg = f"\n{self.msg} completed - 100%"
+        msg = f"\n{self.msg} completed -"
         print(msg)
         if self.is_gui_process:
             self.progress_bar(1.0, desc=msg)
 
     def _on_error(self, err:Exception)->None:
-        error = f"\n{self.msg} error - {err}"
+        error = f"\n{self.msg} error: {err} -"
         print(error)
         if self.is_gui_process:
             self.progress_bar(0.0, desc=error)
