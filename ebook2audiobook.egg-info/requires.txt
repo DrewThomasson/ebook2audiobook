@@ -9,6 +9,7 @@ ebooklib
 fastapi
 beautifulsoup4
 nagisa
+pymupdf
 pymupdf-layout
 pytesseract
 unidic
