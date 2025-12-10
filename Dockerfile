@@ -26,6 +26,10 @@ RUN apk add --no-cache \
     curl ffmpeg nodejs espeak-ng sox tesseract-ocr tesseract-ocr-data-eng || true && \
     rm -rf /var/cache/apk/*
 
+# This single line fixes pymupdf-layout (and many other wheels) on Alpine
+RUN apk add --no-cache --virtual .build-deps build-base && \
+    pip install --no-cache-dir --upgrade pip setuptools wheel
+
 RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
@@ -37,7 +41,7 @@ RUN find /usr -type d -name "__pycache__" -exec rm -rf {} + && \
     rm -rf /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages || true && \
     find /app -type d -name "__pycache__" -exec rm -rf {} + || true
 
-RUN apk del gcc g++ make python3-dev pkgconfig git && \
+RUN apk del gcc g++ make python3-dev pkgconfig git .build-deps && \
     rm -rf /var/cache/apk/* /tmp/* /root/.cache
 
 EXPOSE 7860
