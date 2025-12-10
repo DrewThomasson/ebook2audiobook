@@ -23,16 +23,10 @@ RUN chmod +x ebook2audiobook.sh
 RUN apk add --no-cache \
     bash gcc g++ make python3-dev pkgconfig git wget xz \
     glib libx11 mesa-gl mesa-egl mesa-gbm fontconfig libgomp libsndfile \
-    mupdf-dev curl ffmpeg nodejs espeak-ng sox tesseract-ocr tesseract-ocr-data-eng || true && \
-    rm -rf /var/cache/apk/*
+    curl ffmpeg nodejs espeak-ng sox tesseract-ocr tesseract-ocr-data-eng
 
-# This single block works perfectly on both x86_64 and arm64
-RUN if [ "$(uname -m)" = "x86_64" ]; then \
-        export AUDITWHEEL_PLAT=manylinux_2_28_x86_64; \
-    else \
-        export AUDITWHEEL_PLAT=manylinux_2_28_aarch64; \
-    fi && \
-    export _PYTHON_HOST_PLATFORM=linux_$(uname -m)
+# THIS IS THE ONLY LINE THAT MATTERS
+RUN pip install --no-cache-dir --force-reinstall --no-binary :all: pymupdf pymupdf-layout torchvggish
 
 RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
@@ -40,10 +34,7 @@ RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
     bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
 RUN find /usr -type d -name "__pycache__" -exec rm -rf {} + && \
-    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* && \
-    rm -rf /usr/share/icons/* /usr/share/fonts/* /var/cache/fontconfig/* && \
-    rm -rf /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages || true && \
-    find /app -type d -name "__pycache__" -exec rm -rf {} + || true
+    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* /opt/calibre/*.txt /opt/calibre/*.md
 
 RUN apk del gcc g++ make python3-dev pkgconfig git && \
     rm -rf /var/cache/apk/* /tmp/* /root/.cache
