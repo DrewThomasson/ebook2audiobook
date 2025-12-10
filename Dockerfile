@@ -17,7 +17,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONWARNINGS="ignore::SyntaxWarning" \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+	PIP_PLATFORM=linux_aarch64
 
 WORKDIR /app
 COPY . .
