@@ -557,7 +557,7 @@ if %HAS_COMPOSE%==0 (
 	if errorlevel 1 exit /b 1
 )
 if defined cmd_options set "cmd_extra=%cmd_options% "
-echo Docker image ready! to run your docker: docker run %cmd_extra%--rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME%
+echo Docker image ready! to run your docker: docker run %cmd_extra%--rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% [--help --headless etc..]
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS

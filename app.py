@@ -99,17 +99,17 @@ Docker build image:
     ./ebook2audiobook.sh --script_mode build_docker
 Docker run image:
     CPU:
-    docker run --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu
+    docker run --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu [--headless etc..]
     CUDA:
-    docker run --gpus all --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cu[118/121/128 etc..]
+    docker run --gpus all --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cu[118/121/128 etc..]  [--headless etc..]
     MPS:
     docker run --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:mps
     ROCM:
-    docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..]
+    docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..]  [--headless etc..]
     XPU:
-    docker run --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu
+    docker run --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu  [--headless etc..]
     JETSON:
-    docker run --runtime nvidia  --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]
+    docker run --runtime nvidia  --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]  [--headless etc..]
 
 Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         ''',

@@ -706,7 +706,7 @@ function build_docker_image {
 	if [[ -n "$cmd_options" ]]; then
 		cmd_extra="$cmd_options "
 	fi
-	echo "Docker image ready! to run your docker: docker run ${cmd_extra}--rm -it -v \"$(pwd)/audiobooks:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME [--help]"
+	echo "Docker image ready! to run your docker: docker run ${cmd_extra}--rm -it -v \"$(pwd)/audiobooks:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME [--help --headless etc..]"
 }
 
 ########################################
