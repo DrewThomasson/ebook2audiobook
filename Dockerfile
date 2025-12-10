@@ -22,8 +22,7 @@ RUN chmod +x ebook2audiobook.sh
 
 RUN apk add --no-cache \
     bash gcc g++ make python3-dev pkgconfig git wget xz \
-    glib libx11 mesa-gl mesa-egl mesa-gbm \
-    fontconfig libsnd \
+    glib libx11 mesa-gl mesa-egl mesa-gbm fontconfig \
     ${DOCKER_PROGRAMS_STR} tesseract-ocr tesseract-ocr-data-${ISO3_LANG} || true && \
     rm -rf /var/cache/apk/*
 
