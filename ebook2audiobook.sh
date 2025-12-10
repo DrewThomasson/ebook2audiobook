@@ -702,7 +702,7 @@ function build_docker_image {
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
-	#fi
+	fi
 	if [[ -n "$cmd_options" ]]; then
 		cmd_extra="$cmd_options "
 	fi
