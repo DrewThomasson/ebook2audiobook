@@ -17,43 +17,40 @@ WORKDIR /app
 COPY . .
 
 # ----------------------------------------
-# Install ONLY required system packages
+# Install ONLY essential system libs for Qt initialization
 # ----------------------------------------
 RUN apt-get update && \
     apt-get install -y --no-install-recommends --allow-change-held-packages \
         gcc g++ make python3-dev pkg-config git wget bash xz-utils \
-        # Tiny OpenGL platform libs (required for Calibre installer)
+        # Minimal EGL/OpenGL
         libegl1 libopengl0 libgl1 \
-        # User-supplied tools
+        # Minimal XCB stack required by Qt
+        libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
+        # Your tools
         ${DOCKER_PROGRAMS_STR} \
         tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
 # ----------------------------------------
-# Build Python dependencies via your script
+# Build Python dependencies
 # ----------------------------------------
 RUN chmod +x ebook2audiobook.sh && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 # ----------------------------------------
-# Install Calibre (CLI only, GUI unused)
+# Install Calibre (CLI)
 # ----------------------------------------
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
     bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
 # ----------------------------------------
-# Clean up everything not needed at runtime
+# Cleanup
 # ----------------------------------------
 RUN set -eux; \
-    # Remove Python caches
     find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
-    # Remove unnecessary OS documentation & translations
     rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/*; \
-    # Remove icons, fonts, fontconfig cache
     rm -rf /usr/share/icons/* /usr/share/fonts/* /var/cache/fontconfig/*; \
-    # Remove unused Calibre docs
     rm -rf /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages || true; \
-    # Purge build tools
     apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
