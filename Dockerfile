@@ -23,7 +23,7 @@ RUN chmod +x ebook2audiobook.sh
 RUN apk add --no-cache \
     bash gcc g++ make python3-dev pkgconfig git wget xz \
     glib libx11 mesa-gl mesa-egl mesa-gbm fontconfig libgomp libsndfile \
-    curl ffmpeg nodejs espeak-ng sox tesseract-ocr tesseract-ocr-data-eng || true && \
+    mupdf-dev curl ffmpeg nodejs espeak-ng sox tesseract-ocr tesseract-ocr-data-eng || true && \
     rm -rf /var/cache/apk/*
 
 # This single block works perfectly on both x86_64 and arm64
