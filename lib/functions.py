@@ -1466,7 +1466,6 @@ def foreign2latin(text, base_lang):
         for ch in word:
             if ch.isalpha():
                 name = unicodedata.name(ch, "")
-                print(f'------------------- {name} -------------')
                 if "CYRILLIC" in name:
                     return "cyrillic"
                 if "LATIN" in name:

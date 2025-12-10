@@ -1,8 +1,6 @@
 ARG PYTHON_VERSION=3.12
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-MAINTAINER Ebbok2Audiobook version: 25.12.10
-
 ARG DOCKER_DEVICE_STR
 ARG DOCKER_PROGRAMS_STR
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
