@@ -26,8 +26,13 @@ RUN apk add --no-cache \
     curl ffmpeg nodejs espeak-ng sox tesseract-ocr tesseract-ocr-data-eng || true && \
     rm -rf /var/cache/apk/*
 
-# ONLY these packages have no musl wheels → compile them from source, everything else uses fast wheels
-ENV PIP_NO_BINARY=pymupdf-layout,torchvggish,PyMuPDF,cryptography,regex,numpy,pillow
+# This single block works perfectly on both x86_64 and arm64
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+        export AUDITWHEEL_PLAT=manylinux_2_28_x86_64; \
+    else \
+        export AUDITWHEEL_PLAT=manylinux_2_28_aarch64; \
+    fi && \
+    export _PYTHON_HOST_PLATFORM=linux_$(uname -m)
 
 RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
