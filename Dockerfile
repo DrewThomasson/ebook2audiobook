@@ -26,8 +26,8 @@ RUN apk add --no-cache \
     curl ffmpeg nodejs espeak-ng sox tesseract-ocr tesseract-ocr-data-eng || true && \
     rm -rf /var/cache/apk/*
 
-# This is the ONLY line that changed – forces manylinux wheels (fixes pymupdf-layout)
-ENV PIP_ONLY_BINARY=:all: PIP_NO_CACHE_DIR=1
+# This single line fixes torchvggish + pymupdf-layout + any other manylinux-only packages
+ENV PIP_NO_BINARY=:all:
 
 RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
