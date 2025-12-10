@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION=3.12
-ARG BASE=python:${PYTHON_VERSION}-alpine
+ARG BASE=python:${PYTHON_VERSION}-slim-bookworm
 
 FROM ${BASE}
 
@@ -10,27 +10,25 @@ ARG DOCKER_PROGRAMS_STR
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 WORKDIR /app
-
 COPY . .
 
+RUN apt-get update && apt-get install -y --no-install-recommends --allow-change-held-packages \
+    gcc g++ make python3-dev pkg-config git wget bash xz-utils \
+    libglib2.0-0 libnss3 libatk1.0-0 libgdk-pixbuf-2.0-0 libxcb-cursor0 \
+    libx11-6 libegl1 libopengl0 libxrender1 libxext6 libxi6 libxcb1 \
+    ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG} || true && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN chmod +x ebook2audiobook.sh
-
-RUN apk add --no-cache \
-    gcc g++ make python3-dev py3-pip pkgconfig git wget bash xz \
-    libglib2.0 libstdc++ libgcc \
-    libx11 libxext libxi libxrandr libxrender libxcb \
-    mesa-gl mesa-egl mesa-gbm \
-    ${DOCKER_PROGRAMS_STR} \
-    tesseract-ocr tesseract-ocr-data-${ISO3_LANG} || true
-
 RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
-    sh /tmp/calibre.sh && rm -f /tmp/calibre.sh
+    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
 RUN find /usr -type d -name "__pycache__" -exec rm -rf {} + && \
     rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* && \
@@ -38,10 +36,8 @@ RUN find /usr -type d -name "__pycache__" -exec rm -rf {} + && \
     rm -rf /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages || true && \
     find /app -type d -name "__pycache__" -exec rm -rf {} + || true
 
-RUN apk del gcc g++ make python3-dev pkgconfig git && \
-    rm -rf /var/cache/apk/* /tmp/* /root/.cache
-
-ENV PATH="/root/.local/bin:/opt/calibre:/usr/local/bin:/usr/bin:/bin:${PATH}"
+RUN apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 
 EXPOSE 7860
 
