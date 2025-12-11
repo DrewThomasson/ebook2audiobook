@@ -42,19 +42,18 @@ RUN case "${DEVICE_TAG}" in \
     jetson51*) \
         echo "JetPack 5.1.x → copying CUDA 11.4 libs" && \
         mkdir -p /usr/local/cuda-11.4/lib64 && \
-        ( cp -P /usr/lib/aarch64-linux-gnu/libcuda* \
-                 /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 \
-                 /usr/lib/aarch64-linux-gnu/libcublas* \
-                 /usr/lib/aarch64-linux-gnu/libcufft* \
-                 /usr/lib/aarch64-linux-gnu/libcurand* \
-                 /usr/lib/aarch64-linux-gnu/libcusparse* \
-                 /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) ;; \
+        ( cp -P /usr/lib/aarch64-linux-gnu/libcuda* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+        ( cp -P /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+        ( cp -P /usr/lib/aarch64-linux-gnu/libcublas* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+        ( cp -P /usr/lib/aarch64-linux-gnu/libcufft* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+        ( cp -P /usr/lib/aarch64-linux-gnu/libcurand* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+        ( cp -P /usr/lib/aarch64-linux-gnu/libcusparse* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) ;; \
+    jetson60*|jetson61*) \
+        echo "JetPack 6.x → no extra CUDA lib copy needed" ;; \
     *) ;; \
 esac
 
-RUN if echo "${DEVICE_TAG}" | grep -q "^jetson51"; then \
-		echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64\${LD_LIBRARY_PATH:+:\${LD_LIBRARY_PATH}}" >> /etc/profile.d/cuda.sh; \
-	fi
+ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${DEVICE_TAG#jetson51*}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
     bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
