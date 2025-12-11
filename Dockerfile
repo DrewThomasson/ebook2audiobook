@@ -28,7 +28,7 @@ RUN apt-get update && \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
 		gcc g++ make python3-dev pkg-config git wget bash xz-utils \
 		libegl1 libopengl0 libgl1 libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
-		cmake freetype fontconfig libgomp1 libfontconfig1 libsndfile1 \
+		cmake fontconfig libfreetype6 libgomp1 libfontconfig1 libsndfile1 \
 		${DOCKER_PROGRAMS_STR} \
 		tesseract-ocr-${ISO3_LANG} || true && \
 		rm -rf /var/lib/apt/lists/*
