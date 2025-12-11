@@ -407,7 +407,23 @@ function install_programs {
 			PACK_MGR="apt-get install"
 			PACK_MGR_OPTIONS="-y"
 		elif command -v apk &> /dev/null; then
+			if ! command -v un-get &>/dev/null; then
+				echo "  → Installing un-get plugin..."
+				curl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg
+				installplg /tmp/un-get.plg
+				rm -f /tmp/un-get.plg
+				# Add the two best repos for Unraid 7 (current as of Dec 2025)
+				mkdir -p /boot/config/plugins/un-get
+				cat > /boot/config/plugins/un-get/sources.list <<EOF
+https://slackware.uk/slackware/slackware64-current/
+https://slackware.uk/people/shinji257/unraid7/
+EOF
+				sleep 8
+			fi
 			PACK_MGR="apk add"
+		elif command -v installplg &> /dev/null; then
+			PACK_MGR="un-get install"
+			PACK_MGR_OPTIONS=""
 		else
 			echo "Cannot recognize your applications package manager. Please install the required applications manually."
 			return 1
