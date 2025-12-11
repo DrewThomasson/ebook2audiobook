@@ -673,7 +673,7 @@ function build_docker_image {
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
-		jetson*)	cmd_options="--runtime nvidia"; py_vers="3.10" ;;
+		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="3.10" ;;
 		xpu)		cmd_options="--device=/dev/dri" ;;
 		mps)		cmd_options="" ;;
 		*)			cmd_options="" ;;
@@ -686,6 +686,7 @@ function build_docker_image {
 			build \
 			--no-cache \
 			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg DEVICE_TAG="$TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
@@ -696,6 +697,7 @@ function build_docker_image {
 			--no-cache \
 			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg DEVICE_TAG="$TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
