@@ -2,11 +2,6 @@ ARG PYTHON_VERSION=3.10
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
 ARG APP_VERSION=25.12.12
-ARG DEVICE_TAG=cpu
-ARG DOCKER_DEVICE_STR
-ARG DOCKER_PROGRAMS_STR
-ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
-ARG ISO3_LANG=eng
 
 LABEL org.opencontainers.image.title="ebook2audiobook" \
       org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
@@ -14,6 +9,12 @@ LABEL org.opencontainers.image.title="ebook2audiobook" \
       org.opencontainers.image.authors="Drew Thomasson / Rob McDowell" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook"
+
+ARG DEVICE_TAG=cpu
+ARG DOCKER_DEVICE_STR
+ARG DOCKER_PROGRAMS_STR
+ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
+ARG ISO3_LANG=eng
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
