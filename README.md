@@ -400,7 +400,8 @@ one [pause] equals to 1.4 seconds
 	# JETSON:
 	docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
 
-	# MPS is not exposed in docker so CPU must be used
+	#### MPS is not exposed in docker so CPU must be used ####
+    
     # Docker Compose
     docker-compose up -d # To rebuild add --build 
     # To stop -> docker-compose down
