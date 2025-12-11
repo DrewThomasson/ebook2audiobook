@@ -34,10 +34,13 @@ RUN apt-get update && \
         tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
-# CRITICAL: Rust install + source env in the SAME layer as your script
+RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
+    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
+
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . "$HOME/.cargo/env" && \
-    chmod +x ebook2audiobook.sh && \
+    . "$HOME/.cargo/env"
+
+RUN chmod +x ebook2audiobook.sh && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 # JetPack 5.1.x CUDA 11.4 fix — only when needed
@@ -56,9 +59,6 @@ RUN case "${DEVICE_TAG}" in \
 esac
 
 ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-
-RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
-    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
 RUN set -eux; \
     find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
