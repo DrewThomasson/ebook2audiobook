@@ -658,7 +658,7 @@ function check_sitecustomized {
 function build_docker_image {
 	local ARG="$1"
 	if [[ "$ARG" == "" ]]; then
-		echo "build_docker_image() error: ARG is empt"
+		echo "build_docker_image() error: ARG is empty"
 		return 1
 	fi
 	if ! command -v docker >/dev/null 2>&1; then
