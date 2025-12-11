@@ -1,6 +1,6 @@
 # 📚 ebook2audiobook
 CPU/GPU Converter from eBooks to audiobooks with chapters and metadata<br/>
-using XTTSv2, Bark, Vits, Fairseq, YourTTS, Tacotron2 and more. Supports voice cloning and +1110 languages!
+using XTTSv2, Bark, Vits, Fairseq, YourTTS, Tacotron2 and more. Supports voice cloning and 1158 languages!
 > [!IMPORTANT]
 **This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
@@ -370,59 +370,58 @@ TIP: if it needs some more pauses, just add '###' or
 one [pause] equals to 1.4 seconds
 
 
-### Docker Compose
-
-For pre-built image enable `#image: docker.io/athomasson2/ebook2audiobook:latest` in `docker-compose.yml`
-
-
+### Docker
 
 #### Steps to Run
-1. **Clone the Repository** (if you haven't already):
+1. **Clone the Repository**:
    ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
    ```
-2. **Set GPU Support (disabled by default)**
-  To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
-4. **Start the service:**
+2. **Build the container**
+   ```bash
+   # Windows
+   ebook2audiobook.cmd --script_mode build_docker
+
+   # Linux/MacOS
+   ./ebook2audiobook.sh --script_mode build_docker 
+   ```
+4. **Run the Container:**
     ```bash
-    # Docker
+	### Gradio/GUI:
+	# CPU:
+	docker run --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu
+	# CUDA:
+	docker run --gpus all --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cu[118/121/128 etc..]
+	# ROCM:
+	docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..]
+	# XPU:
+	docker run --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu
+	#JETSON:
+	docker run --runtime nvidia  --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]
+
+	### Headless mode:
+	# CPU:
+	docker run --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+	# CUDA:
+	docker run --gpus all --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook::cu[118/121/128 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+	# ROCM:
+	docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+	# XPU:
+	docker run --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+	# JETSON:
+	docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+
+	#### MPS is not exposed in docker so CPU must be used ####
+    
+    # Docker Compose
     docker-compose up -d # To rebuild add --build 
     # To stop -> docker-compose down
 
-    # Podman
+    # Podman Compose
     podman compose -f podman-compose.yml up -d # To rebuild add --build
     # To stop -> podman compose -f podman-compose.yml down
     ```
-5. **Access the service:**
-  The service will be available at http://localhost:7860.
-
-
-### Compose Build Arguments
-
-```bash
-SKIP_XTTS_TEST: "true" # (Saves space by not baking xtts model into docker image)
-TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu]
-# All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
-```
-
-
-### Compose Headless
-
-[Headless Wiki for more info](https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide)
-```bash
-A headless example is already contained within the `docker-compose.yml` file.
-
-The `docker-compose.yml` file will act as the base dir for any headless commands added.
-```
-
-### Compose container file locations
-
-```bash
-By Default: All compose containers share the contents your local `ebook2audiobook` folder
-```
-
-
 ### Common Docker Issues
 
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
