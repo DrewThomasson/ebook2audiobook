@@ -31,14 +31,19 @@ RUN apt-get update && \
         tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
+# THIS IS THE ONLY FIX: Install Rust + source env in ONE layer AND export PATH for next layer
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-	. "$HOME/.cargo/env"
+    . "$HOME/.cargo/env" && \
+    echo "export PATH=$HOME/.cargo/bin:$PATH" >> /etc/profile.d/rust.sh
 
-RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
-    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
+# Make Rust available to the next RUN command
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN chmod +x ebook2audiobook.sh && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+
+RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
+    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
 RUN set -eux; \
     find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
@@ -49,6 +54,8 @@ RUN set -eux; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache $HOME/.rustup $HOME/.cargo || true
 
-EXPOSE 7860
+RUN mkdir -p /app/audiobooks && chmod 777 /app/audiobooks
+VOLUME /app/audiobooks
 
+EXPOSE 7860
 ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]
