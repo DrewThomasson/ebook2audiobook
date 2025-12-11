@@ -414,11 +414,11 @@ one [pause] is a random between 0.8 to 1.6 seconds
 	# JETSON:
 		docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
     # Docker Compose
-    docker-compose up -d # To rebuild add --build 
+    docker-compose up -d
     # To stop -> docker-compose down
 
     # Podman Compose
-    podman compose -f podman-compose.yml up -d # To rebuild add --build
+    podman compose -f podman-compose.yml up
     # To stop -> podman compose -f podman-compose.yml down
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
