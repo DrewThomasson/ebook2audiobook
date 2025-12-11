@@ -419,22 +419,6 @@ if errorlevel 1 (
 )
 exit /b 0
 
-:compare_versions
-setlocal EnableDelayedExpansion
-set "v1=%~1"
-set "v2=%~2"
-:: Remove dots
-set "v1_n=%v1:.=%"
-set "v2_n=%v2:.=%"
-:: Pad with zeros
-set "v1_n=000000%v1_n%"
-set "v2_n=000000%v2_n%"
-set "v1_n=!v1_n:~-6!"
-set "v2_n=!v2_n:~-6!"
-if !v1_n! LSS !v2_n! (endlocal & set cmp_result=LEQ & exit /b)
-if !v1_n! EQU !v2_n! (endlocal & set cmp_result=LEQ & exit /b)
-endlocal & set cmp_result=GTR & exit /b
-
 :install_python_packages
 echo [ebook2audiobook] Installing dependencies...
 python -m pip cache purge >nul 2>&1
@@ -444,11 +428,6 @@ if errorlevel 1 goto :failed
 for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
 	set "torch_ver=%%A"
 )
-::call :compare_versions "%torch_ver%" "2.2.2"
-::if /I "%cmp_result%"=="LEQ" (
-::	python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
-::	if errorlevel 1 goto :failed
-::)
 python -m unidic download
 if errorlevel 1 goto :failed
 echo [ebook2audiobook] Installation completed.

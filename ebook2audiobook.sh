@@ -606,10 +606,6 @@ function install_python_packages {
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip > /dev/null 2>&1
 	python3 -m pip install --upgrade --no-cache-dir --progress-bar on --disable-pip-version-check --use-pep517 -r "$SCRIPT_DIR/requirements.txt" || exit 1
-	#torch_ver=$(python3 -m pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
-	#if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
-	#	python3 -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
-	#fi
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
 	return 0
