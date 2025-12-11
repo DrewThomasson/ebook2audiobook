@@ -3,9 +3,6 @@ import os, re, sys, platform, shutil, subprocess, json
 from functools import cached_property
 from typing import Union
 from importlib.metadata import version, PackageNotFoundError
-from packaging.version import Version, InvalidVersion
-from packaging.specifiers import SpecifierSet
-from packaging.markers import Marker
 from lib.conf import *
 
 class DeviceInstaller():
@@ -284,7 +281,7 @@ class DeviceInstaller():
             
         return (name, tag, msg)
 
-    def check_and_install_requirements(self)->bool:
+    def install_python_packages(self)->bool:
         if not os.path.exists(requirements_file):
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
@@ -304,6 +301,7 @@ class DeviceInstaller():
                     pkg_part, marker_part = package.split(';', 1)
                     marker_part = marker_part.strip()
                     try:
+                        from packaging.markers import Marker
                         marker = Marker(marker_part)
                         if not marker.evaluate():
                             continue
@@ -339,13 +337,17 @@ class DeviceInstaller():
                 else:
                     spec_str = clean_pkg[len(pkg_name):].strip()
                     if spec_str:
+                        from packaging.specifiers import SpecifierSet
+                        from packaging.version import Version, InvalidVersion
                         spec = SpecifierSet(spec_str)
                         norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
                         short_version = norm_match.group(1) if norm_match else installed_version
                         try:
                             installed_v = Version(short_version)
-                        except Exception:
-                            installed_v = Version('0')
+                        except InvalidVersion as e:
+                            error = f'install_device_packages() Version error: {e}'
+                            print(error)
+                            return 1 
                         req_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
                         if req_match:
                             req_v = Version(req_match.group(1))
@@ -399,7 +401,7 @@ class DeviceInstaller():
                 print(msg)
             return self.check_dictionary()
         except Exception as e:
-            error = f'check_and_install_requirements() error: {e}'
+            error = f'install_python_packages() error: {e}'
             print(error)
             return False
           
@@ -432,6 +434,7 @@ class DeviceInstaller():
                             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
+                                    from packaging.version import Version
                                     torch_version_base = Version(torch_version).base_version
                                     print(f"Installing the right library packages for {device_info['name']}...")
                                     os_env = device_info['os']
@@ -472,11 +475,7 @@ class DeviceInstaller():
             else:
                 error = f'install_device_packages() error: json.loads() could not decode device_info_str={device_info_str}'
                 print(error)
-            return 1
-        except InvalidVersion as e:
-            error = f'install_device_packages() error: {e}'
-            print(error)
-            return 1      
+            return 1     
         except Exception as e:
             error = f'install_device_packages() error: {e}'
             print(error)
