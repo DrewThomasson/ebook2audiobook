@@ -421,7 +421,7 @@ one [pause] equals to 1.4 seconds
     podman compose -f podman-compose.yml up -d # To rebuild add --build
     # To stop -> podman compose -f podman-compose.yml down
 ```
-# NOTE: MPS is not exposed in docker so CPU must be used
+- NOTE: MPS is not exposed in docker so CPU must be used
   
 ### Common Docker Issues
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
