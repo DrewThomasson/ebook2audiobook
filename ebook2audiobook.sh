@@ -36,7 +36,7 @@ APP_NAME="ebook2audiobook"
 APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-DOCKER_PROGRAMS=("cmake" "libgomp1" "libfontconfig1" "libsndfile1" "curl" "ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+DOCKER_PROGRAMS=("curl" "ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="$APP_NAME"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
@@ -408,7 +408,7 @@ function install_programs {
 			PACK_MGR_OPTIONS="-y"
 		elif command -v apk &> /dev/null; then
 			if ! command -v un-get &>/dev/null; then
-				echo "  → Installing un-get plugin..."
+				echo "Installing un-get plugin..."
 				curl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg
 				installplg /tmp/un-get.plg
 				rm -f /tmp/un-get.plg

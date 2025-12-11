@@ -11,7 +11,7 @@ LABEL org.opencontainers.image.title="ebook2audiobook" \
 
 ARG DEVICE_TAG=cpu
 ARG DOCKER_DEVICE_STR='{"name": "cpu", "os": "linux", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": ""}'
-ARG DOCKER_PROGRAMS_STR=cmake libgomp1 libfontconfig1 libsndfile1 curl ffmpeg nodejs espeak-ng sox tesseract-ocr
+ARG DOCKER_PROGRAMS_STR=curl ffmpeg nodejs espeak-ng sox tesseract-ocr
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
 
@@ -29,6 +29,7 @@ RUN apt-get update && \
 		gcc g++ make python3-dev pkg-config git wget bash xz-utils \
 		libegl1 libopengl0 libgl1 \
 		libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
+		cmake freetype fontconfig libgomp1 libfontconfig1 libsndfile1 \
 		${DOCKER_PROGRAMS_STR} \
 		tesseract-ocr-${ISO3_LANG} || true && \
 	rm -rf /var/lib/apt/lists/*
