@@ -34,40 +34,38 @@ RUN apt-get update && \
         tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
+# CRITICAL: Rust install + source env in the SAME layer as your script
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . "$HOME/.cargo/env"
-	
-RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
-    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
+    . "$HOME/.cargo/env" && \
+    chmod +x ebook2audiobook.sh && \
+    ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
+# JetPack 5.1.x CUDA 11.4 fix — only when needed
 RUN case "${DEVICE_TAG}" in \
-        jetson51*) \
-            echo "JetPack 5.1.x → copying CUDA 11.4 libs" && \
-            CUDA_LIB_DIR="/usr/local/cuda-11.4/lib64" && \
-            mkdir -p "$CUDA_LIB_DIR" && \
-            cp -P /usr/lib/aarch64-linux-gnu/libcuda* \
-                  /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 \
-                  /usr/lib/aarch64-linux-gnu/libcublas* \
-                  /usr/lib/aarch64-linux-gnu/libcufft* \
-                  /usr/lib/aarch64-linux-gnu/libcurand* \
-                  /usr/lib/aarch64-linux-gnu/libcusparse* \
-                  "$CUDA_LIB_DIR/" 2>/dev/null || true && \
-            echo "LD_LIBRARY_PATH=$CUDA_LIB_DIR:\${LD_LIBRARY_PATH}" > /etc/profile.d/jetpack51-cuda.sh ;; \
-        jetson60*|jetson61*) \
-            echo "JetPack 6.x → no extra CUDA fix needed" ;; \
-    esac
+    jetson51*) \
+        echo "JetPack 5.1.x → copying CUDA 11.4 libs" && \
+        mkdir -p /usr/local/cuda-11.4/lib64 && \
+        cp -P /usr/lib/aarch64-linux-gnu/libcuda* \
+              /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 \
+              /usr/lib/aarch64-linux-gnu/libcublas* \
+              /usr/lib/aarch64-linux-gnu/libcufft* \
+              /usr/lib/aarch64-linux-gnu/libcurand* \
+              /usr/lib/aarch64-linux-gnu/libcusparse* \
+              /usr/local/cuda-11.4/lib64/ 2>/dev/null true ;; \
+    *) ;; \
+esac
 
 ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
-RUN chmod +x ebook2audiobook.sh && \
-    ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
+    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
 RUN set -eux; \
     find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
     rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* \
            /usr/share/icons/* /usr/share/fonts/* /var/cache/fontconfig/* \
            /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages \
-           /root/.cache /tmp/* $HOME/.rustup $HOME/.cargo || true; \
+           /root/.cache /tmp/* $HOME/.rustup $HOME/.cargo true; \
     apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
