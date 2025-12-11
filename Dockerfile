@@ -3,7 +3,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm
 
 LABEL org.opencontainers.image.title="ebook2audiobook" \
       org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
-      org.opencontainers.image.version="25.12.10" \
+      org.opencontainers.image.version="25.12.12" \
       org.opencontainers.image.authors="Drew Thomasson / Rob McDowell" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook"
@@ -34,6 +34,9 @@ RUN apt-get update && \
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     . "$HOME/.cargo/env"
+	
+RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
+    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
 RUN case "${DEVICE_TAG}" in \
         jetson51*) \
@@ -56,9 +59,6 @@ ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_P
 
 RUN chmod +x ebook2audiobook.sh && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
-
-RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
-    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
 RUN set -eux; \
     find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
