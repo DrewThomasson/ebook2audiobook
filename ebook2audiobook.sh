@@ -724,9 +724,9 @@ function build_docker_image {
 	fi
 	echo "Docker image ready! to run your docker: "
 	echo "GUI mode:"
-	echo "	docker run ${cmd_extra}--rm -it -v \"$(pwd)/audiobooks:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME"
+	echo "	docker run ${cmd_extra}--rm -it -v \"$(pwd)\":/app:rw -p 7860:7860 $DOCKER_IMG_NAME"
 	echo "Headless mode:"
-	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--language etc..]"
+	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 }
 
 ########################################
