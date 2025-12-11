@@ -31,9 +31,9 @@ RUN apt-get update && \
 		libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
 		cmake freetype fontconfig libgomp1 libfontconfig1 libsndfile1 \
 		${DOCKER_PROGRAMS_STR} \
-		tesseract-ocr-${ISO3_LANG} || true && \
-	rm -rf /var/lib/apt/lists/* && \
-	set -eux; \
+		tesseract-ocr-${ISO3_LANG} || true
+
+RUN set -eux; \
 	if command -v curl >/dev/null 2>&1; then \
 		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
 	elif command -v wget >/dev/null 2>&1; then \
@@ -41,8 +41,9 @@ RUN apt-get update && \
 	else \
 		echo "ERROR: curl or wget required to install rustup"; exit 1; \
 	fi && \
-	. "$HOME/.cargo/env" && \
-	chmod +x ebook2audiobook.sh && \
+	. "$HOME/.cargo/env"
+
+RUN chmod +x ebook2audiobook.sh && \
 	./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 RUN case "${DEVICE_TAG}" in \
@@ -82,6 +83,8 @@ RUN mkdir -p /usr/lib && \
 
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
 	bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
+
+RUN rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
 	find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
