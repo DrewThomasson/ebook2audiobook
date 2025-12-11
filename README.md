@@ -387,7 +387,6 @@ one [pause] equals to 1.4 seconds
    ./ebook2audiobook.sh --script_mode build_docker 
 ```
 4. **Run the Container:**
-* MPS is not exposed in docker so CPU must be used
 ```bash
 	# Gradio/GUI:
 
@@ -422,6 +421,8 @@ one [pause] equals to 1.4 seconds
     podman compose -f podman-compose.yml up -d # To rebuild add --build
     # To stop -> podman compose -f podman-compose.yml down
 ```
+* NOTE: MPS is not exposed in docker so CPU must be used
+  
 ### Common Docker Issues
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 
