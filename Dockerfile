@@ -57,16 +57,19 @@ RUN case "${DEVICE_TAG}" in \
         ( cp -P /usr/lib/aarch64-linux-gnu/libcusparse* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) ;; \
     jetson60*|jetson61*) \
         echo "JetPack 6.x → no extra CUDA lib copy needed" ;; \
+	xpu*) \
+        echo "Intel XPU detected — using IPEX" ;; \
+    rocm*) \
+        echo "AMD ROCm detected — using ROCm PyTorch" ;; \
     *) ;; \
 esac
 
-RUN if [[ "${DEVICE_TAG}" == jetson51* ]]; then \
-        export LD_LIBRARY_PATH="/usr/local/cuda-11.4/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"; \
+RUN if [ "${DEVICE_TAG}" = jetson51* ]; then \
+        echo "LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64" >> /etc/environment; \
     else \
-        export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"; \
-    fi && \
-    echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /etc/environment
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
+        echo "LD_LIBRARY_PATH=" >> /etc/environment; \
+    fi
+ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64
 
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
     bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
