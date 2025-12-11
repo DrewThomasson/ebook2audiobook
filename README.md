@@ -368,45 +368,47 @@ one [pause] equals to 1.4 seconds
    ```
 2. **Build the container**
    ```bash
-### Gradio/GUI:
-# CPU:
-	docker run --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu
-# CUDA:
-	docker run --gpus all --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cu[118/121/128 etc..]
-# ROCM:
-	docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..]
-# XPU:
-	docker run --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu
-#JETSON:
-	docker run --runtime nvidia  --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]
+   # Windows
+   ebook2audiobook.cmd --script_mode build_docker
 
-### Headless mode:
-# CPU:
-	docker run --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
-# CUDA:
-	docker run --gpus all --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook::cu[118/121/128 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
-# ROCM:
-	docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
-# XPU:
-	docker run --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
-# JETSON:
-docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
-
-# MPS is not exposed in docker so CPU must be used   
+   # Linux/MacOS
+   ./ebook2audiobook.sh --script_mode build_docker 
    ```
 4. **Run the Container:**
-   Gradio GUI mode:
     ```bash
-    # Docker
+	### Gradio/GUI:
+	# CPU:
+	docker run --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu
+	# CUDA:
+	docker run --gpus all --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:cu[118/121/128 etc..]
+	# ROCM:
+	docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..]
+	# XPU:
+	docker run --device=/dev/dri --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu
+	#JETSON:
+	docker run --runtime nvidia  --rm -it -v "$(pwd)/audiobooks:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]
+
+	### Headless mode:
+	# CPU:
+	docker run --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+	# CUDA:
+	docker run --gpus all --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook::cu[118/121/128 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+	# ROCM:
+	docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+	# XPU:
+	docker run --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+	# JETSON:
+	docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+
+	# MPS is not exposed in docker so CPU must be used
+    # Docker Compose
     docker-compose up -d # To rebuild add --build 
     # To stop -> docker-compose down
 
-    # Podman
+    # Podman Compose
     podman compose -f podman-compose.yml up -d # To rebuild add --build
     # To stop -> podman compose -f podman-compose.yml down
     ```
-    Headless mode:
-
 ### Common Docker Issues
 
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
