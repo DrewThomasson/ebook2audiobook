@@ -359,7 +359,7 @@ Docker run image:
     
     * MPS is not exposed in docker so CPU must be used.
 
-Tip: to add of silence (random between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
+Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
 
 ```
 
@@ -367,7 +367,7 @@ NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] 
 
 TIP: if it needs some more pauses, just add '###' or 
 '[pause]' between the words you wish more pause. 
-one [pause] equals to 1.4 seconds
+one [pause] is a random between 0.8 to 1.6 seconds
 
 
 ### Docker
@@ -424,7 +424,7 @@ one [pause] equals to 1.4 seconds
 - NOTE: MPS is not exposed in docker so CPU must be used
   
 ### Common Docker Issues
-- My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+- My NVIDIA GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 
 ## Fine Tuned TTS models
 #### Fine Tune your own XTTSv2 model
@@ -475,7 +475,7 @@ athomasson2/ebook2audiobook:VERSION_NUM # For Pre-build docker images -> Example
 ```
 
 ## Common Issues:
-- My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+- My NVIDIA GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU is slow (better on server smp CPU) while NVIDIA GPU can have almost real time conversion.
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    For faster multilingual generation I would suggest my other
