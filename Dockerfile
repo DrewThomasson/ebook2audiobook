@@ -71,6 +71,15 @@ RUN if [ "${DEVICE_TAG}" = "jetson51" ]; then \
 	fi
 ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64
 
+# Need for Calibre checking only in /usr/lib
+RUN mkdir -p /usr/lib && \
+    ln -s /usr/lib64/libfreetype.so.6    /usr/lib/libfreetype.so.6    2>/dev/null || true && \
+    ln -s /usr/lib64/libfontconfig.so.1  /usr/lib/libfontconfig.so.1  2>/dev/null || true && \
+    ln -s /usr/lib64/libpng16.so.16      /usr/lib/libpng16.so.16      2>/dev/null || true && \
+    ln -s /usr/lib64/libX11.so.6         /usr/lib/libX11.so.6         2>/dev/null || true && \
+    ln -s /usr/lib64/libXext.so.6        /usr/lib/libXext.so.6        2>/dev/null || true && \
+    ln -s /usr/lib64/libXrender.so.1     /usr/lib/libXrender.so.1     2>/dev/null || true
+
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
 	bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
