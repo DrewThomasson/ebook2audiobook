@@ -2,7 +2,6 @@ ARG PYTHON_VERSION=3.10
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
 ARG APP_VERSION=25.12.12
-
 LABEL org.opencontainers.image.title="ebook2audiobook" \
       org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
       org.opencontainers.image.version="${APP_VERSION}" \
@@ -34,38 +33,40 @@ RUN apt-get update && \
         tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
-RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
-    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
-
+# Rust for sudachipy
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     . "$HOME/.cargo/env"
 
 RUN chmod +x ebook2audiobook.sh && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
-# JetPack 5.1.x CUDA 11.4 fix — only when needed
+# JetPack 5.1.x: ALWAYS copy CUDA 11.4 libs — silent on missing files, never fails build
 RUN case "${DEVICE_TAG}" in \
     jetson51*) \
-        echo "JetPack 5.1.x → copying CUDA 11.4 libs" && \
+        echo "JetPack 5.1.x → copying CUDA 11.4 libs (safe, silent on missing)" && \
         mkdir -p /usr/local/cuda-11.4/lib64 && \
-        cp -P /usr/lib/aarch64-linux-gnu/libcuda* \
-              /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 \
-              /usr/lib/aarch64-linux-gnu/libcublas* \
-              /usr/lib/aarch64-linux-gnu/libcufft* \
-              /usr/lib/aarch64-linux-gnu/libcurand* \
-              /usr/lib/aarch64-linux-gnu/libcusparse* \
-              /usr/local/cuda-11.4/lib64/ 2>/dev/null true ;; \
+        ( cp -P /usr/lib/aarch64-linux-gnu/libcuda* \
+                 /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 \
+                 /usr/lib/aarch64-linux-gnu/libcublas* \
+                 /usr/lib/aarch64-linux-gnu/libcufft* \
+                 /usr/lib/aarch64-linux-gnu/libcurand* \
+                 /usr/lib/aarch64-linux-gnu/libcusparse* \
+                 /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) ;; \
     *) ;; \
 esac
 
-ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+# LD_LIBRARY_PATH only for JetPack 5.1.x — empty otherwise
+ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${DEVICE_TAG#jetson51*}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
+    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
 
 RUN set -eux; \
     find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
     rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* \
            /usr/share/icons/* /usr/share/fonts/* /var/cache/fontconfig/* \
            /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages \
-           /root/.cache /tmp/* $HOME/.rustup $HOME/.cargo true; \
+           /root/.cache /tmp/* $HOME/.rustup $HOME/.cargo || true; \
     apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
