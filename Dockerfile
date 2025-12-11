@@ -33,17 +33,14 @@ RUN apt-get update && \
         tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
-# Rust for sudachipy
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . "$HOME/.cargo/env"
-
-RUN chmod +x ebook2audiobook.sh && \
+    . "$HOME/.cargo/env" && \
+    chmod +x ebook2audiobook.sh && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
-# JetPack 5.1.x: ALWAYS copy CUDA 11.4 libs — silent on missing files, never fails build
 RUN case "${DEVICE_TAG}" in \
     jetson51*) \
-        echo "JetPack 5.1.x → copying CUDA 11.4 libs (safe, silent on missing)" && \
+        echo "JetPack 5.1.x → copying CUDA 11.4 libs" && \
         mkdir -p /usr/local/cuda-11.4/lib64 && \
         ( cp -P /usr/lib/aarch64-linux-gnu/libcuda* \
                  /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 \
@@ -55,8 +52,7 @@ RUN case "${DEVICE_TAG}" in \
     *) ;; \
 esac
 
-# LD_LIBRARY_PATH only for JetPack 5.1.x — empty otherwise
-ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${DEVICE_TAG#jetson51*}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
     bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
