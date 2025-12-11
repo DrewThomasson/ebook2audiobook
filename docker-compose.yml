@@ -4,7 +4,7 @@ services:
   ebook2audiobook:
     # Uncomment to use pre-built image instead of building locally
     # image: docker.io/athomasson2/ebook2audiobook:latest
-    image: ${BUILD_NAME}:ebook2audiobook
+    image: ${BUILD_NAME}
     build:
       context: .
       dockerfile: Dockerfile
