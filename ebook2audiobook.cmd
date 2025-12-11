@@ -541,6 +541,7 @@ set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 if %HAS_COMPOSE%==0 (
 	BUILD_NAME="%DOCKER_IMG_NAME%" docker compose --progress=plain build --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
+		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%TAG%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
@@ -550,6 +551,7 @@ if %HAS_COMPOSE%==0 (
 ) else (
 	docker build --no-cache --progress plain ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
+		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%TAG%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^

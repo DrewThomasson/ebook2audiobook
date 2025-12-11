@@ -686,6 +686,7 @@ function build_docker_image {
 			build \
 			--no-cache \
 			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
@@ -697,6 +698,7 @@ function build_docker_image {
 			--no-cache \
 			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
