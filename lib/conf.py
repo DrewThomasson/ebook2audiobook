@@ -29,6 +29,7 @@ os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
 os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
 os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir
+os.environ['CALIBRE_CONFIG_DIRECTORY'] = tmp_dir
 os.environ['TMPDIR'] = tmp_dir
 os.environ['GRADIO_DEBUG'] = '0'
 os.environ['DO_NOT_TRACK'] = 'True'
