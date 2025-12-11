@@ -367,7 +367,7 @@ NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] 
 
 TIP: if it needs some more pauses, just add '###' or 
 '[pause]' between the words you wish more pause. 
-one [pause] equals to 1.4 seconds
+one [pause] is a random between 0.8 to 1.6 seconds
 
 
 ### Docker
