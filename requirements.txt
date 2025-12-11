@@ -8,9 +8,9 @@ docker
 ebooklib
 fastapi
 beautifulsoup4
-fugashi
 sudachipy
-sudachidict_core
+sudachidict-core
+pymupdf
 pymupdf-layout
 pytesseract
 unidic

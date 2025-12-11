@@ -40,6 +40,7 @@ os.environ['TTS_CACHE'] = tts_dir
 os.environ['TORCH_HOME'] = tts_dir
 os.environ['TTS_HOME'] = models_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
+os.environ['MPLCONFIGDIR'] = f'{models_dir}/matplotlib'
 os.environ['TESSDATA_PREFIX'] = f'{models_dir}/tessdata'
 os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
@@ -90,7 +91,7 @@ default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a definitive place where to upload the jetpack5 torch
 
 jetson_torch_version_base = {
-    "jetson51": "2.2.0",
+    "jetson51": "2.4.0",
     "jetson60": "2.4.0",
     "jetson61": "2.5.0"
 }

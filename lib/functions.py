@@ -13,9 +13,6 @@ import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, 
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
 
 from typing import Any
-from soynlp.tokenizer import LTokenizer
-from pythainlp.tokenize import word_tokenize
-from sudachipy import dictionary, tokenizer
 from PIL import Image, ImageSequence
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -732,9 +729,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     msg = f"NLP model {stanza_model} loaded!"
                     print(msg)
                 else:
-                    #use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
-                    use_gpu = False
-                    #stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
+                    #use_gpu = False
+                    use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
                     stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
                     if stanza_nlp:
                         session['stanza_cache'] = stanza_model
@@ -1025,13 +1021,16 @@ def get_sentences(text:str, id:str)->list|None:
                         jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
                         result.extend([t for t in jieba.cut(segment) if t.strip()])
                     elif lang == 'jpn':
+                        from sudachipy import dictionary, tokenizer
                         sudachi = dictionary.Dictionary().create()
                         mode = tokenizer.Tokenizer.SplitMode.C
                         result.extend([m.surface() for m in sudachi.tokenize(segment, mode) if m.surface().strip()])
                     elif lang == 'kor':
+                        from soynlp.tokenizer import LTokenizer
                         ltokenizer = LTokenizer()
                         result.extend([t for t in ltokenizer.tokenize(segment) if t.strip()])
                     elif lang in ['tha','lao','mya','khm']:
+                        from pythainlp.tokenize import word_tokenize
                         result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
                     else:
                         result.append(segment.strip())
@@ -1487,16 +1486,6 @@ def foreign2latin(text, base_lang):
         scr = script_of(word)
         if scr == "latin":
             return word
-        if base_lang in ["ru", "rus"] and scr == "cyrillic":
-            return word
-        if base_lang in ["ar", "ara"] and scr == "arabic":
-            return word
-        if base_lang in ["ko", "kor"] and scr == "hangul":
-            return word
-        if base_lang in ["ja", "jpn"] and scr == "japanese":
-            return word
-        if base_lang in ["zh", "zho"] and scr == "chinese":
-            return word
         try:
             if scr == "chinese":
                 from pypinyin import pinyin, Style
@@ -1580,7 +1569,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Prepare SML tags
     text = filter_sml(text)
     # romanize foreign words
-    text = foreign2latin(text, lang)
+    if language_mapping[lang]['script'] == 'latin':
+        text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {TTS_SML['pause']} ", text)

@@ -112,7 +112,7 @@ fi
 echo "Cleaning up temporary uninstaller..."
 rm -f "$TEMP_UNINSTALLER" || true
 
-echo
+echo "==================="
 echo "Uninstall complete."
 
 exit 0

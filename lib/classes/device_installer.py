@@ -1,11 +1,11 @@
-import os, re, sys, platform, shutil, importlib, subprocess, json
+import os, re, sys, platform, shutil, subprocess, json
 
-from packaging.version import Version, InvalidVersion
+from functools import cached_property
+from typing import Union
 from importlib.metadata import version, PackageNotFoundError
+from packaging.version import Version, InvalidVersion
 from packaging.specifiers import SpecifierSet
 from packaging.markers import Marker
-from functools import cached_property
-
 from lib.conf import *
 
 class DeviceInstaller():
@@ -23,19 +23,20 @@ class DeviceInstaller():
         return self.detect_device()
 
     def check_device_info(self, mode:str)->str:
-        name, tag = self.check_hardware
+        name, tag, msg = self.check_hardware
         arch = self.check_arch
-        pyenv = sys.version_info[:2]
+        pyvenv = sys.version_info[:2]
         if mode == NATIVE:
             os_env = 'linux' if name == 'jetson' else self.check_platform
         elif mode == 'build_docker':
             os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
-        if all([name, tag, os_env, arch, pyenv]):
-            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyenv, "tag": tag}
+            pyvenv = [3,10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
+        if all([name, tag, os_env, arch, pyvenv]):
+            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
             return json.dumps(device_info)
         return ''
         
-    def get_package_version(self, pkg:str)->str|bool:
+    def get_package_version(self, pkg:str)->Union[str, bool]:
         try:
             return version(pkg)
         except PackageNotFoundError:
@@ -74,7 +75,7 @@ class DeviceInstaller():
             except Exception:
                 return ''
 
-        def toolkit_version_parse(text:str)->str|None:
+        def toolkit_version_parse(text:str)->Union[str, None]:
             if not text:
                 return None
             # ----- CUDA -----
@@ -86,14 +87,16 @@ class DeviceInstaller():
             if m:
                 parts = m.group(1).split(".")
                 major = parts[0]
-                minor = parts[1] if len(parts) > 1 else "0"
+                minor = parts[1] if len(parts) > 1 else 0
+                patch = parts[2] if len(parts) > 2 else 0
                 return f"{major}.{minor}"
             # HIP also implies ROCm
             m = re.search(r'hip\s*version\s*[:=]?\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
             if m:
                 parts = m.group(1).split(".")
                 major = parts[0]
-                minor = parts[1] if len(parts) > 1 else "0"
+                minor = parts[1] if len(parts) > 1 else 0
+                patch = parts[2] if len(parts) > 2 else 0
                 return f"{major}.{minor}"
             # ----- XPU / oneAPI -----
             m = re.search(r'(oneapi|xpu)\s*(toolkit\s*)?version\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)',
@@ -102,7 +105,7 @@ class DeviceInstaller():
                 return m.group(3)
             return None
 
-        def toolkit_version_compare(version_str:str|None, version_range:dict)->int|None:
+        def toolkit_version_compare(version_str:Union[str, None], version_range:dict)->Union[int, None]:
             if version_str is None:
                 return None
             min_tuple = tuple(version_range.get('min', (0, 0)))
@@ -112,6 +115,7 @@ class DeviceInstaller():
             parts = version_str.split('.')
             major = int(parts[0])
             minor = int(parts[1]) if len(parts) > 1 else 0
+            patch = int(parts[2]) if len(parts) > 2 else 0
             current = (major, minor)
             if min_tuple != (0, 0) and current < min_tuple:
                 return -1
@@ -127,58 +131,50 @@ class DeviceInstaller():
         def jetpack_version(text:str)->str:
             m1 = re.search(r'r(\d+)', text)
             m2 = re.search(r'revision:\s*([\d\.]+)', text)
+            msg = ''
             if not m1 or not m2:
                 msg = 'Unrecognized JetPack version. Falling back to CPU.'
-                warn(msg)
-                return 'unknown'
+                return ('unknown', msg)
             l4t_major = int(m1.group(1))
             rev = m2.group(1)
             parts = rev.split('.')
             rev_major = int(parts[0])
             rev_minor = int(parts[1]) if len(parts) > 1 else 0
+            rev_patch = int(parts[2]) if len(parts) > 2 else 0
 
             if l4t_major < 35:
                 msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 5.1+. Falling back to CPU.'
-                warn(msg)
-                return 'unsupported'
+                return ('unsupported', msg)
 
             if l4t_major == 35:
                 if rev_major == 0 and rev_minor <= 1:
                     msg = 'JetPack 5.0/5.0.1 detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
-                    warn(msg)
-                    return 'cpu'
+                    return ('cpu', msg)
                 if rev_major == 0 and rev_minor >= 2:
                     msg = 'JetPack 5.0.x detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
-                    warn(msg)
-                    return 'cpu'
+                    return ('cpu', msg)
                 if rev_major == 1 and rev_minor == 0:
                     msg = 'JetPack 5.1.0 detected. Please upgrade to JetPack 5.1.2 or newer.'
-                    warn(msg)
-                    return '51'
+                    return ('51', msg)
                 if rev_major == 1 and rev_minor == 1:
                     msg = 'JetPack 5.1.1 detected. Please upgrade to JetPack 5.1.2 or newer.'
-                    warn(msg)
-                    return '51'
+                    return ('51', msg)
                 if (rev_major > 1) or (rev_major == 1 and rev_minor >= 2):
-                    return '51'
+                    return ('51', msg)
                 msg = 'Unrecognized JetPack 5.x version. Falling back to CPU.'
-                warn(msg)
-                return 'unknown'
+                return ('unknown', msg)
 
             if l4t_major == 36:
                 if rev_major == 2:
-                    return '60'
+                    return ('60', msg)
                 else:
-                    return '61'
+                    return ('61', msg)
                 msg = 'Unrecognized JetPack 6.x version. Falling back to CPU.'
-                warn(msg)
-            return 'unknown'
-
-        def warn(msg:str)->None:
-            print(f'[WARNING] {msg}')
+            return ('unknown', msg)
 
         name = None
         tag = None
+        msg = ''
         arch = platform.machine().lower()
 
         # ============================================================
@@ -186,7 +182,7 @@ class DeviceInstaller():
         # ============================================================
         if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
             raw = tegra_version()
-            jp_code = jetpack_version(raw)
+            jp_code, msg = jetpack_version(raw)
             if jp_code in ['unsupported', 'unknown']:
                 tag = 'cpu'
             elif os.path.exists('/etc/nv_tegra_release'):
@@ -201,8 +197,7 @@ class DeviceInstaller():
                     tag = f'jetson{jp_code}'
             out = try_cmd('uname - a')
             if 'tegra' in out:
-                msg = 'Unknown Jetson device. Failing back to cpu'
-                warn(msg)
+                msg = 'Jetson GPU detected but not (yes) compatible'
         # ============================================================
         # ROCm
         # ============================================================
@@ -212,19 +207,16 @@ class DeviceInstaller():
             cmp = toolkit_version_compare(version_str, rocm_version_range)
             if cmp == -1:
                 msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
-                warn(msg)
                 tag = 'cpu'
             elif cmp == 1:
                 msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
-                warn(msg)
                 tag = 'cpu'
             elif cmp == 0:
                 devices['ROCM']['found'] = True
                 name = 'rocm'
                 tag = f'rocm{version_str}'
             else:
-                msg = 'No ROCm version found. Falling back to CPU.'
-                warn(msg)
+                msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
 
         # ============================================================
         # CUDA
@@ -235,20 +227,20 @@ class DeviceInstaller():
             cmp = toolkit_version_compare(version_str, cuda_version_range)
             if cmp == -1:
                 msg = f'CUDA {version_str} < min {cuda_version_range["min"]}. Please upgrade.'
-                warn(msg)
                 tag = 'cpu'
             elif cmp == 1:
                 msg = f'CUDA {version_str} > max {cuda_version_range["max"]}. Falling back to CPU.'
-                warn(msg)
                 tag = 'cpu'
             elif cmp == 0:
                 devices['CUDA']['found'] = True
-                major, minor = version_str.split('.')
+                parts = version_str.split(".")
+                major = parts[0]
+                minor = parts[1] if len(parts) > 1 else 0
+                patch = parts[2] if len(parts) > 2 else 0
                 name = 'cuda'
                 tage = f'cu{major}{minor}'
             else:
-                msg = 'No CUDA version found. Falling back to CPU.'
-                warn(msg)
+                msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
 
         # ============================================================
         # APPLE MPS
@@ -269,15 +261,13 @@ class DeviceInstaller():
                 cmp = toolkit_version_compare(version_str, xpu_version_range)
                 if cmp == -1 or cmp == 1:
                     msg = f'XPU {version_str} out of supported range {xpu_version_range}. Falling back to CPU.'
-                    warn(msg)
                     tag = 'cpu'
                 elif cmp == 0 and (has_cmd('sycl-ls') or has_cmd('clinfo')):
                     devices['XPU']['found'] = True
                     name = 'xpu'
                     tag = 'xpu'
                 else:
-                    msg = 'Intel GPU detected but oneAPI runtime missing → CPU'
-                    warn(msg)
+                    msg = 'Intel GPU detected but not compotible or oneAPI runtime is missing.'
 
         elif has_cmd('clinfo'):
             out = try_cmd('clinfo')
@@ -292,7 +282,7 @@ class DeviceInstaller():
             name = 'cpu'
             tag = 'cpu'
             
-        return (name, tag)
+        return (name, tag, msg)
 
     def check_and_install_requirements(self)->bool:
         if not os.path.exists(requirements_file):
@@ -300,6 +290,7 @@ class DeviceInstaller():
             print(error)
             return False
         try:
+            import importlib
             from tqdm import tqdm        
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
@@ -401,8 +392,6 @@ class DeviceInstaller():
                             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', '--progress-bar', 'on', '--disable-pip-version-check', package])
                             t.update(1)
                         except subprocess.CalledProcessError as e:
-                            if package in flexible_packages:
-                                continue
                             error = f'Failed to install {package}: {e}'
                             print(error)
                             return False
@@ -437,36 +426,32 @@ class DeviceInstaller():
                     torch_version = self.get_package_version('torch')
                     if torch_version:
                         if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
-                            print(f"Hardware detected: {device_info['tag']}")
+                            print(f"Hardware detected: {device_info['name']}")
                             m = re.search(r'\+(.+)$', torch_version)
                             current_tag = m.group(1) if m else None
-                            if current_tag is not None:
-                                non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag)
+                            non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
                                     torch_version_base = Version(torch_version).base_version
-                                    print(f"{device_info['name']} hardware found! Installing the right library packages...")
+                                    print(f"Installing the right library packages for {device_info['name']}...")
                                     os_env = device_info['os']
                                     arch = device_info['arch']
                                     tag = device_info['tag']
                                     url = torch_matrix[device_info['tag']]['url']
                                     toolkit_version = "".join(c for c in tag if c.isdigit())
-                                    tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                     if device_info['name'] == 'jetson':
+                                        py_major, py_minor = device_info['pyvenv']
+                                        tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                         torch_pkg = f"{url}/v{toolkit_version}/torch-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                        torchaudio_pkg =   f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                        torchaudio_pkg = f"torchaudio=={jetson_torch_version_base[tag]}"
                                     else:
+                                        tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
                                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
-                                    if device_info['name'] == 'jetson':
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--force-reinstall', '--no-cache-dir', '--use-pep517', '--no-binary', 'scikit-learn', 'scikit-learn'])
                                     if device_info['name'] == 'cuda':
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
-                                    numpy_version = Version(self.get_package_version('numpy'))
-                                    if Version(torch_version) <= Version('2.2.2') and numpy_version and numpy_version >= Version('2.0.0'):
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'numpy<2'])
-                                    #msg = 'Relaunching app.py...'
+                                    #msg = 'Relaunching app...'
                                     #print(msg)
                                     #os.execv(sys.executable, [sys.executable] + sys.argv)
                                 except subprocess.CalledProcessError as e:

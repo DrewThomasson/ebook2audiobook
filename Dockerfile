@@ -1,40 +1,78 @@
-ARG BASE=python:3.12-slim
-FROM ${BASE}
+ARG PYTHON_VERSION=3.10
+FROM python:${PYTHON_VERSION}-slim-bookworm
 
+ARG APP_VERSION=25.12.12
+LABEL org.opencontainers.image.title="ebook2audiobook" \
+      org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.authors="Drew Thomasson / Rob McDowell" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook"
+
+ARG DEVICE_TAG=cpu
 ARG DOCKER_DEVICE_STR
 ARG DOCKER_PROGRAMS_STR
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
-ARG ISO3_LANG
+ARG ISO3_LANG=eng
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH="/root/.local/bin:$PATH"
-ENV CALIBRE_DISABLE_CHECKS=1
-ENV CALIBRE_DISABLE_GUI=1
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONWARNINGS="ignore::SyntaxWarning" \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
-COPY . /app
-RUN chmod +x /app/ebook2audiobook.sh
+COPY . .
 
-RUN set -ex && \
-    BUILD_DEPS="gcc g++ make build-essential python3-dev pkg-config curl" && \
-    RUNTIME_DEPS="wget xz-utils bash git \
-        libegl1 libopengl0 \
-        libx11-6 libglib2.0-0 libnss3 libdbus-1-3 \
-        libatk1.0-0 libgdk-pixbuf-2.0-0 \
-        libxcb-cursor0 \
-        tesseract-ocr tesseract-ocr-$ISO3_LANG \
-        $DOCKER_PROGRAMS_STR" && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends $BUILD_DEPS $RUNTIME_DEPS && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . "$HOME/.cargo/env" && \
-    rustc --version && cargo --version && \
-    wget -nv -O- "$CALIBRE_INSTALLER_URL" | sh /dev/stdin && \
-    echo "Building image for Ebook2Audiobook on Linux Debian Slim" && \
-    PATH="$HOME/.cargo/bin:$PATH" /app/ebook2audiobook.sh --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR" && \
-    apt-get purge -y gcc g++ make build-essential python3-dev pkg-config curl && \
-    apt-get autoremove -y --purge && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends --allow-change-held-packages \
+        gcc g++ make python3-dev pkg-config git wget bash xz-utils \
+        libegl1 libopengl0 libgl1 \
+        libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
+        ${DOCKER_PROGRAMS_STR} \
+        tesseract-ocr-${ISO3_LANG} || true && \
+    rm -rf /var/lib/apt/lists/*
 
+# Rust for sudachipy
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    . "$HOME/.cargo/env"
+
+RUN chmod +x ebook2audiobook.sh && \
+    ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+
+# JetPack 5.1.x: ALWAYS copy CUDA 11.4 libs — silent on missing files, never fails build
+RUN case "${DEVICE_TAG}" in \
+    jetson51*) \
+        echo "JetPack 5.1.x → copying CUDA 11.4 libs (safe, silent on missing)" && \
+        mkdir -p /usr/local/cuda-11.4/lib64 && \
+        ( cp -P /usr/lib/aarch64-linux-gnu/libcuda* \
+                 /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 \
+                 /usr/lib/aarch64-linux-gnu/libcublas* \
+                 /usr/lib/aarch64-linux-gnu/libcufft* \
+                 /usr/lib/aarch64-linux-gnu/libcurand* \
+                 /usr/lib/aarch64-linux-gnu/libcusparse* \
+                 /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) ;; \
+    *) ;; \
+esac
+
+# LD_LIBRARY_PATH only for JetPack 5.1.x — empty otherwise
+ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${DEVICE_TAG#jetson51*}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
+    bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
+
+RUN set -eux; \
+    find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
+    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* \
+           /usr/share/icons/* /usr/share/fonts/* /var/cache/fontconfig/* \
+           /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages \
+           /root/.cache /tmp/* $HOME/.rustup $HOME/.cargo || true; \
+    apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /app/audiobooks && chmod 777 /app/audiobooks
+VOLUME /app/audiobooks
 
 EXPOSE 7860
 ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]
