@@ -1021,8 +1021,10 @@ def get_sentences(text:str, id:str)->list|None:
                         jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
                         result.extend([t for t in jieba.cut(segment) if t.strip()])
                     elif lang == 'jpn':
-                        import nagisa
-                        result.extend([w for w in nagisa.tagging(segment).words if w.strip()])
+                        from sudachipy import dictionary, tokenizer
+                        sudachi = dictionary.Dictionary().create()
+                        mode = tokenizer.Tokenizer.SplitMode.C
+                        result.extend([m.surface() for m in sudachi.tokenize(segment, mode) if m.surface().strip()])
                     elif lang == 'kor':
                         from soynlp.tokenizer import LTokenizer
                         ltokenizer = LTokenizer()
