@@ -33,13 +33,11 @@ RUN apt-get update && \
         tesseract-ocr-${ISO3_LANG} || true && \
     rm -rf /var/lib/apt/lists/*
 
-# THIS IS THE ONLY CHANGE: Rust + your script in ONE layer
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     . "$HOME/.cargo/env" && \
     chmod +x ebook2audiobook.sh && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
-# JetPack 5.1.x CUDA 11.4 copy — silent on missing files
 RUN case "${DEVICE_TAG}" in \
     jetson51*) \
         echo "JetPack 5.1.x → copying CUDA 11.4 libs" && \
