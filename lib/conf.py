@@ -92,7 +92,7 @@ default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a definitive place where to upload the jetpack5 torch
 
 jetson_torch_version_base = {
-    "jetson51": "2.4.0",
+    "jetson51": "2.4.1",
     "jetson60": "2.4.0",
     "jetson61": "2.5.0"
 }
