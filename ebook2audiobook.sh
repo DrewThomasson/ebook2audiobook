@@ -27,16 +27,16 @@ export PATH="$CONDA_BIN_PATH:$PATH"
 NATIVE="native"
 BUILD_DOCKER="build_docker"
 ARCH=$(uname -m)
-PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.12"
+PYTHON_VERSION="$MAX_PYTHON_VERSION"
 PYTHON_ENV="python_env"
 SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
-HOST_PROGRAMS=("curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-DOCKER_PROGRAMS=("curl" "ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr")
+HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
+DOCKER_PROGRAMS=("cmake" "libgomp1" "libfontconfig1" "libsndfile1" "curl" "ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="$APP_NAME"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
@@ -89,17 +89,26 @@ if [[ -n "${arguments[docker_device]+exists}" ]]; then
 		exit 1
 	fi
 fi
-if [[ -v arguments[script_mode] ]]; then
+if [[ -n "${arguments[script_mode]}" ]]; then
 	if [[ "${arguments[script_mode]}" == "true" || -z "${arguments[script_mode]}" ]]; then
 		echo "Error: --script_mode requires a value"
 		exit 1
 	fi
-	for key in "${!arguments[@]}"; do
-		if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
-			echo "Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --$key"
-			exit 1
-		fi
-	done
+	if [ -n "$ZSH_VERSION" ]; then
+		for key in ${(k)arguments}; do   # zsh syntax
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
+				echo "Error: when --script_mode is used, only --docker_device is allowed. Invalid: --$key"
+				exit 1
+			fi
+		done
+	else
+		for key in "${!arguments[@]}"; do  # bash syntax
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
+				echo "Error: when --script_mode is used, only --docker_device is allowed. Invalid: --$key"
+				exit 1
+			fi
+		done
+	fi
 fi
 
 [[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
@@ -264,7 +273,7 @@ PLIST
 	open_desktop_app
 }
 
-function linux_app() {
+function linux_app {
 	local MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
 	local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
 	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
@@ -307,7 +316,7 @@ function check_desktop_app {
 }
 #################
 
-function get_iso3_lang() {
+function get_iso3_lang {
 	case "$1" in
 		en) echo "eng" ;;
 		fr) echo "fra" ;;
@@ -417,9 +426,9 @@ function install_programs {
 	fi
 	for program in "${programs_missing[@]}"; do
 		if [[ "$program" == "calibre" ]]; then		
-			# TODO: check if ebook-convert installed with the right min version
+			# TODO: check if the right ebook-convert is installed
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
+				echo -e "\e[32m=============== Calibre is installed! ===============\e[0m"
 			else
 				# avoid conflict with calibre builtin lxml
 				python3 -m pip uninstall lxml -y 2>/dev/null
@@ -435,84 +444,59 @@ function install_programs {
 				fi
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
 				if command -v $program >/dev/null 2>&1; then
-					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+					echo -e "\e[32m=============== $program is installed! ===============\e[0m"
 				else
-					echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+					echo -e "\e[31m=============== $program installation failed.\e[0m"
 				fi
 			fi	
 		elif [[ "$program" == "rust" || "$program" == "rustc" ]]; then
 			curl --proto '=https' --tlsv1.2 -sSf $RUST_INSTALLER_URL | sh -s -- -y
 			source $HOME/.cargo/env
 			if command -v $program &>/dev/null; then
-				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
 			else
-				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+				echo -e "\e[31m=============== $program installation failed.\e[0m"
 			fi
 		elif [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
-				case "$OS_LANG" in
-					en) tess_lang="eng" ;;
-					fr) tess_lang="fra" ;;
-					de) tess_lang="deu" ;;
-					it) tess_lang="ita" ;;
-					es) tess_lang="spa" ;;
-					pt) tess_lang="por" ;;
-					ar) tess_lang="ara" ;;
-					tr) tess_lang="tur" ;;
-					ru) tess_lang="rus" ;;
-					bn) tess_lang="ben" ;;
-					zh) tess_lang="chi_sim" ;;
-					fa) tess_lang="fas" ;;
-					hi) tess_lang="hin" ;;
-					hu) tess_lang="hun" ;;
-					id) tess_lang="ind" ;;
-					jv) tess_lang="jav" ;;
-					ja) tess_lang="jpn" ;;
-					ko) tess_lang="kor" ;;
-					pl) tess_lang="pol" ;;
-					ta) tess_lang="tam" ;;
-					te) tess_lang="tel" ;;
-					yo) tess_lang="yor" ;;
-					*) tess_lang="eng" ;;
-				esac
-				tess_lang="$(get_iso3_lang $OS_LANG)"
-				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $tess_lang"
+				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
+				ISO3_LANG="$(get_iso3_lang $OS_LANG)"
+				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $ISO3_LANG"
 				langpack=""
 				if command -v brew &> /dev/null; then
-					langpack="tesseract-lang-$tess_lang"
+					langpack="tesseract-lang-$ISO3_LANG"
 				elif command -v apt-get &>/dev/null; then
-					langpack="tesseract-ocr-$tess_lang"
+					langpack="tesseract-ocr-$ISO3_LANG"
 				elif command -v dnf &>/dev/null || command -v yum &>/dev/null; then
-					langpack="tesseract-langpack-$tess_lang"
+					langpack="tesseract-langpack-$ISO3_LANG"
 				elif command -v zypper &>/dev/null; then
-					langpack="tesseract-ocr-$tess_lang"
+					langpack="tesseract-ocr-$ISO3_LANG"
 				elif command -v pacman &>/dev/null; then
-					langpack="tesseract-data-$tess_lang"
+					langpack="tesseract-data-$ISO3_LANG"
 				elif command -v apk &>/dev/null; then
-					langpack="tesseract-ocr-$tess_lang"
+					langpack="tesseract-ocr-$ISO3_LANG"
 				else
 					echo "Cannot recognize your applications package manager. Please install the required applications manually."
 					return 1
 				fi
 				if [[ -n "$langpack" ]]; then
 					eval "$SUDO $PACK_MGR $langpack $PACK_MGR_OPTIONS"
-					if tesseract --list-langs | grep -q "$tess_lang"; then
-						echo "Tesseract OCR language '$tess_lang' successfully installed."
+					if tesseract --list-langs | grep -q "$ISO3_LANG"; then
+						echo "Tesseract OCR language '$ISO3_LANG' successfully installed."
 					else
-						echo "Tesseract OCR language '$tess_lang' not installed properly."
+						echo "Tesseract OCR language '$ISO3_LANG' not installed properly."
 					fi
 				fi
 			else
-				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+				echo -e "\e[31m=============== $program installation failed.\e[0m"
 			fi
 		else
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
 			else
-				echo -e "\e[31m===============>>> $program installation failed.\e[0m"
+				echo -e "\e[31m=============== $program installation failed.\e[0m"
 			fi
 		fi
 	done
@@ -562,16 +546,16 @@ function check_conda {
 				[[ -f "$config_path" ]] || touch "$config_path"
 				grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
 				source "$config_path"
-				echo -e "\e[32m===============>>> Miniforge3 is installed! <<===============\e[0m"
+				echo -e "\e[32m=============== Miniforge3 is installed! ===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 						echo "Miniforge3" >> "$INSTALLED_LOG"
 					fi
 			else
-				echo -e "\e[31m===============>>> Miniforge3 installation failed.\e[0m"
+				echo -e "\e[31m=============== Miniforge3 installation failed.\e[0m"
 				return 1
 			fi
 		else
-			echo -e "\e[31m===============>>> Miniforge3 installer not found!.\e[0m"
+			echo -e "\e[31m=============== Miniforge3 installer not found!.\e[0m"
 			return 1
 		fi
 	fi
@@ -611,7 +595,7 @@ function check_conda {
 
 function check_docker {
 	if ! command -v docker &> /dev/null; then
-		echo -e "\e[31m===============>>> Docker is not installed or not running. Please install or run Docker manually.\e[0m"
+		echo -e "\e[31m=============== Docker is not installed or not running. Please install or run Docker manually.\e[0m"
 		return 1
 	fi
 	return 0
@@ -622,21 +606,21 @@ function install_python_packages {
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip > /dev/null 2>&1
 	python3 -m pip install --upgrade --no-cache-dir --progress-bar on --disable-pip-version-check --use-pep517 -r "$SCRIPT_DIR/requirements.txt" || exit 1
-	torch_ver=$(pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
-	if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
-		python3 -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
-	fi
+	#torch_ver=$(python3 -m pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
+	#if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
+	#	python3 -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
+	#fi
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
 	return 0
 }
 
 function check_device_info {
-arg="$1"
-python3 - << EOF
+	local ARG="$1"
+	python3 - << EOF
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-result = device.check_device_info("$arg")
+result = device.check_device_info("$ARG")
 if result:
 	print(result)
 	raise SystemExit(0)
@@ -645,12 +629,13 @@ EOF
 }
 
 function install_device_packages {
-arg="$1"
-python3 - << EOF
-import sys
+	local ARG="$1"
+	python3 - "$ARG" << 'EOF'
+import sys,json
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-exit_code = device.install_device_packages('''$arg''')
+data = sys.argv[1]  # <-- JSON string received safely
+exit_code = device.install_device_packages(data)
 sys.exit(exit_code)
 EOF
 }
@@ -663,7 +648,7 @@ function check_sitecustomized {
 		if cp -p "$src_pyfile" "$dst_pyfile"; then
 			echo "Installed sitecustomize.py hook in $dst_pyfile"
 		else
-			echo -e "\e[31m===============>>> sitecustomize.py hook installation error: copy failed.\e[0m" >&2
+			echo -e "\e[31m=============== sitecustomize.py hook installation error: copy failed.\e[0m" >&2
 			exit 1
 		fi
 	fi
@@ -672,17 +657,37 @@ function check_sitecustomized {
 
 function build_docker_image {
 	local ARG="$1"
-	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
-	if ! command -v docker >/dev/null 2>&1; then
-		echo -e "\e[31m===============>>> Error: Docker must be installed and running!.\e[0m"
+	if [[ "$ARG" == "" ]]; then
+		echo "build_docker_image() error: ARG is empt"
 		return 1
 	fi
+	if ! command -v docker >/dev/null 2>&1; then
+		echo -e "\e[31m=============== Error: Docker must be installed and running!.\e[0m"
+		return 1
+	fi
+	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
+	local cmd_options=""
+	local cmd_extra=""
+	local py_vers="$PYTHON_VERSION"
+	case "$TAG" in
+		cpu)		cmd_options="";;
+		cu*)		cmd_options="--gpus all" ;;
+		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
+		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="3.10" ;;
+		xpu)		cmd_options="--device=/dev/dri" ;;
+		mps)		cmd_options="" ;;
+		*)			cmd_options="" ;;
+	esac
+	ISO3_LANG="$(get_iso3_lang $OS_LANG)"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
 	if docker compose version >/dev/null 2>&1; then
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
 			--progress plain \
 			build \
 			--no-cache \
+			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg APP_VERSION="$APP_VERSION" \
+			--build-arg DEVICE_TAG="$TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
@@ -692,6 +697,9 @@ function build_docker_image {
 		docker build \
 			--no-cache \
 			--progress plain \
+			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg APP_VERSION="$APP_VERSION" \
+			--build-arg DEVICE_TAG="$TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
@@ -699,6 +707,14 @@ function build_docker_image {
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
 	fi
+	if [[ -n "$cmd_options" ]]; then
+		cmd_extra="$cmd_options "
+	fi
+	echo "Docker image ready! to run your docker: "
+	echo "GUI mode:"
+	echo "	docker run ${cmd_extra}--rm -it -v \"$(pwd)/audiobooks:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME"
+	echo "Headless mode:"
+	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--language etc..]"
 }
 
 ########################################
@@ -714,8 +730,12 @@ else
 				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
 				exit 1
 			fi
-			build_docker_image "$(check_device_info "${SCRIPT_MODE}")" || exit 1
-			echo "Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 $DOCKER_IMG_NAME [--options]"
+			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
+			if [[ "$device_info_str" == "" ]]; then
+				echo "check_device_info() error: result is empty"
+				exit 1
+			fi
+			build_docker_image "$device_info_str" || exit 1
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
@@ -737,23 +757,23 @@ else
 		fi
 		# Output result if a virtual environment is detected
 		if [[ -n "$current_pyvenv" ]]; then
-			echo -e "\e[31m===============>>> Error: Current python virtual environment detected: $current_pyvenv..\e[0m"
+			echo -e "\e[31m=============== Error: Current python virtual environment detected: $current_pyvenv..\e[0m"
 			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
 			echo -e "If you are using conda then you would type in:"
 			echo -e "conda deactivate"
 			exit 1
 		fi
 		check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
-		check_conda || { echo -e "\e[31m===============>>> check_conda() failed.\e[0m"; exit 1; }
+		check_conda || { echo -e "\e[31m=============== check_conda() failed.\e[0m"; exit 1; }
 		source "$CONDA_ENV" || exit 1
-		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m===============>>> conda activate failed.\e[0m"; exit 1; }
+		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m=============== conda activate failed.\e[0m"; exit 1; }
 		check_sitecustomized || exit 1
 		check_desktop_app || exit 1
 		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
 	else
-		echo -e "\e[31m===============>>> ebook2audiobook is not correctly installed.\e[0m"
+		echo -e "\e[31m=============== ebook2audiobook is not correctly installed.\e[0m"
 	fi
 fi
 

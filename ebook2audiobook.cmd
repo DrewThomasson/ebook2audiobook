@@ -30,12 +30,13 @@ set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "ARCH=%PROCESSOR_ARCHITECTURE%"
 set "PYTHON_VERSION=3.12"
+set "PYTHON_SCOOP=python%PYTHON_VERSION:.=%"
 set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=rustup python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
-set "DOCKER_PROGRAMS=curl ffmpeg nodejs espeak-ng sox tesseract-ocr"
+set "HOST_PROGRAMS=cmake rustup python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
+set "DOCKER_PROGRAMS=cmake libgomp1 libfontconfig1 libsndfile1 curl ffmpeg nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=ebook2audiobook"
@@ -223,7 +224,11 @@ if errorlevel 1 (
 	set "OK_SCOOP=1"
 	goto :install_programs
 )
-goto :check_conda
+if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+	goto :check_required_programs
+) else (
+	goto :check_conda
+)
 exit /b
 
 :check_required_programs
@@ -310,16 +315,16 @@ if not "%OK_PROGRAMS%"=="0" (
 		if "%%p"=="tesseract" (
 			where /Q !prog!
 			if not errorlevel 1 (
-				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "tesslang=%%i"
-				echo Detected system language: !OS_LANG! → downloading OCR language: !tesslang!
+				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
+				echo Detected system language: !OS_LANG! → downloading OCR language: %ISO3_LANG%
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
-				if not exist "!tessdata!\!tesslang!.traineddata" (
-					powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
+				if not exist "!tessdata!\%ISO3_LANG%.traineddata" (
+					powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
 				)
-				if exist "!tessdata!\!tesslang!.traineddata" (
-					echo Tesseract OCR language !tesslang! installed in !tessdata!
+				if exist "!tessdata!\%ISO3_LANG%.traineddata" (
+					echo Tesseract OCR language %ISO3_LANG% installed in !tessdata!
 				) else (
-					echo Failed to install OCR language !tesslang!
+					echo Failed to install OCR language %ISO3_LANG%
 				)
 			)
 		)
@@ -439,11 +444,11 @@ if errorlevel 1 goto :failed
 for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
 	set "torch_ver=%%A"
 )
-call :compare_versions "%torch_ver%" "2.2.2"
-if /I "%cmp_result%"=="LEQ" (
-	python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
-	if errorlevel 1 goto :failed
-)
+::call :compare_versions "%torch_ver%" "2.2.2"
+::if /I "%cmp_result%"=="LEQ" (
+::	python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
+::	if errorlevel 1 goto :failed
+::)
 python -m unidic download
 if errorlevel 1 goto :failed
 echo [ebook2audiobook] Installation completed.
@@ -453,7 +458,7 @@ exit /b 0
 set "arg=%~1"
 powershell -NoLogo -NoProfile -Command ^
 @"
-python - << 'EOF'
+%PYTHON_SCOOP% - << 'EOF'
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 result = device.check_device_info(r"%arg%")
@@ -510,27 +515,44 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-:: Extract TAG from JSON (PowerShell)
 for /f %%A in ('powershell -NoLogo -Command "(ConvertFrom-Json ''%ARG%'').tag"') do set "TAG=%%A"
-:: Check Docker installed
 powershell -nologo -noprofile -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
-:: Check if docker compose exists
 powershell -nologo -noprofile -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
+set "cmd_options="
+set "cmd_extra="
+set "py_vers=%PYTHON_VERSION% "
+if /i "%TAG:~0,2%"=="cu" (
+	set "cmd_options=--gpus all"
+) else if /i "%TAG:~0,6%"=="jetson" (
+	set "cmd_options=--runtime nvidia --gpus all"
+	set "py_vers=3.10 "
+) else if /i "%TAG:~0,8%"=="rocm" (
+	set "cmd_options=--device=/dev/kfd --device=/dev/dri"
+) else if /i "%TAG%"=="xpu" (
+	set "cmd_options=--device=/dev/dri"
+) else if /i "%TAG%"=="mps" (
+	set "cmd_options="
+) else if /i "%TAG%"=="cpu" (
+	set "cmd_options="
+)
 set "HAS_COMPOSE=%errorlevel%"
-:: Build image name
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 if %HAS_COMPOSE%==0 (
-	:: Use docker compose v2
 	BUILD_NAME="%DOCKER_IMG_NAME%" docker compose --progress=plain build --no-cache ^
+		--build-arg PYTHON_VERSION="%py_vers%" ^
+		--build-arg APP_VERSION="%APP_VERSION%" ^
+		--build-arg DEVICE_TAG="%TAG%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
 		--build-arg ISO3_LANG="%ISO3_LANG%"
 	if errorlevel 1 exit /b 1
 ) else (
-	:: Use docker build (fallback)
 	docker build --no-cache --progress plain ^
+		--build-arg PYTHON_VERSION="%py_vers%" ^
+		--build-arg APP_VERSION="%APP_VERSION%" ^
+		--build-arg DEVICE_TAG="%TAG%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
@@ -538,6 +560,12 @@ if %HAS_COMPOSE%==0 (
 		-t "%DOCKER_IMG_NAME%" .
 	if errorlevel 1 exit /b 1
 )
+if defined cmd_options set "cmd_extra=%cmd_options% "
+echo Docker image ready! to run your docker:"
+echo GUI mode:
+echo 	docker run %cmd_extra%--rm -it -v "%cd%\audiobooks:/app/audiobooks" %DOCKER_IMG_NAME% -p 7860:7860
+echo Headless mode:"
+echo 	docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS
@@ -566,7 +594,7 @@ if defined arguments.help (
 		where /Q conda
 		if errorlevel 0 (
 			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-			python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
+			call python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
 			call conda deactivate
 		) else (
 			echo Ebook2Audiobook must be installed before to run --help.
@@ -576,9 +604,15 @@ if defined arguments.help (
 ) else (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		if "!DOCKER_DEVICE_STR!"=="" (
+			call %PYTHON_SCOOP% --version >null 2>&1 || call scoop install %PYTHON_SCOOP% 2>null
+			where /Q %PYTHON_SCOOP%
+			if errorlevel 1 (
+				echo %ESC%[31m=============== %PYTHON_SCOOP% installation failed.%ESC%[0m
+				goto :failed
+			)
 			call :check_docker
 			if errorlevel 1 goto :failed
-			docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
+			call docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
 			if errorlevel 0 (
 				echo [STOP] Docker image '%DOCKER_IMG_NAME%' already exists. Aborting build.
 				echo Delete it using: docker rmi %DOCKER_IMG_NAME%
@@ -589,7 +623,6 @@ if defined arguments.help (
 			if errorlevel 1 goto :failed
 			call :build_docker_image "%deviceinfo%"
 			if errorlevel 1 goto :failed
-			echo Docker image ready! to run your docker: docker run --gpus all -it --rm -p 7860:7860 %DOCKER_IMG_NAME%
 		) else (
 			call :install_python_packages
 			if errorlevel 1 goto :failed
