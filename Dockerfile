@@ -32,9 +32,8 @@ RUN apt-get update && \
 		cmake freetype fontconfig libgomp1 libfontconfig1 libsndfile1 \
 		${DOCKER_PROGRAMS_STR} \
 		tesseract-ocr-${ISO3_LANG} || true && \
-	rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
+	rm -rf /var/lib/apt/lists/* && \
+	set -eux; \
 	if command -v curl >/dev/null 2>&1; then \
 		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
 	elif command -v wget >/dev/null 2>&1; then \
