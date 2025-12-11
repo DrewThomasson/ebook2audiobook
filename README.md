@@ -359,7 +359,7 @@ Docker run image:
     
     * MPS is not exposed in docker so CPU must be used.
 
-Tip: to add of silence (random between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
+Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
 
 ```
 
