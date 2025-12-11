@@ -52,7 +52,9 @@ RUN case "${DEVICE_TAG}" in \
     *) ;; \
 esac
 
-ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+RUN if echo "${DEVICE_TAG}" | grep -q "^jetson51"; then \
+		echo "export LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64\${LD_LIBRARY_PATH:+:\${LD_LIBRARY_PATH}}" >> /etc/profile.d/cuda.sh; \
+	fi
 
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
     bash /tmp/calibre.sh && rm -f /tmp/calibre.sh

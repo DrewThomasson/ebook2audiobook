@@ -238,7 +238,7 @@ class DeviceInstaller():
                 minor = parts[1] if len(parts) > 1 else 0
                 patch = parts[2] if len(parts) > 2 else 0
                 name = 'cuda'
-                tage = f'cu{major}{minor}'
+                tag = f'cu{major}{minor}'
             else:
                 msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
 
@@ -267,7 +267,7 @@ class DeviceInstaller():
                     name = 'xpu'
                     tag = 'xpu'
                 else:
-                    msg = 'Intel GPU detected but not compotible or oneAPI runtime is missing.'
+                    msg = 'Intel GPU detected but not compatible or oneAPI runtime is missing.'
 
         elif has_cmd('clinfo'):
             out = try_cmd('clinfo')
