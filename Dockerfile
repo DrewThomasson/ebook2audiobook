@@ -27,11 +27,11 @@ COPY . .
 RUN apt-get update && \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
 		gcc g++ make python3-dev pkg-config git wget bash xz-utils \
-		libegl1 libopengl0 libgl1 \
-		libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
+		libegl1 libopengl0 libgl1 libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
 		cmake freetype fontconfig libgomp1 libfontconfig1 libsndfile1 \
 		${DOCKER_PROGRAMS_STR} \
-		tesseract-ocr-${ISO3_LANG} || true
+		tesseract-ocr-${ISO3_LANG} || true && \
+		rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
 	if command -v curl >/dev/null 2>&1; then \
@@ -83,8 +83,6 @@ RUN mkdir -p /usr/lib && \
 
 RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
 	bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
-
-RUN rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
 	find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
