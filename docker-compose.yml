@@ -1,23 +1,23 @@
 services:
   ebook2audiobook:
-    # Uncomment to use pre-built image instead of building locally
-    # image: docker.io/athomasson2/ebook2audiobook:latest
-    image: ${BUILD_NAME}
+    image: ebook2audiobook:${BUILD_NAME:-cpu}  # e.g. BUILD_NAME=cu128 → ebook2audiobook:cu128
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: "25.12.12"
-        DEVICE_TAG: cpu   # override with environment variable if needed
+        APP_VERSION: ${APP_VERSION:-25.25.25}  # Override with env var
+        DEVICE_TAG: ${DEVICE_TAG:-cpu}         # Override with env var (e.g., cuda, rocm, xpu)
     container_name: ebook2audiobook
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
-    command: []  # Add extra app parameters here if needed
     tty: true
     stdin_open: true
     ports:
       - "7860:7860"
-    privileged: true
+    privileged: true   # Kept as required for some Unraid users
+
+    # NVIDIA GPU passthrough – works on Docker hosts with NVIDIA Container Toolkit
+    # Ignored safely if toolkit not installed or no NVIDIA GPU
     deploy:
       resources:
         reservations:
@@ -25,9 +25,13 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+
     volumes:
-      - .:/app:rw  # Full project bind — all folders (ebooks, audiobooks, etc.) synced instantly
+      - .:/app:rw
+
     restart: unless-stopped
 
-volumes:
-  audiobooks:  # Optional: use named volume for persistence if you prefer
+    # Legacy NVIDIA runtime fallback – harmless on non-NVIDIA hosts
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
