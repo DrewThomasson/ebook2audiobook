@@ -1,63 +1,38 @@
+version: "3.9"
+
 services:
   ebook2audiobook:
-    #image: docker.io/athomasson2/ebook2audiobook:latest  # <-- Use prebuilt image instead of building
+    # Uncomment to use pre-built image instead of building locally
+    # image: docker.io/athomasson2/ebook2audiobook:latest
     image: ${BUILD_NAME}
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_VERSION: "25.12.12"
+        DEVICE_TAG: cpu   # override with environment variable if needed
     container_name: ebook2audiobook
     working_dir: /app
-    # To update ebook2audiobook to the latest you may have to rebuild  
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
-    command: [] # <- Extra ebook2audiobook parameters can be added here
-    # The dir containing this docker-compose.yml file will be used as the base directory for any commands.
-    # Example Headless || command: ["--headless", "--ebook", "The-Tell-Tale-Heart.epub", "--tts_engine", "yourtts"] # "The-Tell-Tale-Heart.epub" file is located in the same dir as this docker-compose.yml. # More compose headless info can be found at wiki "https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide"
+    command: []  # Add extra app parameters here if needed
     tty: true
     stdin_open: true
     ports:
-      - 7860:7860 # Maps container's port 7860 to the host's port 7860.
-
-    # ---------------------------------------------------
-    # UNIVERSAL GPU SUPPORT (NVIDIA + ROCm + Intel XPU)
-    # ---------------------------------------------------
-
-    # NVIDIA (WSL2 + Linux)
-    # NOTE:
-    # - Docker: we do NOT use "runtime: nvidia" or "gpus: all" here, because those will fail
-    #   when nvidia-container-toolkit is not installed.
-    # - Podman: does not support "runtime: nvidia" either.
-    # Instead we run the container in privileged mode so that any existing GPU devices
-    # (/dev/nvidia*, /dev/kfd, /dev/dri, etc.) are visible automatically.
-    # On systems without those devices, the container still starts and just runs on CPU.
-    privileged: true
-
-    # Needed for ROCm + Intel iGPU (ignored if groups do not exist inside the container)
+      - "7860:7860"
+    privileged: false
     group_add:
       - video
       - render
-
-    # Additional optional NVIDIA request (ignored on non-NVIDIA)
-    # NOTE:
-    # - Docker Swarm understands `deploy.resources.*` with "driver: nvidia".
-    # - Regular docker-compose and Podman ignore `deploy` completely.
-    # We keep this block only for symmetry with Swarm / future use.
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: all
-              capabilities: ["gpu"]
-        limits: {} # Keeps limits as an empty mapping to avoid errors. Uncomment and configure below.
-
+              capabilities: [gpu]
     volumes:
-      - ./:/app  # Maps the local directory to the container.
+      - .:/app:rw  # Full project bind — all folders (ebooks, audiobooks, etc.) synced instantly
+    restart: unless-stopped
 
-# Common Issues: ----
-# --> `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory`
-# Removed all post arguments as CMD was replaced with ENTRYPOINT in the Dockerfile  
-# Example correction:  
-# Before: command: ["python", "app.py", "--script_mode", "full_docker"] or -> `docker run athomasson2/ebook2audiobook python app.py --script_mode full_docker`
-# After: nothing needed  or just -> `docker run athomasson2/ebook2audiobook`
-# Extra arguments after app.py can still be added to the -> command: [] 
-# Example adding extra arguments -> command: ["--share"] or -> command: ["--help"]
+volumes:
+  audiobooks:  # Optional: use named volume for persistence if you prefer
