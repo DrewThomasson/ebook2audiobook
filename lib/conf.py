@@ -29,6 +29,7 @@ os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
 os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
 os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir
+os.environ['CALIBRE_CONFIG_DIRECTORY'] = tmp_dir
 os.environ['TMPDIR'] = tmp_dir
 os.environ['GRADIO_DEBUG'] = '0'
 os.environ['DO_NOT_TRACK'] = 'True'
@@ -91,7 +92,7 @@ default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a definitive place where to upload the jetpack5 torch
 
 jetson_torch_version_base = {
-    "jetson51": "2.4.0",
+    "jetson51": "2.4.1",
     "jetson60": "2.4.0",
     "jetson61": "2.5.0"
 }

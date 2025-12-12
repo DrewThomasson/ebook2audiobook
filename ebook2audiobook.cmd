@@ -36,7 +36,7 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 set "HOST_PROGRAMS=cmake rustup python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
-set "DOCKER_PROGRAMS=cmake libgomp1 libfontconfig1 libsndfile1 curl ffmpeg nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+set "DOCKER_PROGRAMS=curl wget ffmpeg nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=ebook2audiobook"
@@ -419,22 +419,6 @@ if errorlevel 1 (
 )
 exit /b 0
 
-:compare_versions
-setlocal EnableDelayedExpansion
-set "v1=%~1"
-set "v2=%~2"
-:: Remove dots
-set "v1_n=%v1:.=%"
-set "v2_n=%v2:.=%"
-:: Pad with zeros
-set "v1_n=000000%v1_n%"
-set "v2_n=000000%v2_n%"
-set "v1_n=!v1_n:~-6!"
-set "v2_n=!v2_n:~-6!"
-if !v1_n! LSS !v2_n! (endlocal & set cmp_result=LEQ & exit /b)
-if !v1_n! EQU !v2_n! (endlocal & set cmp_result=LEQ & exit /b)
-endlocal & set cmp_result=GTR & exit /b
-
 :install_python_packages
 echo [ebook2audiobook] Installing dependencies...
 python -m pip cache purge >nul 2>&1
@@ -444,11 +428,6 @@ if errorlevel 1 goto :failed
 for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
 	set "torch_ver=%%A"
 )
-::call :compare_versions "%torch_ver%" "2.2.2"
-::if /I "%cmp_result%"=="LEQ" (
-::	python -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2"
-::	if errorlevel 1 goto :failed
-::)
 python -m unidic download
 if errorlevel 1 goto :failed
 echo [ebook2audiobook] Installation completed.
@@ -563,9 +542,9 @@ if %HAS_COMPOSE%==0 (
 if defined cmd_options set "cmd_extra=%cmd_options% "
 echo Docker image ready! to run your docker:"
 echo GUI mode:
-echo 	docker run %cmd_extra%--rm -it -v "%cd%\audiobooks:/app/audiobooks" %DOCKER_IMG_NAME% -p 7860:7860
+echo 	docker run %cmd_extra%--rm -it -v "%cd%":/app:rw -p 7860:7860
 echo Headless mode:"
-echo 	docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--language etc..]
+echo 	docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS

@@ -36,7 +36,7 @@ APP_NAME="ebook2audiobook"
 APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-DOCKER_PROGRAMS=("cmake" "libgomp1" "libfontconfig1" "libsndfile1" "curl" "ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+DOCKER_PROGRAMS=("curl" "wget" "ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="$APP_NAME"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
@@ -407,7 +407,23 @@ function install_programs {
 			PACK_MGR="apt-get install"
 			PACK_MGR_OPTIONS="-y"
 		elif command -v apk &> /dev/null; then
+			if ! command -v un-get &>/dev/null; then
+				echo "Installing un-get plugin..."
+				curl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg
+				installplg /tmp/un-get.plg
+				rm -f /tmp/un-get.plg
+				# Add the two best repos for Unraid 7 (current as of Dec 2025)
+				mkdir -p /boot/config/plugins/un-get
+				cat > /boot/config/plugins/un-get/sources.list <<EOF
+https://slackware.uk/slackware/slackware64-current/
+https://slackware.uk/people/shinji257/unraid7/
+EOF
+				sleep 8
+			fi
 			PACK_MGR="apk add"
+		elif command -v installplg &> /dev/null; then
+			PACK_MGR="un-get install"
+			PACK_MGR_OPTIONS=""
 		else
 			echo "Cannot recognize your applications package manager. Please install the required applications manually."
 			return 1
@@ -606,10 +622,6 @@ function install_python_packages {
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip > /dev/null 2>&1
 	python3 -m pip install --upgrade --no-cache-dir --progress-bar on --disable-pip-version-check --use-pep517 -r "$SCRIPT_DIR/requirements.txt" || exit 1
-	#torch_ver=$(python3 -m pip show torch 2>/dev/null | awk '/^Version:/{print $2}')
-	#if [[ "$(printf '%s\n%s\n' "$torch_ver" "2.2.2" | sort -V | head -n1)" == "$torch_ver" ]]; then
-	#	python3 -m pip install --upgrade --no-cache-dir --use-pep517 "numpy<2" || exit 1
-	#fi
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
 	return 0
@@ -712,9 +724,9 @@ function build_docker_image {
 	fi
 	echo "Docker image ready! to run your docker: "
 	echo "GUI mode:"
-	echo "	docker run ${cmd_extra}--rm -it -v \"$(pwd)/audiobooks:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME"
+	echo "	docker run ${cmd_extra}--rm -it -v \"$(pwd)\":/app:rw -p 7860:7860 $DOCKER_IMG_NAME"
 	echo "Headless mode:"
-	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--language etc..]"
+	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 }
 
 ########################################
