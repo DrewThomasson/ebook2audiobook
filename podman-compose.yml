@@ -1,35 +1,37 @@
-version: "3.9"
-
 services:
   ebook2audiobook:
-    # Uncomment to use pre-built image instead of building locally
-    #image: docker.io/athomasson2/ebook2audiobook:latest
-    image: ${BUILD_NAME}
+    image: ebook2audiobook:${DEVICE_TAG:-cpu}  # e.g. DEVICE_TAG=cu128 → ebook2audiobook:cu128 etc.
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-25.25.25}
+        DEVICE_TAG: ${DEVICE_TAG:-cpu}         # e.g. cu124, cu128, rocm, xpu, cpu etc.
     container_name: ebook2audiobook
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
-    command: [] # Extra ebook2audiobook parameters can be added here
     tty: true
     stdin_open: true
     ports:
-      - 7860:7860
-    privileged: true
-    # Needed for ROCm + Intel iGPU
+      - "7860:7860"
+    security_opt:
+      - label=disable  # Required on SELinux/Podman hosts like Unraid/Fedora
+    volumes:
+      - .:/app:rw      # Bind mount current directory – works everywhere
+    restart: unless-stopped
+
+    # All are optional and harmless if the device/backend is not present
+    devices:
+      # NVIDIA CUDA – requires NVIDIA Container Toolkit + CDI generated on host
+      - nvidia.com/gpu=all
+
+      # Intel XPU / oneAPI / Arc iGPU
+      - /dev/dri:/dev/dri
+
+      # AMD ROCm
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+
     group_add:
       - video
-      - render
-    devices:
-      - /dev/dri:/dev/dri
-      - /dev/kfd:/dev/kfd
-    security_opt:
-      - label=disable
-    annotation:
-      io.containers.nvidia: "true"
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-    volumes:
-      - ./:/app
+      - render  # For Intel/AMD graphics access (harmless on NVIDIA/CPU)
