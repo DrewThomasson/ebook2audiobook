@@ -356,7 +356,13 @@ Docker run image:
         docker run --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         JETSON:
         docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-    
+
+    Docker Compose (i.e. for cuda 11.8, add --build to rebuild):
+        DEVICE_TAG=cu118 docker compose up -d
+
+    Podman Compose (i.e. for cuda 12.4, add --build to rebuild)::
+        DEVICE_TAG=cu124 podman-compose up -d
+
     * MPS is not exposed in docker so CPU must be used.
 
 Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
@@ -401,7 +407,7 @@ one [pause] is a random between 0.8 to 1.6 seconds
 	# JETSON:
 		docker run --runtime nvidia  --rm -it -v "$(pwd)":/app:rw -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]
 	
-	# Headless mode:
+	# Headless mode examples:
 	
 	# CPU:
 		docker run --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
@@ -413,12 +419,15 @@ one [pause] is a random between 0.8 to 1.6 seconds
 		docker run --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 	# JETSON:
 		docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-    # Docker Compose
+
+    # Docker Compose (example for cuda 12.9)
     docker-compose up -d
+    DEVICE_TAG=cu128 docker compose up -d # add --build if needed
     # To stop -> docker-compose down
 
-    # Podman Compose
+    # Podman Compose (example for cuda 12.8)
     podman compose -f podman-compose.yml up
+    DEVICE_TAG=cu128 podman-compose up -d # add --build if needed
     # To stop -> podman compose -f podman-compose.yml down
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
