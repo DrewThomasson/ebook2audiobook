@@ -181,20 +181,52 @@ class DeviceInstaller():
             raw = tegra_version()
             jp_code, msg = jetpack_version(raw)
             if jp_code in ['unsupported', 'unknown']:
-                tag = 'cpu'
+                pass
             elif os.path.exists('/etc/nv_tegra_release'):
                 devices['CUDA']['found'] = True
+                devices['JETSON']['found'] = True
                 name = 'jetson'
                 tag = f'jetson{jp_code}'
             elif os.path.exists('/proc/device-tree/compatible'):
                 out = try_cmd('cat /proc/device-tree/compatible')
                 if 'tegra' in out:
                     devices['CUDA']['found'] = True
+                    devices['JETSON']['found'] = True
                     name = 'jetson'
                     tag = f'jetson{jp_code}'
             out = try_cmd('uname - a')
             if 'tegra' in out:
                 msg = 'Jetson GPU detected but not (yes) compatible'
+                
+        # ============================================================
+        # CUDA
+        # ============================================================
+        elif has_cmd('nvcc') or os.path.exists('/usr/local/cuda/bin/nvcc'):
+            # Force nvcc into PATH if it's installed but not visible
+            cuda_bin = '/usr/local/cuda/bin'
+            if os.path.exists(cuda_bin) and cuda_bin not in os.environ['PATH']:
+                os.environ['PATH'] = f"{cuda_bin}:{os.environ['PATH']}"
+            out = try_cmd('nvcc --version')
+            if not out:
+                msg = 'nvcc found but returned empty output.'
+            else:
+                version_str = toolkit_version_parse(out)
+                cmp = toolkit_version_compare(version_str, cuda_version_range)
+                if cmp == -1:
+                    msg = f'CUDA {version_str} < min {cuda_version_range["min"]}. Please upgrade.'
+                elif cmp == 1:
+                    msg = f'CUDA {version_str} > max {cuda_version_range["max"]}. Falling back to CPU.'
+                elif cmp == 0:
+                    devices['CUDA']['found'] = True
+                    parts = version_str.split(".")
+                    major = parts[0]
+                    minor = parts[1] if len(parts) > 1 else 0
+                    patch = parts[2] if len(parts) > 2 else 0
+                    name = 'cuda'
+                    tag = f'cu{major}{minor}'
+                else:
+                    msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
+
         # ============================================================
         # ROCm
         # ============================================================
@@ -204,40 +236,14 @@ class DeviceInstaller():
             cmp = toolkit_version_compare(version_str, rocm_version_range)
             if cmp == -1:
                 msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
-                tag = 'cpu'
             elif cmp == 1:
                 msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
-                tag = 'cpu'
             elif cmp == 0:
                 devices['ROCM']['found'] = True
                 name = 'rocm'
                 tag = f'rocm{version_str}'
             else:
                 msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
-
-        # ============================================================
-        # CUDA
-        # ============================================================
-        elif has_cmd('nvcc'):
-            out = try_cmd('nvcc --version')
-            version_str = toolkit_version_parse(out)
-            cmp = toolkit_version_compare(version_str, cuda_version_range)
-            if cmp == -1:
-                msg = f'CUDA {version_str} < min {cuda_version_range["min"]}. Please upgrade.'
-                tag = 'cpu'
-            elif cmp == 1:
-                msg = f'CUDA {version_str} > max {cuda_version_range["max"]}. Falling back to CPU.'
-                tag = 'cpu'
-            elif cmp == 0:
-                devices['CUDA']['found'] = True
-                parts = version_str.split(".")
-                major = parts[0]
-                minor = parts[1] if len(parts) > 1 else 0
-                patch = parts[2] if len(parts) > 2 else 0
-                name = 'cuda'
-                tag = f'cu{major}{minor}'
-            else:
-                msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
 
         # ============================================================
         # APPLE MPS
@@ -258,14 +264,12 @@ class DeviceInstaller():
                 cmp = toolkit_version_compare(version_str, xpu_version_range)
                 if cmp == -1 or cmp == 1:
                     msg = f'XPU {version_str} out of supported range {xpu_version_range}. Falling back to CPU.'
-                    tag = 'cpu'
                 elif cmp == 0 and (has_cmd('sycl-ls') or has_cmd('clinfo')):
                     devices['XPU']['found'] = True
                     name = 'xpu'
                     tag = 'xpu'
                 else:
                     msg = 'Intel GPU detected but not compatible or oneAPI runtime is missing.'
-
         elif has_cmd('clinfo'):
             out = try_cmd('clinfo')
             if 'intel' in out:
@@ -446,14 +450,17 @@ class DeviceInstaller():
                                         py_major, py_minor = device_info['pyvenv']
                                         tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                         torch_pkg = f"{url}/v{toolkit_version}/torch-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                        torchaudio_pkg = f"torchaudio=={jetson_torch_version_base[tag]}"
+                                        torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'scikit-learn'])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'scikit-learn', '--no-binary', 'scikit-learn'])
                                     else:
                                         tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
-                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
-                                    if device_info['name'] == 'cuda':
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
+                                        if device_info['name'] == 'cuda':
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
                                     #msg = 'Relaunching app...'
                                     #print(msg)
                                     #os.execv(sys.executable, [sys.executable] + sys.argv)

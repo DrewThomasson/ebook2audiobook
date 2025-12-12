@@ -120,6 +120,12 @@ Docker run image:
         docker run --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         JETSON:
         docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+
+    Docker Compose (i.e. for cuda 11.8, add --build to rebuild):
+        DEVICE_TAG=cu118 docker compose up -d
+
+    Podman Compose (i.e. for cuda 12.4, add --build to rebuild):
+        DEVICE_TAG=cu124 podman-compose up -d
     
     * MPS is not exposed in docker so CPU must be used.
 

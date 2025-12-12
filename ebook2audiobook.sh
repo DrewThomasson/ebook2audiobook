@@ -406,9 +406,9 @@ function install_programs {
 			$SUDO apt-get update
 			PACK_MGR="apt-get install"
 			PACK_MGR_OPTIONS="-y"
-		elif command -v apk &> /dev/null; then
+		elif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then
 			if ! command -v un-get &>/dev/null; then
-				echo "Installing un-get plugin..."
+				echo "  → Installing un-get plugin..."
 				curl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg
 				installplg /tmp/un-get.plg
 				rm -f /tmp/un-get.plg
@@ -420,10 +420,9 @@ https://slackware.uk/people/shinji257/unraid7/
 EOF
 				sleep 8
 			fi
-			PACK_MGR="apk add"
-		elif command -v installplg &> /dev/null; then
 			PACK_MGR="un-get install"
-			PACK_MGR_OPTIONS=""
+		elif command -v apk &>/dev/null; then
+			PACK_MGR="apk add"
 		else
 			echo "Cannot recognize your applications package manager. Please install the required applications manually."
 			return 1

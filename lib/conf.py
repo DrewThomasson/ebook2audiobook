@@ -75,6 +75,7 @@ debug_mode = False
 devices = {
     "CPU": {"proc": "cpu", "found": True},
     "CUDA": {"proc": "cuda", "found": False},
+    "JETSON": {"proc": "cuda", "found": False},
     "MPS": {"proc": "mps", "found": False},
     "ROCM": {"proc": "rocm", "found": False},
     "XPU": {"proc": "xpu", "found": False}
