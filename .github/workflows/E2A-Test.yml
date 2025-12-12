@@ -44,19 +44,40 @@ on:
 jobs:
   E2A-test:
     strategy:
+      fail-fast: false
       matrix:
+        #  windows and linux can be added to the matrix when good runners for those are made available for this repo
         os: [macos]
     runs-on: [self-hosted, "${{ matrix.os }}"]
     
-
     steps:
-          
       - name: Print runner info
         shell: bash
         run: |
           echo "Running on:"
           uname -a
-          if [[ "$OSTYPE" == "darwin"* ]]; then sw_vers; else cat /etc/os-release; fi
+          if [[ "$OSTYPE" == "darwin"* ]]; then 
+            sw_vers
+          elif [[ -f /etc/os-release ]]; then
+            cat /etc/os-release
+          else
+            echo "Windows / Other OS detected"
+          fi
+
+      # NEW STEP: Determine which command to run based on OS
+      - name: Determine OS and Script Command
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows" ]]; then
+            echo "Detecting Windows. Using ebook2audiobook.cmd"
+            # We use 'cmd //c' to run a batch file from Git Bash
+            echo "RUN_CMD=cmd //c ebook2audiobook.cmd" >> $GITHUB_ENV
+            echo "IS_WINDOWS=true" >> $GITHUB_ENV
+          else
+            echo "Detecting Unix. Using ebook2audiobook.sh"
+            echo "RUN_CMD=./ebook2audiobook.sh" >> $GITHUB_ENV
+            echo "IS_WINDOWS=false" >> $GITHUB_ENV
+          fi
 
       - name: Wipe & Re-Install E2A
         if: ${{ inputs.wipeAndReinstall }}
@@ -67,7 +88,7 @@ jobs:
         shell: bash
         run: |
           set -e
-      
+       
           REPO_DIR=~/ebook2audiobook
           REPO_URL="https://github.com/${{ github.repository }}"
           IS_PR="${{ github.event_name == 'pull_request' }}"
@@ -76,10 +97,10 @@ jobs:
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           TRIGGER_SHA="${{ github.sha }}"
           FRESH_CLONE=0
-      
+       
           echo "==> Event: ${{ github.event_name }}"
           echo "==> Repo: $REPO_URL"
-      
+       
           # Clone or reuse
           if [ -d "$REPO_DIR" ]; then
             echo "==> Reusing existing repo"
@@ -89,7 +110,7 @@ jobs:
             git remote set-head origin -a
             git remote prune origin
             git fetch --all --prune
-      
+       
             echo "==> Cleaning working directory"
             git reset --hard
           else
@@ -101,18 +122,18 @@ jobs:
             git fetch --all --prune
             FRESH_CLONE=1
           fi
-      
+       
           if [ "$IS_PR" = "true" ]; then
             echo "==> PR detected: simulating GitHub merge (base: $BASE_REF ← head: $HEAD_REF)"
-      
+       
             # Fetch both branches
             git fetch origin "$BASE_REF":"origin/$BASE_REF"
             git fetch origin "$HEAD_REF":"origin/$HEAD_REF"
-      
+       
             # Reset to base branch
             git checkout -B "$BASE_REF" "remotes/origin/$BASE_REF"
             git reset --hard "origin/$BASE_REF"
-      
+       
             # Merge PR source
             if ! git merge --no-ff --no-edit "origin/$HEAD_REF"; then
               echo "❌ Merge conflict simulating PR merge"
@@ -134,22 +155,25 @@ jobs:
             git checkout --detach "$TRIGGER_SHA"
             git reset --hard "$TRIGGER_SHA"
           fi
-      
+       
           echo "==> Final repo state:"
           git status
           git log -1 --oneline
-      
+       
           if [ "$FRESH_CLONE" -eq 1 ]; then
-            echo "==> Running ./ebook2audiobook.sh --help because this was a fresh clone"
-            if ! ./ebook2audiobook.sh --help; then
-              echo "==> Attempting fallback with conda deactivation"
-              source "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" 2>/dev/null && conda deactivate || true
-              ./ebook2audiobook.sh --help
+            echo "==> Running Help Check to verify install"
+            
+            # Use the dynamic command variable
+            if ! $RUN_CMD --help; then
+              echo "==> Attempting fallback with conda deactivation (Unix only)"
+              if [ "$IS_WINDOWS" != "true" ]; then
+                  source "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" 2>/dev/null && conda deactivate || true
+              fi
+              $RUN_CMD --help
             fi
           else
             echo "==> Skipping script run because repo already existed"
           fi
-
 
       - name: Create Audiobook Output folders for Artifacts
         shell: bash
@@ -157,7 +181,9 @@ jobs:
           mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK}
           find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK} -mindepth 1 -exec rm -rf {} +
 
+      # This step only runs on non-windows because we don't need to modify the .sh file if we are running .cmd
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
+        if: matrix.os != 'windows'
         shell: bash
         run: |
           echo "Adding set -e at beginning of ebook2audiobook.sh (for error passing)..."
@@ -170,98 +196,109 @@ jobs:
         run: |
           echo "Running English TACOTRON2 Custom-Voice headless single test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON2
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+          
+          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON2
 
       - name: English FAIRSEQ OCR headless single test
         shell: bash
         run: |
           echo "Running English FAIRSEQ OCR headless single test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
       - name: Haitian Creole FAIRSEQ OCR headless single test
         shell: bash
         run: |
           echo "Running Haitian Creole FAIRSEQ OCR headless single test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless  --language hat --ebook "tools/workflow-testing/odc_test_haitian.pdf" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
+          $RUN_CMD --headless  --language hat --ebook "tools/workflow-testing/odc_test_haitian.pdf" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
       - name: English FAIRSEQ Custom-Voice headless single test
         shell: bash
         run: |
           echo "Running English FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
-          
+          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+       
       - name: Unusual FAIRSEQ Custom-Voice headless single test
         shell: bash
         run: |
           echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/urd-script_davanagari-test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/UnFAIRSEQ
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/urd-script_davanagari-test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/UnFAIRSEQ
 
       - name: English VITS Custom-Voice headless single test
         shell: bash
         run: |
           echo "Running English VITS Custom-Voice headless single test..."
-
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
 
       - name: English YOURTTS Custom-Voice headless batch test
         shell: bash
         run: |
           echo "Running English YOURTTS Custom-Voice headless batch test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
+          $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
 
       - name: Default XTTSv2 headless Custom-Voice single test
         shell: bash
         run: |
           echo "Running Default XTTSv2 headless Custom-Voice single test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
 
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
         shell: bash
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTune
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTune
 
       - name: English XTTSv2 headless custom fine-tuned XTTSv2 model single test
         shell: bash
         run: |
           echo "English XTTSv2 headless custom fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
           [ ! -f BadCartmanSouthPark.zip ] && curl -L "https://huggingface.co/drewThomasson/fineTunedTTSModels/resolve/main/xtts-v2/eng/BadCartmanSouthPark/BadCartmanSouthPark.zip" -o BadCartmanSouthPark.zip || echo "BadCartmanSouthPark.zip already exists"
-          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --custom_model "BadCartmanSouthPark.zip" --tts_engine XTTSv2 --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTuneCustom
-          ls -lhR ./models/__sessions && rm -rf ./models/__sessions
+          
+          $RUN_CMD --headless --language eng --ebook "tools/workflow-testing/test1.txt" --custom_model "BadCartmanSouthPark.zip" --tts_engine XTTSv2 --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTuneCustom
+          
+          # Clean up sessions, careful with path on windows, but rm -rf works in git bash
+          ls -lhR ./models/__sessions || true
+          rm -rf ./models/__sessions
 
       - name: English BARK Custom-Voice headless single test
         shell: bash
         run: |
-          echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
+          echo "Running English BARK headless Custom-Voice single test..."
           cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/BARK 
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/BARK 
 
       - name: Upload audiobooks folder artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: audiobooks
+          name: audiobooks-${{ matrix.os }}
           path: ~/ebook2audiobook/audiobooks
