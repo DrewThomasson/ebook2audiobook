@@ -73,11 +73,12 @@ debug_mode = False
 # ---------------------------------------------------------------------
 
 devices = {
-    "CPU": {"proc": "cpu", "found": True},
-    "CUDA": {"proc": "cuda", "found": False},
-    "MPS": {"proc": "mps", "found": False},
-    "ROCM": {"proc": "rocm", "found": False},
-    "XPU": {"proc": "xpu", "found": False}
+    "CPU": {"name": "cpu", "proc": "cpu", "found": True},
+    "CUDA": {"name": "cuda", "proc": "cuda", "found": False},
+    "CUDA": {"name": "jetson", "proc": "cuda", "found": False},
+    "MPS": {"name": "mps", "proc": "mps", "found": False},
+    "ROCM": {"name": "rocm", "proc": "rocm", "found": False},
+    "XPU": {"name": "xpu", "proc": "xpu", "found": False}
 }
 
 default_device = devices['CPU']['proc']
