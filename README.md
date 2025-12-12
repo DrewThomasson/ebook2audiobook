@@ -360,7 +360,7 @@ Docker run image:
     Docker Compose (i.e. for cuda 11.8, add --build to rebuild):
         DEVICE_TAG=cu118 docker compose up -d
 
-    Podman Compose (i.e. for cuda 12.4, add --build to rebuild)::
+    Podman Compose (i.e. for cuda 12.4, add --build to rebuild):
         DEVICE_TAG=cu124 podman-compose up -d
 
     * MPS is not exposed in docker so CPU must be used.
