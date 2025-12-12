@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   ebook2audiobook:
     # Uncomment to use pre-built image instead of building locally
