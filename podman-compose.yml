@@ -1,6 +1,6 @@
 services:
   ebook2audiobook:
-    image: ebook2audiobook:${BUILD_NAME:-cpu}  # e.g. BUILD_NAME=cu128 → ebook2audiobook:cu128 etc.
+    image: ebook2audiobook:${DEVICE_TAG:-cpu}  # e.g. DEVICE_TAG=cu128 → ebook2audiobook:cu128 etc.
     build:
       context: .
       dockerfile: Dockerfile

@@ -1,12 +1,12 @@
 services:
   ebook2audiobook:
-    image: ebook2audiobook:${BUILD_NAME:-cpu}  # e.g. BUILD_NAME=cu128 → ebook2audiobook:cu128
+    image: ebook2audiobook:${DEVICE_TAG:-cpu}  # e.g. DEVICE_TAG=cu128 → ebook2audiobook:cu128
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-25.25.25}  # Override with env var
-        DEVICE_TAG: ${DEVICE_TAG:-cpu}         # Override with env var (e.g., cuda, rocm, xpu)
+        APP_VERSION: ${APP_VERSION:-25.25.25}
+        DEVICE_TAG: ${DEVICE_TAG:-cpu}         # e.g. cu128, cu118, rocm, xpu, cpu
     container_name: ebook2audiobook
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
@@ -27,7 +27,7 @@ services:
               capabilities: [gpu]
 
     volumes:
-      - .:/app:rw
+      - .:/app:rw      # Bind mount current directory – works everywhere
 
     restart: unless-stopped
 
