@@ -19,10 +19,7 @@ services:
     stdin_open: true
     ports:
       - "7860:7860"
-    privileged: false
-    group_add:
-      - video
-      - render
+    privileged: true
     deploy:
       resources:
         reservations:
