@@ -190,11 +190,10 @@ class DeviceInstaller():
             elif os.path.exists('/proc/device-tree/compatible'):
                 out = try_cmd('cat /proc/device-tree/compatible')
                 if 'tegra' in out:
-                    devices['CUDA']['found'] = True
                     devices['JETSON']['found'] = True
                     name = 'jetson'
                     tag = f'jetson{jp_code}'
-            out = try_cmd('uname - a')
+            out = try_cmd('uname -a')
             if 'tegra' in out:
                 msg = 'Jetson GPU detected but not (yes) compatible'
                 
