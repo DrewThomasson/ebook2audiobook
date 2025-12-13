@@ -458,7 +458,6 @@ class DeviceInstaller():
                                         torch_pkg = f'{url}/torch/torch-{torch_version_base}-{tag_py}-{os_env}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/torchaudio/torchaudio-{torch_version_base}-{tag_py}-{os_env}_{arch}.whl'
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
-                                        torch-2.7.1-cp312-none-macosx_11_0_arm64.whl
                                     else:
                                         tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                         torch_pkg = f'{url}/torch/torch-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
