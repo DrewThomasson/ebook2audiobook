@@ -14,7 +14,7 @@ class VRAMDetector:
         info = {}
         try:
             import torch
-            # ───────────────────────────── Jetson (Unified Memory)       
+            # ───────────────────────────── Jetson (Unified Memory)
             if device == 'jetson':
                 if os.path.exists('/etc/nv_tegra_release'):
                     try:
