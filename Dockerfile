@@ -26,20 +26,14 @@ COPY . .
 
 RUN apt-get update && \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
-		gcc g++ make python3-dev pkg-config git wget bash xz-utils \
+		gcc g++ make python3-dev pkg-config git rustc cargo wget bash xz-utils \
 		libegl1 libopengl0 libgl1 libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
 		cmake fontconfig libfreetype6 libgomp1 libfontconfig1 libsndfile1 \
 		${DOCKER_PROGRAMS_STR} \
-		tesseract-ocr-${ISO3_LANG} || true && \
-		rm -rf /var/lib/apt/lists/*
+		tesseract-ocr-${ISO3_LANG} || true
 
-RUN set -eux; \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . "$HOME/.cargo/env" && \
-    rustc --version && cargo --version  # Verify installation
-
-RUN chmod +x ebook2audiobook.sh && \
-    ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN pip install --upgrade pip setuptools wheel && \
+	./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 RUN case "${DEVICE_TAG}" in \
 	jetson51) \
@@ -89,7 +83,8 @@ RUN set -eux; \
 	apt-get clean; \
 	rm -rf /var/lib/apt/lists/*
 
-VOLUME /app
+RUN mkdir -p /app/audiobooks && chmod 777 /app/audiobooks
+VOLUME /app/audiobooks
 
 EXPOSE 7860
 ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]
