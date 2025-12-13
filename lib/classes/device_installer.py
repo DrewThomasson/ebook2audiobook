@@ -445,7 +445,7 @@ class DeviceInstaller():
                                     tag = device_info['tag']
                                     url = torch_matrix[device_info['tag']]['url']
                                     toolkit_version = "".join(c for c in tag if c.isdigit())
-                                    if device_info['name'] == 'jetson':
+                                    if device_info['name'] == devices['JETSON']['proc']:
                                         py_major, py_minor = device_info['pyvenv']
                                         tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                         torch_pkg = f"{url}/v{toolkit_version}/torch-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
@@ -453,10 +453,17 @@ class DeviceInstaller():
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'scikit-learn'])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'scikit-learn', '--no-binary', 'scikit-learn'])
+                                    elif device_info['name'] == devices['MPS']['proc']:
+                                        torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
+                                        torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
+                                        torch_pkg = f'{url}/torch/torch-{torch_version_base}-{tag_py}-{os_env}_{arch}.whl'
+                                        torchaudio_pkg = f'{url}/torchaudio/torchaudio-{torch_version_base}-{tag_py}-{os_env}_{arch}.whl'
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
+                                        torch-2.7.1-cp312-none-macosx_11_0_arm64.whl
                                     else:
                                         tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
-                                        torch_pkg = f'{url}/{tag}/torch-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
-                                        torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
+                                        torch_pkg = f'{url}/torch/torch-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
+                                        torchaudio_pkg = f'{url}/torchaudio/torchaudio-{torch_version_base}+{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
                                         if device_info['name'] == 'cuda':
                                             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', 'deepspeed'])
