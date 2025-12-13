@@ -730,6 +730,11 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     print(msg)
                 else:
                     use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['JETSON']['proc'] and devices['JETSON']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
+                    use_gpu = True if (
+                        (session['device'] == devices['CUDA']['proc'] and not devices['JETSON']['found'] and devices['CUDA']['found']) or
+                        (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or
+                        (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])
+                    ) else False
                     stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
                     if stanza_nlp:
                         session['stanza_cache'] = stanza_model
