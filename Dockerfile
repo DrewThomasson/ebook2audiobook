@@ -24,7 +24,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 WORKDIR /app
 COPY . .
 
-dockerfileRUN apt-get update && \
+RUN apt-get update && \
     apt-get install -y --no-install-recommends --allow-change-held-packages \
         gcc g++ make python3-dev pkg-config git wget bash xz-utils \
         libegl1 libopengl0 libgl1 \
