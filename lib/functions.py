@@ -729,7 +729,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     msg = f"NLP model {stanza_model} loaded!"
                     print(msg)
                 else:
-                    use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['JETSON']['proc'] and devices['JETSON']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
                     use_gpu = True if (
                         (session['device'] == devices['CUDA']['proc'] and not devices['JETSON']['found'] and devices['CUDA']['found']) or
                         (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or
