@@ -199,7 +199,7 @@ class DeviceInstaller():
         # ============================================================
         # CUDA
         # ============================================================
-        elif has_cmd('nvcc') or os.path.exists('/usr/local/cuda/bin/nvcc'):
+        elif has_cmd('nvcc') or has_cmd('nvcc.exe') or os.path.exists('/usr/local/cuda/bin/nvcc') or (os.name == 'nt' and os.environ.get('CUDA_PATH') and os.path.exists(os.path.join(os.environ['CUDA_PATH'], 'bin', 'nvcc.exe'))):
             # Force nvcc into PATH if it's installed but not visible
             cuda_bin = '/usr/local/cuda/bin'
             if os.path.exists(cuda_bin) and cuda_bin not in os.environ['PATH']:
