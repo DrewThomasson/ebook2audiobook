@@ -25,12 +25,11 @@ services:
       # NVIDIA CUDA – requires NVIDIA Container Toolkit + CDI generated on host
       - nvidia.com/gpu=all
 
-      # Intel XPU / oneAPI / Arc iGPU
+      # Intel XPU / oneAPI / Arc iGPU / ROCm
       - /dev/dri:/dev/dri
 
       # AMD ROCm
       - /dev/kfd:/dev/kfd
-      - /dev/dri:/dev/dri
 
     group_add:
       - video
