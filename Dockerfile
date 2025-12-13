@@ -34,17 +34,12 @@ RUN apt-get update && \
 		rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
-	if command -v curl >/dev/null 2>&1; then \
-		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
-	elif command -v wget >/dev/null 2>&1; then \
-		wget -qO- https://sh.rustup.rs | sh -s -- -y; \
-	else \
-		echo "ERROR: curl or wget required to install rustup"; exit 1; \
-	fi && \
-	. "$HOME/.cargo/env"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    . "$HOME/.cargo/env" && \
+    rustc --version && cargo --version  # Verify installation
 
 RUN chmod +x ebook2audiobook.sh && \
-	./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+    ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 RUN case "${DEVICE_TAG}" in \
 	jetson51) \
@@ -94,8 +89,7 @@ RUN set -eux; \
 	apt-get clean; \
 	rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /app/audiobooks && chmod 777 /app/audiobooks
-VOLUME /app/audiobooks
+VOLUME /app
 
 EXPOSE 7860
 ENTRYPOINT ["python3", "app.py", "--script_mode", "full_docker"]
