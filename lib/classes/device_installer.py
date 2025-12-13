@@ -455,8 +455,8 @@ class DeviceInstaller():
                                     elif device_info['name'] == devices['MPS']['proc']:
                                         torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
                                         torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
-                                        torch_pkg = f'{url}/torch/torch-{torch_version_base}-{tag_py}-{os_env}_{arch}.whl'
-                                        torchaudio_pkg = f'{url}/torchaudio/torchaudio-{torch_version_base}-{tag_py}-{os_env}_{arch}.whl'
+                                        torch_pkg = f'{url}/torch/torch-{torch_version_base}-{torch_tag_py}-{os_env}_{arch}.whl'
+                                        torchaudio_pkg = f'{url}/torchaudio/torchaudio-{torch_version_base}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
                                     else:
                                         tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
