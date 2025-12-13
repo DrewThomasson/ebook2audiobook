@@ -33,13 +33,10 @@ RUN apt-get update && \
 		tesseract-ocr-${ISO3_LANG} || true
 
 RUN set -eux; \
-	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; && \
-	. "$HOME/.cargo/env"
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y;
 
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-RUN chmod +x ebook2audiobook.sh && \
-	./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+ENV . "$HOME/.cargo/env" && \
+	PATH="/root/.cargo/bin:${PATH}"
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
