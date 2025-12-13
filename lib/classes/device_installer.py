@@ -247,8 +247,11 @@ class DeviceInstaller():
         # INTEL XPU
         # ============================================================
         elif os.path.exists('/dev/dri/renderD128') or (os.name == 'nt' and has_cmd('dxdiag')):
-            out = try_cmd('lspci')
-            if 'intel' in out:
+            if os.name == 'nt':
+                out = try_cmd('dxdiag')
+            else:
+                out = try_cmd('lspci')
+            if 'intel' in out.lower():
                 oneapi_out:str = try_cmd('sycl-ls') if has_cmd('sycl-ls') else ''
                 version_str = toolkit_version_parse(oneapi_out)
                 cmp = toolkit_version_compare(version_str, xpu_version_range)
