@@ -12,48 +12,46 @@ class VRAMDetector:
 
     def detect_vram(self, device:str, as_json:bool=False)->Any:
         info = {}
-        # ───────────────────────────── Jetson (Unified Memory)
-        import torch
         try:
+            import torch
+            # ───────────────────────────── Jetson (Unified Memory)       
             if device == 'jetson':
                 if os.path.exists('/etc/nv_tegra_release'):
-                    out = subprocess.check_output(['tegrastats','--interval','1000'],timeout=3).decode()
-                    m = re.search(r'RAM\s+(\d+)/(\d+)MB',out)
-                    if m:
-                        used=int(m.group(1))*1024*1024
-                        total=int(m.group(2))*1024*1024
-                        free=total-used
+                    try:
+                        out = subprocess.check_output(['tegrastats','--interval','1000'],timeout=3).decode()
+                        m = re.search(r'RAM\s+(\d+)/(\d+)MB',out)
+                        if m:
+                            used=int(m.group(1))*1024*1024
+                            total=int(m.group(2))*1024*1024
+                            free=total-used
+                            info={
+                                "os":self.system,
+                                "device_type":"jetson",
+                                "device_name":"NVIDIA Jetson (Unified Memory)",
+                                "used_bytes":used,
+                                "free_bytes":free,
+                                "total_bytes":total,
+                                "used_vram_gb":self._fmt(used),
+                                "free_vram_gb":self._fmt(free),
+                                "total_vram_gb":self._fmt(total),
+                                "note":"Jetson uses unified system RAM as VRAM."
+                            }
+                            return json.dumps(info,indent=2) if as_json else info
+                    except (subprocess.CalledProcessError, Exception):
+                        mem=psutil.virtual_memory()
                         info={
                             "os":self.system,
                             "device_type":"jetson",
                             "device_name":"NVIDIA Jetson (Unified Memory)",
-                            "used_bytes":used,
-                            "free_bytes":free,
-                            "total_bytes":total,
-                            "used_vram_gb":self._fmt(used),
-                            "free_vram_gb":self._fmt(free),
-                            "total_vram_gb":self._fmt(total),
-                            "note":"Jetson uses unified system RAM as VRAM."
+                            "free_bytes":mem.available,
+                            "total_bytes":mem.total,
+                            "free_vram_gb":self._fmt(mem.available),
+                            "total_vram_gb":self._fmt(mem.total),
+                            "note":"tegrastats unavailable; reporting system RAM."
                         }
                         return json.dumps(info,indent=2) if as_json else info
-        except Exception:
-            mem=psutil.virtual_memory()
-            info={
-                "os":self.system,
-                "device_type":"jetson",
-                "device_name":"NVIDIA Jetson (Unified Memory)",
-                "free_bytes":mem.available,
-                "total_bytes":mem.total,
-                "free_vram_gb":self._fmt(mem.available),
-                "total_vram_gb":self._fmt(mem.total),
-                "note":"tegrastats unavailable; reporting system RAM."
-            }
-            return json.dumps(info,indent=2) if as_json else info
-
-        # ───────────────────────────── CUDA (NVIDIA)
-        try:
-            import torch
-            if device == 'cuda':
+            # ───────────────────────────── CUDA (NVIDIA)
+            elif device == 'cuda':
                 if torch.cuda.is_available():
                     free, total = torch.cuda.mem_get_info()
                     alloc = torch.cuda.memory_allocated()
@@ -74,7 +72,7 @@ class VRAMDetector:
                     return json.dumps(info, indent=2) if as_json else info
 
             # ─────────────────────────── ROCm (AMD)
-            if hasattr(torch, 'hip') and torch.hip.is_available():
+            elif hasattr(torch, 'hip') and torch.hip.is_available():
                 free, total = torch.hip.mem_get_info()
                 alloc = torch.hip.memory_allocated()
                 resv = torch.hip.memory_reserved()
@@ -94,7 +92,7 @@ class VRAMDetector:
                 return json.dumps(info, indent=2) if as_json else info
 
             # ─────────────────────────── Intel XPU (oneAPI)
-            if hasattr(torch, 'xpu') and torch.xpu.is_available():
+            elif hasattr(torch, 'xpu') and torch.xpu.is_available():
                 free, total = torch.xpu.mem_get_info()
                 alloc = torch.xpu.memory_allocated()
                 resv = torch.xpu.memory_reserved()
@@ -114,7 +112,7 @@ class VRAMDetector:
                 return json.dumps(info, indent=2) if as_json else info
 
             # ─────────────────────────── Apple MPS (Metal)
-            if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
                 info = {
                     "os": self.system,
                     "device_type": "mps",
