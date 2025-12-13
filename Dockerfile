@@ -37,8 +37,7 @@ RUN set -eux; \
     apt-get update && apt-get install -y --no-install-recommends --allow-change-held-packages curl && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
     . "$HOME/.cargo/env" && \
-    rustc --version && cargo --version && \
-    rm -rf /var/lib/apt/lists/*
+    rustc --version && cargo --version
 
 RUN chmod +x ebook2audiobook.sh && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
