@@ -241,7 +241,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             args['chapters_preview'] = False
             args['event'] = ''
             args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
-            args['device'] = args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
+            args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
             args['output_split_hours'] = default_output_split_hours
