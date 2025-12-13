@@ -183,7 +183,6 @@ class DeviceInstaller():
             if jp_code in ['unsupported', 'unknown']:
                 pass
             elif os.path.exists('/etc/nv_tegra_release'):
-                devices['CUDA']['found'] = True
                 devices['JETSON']['found'] = True
                 name = 'jetson'
                 tag = f'jetson{jp_code}'
