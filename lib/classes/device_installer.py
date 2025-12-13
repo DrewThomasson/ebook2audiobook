@@ -178,6 +178,7 @@ class DeviceInstaller():
         # JETSON
         # ============================================================
         if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
+            print("---> Hardware detected: JETSON")
             raw = tegra_version()
             jp_code, msg = jetpack_version(raw)
             if jp_code in ['unsupported', 'unknown']:
@@ -200,7 +201,7 @@ class DeviceInstaller():
         # CUDA
         # ============================================================
         elif has_cmd('nvcc') or has_cmd('nvcc.exe') or os.path.exists('/usr/local/cuda/bin/nvcc') or (os.name == 'nt' and os.environ.get('CUDA_PATH') and os.path.exists(os.path.join(os.environ['CUDA_PATH'], 'bin', 'nvcc.exe'))):
-            # Force nvcc into PATH if it's installed but not visible
+            print("---> Hardware detected: CUDA")
             cuda_bin = '/usr/local/cuda/bin'
             if os.path.exists(cuda_bin) and cuda_bin not in os.environ['PATH']:
                 os.environ['PATH'] = f"{cuda_bin}:{os.environ['PATH']}"
@@ -229,6 +230,7 @@ class DeviceInstaller():
         # ROCm
         # ============================================================
         elif has_cmd('rocminfo') or os.path.exists('/opt/rocm') or os.path.exists('/opt/rocm/bin/rocminfo'):
+            print("---> Hardware detected: ROCM")
             out = try_cmd('rocminfo')
             version_str = toolkit_version_parse(out)
             cmp = toolkit_version_compare(version_str, rocm_version_range)
@@ -247,6 +249,7 @@ class DeviceInstaller():
         # INTEL XPU
         # ============================================================
         elif os.path.exists('/dev/dri/renderD128') or (os.name == 'nt' and has_cmd('dxdiag')):
+            print("---> Hardware detected: XPU")
             if os.name == 'nt':
                 out = try_cmd('dxdiag')
             else:
@@ -273,6 +276,7 @@ class DeviceInstaller():
         # APPLE MPS
         # ============================================================
         elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
+            print("---> Hardware detected: MPS")
             devices['MPS']['found'] = True
             name = 'mps'
             tag = 'mps'
@@ -433,7 +437,6 @@ class DeviceInstaller():
                     torch_version = self.get_package_version('torch')
                     if torch_version:
                         if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
-                            print(f"Hardware detected: {device_info['name']}")
                             m = re.search(r'\+(.+)$', torch_version)
                             current_tag = m.group(1) if m else None
                             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
