@@ -26,6 +26,7 @@ dependencies = [
 	"docker",
 	"ebooklib",
 	"fastapi",
+	"hf_xet",
 	"beautifulsoup4",
 	"sudachipy",
 	"sudachidict-core",
