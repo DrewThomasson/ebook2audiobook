@@ -35,10 +35,9 @@ RUN apt-get update && \
 RUN set -eux; \
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y;
 
-ENV . "$HOME/.cargo/env" && \
-	PATH="/root/.cargo/bin:${PATH}"
+ENV PATH="/root/.cargo/bin:${PATH}"
 
-RUN --mount=type=cache,target=/root/.cache/pip \
+RUN . "$HOME/.cargo/env" && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 RUN case "${DEVICE_TAG}" in \
