@@ -30,7 +30,7 @@ RUN apt-get update && \
         libegl1 libopengl0 libgl1 \
         libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
         cmake freetype fontconfig libgomp1 libfontconfig1 libsndfile1 \
-        rustc cargo \   # ← ADD THESE HERE
+        rustc cargo \
         ${DOCKER_PROGRAMS_STR} \
         tesseract-ocr-${ISO3_LANG} || true
 
