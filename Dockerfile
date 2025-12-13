@@ -35,6 +35,7 @@ dockerfileRUN apt-get update && \
         tesseract-ocr-${ISO3_LANG} || true
 
 RUN chmod +x ebook2audiobook.sh && \
+	PATH="/root/.cargo/bin:${PATH}" && \
     ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 RUN case "${DEVICE_TAG}" in \
