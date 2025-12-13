@@ -228,7 +228,7 @@ class DeviceInstaller():
         # ============================================================
         # ROCm
         # ============================================================
-        elif has_cmd('rocminfo') or os.path.exists('/opt/rocm'):
+        elif has_cmd('rocminfo') or os.path.exists('/opt/rocm') or os.path.exists('/opt/rocm/bin/rocminfo'):
             out = try_cmd('rocminfo')
             version_str = toolkit_version_parse(out)
             cmp = toolkit_version_compare(version_str, rocm_version_range)
@@ -244,17 +244,9 @@ class DeviceInstaller():
                 msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
 
         # ============================================================
-        # APPLE MPS
-        # ============================================================
-        elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
-            devices['MPS']['found'] = True
-            name = 'mps'
-            tag = 'mps'
-
-        # ============================================================
         # INTEL XPU
         # ============================================================
-        elif os.path.exists('/dev/dri/renderD128'):
+        elif os.path.exists('/dev/dri/renderD128') or (os.name == 'nt' and has_cmd('dxdiag')):
             out = try_cmd('lspci')
             if 'intel' in out:
                 oneapi_out:str = try_cmd('sycl-ls') if has_cmd('sycl-ls') else ''
@@ -273,6 +265,14 @@ class DeviceInstaller():
             if 'intel' in out:
                 name = 'xpu'
                 tag = 'xpu'
+
+        # ============================================================
+        # APPLE MPS
+        # ============================================================
+        elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
+            devices['MPS']['found'] = True
+            name = 'mps'
+            tag = 'mps'
 
         # ============================================================
         # CPU
