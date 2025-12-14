@@ -10,7 +10,7 @@ LABEL org.opencontainers.image.title="ebook2audiobook" \
 	  org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook"
 
 ARG DEVICE_TAG=cpu
-ARG DOCKER_DEVICE_STR='{"name": "${DEVICE_TAG}", "os": "linux", "arch": "x86_64", "pyvenv": [3, 12], "tag": "${DEVICE_TAG}", "note": ""}'
+ARG DOCKER_DEVICE_STR='{"name": "cpu", "os": "linux", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR=curl ffmpeg nodejs espeak-ng sox tesseract-ocr
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
@@ -23,7 +23,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR /app
 COPY . .
-	
+
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN apt-get update && \
@@ -31,11 +31,11 @@ RUN apt-get update && \
 		gcc g++ make python3-dev pkg-config curl git wget bash xz-utils \
 		libegl1 libopengl0 libgl1 libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
 		cmake fontconfig libfreetype6 libgomp1 libfontconfig1 libsndfile1 || true
-		
+
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable && \
     export PATH="/root/.cargo/bin:${PATH}" && \
     rustup default stable
-		
+
 RUN apt-get update && \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
 		${DOCKER_PROGRAMS_STR} \
