@@ -384,7 +384,7 @@ class DeviceInstaller():
                     name = 'rocm'
                     tag = f'rocm{major}{minor}'
                 else:
-                    msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
+                    msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.' 
 
         # ============================================================
         # INTEL XPU
