@@ -333,7 +333,6 @@ if not "%OK_PROGRAMS%"=="0" (
 			where /Q python  && set PY_FOUND=1
 			where /Q python3 && set PY_FOUND=1
 			where /Q py      && set PY_FOUND=1
-
 			if not defined PY_FOUND (
 				echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
 				goto :failed
