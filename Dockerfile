@@ -23,7 +23,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR /app
 COPY . .
-	
+
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN apt-get update && \
