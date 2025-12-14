@@ -305,7 +305,7 @@ if not "%OK_CONDA%"=="0" (
 if not "%OK_PROGRAMS%"=="0" (
 	echo Installing missing programs...
 	if "%OK_SCOOP%"=="0" (
-		call scoop bucket add muggle b https://github.com/hu3rror/scoop-muggle.git
+		call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
 		call scoop bucket add extras
 		call scoop bucket add versions
 	)
@@ -328,12 +328,22 @@ if not "%OK_PROGRAMS%"=="0" (
 				)
 			)
 		)
+		if "%%p"=="python" (
+			set "PY_FOUND="
+			where /Q python  && set PY_FOUND=1
+			where /Q python3 && set PY_FOUND=1
+			where /Q py      && set PY_FOUND=1
+
+			if not defined PY_FOUND (
+				echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
+				goto :failed
+			)
+		)
 		if "%%p"=="nodejs" (
 			set "prog=node"
-		) else (
-			if "%%p"=="calibre-normal" (
-				set "prog=calibre"
-			)
+		)
+		if "%%p"=="calibre-normal" (
+			set "prog=calibre"
 		)
 		if "%%p"=="rustup" (
 			if exist "%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
