@@ -138,11 +138,9 @@ class DeviceInstaller():
             rev_major = int(parts[0])
             rev_minor = int(parts[1]) if len(parts) > 1 else 0
             rev_patch = int(parts[2]) if len(parts) > 2 else 0
-
             if l4t_major < 35:
                 msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 5.1+. Falling back to CPU.'
                 return ('unsupported', msg)
-
             if l4t_major == 35:
                 if rev_major == 0 and rev_minor <= 1:
                     msg = 'JetPack 5.0/5.0.1 detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
@@ -160,7 +158,6 @@ class DeviceInstaller():
                     return ('51', msg)
                 msg = 'Unrecognized JetPack 5.x version. Falling back to CPU.'
                 return ('unknown', msg)
-
             if l4t_major == 36:
                 if rev_major == 2:
                     return ('60', msg)
@@ -212,8 +209,7 @@ class DeviceInstaller():
                     os.path.exists('/dev/nvidiactl') or
                     os.path.exists('/dev/nvidia0')
                 )
-            ) or
-            (
+            ) or (
                 os.name == 'nt' and (
                     (has_cmd('wmic') and (
                         'nvidia' in try_cmd(
@@ -229,22 +225,32 @@ class DeviceInstaller():
                     ).lower())
                 )
             )
-        ) and (
-            has_cmd('nvcc') or
-            has_cmd('nvcc.exe') or
-            os.path.exists('/usr/local/cuda/bin/nvcc') or
-            (os.name == 'nt' and os.environ.get('CUDA_PATH') and
-             os.path.exists(os.path.join(os.environ['CUDA_PATH'], 'bin', 'nvcc.exe')))
         ):
-            cuda_bin = '/usr/local/cuda/bin'
-            if os.path.exists(cuda_bin) and cuda_bin not in os.environ['PATH']:
-                os.environ['PATH'] = f"{cuda_bin}:{os.environ['PATH']}"
-            out = try_cmd('nvcc --version')
-            if not out:
-                msg = 'nvcc found but returned empty output.'
+            version_out = ''
+            if os.name == 'posix':
+                for p in (
+                    '/usr/local/cuda/version.json',
+                    '/usr/local/cuda/version.txt',
+                ):
+                    if os.path.exists(p):
+                        version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                        break
+            elif os.name == 'nt':
+                cuda_path = os.environ.get('CUDA_PATH')
+                if cuda_path:
+                    for p in (
+                        os.path.join(cuda_path, 'version.json'),
+                        os.path.join(cuda_path, 'version.txt'),
+                    ):
+                        if os.path.exists(p):
+                            version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                            break
+            if not version_out:
+                msg = 'CUDA hardware detected but CUDA toolkit version file not found.'
             else:
-                version_str = toolkit_version_parse(out)
+                version_str = toolkit_version_parse(version_out)
                 cmp = toolkit_version_compare(version_str, cuda_version_range)
+
                 if cmp == -1:
                     msg = f'CUDA {version_str} < min {cuda_version_range["min"]}. Please upgrade.'
                 elif cmp == 1:
@@ -263,47 +269,149 @@ class DeviceInstaller():
         # ============================================================
         # ROCm
         # ============================================================
-        elif has_cmd('rocminfo') or os.path.exists('/opt/rocm') or os.path.exists('/opt/rocm/bin/rocminfo'):
-            print("---> Hardware detected: ROCM")
-            out = try_cmd('rocminfo')
-            version_str = toolkit_version_parse(out)
-            cmp = toolkit_version_compare(version_str, rocm_version_range)
-            if cmp == -1:
-                msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
-            elif cmp == 1:
-                msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
-            elif cmp == 0:
-                devices['ROCM']['found'] = True
-                name = 'rocm'
-                tag = f'rocm{version_str}'
+        elif (
+            (
+                os.name == 'posix' and (
+                    (has_cmd('lspci') and any(
+                        v in try_cmd('lspci -nn').lower()
+                        for v in ('1002:', '1022:')
+                    )) or
+                    any(
+                        os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
+                        open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() in ('0x1002', '0x1022')
+                        for d in os.listdir('/sys/bus/pci/devices')
+                        if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                    ) or
+                    os.path.exists('/dev/kfd')
+                )
+            ) or (
+                os.name == 'nt' and (
+                    (has_cmd('wmic') and '1002' in try_cmd(
+                        'wmic path win32_VideoController get Name,PNPDeviceID'
+                    ).lower()) or
+                    (has_cmd('powershell') and 'ven_1002' in try_cmd(
+                        'powershell -Command "Get-PnpDevice -Class Display | '
+                        'Select-Object -ExpandProperty InstanceId"'
+                    ).lower())
+                )
+            )
+        ):
+            version_out = ''
+
+            if os.name == 'posix':
+                for p in (
+                    '/opt/rocm/.info/version',
+                    '/opt/rocm/version',
+                ):
+                    if os.path.exists(p):
+                        version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                        break
+
+            elif os.name == 'nt':
+                for env in ('ROCM_PATH', 'HIP_PATH'):
+                    base = os.environ.get(env)
+                    if base:
+                        for p in (
+                            os.path.join(base, 'version'),
+                            os.path.join(base, '.info', 'version'),
+                        ):
+                            if os.path.exists(p):
+                                version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                                break
+                    if version_out:
+                        break
+
+            if not version_out:
+                msg = 'ROCm hardware detected but ROCm toolkit version file not found.'
             else:
-                msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
+                version_str = toolkit_version_parse(version_out)
+                cmp = toolkit_version_compare(version_str, rocm_version_range)
+
+                if cmp == -1:
+                    msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
+                elif cmp == 1:
+                    msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
+                elif cmp == 0:
+                    devices['ROCM']['found'] = True
+                    parts = version_str.split(".")
+                    major = parts[0]
+                    minor = parts[1] if len(parts) > 1 else 0
+                    patch = parts[2] if len(parts) > 2 else 0
+                    name = 'rocm'
+                    tag = f'rocm{major}{minor}'
+                else:
+                    msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
 
         # ============================================================
         # INTEL XPU
         # ============================================================
-        elif os.path.exists('/dev/dri/renderD128') or (os.name == 'nt' and has_cmd('dxdiag')):
-            if os.name == 'nt':
-                out = try_cmd('dxdiag')
+        elif (
+            (
+                os.name == 'posix' and (
+                    (
+                        os.path.exists('/dev/dri/renderD128') and (
+                            (has_cmd('lspci') and '8086:' in try_cmd('lspci -nn').lower()) or
+                            any(
+                                os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
+                                open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() == '0x8086'
+                                for d in os.listdir('/sys/bus/pci/devices')
+                                if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                            )
+                        )
+                    )
+                )
+            ) or (
+                os.name == 'nt' and (
+                    (has_cmd('wmic') and (
+                        'intel' in try_cmd(
+                            'wmic path win32_VideoController get Name,PNPDeviceID'
+                        ).lower() or
+                        'ven_8086' in try_cmd(
+                            'wmic path win32_VideoController get Name,PNPDeviceID'
+                        ).lower()
+                    )) or
+                    (has_cmd('powershell') and 'ven_8086' in try_cmd(
+                        'powershell -Command "Get-PnpDevice -Class Display | '
+                        'Select-Object -ExpandProperty InstanceId"'
+                    ).lower())
+                )
+            )
+        ):
+            version_out = ''
+            if os.name == 'posix':
+                for p in (
+                    '/opt/intel/oneapi/version.txt',
+                    '/opt/intel/oneapi/compiler/latest/version.txt',
+                    '/opt/intel/oneapi/runtime/latest/version.txt',
+                ):
+                    if os.path.exists(p):
+                        version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                        break
+            elif os.name == 'nt':
+                oneapi_root = os.environ.get('ONEAPI_ROOT')
+                if oneapi_root:
+                    for p in (
+                        os.path.join(oneapi_root, 'version.txt'),
+                        os.path.join(oneapi_root, 'compiler', 'latest', 'version.txt'),
+                        os.path.join(oneapi_root, 'runtime', 'latest', 'version.txt'),
+                    ):
+                        if os.path.exists(p):
+                            version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                            break
+            if not version_out:
+                msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
             else:
-                out = try_cmd('lspci')
-            if 'intel' in out.lower():
-                oneapi_out:str = try_cmd('sycl-ls') if has_cmd('sycl-ls') else ''
-                version_str = toolkit_version_parse(oneapi_out)
+                version_str = toolkit_version_parse(version_out)
                 cmp = toolkit_version_compare(version_str, xpu_version_range)
+
                 if cmp == -1 or cmp == 1:
                     msg = f'XPU {version_str} out of supported range {xpu_version_range}. Falling back to CPU.'
-                elif cmp == 0 and (has_cmd('sycl-ls') or has_cmd('clinfo')):
+                elif cmp == 0:
                     devices['XPU']['found'] = True
                     name = 'xpu'
                     tag = 'xpu'
                 else:
                     msg = 'Intel GPU detected but not compatible or oneAPI runtime is missing.'
-        elif has_cmd('clinfo'):
-            out = try_cmd('clinfo')
-            if 'intel' in out:
-                name = 'xpu'
-                tag = 'xpu'
 
         # ============================================================
         # APPLE MPS
