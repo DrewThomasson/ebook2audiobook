@@ -233,11 +233,14 @@ class DeviceInstaller():
             (
                 os.name == 'posix' and (
                     (has_cmd('lspci') and '10de:' in try_cmd('lspci -nn').lower()) or
-                    any(
-                        os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
-                        open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() == '0x10de'
-                        for d in os.listdir('/sys/bus/pci/devices')
-                        if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                    (
+                        os.path.exists('/sys/bus/pci/devices') and
+                        any(
+                            os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
+                            open(f'/sys/bus/pci/devices/{d}/vendor', 'r').read().strip() == '0x10de'
+                            for d in os.listdir('/sys/bus/pci/devices')
+                            if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                        )
                     ) or
                     os.path.exists('/dev/nvidiactl') or
                     os.path.exists('/dev/nvidia0')
@@ -260,14 +263,17 @@ class DeviceInstaller():
             )
         ):
             version_out = ''
+
             if os.name == 'posix':
                 for p in (
                     '/usr/local/cuda/version.json',
                     '/usr/local/cuda/version.txt',
                 ):
                     if os.path.exists(p):
-                        version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                            version_out = f.read()
                         break
+
             elif os.name == 'nt':
                 cuda_path = os.environ.get('CUDA_PATH')
                 if cuda_path:
@@ -276,8 +282,10 @@ class DeviceInstaller():
                         os.path.join(cuda_path, 'version.txt'),
                     ):
                         if os.path.exists(p):
-                            version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                version_out = f.read()
                             break
+
             if not version_out:
                 msg = 'CUDA hardware detected but CUDA toolkit version file not found.'
             else:
@@ -293,7 +301,6 @@ class DeviceInstaller():
                     parts = version_str.split(".")
                     major = parts[0]
                     minor = parts[1] if len(parts) > 1 else 0
-                    patch = parts[2] if len(parts) > 2 else 0
                     name = 'cuda'
                     tag = f'cu{major}{minor}'
                 else:
@@ -302,18 +309,21 @@ class DeviceInstaller():
         # ============================================================
         # ROCm
         # ============================================================
-        elif (
+         elif (
             (
                 os.name == 'posix' and (
                     (has_cmd('lspci') and any(
                         v in try_cmd('lspci -nn').lower()
                         for v in ('1002:', '1022:')
                     )) or
-                    any(
-                        os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
-                        open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() in ('0x1002', '0x1022')
-                        for d in os.listdir('/sys/bus/pci/devices')
-                        if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                    (
+                        os.path.exists('/sys/bus/pci/devices') and
+                        any(
+                            os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
+                            open(f'/sys/bus/pci/devices/{d}/vendor', 'r').read().strip() in ('0x1002', '0x1022')
+                            for d in os.listdir('/sys/bus/pci/devices')
+                            if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                        )
                     ) or
                     os.path.exists('/dev/kfd')
                 )
@@ -330,14 +340,17 @@ class DeviceInstaller():
             )
         ):
             version_out = ''
+
             if os.name == 'posix':
                 for p in (
                     '/opt/rocm/.info/version',
                     '/opt/rocm/version',
                 ):
                     if os.path.exists(p):
-                        version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                            version_out = f.read()
                         break
+
             elif os.name == 'nt':
                 for env in ('ROCM_PATH', 'HIP_PATH'):
                     base = os.environ.get(env)
@@ -347,7 +360,8 @@ class DeviceInstaller():
                             os.path.join(base, '.info', 'version'),
                         ):
                             if os.path.exists(p):
-                                version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                                with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                    version_out = f.read()
                                 break
                     if version_out:
                         break
@@ -367,7 +381,6 @@ class DeviceInstaller():
                     parts = version_str.split(".")
                     major = parts[0]
                     minor = parts[1] if len(parts) > 1 else 0
-                    patch = parts[2] if len(parts) > 2 else 0
                     name = 'rocm'
                     tag = f'rocm{major}{minor}'
                 else:
@@ -379,12 +392,13 @@ class DeviceInstaller():
         elif (
             (
                 os.name == 'posix' and (
-                    (
-                        os.path.exists('/dev/dri/renderD128') and (
-                            (has_cmd('lspci') and '8086:' in try_cmd('lspci -nn').lower()) or
+                    os.path.exists('/dev/dri/renderD128') and (
+                        (has_cmd('lspci') and '8086:' in try_cmd('lspci -nn').lower()) or
+                        (
+                            os.path.exists('/sys/bus/pci/devices') and
                             any(
                                 os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
-                                open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() == '0x8086'
+                                open(f'/sys/bus/pci/devices/{d}/vendor', 'r').read().strip() == '0x8086'
                                 for d in os.listdir('/sys/bus/pci/devices')
                                 if os.path.isdir(f'/sys/bus/pci/devices/{d}')
                             )
@@ -409,6 +423,7 @@ class DeviceInstaller():
             )
         ):
             version_out = ''
+
             if os.name == 'posix':
                 for p in (
                     '/opt/intel/oneapi/version.txt',
@@ -416,8 +431,10 @@ class DeviceInstaller():
                     '/opt/intel/oneapi/runtime/latest/version.txt',
                 ):
                     if os.path.exists(p):
-                        version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                            version_out = f.read()
                         break
+
             elif os.name == 'nt':
                 oneapi_root = os.environ.get('ONEAPI_ROOT')
                 if oneapi_root:
@@ -427,8 +444,10 @@ class DeviceInstaller():
                         os.path.join(oneapi_root, 'runtime', 'latest', 'version.txt'),
                     ):
                         if os.path.exists(p):
-                            version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                version_out = f.read()
                             break
+
             if not version_out:
                 msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
             else:
