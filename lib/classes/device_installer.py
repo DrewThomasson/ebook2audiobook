@@ -263,7 +263,6 @@ class DeviceInstaller():
             )
         ):
             version_out = ''
-
             if os.name == 'posix':
                 for p in (
                     '/usr/local/cuda/version.json',
@@ -273,7 +272,6 @@ class DeviceInstaller():
                         with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                             version_out = f.read()
                         break
-
             elif os.name == 'nt':
                 cuda_path = os.environ.get('CUDA_PATH')
                 if cuda_path:
@@ -285,7 +283,6 @@ class DeviceInstaller():
                             with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                                 version_out = f.read()
                             break
-
             if not version_out:
                 msg = 'CUDA hardware detected but CUDA toolkit version file not found.'
             else:
@@ -340,7 +337,6 @@ class DeviceInstaller():
             )
         ):
             version_out = ''
-
             if os.name == 'posix':
                 for p in (
                     '/opt/rocm/.info/version',
@@ -350,7 +346,6 @@ class DeviceInstaller():
                         with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                             version_out = f.read()
                         break
-
             elif os.name == 'nt':
                 for env in ('ROCM_PATH', 'HIP_PATH'):
                     base = os.environ.get(env)
@@ -365,13 +360,11 @@ class DeviceInstaller():
                                 break
                     if version_out:
                         break
-
             if not version_out:
                 msg = 'ROCm hardware detected but ROCm toolkit version file not found.'
             else:
                 version_str = toolkit_version_parse(version_out)
                 cmp = toolkit_version_compare(version_str, rocm_version_range)
-
                 if cmp == -1:
                     msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
                 elif cmp == 1:
@@ -423,7 +416,6 @@ class DeviceInstaller():
             )
         ):
             version_out = ''
-
             if os.name == 'posix':
                 for p in (
                     '/opt/intel/oneapi/version.txt',
@@ -434,7 +426,6 @@ class DeviceInstaller():
                         with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                             version_out = f.read()
                         break
-
             elif os.name == 'nt':
                 oneapi_root = os.environ.get('ONEAPI_ROOT')
                 if oneapi_root:
@@ -447,13 +438,11 @@ class DeviceInstaller():
                             with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                                 version_out = f.read()
                             break
-
             if not version_out:
                 msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
             else:
                 version_str = toolkit_version_parse(version_out)
                 cmp = toolkit_version_compare(version_str, xpu_version_range)
-
                 if cmp == -1 or cmp == 1:
                     msg = f'XPU {version_str} out of supported range {xpu_version_range}. Falling back to CPU.'
                 elif cmp == 0:
