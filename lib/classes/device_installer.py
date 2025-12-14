@@ -178,7 +178,6 @@ class DeviceInstaller():
         # JETSON
         # ============================================================
         if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
-            print("---> Hardware detected: JETSON")
             raw = tegra_version()
             jp_code, msg = jetpack_version(raw)
             if jp_code in ['unsupported', 'unknown']:
@@ -201,7 +200,6 @@ class DeviceInstaller():
         # CUDA
         # ============================================================
         elif has_cmd('nvcc') or has_cmd('nvcc.exe') or os.path.exists('/usr/local/cuda/bin/nvcc') or (os.name == 'nt' and os.environ.get('CUDA_PATH') and os.path.exists(os.path.join(os.environ['CUDA_PATH'], 'bin', 'nvcc.exe'))):
-            print("---> Hardware detected: CUDA")
             cuda_bin = '/usr/local/cuda/bin'
             if os.path.exists(cuda_bin) and cuda_bin not in os.environ['PATH']:
                 os.environ['PATH'] = f"{cuda_bin}:{os.environ['PATH']}"
@@ -249,7 +247,6 @@ class DeviceInstaller():
         # INTEL XPU
         # ============================================================
         elif os.path.exists('/dev/dri/renderD128') or (os.name == 'nt' and has_cmd('dxdiag')):
-            print("---> Hardware detected: XPU")
             if os.name == 'nt':
                 out = try_cmd('dxdiag')
             else:
@@ -276,7 +273,6 @@ class DeviceInstaller():
         # APPLE MPS
         # ============================================================
         elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
-            print("---> Hardware detected: MPS")
             devices['MPS']['found'] = True
             name = 'mps'
             tag = 'mps'
@@ -434,6 +430,7 @@ class DeviceInstaller():
             if device_info_str:
                 device_info = json.loads(device_info_str)
                 if device_info:
+                    print(f'---> Hardware detected: {device_info}')
                     torch_version = self.get_package_version('torch')
                     if torch_version:
                         if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
