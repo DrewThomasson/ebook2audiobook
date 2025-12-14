@@ -200,7 +200,6 @@ class DeviceInstaller():
         # CUDA
         # ============================================================
         elif has_cmd('nvcc') or has_cmd('nvcc.exe') or os.path.exists('/usr/local/cuda/bin/nvcc') or (os.name == 'nt' and os.environ.get('CUDA_PATH') and os.path.exists(os.path.join(os.environ['CUDA_PATH'], 'bin', 'nvcc.exe'))):
-            # Force nvcc into PATH if it's installed but not visible
             cuda_bin = '/usr/local/cuda/bin'
             if os.path.exists(cuda_bin) and cuda_bin not in os.environ['PATH']:
                 os.environ['PATH'] = f"{cuda_bin}:{os.environ['PATH']}"
@@ -229,6 +228,7 @@ class DeviceInstaller():
         # ROCm
         # ============================================================
         elif has_cmd('rocminfo') or os.path.exists('/opt/rocm') or os.path.exists('/opt/rocm/bin/rocminfo'):
+            print("---> Hardware detected: ROCM")
             out = try_cmd('rocminfo')
             version_str = toolkit_version_parse(out)
             cmp = toolkit_version_compare(version_str, rocm_version_range)
@@ -430,10 +430,10 @@ class DeviceInstaller():
             if device_info_str:
                 device_info = json.loads(device_info_str)
                 if device_info:
+                    print(f'---> Hardware detected: {device_info}')
                     torch_version = self.get_package_version('torch')
                     if torch_version:
                         if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
-                            print(f"Hardware detected: {device_info['name']}")
                             m = re.search(r'\+(.+)$', torch_version)
                             current_tag = m.group(1) if m else None
                             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
@@ -454,7 +454,7 @@ class DeviceInstaller():
                                         torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}+{tag}-{tag_py}-{os_env}_{arch}.whl"
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', torch_pkg, torchaudio_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'scikit-learn'])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'scikit-learn', '--no-binary', 'scikit-learn'])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'scikit-learn'])
                                     elif device_info['name'] == devices['MPS']['proc']:
                                         torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
                                         torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'

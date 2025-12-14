@@ -36,7 +36,7 @@ APP_NAME="ebook2audiobook"
 APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-DOCKER_PROGRAMS=("curl" "wget" "ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+DOCKER_PROGRAMS=("ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="$APP_NAME"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
@@ -727,9 +727,9 @@ function build_docker_image {
 	echo "Headless mode:"
 	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	echo "Docker Compose:"
-	echo "	DEVICE_TAG=$DOCKER_IMG_NAME docker compose up -d"
+	echo "	DEVICE_TAG=$TAG docker compose up -d"
 	echo "Podman Compose:"
-	echo "	DEVICE_TAG=$DOCKER_IMG_NAME podman-compose up -d"
+	echo "	DEVICE_TAG=$TAG podman-compose up -d"
 }
 
 ########################################

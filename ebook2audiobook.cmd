@@ -36,7 +36,7 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 set "HOST_PROGRAMS=cmake rustup python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
-set "DOCKER_PROGRAMS=curl wget ffmpeg nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+set "DOCKER_PROGRAMS=ffmpeg nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=ebook2audiobook"
@@ -546,9 +546,9 @@ echo 	docker run %cmd_extra%--rm -it -v "%cd%":/app:rw -p 7860:7860
 echo Headless mode:
 echo 	docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 echo Docker Compose:
-echo 	DEVICE_TAG=$DOCKER_IMG_NAME docker compose up -d
+echo 	DEVICE_TAG=%TAG% docker compose up -d
 echo Podman Compose:
-echo 	DEVICE_TAG=$DOCKER_IMG_NAME podman-compose up -d
+echo 	DEVICE_TAG=%TAG% podman-compose up -d
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS
