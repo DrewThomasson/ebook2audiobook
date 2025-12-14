@@ -31,11 +31,11 @@ RUN apt-get update && \
 		gcc g++ make python3-dev pkg-config curl git wget bash xz-utils \
 		libegl1 libopengl0 libgl1 libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
 		cmake fontconfig libfreetype6 libgomp1 libfontconfig1 libsndfile1 || true
-		
+
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable && \
     export PATH="/root/.cargo/bin:${PATH}" && \
     rustup default stable
-		
+
 RUN apt-get update && \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
 		${DOCKER_PROGRAMS_STR} \
