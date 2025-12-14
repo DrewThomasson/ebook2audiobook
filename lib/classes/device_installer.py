@@ -199,7 +199,43 @@ class DeviceInstaller():
         # ============================================================
         # CUDA
         # ============================================================
-        elif has_cmd('nvcc') or has_cmd('nvcc.exe') or os.path.exists('/usr/local/cuda/bin/nvcc') or (os.name == 'nt' and os.environ.get('CUDA_PATH') and os.path.exists(os.path.join(os.environ['CUDA_PATH'], 'bin', 'nvcc.exe'))):
+        elif (
+            (
+                os.name == 'posix' and (
+                    (has_cmd('lspci') and '10de:' in try_cmd('lspci -nn').lower()) or
+                    any(
+                        os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
+                        open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() == '0x10de'
+                        for d in os.listdir('/sys/bus/pci/devices')
+                        if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                    ) or
+                    os.path.exists('/dev/nvidiactl') or
+                    os.path.exists('/dev/nvidia0')
+                )
+            ) or
+            (
+                os.name == 'nt' and (
+                    (has_cmd('wmic') and (
+                        'nvidia' in try_cmd(
+                            'wmic path win32_VideoController get Name,PNPDeviceID'
+                        ).lower() or
+                        'ven_10de' in try_cmd(
+                            'wmic path win32_VideoController get Name,PNPDeviceID'
+                        ).lower()
+                    )) or
+                    (has_cmd('powershell') and 'ven_10de' in try_cmd(
+                        'powershell -Command "Get-PnpDevice -Class Display | '
+                        'Select-Object -ExpandProperty InstanceId"'
+                    ).lower())
+                )
+            )
+        ) and (
+            has_cmd('nvcc') or
+            has_cmd('nvcc.exe') or
+            os.path.exists('/usr/local/cuda/bin/nvcc') or
+            (os.name == 'nt' and os.environ.get('CUDA_PATH') and
+             os.path.exists(os.path.join(os.environ['CUDA_PATH'], 'bin', 'nvcc.exe')))
+        ):
             cuda_bin = '/usr/local/cuda/bin'
             if os.path.exists(cuda_bin) and cuda_bin not in os.environ['PATH']:
                 os.environ['PATH'] = f"{cuda_bin}:{os.environ['PATH']}"
