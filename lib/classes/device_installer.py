@@ -72,35 +72,68 @@ class DeviceInstaller():
             except Exception:
                 return ''
 
-        def toolkit_version_parse(text:str)->Union[str, None]:
-            if not text:
-                return None
-            # ----- CUDA -----
-            m = re.search(r'cuda\s*version\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)', text, re.IGNORECASE)
-            if m:
-                return m.group(1)
-            # ----- ROCm -----
-            m = re.search(r'rocm\s*version\s*[:=]?\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
-            if m:
-                parts = m.group(1).split(".")
-                major = parts[0]
-                minor = parts[1] if len(parts) > 1 else 0
-                patch = parts[2] if len(parts) > 2 else 0
-                return f"{major}.{minor}"
-            # HIP also implies ROCm
-            m = re.search(r'hip\s*version\s*[:=]?\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
-            if m:
-                parts = m.group(1).split(".")
-                major = parts[0]
-                minor = parts[1] if len(parts) > 1 else 0
-                patch = parts[2] if len(parts) > 2 else 0
-                return f"{major}.{minor}"
-            # ----- XPU / oneAPI -----
-            m = re.search(r'(oneapi|xpu)\s*(toolkit\s*)?version\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)',
-                          text, re.IGNORECASE)
-            if m:
-                return m.group(3)
+    def toolkit_version_parse(text:str)->Union[str, None]:
+        if not text:
             return None
+        text = text.strip()
+        if text.startswith('{'):
+            try:
+                import json
+                obj = json.loads(text)
+
+                if isinstance(obj, dict):
+                    # New CUDA JSON
+                    if 'cuda' in obj and isinstance(obj['cuda'], dict):
+                        v = obj['cuda'].get('version')
+                        if v:
+                            return str(v)
+
+                    # Old JSON format
+                    v = obj.get('version')
+                    if v:
+                        return str(v)
+
+            except Exception:
+                pass
+        m = re.search(
+            r'cuda\s*version\s*([0-9]+(?:\.[0-9]+){1,2})',
+            text,
+            re.IGNORECASE
+        )
+        if m:
+            return m.group(1)
+        m = re.search(
+            r'cuda\s*([0-9]+(?:\.[0-9]+)?)',
+            text,
+            re.IGNORECASE
+        )
+        if m:
+            return m.group(1)
+        m = re.search(
+            r'rocm\s*version\s*([0-9]+(?:\.[0-9]+){0,2})',
+            text,
+            re.IGNORECASE
+        )
+        if m:
+            parts = m.group(1).split('.')
+            return f"{parts[0]}.{parts[1] if len(parts) > 1 else 0}"
+
+        m = re.search(
+            r'hip\s*version\s*([0-9]+(?:\.[0-9]+){0,2})',
+            text,
+            re.IGNORECASE
+        )
+        if m:
+            parts = m.group(1).split('.')
+            return f"{parts[0]}.{parts[1] if len(parts) > 1 else 0}"
+        m = re.search(
+            r'(oneapi|xpu)\s*(toolkit\s*)?version\s*([0-9]+(?:\.[0-9]+)?)',
+            text,
+            re.IGNORECASE
+        )
+        if m:
+            return m.group(3)
+        return None
 
         def toolkit_version_compare(version_str:Union[str, None], version_range:dict)->Union[int, None]:
             if version_str is None:
@@ -200,11 +233,14 @@ class DeviceInstaller():
             (
                 os.name == 'posix' and (
                     (has_cmd('lspci') and '10de:' in try_cmd('lspci -nn').lower()) or
-                    any(
-                        os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
-                        open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() == '0x10de'
-                        for d in os.listdir('/sys/bus/pci/devices')
-                        if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                    (
+                        os.path.exists('/sys/bus/pci/devices') and
+                        any(
+                            os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
+                            open(f'/sys/bus/pci/devices/{d}/vendor', 'r').read().strip() == '0x10de'
+                            for d in os.listdir('/sys/bus/pci/devices')
+                            if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                        )
                     ) or
                     os.path.exists('/dev/nvidiactl') or
                     os.path.exists('/dev/nvidia0')
@@ -233,7 +269,8 @@ class DeviceInstaller():
                     '/usr/local/cuda/version.txt',
                 ):
                     if os.path.exists(p):
-                        version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                            version_out = f.read()
                         break
             elif os.name == 'nt':
                 cuda_path = os.environ.get('CUDA_PATH')
@@ -243,7 +280,8 @@ class DeviceInstaller():
                         os.path.join(cuda_path, 'version.txt'),
                     ):
                         if os.path.exists(p):
-                            version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                version_out = f.read()
                             break
             if not version_out:
                 msg = 'CUDA hardware detected but CUDA toolkit version file not found.'
@@ -260,7 +298,6 @@ class DeviceInstaller():
                     parts = version_str.split(".")
                     major = parts[0]
                     minor = parts[1] if len(parts) > 1 else 0
-                    patch = parts[2] if len(parts) > 2 else 0
                     name = 'cuda'
                     tag = f'cu{major}{minor}'
                 else:
@@ -269,18 +306,21 @@ class DeviceInstaller():
         # ============================================================
         # ROCm
         # ============================================================
-        elif (
+         elif (
             (
                 os.name == 'posix' and (
                     (has_cmd('lspci') and any(
                         v in try_cmd('lspci -nn').lower()
                         for v in ('1002:', '1022:')
                     )) or
-                    any(
-                        os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
-                        open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() in ('0x1002', '0x1022')
-                        for d in os.listdir('/sys/bus/pci/devices')
-                        if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                    (
+                        os.path.exists('/sys/bus/pci/devices') and
+                        any(
+                            os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
+                            open(f'/sys/bus/pci/devices/{d}/vendor', 'r').read().strip() in ('0x1002', '0x1022')
+                            for d in os.listdir('/sys/bus/pci/devices')
+                            if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                        )
                     ) or
                     os.path.exists('/dev/kfd')
                 )
@@ -297,16 +337,15 @@ class DeviceInstaller():
             )
         ):
             version_out = ''
-
             if os.name == 'posix':
                 for p in (
                     '/opt/rocm/.info/version',
                     '/opt/rocm/version',
                 ):
                     if os.path.exists(p):
-                        version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                            version_out = f.read()
                         break
-
             elif os.name == 'nt':
                 for env in ('ROCM_PATH', 'HIP_PATH'):
                     base = os.environ.get(env)
@@ -316,17 +355,16 @@ class DeviceInstaller():
                             os.path.join(base, '.info', 'version'),
                         ):
                             if os.path.exists(p):
-                                version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                                with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                    version_out = f.read()
                                 break
                     if version_out:
                         break
-
             if not version_out:
                 msg = 'ROCm hardware detected but ROCm toolkit version file not found.'
             else:
                 version_str = toolkit_version_parse(version_out)
                 cmp = toolkit_version_compare(version_str, rocm_version_range)
-
                 if cmp == -1:
                     msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
                 elif cmp == 1:
@@ -336,7 +374,6 @@ class DeviceInstaller():
                     parts = version_str.split(".")
                     major = parts[0]
                     minor = parts[1] if len(parts) > 1 else 0
-                    patch = parts[2] if len(parts) > 2 else 0
                     name = 'rocm'
                     tag = f'rocm{major}{minor}'
                 else:
@@ -348,12 +385,13 @@ class DeviceInstaller():
         elif (
             (
                 os.name == 'posix' and (
-                    (
-                        os.path.exists('/dev/dri/renderD128') and (
-                            (has_cmd('lspci') and '8086:' in try_cmd('lspci -nn').lower()) or
+                    os.path.exists('/dev/dri/renderD128') and (
+                        (has_cmd('lspci') and '8086:' in try_cmd('lspci -nn').lower()) or
+                        (
+                            os.path.exists('/sys/bus/pci/devices') and
                             any(
                                 os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
-                                open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() == '0x8086'
+                                open(f'/sys/bus/pci/devices/{d}/vendor', 'r').read().strip() == '0x8086'
                                 for d in os.listdir('/sys/bus/pci/devices')
                                 if os.path.isdir(f'/sys/bus/pci/devices/{d}')
                             )
@@ -385,7 +423,8 @@ class DeviceInstaller():
                     '/opt/intel/oneapi/runtime/latest/version.txt',
                 ):
                     if os.path.exists(p):
-                        version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                            version_out = f.read()
                         break
             elif os.name == 'nt':
                 oneapi_root = os.environ.get('ONEAPI_ROOT')
@@ -396,14 +435,14 @@ class DeviceInstaller():
                         os.path.join(oneapi_root, 'runtime', 'latest', 'version.txt'),
                     ):
                         if os.path.exists(p):
-                            version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
+                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                version_out = f.read()
                             break
             if not version_out:
                 msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
             else:
                 version_str = toolkit_version_parse(version_out)
                 cmp = toolkit_version_compare(version_str, xpu_version_range)
-
                 if cmp == -1 or cmp == 1:
                     msg = f'XPU {version_str} out of supported range {xpu_version_range}. Falling back to CPU.'
                 elif cmp == 0:
