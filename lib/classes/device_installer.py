@@ -72,68 +72,68 @@ class DeviceInstaller():
             except Exception:
                 return ''
 
-    def toolkit_version_parse(text:str)->Union[str, None]:
-        if not text:
-            return None
-        text = text.strip()
-        if text.startswith('{'):
-            try:
-                import json
-                obj = json.loads(text)
+        def toolkit_version_parse(text:str)->Union[str, None]:
+            if not text:
+                return None
+            text = text.strip()
+            if text.startswith('{'):
+                try:
+                    import json
+                    obj = json.loads(text)
 
-                if isinstance(obj, dict):
-                    # New CUDA JSON
-                    if 'cuda' in obj and isinstance(obj['cuda'], dict):
-                        v = obj['cuda'].get('version')
+                    if isinstance(obj, dict):
+                        # New CUDA JSON
+                        if 'cuda' in obj and isinstance(obj['cuda'], dict):
+                            v = obj['cuda'].get('version')
+                            if v:
+                                return str(v)
+
+                        # Old JSON format
+                        v = obj.get('version')
                         if v:
                             return str(v)
 
-                    # Old JSON format
-                    v = obj.get('version')
-                    if v:
-                        return str(v)
+                except Exception:
+                    pass
+            m = re.search(
+                r'cuda\s*version\s*([0-9]+(?:\.[0-9]+){1,2})',
+                text,
+                re.IGNORECASE
+            )
+            if m:
+                return m.group(1)
+            m = re.search(
+                r'cuda\s*([0-9]+(?:\.[0-9]+)?)',
+                text,
+                re.IGNORECASE
+            )
+            if m:
+                return m.group(1)
+            m = re.search(
+                r'rocm\s*version\s*([0-9]+(?:\.[0-9]+){0,2})',
+                text,
+                re.IGNORECASE
+            )
+            if m:
+                parts = m.group(1).split('.')
+                return f"{parts[0]}.{parts[1] if len(parts) > 1 else 0}"
 
-            except Exception:
-                pass
-        m = re.search(
-            r'cuda\s*version\s*([0-9]+(?:\.[0-9]+){1,2})',
-            text,
-            re.IGNORECASE
-        )
-        if m:
-            return m.group(1)
-        m = re.search(
-            r'cuda\s*([0-9]+(?:\.[0-9]+)?)',
-            text,
-            re.IGNORECASE
-        )
-        if m:
-            return m.group(1)
-        m = re.search(
-            r'rocm\s*version\s*([0-9]+(?:\.[0-9]+){0,2})',
-            text,
-            re.IGNORECASE
-        )
-        if m:
-            parts = m.group(1).split('.')
-            return f"{parts[0]}.{parts[1] if len(parts) > 1 else 0}"
-
-        m = re.search(
-            r'hip\s*version\s*([0-9]+(?:\.[0-9]+){0,2})',
-            text,
-            re.IGNORECASE
-        )
-        if m:
-            parts = m.group(1).split('.')
-            return f"{parts[0]}.{parts[1] if len(parts) > 1 else 0}"
-        m = re.search(
-            r'(oneapi|xpu)\s*(toolkit\s*)?version\s*([0-9]+(?:\.[0-9]+)?)',
-            text,
-            re.IGNORECASE
-        )
-        if m:
-            return m.group(3)
-        return None
+            m = re.search(
+                r'hip\s*version\s*([0-9]+(?:\.[0-9]+){0,2})',
+                text,
+                re.IGNORECASE
+            )
+            if m:
+                parts = m.group(1).split('.')
+                return f"{parts[0]}.{parts[1] if len(parts) > 1 else 0}"
+            m = re.search(
+                r'(oneapi|xpu)\s*(toolkit\s*)?version\s*([0-9]+(?:\.[0-9]+)?)',
+                text,
+                re.IGNORECASE
+            )
+            if m:
+                return m.group(3)
+            return None
 
         def toolkit_version_compare(version_str:Union[str, None], version_range:dict)->Union[int, None]:
             if version_str is None:
