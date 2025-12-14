@@ -1,7 +1,7 @@
 ARG PYTHON_VERSION=3.12
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-ARG APP_VERSION=25.12.12
+ARG APP_VERSION=25.25.25
 LABEL org.opencontainers.image.title="ebook2audiobook" \
 	  org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
 	  org.opencontainers.image.version="${APP_VERSION}" \
