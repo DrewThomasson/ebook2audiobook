@@ -378,7 +378,6 @@ class DeviceInstaller():
             )
         ):
             version_out = ''
-
             if os.name == 'posix':
                 for p in (
                     '/opt/intel/oneapi/version.txt',
@@ -388,7 +387,6 @@ class DeviceInstaller():
                     if os.path.exists(p):
                         version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
                         break
-
             elif os.name == 'nt':
                 oneapi_root = os.environ.get('ONEAPI_ROOT')
                 if oneapi_root:
@@ -400,7 +398,6 @@ class DeviceInstaller():
                         if os.path.exists(p):
                             version_out = open(p, 'r', encoding='utf-8', errors='ignore').read()
                             break
-
             if not version_out:
                 msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
             else:
