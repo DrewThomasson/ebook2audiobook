@@ -138,11 +138,9 @@ class DeviceInstaller():
             rev_major = int(parts[0])
             rev_minor = int(parts[1]) if len(parts) > 1 else 0
             rev_patch = int(parts[2]) if len(parts) > 2 else 0
-
             if l4t_major < 35:
                 msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 5.1+. Falling back to CPU.'
                 return ('unsupported', msg)
-
             if l4t_major == 35:
                 if rev_major == 0 and rev_minor <= 1:
                     msg = 'JetPack 5.0/5.0.1 detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
@@ -160,7 +158,6 @@ class DeviceInstaller():
                     return ('51', msg)
                 msg = 'Unrecognized JetPack 5.x version. Falling back to CPU.'
                 return ('unknown', msg)
-
             if l4t_major == 36:
                 if rev_major == 2:
                     return ('60', msg)
@@ -212,8 +209,7 @@ class DeviceInstaller():
                     os.path.exists('/dev/nvidiactl') or
                     os.path.exists('/dev/nvidia0')
                 )
-            ) or
-            (
+            ) or (
                 os.name == 'nt' and (
                     (has_cmd('wmic') and (
                         'nvidia' in try_cmd(
@@ -263,7 +259,38 @@ class DeviceInstaller():
         # ============================================================
         # ROCm
         # ============================================================
-        elif has_cmd('rocminfo') or os.path.exists('/opt/rocm') or os.path.exists('/opt/rocm/bin/rocminfo'):
+        elif (
+            (
+                os.name == 'posix' and (
+                    (has_cmd('lspci') and any(
+                        v in try_cmd('lspci -nn').lower()
+                        for v in ('1002:', '1022:')
+                    )) or
+                    any(
+                        os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
+                        open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() in ('0x1002', '0x1022')
+                        for d in os.listdir('/sys/bus/pci/devices')
+                        if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                    ) or
+                    os.path.exists('/dev/kfd')
+                )
+            ) or
+            (
+                os.name == 'nt' and (
+                    (has_cmd('wmic') and '1002' in try_cmd(
+                        'wmic path win32_VideoController get Name,PNPDeviceID'
+                    ).lower()) or
+                    (has_cmd('powershell') and 'ven_1002' in try_cmd(
+                        'powershell -Command "Get-PnpDevice -Class Display | '
+                        'Select-Object -ExpandProperty InstanceId"'
+                    ).lower())
+                )
+            )
+        ) and (
+            has_cmd('rocminfo') or
+            os.path.exists('/opt/rocm') or
+            os.path.exists('/opt/rocm/bin/rocminfo')
+        ):
             print("---> Hardware detected: ROCM")
             out = try_cmd('rocminfo')
             version_str = toolkit_version_parse(out)
@@ -282,7 +309,39 @@ class DeviceInstaller():
         # ============================================================
         # INTEL XPU
         # ============================================================
-        elif os.path.exists('/dev/dri/renderD128') or (os.name == 'nt' and has_cmd('dxdiag')):
+        elif (
+            (
+                os.name == 'posix' and (
+                    (
+                        os.path.exists('/dev/dri/renderD128') and (
+                            (has_cmd('lspci') and '8086:' in try_cmd('lspci -nn').lower()) or
+                            any(
+                                os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
+                                open(f'/sys/bus/pci/devices/{d}/vendor').read().strip() == '0x8086'
+                                for d in os.listdir('/sys/bus/pci/devices')
+                                if os.path.isdir(f'/sys/bus/pci/devices/{d}')
+                            )
+                        )
+                    )
+                )
+            ) or
+            (
+                os.name == 'nt' and (
+                    (has_cmd('wmic') and (
+                        'intel' in try_cmd(
+                            'wmic path win32_VideoController get Name,PNPDeviceID'
+                        ).lower() or
+                        'ven_8086' in try_cmd(
+                            'wmic path win32_VideoController get Name,PNPDeviceID'
+                        ).lower()
+                    )) or
+                    (has_cmd('powershell') and 'ven_8086' in try_cmd(
+                        'powershell -Command "Get-PnpDevice -Class Display | '
+                        'Select-Object -ExpandProperty InstanceId"'
+                    ).lower())
+                )
+            )
+        ):
             if os.name == 'nt':
                 out = try_cmd('dxdiag')
             else:
