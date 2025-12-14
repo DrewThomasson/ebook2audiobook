@@ -1,5 +1,7 @@
 ARG PYTHON_VERSION=3.12
 FROM python:${PYTHON_VERSION}-slim-bookworm
+# Add a real shell so you don't hide errors
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ARG APP_VERSION=25.12.12
 LABEL org.opencontainers.image.title="ebook2audiobook" \
@@ -14,6 +16,8 @@ ARG DOCKER_DEVICE_STR='{"name": "cpu", "os": "linux", "arch": "x86_64", "pyvenv"
 ARG DOCKER_PROGRAMS_STR=curl ffmpeg nodejs espeak-ng sox tesseract-ocr
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
+# Want Rust?
+ARG INSTALL_RUST=1
 
 ENV DEBIAN_FRONTEND=noninteractive \
 	PYTHONDONTWRITEBYTECODE=1 \
@@ -21,26 +25,44 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	PYTHONWARNINGS="ignore::SyntaxWarning" \
 	PIP_NO_CACHE_DIR=1
 
+# Fixing Docker layer caching
 WORKDIR /app
-COPY . .
+
+# Copy only the build driver first for better layer caching
+COPY ebook2audiobook.sh /app/ebook2audiobook.sh
+RUN chmod +x /app/ebook2audiobook.sh
 
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-RUN apt-get update && \
+# Stop hiding apt failures (remove || true, add cleanup)
+RUN set -eux; \
+	apt-get update; \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
-		gcc g++ make python3-dev pkg-config curl git wget bash xz-utils \
-		libegl1 libopengl0 libgl1 libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
-		cmake fontconfig libfreetype6 libgomp1 libfontconfig1 libsndfile1 || true
+		gcc g++ make python3-dev pkg-config \
+		curl git wget bash xz-utils \
+		libegl1 libopengl0 libgl1 \
+		libxcb1 libx11-6 libxcb-cursor0 libxcb-render0 libxcb-shm0 libxcb-xfixes0 \
+		cmake fontconfig libfreetype6 libgomp1 libfontconfig1 libsndfile1; \
+	rm -rf /var/lib/apt/lists/*
 
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable && \
-    export PATH="/root/.cargo/bin:${PATH}" && \
-    rustup default stable
+# Make Rust install Optional
+RUN set -eux; \
+	if [ "${INSTALL_RUST}" = "1" ]; then \
+		curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable; \
+		rustup default stable; \
+	else \
+		echo "Skipping Rust toolchain (INSTALL_RUST=0)"; \
+	fi
 
-RUN apt-get update && \
+RUN set -eux; \
+	apt-get update; \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
 		${DOCKER_PROGRAMS_STR} \
-		tesseract-ocr-${ISO3_LANG} || true
+		tesseract-ocr-${ISO3_LANG}; \
+	rm -rf /var/lib/apt/lists/*
 
+# Copy full source only after system deps are installed
+COPY . /app
 RUN pip install --upgrade pip setuptools wheel && \
 	./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
@@ -79,8 +101,12 @@ RUN mkdir -p /usr/lib && \
     ln -s /usr/lib64/libXext.so.6        /usr/lib/libXext.so.6        2>/dev/null || true && \
     ln -s /usr/lib64/libXrender.so.1     /usr/lib/libXrender.so.1     2>/dev/null || true
 
-RUN wget -nv "$CALIBRE_INSTALLER_URL" -O /tmp/calibre.sh && \
-	bash /tmp/calibre.sh && rm -f /tmp/calibre.sh
+# Harden the calibre install
+RUN set -eux; \
+	wget -nv "${CALIBRE_INSTALLER_URL}" -O /tmp/calibre.sh; \
+	bash /tmp/calibre.sh; \
+	rm -f /tmp/calibre.sh; \
+	rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
 	find /usr /app -type d -name "__pycache__" -exec rm -rf {} +; \
@@ -88,9 +114,9 @@ RUN set -eux; \
 		   /usr/share/icons/* /usr/share/fonts/* /var/cache/fontconfig/* \
 		   /opt/calibre/*.txt /opt/calibre/*.md /opt/calibre/resources/man-pages \
 		   /root/.cache /tmp/* $HOME/.rustup $HOME/.cargo || true; \
-	apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git; \
-	apt-get clean; \
-	rm -rf /var/lib/apt/lists/*
+			apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git || true; \
+			apt-get clean; \
+			rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /app/audiobooks && chmod 777 /app/audiobooks
 VOLUME /app/audiobooks
