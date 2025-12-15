@@ -1,4 +1,4 @@
-import threading, torch, torchaudio, random, gc, shutil, subprocess, tempfile, uuid
+import threading, torch, torchaudio, random, gc, shutil, subprocess, tempfile, uuid, types
 
 import regex as re
 import numpy as np
