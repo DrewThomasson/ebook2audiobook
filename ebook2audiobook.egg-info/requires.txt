@@ -1,3 +1,5 @@
+setuptools
+wheel
 packaging
 tqdm
 torchvggish

@@ -17,6 +17,8 @@ authors = [
     { name = "Drew Thomasson" }
 ]
 dependencies = [
+	"setuptools",
+	"wheel",
 	"packaging",
 	"tqdm",
 	"torchvggish",
