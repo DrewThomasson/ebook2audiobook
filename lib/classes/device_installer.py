@@ -199,6 +199,197 @@ class DeviceInstaller():
                 msg = 'Unrecognized JetPack 6.x version. Falling back to CPU.'
             return ('unknown', msg)
 
+        def has_amd_gpu_pci():
+            # macOS: no ROCm-capable AMD GPUs
+            if sys.platform == "darwin":
+                return False
+            # ---------- Linux ----------
+            if os.name == "posix":
+                sysfs = "/sys/bus/pci/devices"
+                if os.path.isdir(sysfs):
+                    for d in os.listdir(sysfs):
+                        dev = os.path.join(sysfs, d)
+                        try:
+                            with open(f"{dev}/vendor") as f:
+                                if f.read().strip() not in ("0x1002", "0x1022"):
+                                    continue
+                            with open(f"{dev}/class") as f:
+                                cls = f.read().strip()
+                                if cls.startswith("0x0300") or cls.startswith("0x0302"):
+                                    return True
+                        except Exception:
+                            pass
+                if has_cmd("lspci"):
+                    out = try_cmd("lspci -nn").lower()
+                    return (
+                        ("1002:" in out or "1022:" in out) and
+                        (" vga " in out or " 3d " in out)
+                    )
+                return False
+            # ---------- Windows ----------
+            # Hardware may exist, but ROCm will still be disabled
+            if os.name == "nt":
+                if has_cmd("wmic"):
+                    out = try_cmd(
+                        "wmic path win32_VideoController get Name,PNPDeviceID"
+                    ).lower()
+                    return "ven_1002" in out
+                if has_cmd("powershell"):
+                    out = try_cmd(
+                        'powershell -Command "Get-PnpDevice -Class Display | '
+                        'Select-Object -ExpandProperty InstanceId"'
+                    ).lower()
+                    return "ven_1002" in out
+                return False
+            return False
+
+        def has_working_rocm():
+            # ROCm does not exist on macOS or Windows (runtime)
+            if sys.platform != "linux":
+                return False
+            # /dev/kfd is required but not sufficient
+            if not os.path.exists("/dev/kfd"):
+                return False
+            # rocminfo is the authoritative runtime check
+            if not has_cmd("rocminfo"):
+                return False
+            out = try_cmd("rocminfo").lower()
+            if not out:
+                return False
+            # Must enumerate agents
+            if "agent" not in out or "gpu" not in out:
+                return False
+            # Guard against broken installs
+            if "error" in out or "failed" in out:
+                return False
+            return True
+
+        def has_nvidia_gpu_pci():
+            # macOS: NVIDIA GPUs are unsupported → always False
+            if sys.platform == "darwin":
+                return False
+            # ---------- Linux ----------
+            if os.name == "posix":
+                sysfs = "/sys/bus/pci/devices"
+                if os.path.isdir(sysfs):
+                    for d in os.listdir(sysfs):
+                        dev = os.path.join(sysfs, d)
+                        try:
+                            with open(f"{dev}/vendor") as f:
+                                if f.read().strip() != "0x10de":
+                                    continue
+                            with open(f"{dev}/class") as f:
+                                cls = f.read().strip()
+                                if cls.startswith("0x0300") or cls.startswith("0x0302"):
+                                    return True
+                        except Exception:
+                            pass
+                if has_cmd("lspci"):
+                    out = try_cmd("lspci -nn").lower()
+                    return "10de:" in out and (" vga " in out or " 3d " in out)
+                return False
+            # ---------- Windows ----------
+            if os.name == "nt":
+                if has_cmd("nvidia-smi"):
+                    return True
+                if has_cmd("wmic"):
+                    out = try_cmd(
+                        "wmic path win32_VideoController get Name,PNPDeviceID"
+                    ).lower()
+                    return "ven_10de" in out and "display" in out
+                if has_cmd("powershell"):
+                    out = try_cmd(
+                        'powershell -Command "Get-PnpDevice -Class Display | '
+                        'Select-Object -ExpandProperty InstanceId"'
+                    ).lower()
+                    return "ven_10de" in out
+                return False
+            return False
+
+        def has_working_cuda():
+            # CUDA does not exist on macOS
+            if sys.platform == "darwin":
+                return False
+            # nvidia-smi is the only reliable cross-platform signal
+            if not has_cmd("nvidia-smi"):
+                return False
+            out = try_cmd("nvidia-smi -L").lower()
+            if not out:
+                return False
+            # Guard against common failure states
+            if "failed" in out or "error" in out or "no devices were found" in out:
+                return False
+            return "gpu" in out
+
+        def has_intel_gpu_pci():
+            # macOS: Intel GPUs exist but XPU runtime is not supported
+            if sys.platform == "darwin":
+                return False
+            # ---------- Linux ----------
+            if os.name == "posix":
+                sysfs = "/sys/bus/pci/devices"
+                if os.path.isdir(sysfs):
+                    for d in os.listdir(sysfs):
+                        dev = os.path.join(sysfs, d)
+                        try:
+                            with open(f"{dev}/vendor") as f:
+                                if f.read().strip() != "0x8086":
+                                    continue
+                            with open(f"{dev}/class") as f:
+                                cls = f.read().strip()
+                                if cls.startswith("0x0300") or cls.startswith("0x0302"):
+                                    return True
+                        except Exception:
+                            pass
+                if has_cmd("lspci"):
+                    out = try_cmd("lspci -nn").lower()
+                    return "8086:" in out and (" vga " in out or " 3d " in out)
+                return False
+            # ---------- Windows ----------
+            if os.name == "nt":
+                if has_cmd("wmic"):
+                    out = try_cmd(
+                        "wmic path win32_VideoController get Name,PNPDeviceID"
+                    ).lower()
+                    return "ven_8086" in out
+                if has_cmd("powershell"):
+                    out = try_cmd(
+                        'powershell -Command "Get-PnpDevice -Class Display | '
+                        'Select-Object -ExpandProperty InstanceId"'
+                    ).lower()
+                    return "ven_8086" in out
+                return False
+            return False
+
+        def has_working_xpu():
+            # No XPU on macOS
+            if sys.platform == "darwin":
+                return False
+            # ---------- Linux ----------
+            if os.name == "posix":
+                # Must have render node
+                if not os.path.exists("/dev/dri/renderD128"):
+                    return False
+                # Prefer Level Zero runtime check
+                if has_cmd("sycl-ls"):
+                    out = try_cmd("sycl-ls").lower()
+                    if "level-zero" in out and "gpu" in out:
+                        return True
+                if has_cmd("clinfo"):
+                    out = try_cmd("clinfo").lower()
+                    if "intel" in out and "gpu" in out:
+                        return True
+                return False
+            # ---------- Windows ----------
+            if os.name == "nt":
+                # XPU runtime is exposed via Intel GPU drivers + PyTorch
+                # Best signal: oneAPI / Level Zero tooling
+                if has_cmd("sycl-ls"):
+                    out = try_cmd("sycl-ls").lower()
+                    return "gpu" in out
+                return False
+            return False
+
         name = None
         tag = None
         msg = ''
@@ -227,115 +418,9 @@ class DeviceInstaller():
                 msg = 'Jetson GPU detected but not (yes) compatible'
                 
         # ============================================================
-        # CUDA
-        # ============================================================
-        elif (
-            (
-                os.name == 'posix' and (
-                    (has_cmd('lspci') and '10de:' in try_cmd('lspci -nn').lower()) or
-                    (
-                        os.path.exists('/sys/bus/pci/devices') and
-                        any(
-                            os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
-                            open(f'/sys/bus/pci/devices/{d}/vendor', 'r').read().strip() == '0x10de'
-                            for d in os.listdir('/sys/bus/pci/devices')
-                            if os.path.isdir(f'/sys/bus/pci/devices/{d}')
-                        )
-                    ) or
-                    os.path.exists('/dev/nvidiactl') or
-                    os.path.exists('/dev/nvidia0')
-                )
-            ) or (
-                os.name == 'nt' and (
-                    (has_cmd('wmic') and (
-                        'nvidia' in try_cmd(
-                            'wmic path win32_VideoController get Name,PNPDeviceID'
-                        ).lower() or
-                        'ven_10de' in try_cmd(
-                            'wmic path win32_VideoController get Name,PNPDeviceID'
-                        ).lower()
-                    )) or
-                    (has_cmd('powershell') and 'ven_10de' in try_cmd(
-                        'powershell -Command "Get-PnpDevice -Class Display | '
-                        'Select-Object -ExpandProperty InstanceId"'
-                    ).lower())
-                )
-            )
-        ):
-            version_out = ''
-            if os.name == 'posix':
-                for p in (
-                    '/usr/local/cuda/version.json',
-                    '/usr/local/cuda/version.txt',
-                ):
-                    if os.path.exists(p):
-                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                            version_out = f.read()
-                        break
-            elif os.name == 'nt':
-                cuda_path = os.environ.get('CUDA_PATH')
-                if cuda_path:
-                    for p in (
-                        os.path.join(cuda_path, 'version.json'),
-                        os.path.join(cuda_path, 'version.txt'),
-                    ):
-                        if os.path.exists(p):
-                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                version_out = f.read()
-                            break
-            if not version_out:
-                msg = 'CUDA hardware detected but CUDA toolkit version file not found.'
-            else:
-                version_str = toolkit_version_parse(version_out)
-                cmp = toolkit_version_compare(version_str, cuda_version_range)
-
-                if cmp == -1:
-                    msg = f'CUDA {version_str} < min {cuda_version_range["min"]}. Please upgrade.'
-                elif cmp == 1:
-                    msg = f'CUDA {version_str} > max {cuda_version_range["max"]}. Falling back to CPU.'
-                elif cmp == 0:
-                    devices['CUDA']['found'] = True
-                    parts = version_str.split(".")
-                    major = parts[0]
-                    minor = parts[1] if len(parts) > 1 else 0
-                    name = 'cuda'
-                    tag = f'cu{major}{minor}'
-                else:
-                    msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
-
-        # ============================================================
         # ROCm
         # ============================================================
-        elif (
-            (
-                os.name == 'posix' and (
-                    (has_cmd('lspci') and any(
-                        v in try_cmd('lspci -nn').lower()
-                        for v in ('1002:', '1022:')
-                    )) or
-                    (
-                        os.path.exists('/sys/bus/pci/devices') and
-                        any(
-                            os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
-                            open(f'/sys/bus/pci/devices/{d}/vendor', 'r').read().strip() in ('0x1002', '0x1022')
-                            for d in os.listdir('/sys/bus/pci/devices')
-                            if os.path.isdir(f'/sys/bus/pci/devices/{d}')
-                        )
-                    ) or
-                    os.path.exists('/dev/kfd')
-                )
-            ) or (
-                os.name == 'nt' and (
-                    (has_cmd('wmic') and '1002' in try_cmd(
-                        'wmic path win32_VideoController get Name,PNPDeviceID'
-                    ).lower()) or
-                    (has_cmd('powershell') and 'ven_1002' in try_cmd(
-                        'powershell -Command "Get-PnpDevice -Class Display | '
-                        'Select-Object -ExpandProperty InstanceId"'
-                    ).lower())
-                )
-            )
-        ):
+        elif has_working_rocm() and has_amd_gpu_pci():
             version_out = ''
             if os.name == 'posix':
                 for p in (
@@ -378,43 +463,56 @@ class DeviceInstaller():
                     tag = f'rocm{major}{minor}'
                 else:
                     msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
+                
+        # ============================================================
+        # CUDA
+        # ============================================================
+        elif has_working_cuda() and has_nvidia_gpu_pci():
+            version_out = ''
+            if os.name == 'posix':
+                for p in (
+                    '/usr/local/cuda/version.json',
+                    '/usr/local/cuda/version.txt',
+                ):
+                    if os.path.exists(p):
+                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                            version_out = f.read()
+                        break
+            elif os.name == 'nt':
+                cuda_path = os.environ.get('CUDA_PATH')
+                if cuda_path:
+                    for p in (
+                        os.path.join(cuda_path, 'version.json'),
+                        os.path.join(cuda_path, 'version.txt'),
+                    ):
+                        if os.path.exists(p):
+                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                version_out = f.read()
+                            break
+            if not version_out:
+                msg = 'CUDA hardware detected but CUDA toolkit version file not found.'
+            else:
+                version_str = toolkit_version_parse(version_out)
+                cmp = toolkit_version_compare(version_str, cuda_version_range)
+
+                if cmp == -1:
+                    msg = f'CUDA {version_str} < min {cuda_version_range["min"]}. Please upgrade.'
+                elif cmp == 1:
+                    msg = f'CUDA {version_str} > max {cuda_version_range["max"]}. Falling back to CPU.'
+                elif cmp == 0:
+                    devices['CUDA']['found'] = True
+                    parts = version_str.split(".")
+                    major = parts[0]
+                    minor = parts[1] if len(parts) > 1 else 0
+                    name = 'cuda'
+                    tag = f'cu{major}{minor}'
+                else:
+                    msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
 
         # ============================================================
         # INTEL XPU
         # ============================================================
-        elif (
-            (
-                os.name == 'posix' and (
-                    os.path.exists('/dev/dri/renderD128') and (
-                        (has_cmd('lspci') and '8086:' in try_cmd('lspci -nn').lower()) or
-                        (
-                            os.path.exists('/sys/bus/pci/devices') and
-                            any(
-                                os.path.exists(f'/sys/bus/pci/devices/{d}/vendor') and
-                                open(f'/sys/bus/pci/devices/{d}/vendor', 'r').read().strip() == '0x8086'
-                                for d in os.listdir('/sys/bus/pci/devices')
-                                if os.path.isdir(f'/sys/bus/pci/devices/{d}')
-                            )
-                        )
-                    )
-                )
-            ) or (
-                os.name == 'nt' and (
-                    (has_cmd('wmic') and (
-                        'intel' in try_cmd(
-                            'wmic path win32_VideoController get Name,PNPDeviceID'
-                        ).lower() or
-                        'ven_8086' in try_cmd(
-                            'wmic path win32_VideoController get Name,PNPDeviceID'
-                        ).lower()
-                    )) or
-                    (has_cmd('powershell') and 'ven_8086' in try_cmd(
-                        'powershell -Command "Get-PnpDevice -Class Display | '
-                        'Select-Object -ExpandProperty InstanceId"'
-                    ).lower())
-                )
-            )
-        ):
+        elif has_working_xpu() and has_intel_gpu_pci():
             version_out = ''
             if os.name == 'posix':
                 for p in (
@@ -637,7 +735,7 @@ class DeviceInstaller():
                                         torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'scikit-learn'])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'scikit-learn'])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'scikit-learn'])
                                     elif device_info['name'] == devices['MPS']['proc']:
                                         torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
                                         torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
