@@ -17,6 +17,21 @@ from lib import *
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
 
+if not hasattr(torch, "distributed"):
+	torch.distributed = types.SimpleNamespace()
+
+if not hasattr(torch.distributed, "ReduceOp"):
+	class _ReduceOp:
+		SUM = None
+		MAX = None
+		MIN = None
+	torch.distributed.ReduceOp = _ReduceOp
+
+if not hasattr(torch.distributed, "all_reduce"):
+	def _all_reduce(*args, **kwargs):
+		return
+	torch.distributed.all_reduce = _all_reduce
+
 lock = threading.Lock()
 
 class Coqui:
