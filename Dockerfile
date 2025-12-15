@@ -41,7 +41,7 @@ RUN apt-get update && \
 		${DOCKER_PROGRAMS_STR} \
 		tesseract-ocr-${ISO3_LANG}
 
-RUN /ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 RUN case "${DEVICE_TAG}" in \
 	jetson51) \
