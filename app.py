@@ -1,8 +1,11 @@
-import argparse, socket, multiprocessing, sys
+import argparse, socket, multiprocessing, sys, warnings
 
 from lib.conf import *
 from lib.lang import default_language_code
 from lib.models import TTS_ENGINES, default_fine_tuned, default_engine_settings
+
+warnings.filterwarnings("ignore", category=SyntaxWarning)
+warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 
 def init_multiprocessing():
     if sys.platform.startswith("darwin"):

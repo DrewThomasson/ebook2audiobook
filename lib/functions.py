@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
 import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
-import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, fitz
+import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
 
 from typing import Any
@@ -54,8 +54,6 @@ from lib.classes.tts_manager import TTSManager
 #    level=logging.INFO, # DEBUG for more verbosity
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
-
-warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 
 context = None
 context_tracker = None
