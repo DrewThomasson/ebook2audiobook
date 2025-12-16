@@ -748,22 +748,8 @@ class DeviceInstaller():
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
-                                        #if device_info['name'] == 'cuda':
-                                        #    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'deepspeed'])
-                                        if device_info['name'] == 'cuda':
-                                            if platform.system() == "Windows":
-                                                # DeepSpeed CUDA ops are not supported on Windows
-                                                os.environ["DS_BUILD_OPS"] = "0"
-                                                subprocess.check_call([
-                                                    sys.executable, '-m', 'pip', 'install',
-                                                    '--upgrade', '--no-cache-dir', 'deepspeed'
-                                                ])
-                                            else:
-                                                # Linux / Docker
-                                                subprocess.check_call([
-                                                    sys.executable, '-m', 'pip', 'install',
-                                                    '--upgrade', '--no-cache-dir', 'deepspeed'
-                                                ])
+                                        if device_info['name'] == 'cuda' and platform.system() != "Windows":
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'deepspeed'])
                                     #msg = 'Relaunching app...'
                                     #print(msg)
                                     #os.execv(sys.executable, [sys.executable] + sys.argv)
