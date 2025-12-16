@@ -1,4 +1,4 @@
-import os
+import os, warnings
 import numpy as np
 import librosa
 
@@ -6,6 +6,8 @@ from pyannote.audio import Model
 from pyannote.audio.pipelines import VoiceActivityDetection
 from lib.conf import tts_dir
 from lib.models import default_voice_detection_model
+
+warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 class BackgroundDetector:
     def __init__(self,wav_file:str):
