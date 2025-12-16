@@ -552,7 +552,7 @@ if %HAS_COMPOSE%==0 (
 if defined cmd_options set "cmd_extra=%cmd_options% "
 echo Docker image ready! to run your docker:"
 echo GUI mode:
-echo 	docker run %cmd_extra%--rm -it -v "%cd%":/app:rw -p 7860:7860
+echo 	docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 echo Headless mode:
 echo 	docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 echo Docker Compose:
