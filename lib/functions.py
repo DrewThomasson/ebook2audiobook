@@ -55,6 +55,7 @@ from lib.classes.tts_manager import TTSManager
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
+warnings.filterwarnings("ignore", category=SyntaxWarning)
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 
 context = None
