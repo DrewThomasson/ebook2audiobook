@@ -367,7 +367,7 @@ if not "%OK_PROGRAMS%"=="0" (
 	set "missing_prog_array="
 )
 goto :dispatch
-exit
+exit /b
 
 :check_conda
 where /Q conda

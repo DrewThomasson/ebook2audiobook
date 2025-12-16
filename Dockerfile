@@ -60,7 +60,7 @@ RUN set -eux; \
 	
 ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64
 	
-# Need for Calibre checking only in /usr/lib
+# Needed for Calibre checking only in /usr/lib
 RUN mkdir -p /usr/lib && \
 	ln -s /usr/lib64/libfreetype.so.6	/usr/lib/libfreetype.so.6	2>/dev/null || true && \
 	ln -s /usr/lib64/libfontconfig.so.1  /usr/lib/libfontconfig.so.1  2>/dev/null || true && \
