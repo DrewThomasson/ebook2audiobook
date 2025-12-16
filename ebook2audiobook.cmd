@@ -253,14 +253,14 @@ exit /b
 :install_programs
 if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
-	call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
-	call powershell -command "iwr -useb get.scoop.sh | iex"
-	where /Q scoop
+	call pwsh -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force"
+	call pwsh -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb get.scoop.sh | iex"
+	call pwsh -NoProfile -Command "scoop --version" >nul 2>&1
 	if not errorlevel 1 (
-		call scoop install git
-		call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
-		call scoop bucket add extras
-		call scoop bucket add versions
+		call pwsh -NoProfile -Command "scoop install git"
+		call pwsh -NoProfile -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
+		call pwsh -NoProfile -Command "scoop bucket add extras"
+		call pwsh -NoProfile -Command "scoop bucket add versions"
 		if "%OK_PROGRAMS%"=="0" (
 			echo %ESC%[32m=============== Scoop is installed! ===============%ESC%[0m
 			set "OK_SCOOP=0"
@@ -278,7 +278,7 @@ if not "%OK_SCOOP%"=="0" (
 )
 if not "%OK_CONDA%"=="0" (
 	echo Installing Miniforge...
-	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
+	call pwsh -NoProfile -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where /Q conda
 	if not errorlevel 1 (
@@ -305,13 +305,13 @@ if not "%OK_CONDA%"=="0" (
 if not "%OK_PROGRAMS%"=="0" (
 	echo Installing missing programs...
 	if "%OK_SCOOP%"=="0" (
-		call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
-		call scoop bucket add extras
-		call scoop bucket add versions
+		call pwsh -NoProfile -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
+		call pwsh -NoProfile -Command "scoop bucket add extras"
+		call pwsh -NoProfile -Command "scoop bucket add versions"
 	)
 	for %%p in (%missing_prog_array%) do (
 		set "prog=%%p"
-		call scoop install %%p
+		call pwsh -NoProfile -Command "scoop install %%p"
 		if "%%p"=="tesseract" (
 			where /Q !prog!
 			if not errorlevel 1 (
@@ -319,7 +319,7 @@ if not "%OK_PROGRAMS%"=="0" (
 				echo Detected system language: !OS_LANG! → downloading OCR language: %ISO3_LANG%
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 				if not exist "!tessdata!\%ISO3_LANG%.traineddata" (
-					powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
+					call pwsh -NoProfile -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
 				)
 				if exist "!tessdata!\%ISO3_LANG%.traineddata" (
 					echo Tesseract OCR language %ISO3_LANG% installed in !tessdata!
@@ -361,13 +361,13 @@ if not "%OK_PROGRAMS%"=="0" (
 			goto :failed
 		)
 	)
-	call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
+	call pwsh -NoProfile -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
 	set "OK_SCOOP=0"
 	set "OK_PROGRAMS=0"
 	set "missing_prog_array="
 )
 goto :dispatch
-exit /b
+exit
 
 :check_conda
 where /Q conda
@@ -399,7 +399,7 @@ for /f "delims=" %%i in ('where python') do (
 )
 if "%CURRENT_ENV%"=="" (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
-		echo Creating ./python_env version %PYTHON_ENV%...
+		echo Creating ./python_env version %PYTHON_VERSION%...
 		call "%CONDA_HOME%\Scripts\activate.bat"
 		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
 		call conda update --all -y
