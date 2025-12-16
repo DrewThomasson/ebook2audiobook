@@ -601,6 +601,7 @@ function check_conda {
 		fi
 		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
 		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
+		conda update -n base -c conda-forge conda
 		conda update --all -y
 		conda clean --index-cache -y
 		conda clean --packages --tarballs -y
