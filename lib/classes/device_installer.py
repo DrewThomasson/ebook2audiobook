@@ -415,7 +415,7 @@ class DeviceInstaller():
                     tag = f'jetson{jp_code}'
             out = try_cmd('uname -a')
             if 'tegra' in out:
-                msg = 'Jetson GPU detected but not (yes) compatible'
+                msg = 'Jetson GPU detected but not(?) compatible'
                 
         # ============================================================
         # ROCm
@@ -677,7 +677,7 @@ class DeviceInstaller():
                 with tqdm(total = len(packages), desc = 'Installation 0.00%', bar_format = '{desc}: {n_fmt}/{total_fmt} ', unit = 'step') as t:
                     for package in tqdm(missing_packages, desc = 'Installing', unit = 'pkg'):
                         try:
-                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--use-pep517', '--progress-bar', 'on', '--disable-pip-version-check', package])
+                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', package])
                             t.update(1)
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install {package}: {e}'
@@ -733,7 +733,8 @@ class DeviceInstaller():
                                         tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                         torch_pkg = f"{url}/v{toolkit_version}/torch-{jetson_torch_version_base[tag]}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                         torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'scikit-learn'])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'scikit-learn'])
                                     elif device_info['name'] == devices['MPS']['proc']:
