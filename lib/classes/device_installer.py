@@ -749,7 +749,7 @@ class DeviceInstaller():
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
                                         if device_info['name'] == 'cuda':
-                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'deepspeed'])
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--no-build-isolation', 'deepspeed'])
                                     #msg = 'Relaunching app...'
                                     #print(msg)
                                     #os.execv(sys.executable, [sys.executable] + sys.argv)
