@@ -23,6 +23,25 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	PYTHONUNBUFFERED=1 \
 	PYTHONWARNINGS="ignore::SyntaxWarning" \
 	PIP_NO_CACHE_DIR=1
+	
+RUN case "${DEVICE_TAG}" in \
+	jetson51) \
+		echo "JetPack 5.1.x → copying CUDA 11.4 libs" && \
+		mkdir -p /usr/local/cuda-11.4/lib64 && \
+		( cp -P /usr/lib/aarch64-linux-gnu/libcuda* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+		( cp -P /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+		( cp -P /usr/lib/aarch64-linux-gnu/libcublas* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+		( cp -P /usr/lib/aarch64-linux-gnu/libcufft* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+		( cp -P /usr/lib/aarch64-linux-gnu/libcurand* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
+		( cp -P /usr/lib/aarch64-linux-gnu/libcusparse* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) ;; \
+	jetson60|jetson61) \
+		echo "JetPack 6.x → no extra CUDA lib copy needed" ;; \
+	xpu) \
+		echo "Intel XPU detected — using IPEX" ;; \
+	rocm*) \
+		echo "AMD ROCm detected — using ROCm PyTorch" ;; \
+	*) ;; \
+esac
 
 WORKDIR /app
 
@@ -89,25 +108,6 @@ RUN set -eux; \
 	apt-get purge -y --auto-remove gcc g++ make python3-dev pkg-config git; \
 	apt-get clean; \
 	rm -rf /var/lib/apt/lists/*
-	
-RUN case "${DEVICE_TAG}" in \
-	jetson51) \
-		echo "JetPack 5.1.x → copying CUDA 11.4 libs" && \
-		mkdir -p /usr/local/cuda-11.4/lib64 && \
-		( cp -P /usr/lib/aarch64-linux-gnu/libcuda* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
-		( cp -P /usr/lib/aarch64-linux-gnu/libcudart.so.11.0 /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
-		( cp -P /usr/lib/aarch64-linux-gnu/libcublas* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
-		( cp -P /usr/lib/aarch64-linux-gnu/libcufft* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
-		( cp -P /usr/lib/aarch64-linux-gnu/libcurand* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) && \
-		( cp -P /usr/lib/aarch64-linux-gnu/libcusparse* /usr/local/cuda-11.4/lib64/ 2>/dev/null || true ) ;; \
-	jetson60|jetson61) \
-		echo "JetPack 6.x → no extra CUDA lib copy needed" ;; \
-	xpu) \
-		echo "Intel XPU detected — using IPEX" ;; \
-	rocm*) \
-		echo "AMD ROCm detected — using ROCm PyTorch" ;; \
-	*) ;; \
-esac
 
 VOLUME /app
 
