@@ -2463,6 +2463,9 @@ def finalize_audiobook(id:str)->tuple:
             show_alert({"type": "info", "msg": msg})
             exported_files = combine_audio_chapters(session['id'])               
             if exported_files is not None:
+                if not session['is_gui_process']:
+                    process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], audiobook).encode()).hexdigest()}")
+                    shutil.rmtree(process_dir, ignore_errors=True)
                 progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                 session['audiobook'] = exported_files[-1]
                 info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
