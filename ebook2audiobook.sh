@@ -374,16 +374,22 @@ function install_programs {
 	if [[ "$OSTYPE" == darwin* ]]; then
 		echo -e "\e[33mInstalling required programs...\e[0m"
 		PACK_MGR="brew install"
-			if ! command -v brew &> /dev/null; then
-				echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
-				/usr/bin/env bash -c "$(curl -fsSL $BREW_INSTALLER_URL)"
-				echo >> $HOME/.zprofile
-				echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
-				eval "$(/usr/local/bin/brew shellenv)"
-				if ! grep -iqFx "homebrew" "$INSTALLED_LOG"; then
-					echo "homebrew" >> "$INSTALLED_LOG"
-				fi
+		if ! command -v brew &> /dev/null; then
+			echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
+			/usr/bin/env bash -c "$(curl -fsSL $BREW_INSTALLER_URL)"
+			echo >> $HOME/.zprofile
+			echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
+			eval "$(/usr/local/bin/brew shellenv)"
+			if ! grep -iqFx "homebrew" "$INSTALLED_LOG"; then
+				echo "homebrew" >> "$INSTALLED_LOG"
 			fi
+		fi
+	if ! brew list --versions llvm@15 >/dev/null 2>&1; then
+		echo "Installing llvm@15 (required for numba/llvmlite on macOS)"
+		brew install llvm@15
+		export LLVM_DIR="$(brew --prefix llvm@15)/lib/cmake/llvm"
+		export PATH="$(brew --prefix llvm@15)/bin:$PATH"
+	fi
 	else
 		if [[ "$SUDO" == "sudo" ]]; then
 			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
