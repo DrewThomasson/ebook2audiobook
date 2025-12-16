@@ -432,7 +432,7 @@ exit /b 0
 echo [ebook2audiobook] Installing dependencies...
 python -m pip cache purge >nul 2>&1
 python -m pip install --upgrade pip >nul 2>&1
-python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar on --disable-pip-version-check -r "%SCRIPT_DIR%\requirements.txt"
+python -m pip install --upgrade --no-cache-dir -r "%SCRIPT_DIR%\requirements.txt"
 if errorlevel 1 goto :failed
 for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
 	set "torch_ver=%%A"
