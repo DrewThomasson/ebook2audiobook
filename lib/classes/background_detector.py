@@ -20,11 +20,15 @@ class BackgroundDetector:
 		)
 
 		self.pipeline = VoiceActivityDetection(segmentation=model)
-
-		self.pipeline.instantiate({
-			"min_duration_on": 0.0,
-			"min_duration_off": 0.0,
-		})
+        hyper_params={
+          # onset/offset activation thresholds
+          "onset":0.5,"offset":0.5,
+          # remove speech regions shorter than that many seconds.
+          "min_duration_on":0.0,
+          # fill non-speech regions shorter than that many seconds.
+          "min_duration_off":0.0
+        }
+		self.pipeline.instantiate(hyper_params)
 
 		self.pipeline.to(device)
 
