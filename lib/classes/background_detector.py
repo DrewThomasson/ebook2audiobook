@@ -1,10 +1,10 @@
 import torch
 import librosa
 
-from pyannote.audio import Model
-from pyannote.audio.pipelines import VoiceActivityDetection
+from pyannote.audio import Pipeline
 from lib.conf import tts_dir
 from lib.models import default_voice_detection_model
+
 
 class BackgroundDetector:
 
@@ -17,15 +17,11 @@ class BackgroundDetector:
 	def _get_pipeline(self):
 		if self._pipeline is not None:
 			return self._pipeline
-		model = Model.from_pretrained(
+
+		pipeline = Pipeline.from_pretrained(
 			default_voice_detection_model,
 			cache_dir=tts_dir
 		)
-		pipeline = VoiceActivityDetection(segmentation=model)
-		pipeline.instantiate({
-			"min_duration_on": 0.0,
-			"min_duration_off": 0.0
-		})
 		pipeline.to(self.device)
 		self._pipeline = pipeline
 		return pipeline
