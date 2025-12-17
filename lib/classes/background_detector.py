@@ -1,10 +1,16 @@
 import torch
 import librosa
+import threading
 
 from pyannote.audio import Model
 from pyannote.audio.pipelines import VoiceActivityDetection
 from lib.conf import tts_dir
 from lib.models import default_voice_detection_model
+
+
+_PIPELINE_CACHE = {}
+_PIPELINE_LOCK = threading.Lock()
+
 
 class BackgroundDetector:
 
@@ -12,27 +18,40 @@ class BackgroundDetector:
 		self.wav_file = wav_file
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 		self.total_duration = librosa.get_duration(path=self.wav_file)
-		self._pipeline = None
 
-	def _get_pipeline(self):
-		if self._pipeline is not None:
-			return self._pipeline
+	def _get_pipeline(self) -> VoiceActivityDetection:
+		"""
+		Return a VoiceActivityDetection pipeline instance that is safe
+		for multithreading and multiprocessing.
 
-		model = Model.from_pretrained(
-			default_voice_detection_model,
-			cache_dir=tts_dir
-		)
+		One pipeline per process/device.
+		"""
+		key = self.device.type
 
-		pipeline = VoiceActivityDetection(segmentation=model)
+		if key in _PIPELINE_CACHE:
+			return _PIPELINE_CACHE[key]
 
-		pipeline.instantiate({
-			"min_duration_on": 0.0,
-			"min_duration_off": 0.0
-		})
+		with _PIPELINE_LOCK:
+			if key in _PIPELINE_CACHE:
+				return _PIPELINE_CACHE[key]
 
-		pipeline.to(self.device)
-		self._pipeline = pipeline
-		return pipeline
+			model = Model.from_pretrained(
+				default_voice_detection_model,
+				cache_dir=tts_dir
+			)
+
+			pipeline = VoiceActivityDetection(segmentation=model)
+
+			pipeline.instantiate({
+				"onset": 0.5,
+				"offset": 0.5,
+				"min_duration_on": 0.0,
+				"min_duration_off": 0.0
+			})
+
+			pipeline.to(self.device)
+			_PIPELINE_CACHE[key] = pipeline
+			return pipeline
 
 	def detect(self, vad_ratio_thresh: float = 0.05) -> tuple[bool, dict[str, float | bool]]:
 		pipeline = self._get_pipeline()
