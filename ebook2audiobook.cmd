@@ -401,7 +401,7 @@ if "%CURRENT_ENV%"=="" (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
 		echo Creating ./python_env version %PYTHON_VERSION%...
 		call "%CONDA_HOME%\Scripts\activate.bat"
-		call conda update -n base -c conda-forge conda
+		call conda update -n base -c conda-forge conda -y
 		call conda update --all -y
 		call conda clean --index-cache -y
 		call conda clean --packages --tarballs -y
