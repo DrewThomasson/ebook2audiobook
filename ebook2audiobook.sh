@@ -386,7 +386,7 @@ function install_programs {
 		fi
 	if ! brew list --versions llvm@15 >/dev/null 2>&1; then
 		echo "Installing llvm@15 (required for numba/llvmlite on macOS)"
-		brew instal llvm@15
+		brew install llvm@15
 		export LLVM_DIR="$(brew --prefix llvm@15)/lib/cmake/llvm"
 		export PATH="$(brew --prefix llvm@15)/bin:$PATH"
 	fi
@@ -626,7 +626,6 @@ function check_docker {
 function install_python_packages {
 	echo "[ebook2audiobook] Installing dependencies..."
 	python3 -m pip cache purge > /dev/null 2>&1
-	python3 -m pip install --upgrade pip > /dev/null 2>&1
 	python3 -m pip install --upgrade pip pip setuptools wheel >nul 2>&1
 	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
 	python3 -m pip install --upgrade --no-cache-dir -r "$SCRIPT_DIR/requirements.txt" || exit 1
