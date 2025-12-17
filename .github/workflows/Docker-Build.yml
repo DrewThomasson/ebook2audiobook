@@ -127,14 +127,30 @@ jobs:
           echo "GIT_HASH=${GIT_HASH}"
           echo "RELEASE_TAG=${RELEASE_TAG}"
 
-      - name: Build and Push Release Docker Image
+      # ==================== CPU Build (linux/amd64 + linux/arm64) ====================
+      - name: Build and Push CPU Docker Image
         run: |
           cd ~/E2ADockerBuild/ebook2audiobook
           docker buildx build --pull --platform linux/amd64,linux/arm64 \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH} \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG} \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+            --build-arg DEVICE_TAG=cpu \
+            --build-arg DOCKER_DEVICE_STR='{"name":  "cpu", "os": "linux", "arch": "x86_64", "pyvenv": [3, 12], "tag":  "cpu", "note": "CPU only"}' \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook: ${GIT_HASH}-cpu \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cpu \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook: cpu \
             --push .
+
+      # ==================== CUDA 12.8 Build (linux/amd64 only) ====================
+      - name:  Build and Push CUDA 12.8 Docker Image
+        run:  |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          docker buildx build --pull --platform linux/amd64 \
+            --build-arg DEVICE_TAG=cu128 \
+            --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "linux", "arch":  "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "CUDA 12.8"}' \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cu128 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook: ${RELEASE_TAG}-cu128 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu128 \
+            --push . 
+            
 
       - name: Prune docker & buildx
         run: |
