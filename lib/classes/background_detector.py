@@ -9,7 +9,7 @@ from lib.models import default_voice_detection_model
 
 class BackgroundDetector:
 
-	def __init__(self, wav_file:str, hf_token:str|None=None)->None:
+	def __init__(self, wav_file:str):
 		self.wav_file = wav_file
 
 		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
