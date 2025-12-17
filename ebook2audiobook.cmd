@@ -1,6 +1,25 @@
 @echo off
+setlocal EnableExtensions EnableDelayedExpansion
 
-setlocal enabledelayedexpansion
+:: Force UTF-8 for CMD
+chcp 65001 >nul
+
+:: Prefer PowerShell 7, fallback to Windows PowerShell 5.1
+set "PS_EXE=pwsh"
+where /Q pwsh >nul 2>&1 || set "PS_EXE=powershell"
+
+:: One canonical set of flags for every PowerShell call in this script
+set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass"
+
+:: Detect Constrained Language Mode (corporate lockdown)
+"%PS_EXE%" %PS_ARGS% -Command "if ($ExecutionContext.SessionState.LanguageMode -ne 'FullLanguage') { exit 99 }"
+if errorlevel 99 (
+	echo ERROR: PowerShell Constrained Language Mode detected. This environment is not supported.
+	goto :failed
+)
+
+:: Ensure PS output encoding is UTF-8 for this session (non-persistent)
+"%PS_EXE%" %PS_ARGS% -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8" >nul 2>&1
 
 :: Enable ANSI VT mode
 reg query HKCU\Console /v VirtualTerminalLevel >nul 2>&1
@@ -9,7 +28,9 @@ if errorlevel 1 (
 )
 
 :: Real ESC byte via PowerShell (RELIABLE)
-for /f "delims=" %%e in ('powershell -NoLogo -NoProfile -Command "[char]27"') do set "ESC=%%e"
+for /f "delims=" %%e in ('
+	cmd /c ""%PS_EXE%" %PS_ARGS% -Command "[char]27""
+') do set "ESC=%%e"
 
 :: Capture all arguments into ARGS
 set "ARGS=%*"
@@ -153,14 +174,7 @@ goto :check_scoop
 ::::::::::::::: DESKTOP APP
 :make_shortcut
 set "shortcut=%~1"
-powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$s = New-Object -ComObject WScript.Shell; " ^
-  "$sc = $s.CreateShortcut('%shortcut%'); " ^
-  "$sc.TargetPath = 'cmd.exe'; " ^
-  "$sc.Arguments = '/k ""cd /d """"%SCRIPT_DIR%"""" && """"%APP_FILE%""""""'; " ^
-  "$sc.WorkingDirectory = '%SCRIPT_DIR%'; " ^
-  "$sc.IconLocation = '%ICON_PATH%'; " ^
-  "$sc.Save()"
+"%PS_EXE%" %PS_ARGS% -Command "$s=New-Object -ComObject WScript.Shell; $sc=$s.CreateShortcut('%shortcut%'); $sc.TargetPath='cmd.exe'; $sc.Arguments='/k ""cd /d """"%SCRIPT_DIR%"""" && """"%APP_FILE%""""""'; $sc.WorkingDirectory='%SCRIPT_DIR%'; $sc.IconLocation='%ICON_PATH%'; $sc.Save()"
 exit /b
 
 :build_gui
@@ -185,7 +199,7 @@ if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
 	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
 	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
 	reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
-	start "%APP_NAME%" powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%BROWSER_HELPER%" -HostName "%TEST_HOST%" -Port %TEST_PORT%
+	start "%APP_NAME%" /min "%PS_EXE%" %PS_ARGS% -File "%BROWSER_HELPER%" -HostName "%TEST_HOST%" -Port %TEST_PORT%
 )
 exit /b
 :::::: END OF DESKTOP APP
@@ -253,14 +267,14 @@ exit /b
 :install_programs
 if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
-	call pwsh -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force"
-	call pwsh -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb get.scoop.sh | iex"
-	call pwsh -NoProfile -Command "scoop --version" >nul 2>&1
+	call "%PS_EXE%" %PS_ARGS% -Command "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force"
+	call "%PS_EXE%" %PS_ARGS% -Command "iwr -useb get.scoop.sh | iex"
+	call "%PS_EXE%" %PS_ARGS% -Command "scoop --version" >nul 2>&1
 	if not errorlevel 1 (
-		call pwsh -NoProfile -Command "scoop install git"
-		call pwsh -NoProfile -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
-		call pwsh -NoProfile -Command "scoop bucket add extras"
-		call pwsh -NoProfile -Command "scoop bucket add versions"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
 		if "%OK_PROGRAMS%"=="0" (
 			echo %ESC%[32m=============== Scoop is installed! ===============%ESC%[0m
 			set "OK_SCOOP=0"
@@ -278,7 +292,7 @@ if not "%OK_SCOOP%"=="0" (
 )
 if not "%OK_CONDA%"=="0" (
 	echo Installing Miniforge...
-	call pwsh -NoProfile -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"
+	call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where /Q conda
 	if not errorlevel 1 (
@@ -305,13 +319,13 @@ if not "%OK_CONDA%"=="0" (
 if not "%OK_PROGRAMS%"=="0" (
 	echo Installing missing programs...
 	if "%OK_SCOOP%"=="0" (
-		call pwsh -NoProfile -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
-		call pwsh -NoProfile -Command "scoop bucket add extras"
-		call pwsh -NoProfile -Command "scoop bucket add versions"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
 	)
 	for %%p in (%missing_prog_array%) do (
 		set "prog=%%p"
-		call pwsh -NoProfile -Command "scoop install %%p"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
 		if "%%p"=="tesseract" (
 			where /Q !prog!
 			if not errorlevel 1 (
@@ -319,7 +333,7 @@ if not "%OK_PROGRAMS%"=="0" (
 				echo Detected system language: !OS_LANG! → downloading OCR language: %ISO3_LANG%
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 				if not exist "!tessdata!\%ISO3_LANG%.traineddata" (
-					call pwsh -NoProfile -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
+					call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
 				)
 				if exist "!tessdata!\%ISO3_LANG%.traineddata" (
 					echo Tesseract OCR language %ISO3_LANG% installed in !tessdata!
@@ -361,7 +375,7 @@ if not "%OK_PROGRAMS%"=="0" (
 			goto :failed
 		)
 	)
-	call pwsh -NoProfile -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
+	call "%PS_EXE%" %PS_ARGS% -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
 	set "OK_SCOOP=0"
 	set "OK_PROGRAMS=0"
 	set "missing_prog_array="
@@ -446,7 +460,7 @@ exit /b 0
 
 :check_device_info
 set "arg=%~1"
-powershell -NoLogo -NoProfile -Command ^
+"%PS_EXE%" %PS_ARGS% -Command ^
 @"
 %PYTHON_SCOOP% - << 'EOF'
 from lib.classes.device_installer import DeviceInstaller
@@ -462,7 +476,7 @@ exit /b %errorlevel%
 
 :install_device_packages
 set "arg=%~1"
-powershell -NoLogo -NoProfile -Command ^
+"%PS_EXE%" %PS_ARGS% -Command ^
 @"
 python - << 'EOF'
 import sys
@@ -506,9 +520,9 @@ exit /b 0
 :build_docker_image
 set "ARG=%~1"
 for /f %%A in ('powershell -NoLogo -Command "(ConvertFrom-Json ''%ARG%'').tag"') do set "TAG=%%A"
-powershell -nologo -noprofile -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
+"%PS_EXE%" %PS_ARGS% -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
-powershell -nologo -noprofile -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
+"%PS_EXE%" %PS_ARGS% -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
 set "cmd_options="
 set "cmd_extra="
 set "py_vers=%PYTHON_VERSION% "
