@@ -386,7 +386,7 @@ function install_programs {
 		fi
 	if ! brew list --versions llvm@15 >/dev/null 2>&1; then
 		echo "Installing llvm@15 (required for numba/llvmlite on macOS)"
-		brew install llvm@15
+		brew instal llvm@15
 		export LLVM_DIR="$(brew --prefix llvm@15)/lib/cmake/llvm"
 		export PATH="$(brew --prefix llvm@15)/bin:$PATH"
 	fi
@@ -601,7 +601,7 @@ function check_conda {
 		fi
 		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
 		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
-		conda update -n base -c conda-forge conda
+		conda update -n base -c conda-forge conda -y
 		conda update --all -y
 		conda clean --index-cache -y
 		conda clean --packages --tarballs -y
@@ -627,6 +627,8 @@ function install_python_packages {
 	echo "[ebook2audiobook] Installing dependencies..."
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip > /dev/null 2>&1
+	python3 -m pip install --upgrade pip pip setuptools wheel >nul 2>&1
+	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
 	python3 -m pip install --upgrade --no-cache-dir -r "$SCRIPT_DIR/requirements.txt" || exit 1
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
@@ -730,7 +732,7 @@ function build_docker_image {
 	fi
 	echo "Docker image ready! to run your docker: "
 	echo "GUI mode:"
-	echo "	docker run ${cmd_extra}--rm -it -v \"$(pwd)\":/app:rw -p 7860:7860 $DOCKER_IMG_NAME"
+	echo "	docker run ${cmd_extra}--rm -it -p 7860:7860 $DOCKER_IMG_NAME"
 	echo "Headless mode:"
 	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	echo "Docker Compose:"

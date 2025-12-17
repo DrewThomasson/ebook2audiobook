@@ -17,21 +17,6 @@ from lib import *
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
 
-if not hasattr(torch, "distributed"):
-	torch.distributed = types.SimpleNamespace()
-
-if not hasattr(torch.distributed, "ReduceOp"):
-	class _ReduceOp:
-		SUM = None
-		MAX = None
-		MIN = None
-	torch.distributed.ReduceOp = _ReduceOp
-
-if not hasattr(torch.distributed, "all_reduce"):
-	def _all_reduce(*args, **kwargs):
-		return
-	torch.distributed.all_reduce = _all_reduce
-
 lock = threading.Lock()
 
 class Coqui:
@@ -64,6 +49,19 @@ class Coqui:
                 torch.manual_seed(seed)
                 if using_gpu and enough_vram:
                     if devices['CUDA']['found'] or devices['ROCM']['found'] or devices['JETSON']['found']:
+                        if devices['JETSON']['found']:
+                            if not hasattr(torch, "distributed"):
+                                torch.distributed = types.SimpleNamespace()
+                            if not hasattr(torch.distributed, "ReduceOp"):
+                                class _ReduceOp:
+                                    SUM = None
+                                    MAX = None
+                                    MIN = None
+                                torch.distributed.ReduceOp = _ReduceOp
+                            if not hasattr(torch.distributed, "all_reduce"):
+                                def _all_reduce(*args, **kwargs):
+                                    return
+                                torch.distributed.all_reduce = _all_reduce
                         torch.cuda.set_per_process_memory_fraction(0.95)
                         torch.backends.cudnn.enabled = True
                         torch.backends.cudnn.benchmark = True

@@ -401,7 +401,7 @@ if "%CURRENT_ENV%"=="" (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
 		echo Creating ./python_env version %PYTHON_VERSION%...
 		call "%CONDA_HOME%\Scripts\activate.bat"
-		call conda update -n base -c conda-forge conda
+		call conda update -n base -c conda-forge conda -y
 		call conda update --all -y
 		call conda clean --index-cache -y
 		call conda clean --packages --tarballs -y
@@ -432,7 +432,8 @@ exit /b 0
 :install_python_packages
 echo [ebook2audiobook] Installing dependencies...
 python -m pip cache purge >nul 2>&1
-python -m pip install --upgrade pip >nul 2>&1
+python -m pip install --upgrade pip pip setuptools wheel >nul 2>&1
+python -m pip install --upgrade llvmlite numba --only-binary=:all:
 python -m pip install --upgrade --no-cache-dir -r "%SCRIPT_DIR%\requirements.txt"
 if errorlevel 1 goto :failed
 for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
@@ -552,7 +553,7 @@ if %HAS_COMPOSE%==0 (
 if defined cmd_options set "cmd_extra=%cmd_options% "
 echo Docker image ready! to run your docker:"
 echo GUI mode:
-echo 	docker run %cmd_extra%--rm -it -v "%cd%":/app:rw -p 7860:7860
+echo 	docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 echo Headless mode:
 echo 	docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 echo Docker Compose:
