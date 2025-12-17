@@ -17,14 +17,12 @@ class BackgroundDetector:
 		model = Model.from_pretrained(
 			default_voice_detection_model,
 			cache_dir=tts_dir,
-			use_auth_token='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',
+			use_auth_token='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',
 		)
 
 		self.pipeline = VoiceActivityDetection(segmentation=model)
 
 		self.pipeline.instantiate({
-			"onset": 0.5,
-			"offset": 0.5,
 			"min_duration_on": 0.0,
 			"min_duration_off": 0.0,
 		})
