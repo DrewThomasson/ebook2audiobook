@@ -2,14 +2,14 @@ import torch
 import librosa
 import threading
 
-from pyannote.audio import Model, Audio
-from pyannote.core import SlidingWindowFeature
+from pyannote.audio import Model
+from pyannote.audio.pipelines import VoiceActivityDetection
 from lib.conf import tts_dir
 from lib.models import default_voice_detection_model
 
 
-_MODEL_CACHE = {}
-_MODEL_LOCK = threading.Lock()
+_PIPELINE_CACHE = {}
+_PIPELINE_LOCK = threading.Lock()
 
 
 class BackgroundDetector:
@@ -19,58 +19,50 @@ class BackgroundDetector:
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 		self.total_duration = librosa.get_duration(path=self.wav_file)
 
-		self.audio = Audio(sample_rate=16000, mono=True)
-
-	def _get_model(self) -> Model:
+	def _get_pipeline(self) -> VoiceActivityDetection:
 		"""
-		Return a segmentation model instance safe for multiprocessing
-		and multithreading. One model per process/device.
+		Return a VoiceActivityDetection pipeline instance that is safe
+		for multithreading and multiprocessing.
+
+		One pipeline per process/device.
 		"""
 		key = self.device.type
 
-		if key in _MODEL_CACHE:
-			return _MODEL_CACHE[key]
+		if key in _PIPELINE_CACHE:
+			return _PIPELINE_CACHE[key]
 
-		with _MODEL_LOCK:
-			if key in _MODEL_CACHE:
-				return _MODEL_CACHE[key]
+		with _PIPELINE_LOCK:
+			if key in _PIPELINE_CACHE:
+				return _PIPELINE_CACHE[key]
 
 			model = Model.from_pretrained(
 				default_voice_detection_model,
 				cache_dir=tts_dir
 			)
 
-			model.to(self.device)
-			model.eval()
-			_MODEL_CACHE[key] = model
-			return model
+			pipeline = VoiceActivityDetection(segmentation=model)
 
-	def _speech_time_from_segmentation(
-		self,
-		segmentation: SlidingWindowFeature,
-		threshold: float = 0.5
-	) -> float:
-		data = segmentation.data
+			pipeline.instantiate({
+				"onset": 0.5,
+				"offset": 0.5,
+				"min_duration_on": 0.0,
+				"min_duration_off": 0.0
+			})
 
-		if data.ndim == 2:
-			speech_frames = (data >= threshold).any(axis=1)
-		else:
-			speech_frames = data >= threshold
-
-		window = segmentation.sliding_window
-		return float(speech_frames.sum() * window.step)
+			pipeline.to(self.device)
+			_PIPELINE_CACHE[key] = pipeline
+			return pipeline
 
 	def detect(self, vad_ratio_thresh: float = 0.05) -> tuple[bool, dict[str, float | bool]]:
-		model = self._get_model()
+		pipeline = self._get_pipeline()
 
-		waveform, sample_rate = self.audio(self.wav_file)
+		annotation = pipeline(self.wav_file)
 
-		waveform = waveform.to(self.device)
+		speech_time = sum(
+			segment.end - segment.start
+			for segment in annotation.itersegments()
+		)
 
-		with torch.no_grad():
-			segmentation = model(waveform)
-
-		speech_time = self._speech_time_from_segmentation(segmentation)
 		non_speech_ratio = 1.0 - (
 			speech_time / self.total_duration if self.total_duration > 0 else 0.0
 		)
