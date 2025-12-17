@@ -116,4 +116,5 @@ RUN set -eux; \
 
 EXPOSE 7860
 
-CMD ["python3", "app.py", "--script_mode", "full_docker"]
+ENTRYPOINT ["python3", "-u", "app.py"]
+CMD ["--script_mode", "full_docker"]
