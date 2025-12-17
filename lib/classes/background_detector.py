@@ -2,7 +2,7 @@ import torch
 import librosa
 import threading
 
-from pyannote.audio import Model
+from pyannote.audio import Model, Audio
 from pyannote.core import SlidingWindowFeature
 from lib.conf import tts_dir
 from lib.models import default_voice_detection_model
@@ -19,14 +19,14 @@ class BackgroundDetector:
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 		self.total_duration = librosa.get_duration(path=self.wav_file)
 
+		self.audio = Audio(sample_rate=16000, mono=True)
+
 	def _get_model(self) -> Model:
 		"""
-		Return a segmentation model instance that is safe for
-		multithreading and multiprocessing.
-
-		One model per (process, device).
+		Return a segmentation model instance safe for multiprocessing
+		and multithreading. One model per process/device.
 		"""
-		key = (id(torch.cuda.current_stream()) if self.device.type == "cuda" else "cpu")
+		key = self.device.type
 
 		if key in _MODEL_CACHE:
 			return _MODEL_CACHE[key]
@@ -63,7 +63,12 @@ class BackgroundDetector:
 	def detect(self, vad_ratio_thresh: float = 0.05) -> tuple[bool, dict[str, float | bool]]:
 		model = self._get_model()
 
-		segmentation = model(self.wav_file)
+		waveform, sample_rate = self.audio(self.wav_file)
+
+		waveform = waveform.to(self.device)
+
+		with torch.no_grad():
+			segmentation = model(waveform)
 
 		speech_time = self._speech_time_from_segmentation(segmentation)
 		non_speech_ratio = 1.0 - (
