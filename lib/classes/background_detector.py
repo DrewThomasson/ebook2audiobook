@@ -11,14 +11,11 @@ class BackgroundDetector:
 
     def __init__(self, wav_file:str):
         self.wav_file = wav_file
-
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
         model = Model.from_pretrained(
             default_voice_detection_model,
             cache_dir=tts_dir
         )
-
         self.pipeline = VoiceActivityDetection(segmentation=model)
         hyper_params = {
             # remove speech regions shorter than that many seconds.
@@ -32,19 +29,14 @@ class BackgroundDetector:
 
     def detect(self, vad_ratio_thresh:float=0.05)->tuple[bool, dict[str, float | bool]]:
         annotation = self.pipeline(self.wav_file)
-
         speech_time = sum(
             segment.end - segment.start
             for segment in annotation.itersegments()
         )
-
         non_speech_ratio = 1.0 - (speech_time / self.total_duration if self.total_duration > 0 else 0.0)
-
         background_detected = non_speech_ratio > vad_ratio_thresh
-
         report = {
             "non_speech_ratio": non_speech_ratio,
             "background_detected": background_detected,
         }
-
         return background_detected, report
