@@ -432,7 +432,8 @@ exit /b 0
 :install_python_packages
 echo [ebook2audiobook] Installing dependencies...
 python -m pip cache purge >nul 2>&1
-python -m pip install --upgrade pip >nul 2>&1
+python -m pip install --upgrade pip pip setuptools wheel >nul 2>&1
+python -m pip install --upgrade llvmlite numba --only-binary=:all:
 python -m pip install --upgrade --no-cache-dir -r "%SCRIPT_DIR%\requirements.txt"
 if errorlevel 1 goto :failed
 for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (

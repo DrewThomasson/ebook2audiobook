@@ -627,6 +627,8 @@ function install_python_packages {
 	echo "[ebook2audiobook] Installing dependencies..."
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip > /dev/null 2>&1
+	python3 -m pip install --upgrade pip pip setuptools wheel >nul 2>&1
+	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
 	python3 -m pip install --upgrade --no-cache-dir -r "$SCRIPT_DIR/requirements.txt" || exit 1
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."

@@ -9,7 +9,7 @@ from lib.models import default_voice_detection_model
 
 class BackgroundDetector:
 
-	def __init__(self, wav_file:str, hf_token:str|None='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')->None:
+	def __init__(self, wav_file:str, hf_token:str|None=None)->None:
 		self.wav_file = wav_file
 
 		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -17,7 +17,7 @@ class BackgroundDetector:
 		model = Model.from_pretrained(
 			default_voice_detection_model,
 			cache_dir=tts_dir,
-			use_auth_token=hf_token,
+			use_auth_token='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',
 		)
 
 		self.pipeline = VoiceActivityDetection(segmentation=model)
