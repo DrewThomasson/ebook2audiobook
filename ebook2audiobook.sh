@@ -386,7 +386,7 @@ function install_programs {
 		fi
 	if ! brew list --versions llvm@15 >/dev/null 2>&1; then
 		echo "Installing llvm@15 (required for numba/llvmlite on macOS)"
-		brew install llvm@15
+		brew instal llvm@15
 		export LLVM_DIR="$(brew --prefix llvm@15)/lib/cmake/llvm"
 		export PATH="$(brew --prefix llvm@15)/bin:$PATH"
 	fi
@@ -601,7 +601,7 @@ function check_conda {
 		fi
 		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
 		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
-		conda update -n base -c conda-forge conda
+		conda update -n base -c conda-forge conda -y
 		conda update --all -y
 		conda clean --index-cache -y
 		conda clean --packages --tarballs -y
