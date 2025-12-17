@@ -1,8 +1,11 @@
-import argparse, socket, multiprocessing, sys
+import argparse, socket, multiprocessing, sys, warnings
 
 from lib.conf import *
 from lib.lang import default_language_code
 from lib.models import TTS_ENGINES, default_fine_tuned, default_engine_settings
+
+warnings.filterwarnings("ignore", category=SyntaxWarning)
+warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 
 def init_multiprocessing():
     if sys.platform.startswith("darwin"):
@@ -100,15 +103,15 @@ Docker build image:
 Docker run image:
     Gradio/GUI:
         CPU:
-        docker run --rm -it -v "$(pwd)":/app:rw -p 7860:7860 ebook2audiobook:cpu
+        docker run --rm -it -p 7860:7860 ebook2audiobook:cpu
         CUDA:
-        docker run --gpus all --rm -it -v "$(pwd)":/app:rw -p 7860:7860 ebook2audiobook:cu[118/121/128 etc..]
+        docker run --gpus all --rm -it -p 7860:7860 ebook2audiobook:cu[118/121/128 etc..]
         ROCM:
-        docker run --device=/dev/kfd --device=/dev/dri --rm -it -v "$(pwd)":/app:rw -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..]
+        docker run --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[5.5/6.1/6.4 etc..]
         XPU:
-        docker run --device=/dev/dri --rm -it -v "$(pwd)":/app:rw -p 7860:7860 ebook2audiobook:xpu
+        docker run --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu
         JETSON:
-        docker run --runtime nvidia  --rm -it -v "$(pwd)":/app:rw -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]
+        docker run --runtime nvidia  --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...]
     Headless mode:
         CPU:
         docker run --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
