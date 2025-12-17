@@ -29,7 +29,8 @@ TTS_SML = {
 default_tts_engine = TTS_ENGINES['XTTSv2']
 default_fine_tuned = 'internal'
 default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
-default_voice_detection_model = 'drewThomasson/segmentation'
+#default_voice_detection_model = 'drewThomasson/segmentation'
+default_voice_detection_model = 'pyannote/segmentation-3.0'
 
 max_custom_model = 100
 max_custom_voices = 1000
