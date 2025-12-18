@@ -49,7 +49,6 @@ os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 os.environ['PYTORCH_NO_CUDA_MEMORY_CACHING'] = '1'
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:32,garbage_collection_threshold:0.6,expandable_segments:True'
-os.environ["LD_PRELOAD"] = f"/lib/aarch64-linux-gnu/libgomp.so:{os.environ.get('LD_PRELOAD', '')}"
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 os.environ["CUDA_CACHE_MAXSIZE"] = "2147483648"

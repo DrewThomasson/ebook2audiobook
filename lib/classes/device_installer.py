@@ -1,3 +1,6 @@
+import ctypes
+ctypes.CDLL("libgomp.so.1", mode=ctypes.RTLD_GLOBAL)
+
 import os, re, sys, platform, shutil, subprocess, json
 
 from functools import cached_property
