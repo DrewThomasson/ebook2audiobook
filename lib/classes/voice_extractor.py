@@ -96,10 +96,14 @@ class VoiceExtractor:
                 self.wav_file
             ]
             try:
-                process = subprocess.run(cmd, check = True)
-                self.voice_track = os.path.join(self.demucs_dir, self.voice_track)
-                msg = 'Voice track isolation successful'
-                return True, msg
+                proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.wav_file), msg='Denoising')
+                if proc_pipe:
+                    self.voice_track = os.path.join(self.demucs_dir, self.voice_track)
+                    msg = 'Voice track isolation successful'
+                    return True, msg
+                else:
+                    error = f'_demucs_voice() error: {self.wav_file}'
+                    return False, error
             except subprocess.CalledProcessError as e:
                 error = (
                     f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'
