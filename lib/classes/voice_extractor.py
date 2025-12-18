@@ -101,11 +101,13 @@ class VoiceExtractor:
                 f'stdout: {e.output}\n\n'
                 f'stderr: {e.stderr}'
             )
+            return False, error
         except FileNotFoundError:
             error = f'_demucs_voice() subprocess FileNotFoundError error: The "demucs" command was not found. Ensure it is installed and in PATH.'
+            return False, error
         except Exception as e:
             error = f'_demucs_voice() subprocess Exception error: {str(e)}'
-        return False, error
+            return False, error
 
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int = 200, keep_silence:int = 300)->None:
         final_audio = AudioSegment.silent(duration = 0)
