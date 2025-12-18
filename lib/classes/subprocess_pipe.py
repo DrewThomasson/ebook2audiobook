@@ -33,7 +33,7 @@ class SubprocessPipe:
 
     def _run_process(self)->bool:
         try:
-            if self.cmd[0] == "ffmpeg":
+            if 'ffmpeg' in cmd[0]:
                 self.process = subprocess.Popen(
                     self.cmd,
                     stdout=subprocess.DEVNULL,
