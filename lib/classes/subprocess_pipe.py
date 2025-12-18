@@ -1,4 +1,4 @@
-import os, subprocess, re, sys, tqdm, gradio as gr
+import os, subprocess, re, sys, gradio as gr
 
 class SubprocessPipe:
     def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing'):
