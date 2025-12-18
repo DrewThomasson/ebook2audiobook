@@ -46,8 +46,6 @@ class BackgroundDetector:
             )
             pipeline = VoiceActivityDetection(segmentation=model)
             pipeline.instantiate({
-                "onset": 0.5,
-                "offset": 0.5,
                 "min_duration_on": 0.0,
                 "min_duration_off": 0.0
             })

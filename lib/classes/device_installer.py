@@ -230,14 +230,10 @@ class DeviceInstaller():
             # Hardware may exist, but ROCm will still be disabled
             if os.name == "nt":
                 if has_cmd("wmic"):
-                    out = try_cmd(
-                        "wmic path win32_VideoController get Name,PNPDeviceID"
-                    ).lower()
+                    out = try_cmd("wmic path win32_VideoController get Name,PNPDeviceID").lower()
                     return "ven_1002" in out
                 if has_cmd("powershell"):
-                    out = try_cmd(
-                        'powershell -Command "Get-PnpDevice -Class Display | '
-                        'Select-Object -ExpandProperty InstanceId"'
+                    out = try_cmd('powershell -Command "Get-PnpDevice -Class Display | Select-Object -ExpandProperty InstanceId"'
                     ).lower()
                     return "ven_1002" in out
                 return False
