@@ -96,26 +96,25 @@ class VoiceExtractor:
                 self.wav_file
             ]
             try:
-                process = subprocess.run(cmd, check = True)
-                self.voice_track = os.path.join(self.demucs_dir, self.voice_track)
-                msg = 'Voice track isolation successful'
-                return True, msg
+                proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.wav_file), msg='Denoising')
+                if proc_pipe:
+                    self.voice_track = os.path.join(self.demucs_dir, self.voice_track)
+                    msg = 'Voice track isolation successful'
+                    return True, msg
+                else:
+                    error = f'_demucs_voice() error: {self.wav_file}'
             except subprocess.CalledProcessError as e:
                 error = (
                     f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'
                     f'stdout: {e.output}\n\n'
                     f'stderr: {e.stderr}'
                 )
-                raise ValueError(error)
             except FileNotFoundError:
                 error = f'_demucs_voice() subprocess FileNotFoundError error: The "demucs" command was not found. Ensure it is installed and in PATH.'
-                raise ValueError(error)
             except Exception as e:
                 error = f'_demucs_voice() subprocess Exception error: {str(e)}'
-                raise ValueError(error)
         except Exception as e:
             error = f'_demucs_voice() error: {e}'
-            raise ValueError(error)
         return False, error
 
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int = 200, keep_silence:int = 300)->None:

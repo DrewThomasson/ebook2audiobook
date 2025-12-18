@@ -1,4 +1,4 @@
-import subprocess, re, sys, gradio as gr
+import os, subprocess, re, sys, tqdm, gradio as gr
 
 class SubprocessPipe:
     def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing'):
@@ -33,27 +33,71 @@ class SubprocessPipe:
 
     def _run_process(self)->bool:
         try:
-            self.process=subprocess.Popen(
-                self.cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                text=False,
-                bufsize=0
-            )
-            time_pattern=re.compile(rb'out_time_ms=(\d+)')
-            last_percent=0.0
-            for raw_line in self.process.stderr:
-                line=raw_line.decode(errors='ignore')
-                match=time_pattern.search(raw_line)
-                if match and self.total_duration > 0:
-                    current_time=int(match.group(1))/1_000_000
-                    percent=min((current_time/self.total_duration)*100,100)
-                    if abs(percent-last_percent) >= 0.5:
-                        self._on_progress(percent)
-                        last_percent=percent
-                elif b'progress=end' in raw_line:
-                    self._on_progress(100)
-                    break
+            is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
+            if is_ffmpeg:
+                self.process = subprocess.Popen(
+                    self.cmd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    text=False,
+                    bufsize=0
+                )
+            else:
+                if self.is_gui_process:
+                    self.process = subprocess.Popen(
+                        self.cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=False,
+                        bufsize=0
+                    )
+                else:
+                    self.process = subprocess.Popen(
+                        self.cmd,
+                        stdout=None,
+                        stderr=None,
+                        text=False
+                    )
+            if is_ffmpeg:
+                time_pattern=re.compile(rb'out_time_ms=(\d+)')
+                last_percent=0.0
+                for raw_line in self.process.stderr:
+                    line=raw_line.decode(errors='ignore')
+                    match=time_pattern.search(raw_line)
+                    if match and self.total_duration > 0:
+                        current_time=int(match.group(1))/1_000_000
+                        percent=min((current_time/self.total_duration)*100,100)
+                        if abs(percent-last_percent) >= 0.5:
+                            self._on_progress(percent)
+                            last_percent=percent
+                    elif b'progress=end' in raw_line:
+                        self._on_progress(100)
+                        break
+            else:
+                if self.is_gui_process:
+                    tqdm_re = re.compile(rb'(\d{1,3})%\|')
+                    last_percent = 0.0
+                    buffer = b""
+
+                    while True:
+                        chunk = self.process.stdout.read(1024)
+                        if not chunk:
+                            break
+
+                        buffer += chunk
+
+                        # tqdm updates via \r, keep buffer small
+                        if b'\r' in buffer:
+                            parts = buffer.split(b'\r')
+                            buffer = parts[-1]
+
+                            for part in parts[:-1]:
+                                match = tqdm_re.search(part)
+                                if match:
+                                    percent = min(float(match.group(1)), 100.0)
+                                    if percent - last_percent >= 0.5:
+                                        self._on_progress(percent)
+                                        last_percent = percent
             self.process.wait()
             if self._stop_requested:
                 return False
