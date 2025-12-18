@@ -409,9 +409,10 @@ class DeviceInstaller():
                     devices['JETSON']['found'] = True
                     name = 'jetson'
                     tag = f'jetson{jp_code}'
-            out = try_cmd('uname -a')
-            if 'tegra' in out:
-                msg = 'Jetson GPU detected but not(?) compatible'
+            else:
+                out = try_cmd('uname -a')
+                if 'tegra' in out:
+                    msg = 'Jetson GPU detected but not(?) compatible'
                 
         # ============================================================
         # ROCm
