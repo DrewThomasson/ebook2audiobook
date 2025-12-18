@@ -33,12 +33,20 @@ class SubprocessPipe:
 
     def _run_process(self)->bool:
         try:
-            self.process=subprocess.Popen(
+        if self.cmd[0] == "ffmpeg":
+            self.process = subprocess.Popen(
                 self.cmd,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
                 text=False,
                 bufsize=0
+            )
+        else:
+            self.process = subprocess.Popen(
+                self.cmd,
+                stdout=None,
+                stderr=None,
+                text=False
             )
             time_pattern=re.compile(rb'out_time_ms=(\d+)')
             last_percent=0.0
