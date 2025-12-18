@@ -61,16 +61,6 @@ class SubprocessPipe:
                         text=False
                     )
             if is_ffmpeg:
-                tqdm_re = re.compile(rb'(\d{1,3})%\|')
-                last_percent = 0.0
-                for raw_line in self.process.stdout:
-                    match = tqdm_re.search(raw_line)
-                    if match:
-                        percent = min(float(match.group(1)), 100.0)
-                        if percent - last_percent >= 0.5:
-                            self._on_progress(percent)
-                            last_percent = percent
-            else:
                 time_pattern=re.compile(rb'out_time_ms=(\d+)')
                 last_percent=0.0
                 for raw_line in self.process.stderr:
@@ -85,6 +75,16 @@ class SubprocessPipe:
                     elif b'progress=end' in raw_line:
                         self._on_progress(100)
                         break
+            else:
+                tqdm_re = re.compile(rb'(\d{1,3})%\|')
+                last_percent = 0.0
+                for raw_line in self.process.stdout:
+                    match = tqdm_re.search(raw_line)
+                    if match:
+                        percent = min(float(match.group(1)), 100.0)
+                        if percent - last_percent >= 0.5:
+                            self._on_progress(percent)
+                            last_percent = percent
             self.process.wait()
             if self._stop_requested:
                 return False
