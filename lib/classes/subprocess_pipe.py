@@ -46,7 +46,7 @@ class SubprocessPipe:
                     self.cmd,
                     stdout=None,
                     stderr=None,
-                    text=False
+                    text=False,
                     bufsize=0
                 )
             time_pattern=re.compile(rb'out_time_ms=(\d+)')
