@@ -47,6 +47,7 @@ class SubprocessPipe:
                     stdout=None,
                     stderr=None,
                     text=False
+                    bufsize=0
                 )
             time_pattern=re.compile(rb'out_time_ms=(\d+)')
             last_percent=0.0
