@@ -34,7 +34,7 @@ class SubprocessPipe:
     def _run_process(self)->bool:
         try:
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
-            if os.path.basename(self.cmd[0]) == 'ffmpeg':
+            if is_ffmpeg:
                 self.process = subprocess.Popen(
                     self.cmd,
                     stdout=subprocess.DEVNULL,
@@ -77,13 +77,27 @@ class SubprocessPipe:
                 if self.is_gui_process:
                     tqdm_re = re.compile(rb'(\d{1,3})%\|')
                     last_percent = 0.0
-                    for raw_line in self.process.stdout:
-                        match = tqdm_re.search(raw_line)
-                        if match:
-                            percent = min(float(match.group(1)), 100.0)
-                            if percent - last_percent >= 0.5:
-                                self._on_progress(percent)
-                                last_percent = percent
+                    buffer = b""
+
+                    while True:
+                        chunk = self.process.stdout.read(1024)
+                        if not chunk:
+                            break
+
+                        buffer += chunk
+
+                        # tqdm updates via \r, keep buffer small
+                        if b'\r' in buffer:
+                            parts = buffer.split(b'\r')
+                            buffer = parts[-1]
+
+                            for part in parts[:-1]:
+                                match = tqdm_re.search(part)
+                                if match:
+                                    percent = min(float(match.group(1)), 100.0)
+                                    if percent - last_percent >= 0.5:
+                                        self._on_progress(percent)
+                                        last_percent = percent
             self.process.wait()
             if self._stop_requested:
                 return False
