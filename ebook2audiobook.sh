@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 
-if [[ "$OSTYPE" == darwin* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
+set -euo pipefail
+
+CURRENT_PYVENV=""
+SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
+
+if [[ "${OSTYPE:-}" == darwin* && "$SWITCHED_TO_ZSH" -eq 0 && "$(ps -p $$ -o comm= 2>/dev/null || true)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
 	exec env zsh "$0" "$@"
 fi
 
-if [[ -n "$BASH_SOURCE" ]]; then
+if [[ -n "${BASH_SOURCE:-}" ]]; then
 	script_path="${BASH_SOURCE[0]}"
-elif [[ -n "$ZSH_VERSION" ]]; then
+elif [[ -n "${ZSH_VERSION:-}" ]]; then
 	script_path="${(%):-%x}"
 else
 	script_path="$0"
@@ -46,7 +51,7 @@ MINIFORGE_LINUX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases
 RUST_INSTALLER_URL="https://sh.rustup.rs"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
-WGET=$(which wget 2>/dev/null)
+WGET="$(command -v wget 2>/dev/null || true)"
 
 typeset -A arguments # associative array
 typeset -a programs_missing # indexed array
@@ -74,7 +79,7 @@ while (( $# > 0 )); do
 	shift
 done
 
-if [[ "${arguments[script_mode]}" != "" ]]; then
+if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 		SCRIPT_MODE="${arguments[script_mode]}"
 	else
@@ -82,6 +87,7 @@ if [[ "${arguments[script_mode]}" != "" ]]; then
 		exit 1
 	fi
 fi
+
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments[docker_device]}"
 	if [[ "$DOCKER_DEVICE_STR" == "true" ]]; then
@@ -89,20 +95,22 @@ if [[ -n "${arguments[docker_device]+exists}" ]]; then
 		exit 1
 	fi
 fi
-if [[ -n "${arguments[script_mode]}" ]]; then
+
+if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "true" || -z "${arguments[script_mode]}" ]]; then
 		echo "Error: --script_mode requires a value"
 		exit 1
 	fi
-	if [ -n "$ZSH_VERSION" ]; then
-		for key in ${(k)arguments}; do   # zsh syntax
+
+	if [[ -n "${ZSH_VERSION:-}" ]]; then
+		for key in ${(k)arguments}; do
 			if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
 				echo "Error: when --script_mode is used, only --docker_device is allowed. Invalid: --$key"
 				exit 1
 			fi
 		done
 	else
-		for key in "${!arguments[@]}"; do  # bash syntax
+		for key in "${!arguments[@]}"; do
 			if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
 				echo "Error: when --script_mode is used, only --docker_device is allowed. Invalid: --$key"
 				exit 1
@@ -116,7 +124,7 @@ fi
 
 cd "$SCRIPT_DIR"
 
-if [[ ! -f "$INSTALLED_LOG" ]]; then
+if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
 	touch "$INSTALLED_LOG"
 fi
 
@@ -304,12 +312,12 @@ EOF
 }
 
 function check_desktop_app {
-	if [[ " ${ARGS[*]} " == *" --headless "* || has_no_display -eq 1 ]]; then
+	if [[ " ${ARGS[*]} " == *" --headless "* ]] || ! has_no_display; then
 		return 0
 	fi
 	if [[ "$OSTYPE" == darwin* ]]; then
 		mac_app
-	elif [[ "$OSTYPE" == "linux"* ]]; then
+	elif [[ "$OSTYPE" == linux* ]]; then
 		linux_app
 	fi
 	return 0
@@ -439,7 +447,7 @@ EOF
 		result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
 		result_code=$?
 		if [[ $result_code -eq 0 ]]; then
-			WGET=$(which wget 2>/dev/null)
+			WGET="$(command -v wget 2>/dev/null || true)"
 		else
 			echo "Cannot 'wget'. Please install 'wget'  manually."
 			return 1
@@ -628,7 +636,24 @@ function install_python_packages {
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip setuptools wheel >nul 2>&1
 	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
-	python3 -m pip install --upgrade --no-cache-dir -r "$SCRIPT_DIR/requirements.txt" || exit 1
+	
+	total=$(grep -vE '^\s*($|#)' "$SCRIPT_DIR/requirements.txt" | wc -l | tr -d ' ')
+	i=0
+
+	progress_bar() {
+		local cur=$1 max=$2 width=30
+		local filled=$(( cur * width / max ))
+		printf "\r[%-${width}s] %d/%d" "$(printf '#%.0s' $(seq 1 "$filled"))" "$cur" "$max"
+	}
+
+	while IFS= read -r pkg || [[ -n "$pkg" ]]; do
+		[[ -z "$pkg" || "$pkg" == \#* ]] && continue
+		((i++))
+		progress_bar "$i" "$total"
+		echo " Installing $pkg"
+		python3 -m pip install --upgrade --no-cache-dir "$pkg"
+	done < "$SCRIPT_DIR/requirements.txt"
+
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
 	return 0
@@ -766,21 +791,22 @@ else
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 		# Check if running in a Conda or Python virtual environment
-		if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
-			current_pyvenv="$CONDA_PREFIX"
-		elif [[ -n "$VIRTUAL_ENV" ]]; then
+		if [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
+			current_pyvenv="${CONDA_PREFIX:-}"
+		elif [[ -n "${VIRTUAL_ENV:-}" ]]; then
 			current_pyvenv="$VIRTUAL_ENV"
 		fi
 		# If neither environment variable is set, check Python path
-		if [[ -z "$current_pyvenv" ]]; then
-			PYTHON_PATH=$(which python 2>/dev/null)
-			if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" == "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" == "$VIRTUAL_ENV/bin/python" ) ]]; then
-				current_pyvenv="${CONDA_PREFIX:-$VIRTUAL_ENV}"
+		if [[ -z "${CURRENT_PYVENV:-}" ]]; then
+			PYTHON_PATH="$(command -v python 2>/dev/null || true)"
+			if [[ ( -n "${CONDA_PREFIX:-}" && "$PYTHON_PATH" == "${CONDA_PREFIX:-}/bin/python" ) || \
+				  ( -n "${VIRTUAL_ENV:-}" && "$PYTHON_PATH" == "${VIRTUAL_ENV:-}/bin/python" ) ]]; then
+				CURRENT_PYVENV="${CONDA_PREFIX:-${VIRTUAL_ENV:-}}"
 			fi
 		fi
 		# Output result if a virtual environment is detected
-		if [[ -n "$current_pyvenv" ]]; then
-			echo -e "\e[31m=============== Error: Current python virtual environment detected: $current_pyvenv..\e[0m"
+		if [[ -n "$CURRENT_PYVENV" ]]; then
+			echo -e "\e[31m=============== Error: Current python virtual environment detected: $CURRENT_PYVENV..\e[0m"
 			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
 			echo -e "If you are using conda then you would type in:"
 			echo -e "conda deactivate"
