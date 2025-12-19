@@ -797,10 +797,11 @@ else
 			current_pyvenv="$VIRTUAL_ENV"
 		fi
 		# If neither environment variable is set, check Python path
-		if [[ -z "$CURRENT_PYVENV" ]]; then
-			PYTHON_PATH=$(which python 2>/dev/null)
-			if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" == "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" == "$VIRTUAL_ENV/bin/python" ) ]]; then
-				CURRENT_PYVENV="${CONDA_PREFIX:-$VIRTUAL_ENV}"
+		if [[ -z "${CURRENT_PYVENV:-}" ]]; then
+			PYTHON_PATH="$(command -v python 2>/dev/null || true)"
+			if [[ ( -n "${CONDA_PREFIX:-}" && "$PYTHON_PATH" == "${CONDA_PREFIX:-}/bin/python" ) || \
+				  ( -n "${VIRTUAL_ENV:-}" && "$PYTHON_PATH" == "${VIRTUAL_ENV:-}/bin/python" ) ]]; then
+				CURRENT_PYVENV="${CONDA_PREFIX:-${VIRTUAL_ENV:-}}"
 			fi
 		fi
 		# Output result if a virtual environment is detected
