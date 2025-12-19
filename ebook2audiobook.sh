@@ -317,7 +317,7 @@ function check_desktop_app {
 	fi
 	if [[ "$OSTYPE" == darwin* ]]; then
 		mac_app
-	elif [[ "$OSTYPE" == "linux"* ]]; then
+	elif [[ "$OSTYPE" == linux* ]]; then
 		linux_app
 	fi
 	return 0
