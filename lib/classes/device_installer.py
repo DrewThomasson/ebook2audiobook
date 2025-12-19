@@ -733,8 +733,6 @@ class DeviceInstaller():
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'scikit-learn'])
-                                        if Version(torch_version_base) <= Version('2.2.2'):
-                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'numpy<2'])
                                     elif device_info['name'] == devices['MPS']['proc']:
                                         torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
                                         torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
@@ -746,6 +744,8 @@ class DeviceInstaller():
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
+                                    if Version(torch_version_base) <= Version('2.2.2'):
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'numpy<2'])
                                 except subprocess.CalledProcessError as e:
                                     error = f'Failed to install torch package: {e}'
                                     print(error)
