@@ -13,7 +13,6 @@ on:
       - completed
     branches:
       - main
-      - v25
 
 jobs:
   DockerBuild:
