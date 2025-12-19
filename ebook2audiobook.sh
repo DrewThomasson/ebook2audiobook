@@ -3,6 +3,7 @@
 set -euo pipefail
 
 CURRENT_PYVENV=""
+SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
 
 if [[ "${OSTYPE:-}" == darwin* && "$SWITCHED_TO_ZSH" -eq 0 && "$(ps -p $$ -o comm= 2>/dev/null || true)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
