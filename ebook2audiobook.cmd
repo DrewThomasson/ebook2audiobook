@@ -96,7 +96,7 @@ if "%ARCH%"=="x86" (
 	goto :failed
 )
 
-if not exist "%INSTALLED_LOG%" (
+if not exist "%INSTALLED_LOG%" if /I not "%SCRIPT_MODE%"=="BUILD_DOCKER" (
 	type nul > "%INSTALLED_LOG%"
 )
 
@@ -448,7 +448,14 @@ echo [ebook2audiobook] Installing dependencies...
 python -m pip cache purge >nul 2>&1
 python -m pip install --upgrade pip pip setuptools wheel >nul 2>&1
 python -m pip install --upgrade llvmlite numba --only-binary=:all:
-python -m pip install --upgrade --no-cache-dir -r "%SCRIPT_DIR%\requirements.txt"
+set count_pkg=0
+for /f "usebackq delims=" %%P in ("%SCRIPT_DIR%\requirements.txt") do (
+	if not "%%P"=="" if not "%%P:~0,1%"=="#" (
+		set /a count_pkg+=1
+		echo [!count_pkg!] Installing %%P
+		python -m pip install --upgrade --no-cache-dir %%P || exit /b 1
+	)
+)
 if errorlevel 1 goto :failed
 for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
 	set "torch_ver=%%A"

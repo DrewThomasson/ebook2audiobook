@@ -23,10 +23,10 @@ class VoiceExtractor:
         self.session = session
         self.voice_file = voice_file
         self.voice_name = voice_name
-        self.voice_track = 'vocals.wav'
-        self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.output_dir = self.session['voice_dir']
-        self.demucs_dir = os.path.join(self.output_dir,'htdemucs',voice_name)
+        self.demucs_dir = os.path.join(self.output_dir,'htdemucs', voice_name)
+        self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
+        self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
         self.final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
         self.silence_threshold = -60
@@ -46,13 +46,17 @@ class VoiceExtractor:
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
                 '-ac', '1', '-y', self.wav_file
             ]   
-            SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_file), msg='Convert')
+            proc = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_file), msg='Convert')
             if not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
                 error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
                 return False, error
             else:
-                msg = 'Conversion to .wav format for processing successful'
-                return True, msg
+                if proc:
+                    msg = 'Conversion to .wav format for processing successful'
+                    return True, msg
+                else:
+                    error = f'normalize_audio() SubprocessPipe Error:'
+                    return False, error
         except subprocess.CalledProcessError as e:
             try:
                 stderr_text = e.stderr.decode('utf-8', errors='replace')
@@ -91,10 +95,13 @@ class VoiceExtractor:
                 "--out", self.output_dir,
                 self.wav_file
             ]
-            SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.wav_file), msg='Denoising')
-            self.voice_track = os.path.join(self.demucs_dir, self.voice_track)
-            msg = 'Voice track isolation successful'
-            return True, msg
+            proc = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.wav_file), msg='Denoising')
+            if proc:
+                msg = 'Voice track isolation successful'
+                return True, msg
+            else:
+                error = f'_demucs_voice() SubprocessPipe Error:'
+                return False, error
         except subprocess.CalledProcessError as e:
             error = (
                 f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'
@@ -208,7 +215,6 @@ class VoiceExtractor:
             return 0
 
     def normalize_audio(self, src_file:str=None, proc_file:str=None, dst_file:str=None)->tuple[bool, str]:
-        error = ''
         try:
             src_file = src_file or self.voice_track
             proc_file = proc_file or self.proc_voice_file
@@ -233,23 +239,34 @@ class VoiceExtractor:
                 '-y', proc_file
             ]
             try:
-                SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(src_file), msg='Normalize')
+                proc = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(src_file), msg='Normalize')
                 if not os.path.exists(proc_file) or os.path.getsize(proc_file) == 0:
                     error = f'normalize_audio() error: {proc_file} was not created or is empty.'
                     return False, error
                 else:
-                    if proc_file != dst_file:
-                        os.replace(proc_file, dst_file)
-                        shutil.rmtree(self.demucs_dir, ignore_errors = True)
-                    msg = 'Audio normalization successful!'
-                    return True, msg
+                    if proc:
+                        if proc_file != dst_file:
+                            os.replace(proc_file, dst_file)
+                            shutil.rmtree(self.demucs_dir, ignore_errors = True)
+                        msg = 'Audio normalization successful!'
+                        return True, msg
+                    else:
+                        error = f'normalize_audio() SubprocessPipe Error:'
+                        return False, error
             except subprocess.CalledProcessError as e:
-                error = f'normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
+                stderr = getattr(e, "stderr", None)
+                if isinstance(stderr, (bytes, bytearray)):
+                    stderr_msg = stderr.decode(errors="replace")
+                else:
+                    stderr_msg = str(e)
+                error = f'normalize_audio() ffmpeg.Error: {stderr_msg}'
+                return False, error
         except FileNotFoundError as e:
             error = 'normalize_audio() FileNotFoundError: {e} Input file or FFmpeg PATH not found!'
+            return False, error
         except Exception as e:
             error = f'normalize_audio() error: {e}'
-        return False, error
+            return False, error
 
     def extract_voice(self)->tuple[bool,str|None]:
         success = False
