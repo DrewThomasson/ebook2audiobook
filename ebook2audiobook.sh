@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 if [[ "$OSTYPE" == darwin* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
 	exec env zsh "$0" "$@"
@@ -116,7 +118,7 @@ fi
 
 cd "$SCRIPT_DIR"
 
-if [[ ! -f "$INSTALLED_LOG" ]]; then
+if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
 	touch "$INSTALLED_LOG"
 fi
 
@@ -628,7 +630,24 @@ function install_python_packages {
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip setuptools wheel >nul 2>&1
 	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
-	python3 -m pip install --upgrade --no-cache-dir -r "$SCRIPT_DIR/requirements.txt" || exit 1
+	
+	total=$(grep -vE '^\s*($|#)' "$SCRIPT_DIR/requirements.txt" | wc -l | tr -d ' ')
+	i=0
+
+	progress_bar() {
+		local cur=$1 max=$2 width=30
+		local filled=$(( cur * width / max ))
+		printf "\r[%-${width}s] %d/%d" "$(printf '#%.0s' $(seq 1 "$filled"))" "$cur" "$max"
+	}
+
+	while IFS= read -r pkg || [[ -n "$pkg" ]]; do
+		[[ -z "$pkg" || "$pkg" == \#* ]] && continue
+		((i++))
+		progress_bar "$i" "$total"
+		echo " Installing $pkg"
+		python3 -m pip install --upgrade --no-cache-dir "$pkg"
+	done < "$SCRIPT_DIR/requirements.txt"
+
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
 	return 0
