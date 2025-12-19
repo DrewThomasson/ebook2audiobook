@@ -718,6 +718,8 @@ class DeviceInstaller():
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
                                     from packaging.version import Version
+                                    numpy_version = self.get_package_version('numpy')
+                                    numpy_version_base = Version(numpy_version).base_version
                                     torch_version_base = Version(torch_version).base_version
                                     print(f"Installing the right library packages for {device_info['name']}...")
                                     os_env = device_info['os']
@@ -744,7 +746,7 @@ class DeviceInstaller():
                                         torch_pkg = f'{url}/{tag}/torch-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl'
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
-                                    if Version(torch_version_base) <= Version('2.2.2'):
+                                    if Version(torch_version_base) <= Version('2.2.2') and Version(numpy_version_base) >= Version('2.0.0'):
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'numpy<2'])
                                 except subprocess.CalledProcessError as e:
                                     error = f'Failed to install torch package: {e}'
