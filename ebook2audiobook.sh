@@ -312,7 +312,7 @@ EOF
 }
 
 function check_desktop_app {
-	if [[ " ${ARGS[*]} " == *" --headless "* || has_no_display -eq 1 ]]; then
+	if [[ " ${ARGS[*]} " == *" --headless "* ]] || ! has_no_display; then
 		return 0
 	fi
 	if [[ "$OSTYPE" == darwin* ]]; then
