@@ -13,6 +13,7 @@ on:
       - completed
     branches:
       - main
+      - v25
 
 jobs:
   DockerBuild:
@@ -135,7 +136,7 @@ jobs:
           CPU_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cpu"
           docker buildx build --pull --platform linux/amd64,linux/arm64 \
             --build-arg DEVICE_TAG=cpu \
-            --build-arg DOCKER_DEVICE_STR='{"name":  "cpu", "os": "linux", "arch": "x86_64", "pyvenv": [3, 12], "tag":  "cpu", "note": "CPU only"}' \
+            --build-arg DOCKER_DEVICE_STR='{"name":  "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag":  "cpu", "note": "CPU only"}' \
             -t "$CPU_TAG_1" \
             -t "$CPU_TAG_2" \
             -t "$CPU_TAG_3" \
@@ -150,7 +151,7 @@ jobs:
           CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu128"
           docker buildx build --pull --platform linux/amd64 \
             --build-arg DEVICE_TAG=cu128 \
-            --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "linux", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "CUDA 12.8"}' \
+            --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "CUDA 12.8"}' \
             -t "$CUDA_TAG_1" \
             -t "$CUDA_TAG_2" \
             -t "$CUDA_TAG_3" \
