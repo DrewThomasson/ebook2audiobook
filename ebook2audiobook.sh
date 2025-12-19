@@ -2,14 +2,16 @@
 
 set -euo pipefail
 
-if [[ "$OSTYPE" == darwin* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
+CURRENT_PYVENV=""
+
+if [[ "${OSTYPE:-}" == darwin* && "$SWITCHED_TO_ZSH" -eq 0 && "$(ps -p $$ -o comm= 2>/dev/null || true)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
 	exec env zsh "$0" "$@"
 fi
 
-if [[ -n "$BASH_SOURCE" ]]; then
+if [[ -n "${BASH_SOURCE:-}" ]]; then
 	script_path="${BASH_SOURCE[0]}"
-elif [[ -n "$ZSH_VERSION" ]]; then
+elif [[ -n "${ZSH_VERSION:-}" ]]; then
 	script_path="${(%):-%x}"
 else
 	script_path="$0"
@@ -48,7 +50,7 @@ MINIFORGE_LINUX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases
 RUST_INSTALLER_URL="https://sh.rustup.rs"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
-WGET=$(which wget 2>/dev/null)
+WGET="$(command -v wget 2>/dev/null || true)"
 
 typeset -A arguments # associative array
 typeset -a programs_missing # indexed array
@@ -441,7 +443,7 @@ EOF
 		result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
 		result_code=$?
 		if [[ $result_code -eq 0 ]]; then
-			WGET=$(which wget 2>/dev/null)
+			WGET="$(command -v wget 2>/dev/null || true)"
 		else
 			echo "Cannot 'wget'. Please install 'wget'  manually."
 			return 1
@@ -785,21 +787,21 @@ else
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 		# Check if running in a Conda or Python virtual environment
-		if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
-			current_pyvenv="$CONDA_PREFIX"
-		elif [[ -n "$VIRTUAL_ENV" ]]; then
+		if [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
+			current_pyvenv="${CONDA_PREFIX:-}"
+		elif [[ -n "${VIRTUAL_ENV:-}" ]]; then
 			current_pyvenv="$VIRTUAL_ENV"
 		fi
 		# If neither environment variable is set, check Python path
-		if [[ -z "$current_pyvenv" ]]; then
+		if [[ -z "$CURRENT_PYVENV" ]]; then
 			PYTHON_PATH=$(which python 2>/dev/null)
 			if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" == "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" == "$VIRTUAL_ENV/bin/python" ) ]]; then
-				current_pyvenv="${CONDA_PREFIX:-$VIRTUAL_ENV}"
+				CURRENT_PYVENV="${CONDA_PREFIX:-$VIRTUAL_ENV}"
 			fi
 		fi
 		# Output result if a virtual environment is detected
-		if [[ -n "$current_pyvenv" ]]; then
-			echo -e "\e[31m=============== Error: Current python virtual environment detected: $current_pyvenv..\e[0m"
+		if [[ -n "$CURRENT_PYVENV" ]]; then
+			echo -e "\e[31m=============== Error: Current python virtual environment detected: $CURRENT_PYVENV..\e[0m"
 			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
 			echo -e "If you are using conda then you would type in:"
 			echo -e "conda deactivate"
