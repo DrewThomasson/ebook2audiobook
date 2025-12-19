@@ -55,7 +55,7 @@ class VoiceExtractor:
                     msg = 'Conversion to .wav format for processing successful'
                     return True, msg
                 else:
-                    error = f'normalize_audio() SubprocessPipe Error:'
+                    error = f'_convert2wav() SubprocessPipe Error.'
                     return False, error
         except subprocess.CalledProcessError as e:
             try:
@@ -100,7 +100,7 @@ class VoiceExtractor:
                 msg = 'Voice track isolation successful'
                 return True, msg
             else:
-                error = f'_demucs_voice() SubprocessPipe Error:'
+                error = f'_demucs_voice() SubprocessPipe Error.'
                 return False, error
         except subprocess.CalledProcessError as e:
             error = (
@@ -251,7 +251,7 @@ class VoiceExtractor:
                         msg = 'Audio normalization successful!'
                         return True, msg
                     else:
-                        error = f'normalize_audio() SubprocessPipe Error:'
+                        error = f'normalize_audio() SubprocessPipe Error.'
                         return False, error
             except subprocess.CalledProcessError as e:
                 stderr = getattr(e, "stderr", None)
@@ -262,7 +262,7 @@ class VoiceExtractor:
                 error = f'normalize_audio() ffmpeg.Error: {stderr_msg}'
                 return False, error
         except FileNotFoundError as e:
-            error = 'normalize_audio() FileNotFoundError: {e} Input file or FFmpeg PATH not found!'
+            error = f'normalize_audio() FileNotFoundError: {e}. Input file or FFmpeg PATH not found!'
             return False, error
         except Exception as e:
             error = f'normalize_audio() error: {e}'

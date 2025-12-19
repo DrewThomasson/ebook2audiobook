@@ -450,10 +450,10 @@ python -m pip install --upgrade pip pip setuptools wheel >nul 2>&1
 python -m pip install --upgrade llvmlite numba --only-binary=:all:
 set count_pkg=0
 for /f "usebackq delims=" %%P in ("%SCRIPT_DIR%\requirements.txt") do (
-	if not "%%P"=="" if not "%%P:~0,1%"=="#" (
+	if not "%%P"=="" if not "%%P:~0,1"=="#" (
 		set /a count_pkg+=1
 		echo [!count_pkg!] Installing %%P
-		python -m pip install --upgrade --no-cache-dir %%P || exit /b 1
+		python -m pip install --upgrade --no-cache-dir "%%P" || exit /b 1
 	)
 )
 if errorlevel 1 goto :failed

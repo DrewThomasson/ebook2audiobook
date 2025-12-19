@@ -792,9 +792,9 @@ else
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 		# Check if running in a Conda or Python virtual environment
 		if [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
-			current_pyvenv="${CONDA_PREFIX:-}"
+			CURRENT_PYVENV="${CONDA_PREFIX:-}"
 		elif [[ -n "${VIRTUAL_ENV:-}" ]]; then
-			current_pyvenv="$VIRTUAL_ENV"
+			CURRENT_PYVENV="$VIRTUAL_ENV"
 		fi
 		# If neither environment variable is set, check Python path
 		if [[ -z "${CURRENT_PYVENV:-}" ]]; then
