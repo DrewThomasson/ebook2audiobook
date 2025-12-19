@@ -130,9 +130,9 @@ jobs:
       - name:  Build and Push CPU Docker Image
         run: |
           cd ~/E2ADockerBuild/ebook2audiobook
-          CPU_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook: ${GIT_HASH}-cpu"
-          CPU_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook: ${RELEASE_TAG}-cpu"
-          CPU_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook: cpu"
+          CPU_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cpu"
+          CPU_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cpu"
+          CPU_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cpu"
           docker buildx build --pull --platform linux/amd64,linux/arm64 \
             --build-arg DEVICE_TAG=cpu \
             --build-arg DOCKER_DEVICE_STR='{"name":  "cpu", "os": "linux", "arch": "x86_64", "pyvenv": [3, 12], "tag":  "cpu", "note": "CPU only"}' \
@@ -147,7 +147,7 @@ jobs:
           cd ~/E2ADockerBuild/ebook2audiobook
           CUDA_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cu128"
           CUDA_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cu128"
-          CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook: cu128"
+          CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu128"
           docker buildx build --pull --platform linux/amd64 \
             --build-arg DEVICE_TAG=cu128 \
             --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "linux", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "CUDA 12.8"}' \
