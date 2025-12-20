@@ -139,15 +139,14 @@ to be sure your issue does not exist already.**
 **Lacking of any standards structure like what is a chapter, paragraph, preface etc.<br>
 you should first remove manually any text you don't want to be converted in audio.**
 
-### Installation Instructions
+### Instructions 
 1. **Clone repo**
-```bash
-git clone https://github.com/DrewThomasson/ebook2audiobook.git
-cd ebook2audiobook
-```
+	```bash
+	git clone https://github.com/DrewThomasson/ebook2audiobook.git
+	cd ebook2audiobook
+	```
 
-### Installation / Launching Gradio Web Interface  
-1. **Run ebook2audiobook**:
+2. **Install / Run ebook2audiobook**:
 
    - **Linux/MacOS**  
      ```bash
