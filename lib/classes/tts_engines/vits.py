@@ -32,7 +32,7 @@ class Vits:
             self.pth_voice_file = None
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
-            self.params = {{"semitones":{}}
+            self.params = {"semitones":{}}
             self.params['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             self.resampler_cache = {}
