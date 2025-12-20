@@ -11,7 +11,7 @@ from huggingface_hub import hf_hub_download
 
 from lib.classes.tts_registry import TTSRegistry
 from lib.classes.vram_detector import VRAMDetector
-from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, loaded_tts_size_gb, load_xtts_builtin_list #, ensure_safe_checkpoint
+from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, loaded_tts_size_gb, load_xtts_builtin_list, apply_cuda_policy #, ensure_safe_checkpoint
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 from lib import *
 
@@ -46,39 +46,7 @@ class Fairseq(TTSRegistry, name='fairseq'):
             torch.manual_seed(seed)
             has_cuda = (torch.version.cuda is not None and torch.cuda.is_available())
             if has_cuda:
-                if using_gpu and enough_vram:
-                    """
-                    if devices['JETSON']['found']:
-                        if not hasattr(torch, "distributed"):
-                            torch.distributed = types.SimpleNamespace()
-                        if not hasattr(torch.distributed, "ReduceOp"):
-                            class _ReduceOp:
-                                SUM = None
-                                MAX = None
-                                MIN = None
-                            torch.distributed.ReduceOp = _ReduceOp
-                        if not hasattr(torch.distributed, "all_reduce"):
-                            def _all_reduce(*args, **kwargs):
-                                return
-                            torch.distributed.all_reduce = _all_reduce
-                    """
-                    torch.cuda.set_per_process_memory_fraction(0.95)
-                    torch.backends.cudnn.enabled = True
-                    torch.backends.cudnn.benchmark = True
-                    torch.backends.cudnn.deterministic = True
-                    torch.backends.cudnn.allow_tf32 = True
-                    torch.backends.cuda.matmul.allow_tf32 = True
-                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-                    torch.cuda.manual_seed_all(seed)
-                else:
-                    torch.cuda.set_per_process_memory_fraction(0.7)
-                    torch.backends.cudnn.enabled = True
-                    torch.backends.cudnn.benchmark = False
-                    torch.backends.cudnn.deterministic = True
-                    torch.backends.cudnn.allow_tf32 = False
-                    torch.backends.cuda.matmul.allow_tf32 = False
-                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-                    torch.cuda.manual_seed_all(seed)
+                apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = load_xtts_builtin_list()
             self._load_engine()
             self._load_engine_zs()

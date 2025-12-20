@@ -57,6 +57,26 @@ def load_xtts_builtin_list()->dict:
             "load_xtts_builtin_list() failed"
         ) from error
 
+def apply_cuda_policy(using_gpu, enough_vram, seed):
+    if using_gpu and enough_vram:
+        torch.cuda.set_per_process_memory_fraction(0.95)
+        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.allow_tf32 = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
+        torch.cuda.manual_seed_all(seed)
+    else:
+        torch.cuda.set_per_process_memory_fraction(0.7)
+        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.allow_tf32 = False
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
+        torch.cuda.manual_seed_all(seed)
+
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 
     def format_timestamp(seconds:float)->str:
