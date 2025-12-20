@@ -1,18 +1,15 @@
-import threading, torch, torchaudio, random, gc, shutil, subprocess, tempfile, uuid, types
+import threading, torch, random
 
 import regex as re
-import numpy as np
-import soundfile as sf
+import numpy as np 
 
 from multiprocessing.managers import DictProxy
 from typing import Any
 from pathlib import Path
-from huggingface_hub import hf_hub_download
 
 from lib.classes.tts_registry import TTSRegistry
-from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.utils import TTSUtils
-from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
+from lib.classes.tts_engines.common.audio_filters import trim_audio, is_audio_data_valid
 from lib import *
 
 #import logging

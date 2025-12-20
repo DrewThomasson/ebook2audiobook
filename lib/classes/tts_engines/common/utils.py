@@ -1,8 +1,4 @@
-import os
-import gc
-import torch
-import shutil
-import regex as re
+import os, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf
 
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
@@ -13,6 +9,8 @@ from torch.nn import Module
 
 from lib.conf import tts_dir
 from lib.models import xtts_builtin_speakers_list, TTS_ENGINES, models
+from lib.classes.vram_detector import VRAMDetector
+from lib.classes.tts_engines.common.audio_filters import normalize_audio
 
 class TTSUtils:
 
