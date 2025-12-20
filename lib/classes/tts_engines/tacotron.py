@@ -493,6 +493,6 @@ class Tacotron2(TTSRegistry, name='tacotron'):
                 print(error)
                 return False
         except Exception as e:
-            error = f'Coquit.convert(): {e}'
+            error = f'Tacotron2.convert(): {e}'
             raise ValueError(e)
             return False

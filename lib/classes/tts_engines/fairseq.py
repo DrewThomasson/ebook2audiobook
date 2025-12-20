@@ -464,6 +464,6 @@ class Fairseq(TTSRegistry, name='fairseq'):
                 print(error)
                 return False
         except Exception as e:
-            error = f'Coquit.convert(): {e}'
+            error = f'Fairseq.convert(): {e}'
             raise ValueError(e)
             return False

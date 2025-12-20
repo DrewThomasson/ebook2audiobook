@@ -477,6 +477,6 @@ class Vits(TTSRegistry, name='vits'):
                 print(error)
                 return False
         except Exception as e:
-            error = f'Coquit.convert(): {e}'
+            error = f'Vits.convert(): {e}'
             raise ValueError(e)
             return False

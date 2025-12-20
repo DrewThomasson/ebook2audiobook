@@ -877,6 +877,6 @@ class Coqui:
                 print(error)
                 return False
         except Exception as e:
-            error = f'Coquit.convert(): {e}'
+            error = f'Coqui.convert(): {e}'
             raise ValueError(e)
             return False

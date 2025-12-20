@@ -442,6 +442,6 @@ class XTTSv2(TTSRegistry, name='xtts'):
                 print(error)
                 return False
         except Exception as e:
-            error = f'Coquit.convert(): {e}'
+            error = f'Xttsv2.convert(): {e}'
             print(error)
             return False

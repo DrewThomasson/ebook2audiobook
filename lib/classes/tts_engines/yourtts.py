@@ -407,6 +407,6 @@ class YourTTS(TTSRegistry, name='yourtts'):
                 print(error)
                 return False
         except Exception as e:
-            error = f'Coquit.convert(): {e}'
+            error = f'YourTTS.convert(): {e}'
             raise ValueError(e)
             return False

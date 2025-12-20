@@ -21,10 +21,5 @@ class TTSManager:
 
         self.engine = engine_cls(session)
 
-    def convert_sentence2audio(self, sentence_number: int, sentence: str) -> bool:
-        try:
-            return self.engine.convert(sentence_number, sentence)
-        except Exception as e:
-            raise RuntimeError(
-                f"TTS convert failed ({self.session['tts_engine']})"
-            ) from e
+    def convert_sentence2audio(self, sentence_number:int, sentence:str)->bool:
+        return self.engine.convert(sentence_number, sentence)

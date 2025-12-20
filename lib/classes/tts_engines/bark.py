@@ -500,6 +500,6 @@ class Bark(TTSRegistry, name='bark'):
                 print(error)
                 return False
         except Exception as e:
-            error = f'Coquit.convert(): {e}'
+            error = f'Bark.convert(): {e}'
             raise ValueError(e)
             return False
