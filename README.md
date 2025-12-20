@@ -121,7 +121,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 | **Hungarian (hu)** | **Korean (ko)**     | **Vietnamese (vi)**| **Swedish (sv)**   |
 | **Persian (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesian (id)**|
 | **Slovak (sk)**    | **Croatian (hr)**   | **Tamil (ta)**     | **Danish (da)**    |
-- [**+1100 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
 ##  Hardware Requirements
@@ -139,15 +139,14 @@ to be sure your issue does not exist already.**
 **Lacking of any standards structure like what is a chapter, paragraph, preface etc.<br>
 you should first remove manually any text you don't want to be converted in audio.**
 
-### Installation Instructions
+### Instructions 
 1. **Clone repo**
-```bash
-git clone https://github.com/DrewThomasson/ebook2audiobook.git
-cd ebook2audiobook
-```
+	```bash
+	git clone https://github.com/DrewThomasson/ebook2audiobook.git
+	cd ebook2audiobook
+	```
 
-### Launching Gradio Web Interface  
-1. **Run ebook2audiobook**:
+2. **Install / Run ebook2audiobook**:
 
    - **Linux/MacOS**  
      ```bash

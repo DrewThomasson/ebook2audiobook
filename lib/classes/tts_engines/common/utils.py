@@ -5,10 +5,14 @@ import shutil
 import regex as re
 
 from typing import Any, Union, Dict
+from huggingface_hub import hf_hub_download
 from safetensors.torch import save_file
 from pathlib import Path
 from torch import Tensor
 from torch.nn import Module
+
+from lib.conf import tts_dir
+from lib.models import xtts_builtin_speakers_list, TTS_ENGINES, models
 
 def cleanup_memory()->None:
     gc.collect()
@@ -34,6 +38,24 @@ def loaded_tts_size_gb(loaded_tts:Dict[str, Module])->float:
 	gb = total_bytes / (1024 ** 3)
 	return round(gb, 2)
 
+def load_xtts_builtin_list()->dict:
+    try:
+        if len(xtts_builtin_speakers_list) > 0:
+            return xtts_builtin_speakers_list
+        speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+        loaded = torch.load(speakers_path, weights_only=False)
+        if not isinstance(loaded, dict):
+            raise TypeError(
+                f"Invalid XTTS speakers format: {type(loaded)}"
+            )
+        for name, data in loaded.items():
+            if name not in xtts_builtin_speakers_list:
+                xtts_builtin_speakers_list[name] = data
+        return xtts_builtin_speakers_list
+    except Exception as error:
+        raise RuntimeError(
+            "load_xtts_builtin_list() failed"
+        ) from error
 
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 
