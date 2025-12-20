@@ -11,7 +11,7 @@ from huggingface_hub import hf_hub_download
 
 from lib.classes.tts_registry import TTSRegistry
 from lib.classes.vram_detector import VRAMDetector
-from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, loaded_tts_size_gb, load_xtts_builtin_list #, ensure_safe_checkpoint
+from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, loaded_tts_size_gb, load_xtts_builtin_list, apply_cuda_policy #, ensure_safe_checkpoint
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 from lib import *
 
@@ -46,39 +46,7 @@ class Fairseq(TTSRegistry, name='fairseq'):
             torch.manual_seed(seed)
             has_cuda = (torch.version.cuda is not None and torch.cuda.is_available())
             if has_cuda:
-                if using_gpu and enough_vram:
-                    """
-                    if devices['JETSON']['found']:
-                        if not hasattr(torch, "distributed"):
-                            torch.distributed = types.SimpleNamespace()
-                        if not hasattr(torch.distributed, "ReduceOp"):
-                            class _ReduceOp:
-                                SUM = None
-                                MAX = None
-                                MIN = None
-                            torch.distributed.ReduceOp = _ReduceOp
-                        if not hasattr(torch.distributed, "all_reduce"):
-                            def _all_reduce(*args, **kwargs):
-                                return
-                            torch.distributed.all_reduce = _all_reduce
-                    """
-                    torch.cuda.set_per_process_memory_fraction(0.95)
-                    torch.backends.cudnn.enabled = True
-                    torch.backends.cudnn.benchmark = True
-                    torch.backends.cudnn.deterministic = True
-                    torch.backends.cudnn.allow_tf32 = True
-                    torch.backends.cuda.matmul.allow_tf32 = True
-                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-                    torch.cuda.manual_seed_all(seed)
-                else:
-                    torch.cuda.set_per_process_memory_fraction(0.7)
-                    torch.backends.cudnn.enabled = True
-                    torch.backends.cudnn.benchmark = False
-                    torch.backends.cudnn.deterministic = True
-                    torch.backends.cudnn.allow_tf32 = False
-                    torch.backends.cuda.matmul.allow_tf32 = False
-                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-                    torch.cuda.manual_seed_all(seed)
+                apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = load_xtts_builtin_list()
             self._load_engine()
             self._load_engine_zs()
@@ -164,7 +132,7 @@ class Fairseq(TTSRegistry, name='fairseq'):
                     self.tts_key = model_path
                     self.engine = self._load_api(self.tts_key, model_path)
             if self.engine:
-                msg = f'TTS {key} Loaded!'
+                msg = f'TTS {self.tts_key} Loaded!'
         except Exception as e:
             error = f'_load_engine() error: {e}'
 
@@ -178,7 +146,7 @@ class Fairseq(TTSRegistry, name='fairseq'):
                 self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
             if self.engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
-                msg = f'ZeroShot {key} Loaded!'
+                msg = f'ZeroShot {self.tts_zs_key} Loaded!'
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
 
@@ -306,9 +274,9 @@ class Fairseq(TTSRegistry, name='fairseq'):
             waveform = resampler(waveform)
         wav_tensor = waveform.squeeze(0)
         wav_numpy = wav_tensor.cpu().numpy()
-        os.path.join(self.session['process_dir'], 'tmp')
-        os.makedirs(tmp_dir, exist_ok=True)
-        tmp_fh = tempfile.NamedTemporaryFile(dir=tmp_dir, suffix=".wav", delete=False)
+        resample_tmp = os.path.join(self.session['process_dir'], 'tmp')
+        os.makedirs(resample_tmp, exist_ok=True)
+        tmp_fh = tempfile.NamedTemporaryFile(dir=resample_tmp, suffix=".wav", delete=False)
         tmp_path = tmp_fh.name
         tmp_fh.close()
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
@@ -456,7 +424,7 @@ class Fairseq(TTSRegistry, name='fairseq'):
                                 print(error)
                                 return False
                     else:
-                        error = f"audio_sentence not valide"
+                        error = f"audio_sentence not valid"
                         print(error)
                         return False
             else:
