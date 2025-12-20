@@ -5,6 +5,7 @@ import shutil
 import regex as re
 
 from typing import Any, Union, Dict
+from huggingface_hub import hf_hub_download
 from safetensors.torch import save_file
 from pathlib import Path
 from torch import Tensor
