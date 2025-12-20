@@ -80,7 +80,6 @@ class XTTSv2(TTSRegistry, name='xtts'):
                     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
                     torch.cuda.manual_seed_all(seed)
             load_xtts_builtin_list()
-            print(xtts_builtin_speakers_list)
             self._load_engine()
             self._load_engine_zs()
         except Exception as e:
