@@ -163,8 +163,6 @@ class XTTSv2:
                     hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                     if self.session['fine_tuned'] == 'internal':
                         hf_sub = ''
-                        if self.speakers_path is None:
-                            self.speakers_path = hf_hub_download(repo_id=hf_repo, filename='speakers_xtts.pth', cache_dir=self.cache_dir)
                     else:
                         hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                     config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
