@@ -42,8 +42,8 @@ def load_xtts_builtin_list()->None:
     try:
         global xtts_builtin_speakers_list
         if not xtts_builtin_speakers_list:
-            self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
-            xtts_builtin_speakers_list = torch.load(self.speakers_path, weights_only=False)
+            speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+            xtts_builtin_speakers_list = torch.load(speakers_path, weights_only=False)
     except Exception as e:
         error = f'load_xtts_builtin_list() error: {e}'
         raise ValueError(error)
