@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+: "${HOME:=$PWD}"
+
 CURRENT_PYVENV=""
 SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
 
@@ -27,7 +29,7 @@ export TMPDIR="$SCRIPT_DIR/tmp"
 export CONDA_HOME="$HOME/Miniforge3"
 export CONDA_BIN_PATH="$CONDA_HOME/bin"
 export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
-export PATH="$CONDA_BIN_PATH:$PATH"
+export PATH="$CONDA_BIN_PATH:${PATH-}"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
@@ -125,8 +127,8 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	fi
 fi
 
-[[ "$OSTYPE" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
-[[ $OSTYPE == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
+[[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
+[[ ${OSTYPE-} == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
 cd "$SCRIPT_DIR"
 
@@ -146,14 +148,12 @@ function has_no_display {
 			return 1   # SSH or console mode
 		fi
 	else
-		if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+		if [[ -n "${SSH_CONNECTION-}" || -n "${SSH_CLIENT-}" || -n "${SSH_TTY-}" ]]; then
 			return 1
 		fi
-
-		if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
+		if [[ -z "${DISPLAY-}" && -z "${WAYLAND_DISPLAY-}" ]]; then
 			return 1   # No display server → headless
 		fi
-
 		if pgrep -x vncserver	>/dev/null 2>&1 || \
 		   pgrep -x Xvnc		 >/dev/null 2>&1 || \
 		   pgrep -x x11vnc	   >/dev/null 2>&1 || \
@@ -198,7 +198,7 @@ function open_desktop_app {
 			fi
 		done
 
-		if [[ "$OSTYPE" == darwin* ]]; then
+		if [[ "${OSTYPE-}" == darwin* ]]; then
 			open "$url" >/dev/null 2>&1 &
 		elif command -v xdg-open >/dev/null 2>&1; then
 			xdg-open "$url" >/dev/null 2>&1 &
@@ -321,9 +321,9 @@ function check_desktop_app {
 	if [[ " ${ARGS[*]} " == *" --headless "* ]] || ! has_no_display; then
 		return 0
 	fi
-	if [[ "$OSTYPE" == darwin* ]]; then
+	if [[ "${OSTYPE-}" == darwin* ]]; then
 		mac_app
-	elif [[ "$OSTYPE" == linux* ]]; then
+	elif [[ "${OSTYPE-}" == linux* ]]; then
 		linux_app
 	fi
 	return 0
@@ -385,7 +385,7 @@ function check_required_programs {
 }
 
 function install_programs {
-	if [[ "$OSTYPE" == darwin* ]]; then
+	if [[ "${OSTYPE-}" == darwin* ]]; then
 		echo -e "\e[33mInstalling required programs...\e[0m"
 		PACK_MGR="brew install"
 		if ! command -v brew &> /dev/null; then
@@ -468,7 +468,7 @@ EOF
 				# avoid conflict with calibre builtin lxml
 				python3 -m pip uninstall lxml -y 2>/dev/null
 				echo -e "\e[33mInstalling Calibre...\e[0m"
-				if [[ "$OSTYPE" == darwin* ]]; then
+				if [[ "${OSTYPE-}" == darwin* ]]; then
 					eval "$PACK_MGR --cask calibre"
 				else
 					if [[ "$SUDO" == "sudo" ]]; then
@@ -496,7 +496,7 @@ EOF
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
-				ISO3_LANG="$(get_iso3_lang $OS_LANG)"
+				ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $ISO3_LANG"
 				langpack=""
 				if command -v brew &> /dev/null; then
@@ -563,7 +563,7 @@ function check_conda {
 		local installer_path="/tmp/Miniforge3.sh"
 		local config_path
 		echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
-		if [[ "$OSTYPE" == darwin* ]]; then
+		if [[ "${OSTYPE-}" == darwin* ]]; then
 			config_path="$HOME/.zshrc"
 			curl -fsSLo "$installer_path" "$MINIFORGE_MACOSX_INSTALLER_URL"
 		else
@@ -595,11 +595,11 @@ function check_conda {
 		fi
 	fi
 	if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
-		if [[ "$OSTYPE" == darwin* && "$ARCH" == "x86_64" ]]; then
+		if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then
 			PYTHON_VERSION="3.11"
 		elif [[ -r /proc/device-tree/model ]]; then
 			# Detect Jetson and select correct Python version
-			MODEL=$(tr -d '\0' </proc/device-tree/model | tr 'A-Z' 'a-z')
+			MODEL="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
 			if [[ "$MODEL" == *jetson* ]]; then
 				PYTHON_VERSION="3.10"
 			fi
@@ -649,7 +649,7 @@ function install_python_packages {
 	progress_bar() {
 		local cur=$1 max=$2 width=30
 		local filled=$(( cur * width / max ))
-		printf "\r[%-${width}s] %d/%d" "$(printf '#%.0s' $(seq 1 "$filled"))" "$cur" "$max"
+		printf "\r[%-${width}s] %d/%d" "$(printf '#%.0s' $(printf '%*s' "$filled" ''))" "$cur" "$max"
 	}
 
 	while IFS= read -r pkg || [[ -n "$pkg" ]]; do
@@ -728,7 +728,7 @@ function build_docker_image {
 		mps)		cmd_options="" ;;
 		*)			cmd_options="" ;;
 	esac
-	ISO3_LANG="$(get_iso3_lang $OS_LANG)"
+	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
 	if docker compose version >/dev/null 2>&1; then
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \

@@ -209,7 +209,7 @@ class YourTTS(TTSRegistry, name='yourtts'):
                         engine = self._load_checkpoint(tts_engine=TTS_ENGINES['XTTSv2'], key=key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
                     if engine:
                         if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                            gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
+                            gpt_cond_latent, speaker_embedding = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
                         else:
                             gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[voice_path])
                         fine_tuned_params = {
