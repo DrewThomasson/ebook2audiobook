@@ -49,7 +49,6 @@ default_engine_settings = {
         #"gpt_cond_len": 512,
         #"gpt_batch_size": 1,
         "enable_text_splitting": False,
-        "use_deepspeed": False,
         "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav'],
         "voices": {
             "ClaribelDervla": "Claribel Dervla", "DaisyStudious": "Daisy Studious", "GracieWise": "Gracie Wise",

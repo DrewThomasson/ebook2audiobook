@@ -10,6 +10,8 @@ from pathlib import Path
 from torch import Tensor
 from torch.nn import Module
 
+from lib.models import xtts_builtin_speakers_list
+
 def cleanup_memory()->None:
     gc.collect()
     if torch.cuda.is_available():
@@ -34,6 +36,14 @@ def loaded_tts_size_gb(loaded_tts:Dict[str, Module])->float:
 	gb = total_bytes / (1024 ** 3)
 	return round(gb, 2)
 
+def load_xtts_builtin_list()->None:
+    try:
+        if not xtts_builtin_speakers_list:
+            self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+            xtts_builtin_speakers_list = torch.load(self.speakers_path, weights_only=False)
+    except Exception as e:
+        error = f'load_xtts_builtin_list() error: {e}'
+        raise(error)
 
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 

@@ -22,7 +22,6 @@ lock = threading.Lock()
 class Coqui:
     def __init__(self, session:DictProxy):
         try:
-            global xtts_builtin_speakers_list
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
@@ -136,7 +135,6 @@ class Coqui:
                             config,
                             checkpoint_path = checkpoint_path,
                             vocab_path = vocab_path,
-                            use_deepspeed = default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc'], devices['XPU']['proc'], devices['ROCM']['proc']] else False,
                             eval = True
                         )
                     elif engine_name == TTS_ENGINES['BARK']:
