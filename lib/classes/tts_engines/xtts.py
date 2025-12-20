@@ -10,10 +10,6 @@ from pathlib import Path
 from lib.classes.tts_registry import TTSRegistry
 from lib.classes.tts_engines.common.utils import TTSUtils
 from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
-from lib import *
-
-#import logging
-#logging.basicConfig(level=logging.DEBUG)
 
 lock = threading.Lock()
 
