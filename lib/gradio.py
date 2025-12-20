@@ -1,5 +1,5 @@
 from __future__ import annotations
-from lib.functions import *
+from lib.core import *
 
 def build_interface(args:dict)->gr.Blocks:
     try:
