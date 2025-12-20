@@ -53,8 +53,14 @@ INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 WGET="$(command -v wget 2>/dev/null || true)"
 
-typeset -A arguments # associative array
-typeset -a programs_missing # indexed array
+typeset -A arguments=() # associative array
+declare -a programs_missing=() # indexed array
+
+PACK_MGR=""
+PACK_MGR_OPTIONS=""
+BUILD_NAME=""
+ISO3_LANG="eng"
+SUDO="sudo"
 
 ARGS=("$@")
 
