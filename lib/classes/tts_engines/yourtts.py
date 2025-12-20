@@ -131,7 +131,7 @@ class YourTTS(TTSRegistry, name='yourtts'):
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                     self.engine = self._load_api(self.tts_key, model_path)
             if self.engine:
-                msg = f'TTS {key} Loaded!'
+                msg = f'TTS {self.tts_key} Loaded!'
         except Exception as e:
             error = f'_load_engine() error: {e}'
 
@@ -145,7 +145,7 @@ class YourTTS(TTSRegistry, name='yourtts'):
                 self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
             if self.engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
-                msg = f'ZeroShot {key} Loaded!'
+                msg = f'ZeroShot {self.tts_zs_key} Loaded!'
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
 
@@ -367,7 +367,7 @@ class YourTTS(TTSRegistry, name='yourtts'):
                                 print(error)
                                 return False
                     else:
-                        error = f"audio_sentence not valide"
+                        error = f"audio_sentence not valid"
                         print(error)
                         return False
             else:

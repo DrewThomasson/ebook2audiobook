@@ -141,7 +141,7 @@ class XTTSv2(TTSRegistry, name='xtts'):
                     vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
                     self.engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
             if self.engine:
-                msg = f'TTS {key} Loaded!'
+                msg = f'TTS {self.tts_key} Loaded!'
         except Exception as e:
             error = f'_load_engine() error: {e}'
 
@@ -155,7 +155,7 @@ class XTTSv2(TTSRegistry, name='xtts'):
                 self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
             if self.engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
-                msg = f'ZeroShot {key} Loaded!'
+                msg = f'ZeroShot {self.tts_zs_key} Loaded!'
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
 
@@ -402,7 +402,7 @@ class XTTSv2(TTSRegistry, name='xtts'):
                                 print(error)
                                 return False
                     else:
-                        error = f"audio_sentence not valide"
+                        error = f"audio_sentence not valid"
                         print(error)
                         return False
             else:
