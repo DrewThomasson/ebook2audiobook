@@ -79,7 +79,7 @@ class Bark(TTSRegistry, name='bark'):
                     torch.backends.cuda.matmul.allow_tf32 = False
                     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
                     torch.cuda.manual_seed_all(seed)
-            load_xtts_builtin_list()
+            self.xtts_speakers = load_xtts_builtin_list()
             self._load_engine()
             self._load_engine_zs()
         except Exception as e:

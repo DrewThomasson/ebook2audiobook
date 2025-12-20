@@ -79,7 +79,7 @@ class XTTSv2(TTSRegistry, name='xtts'):
                     torch.backends.cuda.matmul.allow_tf32 = False
                     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
                     torch.cuda.manual_seed_all(seed)
-            load_xtts_builtin_list()
+            self.xtts_speakers = load_xtts_builtin_list()
             self._load_engine()
             self._load_engine_zs()
         except Exception as e:
@@ -219,7 +219,7 @@ class XTTSv2(TTSRegistry, name='xtts'):
                         engine = self._load_checkpoint(tts_engine=TTS_ENGINES['XTTSv2'], key=key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
                     if engine:
                         if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                            gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
+                            gpt_cond_latent, speaker_embedding = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
                         else:
                             gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[voice_path])
                         fine_tuned_params = {
@@ -365,7 +365,7 @@ class XTTSv2(TTSRegistry, name='xtts'):
                         msg = 'Computing speaker latents...'
                         print(msg)
                         if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                            self.params['gpt_cond_latent'], self.params['speaker_embedding'] = xtts_builtin_speakers_list[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
+                            self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
                         else:
                             self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['voice_path']])  
                         self.params['latent_embedding'][self.params['voice_path']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']

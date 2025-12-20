@@ -11,8 +11,8 @@ from pathlib import Path
 from torch import Tensor
 from torch.nn import Module
 
+import lib.models as m
 from lib.conf import tts_dir
-from lib.models import xtts_builtin_speakers_list, TTS_ENGINES, models
 
 def cleanup_memory()->None:
     gc.collect()
@@ -38,21 +38,24 @@ def loaded_tts_size_gb(loaded_tts:Dict[str, Module])->float:
 	gb = total_bytes / (1024 ** 3)
 	return round(gb, 2)
 
-def load_xtts_builtin_list()->None:
+def load_xtts_builtin_list()->dict:
     try:
-        if not xtts_builtin_speakers_list:
-            speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
-            loaded = torch.load(speakers_path, weights_only=False)
-            if not loaded:
-                raise ValueError(f"Empty XTTS speakers list from {speakers_path}")
-            if not isinstance(loaded, list):
-                raise TypeError(f"Invalid XTTS speakers format: {type(loaded)}")
-            for speaker in loaded:
-                if speaker not in models.xtts_builtin_speakers_list:
-                    models.xtts_builtin_speakers_list.append(speaker)
-    except Exception as e:
-        error = f'load_xtts_builtin_list() error: {e}'
-        raise ValueError(error)
+        if m.xtts_builtin_speakers_list:
+            return m.xtts_builtin_speakers_list
+        speakers_path = hf_hub_download(repo_id=m.models[m.TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+        loaded = torch.load(speakers_path, weights_only=False)
+        if not isinstance(loaded, dict):
+            raise TypeError(
+                f"Invalid XTTS speakers format: {type(loaded)}"
+            )
+        for name, data in loaded.items():
+            if name not in m.xtts_builtin_speakers_list:
+                m.xtts_builtin_speakers_list[name] = data
+        return m.xtts_builtin_speakers_list
+    except Exception as error:
+        raise RuntimeError(
+            "load_xtts_builtin_list() failed"
+        ) from error
 
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 
