@@ -1,4 +1,5 @@
 class TTSRegistry:
+
     ENGINES = {}
 
     def __init_subclass__(cls, *, name, **kwargs):
