@@ -4,8 +4,6 @@ import torch
 import shutil
 import regex as re
 
-import lib.models as m
-
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
 from safetensors.torch import save_file
@@ -14,6 +12,7 @@ from torch import Tensor
 from torch.nn import Module
 
 from lib.conf import tts_dir
+from lib.models import xtts_builtin_speakers_list, TTS_ENGINES, models
 
 def cleanup_memory()->None:
     gc.collect()
@@ -41,18 +40,18 @@ def loaded_tts_size_gb(loaded_tts:Dict[str, Module])->float:
 
 def load_xtts_builtin_list()->dict:
     try:
-        if len(m.xtts_builtin_speakers_list) > 0:
-            return m.xtts_builtin_speakers_list
-        speakers_path = hf_hub_download(repo_id=m.models[m.TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+        if len(xtts_builtin_speakers_list) > 0:
+            return xtts_builtin_speakers_list
+        speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
         loaded = torch.load(speakers_path, weights_only=False)
         if not isinstance(loaded, dict):
             raise TypeError(
                 f"Invalid XTTS speakers format: {type(loaded)}"
             )
         for name, data in loaded.items():
-            if name not in m.xtts_builtin_speakers_list:
-                m.xtts_builtin_speakers_list[name] = data
-        return m.xtts_builtin_speakers_list
+            if name not in xtts_builtin_speakers_list:
+                xtts_builtin_speakers_list[name] = data
+        return xtts_builtin_speakers_list
     except Exception as error:
         raise RuntimeError(
             "load_xtts_builtin_list() failed"
