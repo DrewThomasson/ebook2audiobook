@@ -45,6 +45,38 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             error = f'__init__() error: {e}'
             raise ValueError(error)
 
+    def _load_engine(self)->Any:
+        try:
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            print(msg)
+            self._cleanup_memory()
+            engine = loaded_tts.get(self.tts_key, False)
+            if not engine:
+                if self.session['custom_model'] is not None:
+                    config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
+                    checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
+                    vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][2])
+                    self.tts_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
+                    engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
+                else:
+                    hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
+                    if self.session['fine_tuned'] == 'internal':
+                        hf_sub = ''
+                        if self.speakers_path is None:
+                            self.speakers_path = hf_hub_download(repo_id=hf_repo, filename='speakers_xtts.pth', cache_dir=self.cache_dir)
+                    else:
+                        hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
+                    config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
+                    checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
+                    vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
+                    engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
+            if engine:
+                msg = f'TTS {self.tts_key} Loaded!'
+                return engine
+        except Exception as e:
+            error = f'_load_engine() error: {e}'
+            raise ValueError(error)
+
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
             speaker = None

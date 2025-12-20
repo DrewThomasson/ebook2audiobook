@@ -45,6 +45,31 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             error = f'__init__() error: {e}'
             raise ValueError(error)
 
+    def _load_engine(self)->Any:
+        try:
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            print(msg)
+            self._cleanup_memory()
+            engine = loaded_tts.get(self.tts_key, False)
+            if not engine:     
+                if self.session['custom_model'] is not None:
+                    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
+                    print(msg)
+                else:
+                    hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
+                    hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
+                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
+                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
+                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
+                    checkpoint_dir = os.path.dirname(text_model_path)
+                    engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir)
+            if engine:
+                msg = f'TTS {self.tts_key} Loaded!'
+                return engine
+        except Exception as e:
+            error = f'_load_engine() error: {e}'
+            raise ValueError(error)
+
     def _check_bark_npz(self, voice_path:str, bark_dir:str, speaker:str)->bool:
         try:
             if self.session['language'] in language_tts[TTS_ENGINES['BARK']].keys():

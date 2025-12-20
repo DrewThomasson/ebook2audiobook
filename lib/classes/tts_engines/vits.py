@@ -1,7 +1,4 @@
-import threading, torch, random
-
-import regex as re
-import numpy as np 
+import os, threading, torch, random, regex as re, numpy as np
 
 from multiprocessing.managers import DictProxy
 from typing import Any
@@ -10,7 +7,7 @@ from pathlib import Path
 from lib.classes.tts_registry import TTSRegistry
 from lib.classes.tts_engines.common.utils import TTSUtils
 from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
-from lib.conf import tts_dir
+from lib.conf import tts_dir, devices
 from lib.conf_models import default_vc_model, models
 
 lock = threading.Lock()
@@ -23,9 +20,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.cache_dir = tts_dir
             self.speakers_path = None
             self.tts_key = self.session['model_cache']
-            self.engine = None
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
-            self.engine_zs = None
             self.pth_voice_file = None
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
@@ -44,10 +39,39 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             if has_cuda:
                 self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
-            self._load_engine()
-            self._load_engine_zs()
+            self.engine = self._load_engine()
+            self.engine_zs = self._load_engine_zs()
         except Exception as e:
             error = f'__init__() error: {e}'
+            raise ValueError(error)
+
+    def _load_engine(self)->Any:
+        try:
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            print(msg)
+            self._cleanup_memory()
+            engine = loaded_tts.get(self.tts_key, False)
+            if not engine:
+                if self.session['custom_model'] is not None:
+                    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
+                    print(msg)
+                else:
+                    iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
+                    sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
+                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
+                    if sub is not None:
+                        self.params[self.session['tts_engine']]['samplerate'] = models[TTS_ENGINES['VITS']][self.session['fine_tuned']]['samplerate'][sub]
+                        model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
+                        self.tts_key = model_path
+                        engine = self._load_api(self.tts_key, model_path)
+                    else:
+                        msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
+                        print(msg)
+            if engine:
+                msg = f'TTS {self.tts_key} Loaded!'
+                return engine
+        except Exception as e:
+            error = f'_load_engine() error: {e}'
             raise ValueError(error)
 
     def convert(self, sentence_index:int, sentence:str)->bool:

@@ -45,6 +45,53 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             error = f'__init__() error: {e}'
             raise ValueError(error)
 
+    def _load_engine(self)->Any:
+        try:
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            print(msg)
+            self._cleanup_memory()
+            engine = loaded_tts.get(self.tts_key, False)
+            if not engine:
+                if self.session['custom_model'] is not None:
+                    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
+                    print(msg)
+                else:
+                    iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
+                    sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
+                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+                    self.params[self.session['tts_engine']]['samplerate'] = models[TTS_ENGINES['TACOTRON2']][self.session['fine_tuned']]['samplerate'][sub]
+                    if sub is None:
+                        iso_dir = self.session['language']
+                        sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+                    if sub is not None:
+                        model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
+                        self.tts_key = model_path
+                        engine = self._load_api(self.tts_key, model_path)
+                        m = engine.synthesizer.tts_model
+                        d = m.decoder
+                        # Stability
+                        d.prenet_dropout = 0.0
+                        d.attention_dropout = 0.0
+                        d.decoder_dropout = 0.0
+                        m.attention.location_attention.dropout = 0.0
+                        # Stop-gate tuning
+                        d.gate_threshold = 0.5
+                        d.force_gate = True
+                        d.gate_delay = 10
+                        # Long-sentence fix
+                        d.max_decoder_steps = 1000
+                        # Prevent attention drift
+                        d.attention_keeplast = True
+                    else:
+                        msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
+                        print(msg)
+            if engine:
+                msg = f'TTS {self.tts_key} Loaded!'
+                return engine
+        except Exception as e:
+            error = f'_load_engine() error: {e}'
+            raise ValueError(error)
+
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
             speaker = None

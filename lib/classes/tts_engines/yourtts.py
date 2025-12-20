@@ -45,6 +45,26 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             error = f'__init__() error: {e}'
             raise ValueError(error)
 
+    def _load_engine(self)->Any:
+        try:
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            print(msg)
+            self._cleanup_memory()
+            self.engine = loaded_tts.get(self.tts_key, False)
+            if not engine:
+                if self.session['custom_model'] is not None:
+                    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
+                    print(msg)
+                else:
+                    model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
+                    self.engine = self._load_api(self.tts_key, model_path)
+            if engine:
+                msg = f'TTS {self.tts_key} Loaded!'
+                return engine
+        except Exception as e:
+            error = f'_load_engine() error: {e}'
+            raise ValueError(error)
+
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
             speaker = None
