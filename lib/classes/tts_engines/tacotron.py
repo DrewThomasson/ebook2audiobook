@@ -11,6 +11,7 @@ from lib.classes.tts_registry import TTSRegistry
 from lib.classes.tts_engines.common.utils import TTSUtils
 from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
 from lib.conf import tts_dir
+from lib.models import default_vc_model, models
 
 lock = threading.Lock()
 

@@ -5,7 +5,7 @@ import threading
 from pyannote.audio import Model
 from pyannote.audio.pipelines import VoiceActivityDetection
 from lib.conf import tts_dir
-from lib.models import default_voice_detection_model
+from lib.conf_models import default_voice_detection_model
 
 
 _PIPELINE_CACHE = {}
