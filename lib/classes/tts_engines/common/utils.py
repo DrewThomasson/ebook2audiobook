@@ -147,6 +147,7 @@ class TTSUtils:
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
                 else:
                     hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
+                    print(f'---------------{hg_repo}--------------')
                     if self.session['fine_tuned'] == 'internal':
                         hf_sub = ''
                     else:
