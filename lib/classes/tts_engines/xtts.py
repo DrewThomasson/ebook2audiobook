@@ -9,6 +9,7 @@ from lib.classes.tts_engines.common.utils import TTSUtils
 from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
 from lib.conf import tts_dir, devices
 from lib.conf_models import loaded_tts, default_vc_model, models
+from lib.conf_lang import language_tts
 
 lock = threading.Lock()
 
