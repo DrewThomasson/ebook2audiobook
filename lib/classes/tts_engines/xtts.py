@@ -334,7 +334,7 @@ class XTTSv2(TTSRegistry, name='xtts'):
             if self.params['voice_path'] is not None:
                 speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['voice_path']))
                 if self.params['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['voice_path']:
-                    self.session['voice'] = self.params['voice_path'] = self._check_xtts_builtin_speakers(self.params['voice_path'], speaker)
+                    #self.session['voice'] = self.params['voice_path'] = self._check_xtts_builtin_speakers(self.params['voice_path'], speaker)
                     if not self.params['voice_path']:
                         msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                         print(msg)
