@@ -87,7 +87,6 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Docker](#docker)
     - [Steps to Run](#steps-to-run)
     - [Common Docker Issues](#common-docker-issues)
-    - [Docker Build (Manual)](https://github.com/DrewThomasson/ebook2audiobook/wiki/Manual-Docker-Guide)
   
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
