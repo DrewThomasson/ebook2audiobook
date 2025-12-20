@@ -133,19 +133,19 @@ class TTSUtils:
             print(error)
             return None
 
-    def _load_engine(self)->None:
+    def _load_engine(self)->Any:
         try:
             msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
             print(msg)
             self._cleanup_memory()
-            self.engine = loaded_tts.get(self.tts_key, False)
-            if not self.engine:
+            engine = loaded_tts.get(self.tts_key, False)
+            if not engine:
                 if self.session['custom_model'] is not None:
                     config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
                     checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
                     vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][2])
                     self.tts_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
-                    self.engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
+                    engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
                 else:
                     hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                     if self.session['fine_tuned'] == 'internal':
@@ -155,25 +155,29 @@ class TTSUtils:
                     config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
                     checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
                     vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
-                    self.engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
-            if self.engine:
+                    engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
+            if engine:
                 msg = f'TTS {self.tts_key} Loaded!'
+                return engine
         except Exception as e:
             error = f'_load_engine() error: {e}'
+            raise ValueError(error)
 
     def _load_engine_zs(self)->Any:
         try:
             msg = f"Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient..."
             print(msg)
             self._cleanup_memory()
-            self.engine_zs = loaded_tts.get(self.tts_zs_key, False)
-            if not self.engine_zs:
-                self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
-            if self.engine_zs:
+            engine_zs = loaded_tts.get(self.tts_zs_key, False)
+            if not engine_zs:
+                engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
+            if engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
                 msg = f'ZeroShot {self.tts_zs_key} Loaded!'
+                return engine_zs
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
+            raise ValueError(error)
 
     def _check_xtts_builtin_speakers(self, voice_path:str, speaker:str)->str|bool:
         try:

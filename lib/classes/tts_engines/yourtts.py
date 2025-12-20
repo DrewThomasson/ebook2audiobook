@@ -25,9 +25,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             self.cache_dir = tts_dir
             self.speakers_path = None
             self.tts_key = self.session['model_cache']
-            self.engine = None
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
-            self.engine_zs = None
             self.pth_voice_file = None
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
@@ -46,8 +44,8 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             if has_cuda:
                 self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
-            self._load_engine()
-            self._load_engine_zs()
+            self.engine = self._load_engine()
+            self.engine_zs = self._load_engine_zs()
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
