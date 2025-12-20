@@ -9,6 +9,7 @@ from typing import Any
 from pathlib import Path
 from huggingface_hub import hf_hub_download
 
+from lib.classes.tts_registry import TTSRegistry
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, loaded_tts_size_gb, load_xtts_builtin_list #, ensure_safe_checkpoint
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
@@ -19,7 +20,7 @@ from lib import *
 
 lock = threading.Lock()
 
-class Bark:
+class Bark(TTSRegistry, name='bark'):
     def __init__(self, session:DictProxy):
         try:
             self.session = session
