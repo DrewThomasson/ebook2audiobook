@@ -4,6 +4,8 @@ import torch
 import shutil
 import regex as re
 
+import lib.models as m
+
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
 from safetensors.torch import save_file
@@ -11,7 +13,6 @@ from pathlib import Path
 from torch import Tensor
 from torch.nn import Module
 
-import lib.models as m
 from lib.conf import tts_dir
 
 def cleanup_memory()->None:
@@ -40,7 +41,7 @@ def loaded_tts_size_gb(loaded_tts:Dict[str, Module])->float:
 
 def load_xtts_builtin_list()->dict:
     try:
-        if m.xtts_builtin_speakers_list:
+        if len(m.xtts_builtin_speakers_list) > 0:
             return m.xtts_builtin_speakers_list
         speakers_path = hf_hub_download(repo_id=m.models[m.TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
         loaded = torch.load(speakers_path, weights_only=False)
