@@ -10,7 +10,7 @@ from torch.nn import Module
 from lib.conf import tts_dir
 from lib.models import xtts_builtin_speakers_list, TTS_ENGINES, models
 from lib.classes.vram_detector import VRAMDetector
-from lib.classes.tts_engines.common.audio_filters import normalize_audio
+from lib.classes.tts_engines.common.audio import normalize_audio
 
 class TTSUtils:
 

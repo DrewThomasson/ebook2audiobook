@@ -11,7 +11,7 @@ from huggingface_hub import hf_hub_download
 
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.utils import cleanup_memory, append_sentence2vtt, loaded_tts_size_gb #, ensure_safe_checkpoint
-from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
+from lib.classes.tts_engines.common.audio import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 from lib import *
 
 #import logging
