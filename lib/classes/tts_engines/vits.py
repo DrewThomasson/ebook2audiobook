@@ -282,9 +282,9 @@ class Vits(TTSRegistry, name='vits'):
             waveform = resampler(waveform)
         wav_tensor = waveform.squeeze(0)
         wav_numpy = wav_tensor.cpu().numpy()
-        os.path.join(self.session['process_dir'], 'tmp')
-        os.makedirs(tmp_dir, exist_ok=True)
-        tmp_fh = tempfile.NamedTemporaryFile(dir=tmp_dir, suffix=".wav", delete=False)
+        resample_tmp = os.path.join(self.session['process_dir'], 'tmp')
+        os.makedirs(resample_tmp, exist_ok=True)
+        tmp_fh = tempfile.NamedTemporaryFile(dir=resample_tmp, suffix=".wav", delete=False)
         tmp_path = tmp_fh.name
         tmp_fh.close()
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
