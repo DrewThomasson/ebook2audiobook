@@ -44,7 +44,7 @@ def load_xtts_builtin_list()->None:
             xtts_builtin_speakers_list = torch.load(self.speakers_path, weights_only=False)
     except Exception as e:
         error = f'load_xtts_builtin_list() error: {e}'
-        raise(error)
+        raise ValueError(error)
 
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 
