@@ -17,7 +17,7 @@ from .conf_lang import (
     language_math_phonemes, language_clock, language_tts, os, punctuation_list, 
     punctuation_list_set, punctuation_split_hard, punctuation_split_hard_set,
     punctuation_split_soft, punctuation_split_soft_set, punctuation_switch,
-    specialchars_mapping, chars_remove, year_to_decades_languages
+    specialchars_mapping, chars_remove, year_to_decades_languages,
 )
 
 from .conf_models import (
@@ -47,11 +47,11 @@ __all__ = [
     "language_math_phonemes", "language_clock", "language_tts", "os", "punctuation_list", 
     "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
     "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
-    "specialchars_mapping", "chars_remove", "year_to_decades_languages"
+    "specialchars_mapping", "chars_remove", "year_to_decades_languages",
     
     # from conf_models
     "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "default_fine_tuned", "default_tts_engine",
     "default_engine_settings", "default_vc_model", "default_voice_detection_model",
     "loaded_tts", "xtts_builtin_speakers_list", "max_custom_model",
-    "max_custom_voices", "models", "os", "voices_dir",
+    "max_custom_voices", "models", "os", "voices_dir"
 ]
