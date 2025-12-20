@@ -138,7 +138,7 @@ fi
 
 ###### DESKTOP APP
 function has_no_display {
-	if [[ "$OSTYPE" == darwin* ]]; then
+	if [[ "${OSTYPE:-}" == darwin* ]]; then
 		if pgrep -x WindowServer >/dev/null 2>&1 &&
 		   [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
 			return 0   # macOS GUI
