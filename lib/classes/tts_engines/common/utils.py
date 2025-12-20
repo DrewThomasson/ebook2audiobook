@@ -57,7 +57,7 @@ def load_xtts_builtin_list()->dict:
             "load_xtts_builtin_list() failed"
         ) from error
 
-def apply_cuda_policy(using_gpu, enough_vram, seed):
+def apply_cuda_policy(using_gpu:bool, enough_vram:bool, seed:int)->None:
     if using_gpu and enough_vram:
         torch.cuda.set_per_process_memory_fraction(0.95)
         torch.backends.cudnn.enabled = True
