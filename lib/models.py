@@ -2,7 +2,7 @@ import os
 from lib.conf import tts_dir, voices_dir
 
 loaded_tts = {}
-xtts_builtin_speakers_list = []
+xtts_builtin_speakers_list = {}
 
 TTS_ENGINES = {
     "XTTSv2": "xtts", 
