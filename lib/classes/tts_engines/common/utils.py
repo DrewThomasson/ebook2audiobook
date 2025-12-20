@@ -140,9 +140,9 @@ class TTSUtils:
             engine = loaded_tts.get(self.tts_key, False)
             if not engine:
                 if self.session['custom_model'] is not None:
-                    config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
-                    checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
-                    vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][2])
+                    config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[elf.session['tts_engine']]['files'][0])
+                    checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[elf.session['tts_engine']]['files'][1])
+                    vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],default_engine_settings[elf.session['tts_engine']]['files'][2])
                     self.tts_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
                 else:
@@ -183,12 +183,13 @@ class TTSUtils:
             voice_parts = Path(voice_path).parts
             if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
                 return voice_path
-            if self.session['language'] in language_tts[TTS_ENGINES['XTTSv2']].keys():
+            xtts = TTS_ENGINES['XTTSv2']
+            if self.session['language'] in language_tts[xtts].keys():
                 default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                 if os.path.exists(default_text_file):
                     msg = f"Converting builtin eng voice to {self.session['language']}..."
                     print(msg)
-                    key = f"{TTS_ENGINES['XTTSv2']}-internal"
+                    key = f"{xtts}-internal"
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
                     self._cleanup_memory()
                     engine = loaded_tts.get(key, False)
@@ -198,15 +199,15 @@ class TTSUtils:
                         models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
                         if self.session['free_vram_gb'] <= models_loaded_size_gb:
                             del loaded_tts[self.tts_key]
-                        hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
+                        hf_repo = models[xtts]['internal']['repo']
                         hf_sub = ''
-                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][1]}", cache_dir=self.cache_dir)
-                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][2]}", cache_dir=self.cache_dir)
-                        engine = self._load_checkpoint(tts_engine=TTS_ENGINES['XTTSv2'], key=key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
+                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[xtts]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[xtts]['internal']['files'][1]}", cache_dir=self.cache_dir)
+                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[xtts]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                        engine = self._load_checkpoint(tts_engine=xtts, key=key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
                     if engine:
-                        if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                            gpt_cond_latent, speaker_embedding = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
+                        if speaker in default_engine_settings[xtts]['voices'].keys():
+                            gpt_cond_latent, speaker_embedding = self.xtts_speakers[default_engine_settings[xtts]['voices'][speaker]].values()
                         else:
                             gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[voice_path])
                         fine_tuned_params = {
@@ -244,7 +245,7 @@ class TTSUtils:
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
                             proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
-                            torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate'], format='wav')
+                            torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
                             if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
                                 del audio_sentence, sourceTensor, audio_tensor
                                 Path(proc_voice_path).unlink(missing_ok=True)
@@ -258,7 +259,7 @@ class TTSUtils:
                         else:
                             error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
                     else:
-                        error = f"_check_xtts_builtin_speakers() error: {TTS_ENGINES['XTTSv2']} is False"
+                        error = f"_check_xtts_builtin_speakers() error: {xtts} is False"
                 else:
                     error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
                 print(error)
