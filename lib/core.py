@@ -41,13 +41,14 @@ from langdetect import detect
 from unidecode import unidecode
 from phonemizer import phonemize
 
-from lib import *
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
+
+from lib import *
 
 #import logging
 #logging.basicConfig(
