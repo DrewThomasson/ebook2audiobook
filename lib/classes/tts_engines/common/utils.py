@@ -12,7 +12,7 @@ from torch import Tensor
 from torch.nn import Module
 
 from lib.conf import tts_dir
-from lib.models import xtts_builtin_speakers_list, models
+from lib.models import xtts_builtin_speakers_list, TTS_ENGINES, models
 
 def cleanup_memory()->None:
     gc.collect()
