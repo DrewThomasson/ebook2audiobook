@@ -1,16 +1,27 @@
 import importlib
+import threading
 import lib.classes.tts_engines
 
-from typing import Any
+from typing import Dict, Any
 from functools import lru_cache
 from lib.classes.tts_registry import TTSRegistry
 
-@lru_cache(maxsize=None)
-def load_engine_presets(engine: str):
-    module = importlib.import_module(
-        f"lib.classes.tts_engines.presets.{engine}_presets"
-    )
-    return module.models
+_lock = threading.Lock()
+_models_cache: Dict[str, Dict[str, Any]] = {}
+
+def get_engine_presets(engine:str)->Dict[str, Any]:
+    with _lock:
+        if engine in _models_cache:
+            return _models_cache[engine]
+        module = importlib.import_module(
+            f"lib.classes.tts_engines.presets.{engine}_presets"
+        )
+        if not hasattr(module, "models"):
+            raise RuntimeError(
+                f"'models' not found in {engine}_presets"
+            )
+        _models_cache[engine] = module.models
+        return module.models
 
 class TTSManager:
 

@@ -11,7 +11,7 @@ from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.audio import normalize_audio
 from lib import *
 
-lock = threading.Lock()
+_lock = threading.Lock()
 
 class TTSUtils:
 
@@ -72,9 +72,8 @@ class TTSUtils:
             torch.cuda.manual_seed_all(seed)
 
     def _load_api(self, key:str, model_path:str)->Any:
-        global lock
         try:
-            with lock:
+            with _lock:
                 from TTS.api import TTS as TTSEngine
                 engine = loaded_tts.get(key, False)
                 if not engine:
@@ -92,9 +91,8 @@ class TTSUtils:
             return None
 
     def _load_checkpoint(self,**kwargs:Any)->Any:
-        global lock
         try:
-            with lock:
+            with _lock:
                 key = kwargs.get('key')
                 engine = loaded_tts.get(key, False)
                 if not engine:
