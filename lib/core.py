@@ -2316,7 +2316,7 @@ def convert_ebook(args:dict)->tuple:
                                 else:
                                     error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                             except ModuleNotFoundError as e:
-                                error = f"No presets module for TTS engine '{session['tts_engine']}'" from e
+                                error = f"No presets module for TTS engine '{session['tts_engine']}': {e}"
                                 print(error)
                     if session['voice'] is not None:
                         voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
