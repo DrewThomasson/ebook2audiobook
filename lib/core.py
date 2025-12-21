@@ -44,7 +44,7 @@ from phonemizer import phonemize
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
-from lib.classes.tts_manager import TTSManager
+from lib.classes.tts_manager import load_engine_presets, TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 
@@ -2305,8 +2305,7 @@ def convert_ebook(args:dict)->tuple:
                         src_name = src_path.stem
                         if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
                             try:
-                                preset_name = f"lib.classes.tts_engines.config.{session['tts_engine']}_presets"
-                                models = importlib.import_module(preset_name).models
+                                models = load_engine_presets(session['tts_engine'])
                                 if analyze_uploaded_file(session['custom_model'], models[session['tts_engine']]['internal']['files']):
                                     model = extract_custom_model(session['custom_model'], id, models[session['tts_engine']][default_fine_tuned]['files'])
                                     if model is not None:

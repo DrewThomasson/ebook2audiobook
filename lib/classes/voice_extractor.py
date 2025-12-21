@@ -15,7 +15,6 @@ from pydub.silence import detect_silence
 from lib.classes.background_detector import BackgroundDetector
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.conf import voice_formats, default_audio_proc_samplerate
-from lib.conf_models import TTS_ENGINES, models
 
 class VoiceExtractor:
     def __init__(self, session:Any, voice_file:str, voice_name:str):
