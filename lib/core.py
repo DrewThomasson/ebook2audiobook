@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
 import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz
-import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importLib
+import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib
 
 from typing import Any
 from PIL import Image, ImageSequence
