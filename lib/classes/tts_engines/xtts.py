@@ -1,4 +1,4 @@
-import os, torch, random, regex as re, numpy as np
+import os, torch, torchaudio, random, regex as re, numpy as np
 
 from multiprocessing.managers import DictProxy
 from typing import Any
