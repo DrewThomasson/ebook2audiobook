@@ -9,7 +9,7 @@ from lib.classes.tts_registry import TTSRegistry
 _lock = threading.Lock()
 _models_cache: Dict[str, Dict[str, Any]] = {}
 
-def get_engine_presets(engine:str)->Dict[str, Any]:
+def load_engine_presets(engine:str)->Dict[str, Any]:
     with _lock:
         if engine in _models_cache:
             return _models_cache[engine]
