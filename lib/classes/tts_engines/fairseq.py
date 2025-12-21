@@ -60,7 +60,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
                     self.tts_key = model_path
                     engine = self._load_api(self.tts_key, model_path)
-            if engine:
+            if engine and engine is not None:
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
         except Exception as e:

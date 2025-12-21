@@ -68,7 +68,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     else:
                         msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                         print(msg)
-            if engine:
+            if engine and engine is not None:
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
         except Exception as e:

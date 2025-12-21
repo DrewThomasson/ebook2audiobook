@@ -71,7 +71,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
                     vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
-            if engine:
+            if engine and engine is not None:
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
         except Exception as e:
