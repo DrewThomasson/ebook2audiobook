@@ -60,7 +60,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
                     sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-                    self.params[self.session['tts_engine']]['samplerate'] = models[TTS_ENGINES['TACOTRON2']][self.session['fine_tuned']]['samplerate'][sub]
+                    self.params['samplerate'] = models[TTS_ENGINES['TACOTRON2']][self.session['fine_tuned']]['samplerate'][sub]
                     if sub is None:
                         iso_dir = self.session['language']
                         sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)

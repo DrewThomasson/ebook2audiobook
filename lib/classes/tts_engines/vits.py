@@ -61,7 +61,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
                     if sub is not None:
-                        self.params[self.session['tts_engine']]['samplerate'] = models[TTS_ENGINES['VITS']][self.session['fine_tuned']]['samplerate'][sub]
+                        self.params['samplerate'] = models[TTS_ENGINES['VITS']][self.session['fine_tuned']]['samplerate'][sub]
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                         self.tts_key = model_path
                         engine = self._load_api(self.tts_key, model_path)
