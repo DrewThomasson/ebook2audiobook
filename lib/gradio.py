@@ -1,6 +1,5 @@
 import threading
 
-from __future__ import annotations
 from lib.core import *
 
 _lock = threading.Lock()
