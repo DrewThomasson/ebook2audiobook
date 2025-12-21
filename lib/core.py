@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
 import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz
-import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
+import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importLib
 
 from typing import Any
 from PIL import Image, ImageSequence
@@ -2304,14 +2304,20 @@ def convert_ebook(args:dict)->tuple:
                         src_path = Path(session['custom_model'])
                         src_name = src_path.stem
                         if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
-                            if analyze_uploaded_file(session['custom_model'], models[session['tts_engine']]['internal']['files']):
-                                model = extract_custom_model(session['custom_model'], id, models[session['tts_engine']][default_fine_tuned]['files'])
-                                if model is not None:
-                                    session['custom_model'] = model
+                            try:
+                                preset_name = f"lib.classes.tts_engines.config.{session['tts_engine']}_presets"
+                                models = importlib.import_module(preset_name).models
+                                if analyze_uploaded_file(session['custom_model'], models[session['tts_engine']]['internal']['files']):
+                                    model = extract_custom_model(session['custom_model'], id, models[session['tts_engine']][default_fine_tuned]['files'])
+                                    if model is not None:
+                                        session['custom_model'] = model
+                                    else:
+                                        error = f"{model} could not be extracted or mandatory files are missing"
                                 else:
-                                    error = f"{model} could not be extracted or mandatory files are missing"
-                            else:
-                                error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                                    error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                            except ModuleNotFoundError as e:
+                                error = f"No presets module for TTS engine '{session['tts_engine']}'") from e
+                                print(error)
                     if session['voice'] is not None:
                         voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
                         voice_name = get_sanitized(voice_name)

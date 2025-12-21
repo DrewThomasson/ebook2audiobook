@@ -153,6 +153,7 @@ default_engine_settings = {
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
     }
 }
+"""
 models = {
     TTS_ENGINES['XTTSv2']: {
         "internal": {
@@ -513,5 +514,4 @@ models = {
         }
     }
 }
-
-
+"""
