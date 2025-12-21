@@ -255,7 +255,7 @@ class Coqui:
                             d.prenet_dropout = 0.0
                             d.attention_dropout = 0.0
                             d.decoder_dropout = 0.0
-                            m.attention.location_attention.dropout = 0.0
+                            d.attention.location_attention.dropout = 0.0
                             # Stop-gate tuning
                             d.gate_threshold = 0.5
                             d.force_gate = True
