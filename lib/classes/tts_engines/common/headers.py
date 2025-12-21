@@ -13,7 +13,7 @@ from lib.classes.tts_registry import TTSRegistry
 from lib.classes.tts_engines.common.utils import TTSUtils
 from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
 from lib.conf import tts_dir, devices, default_audio_proc_format
-from lib.conf_models import TTS_ENGINES, TTS_SML, loaded_tts, default_vc_model, models
+from lib.conf_models import TTS_ENGINES, TTS_SML, loaded_tts, default_vc_model
 from lib.conf_lang import language_tts
 
 
@@ -45,6 +45,5 @@ __all__ = [
     "TTS_SML",
     "loaded_tts",
     "default_vc_model",
-    "models",
     "language_tts",
 ]

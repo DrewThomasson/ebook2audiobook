@@ -8,7 +8,7 @@ from lib.classes.tts_registry import TTSRegistry
 @lru_cache(maxsize=None)
 def load_engine_presets(engine: str):
     module = importlib.import_module(
-        f"lib.classes.tts_engines.config.{engine}_presets"
+        f"lib.classes.tts_engines.presets.{engine}_presets"
     )
     return module.models
 
