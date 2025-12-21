@@ -1,4 +1,4 @@
-import os, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf
+import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf
 
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
@@ -10,6 +10,8 @@ from torch.nn import Module
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.audio import normalize_audio
 from lib import *
+
+lock = threading.Lock()
 
 class TTSUtils:
 

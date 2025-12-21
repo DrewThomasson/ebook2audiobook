@@ -1,4 +1,4 @@
-import os, threading, torch, random, regex as re, numpy as np
+import os, torch, random, regex as re, numpy as np
 
 from multiprocessing.managers import DictProxy
 from typing import Any
@@ -10,8 +10,6 @@ from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
 from lib.conf import tts_dir, devices
 from lib.conf_models import loaded_tts, TTS_ENGINES, default_vc_model, models
 from lib.conf_lang import language_tts
-
-lock = threading.Lock()
 
 class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
 
