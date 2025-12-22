@@ -1557,8 +1557,9 @@ def build_interface(args:dict)->gr.Blocks:
                     nonlocal models
                     msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                     if data is None or isinstance(data, str) or not data.get('id'):
-                        data = context_tracker.set_session(str(uuid.uuid4()))
-                    session = context.get_session(data['id'])
+                        session = context.set_session(str(uuid.uuid4()))
+                    else:
+                        session = context.get_session(session['id'])
                     if len(active_sessions) == 0 or session['status'] is None:
                         restore_session_from_data(data, session)
                         session['status'] = None

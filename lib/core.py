@@ -80,7 +80,7 @@ class SessionTracker:
 
     def start_session(self, id:str)->bool:
         with self.lock:
-            session = context.set_session(id)
+            session = context.get_session(id)
             if session['status'] is None:
                 session['status'] = 'ready'
                 return True
