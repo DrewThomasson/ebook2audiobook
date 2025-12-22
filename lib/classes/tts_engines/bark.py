@@ -13,11 +13,12 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.pth_voice_file = None
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
+            self.resampler_cache = {}
+            self.audio_segments = []
+            self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
             self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
-            self.resampler_cache = {}
-            self.audio_segments = []
             using_gpu = self.session['device'] != devices['CPU']['proc']
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 123456
