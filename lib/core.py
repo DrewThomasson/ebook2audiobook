@@ -2272,9 +2272,9 @@ def convert_ebook(args:dict)->tuple:
                 else:
                     id = str(uuid.uuid4())
                     if not context_tracker.start_session(id):
-                    error = 'convert_ebook() error: Session initialization failed!'
-                    print(error)
-                    return error, False                        
+                        error = 'convert_ebook() error: Session initialization failed!'
+                        print(error)
+                        return error, False                        
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
                 session['ebook'] = str(args['ebook']) if args.get('ebook') else None
