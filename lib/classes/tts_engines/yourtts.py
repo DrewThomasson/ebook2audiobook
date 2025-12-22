@@ -40,7 +40,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
             print(msg)
             self._cleanup_memory()
-            self.engine = loaded_tts.get(self.tts_key, False)
+            engine = loaded_tts.get(self.tts_key, False)
             if not engine:
                 if self.session['custom_model'] is not None:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
