@@ -62,7 +62,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
 
     def _check_bark_npz(self, voice_path:str, bark_dir:str, speaker:str)->bool:
         try:
-            if self.session['language'] in language_tts[TTS_ENGINES['BARK']].keys():
+            if self.session['language'] in default_engine_settings[TTS_ENGINES['BARK']].get('languages', {}):
                 pth_voice_dir = os.path.join(bark_dir, speaker)
                 pth_voice_file = os.path.join(pth_voice_dir,f'{speaker}.pth')
                 if os.path.exists(pth_voice_file):

@@ -154,7 +154,7 @@ class TTSUtils:
             if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
                 return voice_path
             xtts = TTS_ENGINES['XTTSv2']
-            if self.session['language'] in language_tts[xtts].keys():
+            if self.session['language'] in default_engine_settings[xtts].get('languages', {}):
                 default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                 if os.path.exists(default_text_file):
                     msg = f"Converting builtin eng voice to {self.session['language']}..."
