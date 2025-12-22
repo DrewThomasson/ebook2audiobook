@@ -1047,7 +1047,7 @@ def build_interface(args:dict)->gr.Blocks:
                             shutil.rmtree(custom_model, ignore_errors=True)                           
                             msg = f'Custom model {selected_name} deleted!'
                             if session['custom_model'] in session['voice']:
-                                session['voice'] = None if voice_options[0][1] == None else models[session['tts_engine']][session['fine_tuned']]['voice']
+                                session['voice'] = None if voice_options[0][1] == None else models[session['fine_tuned']]['voice']
                             session['custom_model'] = None
                             show_alert({"type": "warning", "msg": msg})
                             return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
@@ -1133,7 +1133,7 @@ def build_interface(args:dict)->gr.Blocks:
                         voice_options = sorted(voice_options, key=lambda x: x[0].lower())    
                     if session['voice'] is not None and session['voice'] not in voice_options:
                         new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
-                        session['voice'] = new_voice_path if os.path.exists(new_voice_path) else models[session['tts_engine']][session['fine_tuned']]['voice']
+                        session['voice'] = new_voice_path if os.path.exists(new_voice_path) else models[session['fine_tuned']]['voice']
                     return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
@@ -1230,8 +1230,8 @@ def build_interface(args:dict)->gr.Blocks:
                     else:
                         session = context.get_session(id)
                         session['tts_engine'] = t
-                        if analyze_uploaded_file(f, models[session['tts_engine']]['internal']['files']):
-                            model = extract_custom_model(f, id, models[session['tts_engine']][default_fine_tuned]['files'])
+                        if analyze_uploaded_file(f, models['internal']['files']):
+                            model = extract_custom_model(f, id, models[default_fine_tuned]['files'])
                             if model is not None:
                                 session['custom_model'] = model
                                 session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')
@@ -1257,7 +1257,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(id)
                 session['tts_engine'] = engine
                 session['fine_tuned'] = default_fine_tuned
-                session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
+                session['voice'] = models[session['fine_tuned']]['voice']
                 if engine in [TTS_ENGINES['XTTSv2']]:
                     if session['custom_model'] is not None:
                         session['voice'] = os.path.join(session['custom_model'], f"{os.path.basename(session['custom_model'])}.wav")
@@ -1270,7 +1270,7 @@ def build_interface(args:dict)->gr.Blocks:
                         gr.update(visible=False),
                         gr.update(visible=visible_custom_model),
                         update_gr_fine_tuned_list(id),
-                        gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
+                        gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"),
                         update_gr_voice_list(id),
                         gr.update(value=f"My {session['tts_engine']} Custom Models")
                     )
@@ -1297,7 +1297,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_custom_model = visible_gr_group_custom_model
                     else:
                         visible_custom_model = False
-                        session['voice'] = models[session['tts_engine']][selected]['voice']
+                        session['voice'] = models[selected]['voice']
                     return gr.update(visible=visible_custom_model), update_gr_voice_list(id)
                 return gr.update(), gr.update()
 
@@ -1583,7 +1583,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['tts_engine'] is not None:
                             models = load_engine_presets(session['tts_engine'])
                             if session['tts_engine'] in models.keys():
-                                if session['fine_tuned'] not in models[session['tts_engine']].keys():
+                                if session['fine_tuned'] not in models.keys():
                                     session['fine_tuned'] = default_fine_tuned
                             else:
                                 session['tts_engine'] = default_tts_engine
