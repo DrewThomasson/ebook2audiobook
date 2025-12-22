@@ -1,8 +1,5 @@
-import threading
 from lib.core import *
 from lib.classes.tts_engines.common.presets import load_engine_presets
-
-_lock = threading.Lock()
 
 def build_interface(args:dict)->gr.Blocks:
     try:
