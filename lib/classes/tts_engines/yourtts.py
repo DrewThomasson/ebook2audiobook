@@ -47,7 +47,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     print(msg)
                 else:
                     model_path = self.models[self.session['fine_tuned']]['repo']
-                    self.engine = self._load_api(self.tts_key, model_path)
+                    engine = self._load_api(self.tts_key, model_path)
             if engine:
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
@@ -145,7 +145,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         print(error)
                         return False
             else:
-                error = f"TTS engine {self.session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory"
+                error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 print(error)
                 return False
         except Exception as e:
