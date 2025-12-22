@@ -2,13 +2,16 @@ def build_interface(args:dict)->gr.Blocks:
     try:
         import threading
         from lib.core import *
+        from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
         _lock = threading.Lock()
+
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
         is_gui_shared = args['share']
         title = 'Ebook2Audiobook'
         gr_glassmask_msg = 'Initialization, please wait...'
+        models = None
         ebook_src = None
         language_options = [
             (
@@ -1142,10 +1145,12 @@ def build_interface(args:dict)->gr.Blocks:
 
             def update_gr_tts_engine_list(id:str)->dict:
                 try:
+                    nonlocal models
                     nonlocal tts_engine_options
                     session = context.get_session(id)
                     tts_engine_options = get_compatible_tts_engines(session['language'])
                     session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
+                    models = load_engine_presets(session['tts_engine'])
                     return gr.update(choices=tts_engine_options, value=session['tts_engine'])
                 except Exception as e:
                     error = f'update_gr_tts_engine_list(): {e}!'
@@ -1250,6 +1255,8 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(), gr.update(), gr.update()
 
             def change_gr_tts_engine_list(engine:str, id:str)->tuple:
+                nonlocal models
+                models = load_engine_presets(engine)
                 session = context.get_session(id)
                 session['tts_engine'] = engine
                 session['fine_tuned'] = default_fine_tuned
@@ -1551,6 +1558,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
+                    nonlocal models
                     msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                     if data is None or isinstance(data, str) or not data.get('id'):
                         data = context.get_session(str(uuid.uuid4()))
@@ -1576,6 +1584,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['custom_model'] = None 
                     if session['fine_tuned'] is not None:
                         if session['tts_engine'] is not None:
+                            models = load_engine_presets(session['tts_engine'])
                             if session['tts_engine'] in models.keys():
                                 if session['fine_tuned'] not in models[session['tts_engine']].keys():
                                     session['fine_tuned'] = default_fine_tuned

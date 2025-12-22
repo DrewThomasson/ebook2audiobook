@@ -7,7 +7,7 @@ from functools import lru_cache
 from lib.classes.tts_registry import TTSRegistry
 
 _lock = threading.Lock()
-_models_cache: Dict[str, Dict[str, Any]] = {}
+_models_cache:Dict[str, Dict[str, Any]] = {}
 
 def load_engine_presets(engine:str)->Dict[str, Any]:
     with _lock:
