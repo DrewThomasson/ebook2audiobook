@@ -32,11 +32,11 @@ class TTSUtils:
         gb = total_bytes / (1024 ** 3)
         return round(gb, 2)
 
-    def _load_xtts_builtin_list(self)->dict:
+    def _load_xtts_builtin_list(self, repo_id)->dict:
         try:
             if len(xtts_builtin_speakers_list) > 0:
                 return xtts_builtin_speakers_list
-            speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+            speakers_path = hf_hub_download(repo_id=repo_id, filename='speakers_xtts.pth', cache_dir=tts_dir)
             loaded = torch.load(speakers_path, weights_only=False)
             if not isinstance(loaded, dict):
                 raise TypeError(
@@ -169,11 +169,11 @@ class TTSUtils:
                         models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
                         if self.session['free_vram_gb'] <= models_loaded_size_gb:
                             del loaded_tts[self.tts_key]
-                        hf_repo = models[xtts]['internal']['repo']
+                        hf_repo = default_engine_settings[xtts]['repo']
                         hf_sub = ''
-                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[xtts]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[xtts]['internal']['files'][1]}", cache_dir=self.cache_dir)
-                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[xtts]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][0]}", cache_dir=self.cache_dir)
+                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][1]}", cache_dir=self.cache_dir)
+                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][2]}", cache_dir=self.cache_dir)
                         engine = self._load_checkpoint(tts_engine=xtts, key=key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
                     if engine:
                         if speaker in default_engine_settings[xtts]['voices'].keys():
