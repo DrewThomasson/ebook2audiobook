@@ -5,9 +5,10 @@ import random
 import regex as re
 import numpy as np
 
-from multiprocessing.managers import DictProxy
 from typing import Any
 from pathlib import Path
+from multiprocessing.managers import DictProxy
+from huggingface_hub import hf_hub_download
 
 from lib.conf import tts_dir, devices, default_audio_proc_format
 from lib.conf_models import TTS_ENGINES, TTS_SML, loaded_tts, default_vc_model, default_engine_settings
@@ -17,26 +18,20 @@ from lib.classes.tts_engines.common.utils import TTSUtils
 from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
 
 __all__ = [
-    # std / third-party
     "os",
     "torch",
     "torchaudio",
     "random",
     "re",
     "np",
-
-    # typing / stdlib
-    "DictProxy",
     "Any",
     "Path",
-
-    # registry & utils
+    "DictProxy",
+    "hf_hub_download"
     "TTSRegistry",
     "TTSUtils",
     "trim_audio",
     "is_audio_data_valid",
-
-    # config
     "tts_dir",
     "devices",
     "default_audio_proc_format",
@@ -45,5 +40,5 @@ __all__ = [
     "loaded_tts",
     "default_vc_model",
     "default_engine_settings",
-    "language_tts",
+    "language_tts"
 ]
