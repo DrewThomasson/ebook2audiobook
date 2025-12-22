@@ -13,7 +13,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
             self.params = {"semitones":{}}
-            self.params['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
+            self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             self.resampler_cache = {}
             self.audio_segments = []
@@ -45,11 +45,11 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     print(msg)
                 else:
                     iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
-                    sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
+                    sub_dict = self.models[self.session['fine_tuned']]['sub']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
                     if sub is not None:
-                        self.params['samplerate'] = models[TTS_ENGINES['VITS']][self.session['fine_tuned']]['samplerate'][sub]
-                        model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
+                        self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
+                        model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                         self.tts_key = model_path
                         engine = self._load_api(self.tts_key, model_path)
                     else:
@@ -68,7 +68,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             audio_sentence = False
             self.params['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
-                else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
+                else self.models[self.session['fine_tuned']]['voice']
             )
             if self.params['voice_path'] is not None:
                 speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['voice_path']))
@@ -98,11 +98,11 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     trim_audio_buffer = 0.004
                     sentence += '—' if sentence[-1].isalnum() else ''
                     speaker_argument = {}
-                    if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
-                        if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
+                    if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
+                        if self.session['language'] in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
                             speaker_argument = {"speaker": 'p262'}
-                    elif self.session['language'] == 'cat' and 'custom/vits' in models[self.session['tts_engine']]['internal']['sub']:
-                        if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['custom/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['custom/vits']:
+                    elif self.session['language'] == 'cat' and 'custom/vits' in self.models['internal']['sub']:
+                        if self.session['language'] in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
                             speaker_argument = {"speaker": '09901'}
                     if self.params['voice_path'] is not None:
                         proc_dir = os.path.join(self.session['voice_dir'], 'proc')

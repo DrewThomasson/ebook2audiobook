@@ -2305,9 +2305,8 @@ def convert_ebook(args:dict)->tuple:
                         src_name = src_path.stem
                         if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
                             try:
-                                models = load_engine_presets(session['tts_engine'])
-                                if analyze_uploaded_file(session['custom_model'], models[session['tts_engine']]['internal']['files']):
-                                    model = extract_custom_model(session['custom_model'], id, models[session['tts_engine']][default_fine_tuned]['files'])
+                                if analyze_uploaded_file(session['custom_model'], default_engine_settings[session['tts_engine']]['internal']['files']):
+                                    model = extract_custom_model(session['custom_model'], id, default_engine_settings[session['tts_engine']]['files'])
                                     if model is not None:
                                         session['custom_model'] = model
                                     else:

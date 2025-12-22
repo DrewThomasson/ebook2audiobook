@@ -13,7 +13,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
             self.params = {}
-            self.params['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
+            self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             self.resampler_cache = {}
             self.audio_segments = []
@@ -44,11 +44,11 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
-                    hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                    hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
-                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
-                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
-                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
+                    hf_repo = self.models[self.session['fine_tuned']]['repo']
+                    hf_sub = self.models[self.session['fine_tuned']]['sub']
+                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.models[self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
+                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.models[self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
+                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.models[self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
                     checkpoint_dir = os.path.dirname(text_model_path)
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir)
             if engine and engine is not None:
@@ -103,7 +103,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             audio_sentence = False
             self.params['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
-                else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
+                else self.models[self.session['fine_tuned']]['voice']
             )
             if self.params['voice_path'] is not None:
                 speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['voice_path']))
