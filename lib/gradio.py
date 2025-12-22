@@ -1142,12 +1142,10 @@ def build_interface(args:dict)->gr.Blocks:
 
             def update_gr_tts_engine_list(id:str)->dict:
                 try:
-                    nonlocal models
                     nonlocal tts_engine_options
                     session = context.get_session(id)
                     tts_engine_options = get_compatible_tts_engines(session['language'])
                     session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
-                    models = load_engine_presets(session['tts_engine'])
                     return gr.update(choices=tts_engine_options, value=session['tts_engine'])
                 except Exception as e:
                     error = f'update_gr_tts_engine_list(): {e}!'
@@ -1180,8 +1178,9 @@ def build_interface(args:dict)->gr.Blocks:
                     nonlocal fine_tuned_options
                     session = context.get_session(id)
                     fine_tuned_options = [
-                        name for name, details in models.get(session['tts_engine'], {}).items()
-                        if details.get('lang') in ('multi', session['language'])
+                        name
+                        for name, details in models.items()
+                        if details.get("lang") in ("multi", session["language"])
                     ]
                     if session['fine_tuned'] in fine_tuned_options:
                         fine_tuned = session['fine_tuned']
