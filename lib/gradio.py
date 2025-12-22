@@ -1556,6 +1556,7 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     nonlocal models
                     msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
+                    print(data)
                     if data and data.get('id', False):
                         session = context.get_session(data.get('id'))
                     else:
