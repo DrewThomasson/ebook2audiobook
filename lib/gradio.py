@@ -1,6 +1,6 @@
 import threading
 from lib.core import *
-from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.classes.tts_engines.common.presets import load_engine_presets
 
 _lock = threading.Lock()
 
