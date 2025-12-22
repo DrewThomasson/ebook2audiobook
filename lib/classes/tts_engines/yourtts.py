@@ -13,6 +13,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
             self.params = {}
+            self.models = load_engine_presets(session['tts_engine'])
             self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             self.resampler_cache = {}

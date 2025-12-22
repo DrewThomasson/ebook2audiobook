@@ -38,7 +38,6 @@ class TTSManager:
                 f"Expected one of: {', '.join(TTSRegistry.ENGINES)}"
             )
         self.engine = engine_cls(session)
-        self.engine.models = load_engine_presets(engine_name)
 
     def convert_sentence2audio(self, sentence_number: int, sentence: str) -> bool:
         return self.engine.convert(sentence_number, sentence)
