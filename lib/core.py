@@ -2200,12 +2200,12 @@ def delete_unused_tmp_dirs(web_dir:str, days:int, id:str)->None:
                             error = f'Error deleting {full_dir_path}: {e}'
                             print(error)
 
-def get_compatible_tts_engines(language:str)->list:
-    compatible_engines = [
-        tts for tts in models.keys()
-        if language in language_tts.get(tts, {})
+def get_compatible_tts_engines(language:str)->list[str]:
+    return [
+        engine
+        for engine, langs in language_tts.items()
+        if language in langs
     ]
-    return compatible_engines
 
 def convert_ebook_batch(args:dict)->tuple:
     if isinstance(args['ebook_list'], list):
