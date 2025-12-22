@@ -334,16 +334,16 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                         )
                 except OSError as e:
                     error = f'Connection error: {e}'
-                    f.alert_exception(error, None)
+                    c.alert_exception(error, None)
                 except socket.error as e:
                     error = f'Socket error: {e}'
-                    f.alert_exception(error, None)
+                    c.alert_exception(error, None)
                 except KeyboardInterrupt:
                     error = 'Server interrupted by user. Shutting down...'
-                    f.alert_exception(error, None)
+                    c.alert_exception(error, None)
                 except Exception as e:
                     error = f'An unexpected error occurred: {e}'
-                    f.alert_exception(error, None)
+                    c.alert_exception(error, None)
             else:
                 error = 'Error: In GUI mode, no option or only --share can be passed'
                 print(error)
