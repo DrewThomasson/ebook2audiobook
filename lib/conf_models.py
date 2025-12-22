@@ -36,6 +36,7 @@ max_custom_voices = 1000
 
 default_engine_settings = {
     TTS_ENGINES['XTTSv2']: {
+        "repo": "coqui/XTTS-v2",
         "samplerate": 24000,
         "temperature": 0.75,
         #"codec_temperature": 0.3,

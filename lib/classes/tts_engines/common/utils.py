@@ -32,11 +32,11 @@ class TTSUtils:
         gb = total_bytes / (1024 ** 3)
         return round(gb, 2)
 
-    def _load_xtts_builtin_list(self, repo_id)->dict:
+    def _load_xtts_builtin_list(self)->dict:
         try:
             if len(xtts_builtin_speakers_list) > 0:
                 return xtts_builtin_speakers_list
-            speakers_path = hf_hub_download(repo_id=repo_id, filename='speakers_xtts.pth', cache_dir=tts_dir)
+            speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTSv2']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
             loaded = torch.load(speakers_path, weights_only=False)
             if not isinstance(loaded, dict):
                 raise TypeError(

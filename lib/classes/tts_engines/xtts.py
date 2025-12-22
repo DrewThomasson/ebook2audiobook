@@ -27,7 +27,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             has_cuda = (torch.version.cuda is not None and torch.cuda.is_available())
             if has_cuda:
                 self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
-            self.xtts_speakers = self._load_xtts_builtin_list(self.models[self.session['fine_tuned']]['repo'])
+            self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self._load_engine()
             self.engine_zs = self._load_engine_zs()
         except Exception as e:
