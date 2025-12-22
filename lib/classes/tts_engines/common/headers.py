@@ -27,7 +27,7 @@ __all__ = [
     "Any",
     "Path",
     "DictProxy",
-    "hf_hub_download"
+    "hf_hub_download",
     "TTSRegistry",
     "TTSUtils",
     "trim_audio",
