@@ -1559,7 +1559,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if data is None or isinstance(data, str) or not data.get('id'):
                         session = context.set_session(str(uuid.uuid4()))
                     else:
-                        session = context.get_session(session['id'])
+                        session = context.get_session(data.get('id'))
                     if len(active_sessions) == 0 or session['status'] is None:
                         restore_session_from_data(data, session)
                         session['status'] = None
