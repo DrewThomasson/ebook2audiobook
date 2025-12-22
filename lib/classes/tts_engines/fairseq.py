@@ -1,4 +1,5 @@
 from lib.classes.tts_engines.common.headers import *
+from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
 class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
 
