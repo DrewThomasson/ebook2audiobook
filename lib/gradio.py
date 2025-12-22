@@ -1,11 +1,9 @@
-import threading
-
-from lib.core import *
-
-_lock = threading.Lock()
-
 def build_interface(args:dict)->gr.Blocks:
     try:
+        import threading
+        from lib.core import *
+
+        _lock = threading.Lock()
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
         is_gui_shared = args['share']
