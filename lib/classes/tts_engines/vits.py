@@ -46,7 +46,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
-                    iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
+                    iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
                     sub_dict = self.models[self.session['fine_tuned']]['sub']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
                     if sub is not None:
