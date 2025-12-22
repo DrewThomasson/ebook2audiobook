@@ -2208,8 +2208,8 @@ def delete_unused_tmp_dirs(web_dir:str, days:int, id:str)->None:
 def get_compatible_tts_engines(language:str)->list[str]:
     return [
         engine
-        for engine, langs in language_tts.items()
-        if language in langs
+        for engine, cfg in default_engine_settings.items()
+        if language in cfg.get('languages', {})
     ]
 
 def convert_ebook_batch(args:dict)->tuple:
@@ -2431,8 +2431,8 @@ def convert_ebook(args:dict)->tuple:
                                             if session['is_gui_process']:
                                                 show_alert({"type": "warning", "msg": error})
                                         is_lang_in_tts_engine = (
-                                            session.get('tts_engine') in language_tts and
-                                            session.get('language') in language_tts[session['tts_engine']]
+                                            session.get('tts_engine') in default_engine_settings and
+                                            session.get('language') in default_engine_settings[session['tts_engine']].get('languages', {})
                                         )
                                         if is_lang_in_tts_engine:
                                             session['cover'] = get_cover(epubBook, id)

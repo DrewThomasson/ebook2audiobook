@@ -1091,7 +1091,7 @@ def build_interface(args:dict)->gr.Blocks:
                         (os.path.splitext(f.name)[0], str(f))
                         for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
                     ]
-                    if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
+                    if session['language'] in default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {}):
                         builtin_names = {t[0]: None for t in builtin_options}
                         eng_dir = Path(os.path.join(voices_dir, "eng"))
                         eng_options = [

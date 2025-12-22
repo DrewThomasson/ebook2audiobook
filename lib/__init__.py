@@ -14,7 +14,7 @@ from .conf import (
 from .conf_lang import (
     abbreviations_mapping, chapter_word_mapping, default_language_code,
     roman_numbers_tuples, emojis_list, install_info, language_mapping,
-    language_math_phonemes, language_clock, language_tts, os, punctuation_list, 
+    language_math_phonemes, language_clock, os, punctuation_list, 
     punctuation_list_set, punctuation_split_hard, punctuation_split_hard_set,
     punctuation_split_soft, punctuation_split_soft_set, punctuation_switch,
     specialchars_mapping, chars_remove, year_to_decades_languages,
@@ -44,7 +44,7 @@ __all__ = [
     # from conf_lang
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code",
     "roman_numbers_tuples", "emojis_list", "install_info", "language_mapping",
-    "language_math_phonemes", "language_clock", "language_tts", "os", "punctuation_list", 
+    "language_math_phonemes", "language_clock", "os", "punctuation_list", 
     "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
     "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
     "specialchars_mapping", "chars_remove", "year_to_decades_languages",
