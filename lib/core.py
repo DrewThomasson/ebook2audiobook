@@ -80,7 +80,7 @@ class SessionTracker:
 
     def start_session(self, id:str)->bool:
         with self.lock:
-            session = context.get_session(id)
+            session = context.set_session(id)
             if session['status'] is None:
                 session['status'] = 'ready'
                 return True
@@ -117,89 +117,94 @@ class SessionContext:
             print(error)
             return None
 
-    def get_session(self, id:str)->str:
-        if id not in self.sessions:
-            self.sessions[id] = self._recursive_proxy({
-                "script_mode": NATIVE,
-                "id": id,
-                "tab_id": None,
-                "is_gui_process": False,
-                "free_vram_gb": 0,
-                "process_id": None,
-                "status": None,
-                "event": None,
-                "progress": 0,
-                "cancellation_requested": False,
-                "device": default_device,
-                "tts_engine": default_tts_engine,
-                "fine_tuned": default_fine_tuned,
-                "model_cache": None,
-                "model_zs_cache": None,
-                "stanza_cache": None,
-                "system": None,
-                "client": None,
-                "language": default_language_code,
-                "language_iso1": None,
-                "audiobook": None,
-                "audiobooks_dir": None,
-                "process_dir": None,
-                "ebook": None,
-                "ebook_list": None,
-                "ebook_mode": "single",
-                "chapters_preview": default_chapters_preview,
-                "chapters_dir": None,
-                "chapters_dir_sentences": None,
-                "epub_path": None,
-                "filename_noext": None,
-                "voice": None,
-                "voice_dir": None,
-                "custom_model": None,
-                "custom_model_dir": None,
-                "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
-                #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['codec_temperature'],
-                "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
-                "xtts_num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
-                "xtts_repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
-                #"xtts_cvvp_weight": default_engine_settings[TTS_ENGINES['XTTSv2']]['cvvp_weight'],
-                "xtts_top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
-                "xtts_top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'],
-                "xtts_speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
-                #"xtts_gpt_cond_len": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_cond_len'],
-                #"xtts_gpt_batch_size": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_batch_size'],
-                "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
-                "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
-                "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
-                "final_name": None,
-                "output_format": default_output_format,
-                "output_channel": default_output_channel,
-                "output_split": default_output_split,
-                "output_split_hours": default_output_split_hours,
-                "metadata": {
-                    "title": None, 
-                    "creator": None,
-                    "contributor": None,
-                    "language": None,
-                    "identifier": None,
-                    "publisher": None,
-                    "date": None,
-                    "description": None,
-                    "subject": None,
-                    "rights": None,
-                    "format": None,
-                    "type": None,
-                    "coverage": None,
-                    "relation": None,
-                    "Source": None,
-                    "Modified": None,
-                },
-                "toc": None,
-                "chapters": None,
-                "cover": None,
-                "duration": 0,
-                "playback_time": 0,
-                "playback_volume": 0
-            }, manager=self.manager)
+    def set_session(self, id:str)->Any:
+        self.sessions[id] = self._recursive_proxy({
+            "script_mode": NATIVE,
+            "id": id,
+            "tab_id": None,
+            "is_gui_process": False,
+            "free_vram_gb": 0,
+            "process_id": None,
+            "status": None,
+            "event": None,
+            "progress": 0,
+            "cancellation_requested": False,
+            "device": default_device,
+            "tts_engine": default_tts_engine,
+            "fine_tuned": default_fine_tuned,
+            "model_cache": None,
+            "model_zs_cache": None,
+            "stanza_cache": None,
+            "system": None,
+            "client": None,
+            "language": default_language_code,
+            "language_iso1": None,
+            "audiobook": None,
+            "audiobooks_dir": None,
+            "process_dir": None,
+            "ebook": None,
+            "ebook_list": None,
+            "ebook_mode": "single",
+            "chapters_preview": default_chapters_preview,
+            "chapters_dir": None,
+            "chapters_dir_sentences": None,
+            "epub_path": None,
+            "filename_noext": None,
+            "voice": None,
+            "voice_dir": None,
+            "custom_model": None,
+            "custom_model_dir": None,
+            "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
+            #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['codec_temperature'],
+            "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
+            "xtts_num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
+            "xtts_repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
+            #"xtts_cvvp_weight": default_engine_settings[TTS_ENGINES['XTTSv2']]['cvvp_weight'],
+            "xtts_top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
+            "xtts_top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'],
+            "xtts_speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
+            #"xtts_gpt_cond_len": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_cond_len'],
+            #"xtts_gpt_batch_size": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_batch_size'],
+            "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+            "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
+            "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
+            "final_name": None,
+            "output_format": default_output_format,
+            "output_channel": default_output_channel,
+            "output_split": default_output_split,
+            "output_split_hours": default_output_split_hours,
+            "metadata": {
+                "title": None, 
+                "creator": None,
+                "contributor": None,
+                "language": None,
+                "identifier": None,
+                "publisher": None,
+                "date": None,
+                "description": None,
+                "subject": None,
+                "rights": None,
+                "format": None,
+                "type": None,
+                "coverage": None,
+                "relation": None,
+                "Source": None,
+                "Modified": None,
+            },
+            "toc": None,
+            "chapters": None,
+            "cover": None,
+            "duration": 0,
+            "playback_time": 0,
+            "playback_volume": 0
+        }, manager=self.manager)
         return self.sessions[id]
+
+    def get_session(self, id:str)->Any:
+        if id in self.sessions:
+            return self.sessions[id]
+        error = 'get_session() error: session expired!'
+        raise ValueError(error)
 
     def find_id_by_hash(self, socket_hash:str)->str|None:
         for id, session in self.sessions.items():
@@ -2242,11 +2247,11 @@ def convert_ebook(args:dict)->tuple:
                 if not os.path.splitext(args['ebook'])[1]:
                     error = f"{args['ebook']} needs a format extension."
                     print(error)
-                    return error, false
+                    return error, False
                 if not os.path.exists(args['ebook']):
                     error = 'File does not exist or Directory empty.'
                     print(error)
-                    return error, false
+                    return error, False
                 try:
                     if len(args['language']) in (2, 3):
                         lang_dict = Lang(args['language'])
@@ -2260,9 +2265,16 @@ def convert_ebook(args:dict)->tuple:
                 if args['language'] not in language_mapping.keys():
                     error = 'The language you provided is not (yet) supported'
                     print(error)
-                    return error, false
-                id = str(args['session']) if args['session'] is not None else str(uuid.uuid4())
-                session = context.get_session(id)
+                    return error, False
+                if args['session'] is not None:
+                    id = str(args['session'])
+                    session = context.get_session(id)
+                else:
+                    id = str(uuid.uuid4())
+                    if not context_tracker.start_session(id):
+                    error = 'convert_ebook() error: Session initialization failed!'
+                    print(error)
+                    return error, False                        
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
                 session['ebook'] = str(args['ebook']) if args.get('ebook') else None
