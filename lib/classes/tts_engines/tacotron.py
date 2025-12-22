@@ -13,7 +13,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
             self.params = {"semitones":{}}
-            self.params['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
+            self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             self.resampler_cache = {}
             self.audio_segments = []
@@ -45,14 +45,14 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     print(msg)
                 else:
                     iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
-                    sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
+                    sub_dict = self.models[self.session['fine_tuned']]['sub']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-                    self.params['samplerate'] = models[TTS_ENGINES['TACOTRON2']][self.session['fine_tuned']]['samplerate'][sub]
+                    self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
                     if sub is None:
                         iso_dir = self.session['language']
                         sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                     if sub is not None:
-                        model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
+                        model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                         self.tts_key = model_path
                         engine = self._load_api(self.tts_key, model_path)
                         m = engine.synthesizer.tts_model
@@ -85,7 +85,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             audio_sentence = False
             self.params['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
-                else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
+                else self.models[self.session['fine_tuned']]['voice']
             )
             if self.params['voice_path'] is not None:
                 speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['voice_path']))
