@@ -202,7 +202,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         print(error)
                         return False
             else:
-                error = f"TTS engine {self.session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory"
+                error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 print(error)
                 return False
         except Exception as e:
