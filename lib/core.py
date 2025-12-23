@@ -860,43 +860,43 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                 error = 'No tuples_list from body created!'
                 print(error)
                 return None
-			text_list = []
-			handled_tables = set()
-			prev_typ = None
-			for typ, payload in tuples_list:
-				if typ == 'heading':
-					text_list.append(payload.strip())
-				elif typ in ('break', 'pause'):
-					if text_list and text_list[-1] and text_list[-1][-1].isalnum():
-						text_list[-1] += '.'
-					if prev_typ != typ:
-						text_list.append(TTS_SML[typ])
-				elif typ == 'table':
-					table = payload
-					if table in handled_tables:
-						prev_typ = typ
-						continue
-					handled_tables.add(table)
-					rows = table.find_all('tr')
-					if not rows:
-						prev_typ = typ
-						continue
-					headers = [c.get_text(strip=True) for c in rows[0].find_all(['td', 'th'])]
-					for row in rows[1:]:
-						cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all('td')]
-						if not cells:
-							continue
-						if len(cells) == len(headers) and headers:
-							line = ' — '.join(f'{h}: {c}' for h, c in zip(headers, cells))
-						else:
-							line = ' — '.join(cells)
-						if line:
-							text_list.append(line.strip())
-				else:
-					text = payload.strip()
-					if text:
-						text_list.append(text)
-				prev_typ = typ
+            text_list = []
+            handled_tables = set()
+            prev_typ = None
+            for typ, payload in tuples_list:
+                if typ == 'heading':
+                    text_list.append(payload.strip())
+                elif typ in ('break', 'pause'):
+                    if text_list and text_list[-1] and text_list[-1][-1].isalnum():
+                        text_list[-1] += '.'
+                    if prev_typ != typ:
+                        text_list.append(TTS_SML[typ])
+                elif typ == 'table':
+                    table = payload
+                    if table in handled_tables:
+                        prev_typ = typ
+                        continue
+                    handled_tables.add(table)
+                    rows = table.find_all('tr')
+                    if not rows:
+                        prev_typ = typ
+                        continue
+                    headers = [c.get_text(strip=True) for c in rows[0].find_all(['td', 'th'])]
+                    for row in rows[1:]:
+                        cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all('td')]
+                        if not cells:
+                            continue
+                        if len(cells) == len(headers) and headers:
+                            line = ' — '.join(f'{h}: {c}' for h, c in zip(headers, cells))
+                        else:
+                            line = ' — '.join(cells)
+                        if line:
+                            text_list.append(line.strip())
+                else:
+                    text = payload.strip()
+                    if text:
+                        text_list.append(text)
+                prev_typ = typ
             max_chars = int(language_mapping[lang]['max_chars'] / 2)
             clean_list = []
             i = 0
