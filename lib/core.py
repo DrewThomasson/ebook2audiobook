@@ -681,7 +681,7 @@ def get_cover(epubBook:EpubBook, id:str)->bool|str:
             return True
     except Exception as e:
         DependencyError(e)
-        eturn False
+        return False
 
 def get_chapters(epubBook:EpubBook, id:str)->tuple[Any,Any]:
     try:
