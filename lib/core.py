@@ -204,8 +204,7 @@ class SessionContext:
         if id in self.sessions:
             return self.sessions[id]
         error = 'get_session() error: session expired!'
-        print(error)
-        raise
+        DependencyError(error)
 
     def find_id_by_hash(self, socket_hash:str)->str|None:
         for id, session in self.sessions.items():
