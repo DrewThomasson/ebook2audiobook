@@ -46,6 +46,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
+                    """
                     hf_repo = self.models[self.session['fine_tuned']]['repo']
                     hf_sub = self.models[self.session['fine_tuned']]['sub']
                     text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.models[self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
@@ -53,6 +54,9 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.models[self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
                     checkpoint_dir = os.path.dirname(text_model_path)
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir)
+                    """
+                    model_path = self.models[self.session['fine_tuned']]['repo']
+                    engine = self._load_api(self.tts_key, model_path)
             if engine and engine is not None:
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
@@ -62,7 +66,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         except Exception as e:
             error = f'_load_engine() error: {e}'
             raise ValueError(error)
-
+    """
     def _check_bark_npz(self, voice_path:str, bark_dir:str, speaker:str)->bool:
         try:
             if self.session['language'] in default_engine_settings[TTS_ENGINES['BARK']].get('languages', {}):
@@ -101,7 +105,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             error = f'_check_bark_npz() error: {e}'
             print(error)
             return False
-
+    """
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
             speaker = None
@@ -152,11 +156,13 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
                         bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
                     else:
-                        bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')       
+                        bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
+                        """
                         if not self._check_bark_npz(self.params['voice_path'], bark_dir, speaker):
                             error = 'Could not create pth voice file!'
                             print(error)
                             return False
+                        """
                     pth_voice_dir = os.path.join(bark_dir, speaker)
                     pth_voice_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
                     fine_tuned_params = {
@@ -168,9 +174,18 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         if self.session.get(key) is not None
                     }
                     with torch.no_grad():
+                        """
                         result = self.engine.synthesize(
                             sentence,
                             #speaker_wav=self.params['voice_path'],
+                            speaker=speaker,
+                            voice_dir=pth_voice_dir,
+                            **fine_tuned_params
+                        )
+                        """
+                        result = self.engine.tts(
+                            text=sentence,
+                            speaker_wav=self.params['voice_path'],
                             speaker=speaker,
                             voice_dir=pth_voice_dir,
                             **fine_tuned_params
