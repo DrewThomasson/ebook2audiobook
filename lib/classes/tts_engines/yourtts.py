@@ -48,9 +48,12 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 else:
                     model_path = self.models[self.session['fine_tuned']]['repo']
                     engine = self._load_api(self.tts_key, model_path)
-            if engine:
+            if engine and engine is not None:
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
+            else:
+                error = '_load_engine() failed!'
+                raise ValueError(error)
         except Exception as e:
             error = f'_load_engine() error: {e}'
             raise ValueError(error)

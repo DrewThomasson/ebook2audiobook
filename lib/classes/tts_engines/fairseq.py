@@ -52,6 +52,9 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             if engine and engine is not None:
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
+            else:
+                error = '_load_engine() failed!'
+                raise ValueError(error)
         except Exception as e:
             error = f'_load_engine() error: {e}'
             raise ValueError(error)
