@@ -185,7 +185,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         """
                         audio_sentence = self.engine.tts(
                             text=sentence,
-                            speaker_wav=[self.params['voice_path']],
+                            speaker_wav=self.params['voice_path'],
                             speaker=speaker,
                             voice_dir=pth_voice_dir,
                             **fine_tuned_params
