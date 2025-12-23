@@ -52,6 +52,7 @@ class TTSUtils:
             ) from error
 
     def _apply_cuda_policy(self, using_gpu:bool, enough_vram:bool, seed:int)->None:
+        torch.cuda.manual_seed_all(0)
         if using_gpu and enough_vram:
             torch.cuda.set_per_process_memory_fraction(0.95)
             torch.backends.cudnn.enabled = True
