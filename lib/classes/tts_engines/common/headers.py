@@ -33,6 +33,7 @@ __all__ = [
     "default_audio_proc_format",
     "TTS_ENGINES",
     "TTS_SML",
+    "TTS_VOICE_CONVERSION",
     "loaded_tts",
     "default_vc_model",
     "default_engine_settings"
