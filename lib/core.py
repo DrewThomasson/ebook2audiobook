@@ -516,7 +516,7 @@ def convert2epub(id:str)-> bool:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
                 text = text.replace('\n\n', '\n[[pause]]\n')
-                with open(tmp_txt_path, 'w', encoding='utf-8') as f:
+                with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
                 msg = 'File input is a PDF. flatten it in XHTML...'
