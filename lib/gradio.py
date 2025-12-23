@@ -824,7 +824,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(interactive=False), gr.update(value=None), gr.update(value=session['device']), update_gr_audiobook_list(id), 
                             gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
                         )
-                outputs = tuple([gr.update() for _ in range(9)])
+                outputs = tuple([gr.update() for _ in range(8)])
                 return outputs
 
             def change_gr_audiobook_list(selected:str|None, id:str)->dict:
