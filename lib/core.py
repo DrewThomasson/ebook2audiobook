@@ -511,7 +511,14 @@ def convert2epub(id:str)-> bool:
                 error = f'Unsupported file format: {file_ext}'
                 print(error)
                 return False
-            if file_ext == '.pdf':
+            if file_ext == '.txt':
+                with open(file_input, 'r', encoding='utf-8') as f:
+                    text = f.read()
+                text = text.replace('\r\n', '\n')
+                text = text.replace('\n\n', '\n[[pause]]\n')
+                with open(tmp_txt_path, 'w', encoding='utf-8') as f:
+                    f.write(text)
+            elif file_ext == '.pdf':
                 msg = 'File input is a PDF. flatten it in XHTML...'
                 print(msg)
                 doc = fitz.open(file_input)
@@ -774,6 +781,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return error, None
 
 def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
+
     def tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             for child in node.children:
@@ -789,7 +797,6 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                         if title:
                             yield ("heading", title)
                             last_text_char = title[-1] if title else last_text_char
-
                     elif name == "table":
                         yield ("table", child)
                     else:
@@ -850,52 +857,43 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                 error = 'No tuples_list from body created!'
                 print(error)
                 return None
-            if len(tuples_list) >= 2:
-                first_typ, first_payload = tuples_list[0]
-                second_typ, _ = tuples_list[1]
-                if second_typ in ("break", "pause"):
-                    if isinstance(first_payload, str):
-                        text = first_payload.rstrip()
-                        if text and text[-1].isalnum():
-                            tuples_list[0] = (first_typ, text + ".")
-            text_list = []
-            handled_tables = set()
-            prev_typ = None
-            for typ, payload in tuples_list:
-                if typ == "heading":
-                    text_list.append(payload.strip())
-                elif typ == "break":
-                    if prev_typ != 'break':
-                        text_list.append(TTS_SML['break'])
-                elif typ == 'pause':
-                    if prev_typ != 'pause':
-                        text_list.append(TTS_SML['pause'])
-                elif typ == "table":
-                    table = payload
-                    if table in handled_tables:
-                        prev_typ = typ
-                        continue
-                    handled_tables.add(table)
-                    rows = table.find_all("tr")
-                    if not rows:
-                        prev_typ = typ
-                        continue
-                    headers = [c.get_text(strip=True) for c in rows[0].find_all(["td", "th"])]
-                    for row in rows[1:]:
-                        cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all("td")]
-                        if not cells:
-                            continue
-                        if len(cells) == len(headers) and headers:
-                            line = " — ".join(f"{h}: {c}" for h, c in zip(headers, cells))
-                        else:
-                            line = " — ".join(cells)
-                        if line:
-                            text_list.append(line.strip())
-                else:
-                    text = payload.strip()
-                    if text:
-                        text_list.append(text)
-                prev_typ = typ
+			text_list = []
+			handled_tables = set()
+			prev_typ = None
+			for typ, payload in tuples_list:
+				if typ == "heading":
+					text_list.append(payload.strip())
+				elif typ in ("break", "pause"):
+					if text_list and text_list[-1] and text_list[-1][-1].isalnum():
+						text_list[-1] += "."
+					if prev_typ != typ:
+						text_list.append(TTS_SML[typ])
+				elif typ == "table":
+					table = payload
+					if table in handled_tables:
+						prev_typ = typ
+						continue
+					handled_tables.add(table)
+					rows = table.find_all("tr")
+					if not rows:
+						prev_typ = typ
+						continue
+					headers = [c.get_text(strip=True) for c in rows[0].find_all(["td", "th"])]
+					for row in rows[1:]:
+						cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all("td")]
+						if not cells:
+							continue
+						if len(cells) == len(headers) and headers:
+							line = " — ".join(f"{h}: {c}" for h, c in zip(headers, cells))
+						else:
+							line = " — ".join(cells)
+						if line:
+							text_list.append(line.strip())
+				else:
+					text = payload.strip()
+					if text:
+						text_list.append(text)
+				prev_typ = typ
             max_chars = int(language_mapping[lang]['max_chars'] / 2)
             clean_list = []
             i = 0
