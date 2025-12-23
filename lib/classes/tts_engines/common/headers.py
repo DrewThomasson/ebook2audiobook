@@ -1,4 +1,4 @@
-import os, torch, torchaudio, random, uuid, regex as re, numpy as np
+import os, torch, torchaudio, random, subprocess, uuid, regex as re, numpy as np
 
 from typing import Any
 from pathlib import Path
@@ -16,6 +16,7 @@ __all__ = [
     "torch",
     "torchaudio",
     "random",
+    "subprocess",
     "uuid",
     "re",
     "np",
