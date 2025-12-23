@@ -1555,9 +1555,9 @@ def build_interface(args:dict)->gr.Blocks:
                                 return gr.update(value=msg), gr.update()
                         if error is not None:
                             show_alert({"type": "warning", "msg": error})
-                    except Exception as e:
-                        error = f'submit_confirmed_blocks(): {e}'
-                        alert_exception(error, id)
+                except Exception as e:
+                    error = f'submit_confirmed_blocks(): {e}'
+                    alert_exception(error, id)
                 return gr.update(), gr.update()          
 
             def update_gr_audiobook_list(id:str)->dict:
