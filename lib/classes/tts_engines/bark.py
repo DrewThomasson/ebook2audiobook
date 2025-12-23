@@ -53,6 +53,9 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.models[self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
                     checkpoint_dir = os.path.dirname(text_model_path)
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir)
+                    if not engine:
+                        error = '_load_engine() failed!'
+                        raise ValueError(error)
             if engine and engine is not None:
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
