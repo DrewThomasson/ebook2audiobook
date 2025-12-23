@@ -788,17 +788,20 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
-                        yield ("text", text)
+                        yield ('text', text)
                         last_text_char = text[-1] if text else last_text_char
                 elif isinstance(child, Tag):
                     name = child.name.lower()
+                    if name == 'span' and child.get('data-pause') == '1':
+                        yield ('pause, TTS_SML['pause'])
+                        continue
                     if name in heading_tags:
                         title = child.get_text(strip=True)
                         if title:
-                            yield ("heading", title)
+                            yield ('heading', title)
                             last_text_char = title[-1] if title else last_text_char
-                    elif name == "table":
-                        yield ("table", child)
+                    elif name == 'table':
+                        yield ('table', child)
                     else:
                         return_data = False
                         if name in proc_tags:
@@ -806,15 +809,15 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                                 return_data = True
                                 yield inner
                                 # Track last char if this is text or heading
-                                if inner[0] in ("text", "heading") and inner[1]:
+                                if inner[0] in ('text', 'heading') and inner[1]:
                                     last_text_char = inner[1][-1]
                             if return_data:
                                 if name in break_tags:
                                     # Only yield break if last char is NOT alnum or space
                                     if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
-                                        yield ("break", TTS_SML['break'])
+                                        yield ('break', TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
-                                    yield ("pause", TTS_SML['pause'])
+                                    yield ('pause', TTS_SML['pause'])
                         else:
                             yield from tuple_row(child, last_text_char)
         except Exception as e:
@@ -831,26 +834,26 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
             pause_tags = ['div', 'span']
             proc_tags = heading_tags + break_tags + pause_tags
             doc_body = doc.get_body_content()
-            raw_html = doc_body.decode("utf-8") if isinstance(doc_body, bytes) else doc_body
+            raw_html = doc_body.decode('utf-8') if isinstance(doc_body, bytes) else doc_body
             soup = BeautifulSoup(raw_html, 'html.parser')
             body = soup.body
             if not body or not body.get_text(strip=True):
                 return []
             # Skip known non-chapter types
-            epub_type = body.get("epub:type", "").lower()
+            epub_type = body.get('epub:type', '').lower()
             if not epub_type:
-                section_tag = soup.find("section")
+                section_tag = soup.find('section')
                 if section_tag:
-                    epub_type = section_tag.get("epub:type", "").lower()
+                    epub_type = section_tag.get('epub:type', '').lower()
             excluded = {
-                "frontmatter", "backmatter", "toc", "titlepage", "colophon",
-                "acknowledgments", "dedication", "glossary", "index",
-                "appendix", "bibliography", "copyright-page", "landmark"
+                'frontmatter', 'backmatter', 'toc', 'titlepage', 'colophon',
+                'acknowledgments', 'dedication', 'glossary', 'index',
+                'appendix', 'bibliography', 'copyright-page', 'landmark'
             }
             if any(part in epub_type for part in excluded):
                 return []
             # remove scripts/styles
-            for tag in soup(["script", "style"]):
+            for tag in soup(['script', 'style']):
                 tag.decompose()
             tuples_list = list(tuple_row(body))
             if not tuples_list:
@@ -861,32 +864,32 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
 			handled_tables = set()
 			prev_typ = None
 			for typ, payload in tuples_list:
-				if typ == "heading":
+				if typ == 'heading':
 					text_list.append(payload.strip())
-				elif typ in ("break", "pause"):
+				elif typ in ('break', 'pause'):
 					if text_list and text_list[-1] and text_list[-1][-1].isalnum():
-						text_list[-1] += "."
+						text_list[-1] += '.'
 					if prev_typ != typ:
 						text_list.append(TTS_SML[typ])
-				elif typ == "table":
+				elif typ == 'table':
 					table = payload
 					if table in handled_tables:
 						prev_typ = typ
 						continue
 					handled_tables.add(table)
-					rows = table.find_all("tr")
+					rows = table.find_all('tr')
 					if not rows:
 						prev_typ = typ
 						continue
-					headers = [c.get_text(strip=True) for c in rows[0].find_all(["td", "th"])]
+					headers = [c.get_text(strip=True) for c in rows[0].find_all(['td', 'th'])]
 					for row in rows[1:]:
-						cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all("td")]
+						cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all('td')]
 						if not cells:
 							continue
 						if len(cells) == len(headers) and headers:
-							line = " — ".join(f"{h}: {c}" for h, c in zip(headers, cells))
+							line = ' — '.join(f'{h}: {c}' for h, c in zip(headers, cells))
 						else:
-							line = " — ".join(cells)
+							line = ' — '.join(cells)
 						if line:
 							text_list.append(line.strip())
 				else:
@@ -899,10 +902,10 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
             i = 0
             while i < len(text_list):
                 current = text_list[i]
-                if current == "‡break‡":
+                if current == '‡break‡':
                     if clean_list:
                         prev = clean_list[-1]
-                        if prev in ("‡break‡", "‡pause‡"):
+                        if prev in ('‡break‡', '‡pause‡'):
                             i += 1
                             continue
                         if prev and (prev[-1].isalnum() or prev[-1] == ' '):
@@ -911,8 +914,8 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                                 merged_length = len(prev.rstrip()) + 1 + len(next_sentence.lstrip())
                                 if merged_length <= max_chars:
                                     # Merge with space handling
-                                    if not prev.endswith(" ") and not next_sentence.startswith(" "):
-                                        clean_list[-1] = prev + " " + next_sentence
+                                    if not prev.endswith(' ') and not next_sentence.startswith(' '):
+                                        clean_list[-1] = prev + ' ' + next_sentence
                                     else:
                                         clean_list[-1] = prev + next_sentence
                                     i += 2
@@ -952,7 +955,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                             # 2) convert ordinal days like "16th"/"16 th" -> "sixteenth"
                             if is_num2words_compat:
                                 processed = re_ordinal.sub(
-                                    lambda m: num2words(int(m.group(1)), to="ordinal", lang=(lang_iso1 or "en")),
+                                    lambda m: num2words(int(m.group(1)), to='ordinal', lang=(lang_iso1 or 'en')),
                                     processed
                                 )
                             else:
@@ -966,9 +969,9 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                                 # leave years alone (already handled above)
                                 if re.fullmatch(r"\d{4}", s):
                                     return s
-                                n = float(s) if "." in s else int(s)
+                                n = float(s) if '.' in s else int(s)
                                 if is_num2words_compat:
-                                    return num2words(n, lang=(lang_iso1 or "en"))
+                                    return num2words(n, lang=(lang_iso1 or 'en'))
                                 else:
                                     return math2words(m, lang, lang_iso1, tts_engine, is_num2words_compat)
 
@@ -980,7 +983,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                     else:
                         if is_num2words_compat:
                             text = re_ordinal.sub(
-                                lambda m: num2words(int(m.group(1)), to="ordinal", lang=(lang_iso1 or "en")),
+                                lambda m: num2words(int(m.group(1)), to='ordinal', lang=(lang_iso1 or 'en')),
                                 text
                             )
                         else:
@@ -1023,8 +1026,8 @@ def get_sentences(text:str, id:str)->list|None:
         return result
 
     def segment_ideogramms(text:str)->list[str]:
-        sml_pattern = "|".join(re.escape(token) for token in sml_tokens)
-        segments = re.split(f"({sml_pattern})", text)
+        sml_pattern = '|'.join(re.escape(token) for token in sml_tokens)
+        segments = re.split(f'({sml_pattern})', text)
         result = []
         try:
             for segment in segments:
@@ -1175,7 +1178,7 @@ def get_sentences(text:str, id:str)->list|None:
                 sentences = []
                 for s in soft_list:
                     if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
-                        if sentences and s in (TTS_SML["break"], TTS_SML["pause"]):
+                        if sentences and s in (TTS_SML['break'], TTS_SML['pause']):
                             last = sentences[-1]
                             if last and last[-1].isalnum():
                                 sentences[-1] = last + ";\n"
@@ -1203,12 +1206,12 @@ def get_sentences(text:str, id:str)->list|None:
         print(error)
         return None
 
-def get_sanitized(str:str, replacement:str="_")->str:
+def get_sanitized(str:str, replacement:str='_')->str:
     str = str.replace('&', 'And')
     forbidden_chars = r'[<>:"/\\|?*\x00-\x1F ()]'
     sanitized = re.sub(r'\s+', replacement, str)
     sanitized = re.sub(forbidden_chars, replacement, sanitized)
-    sanitized = sanitized.strip("_")
+    sanitized = sanitized.strip('_')
     return sanitized
     
 def get_date_entities(text:str, stanza_nlp:Pipeline)->list[tuple[int,int,str]]|bool:
@@ -1246,13 +1249,13 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
     )
 
     def normalize_commas(num_str:str)->str:
-        """Normalize number string to standard comma format: 1,234,567"""
+        # ormalize number string to standard comma format: 1,234,567
         tok = num_str.replace('\u00A0', '').replace(' ', '')
         if '.' in tok:
             integer_part, decimal_part = tok.split('.', 1)
             integer_part = integer_part.replace(',', '')
             integer_part = "{:,}".format(int(integer_part))
-            return f"{integer_part}.{decimal_part}"
+            return f'{integer_part}.{decimal_part}'
         else:
             integer_part = tok.replace(',', '')
             return "{:,}".format(int(integer_part))
@@ -1288,9 +1291,9 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
         second_num = clean_single_num(match.group(3)) if match.group(3) else ''
         trailing = match.group(4) or ''
         if second_num:
-            return f"{first_num}{dash_char}{second_num}{trailing}"
+            return f'{first_num}{dash_char}{second_num}{trailing}'
         else:
-            return f"{first_num}{trailing}"
+            return f'{first_num}{trailing}'
 
     return number_re.sub(clean_match, text)
 
@@ -1307,7 +1310,7 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
             else:
                 return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
         if is_num2words_compat:
-            return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}" 
+            return f'{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}' 
         else:
             return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in first_two) + ' ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in last_two)
     except Exception as e:
@@ -1350,35 +1353,35 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
                 parts.append(n2w(mnt))
             if sec is not None and sec > 0:
                 parts.append(n2w(sec))
-            return " ".join(parts)
+            return ' '.join(parts)
 
         next_hour = (h + 1) % 24
-        special_hours = lc.get("special_hours", {})
+        special_hours = lc.get('special_hours', {})
         # Build main phrase
         if mnt == 0 and (sec is None or sec == 0):
             if h in special_hours:
                 phrase = special_hours[h]
             else:
-                phrase = lc["oclock"].format(hour=n2w(h))
+                phrase = lc['oclock'].format(hour=n2w(h))
         elif mnt == 15:
-            phrase = lc["quarter_past"].format(hour=n2w(h))
+            phrase = lc['quarter_past'].format(hour=n2w(h))
         elif mnt == 30:
-            # German "halb drei" (= 2:30) uses next hour
-            if lang == "deu":
-                phrase = lc["half_past"].format(next_hour=n2w(next_hour))
+            # German 'halb drei' (= 2:30) uses next hour
+            if lang == 'deu':
+                phrase = lc['half_past'].format(next_hour=n2w(next_hour))
             else:
-                phrase = lc["half_past"].format(hour=n2w(h))
+                phrase = lc['half_past'].format(hour=n2w(h))
         elif mnt == 45:
-            phrase = lc["quarter_to"].format(next_hour=n2w(next_hour))
+            phrase = lc['quarter_to'].format(next_hour=n2w(next_hour))
         elif mnt < 30:
-            phrase = lc["past"].format(hour=n2w(h), minute=n2w(mnt)) if mnt != 0 else lc["oclock"].format(hour=n2w(h))
+            phrase = lc['past'].format(hour=n2w(h), minute=n2w(mnt)) if mnt != 0 else lc['oclock'].format(hour=n2w(h))
         else:
             minute_to_hour = 60 - mnt
-            phrase = lc["to"].format(next_hour=n2w(next_hour), minute=n2w(minute_to_hour))
+            phrase = lc['to'].format(next_hour=n2w(next_hour), minute=n2w(minute_to_hour))
         # Append seconds if present
         if sec is not None and sec > 0:
-            second_phrase = lc["second"].format(second=n2w(sec))
-            phrase = lc["full"].format(phrase=phrase, second_phrase=second_phrase)
+            second_phrase = lc['second'].format(second=n2w(sec))
+            phrase = lc['full'].format(phrase=phrase, second_phrase=second_phrase)
         return phrase
 
     return time_rx.sub(repl_num, text)
@@ -1387,9 +1390,9 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     def repl_ambiguous(match:re.Match)->str:
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
-            return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
+            return f'{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}'
         if match.group(3) and match.group(3) in ambiguous_replacements:
-            return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
+            return f'{ambiguous_replacements[match.group(3)]} {match.group(4)}'
         return match.group(0)
 
     def _ordinal_to_words(m:re.Match)->str:
@@ -1397,7 +1400,7 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
         if is_num2words_compat:
             try:
                 from num2words import num2words
-                return num2words(n, to="ordinal", lang=(lang_iso1 or "en"))
+                return num2words(n, to='ordinal', lang=(lang_iso1 or 'en'))
             except Exception:
                 pass
         # If num2words isn't available/compatible, keep original token as-is.
@@ -1416,7 +1419,7 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     # Replace unambiguous symbols everywhere
     if normal_replacements:
         sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
-        text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
+        text = re.sub(sym_pat, lambda m: f' {normal_replacements[m.group(1)]} ', text)
     # Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
         ambiguous_pattern = (
@@ -1452,14 +1455,14 @@ def roman2number(text:str)->str:
         if not is_valid_roman(roman):
             return m.group(0)
         val = to_int(roman)
-        return f"{val}{m.group(2)}{m.group(3)}"
+        return f'{val}{m.group(2)}{m.group(3)}'
 
     def repl_standalone(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
         val = to_int(roman)
-        return f"{val}{m.group(2)}"
+        return f'{val}{m.group(2)}'
 
     def repl_word(m:re.Match)->str:
         roman = m.group(1)
@@ -1488,43 +1491,43 @@ def foreign2latin(text, base_lang):
     def script_of(word):
         for ch in word:
             if ch.isalpha():
-                name = unicodedata.name(ch, "")
-                if "CYRILLIC" in name:
-                    return "cyrillic"
-                if "LATIN" in name:
-                    return "latin"
-                if "ARABIC" in name:
-                    return "arabic"
-                if "HANGUL" in name:
-                    return "hangul"
-                if "HIRAGANA" in name or "KATAKANA" in name:
-                    return "japanese"
-                if "CJK" in name or "IDEOGRAPH" in name:
-                    return "chinese"
-        return "unknown"
+                name = unicodedata.name(ch, '')
+                if 'CYRILLIC' in name:
+                    return 'cyrillic'
+                if 'LATIN' in name:
+                    return 'latin'
+                if 'ARABIC' in name:
+                    return 'arabic'
+                if 'HANGUL' in name:
+                    return 'hangul'
+                if 'HIRAGANA' in name or 'KATAKANA' in name:
+                    return 'japanese'
+                if 'CJK' in name or 'IDEOGRAPH' in name:
+                    return 'chinese'
+        return 'unknown'
 
     def romanize(word):
         scr = script_of(word)
-        if scr == "latin":
+        if scr == 'latin':
             return word
         try:
-            if scr == "chinese":
+            if scr == 'chinese':
                 from pypinyin import pinyin, Style
-                return "".join(x[0] for x in pinyin(word, style=Style.NORMAL))
-            if scr == "japanese":
+                return ''.join(x[0] for x in pinyin(word, style=Style.NORMAL))
+            if scr == 'japanese':
                 import pykakasi
                 k = pykakasi.kakasi()
-                k.setMode("H", "a")
-                k.setMode("K", "a")
-                k.setMode("J", "a")
-                k.setMode("r", "Hepburn")
+                k.setMode('H', 'a')
+                k.setMode('K', 'a')
+                k.setMode('J', 'a')
+                k.setMode('r', 'Hepburn')
                 return k.getConverter().do(word)
-            if scr == "hangul":
+            if scr == 'hangul':
                 return unidecode(word)
-            if scr == "arabic":
-                return unidecode(phonemize(word, language="ar", backend="espeak"))
-            if scr == "cyrillic":
-                return unidecode(phonemize(word, language="ru", backend="espeak"))
+            if scr == 'arabic':
+                return unidecode(phonemize(word, language='ar', backend='espeak'))
+            if scr == 'cyrillic':
+                return unidecode(phonemize(word, language='ru', backend='espeak'))
             return unidecode(word)
         except:
             return unidecode(word)
@@ -1532,7 +1535,7 @@ def foreign2latin(text, base_lang):
     tts_markers = set(TTS_SML.values())
     protected = {}
     for i, m in enumerate(tts_markers):
-        key = f"__TTS_MARKER_{i}__"
+        key = f'__TTS_MARKER_{i}__'
         protected[key] = m
         text = text.replace(m, key)
     tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
@@ -1544,13 +1547,13 @@ def foreign2latin(text, base_lang):
             buf.append(romanize(t))
         else:
             buf.append(t)
-    out = ""
+    out = ''
     for i, t in enumerate(buf):
         if i == 0:
             out += t
         else:
             if re.match(r"^\w+$", buf[i-1]) and re.match(r"^\w+$", t):
-                out += " " + t
+                out += ' ' + t
             else:
                 out += t
     for k, v in protected.items():
@@ -1560,7 +1563,7 @@ def foreign2latin(text, base_lang):
 def filter_sml(text:str)->str:
     for key, value in TTS_SML.items():
         pattern = re.escape(key) if key == '###' else r'\[' + re.escape(key) + r'\]'
-        text = re.sub(pattern, f" {value} ", text)
+        text = re.sub(pattern, f' {value} ', text)
     return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
