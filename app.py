@@ -292,7 +292,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                         args['ebook_list'].append(full_path)
-                progress_status, passed = f.convert_ebook_batch(args)
+                progress_status, passed = c.convert_ebook_batch(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
@@ -303,7 +303,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
                     print(error)
                     sys.exit(1) 
-                progress_status, passed = f.convert_ebook(args)
+                progress_status, passed = c.convert_ebook(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
