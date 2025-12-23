@@ -71,7 +71,7 @@ while (( $# > 0 )); do
 	case "$1" in
 		--*)
 			key="${1#--}"
-			if [[ -n "$2" && "${2}:-" != --* ]]; then
+			if [[ -n "${2}:-" && "$2" != --* ]]; then
 				arguments[$key]="$2"
 				shift 2
 				continue
