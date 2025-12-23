@@ -94,7 +94,6 @@ default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a definitive place where to upload the jetpack5 torch
 
 jetson_torch_version_base = {
-    "jetson51": "2.4.1",
     "jetson60": "2.4.0",
     "jetson61": "2.5.0"
 }
@@ -126,7 +125,6 @@ torch_matrix = {
     "xpu": {"url": default_pytorch_url},
     
     # JETSON
-    "jetson51": {"url": default_jetson_url},
     "jetson60": {"url": default_jetson_url},
     "jetson61": {"url": default_jetson_url}
 }
@@ -135,7 +133,7 @@ cuda_version_range = {"min": (11,8), "max": (12,8)}
 rocm_version_range = {"min": (5,5), "max": (6,4)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
-jetson_version_range = {"min": (5,1), "max": (6,2)}
+jetson_version_range = {"min": (6,0), "max": (6,2)}
 
 # ---------------------------------------------------------------------
 # Python environment references
