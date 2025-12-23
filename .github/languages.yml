@@ -1,0 +1,53 @@
+languages:
+  - code: ar  # Arabic
+    name: Arabic (ara)
+  - code: zh-CN  # Chinese (Simplified)
+    name: Chinese (zho)
+  - code: en  # English
+    name: English (eng)
+  - code: es  # Spanish
+    name: Spanish (spa)
+  - code: fr  # French
+    name: French (fra)
+  - code: de  # German
+    name: German (deu)
+  - code: it  # Italian
+    name: Italian (ita)
+  - code: pt  # Portuguese
+    name: Portuguese (por)
+  - code: pl  # Polish
+    name: Polish (pol)
+  - code: tr  # Turkish
+    name: Turkish (tur)
+  - code: ru  # Russian
+    name: Russian (rus)
+  - code: nl  # Dutch
+    name: Dutch (nld)
+  - code: cs  # Czech
+    name: Czech (ces)
+  - code: ja  # Japanese
+    name: Japanese (jpn)
+  - code: hi  # Hindi
+    name: Hindi (hin)
+  - code: bn  # Bengali
+    name: Bengali (ben)
+  - code: hu  # Hungarian
+    name: Hungarian (hun)
+  - code: ko  # Korean
+    name: Korean (kor)
+  - code: vi  # Vietnamese
+    name: Vietnamese (vie)
+  - code: sv  # Swedish
+    name: Swedish (swe)
+  - code: fa  # Persian
+    name: Persian (fas)
+  - code: yo  # Yoruba
+    name: Yoruba (yor)
+  - code: sw  # Swahili
+    name: Swahili (swa)
+  - code: id  # Indonesian
+    name: Indonesian (ind)
+  - code: sk  # Slovak
+    name: Slovak (slk)
+  - code: hr  # Croatian
+    name: Croatian (hrv)
