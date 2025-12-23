@@ -21,7 +21,10 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             using_gpu = self.session['device'] != devices['CPU']['proc']
             enough_vram = self.session['free_vram_gb'] > 4.0
-            torch.manual_seed(0)
+            seed = 0
+            #random.seed(seed)
+            #np.random.seed(seed)
+            torch.manual_seed(seed)
             has_cuda = (torch.version.cuda is not None and torch.cuda.is_available())
             if has_cuda:
                 self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
