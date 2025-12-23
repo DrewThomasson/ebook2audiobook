@@ -850,6 +850,14 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                 error = 'No tuples_list from body created!'
                 print(error)
                 return None
+            if len(tuples_list) >= 2:
+                first_typ, first_payload = tuples_list[0]
+                second_typ, _ = tuples_list[1]
+                if second_typ in ("break", "pause"):
+                    if isinstance(first_payload, str):
+                        text = first_payload.rstrip()
+                        if text and text[-1].isalnum():
+                            tuples_list[0] = (first_typ, text + ".")
             text_list = []
             handled_tables = set()
             prev_typ = None
@@ -888,14 +896,6 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                     if text:
                         text_list.append(text)
                 prev_typ = typ
-            if len(text_list) >= 2:
-                first_typ, first_payload = text_list[0]
-                second_typ, _ = text_list[1]
-                if second_typ in ("break", "pause"):
-                    if isinstance(first_payload, str):
-                        text = first_payload.rstrip()
-                        if text and text[-1].isalnum():
-                            text_list[0] = (first_typ, text + ".")
             max_chars = int(language_mapping[lang]['max_chars'] / 2)
             clean_list = []
             i = 0
