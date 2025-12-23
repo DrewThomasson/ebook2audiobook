@@ -21,7 +21,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             using_gpu = self.session['device'] != devices['CPU']['proc']
             enough_vram = self.session['free_vram_gb'] > 4.0
-            seed = 0
+            seed = 123456
             #random.seed(seed)
             #np.random.seed(seed)
             torch.manual_seed(seed)
