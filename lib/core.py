@@ -891,7 +891,6 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
             if len(text_list) >= 2:
                 first_typ, first_payload = text_list[0]
                 second_typ, _ = text_list[1]
-
                 if second_typ in ("break", "pause"):
                     if isinstance(first_payload, str):
                         text = first_payload.rstrip()
