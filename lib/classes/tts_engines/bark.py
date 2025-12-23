@@ -191,8 +191,8 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             **fine_tuned_params
                         )
                     #audio_sentence = result.get('wav')
-                    if is_audio_data_valid(audio_sentence):
-                        audio_sentence = audio_sentence.tolist()
+                    #if is_audio_data_valid(audio_sentence):
+                    #    audio_sentence = audio_sentence.tolist()
                     if is_audio_data_valid(audio_sentence):
                         sourceTensor = self._tensor_type(audio_sentence)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
