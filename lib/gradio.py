@@ -1676,8 +1676,9 @@ def build_interface(args:dict)->gr.Blocks:
             def clear_event(id:str)->None:
                 if id:
                     session = context.get_session(id)
-                    if session['event'] is not None:
-                        session['event'] = None
+                    if session:
+                        if session['event'] is not None:
+                            session['event'] = None
 
             gr_ebook_file.change(
                 fn=change_convert_btn,
