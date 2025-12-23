@@ -673,10 +673,11 @@ def build_interface(args:dict)->gr.Blocks:
             
             def enable_components(id:str)->tuple:
                 session = context.get_session(id)
-                if session['event'] == 'confirm_blocks':
-                    outputs = tuple([gr.update() for _ in range(12)])
-                else:
-                    outputs = tuple([gr.update(interactive=True) for _ in range(12)])
+                if session:
+                    if session['event'] == 'confirm_blocks':
+                        outputs = tuple([gr.update() for _ in range(12)])
+                        return outputs
+                outputs = tuple([gr.update(interactive=True) for _ in range(12)])
                 return outputs
 
             def show_gr_modal(type:str, msg:str)->str:
@@ -751,55 +752,56 @@ def build_interface(args:dict)->gr.Blocks:
             def restore_interface(id:str, req:gr.Request)->tuple:
                 try:
                     session = context.get_session(id)
-                    socket_hash = str(req.session_hash)
-                    if not session.get(socket_hash):
-                        outputs = tuple([gr.update() for _ in range(15)])
-                        return outputs
-                    ebook_data = None
-                    file_count = session['ebook_mode']
-                    if session['ebook_list'] is not None and file_count == 'directory':
-                        session['ebook'] = None
-                        ebook_data = [f for f in session["ebook_list"] if os.path.exists(f)]
-                        if not ebook_data:
-                            ebook_data = None
-                    elif isinstance(session['ebook'], str) and file_count == 'single':
-                        session['ebook_list'] = None
-                        if os.path.exists(session['ebook']):
-                            ebook_data = session['ebook']
+                    if session:
+                        socket_hash = str(req.session_hash)
+                        if not session.get(socket_hash):
+                            outputs = tuple([gr.update() for _ in range(15)])
+                            return outputs
+                        ebook_data = None
+                        file_count = session['ebook_mode']
+                        if session['ebook_list'] is not None and file_count == 'directory':
+                            session['ebook'] = None
+                            ebook_data = [f for f in session["ebook_list"] if os.path.exists(f)]
+                            if not ebook_data:
+                                ebook_data = None
+                        elif isinstance(session['ebook'], str) and file_count == 'single':
+                            session['ebook_list'] = None
+                            if os.path.exists(session['ebook']):
+                                ebook_data = session['ebook']
+                            else:
+                                ebook_data = session['ebook'] = None
                         else:
                             ebook_data = session['ebook'] = None
-                    else:
-                        ebook_data = session['ebook'] = None
-                    if ebook_data is not None:
-                        current_dir_cache = tempfile.gettempdir()
-                        current_dir_cache_norm = os.path.normpath(current_dir_cache)
-                        prev_cache_dir = os.path.normpath(os.path.dirname(ebook_data[0]) if isinstance(ebook_data, list) else os.path.dirname(ebook_data))
-                        if prev_cache_dir != current_dir_cache_norm:
-                            ebook_data = None
-                        session['ebook'] = ebook_data
-                    visible_row_split_hours = True if session['output_split'] else False
-                    return (
-                        gr.update(value=ebook_data),
-                        gr.update(value=session['ebook_mode']),
-                        gr.update(value=bool(session['chapters_preview'])),
-                        gr.update(value=session['device']),
-                        gr.update(value=session['language']),
-                        update_gr_voice_list(id),
-                        update_gr_tts_engine_list(id),
-                        update_gr_custom_model_list(id),
-                        update_gr_fine_tuned_list(id),
-                        gr.update(value=session['output_format']),
-                        gr.update(value=session['output_channel']),
-                        gr.update(value=bool(session['output_split'])),
-                        gr.update(value=session['output_split_hours']),
-                        gr.update(visible=visible_row_split_hours),
-                        update_gr_audiobook_list(id)
-                    )
+                        if ebook_data is not None:
+                            current_dir_cache = tempfile.gettempdir()
+                            current_dir_cache_norm = os.path.normpath(current_dir_cache)
+                            prev_cache_dir = os.path.normpath(os.path.dirname(ebook_data[0]) if isinstance(ebook_data, list) else os.path.dirname(ebook_data))
+                            if prev_cache_dir != current_dir_cache_norm:
+                                ebook_data = None
+                            session['ebook'] = ebook_data
+                        visible_row_split_hours = True if session['output_split'] else False
+                        return (
+                            gr.update(value=ebook_data),
+                            gr.update(value=session['ebook_mode']),
+                            gr.update(value=bool(session['chapters_preview'])),
+                            gr.update(value=session['device']),
+                            gr.update(value=session['language']),
+                            update_gr_voice_list(id),
+                            update_gr_tts_engine_list(id),
+                            update_gr_custom_model_list(id),
+                            update_gr_fine_tuned_list(id),
+                            gr.update(value=session['output_format']),
+                            gr.update(value=session['output_channel']),
+                            gr.update(value=bool(session['output_split'])),
+                            gr.update(value=session['output_split_hours']),
+                            gr.update(visible=visible_row_split_hours),
+                            update_gr_audiobook_list(id)
+                        )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
                     alert_exception(error, id)
-                    outputs = tuple([gr.update() for _ in range(15)])
-                    return outputs
+                outputs = tuple([gr.update() for _ in range(15)])
+                return outputs
 
             def restore_audiobook_player(audiobook:str|None)->tuple:
                 try:
@@ -813,21 +815,25 @@ def build_interface(args:dict)->gr.Blocks:
 
             def refresh_interface(id:str)->tuple:
                 session = context.get_session(id)
-                if session['event'] == 'confirm_blocks':
-                    outputs = tuple([gr.update() for _ in range(9)])
-                    return outputs
-                else:
-                    return (
-                        gr.update(interactive=False), gr.update(value=None), gr.update(value=session['device']), update_gr_audiobook_list(id), 
-                        gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
-                    )
+                if session:
+                    if session['event'] == 'confirm_blocks':
+                        outputs = tuple([gr.update() for _ in range(9)])
+                        return outputs
+                    else:
+                        return (
+                            gr.update(interactive=False), gr.update(value=None), gr.update(value=session['device']), update_gr_audiobook_list(id), 
+                            gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
+                        )
+                outputs = tuple([gr.update() for _ in range(9)])
+                return outputs
 
             def change_gr_audiobook_list(selected:str|None, id:str)->dict:
                 try:
                     session = context.get_session(id)
-                    session['audiobook'] = selected
-                    group_visible = True if len(audiobook_options) > 0 else False
-                    return gr.update(visible=group_visible)
+                    if session:
+                        session['audiobook'] = selected
+                        group_visible = True if len(audiobook_options) > 0 else False
+                        return gr.update(visible=group_visible)
                 except Exception as e:
                     error = f'change_gr_audiobook_list(): {e}'
                     alert_exception(error, id)
@@ -836,24 +842,25 @@ def build_interface(args:dict)->gr.Blocks:
             def update_gr_audiobook_player(id:str)->tuple:
                 try:
                     session = context.get_session(id)
-                    if session['audiobook'] is not None: 
-                        vtt = Path(session['audiobook']).with_suffix('.vtt')
-                        if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
-                            error = f"{Path(session['audiobook']).name} does not exist!"
-                            print(error)
-                            alert_exception(error, id)
-                            return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
-                        audio_info = mediainfo(session['audiobook'])
-                        duration = audio_info.get('duration', False)
-                        if duration:
-                            session['duration'] = float(audio_info['duration'])
-                            with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
-                                vtt_content = f.read()
-                            return gr.update(value=0.0), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
-                        else:
-                            error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
-                            print(error)
-                            alert_exception(error, id)
+                    if session:
+                        if session['audiobook'] is not None: 
+                            vtt = Path(session['audiobook']).with_suffix('.vtt')
+                            if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
+                                error = f"{Path(session['audiobook']).name} does not exist!"
+                                print(error)
+                                alert_exception(error, id)
+                                return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
+                            audio_info = mediainfo(session['audiobook'])
+                            duration = audio_info.get('duration', False)
+                            if duration:
+                                session['duration'] = float(audio_info['duration'])
+                                with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
+                                    vtt_content = f.read()
+                                return gr.update(value=0.0), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
+                            else:
+                                error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
+                                print(error)
+                                alert_exception(error, id)
                 except Exception as e:
                     error = f'update_gr_audiobook_player(): {e}'
                     print(error)
@@ -882,24 +889,25 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_ebook_file(data:str|None, id:str)->tuple:
                 try:
                     session = context.get_session(id)
-                    session["ebook"] = None
-                    session["ebook_list"] = None
-                    if data is None:
-                        if session.get("status") == "converting":
-                            session["cancellation_requested"] = True
-                            msg = "Cancellation requested, please wait..."
-                            yield gr.update(value=show_gr_modal("wait", msg), visible=True)
-                            return
-                    if isinstance(data, list):
-                        ebook_list = []
-                        for f in data:
-                            path = f.get("path") if isinstance(f, dict) else str(f)
-                            ebook_list.append(path)
-                        session["ebook_list"] = ebook_list
-                    else:
-                        session["ebook"] = data
-                    session["cancellation_requested"] = False
-                    return gr.update(value='', visible=False)
+                    if session:
+                        session["ebook"] = None
+                        session["ebook_list"] = None
+                        if data is None:
+                            if session.get("status") == "converting":
+                                session["cancellation_requested"] = True
+                                msg = "Cancellation requested, please wait..."
+                                yield gr.update(value=show_gr_modal("wait", msg), visible=True)
+                                return
+                        if isinstance(data, list):
+                            ebook_list = []
+                            for f in data:
+                                path = f.get("path") if isinstance(f, dict) else str(f)
+                                ebook_list.append(path)
+                            session["ebook_list"] = ebook_list
+                        else:
+                            session["ebook"] = data
+                        session["cancellation_requested"] = False
+                        return gr.update(value='', visible=False)
                 except Exception as e:
                     error = f'change_gr_ebook_file(): {e}'
                     alert_exception(error, id)
@@ -907,11 +915,13 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_ebook_mode(val:str, id:str)->tuple:
                 session = context.get_session(id)
-                session['ebook_mode'] = val
-                if val == 'single':
-                    return gr.update(label=src_label_file, file_count='single'), gr.update(visible=True)
-                else:
-                    return gr.update(label=src_label_dir, file_count='directory'), gr.update(visible=False)
+                if session:
+                    session['ebook_mode'] = val
+                    if val == 'single':
+                        return gr.update(label=src_label_file, file_count='single'), gr.update(visible=True)
+                    else:
+                        return gr.update(label=src_label_dir, file_count='directory'), gr.update(visible=False)
+                return gr.update(), gr.update()
 
             def change_gr_voice_file(f:str|None, id:str)->tuple:
                 state = {}
@@ -926,76 +936,80 @@ def build_interface(args:dict)->gr.Blocks:
                         state['msg'] = error
                     else:                  
                         session = context.get_session(id)
-                        voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
-                        voice_name = get_sanitized(voice_name)
-                        final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
-                        extractor = VoiceExtractor(session, f, voice_name)
-                        status, msg = extractor.extract_voice()
-                        if status:
-                            session['voice'] = final_voice_file
-                            msg = f'Voice {voice_name} added to the voices list'
-                            state['type'] = 'success'
-                            state['msg'] = msg
-                            show_alert(state)
-                            return update_gr_voice_list(id)
-                        else:
-                            error = 'failed! Check if you audio file is compatible.'
-                            state['type'] = 'warning'
-                            state['msg'] = error
+                        if session:
+                            voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
+                            voice_name = get_sanitized(voice_name)
+                            final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
+                            extractor = VoiceExtractor(session, f, voice_name)
+                            status, msg = extractor.extract_voice()
+                            if status:
+                                session['voice'] = final_voice_file
+                                msg = f'Voice {voice_name} added to the voices list'
+                                state['type'] = 'success'
+                                state['msg'] = msg
+                                show_alert(state)
+                                return update_gr_voice_list(id)
+                            else:
+                                error = 'failed! Check if you audio file is compatible.'
+                                state['type'] = 'warning'
+                                state['msg'] = error
                     show_alert(state)
                 return gr.update()
 
             def change_gr_voice_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
-                session['voice'] = next((value for label, value in voice_options if value == selected), voice_options[0][1])
-                visible = True if session['voice'] is not None else False
-                return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
-
+                if session:
+                    session['voice'] = next((value for label, value in voice_options if value == selected), voice_options[0][1])
+                    visible = True if session['voice'] is not None else False
+                    return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
+                return gr.update(), gr.update(), gr.update()
+                
             def click_gr_voice_del_btn(selected:str, id:str)->tuple:
                 try:
                     if selected is not None:
                         session = context.get_session(id)
-                        speaker_path = os.path.abspath(selected)
-                        speaker = re.sub(r'\.wav$|\.npz|\.pth$', '', os.path.basename(selected))
-                        builtin_root = os.path.join(voices_dir, session['language'])
-                        is_in_builtin = os.path.commonpath([
-                            speaker_path,
-                            os.path.abspath(builtin_root)
-                        ]) == os.path.abspath(builtin_root)
-                        is_in_models = os.path.commonpath([
-                            speaker_path,
-                            os.path.abspath(session['custom_model_dir'])
-                        ]) == os.path.abspath(session['custom_model_dir'])
-                        # Check if voice is built-in
-                        is_builtin = any(
-                            speaker in settings.get('voices', {})
-                            for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
-                        )
-                        if is_builtin and is_in_builtin:
-                            error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
-                            show_alert({"type": "warning", "msg": error})
-                            return gr.update(), gr.update(visible=False)
-                        if is_in_models:
-                            error = f'Voice file {speaker} is a voice of one of your custom model and cannot be deleted.'
-                            show_alert({"type": "warning", "msg": error})
-                            return gr.update(), gr.update(visible=False)                          
-                        try:
-                            selected_path = Path(selected).resolve()
-                            parent_path = Path(session['voice_dir']).parent.resolve()
-                            if parent_path in selected_path.parents:
-                                msg = f'Are you sure to delete {speaker}...'
-                                return (
-                                    gr.update(value='confirm_voice_del'),
-                                    gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
-                                )
-                            else:
-                                error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
+                        if session:
+                            speaker_path = os.path.abspath(selected)
+                            speaker = re.sub(r'\.wav$|\.npz|\.pth$', '', os.path.basename(selected))
+                            builtin_root = os.path.join(voices_dir, session['language'])
+                            is_in_builtin = os.path.commonpath([
+                                speaker_path,
+                                os.path.abspath(builtin_root)
+                            ]) == os.path.abspath(builtin_root)
+                            is_in_models = os.path.commonpath([
+                                speaker_path,
+                                os.path.abspath(session['custom_model_dir'])
+                            ]) == os.path.abspath(session['custom_model_dir'])
+                            # Check if voice is built-in
+                            is_builtin = any(
+                                speaker in settings.get('voices', {})
+                                for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
+                            )
+                            if is_builtin and is_in_builtin:
+                                error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                                 show_alert({"type": "warning", "msg": error})
                                 return gr.update(), gr.update(visible=False)
-                        except Exception as e:
-                            error = f'Could not delete the voice file {selected}!\n{e}'
-                            alert_exception(error, id)
-                            return gr.update(), gr.update(visible=False)
+                            if is_in_models:
+                                error = f'Voice file {speaker} is a voice of one of your custom model and cannot be deleted.'
+                                show_alert({"type": "warning", "msg": error})
+                                return gr.update(), gr.update(visible=False)                          
+                            try:
+                                selected_path = Path(selected).resolve()
+                                parent_path = Path(session['voice_dir']).parent.resolve()
+                                if parent_path in selected_path.parents:
+                                    msg = f'Are you sure to delete {speaker}...'
+                                    return (
+                                        gr.update(value='confirm_voice_del'),
+                                        gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                                    )
+                                else:
+                                    error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
+                                    show_alert({"type": "warning", "msg": error})
+                                    return gr.update(), gr.update(visible=False)
+                            except Exception as e:
+                                error = f'Could not delete the voice file {selected}!\n{e}'
+                                alert_exception(error, id)
+                                return gr.update(), gr.update(visible=False)
                     # Fallback/default return if not selected or after errors
                     return gr.update(), gr.update(visible=False)
                 except Exception as e:
@@ -1007,9 +1021,10 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     if selected is not None:
                         session = context.get_session(id)
-                        selected_name = os.path.basename(selected)
-                        msg = f'Are you sure to delete {selected_name}...'
-                        return gr.update(value='confirm_custom_model_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                        if session:
+                            selected_name = os.path.basename(selected)
+                            msg = f'Are you sure to delete {selected_name}...'
+                            return gr.update(value='confirm_custom_model_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
                 except Exception as e:
                     error = f'Could not delete the custom model {selected_name}!'
                     alert_exception(error, id)
@@ -1019,9 +1034,10 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     if selected is not None:
                         session = context.get_session(id)
-                        selected_name = Path(selected).stem
-                        msg = f'Are you sure to delete {selected_name}...'
-                        return gr.update(value='confirm_audiobook_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                        if session:
+                            selected_name = Path(selected).stem
+                            msg = f'Are you sure to delete {selected_name}...'
+                            return gr.update(value='confirm_audiobook_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
                 except Exception as e:
                     error = f'Could not delete the audiobook {selected_name}!'
                     alert_exception(error, id)
@@ -1031,41 +1047,42 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     if method is not None:
                         session = context.get_session(id)
-                        if method == 'confirm_voice_del':
-                            selected_name = Path(voice_path).stem
-                            pattern = re.sub(r'\.wav$', '*.wav', voice_path)
-                            files2remove = glob(pattern)
-                            for file in files2remove:
-                                os.remove(file)
-                            shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
-                            msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
-                            session['voice'] = None
-                            show_alert({"type": "warning", "msg": msg})
-                            return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(id)
-                        elif method == 'confirm_custom_model_del':
-                            selected_name = os.path.basename(custom_model)
-                            shutil.rmtree(custom_model, ignore_errors=True)                           
-                            msg = f'Custom model {selected_name} deleted!'
-                            if session['custom_model'] in session['voice']:
-                                session['voice'] = None if voice_options[0][1] == None else models[session['fine_tuned']]['voice']
-                            session['custom_model'] = None
-                            show_alert({"type": "warning", "msg": msg})
-                            return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
-                        elif method == 'confirm_audiobook_del':
-                            selected_name = Path(audiobook).stem
-                            if os.path.isdir(audiobook):
-                                shutil.rmtree(selected, ignore_errors=True)
-                            elif os.path.exists(audiobook):
-                                os.remove(audiobook)
-                            vtt_path = Path(audiobook).with_suffix('.vtt')
-                            if os.path.exists(vtt_path):
-                                os.remove(vtt_path)
-                            process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], audiobook).encode()).hexdigest()}")
-                            shutil.rmtree(process_dir, ignore_errors=True)
-                            msg = f'Audiobook {selected_name} deleted!'
-                            session['audiobook'] = None
-                            show_alert({"type": "warning", "msg": msg})
-                            return gr.update(), update_gr_audiobook_list(id), gr.update(value='', visible=False), gr.update()
+                        if session:
+                            if method == 'confirm_voice_del':
+                                selected_name = Path(voice_path).stem
+                                pattern = re.sub(r'\.wav$', '*.wav', voice_path)
+                                files2remove = glob(pattern)
+                                for file in files2remove:
+                                    os.remove(file)
+                                shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
+                                msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
+                                session['voice'] = None
+                                show_alert({"type": "warning", "msg": msg})
+                                return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(id)
+                            elif method == 'confirm_custom_model_del':
+                                selected_name = os.path.basename(custom_model)
+                                shutil.rmtree(custom_model, ignore_errors=True)                           
+                                msg = f'Custom model {selected_name} deleted!'
+                                if session['custom_model'] in session['voice']:
+                                    session['voice'] = None if voice_options[0][1] == None else models[session['fine_tuned']]['voice']
+                                session['custom_model'] = None
+                                show_alert({"type": "warning", "msg": msg})
+                                return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
+                            elif method == 'confirm_audiobook_del':
+                                selected_name = Path(audiobook).stem
+                                if os.path.isdir(audiobook):
+                                    shutil.rmtree(selected, ignore_errors=True)
+                                elif os.path.exists(audiobook):
+                                    os.remove(audiobook)
+                                vtt_path = Path(audiobook).with_suffix('.vtt')
+                                if os.path.exists(vtt_path):
+                                    os.remove(vtt_path)
+                                process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], audiobook).encode()).hexdigest()}")
+                                shutil.rmtree(process_dir, ignore_errors=True)
+                                msg = f'Audiobook {selected_name} deleted!'
+                                session['audiobook'] = None
+                                show_alert({"type": "warning", "msg": msg})
+                                return gr.update(), update_gr_audiobook_list(id), gr.update(value='', visible=False), gr.update()
                 except Exception as e:
                     error = f'confirm_deletion(): {e}!'
                     alert_exception(error, id)
@@ -1073,142 +1090,149 @@ def build_interface(args:dict)->gr.Blocks:
 
             def confirm_blocks(choice:str, id:str)->dict:
                 session = context.get_session(id)
-                if choice == 'yes':           
-                    session['event'] = 'blocks_confirmed'
-                else:
-                    session['status'] = 'ready'
+                if session:
+                    if choice == 'yes':           
+                        session['event'] = 'blocks_confirmed'
+                    else:
+                        session['status'] = 'ready'
                 return gr.update(value='', visible=False)
 
             def update_gr_voice_list(id:str)->dict:
                 try:
                     nonlocal voice_options
                     session = context.get_session(id)
-                    lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                    file_pattern = "*.wav"
-                    eng_options = []
-                    bark_options = []
-                    builtin_options = [
-                        (os.path.splitext(f.name)[0], str(f))
-                        for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
-                    ]
-                    if session['language'] in default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {}):
-                        builtin_names = {t[0]: None for t in builtin_options}
-                        eng_dir = Path(os.path.join(voices_dir, "eng"))
-                        eng_options = [
-                            (base, str(f))
-                            for f in eng_dir.rglob(file_pattern)
-                            for base in [os.path.splitext(f.name)[0]]
-                            if base not in builtin_names
-                        ]
-                    if session['tts_engine'] == TTS_ENGINES['BARK']:
-                        lang_dict = Lang(session['language'])
-                        if lang_dict:
-                            lang_iso1 = lang_dict.pt1
-                            lang = lang_iso1.lower()
-                            speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
-                            pattern_speaker = re.compile(r"^.*?_speaker_(\d+)$")
-                            bark_options = [
-                                (pattern_speaker.sub(r"Speaker \1", f.stem), str(f.with_suffix(".wav")))
-                                for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
-                            ]
-                    voice_options = builtin_options + eng_options + bark_options
-                    session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
-                    os.makedirs(session['voice_dir'], exist_ok=True)
-                    if session['voice_dir'] is not None:
-                        session_voice_dir = Path(session['voice_dir'])
-                        voice_options += [
+                    if session:
+                        lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
+                        file_pattern = "*.wav"
+                        eng_options = []
+                        bark_options = []
+                        builtin_options = [
                             (os.path.splitext(f.name)[0], str(f))
-                            for f in session_voice_dir.rglob(file_pattern)
-                            if f.is_file()
+                            for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
                         ]
-                    if session.get('custom_model_dir'):
-                        voice_options.extend(
-                            (f.stem, str(f))
-                            for f in Path(session['custom_model_dir']).rglob('*.wav')
-                            if f.is_file()
-                        )
-                    if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
-                        voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
-                    else:
-                        voice_options = sorted(voice_options, key=lambda x: x[0].lower())    
-                    if session['voice'] is not None and session['voice'] not in voice_options:
-                        new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
-                        session['voice'] = new_voice_path if os.path.exists(new_voice_path) else models[session['fine_tuned']]['voice']
-                    return gr.update(choices=voice_options, value=session['voice'])
+                        if session['language'] in default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {}):
+                            builtin_names = {t[0]: None for t in builtin_options}
+                            eng_dir = Path(os.path.join(voices_dir, "eng"))
+                            eng_options = [
+                                (base, str(f))
+                                for f in eng_dir.rglob(file_pattern)
+                                for base in [os.path.splitext(f.name)[0]]
+                                if base not in builtin_names
+                            ]
+                        if session['tts_engine'] == TTS_ENGINES['BARK']:
+                            lang_dict = Lang(session['language'])
+                            if lang_dict:
+                                lang_iso1 = lang_dict.pt1
+                                lang = lang_iso1.lower()
+                                speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
+                                pattern_speaker = re.compile(r"^.*?_speaker_(\d+)$")
+                                bark_options = [
+                                    (pattern_speaker.sub(r"Speaker \1", f.stem), str(f.with_suffix(".wav")))
+                                    for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
+                                ]
+                        voice_options = builtin_options + eng_options + bark_options
+                        session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                        os.makedirs(session['voice_dir'], exist_ok=True)
+                        if session['voice_dir'] is not None:
+                            session_voice_dir = Path(session['voice_dir'])
+                            voice_options += [
+                                (os.path.splitext(f.name)[0], str(f))
+                                for f in session_voice_dir.rglob(file_pattern)
+                                if f.is_file()
+                            ]
+                        if session.get('custom_model_dir'):
+                            voice_options.extend(
+                                (f.stem, str(f))
+                                for f in Path(session['custom_model_dir']).rglob('*.wav')
+                                if f.is_file()
+                            )
+                        if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+                            voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
+                        else:
+                            voice_options = sorted(voice_options, key=lambda x: x[0].lower())    
+                        if session['voice'] is not None and session['voice'] not in voice_options:
+                            new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
+                            session['voice'] = new_voice_path if os.path.exists(new_voice_path) else models[session['fine_tuned']]['voice']
+                        return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
                     alert_exception(error, id)
-                    return gr.update()
+                return gr.update()
 
             def update_gr_tts_engine_list(id:str)->dict:
                 try:
                     nonlocal tts_engine_options
                     session = context.get_session(id)
-                    tts_engine_options = get_compatible_tts_engines(session['language'])
-                    session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
-                    return gr.update(choices=tts_engine_options, value=session['tts_engine'])
+                    if session:
+                        tts_engine_options = get_compatible_tts_engines(session['language'])
+                        session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
+                        return gr.update(choices=tts_engine_options, value=session['tts_engine'])
                 except Exception as e:
                     error = f'update_gr_tts_engine_list(): {e}!'
                     alert_exception(error, id)              
-                    return gr.update()
+                return gr.update()
 
             def update_gr_custom_model_list(id:str)->dict:
                 try:
                     nonlocal custom_model_options
                     session = context.get_session(id)
-                    custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
-                    custom_model_options = [('None', None)] + [
-                        (
-                            str(dir),
-                            os.path.join(custom_model_tts_dir, dir)
-                        )
-                        for dir in os.listdir(custom_model_tts_dir)
-                        if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
-                    ]
-                    session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-                    model_paths = {v[1] for v in custom_model_options}
-                    return gr.update(choices=custom_model_options, value=session['custom_model'])
+                    if session:
+                        custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
+                        custom_model_options = [('None', None)] + [
+                            (
+                                str(dir),
+                                os.path.join(custom_model_tts_dir, dir)
+                            )
+                            for dir in os.listdir(custom_model_tts_dir)
+                            if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
+                        ]
+                        session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
+                        model_paths = {v[1] for v in custom_model_options}
+                        return gr.update(choices=custom_model_options, value=session['custom_model'])
                 except Exception as e:
                     error = f'update_gr_custom_model_list(): {e}!'
                     alert_exception(error, id)
-                    return gr.update()
+                return gr.update()
 
             def update_gr_fine_tuned_list(id:str)->dict:
                 try:
                     nonlocal fine_tuned_options
                     session = context.get_session(id)
-                    fine_tuned_options = [
-                        name
-                        for name, details in models.items()
-                        if details.get("lang") in ("multi", session["language"])
-                    ]
-                    if session['fine_tuned'] in fine_tuned_options:
-                        fine_tuned = session['fine_tuned']
-                    else:
-                        fine_tuned = default_fine_tuned
-                    session['fine_tuned'] = fine_tuned
-                    return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
+                    if session:
+                        fine_tuned_options = [
+                            name
+                            for name, details in models.items()
+                            if details.get("lang") in ("multi", session["language"])
+                        ]
+                        if session['fine_tuned'] in fine_tuned_options:
+                            fine_tuned = session['fine_tuned']
+                        else:
+                            fine_tuned = default_fine_tuned
+                        session['fine_tuned'] = fine_tuned
+                        return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
                 except Exception as e:
                     error = f'update_gr_fine_tuned_list(): {e}!'
                     alert_exception(error, id)              
-                    return gr.update()
+                return gr.update()
 
             def change_gr_device(selected:str, id:str)->None:
                 session = context.get_session(id)
-                session['device'] = selected
+                if session:
+                    session['device'] = selected
 
             def change_gr_language(selected:str, id:str)->tuple:
                 if selected:
                     session = context.get_session(id)
-                    prev = session['language']      
-                    session['language'] = selected
-                    return (
-                        gr.update(value=session['language']),
-                        update_gr_tts_engine_list(id),
-                        update_gr_custom_model_list(id),
-                        update_gr_fine_tuned_list(id),
-                        update_gr_voice_list(id)
-                    )
+                    if session:
+                        prev = session['language']      
+                        session['language'] = selected
+                        return (
+                            gr.update(value=session['language']),
+                            update_gr_tts_engine_list(id),
+                            update_gr_custom_model_list(id),
+                            update_gr_fine_tuned_list(id),
+                            update_gr_voice_list(id)
+                        )
                 return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
             def check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
@@ -1228,25 +1252,26 @@ def build_interface(args:dict)->gr.Blocks:
                         state['msg'] = error
                     else:
                         session = context.get_session(id)
-                        session['tts_engine'] = t
-                        if analyze_uploaded_file(f, models['internal']['files']):
-                            model = extract_custom_model(f, id, models[default_fine_tuned]['files'])
-                            if model is not None:
-                                session['custom_model'] = model
-                                session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')
-                                msg = f'{os.path.basename(model)} added to the custom models list'
-                                state['type'] = 'success'
-                                state['msg'] = msg
-                                show_alert(state)
-                                return gr.update(value=None), update_gr_custom_model_list(id), update_gr_voice_list(id)
+                        if session:
+                            session['tts_engine'] = t
+                            if analyze_uploaded_file(f, models['internal']['files']):
+                                model = extract_custom_model(f, id, models[default_fine_tuned]['files'])
+                                if model is not None:
+                                    session['custom_model'] = model
+                                    session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')
+                                    msg = f'{os.path.basename(model)} added to the custom models list'
+                                    state['type'] = 'success'
+                                    state['msg'] = msg
+                                    show_alert(state)
+                                    return gr.update(value=None), update_gr_custom_model_list(id), update_gr_voice_list(id)
+                                else:
+                                    error = f'Cannot extract custom model zip file {os.path.basename(f)}'
+                                    state['type'] = 'warning'
+                                    state['msg'] = error
                             else:
-                                error = f'Cannot extract custom model zip file {os.path.basename(f)}'
+                                error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                                 state['type'] = 'warning'
                                 state['msg'] = error
-                        else:
-                            error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
-                            state['type'] = 'warning'
-                            state['msg'] = error
                     show_alert(state)
                 return gr.update(), gr.update(), gr.update()
 
@@ -1254,79 +1279,89 @@ def build_interface(args:dict)->gr.Blocks:
                 nonlocal models
                 models = load_engine_presets(engine)
                 session = context.get_session(id)
-                session['tts_engine'] = engine
-                session['fine_tuned'] = default_fine_tuned
-                session['voice'] = models[session['fine_tuned']]['voice']
-                if engine in [TTS_ENGINES['XTTSv2']]:
-                    if session['custom_model'] is not None:
-                        session['voice'] = os.path.join(session['custom_model'], f"{os.path.basename(session['custom_model'])}.wav")
-                bark_visible = False
-                if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                    visible_custom_model = True if session['fine_tuned'] == 'internal' else False
-                    return (
-                        gr.update(value=show_rating(session['tts_engine'])), 
-                        gr.update(visible=visible_gr_tab_xtts_params),
-                        gr.update(visible=False),
-                        gr.update(visible=visible_custom_model),
-                        update_gr_fine_tuned_list(id),
-                        gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"),
-                        update_gr_voice_list(id),
-                        gr.update(value=f"My {session['tts_engine']} Custom Models")
-                    )
-                else:
-                    if session['tts_engine'] == TTS_ENGINES['BARK']:
-                        bark_visible = visible_gr_tab_bark_params
-                    return (
-                        gr.update(value=show_rating(session['tts_engine'])),
-                        gr.update(visible=False),
-                        gr.update(visible=bark_visible), 
-                        gr.update(visible=False),
-                        update_gr_fine_tuned_list(id),
-                        gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
-                        update_gr_voice_list(id),
-                        gr.update(value='')
-                    )
-                    
+                if session:
+                    session['tts_engine'] = engine
+                    session['fine_tuned'] = default_fine_tuned
+                    session['voice'] = models[session['fine_tuned']]['voice']
+                    if engine in [TTS_ENGINES['XTTSv2']]:
+                        if session['custom_model'] is not None:
+                            session['voice'] = os.path.join(session['custom_model'], f"{os.path.basename(session['custom_model'])}.wav")
+                    bark_visible = False
+                    if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                        visible_custom_model = True if session['fine_tuned'] == 'internal' else False
+                        return (
+                            gr.update(value=show_rating(session['tts_engine'])), 
+                            gr.update(visible=visible_gr_tab_xtts_params),
+                            gr.update(visible=False),
+                            gr.update(visible=visible_custom_model),
+                            update_gr_fine_tuned_list(id),
+                            gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"),
+                            update_gr_voice_list(id),
+                            gr.update(value=f"My {session['tts_engine']} Custom Models")
+                        )
+                    else:
+                        if session['tts_engine'] == TTS_ENGINES['BARK']:
+                            bark_visible = visible_gr_tab_bark_params
+                        return (
+                            gr.update(value=show_rating(session['tts_engine'])),
+                            gr.update(visible=False),
+                            gr.update(visible=bark_visible), 
+                            gr.update(visible=False),
+                            update_gr_fine_tuned_list(id),
+                            gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
+                            update_gr_voice_list(id),
+                            gr.update(value='')
+                        )
+                outputs = tuple([gr.update(interactive=False) for _ in range(8)])
+                return outputs
+
             def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
                 if selected:
                     session = context.get_session(id)
-                    session['fine_tuned'] = selected
-                    visible_custom_model = False
-                    if selected == 'internal':
-                        visible_custom_model = visible_gr_group_custom_model
-                    else:
+                    if session:
+                        session['fine_tuned'] = selected
                         visible_custom_model = False
-                        session['voice'] = models[selected]['voice']
-                    return gr.update(visible=visible_custom_model), update_gr_voice_list(id)
+                        if selected == 'internal':
+                            visible_custom_model = visible_gr_group_custom_model
+                        else:
+                            visible_custom_model = False
+                            session['voice'] = models[selected]['voice']
+                        return gr.update(visible=visible_custom_model), update_gr_voice_list(id)
                 return gr.update(), gr.update()
 
             def change_gr_custom_model_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
-                session['custom_model'] = selected
-                if selected is not None:
-                    session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
-                visible_fine_tuned = True if selected is None else False
-                visible_del_btn = False if selected is None else True
-                return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(id)
-            
+                if session:
+                    session['custom_model'] = selected
+                    if selected is not None:
+                        session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
+                    visible_fine_tuned = True if selected is None else False
+                    visible_del_btn = False if selected is None else True
+                    return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(id)
+                return gr.update(), gr.update()
+
             def change_gr_output_format_list(val:str, id:str)->None:
                 session = context.get_session(id)
-                session['output_format'] = val
+                if session:
+                    session['output_format'] = val
                 return
 
             def change_gr_output_channel_list(val:str, id:str)->None:
                 session = context.get_session(id)
-                session['output_channel'] = val
+                if session:
+                    session['output_channel'] = val
                 return
                 
             def change_gr_output_split(val:str, id:str)->dict:
                 session = context.get_session(id)
-                session['output_split'] = val
+                if session:
+                    session['output_split'] = val
                 return gr.update(visible=val)
 
             def change_gr_playback_time(time:float, id:str)->None:
                 session = context.get_session(id)
-                session['playback_time'] = time
+                if session:
+                    session['playback_time'] = time
                 return
 
             def toggle_audiobook_files(audiobook:str, is_visible:bool)->tuple:
@@ -1349,27 +1384,28 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_param(key:str, val:Any, id:str, val2:Any=None)->None:
                 session = context.get_session(id)
-                session[key] = val
-                state = {}
-                if key == "chapters_preview":
-                    msg = 'Chapters preview feature will be available to the next version'   
-                    state['type'] = 'info'
-                    state['msg'] = msg
-                    show_alert(state)
-                elif key == 'xtts_length_penalty':
-                    if val2 is not None:
-                        if float(val) > float(val2):
-                            error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
-                            state['type'] = 'warning'
-                            state['msg'] = error
-                            show_alert(state)
-                elif key == 'xtts_num_beams':
-                    if val2 is not None:
-                        if float(val) < float(val2):
-                            error = 'Num beams must be always higher than length penalty or equal if its value is 1.0'   
-                            state['type'] = 'warning'
-                            state['msg'] = error
-                            show_alert(state)
+                if session:
+                    session[key] = val
+                    state = {}
+                    if key == "chapters_preview":
+                        msg = 'Chapters preview feature will be available to the next version'   
+                        state['type'] = 'info'
+                        state['msg'] = msg
+                        show_alert(state)
+                    elif key == 'xtts_length_penalty':
+                        if val2 is not None:
+                            if float(val) > float(val2):
+                                error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
+                                state['type'] = 'warning'
+                                state['msg'] = error
+                                show_alert(state)
+                    elif key == 'xtts_num_beams':
+                        if val2 is not None:
+                            if float(val) < float(val2):
+                                error = 'Num beams must be always higher than length penalty or equal if its value is 1.0'   
+                                state['type'] = 'warning'
+                                state['msg'] = error
+                                show_alert(state)
 
             def submit_convert_btn(
                     id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
@@ -1378,54 +1414,116 @@ def build_interface(args:dict)->gr.Blocks:
                 )->tuple:
                 try:
                     session = context.get_session(id)
-                    args = {
-                        "is_gui_process": session['is_gui_process'],
-                        "session": id,
-                        "script_mode": script_mode,
-                        "chapters_preview": chapters_preview,
-                        "device": device,
-                        "tts_engine": tts_engine,
-                        "ebook": ebook_file if isinstance(ebook_file, str) else None,
-                        "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
-                        "audiobooks_dir": session['audiobooks_dir'],
-                        "voice": voice,
-                        "language": language,
-                        "custom_model": custom_model,
-                        "fine_tuned": fine_tuned,
-                        "output_format": output_format,
-                        "output_channel": output_channel,
-                        "xtts_temperature": float(xtts_temperature),
-                        "xtts_length_penalty": float(xtts_length_penalty),
-                        "xtts_num_beams": int(session['xtts_num_beams']),
-                        "xtts_repetition_penalty": float(xtts_repetition_penalty),
-                        "xtts_top_k": int(xtts_top_k),
-                        "xtts_top_p": float(xtts_top_p),
-                        "xtts_speed": float(xtts_speed),
-                        "xtts_enable_text_splitting": bool(xtts_enable_text_splitting),
-                        "bark_text_temp": float(bark_text_temp),
-                        "bark_waveform_temp": float(bark_waveform_temp),
-                        "output_split": bool(output_split),
-                        "output_split_hours": output_split_hours,
-                        "event": None
-                    }
-                    error = None
-                    if args['ebook'] is None and args['ebook_list'] is None:
-                        error = 'Error: a file or directory is required.'
-                        show_alert({"type": "warning", "msg": error})
-                    elif args['xtts_num_beams'] < args['xtts_length_penalty']:
-                        error = 'Error: num beams must be greater or equal than length penalty.'
-                        show_alert({"type": "warning", "msg": error})                   
-                    else:
-                        session['status'] = 'converting'
-                        session['progress'] = len(audiobook_options)
-                        if isinstance(args['ebook_list'], list):
-                            args['chapters_preview'] = None
-                            ebook_list = args['ebook_list'][:]
+                    if session:
+                        args = {
+                            "is_gui_process": session['is_gui_process'],
+                            "session": id,
+                            "script_mode": script_mode,
+                            "chapters_preview": chapters_preview,
+                            "device": device,
+                            "tts_engine": tts_engine,
+                            "ebook": ebook_file if isinstance(ebook_file, str) else None,
+                            "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
+                            "audiobooks_dir": session['audiobooks_dir'],
+                            "voice": voice,
+                            "language": language,
+                            "custom_model": custom_model,
+                            "fine_tuned": fine_tuned,
+                            "output_format": output_format,
+                            "output_channel": output_channel,
+                            "xtts_temperature": float(xtts_temperature),
+                            "xtts_length_penalty": float(xtts_length_penalty),
+                            "xtts_num_beams": int(session['xtts_num_beams']),
+                            "xtts_repetition_penalty": float(xtts_repetition_penalty),
+                            "xtts_top_k": int(xtts_top_k),
+                            "xtts_top_p": float(xtts_top_p),
+                            "xtts_speed": float(xtts_speed),
+                            "xtts_enable_text_splitting": bool(xtts_enable_text_splitting),
+                            "bark_text_temp": float(bark_text_temp),
+                            "bark_waveform_temp": float(bark_waveform_temp),
+                            "output_split": bool(output_split),
+                            "output_split_hours": output_split_hours,
+                            "event": None
+                        }
+                        error = None
+                        if args['ebook'] is None and args['ebook_list'] is None:
+                            error = 'Error: a file or directory is required.'
+                            show_alert({"type": "warning", "msg": error})
+                        elif args['xtts_num_beams'] < args['xtts_length_penalty']:
+                            error = 'Error: num beams must be greater or equal than length penalty.'
+                            show_alert({"type": "warning", "msg": error})                   
+                        else:
+                            session['status'] = 'converting'
+                            session['progress'] = len(audiobook_options)
+                            if isinstance(args['ebook_list'], list):
+                                args['chapters_preview'] = None
+                                ebook_list = args['ebook_list'][:]
+                                for file in ebook_list:
+                                    if any(file.endswith(ext) for ext in ebook_formats):
+                                        print(f'Processing eBook file: {os.path.basename(file)}')
+                                        args['ebook'] = file
+                                        progress_status, passed = convert_ebook(args)
+                                        if passed is False:
+                                            if session['status'] == 'converting':
+                                                error = 'Conversion cancelled.'
+                                                break
+                                            else:
+                                                error = 'Conversion failed.'
+                                                break
+                                        else:
+                                            show_alert({"type": "success", "msg": progress_status})
+                                            args['ebook_list'].remove(file)
+                                            reset_session(args['session'])
+                                            count_file = len(args['ebook_list'])
+                                            if count_file > 0:
+                                                msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                                yield gr.update(value=msg), gr.update()
+                                            else:
+                                                msg = 'Conversion successful!'
+                                                session['status'] = 'ready'
+                                                return gr.update(value=msg), gr.update()
+                            else:
+                                print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
+                                progress_status, passed = convert_ebook(args)
+                                if passed is False:
+                                    if session['status'] == 'converting':
+                                        error = 'Conversion cancelled.'
+                                    else:
+                                        error = 'Conversion failed.'
+                                else:
+                                    if progress_status == 'confirm_blocks':
+                                        session['event'] = progress_status
+                                        msg = 'Select the blocks to convert:'
+                                        print(msg)
+                                        yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
+                                        return
+                                    else:
+                                        show_alert({"type": "success", "msg": progress_status})
+                                        reset_session(args['session'])
+                                        msg = 'Conversion successful!'
+                                        session['status'] = 'ready'
+                                        return gr.update(value=msg), gr.update()
+                        if error is not None:
+                            show_alert({"type": "warning", "msg": error})
+                        session['status'] = 'ready'
+                except Exception as e:
+                    error = f'submit_convert_btn(): {e}'
+                    alert_exception(error, id)
+                    session['status'] = 'ready'
+                return gr.update(), gr.update()
+            
+            def submit_confirmed_blocks(id:str)->tuple:
+                try:
+                    session = context.get_session(id)
+                    if session:
+                        error = None
+                        if isinstance(session['ebook_list'], list):
+                            ebook_list = session['ebook_list'][:]
                             for file in ebook_list:
                                 if any(file.endswith(ext) for ext in ebook_formats):
                                     print(f'Processing eBook file: {os.path.basename(file)}')
-                                    args['ebook'] = file
-                                    progress_status, passed = convert_ebook(args)
+                                    session['ebook'] = file
+                                    progress_status, passed = convert_ebook(session)
                                     if passed is False:
                                         if session['status'] == 'converting':
                                             error = 'Conversion cancelled.'
@@ -1435,118 +1533,60 @@ def build_interface(args:dict)->gr.Blocks:
                                             break
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
-                                        args['ebook_list'].remove(file)
-                                        reset_session(args['session'])
-                                        count_file = len(args['ebook_list'])
-                                        if count_file > 0:
-                                            msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
-                                            yield gr.update(value=msg), gr.update()
-                                        else:
-                                            msg = 'Conversion successful!'
-                                            session['status'] = 'ready'
-                                            return gr.update(value=msg), gr.update()
+                                        session['ebook_list'].remove(file)
+                                        reset_session(session['id'])
+                                        msg = 'Conversion successful!'
+                                        session['status'] = 'ready'
+                                        return gr.update(value=msg), gr.update()
                         else:
-                            print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
-                            progress_status, passed = convert_ebook(args)
+                            print(f"Processing eBook file: {os.path.basename(session['ebook'])}")
+                            progress_status, passed = convert_ebook(session)
                             if passed is False:
                                 if session['status'] == 'converting':
                                     error = 'Conversion cancelled.'
                                 else:
                                     error = 'Conversion failed.'
+                                session['status'] = 'ready'
                             else:
-                                if progress_status == 'confirm_blocks':
-                                    session['event'] = progress_status
-                                    msg = 'Select the blocks to convert:'
-                                    print(msg)
-                                    yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
-                                    return
-                                else:
-                                    show_alert({"type": "success", "msg": progress_status})
-                                    reset_session(args['session'])
-                                    msg = 'Conversion successful!'
-                                    session['status'] = 'ready'
-                                    return gr.update(value=msg), gr.update()
-                    if error is not None:
-                        show_alert({"type": "warning", "msg": error})
-                except Exception as e:
-                    error = f'submit_convert_btn(): {e}'
-                    alert_exception(error, id)
-                session['status'] = 'ready'
-                return gr.update(), gr.update()
-            
-            def submit_confirmed_blocks(id:str)->tuple:
-                try:
-                    session = context.get_session(id)
-                    error = None
-                    if isinstance(session['ebook_list'], list):
-                        ebook_list = session['ebook_list'][:]
-                        for file in ebook_list:
-                            if any(file.endswith(ext) for ext in ebook_formats):
-                                print(f'Processing eBook file: {os.path.basename(file)}')
-                                session['ebook'] = file
-                                progress_status, passed = convert_ebook(session)
-                                if passed is False:
-                                    if session['status'] == 'converting':
-                                        error = 'Conversion cancelled.'
-                                        break
-                                    else:
-                                        error = 'Conversion failed.'
-                                        break
-                                else:
-                                    show_alert({"type": "success", "msg": progress_status})
-                                    session['ebook_list'].remove(file)
-                                    reset_session(session['id'])
-                                    msg = 'Conversion successful!'
-                                    session['status'] = 'ready'
-                                    return gr.update(value=msg), gr.update()
-                    else:
-                        print(f"Processing eBook file: {os.path.basename(session['ebook'])}")
-                        progress_status, passed = convert_ebook(session)
-                        if passed is False:
-                            if session['status'] == 'converting':
-                                error = 'Conversion cancelled.'
-                            else:
-                                error = 'Conversion failed.'
-                            session['status'] = 'ready'
-                        else:
-                            show_alert({"type": "success", "msg": progress_status})
-                            reset_session(session['id'])
-                            msg = 'Conversion successful!'
-                            session['status'] = 'ready'
-                            return gr.update(value=msg), gr.update()
-                    if error is not None:
-                        show_alert({"type": "warning", "msg": error})
-                except Exception as e:
-                    error = f'submit_confirmed_blocks(): {e}'
-                    alert_exception(error, id)
+                                show_alert({"type": "success", "msg": progress_status})
+                                reset_session(session['id'])
+                                msg = 'Conversion successful!'
+                                session['status'] = 'ready'
+                                return gr.update(value=msg), gr.update()
+                        if error is not None:
+                            show_alert({"type": "warning", "msg": error})
+                    except Exception as e:
+                        error = f'submit_confirmed_blocks(): {e}'
+                        alert_exception(error, id)
                 return gr.update(), gr.update()          
 
             def update_gr_audiobook_list(id:str)->dict:
                 try:
                     nonlocal audiobook_options
                     session = context.get_session(id)
-                    if session['audiobooks_dir'] is not None:
-                        audiobook_options = [
-                            (f, os.path.join(session['audiobooks_dir'], str(f)))
-                            for f in os.listdir(session['audiobooks_dir'])
-                            if not f.lower().endswith(".vtt")
-                        ]
-                    audiobook_options.sort(
-                        key=lambda x: os.path.getmtime(x[1]),
-                        reverse=True
-                    )
-                    session['audiobook'] = (
-                        session['audiobook']
-                        if session['audiobook'] in [option[1] for option in audiobook_options]
-                        else None
-                    )
-                    if len(audiobook_options) > 0:
-                        if session['audiobook'] is not None:
-                            return gr.update(choices=audiobook_options, value=session['audiobook'])
+                    if session:
+                        if session['audiobooks_dir'] is not None:
+                            audiobook_options = [
+                                (f, os.path.join(session['audiobooks_dir'], str(f)))
+                                for f in os.listdir(session['audiobooks_dir'])
+                                if not f.lower().endswith(".vtt")
+                            ]
+                        audiobook_options.sort(
+                            key=lambda x: os.path.getmtime(x[1]),
+                            reverse=True
+                        )
+                        session['audiobook'] = (
+                            session['audiobook']
+                            if session['audiobook'] in [option[1] for option in audiobook_options]
+                            else None
+                        )
+                        if len(audiobook_options) > 0:
+                            if session['audiobook'] is not None:
+                                return gr.update(choices=audiobook_options, value=session['audiobook'])
+                            else:
+                                return gr.update(choices=audiobook_options, value=audiobook_options[0][1])
                         else:
-                            return gr.update(choices=audiobook_options, value=audiobook_options[0][1])
-                    else:
-                        return gr.update(choices=audiobook_options, value=None)
+                            return gr.update(choices=audiobook_options, value=None)
                 except Exception as e:
                     error = f'update_gr_audiobook_list(): {e}!'
                     alert_exception(error, id)              

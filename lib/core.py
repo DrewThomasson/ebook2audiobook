@@ -240,7 +240,6 @@ def prepare_dirs(src:str, id:str)->bool:
             os.makedirs(session['chapters_dir_sentences'], exist_ok=True)
             shutil.copy(src, session['ebook']) 
             return True
-        return False
     except Exception as e:
         DependencyError(e)
         return False
@@ -260,11 +259,10 @@ def check_programs(prog_name:str, command:str, options:str)->bool:
         e = f'''********** Error: {prog_name} is not installed! if your OS calibre package version 
         is not compatible you still can run ebook2audiobook.sh (linux/mac) or ebook2audiobook.cmd (windows) **********'''
         DependencyError(e)
-        return False
     except subprocess.CalledProcessError:
         e = f'Error: There was an issue running {prog_name}.'
         DependencyError(e)
-        return False
+    return False
 
 def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     try:
@@ -296,10 +294,11 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     except zipfile.BadZipFile:
         error = 'The file is not a valid ZIP archive.'
         print(error)
+        return False
     except Exception as e:
         error = f'An error occurred: {e}'
         print(error)
-    return False
+        return False
 
 def extract_custom_model(file_src:str, id, required_files:list)->str|None:
     session = context.get_session(id)
@@ -343,7 +342,7 @@ def extract_custom_model(file_src:str, id, required_files:list)->str|None:
         except asyncio.exceptions.CancelledError as e:
             DependencyError(e)
             error = f'extract_custom_model asyncio.exceptions.CancelledError: {e}'
-            print(error)     
+            print(error)
         except Exception as e:
             DependencyError(e)
             error = f'extract_custom_model Exception: {e}'
@@ -632,7 +631,6 @@ def convert2epub(id:str)-> bool:
             error = f'convert2epub error: {e}'
             print(error)
             return False
-        return False
 
 def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
     # 1. Try metadata (official EPUB title)
@@ -681,10 +679,9 @@ def get_cover(epubBook:EpubBook, id:str)->bool|str:
                 image.save(cover_path, format = 'JPEG')
                 return cover_path
             return True
-        return False
     except Exception as e:
         DependencyError(e)
-        return False
+        eturn False
 
 def get_chapters(epubBook:EpubBook, id:str)->tuple[Any,Any]:
     try:
@@ -1310,7 +1307,6 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
     except Exception as e:
         error = f'year2words() error: {e}'
         print(error)
-        raise
         return False
 
 def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
@@ -1731,7 +1727,7 @@ def convert_chapters2audio(id:str)->bool:
             return True
         except Exception as e:
             DependencyError(e)
-        return False
+            return False
 
 def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
     try:
@@ -1803,10 +1799,9 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
                     error = 'combine_audio_sentences() Final merge failed.'
                     print(error)
                     return False
-        return False
     except Exception as e:
         DependencyError(e)
-        return False
+    return False
 
 def combine_audio_chapters(id:str)->list[str]|None:
     def get_audio_duration(filepath:str)->float:
