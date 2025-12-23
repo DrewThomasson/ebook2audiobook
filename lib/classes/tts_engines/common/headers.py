@@ -16,6 +16,7 @@ __all__ = [
     "torch",
     "torchaudio",
     "random",
+    "uuid",
     "re",
     "np",
     "Any",
