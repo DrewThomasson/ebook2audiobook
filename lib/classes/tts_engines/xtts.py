@@ -131,10 +131,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         }.items()
                         if self.session.get(key) is not None
                     }
-                    fine_tuned_params['enable_chunk_crossfade'] = False
-                    fine_tuned_params['overlap_wav_len'] = 0
-                    fine_tuned_params['gpt_cond_len'] = 6
-                    fine_tuned_params['pt_cond_chunk_len'] = 30
                     with torch.no_grad():
                         result = self.engine.inference(
                             text=sentence,
