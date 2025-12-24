@@ -524,7 +524,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_xtts_temperature = gr.Slider(
                                 label='Temperature',
                                 minimum=0.05,
-                                maximum=10.0,
+                                maximum=5.0,
                                 step=0.05,
                                 value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
                                 elem_id='gr_xtts_temperature',
@@ -553,7 +553,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_xtts_repetition_penalty = gr.Slider(
                                 label='Repetition Penalty',
                                 minimum=1.0,
-                                maximum=10.0,
+                                maximum=5.0,
                                 step=0.1,
                                 value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
                                 elem_id='gr_xtts_repetition_penalty',
