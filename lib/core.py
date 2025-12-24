@@ -900,7 +900,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
             i = 0
             while i < len(text_list):
                 current = text_list[i]
-                if current in ('[pause]', '‡pause‡'):
+                if current == '‡pause‡':
                     if clean_list:
                         prev = clean_list[-1]
                         if prev and prev[-1].isalnum():
