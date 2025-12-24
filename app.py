@@ -1,8 +1,8 @@
 import argparse, socket, multiprocessing, sys, warnings
 
 from lib.conf import *
-from lib.lang import default_language_code
-from lib.models import TTS_ENGINES, default_fine_tuned, default_engine_settings
+from lib.conf_lang import default_language_code
+from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
@@ -234,10 +234,10 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     error = f'Error: Could not installed device packages!'
                     print(error)
                     sys.exit(1)
-        import lib.functions as f
-        f.context = f.SessionContext() if f.context is None else f.context
-        f.context_tracker = f.SessionTracker() if f.context_tracker is None else f.context_tracker
-        f.active_sessions = set() if f.active_sessions is None else f.active_sessions
+        import lib.core as c
+        c.context = c.SessionContext() if c.context is None else c.context
+        c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
+        c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False
@@ -292,7 +292,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                         args['ebook_list'].append(full_path)
-                progress_status, passed = f.convert_ebook_batch(args)
+                progress_status, passed = c.convert_ebook_batch(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
@@ -303,7 +303,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
                     print(error)
                     sys.exit(1) 
-                progress_status, passed = f.convert_ebook(args)
+                progress_status, passed = c.convert_ebook(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
@@ -334,16 +334,16 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                         )
                 except OSError as e:
                     error = f'Connection error: {e}'
-                    f.alert_exception(error, None)
+                    c.alert_exception(error, None)
                 except socket.error as e:
                     error = f'Socket error: {e}'
-                    f.alert_exception(error, None)
+                    c.alert_exception(error, None)
                 except KeyboardInterrupt:
                     error = 'Server interrupted by user. Shutting down...'
-                    f.alert_exception(error, None)
+                    c.alert_exception(error, None)
                 except Exception as e:
                     error = f'An unexpected error occurred: {e}'
-                    f.alert_exception(error, None)
+                    c.alert_exception(error, None)
             else:
                 error = 'Error: In GUI mode, no option or only --share can be passed'
                 print(error)

@@ -71,12 +71,14 @@ while (( $# > 0 )); do
 	case "$1" in
 		--*)
 			key="${1#--}"
-			if [[ -n "$2" && "$2" != --* ]]; then
-				arguments[$key]="$2"
+			if (( $# > 1 )) && [[ "$2" != --* ]]; then
+				arguments["$key"]="$2"
 				shift 2
 				continue
 			else
-				arguments[$key]=true
+				arguments["$key"]=true
+				shift
+				continue
 			fi
 			;;
 		*)
@@ -84,8 +86,8 @@ while (( $# > 0 )); do
 			exit 1
 			;;
 	esac
-	shift
 done
+
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
@@ -601,6 +603,8 @@ function check_conda {
 			# Detect Jetson and select correct Python version
 			MODEL="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
 			if [[ "$MODEL" == *jetson* ]]; then
+				# needed gfortran to compile pip scipy pkg
+				sudo apt-get install gfortran
 				PYTHON_VERSION="3.10"
 			fi
 		else

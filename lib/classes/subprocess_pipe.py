@@ -20,7 +20,7 @@ class SubprocessPipe:
             self.progress_bar((percent / 100), desc=self.msg)
 
     def _on_complete(self)->None:
-        msg = f"{self.msg} completed!"
+        msg = f"\n{self.msg} completed!"
         print(msg)
         if self.is_gui_process:
             self.progress_bar(1.0, desc=msg)

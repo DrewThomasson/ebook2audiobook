@@ -1,8 +1,4 @@
-import os
-import gc
-import torch
-import shutil
-import regex as re
+import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf, numpy as np
 
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
@@ -11,190 +7,307 @@ from pathlib import Path
 from torch import Tensor
 from torch.nn import Module
 
-from lib.conf import tts_dir
-from lib.models import xtts_builtin_speakers_list, TTS_ENGINES, models
+from lib.classes.vram_detector import VRAMDetector
+from lib.classes.tts_engines.common.audio import normalize_audio
+from lib import *
 
-def cleanup_memory()->None:
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
-        torch.cuda.synchronize()
+_lock = threading.Lock()
 
-def model_size_bytes(model:Module)->int:
-	total = 0
-	for t in list(model.parameters()) + list(model.buffers()):
-		if isinstance(t, Tensor):
-			total += t.nelement() * t.element_size()
-	return total
+class TTSUtils:
 
-def loaded_tts_size_gb(loaded_tts:Dict[str, Module])->float:
-	total_bytes = 0
-	for model in loaded_tts.values():
-		try:
-			total_bytes += model_size_bytes(model)
-		except Exception:
-			pass
-	gb = total_bytes / (1024 ** 3)
-	return round(gb, 2)
+    def _cleanup_memory(self)->None:
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+            torch.cuda.synchronize()
 
-def load_xtts_builtin_list()->dict:
-    try:
-        if len(xtts_builtin_speakers_list) > 0:
-            return xtts_builtin_speakers_list
-        speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
-        loaded = torch.load(speakers_path, weights_only=False)
-        if not isinstance(loaded, dict):
-            raise TypeError(
-                f"Invalid XTTS speakers format: {type(loaded)}"
-            )
-        for name, data in loaded.items():
-            if name not in xtts_builtin_speakers_list:
-                xtts_builtin_speakers_list[name] = data
-        return xtts_builtin_speakers_list
-    except Exception as error:
-        raise RuntimeError(
-            "load_xtts_builtin_list() failed"
-        ) from error
-
-def apply_cuda_policy(using_gpu, enough_vram, seed):
-    if using_gpu and enough_vram:
-        torch.cuda.set_per_process_memory_fraction(0.95)
-        torch.backends.cudnn.enabled = True
-        torch.backends.cudnn.benchmark = True
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.allow_tf32 = True
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-        torch.cuda.manual_seed_all(seed)
-    else:
-        torch.cuda.set_per_process_memory_fraction(0.7)
-        torch.backends.cudnn.enabled = True
-        torch.backends.cudnn.benchmark = False
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.allow_tf32 = False
-        torch.backends.cuda.matmul.allow_tf32 = False
-        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-        torch.cuda.manual_seed_all(seed)
-
-def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
-
-    def format_timestamp(seconds:float)->str:
-        m, s = divmod(seconds, 60)
-        h, m = divmod(m, 60)
-        return f"{int(h):02}:{int(m):02}:{s:06.3f}"
-
-    try:
-        index = 1
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if "-->" in line:
-                        index += 1
-        if index > 1 and "resume_check" in sentence_obj and sentence_obj["resume_check"] < index:
-            return index  # Already written
-        if not os.path.exists(path):
-            with open(path, "w", encoding="utf-8") as f:
-                f.write("WEBVTT\n\n")
-        with open(path, "a", encoding="utf-8") as f:
-            start = format_timestamp(float(sentence_obj["start"]))
-            end = format_timestamp(float(sentence_obj["end"]))
-            text = re.sub(r"[\r\n]+", " ", str(sentence_obj["text"])).strip()
-            f.write(f"{start} --> {end}\n{text}\n\n")
-        return index + 1
-    except Exception as e:
-        error = f"append_sentence2vtt() error: {e}"
-        print(error)
-        return False
-
-def is_safetensors_file(path:str)->bool:
-    try:
-        with open(path, 'rb') as f:
-            header = f.read(32)
-            return b'safetensors' in header
-    except Exception:
-        return False
-
-def convert_pt_to_safetensors(pth_path:str, delete_original:bool=False)->str:
-    pth_path = Path(pth_path)
-    if not pth_path.exists():
-        error = f'File not found: {pth_path}'
-        print(error)
-        raise FileNotFoundError()
-    if not (pth_path.suffix in ['.pth', '.pt']):
-        error = f'Expected a .pth or .pt file, got: {pth_path.suffix}'
-        print(error)
-        raise ValueError(error)
-    safe_dir = pth_path.parent / "safetensors"
-    safe_dir.mkdir(exist_ok=True)
-    safe_path = safe_dir / pth_path.with_suffix('.safetensors').name
-    msg = f'Converting {pth_path.name} → safetensors/{safe_path.name}'
-    print(msg)
-    try:
-        try:
-            state = torch.load(str(pth_path), map_location='cpu', weights_only=True)
-        except Exception:
-            error = f'⚠️ weights_only load failed for {pth_path.name}, retrying unsafely (trusted file).'
-            print(error)
-            state = torch.load(str(pth_path), map_location='cpu', weights_only=False)
-        if isinstance(state, dict) and "model" in state:
-            state = state["model"]
-        flattened = {}
-        for k, v in state.items():
-            if isinstance(v, dict):
-                for subk, subv in v.items():
-                    flattened[f"{k}.{subk}"] = subv
-            else:
-                flattened[k] = v
-        state = {k: v for k, v in flattened.items() if isinstance(v, torch.Tensor)}
-        for k, v in list(state.items()):
-            state[k] = v.clone().detach()
-        save_file(state, str(safe_path))
-        if delete_original:
-            pth_path.unlink(missing_ok=True)
-            msg = f'Deleted original: {pth_path}'
-            print(msg)
-        msg = f'Saved: {safe_path}'
-        print(msg)
-        return str(safe_path)
-    except Exception as e:
-        error = f'Failed to convert {pth_path.name}: {e}'
-        print(error)
-        raise
-
-def ensure_safe_checkpoint(checkpoint_dir:str)->list[str]:
-    safe_files = []
-    if os.path.isfile(checkpoint_dir):
-        if not (checkpoint_dir.endswith('.pth') or checkpoint_dir.endswith('.pt')):
-            error = f'Invalid checkpoint file: {checkpoint_dir}'
-            raise ValueError(error)
-        if not is_safetensors_file(checkpoint_dir):
+    def _loaded_tts_size_gb(self, loaded_tts:Dict[str, Module])->float:
+        total_bytes = 0
+        for model in loaded_tts.values():
             try:
-                safe_path = convert_pt_to_safetensors(checkpoint_dir, False)
-                msg = f'Created safetensors version of {os.path.basename(checkpoint_dir)} → {safe_path}'
-                print(msg)
-                safe_files.append(safe_path)
-            except Exception as e:
-                error = f'Failed to convert {os.path.basename(checkpoint_dir)}: {e}'
-                print(error)
+                total_bytes += model_size_bytes(model)
+            except Exception:
+                pass
+        gb = total_bytes / (1024 ** 3)
+        return round(gb, 2)
+
+    def _load_xtts_builtin_list(self)->dict:
+        try:
+            if len(xtts_builtin_speakers_list) > 0:
+                return xtts_builtin_speakers_list
+            speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTSv2']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+            loaded = torch.load(speakers_path, weights_only=False)
+            if not isinstance(loaded, dict):
+                raise TypeError(
+                    f"Invalid XTTS speakers format: {type(loaded)}"
+                )
+            for name, data in loaded.items():
+                if name not in xtts_builtin_speakers_list:
+                    xtts_builtin_speakers_list[name] = data
+            return xtts_builtin_speakers_list
+        except Exception as error:
+            raise RuntimeError(
+                "self._load_xtts_builtin_list() failed"
+            ) from error
+
+    def _apply_cuda_policy(self, using_gpu:bool, enough_vram:bool, seed:int)->None:
+        torch.cuda.manual_seed_all(0)
+        if using_gpu and enough_vram:
+            torch.cuda.set_per_process_memory_fraction(0.95)
+            torch.backends.cudnn.enabled = True
+            torch.backends.cudnn.benchmark = True
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.allow_tf32 = True
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
+            torch.cuda.manual_seed_all(seed)
         else:
-            safe_files.append(checkpoint_dir)
-        return safe_files
-    if not os.path.isdir(checkpoint_dir):
-        raise FileNotFoundError(f"Invalid checkpoint_dir: {checkpoint_dir}")
-    for root, _, files in os.walk(checkpoint_dir):
-        for fname in files:
-            if fname.endswith(".pth") or fname.endswith(".pt"):
-                pth_path = os.path.join(root, fname)
-                if is_safetensors_file(pth_path):
-                    safe_files.append(pth_path)
-                    continue
-                try:
-                    safe_path = convert_pt_to_safetensors(pth_path, False)
-                    msg = f'Created safetensors version of {os.path.relpath(pth_path, checkpoint_dir)} → {os.path.relpath(safe_path, checkpoint_dir)}'
+            torch.cuda.set_per_process_memory_fraction(0.7)
+            torch.backends.cudnn.enabled = True
+            torch.backends.cudnn.benchmark = False
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.allow_tf32 = False
+            torch.backends.cuda.matmul.allow_tf32 = False
+            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
+            torch.cuda.manual_seed_all(seed)
+
+    def _load_api(self, key:str, model_path:str)->Any:
+        try:
+            with _lock:
+                from TTS.api import TTS as TTSEngine
+                engine = loaded_tts.get(key, False)
+                if not engine:
+                    engine = TTSEngine(model_path)
+                if engine:
+                    vram_dict = VRAMDetector().detect_vram(self.session['device'])
+                    self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                    models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
+                    if self.session['free_vram_gb'] > models_loaded_size_gb:
+                        loaded_tts[key] = engine
+                return engine
+        except Exception as e:
+            error = f"_load_api() error: {e}"
+            print(error)
+            return None
+
+    def _load_checkpoint(self,**kwargs:Any)->Any:
+        try:
+            with _lock:
+                key = kwargs.get('key')
+                engine = loaded_tts.get(key, False)
+                if not engine:
+                    engine_name = kwargs.get('tts_engine', None)
+                    from TTS.tts.configs.xtts_config import XttsConfig
+                    from TTS.tts.models.xtts import Xtts
+                    checkpoint_path = kwargs.get('checkpoint_path')
+                    config_path = kwargs.get('config_path',None)
+                    vocab_path = kwargs.get('vocab_path',None)
+                    if not checkpoint_path or not os.path.exists(checkpoint_path):
+                        error = f'Missing or invalid checkpoint_path: {checkpoint_path}'
+                        raise FileNotFoundError(error)
+                        return False
+                    if not config_path or not os.path.exists(config_path):
+                        error = f'Missing or invalid config_path: {config_path}'
+                        raise FileNotFoundError(error)
+                        return False
+                    config = XttsConfig()
+                    config.models_dir = os.path.join("models","tts")
+                    config.load_json(config_path)
+                    engine = Xtts.init_from_config(config)
+                    engine.load_checkpoint(
+                        config,
+                        checkpoint_path = checkpoint_path,
+                        vocab_path = vocab_path,
+                        eval = True
+                    ) 
+                if engine:
+                    vram_dict = VRAMDetector().detect_vram(self.session['device'])
+                    self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                    models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
+                    if self.session['free_vram_gb'] > models_loaded_size_gb:
+                        loaded_tts[key] = engine
+                return engine
+        except Exception as e:
+            error = f'_load_checkpoint() error: {e}'
+            print(error)
+            return None
+
+    def _load_engine_zs(self)->Any:
+        try:
+            msg = f"Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient..."
+            print(msg)
+            self._cleanup_memory()
+            engine_zs = loaded_tts.get(self.tts_zs_key, False)
+            if not engine_zs:
+                engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
+            if engine_zs:
+                self.session['model_zs_cache'] = self.tts_zs_key
+                msg = f'ZeroShot {self.tts_zs_key} Loaded!'
+                return engine_zs
+        except Exception as e:
+            error = f'_load_engine_zs() error: {e}'
+            raise ValueError(error)
+
+    def _check_xtts_builtin_speakers(self, voice_path:str, speaker:str)->str|bool:
+        try:
+            voice_parts = Path(voice_path).parts
+            if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
+                return voice_path
+            xtts = TTS_ENGINES['XTTSv2']
+            if self.session['language'] in default_engine_settings[xtts].get('languages', {}):
+                default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
+                if os.path.exists(default_text_file):
+                    msg = f"Converting builtin eng voice to {self.session['language']}..."
                     print(msg)
-                    safe_files.append(safe_path)
-                except Exception as e:
-                    error = f'Failed to convert {fname}: {e}'
-                    print(error)
-    return safe_files
+                    key = f"{xtts}-internal"
+                    default_text = Path(default_text_file).read_text(encoding="utf-8")
+                    self._cleanup_memory()
+                    engine = loaded_tts.get(key, False)
+                    if not engine:
+                        vram_dict = VRAMDetector().detect_vram(self.session['device'])
+                        self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                        models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
+                        if self.session['free_vram_gb'] <= models_loaded_size_gb:
+                            del loaded_tts[self.tts_key]
+                        hf_repo = default_engine_settings[xtts]['repo']
+                        hf_sub = ''
+                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][0]}", cache_dir=self.cache_dir)
+                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][1]}", cache_dir=self.cache_dir)
+                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][2]}", cache_dir=self.cache_dir)
+                        engine = self._load_checkpoint(tts_engine=xtts, key=key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
+                    if engine:
+                        if speaker in default_engine_settings[xtts]['voices'].keys():
+                            gpt_cond_latent, speaker_embedding = self.xtts_speakers[default_engine_settings[xtts]['voices'][speaker]].values()
+                        else:
+                            gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[voice_path], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)
+                        fine_tuned_params = {
+                            key.removeprefix("xtts_"): cast_type(self.session[key])
+                            for key, cast_type in {
+                                "xtts_temperature": float,
+                                #"xtts_codec_temperature": float,
+                                "xtts_length_penalty": float,
+                                "xtts_num_beams": int,
+                                "xtts_repetition_penalty": float,
+                                #"xtts_cvvp_weight": float,
+                                "xtts_top_k": int,
+                                "xtts_top_p": float,
+                                "xtts_speed": float,
+                                #"xtts_gpt_cond_len": int,
+                                #"xtts_gpt_batch_size": int,
+                                "xtts_enable_text_splitting": bool
+                            }.items()
+                            if self.session.get(key) is not None
+                        }
+                        with torch.no_grad():
+                            result = engine.inference(
+                                text=default_text.strip(),
+                                language=self.session['language_iso1'],
+                                gpt_cond_latent=gpt_cond_latent,
+                                speaker_embedding=speaker_embedding,
+                                **fine_tuned_params,
+                            )
+                        audio_sentence = result.get('wav') if isinstance(result, dict) else None
+                        if audio_sentence is not None:
+                            audio_sentence = audio_sentence.tolist()
+                            sourceTensor = self._tensor_type(audio_sentence)
+                            audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                            # CON is a reserved name on windows
+                            lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
+                            new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
+                            proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
+                            torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
+                            if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
+                                del audio_sentence, sourceTensor, audio_tensor
+                                Path(proc_voice_path).unlink(missing_ok=True)
+                                gc.collect()
+                                self.engine = loaded_tts.get(self.tts_key, False)
+                                if not self.engine:
+                                    self._load_engine()
+                                return new_voice_path
+                            else:
+                                error = 'normalize_audio() error:'
+                        else:
+                            error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
+                    else:
+                        error = f"_check_xtts_builtin_speakers() error: {xtts} is False"
+                else:
+                    error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
+                print(error)
+            else:
+                return voice_path
+        except Exception as e:
+            error = f'_check_xtts_builtin_speakers() error: {e}'
+            if new_voice_path:
+                Path(new_voice_path).unlink(missing_ok=True)
+            if proc_voice_path:
+                Path(proc_voice_path).unlink(missing_ok=True)
+            print(error)
+            return False
+        
+    def _tensor_type(self,audio_data:Any)->torch.Tensor:
+        if isinstance(audio_data, torch.Tensor):
+            return audio_data
+        elif isinstance(audio_data,np.ndarray):
+            return torch.from_numpy(audio_data).float()
+        elif isinstance(audio_data,list):
+            return torch.tensor(audio_data,dtype=torch.float32)
+        else:
+            raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
+            
+    def _get_resampler(self,orig_sr:int,target_sr:int)->torchaudio.transforms.Resample:
+        key=(orig_sr,target_sr)
+        if key not in self.resampler_cache:
+            self.resampler_cache[key]=torchaudio.transforms.Resample(
+                orig_freq = orig_sr,new_freq = target_sr
+            )
+        return self.resampler_cache[key]
+
+    def _resample_wav(self,wav_path:str,expected_sr:int)->str:
+        waveform,orig_sr = torchaudio.load(wav_path)
+        if orig_sr==expected_sr and waveform.size(0)==1:
+            return wav_path
+        if waveform.size(0)>1:
+            waveform = waveform.mean(dim=0,keepdim=True)
+        if orig_sr!=expected_sr:
+            resampler = self._get_resampler(orig_sr,expected_sr)
+            waveform = resampler(waveform)
+        wav_tensor = waveform.squeeze(0)
+        wav_numpy = wav_tensor.cpu().numpy()
+        resample_tmp = os.path.join(self.session['process_dir'], 'tmp')
+        os.makedirs(resample_tmp, exist_ok=True)
+        tmp_fh = tempfile.NamedTemporaryFile(dir=resample_tmp, suffix=".wav", delete=False)
+        tmp_path = tmp_fh.name
+        tmp_fh.close()
+        sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
+        return tmp_path
+
+    def _append_sentence2vtt(self, sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
+
+        def format_timestamp(seconds:float)->str:
+            m, s = divmod(seconds, 60)
+            h, m = divmod(m, 60)
+            return f"{int(h):02}:{int(m):02}:{s:06.3f}"
+
+        try:
+            index = 1
+            if os.path.exists(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if "-->" in line:
+                            index += 1
+            if index > 1 and "resume_check" in sentence_obj and sentence_obj["resume_check"] < index:
+                return index  # Already written
+            if not os.path.exists(path):
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write("WEBVTT\n\n")
+            with open(path, "a", encoding="utf-8") as f:
+                start = format_timestamp(float(sentence_obj["start"]))
+                end = format_timestamp(float(sentence_obj["end"]))
+                text = re.sub(r"[\r\n]+", " ", str(sentence_obj["text"])).strip()
+                f.write(f"{start} --> {end}\n{text}\n\n")
+            return index + 1
+        except Exception as e:
+            error = f"self._append_sentence2vtt() error: {e}"
+            print(error)
+            return False
