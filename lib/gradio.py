@@ -1609,9 +1609,9 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.set_session(str(uuid.uuid4()))
                     else:
                         session = context.set_session(data.get('id'))
-                        if len(active_sessions) == 0 or data['status'] is None:
-                            restore_session_from_data(data, session)
-                            session['status'] = None
+                    if len(active_sessions) == 0 or (data and data.get('status', None) is None):
+                        restore_session_from_data(data, session)
+                        session['status'] = None
                     if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                         return gr.update(), gr.update(), gr.update(value=''), update_gr_glassmask(str=error)
