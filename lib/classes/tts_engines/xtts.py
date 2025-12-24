@@ -111,7 +111,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
                             self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
                         else:
-                            self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['voice_path']])  
+                            self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['voice_path']], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)  
                         self.params['latent_embedding'][self.params['voice_path']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
                     fine_tuned_params = {
                         key.removeprefix("xtts_"): cast_type(self.session[key])
