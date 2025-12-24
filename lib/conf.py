@@ -48,7 +48,8 @@ os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostran
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 os.environ['PYTORCH_NO_CUDA_MEMORY_CACHING'] = '1'
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:32,garbage_collection_threshold:0.6,expandable_segments:True'
+os.environ['TORCH_CUDA_ENABLE_CUDA_GRAPH'] = '0'
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128,garbage_collection_threshold:0.6,expandable_segments:True'
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 os.environ["CUDA_CACHE_MAXSIZE"] = "2147483648"
@@ -93,7 +94,6 @@ default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a definitive place where to upload the jetpack5 torch
 
 jetson_torch_version_base = {
-    "jetson51": "2.4.1",
     "jetson60": "2.4.0",
     "jetson61": "2.5.0"
 }
@@ -125,7 +125,6 @@ torch_matrix = {
     "xpu": {"url": default_pytorch_url},
     
     # JETSON
-    "jetson51": {"url": default_jetson_url},
     "jetson60": {"url": default_jetson_url},
     "jetson61": {"url": default_jetson_url}
 }
@@ -134,7 +133,7 @@ cuda_version_range = {"min": (11,8), "max": (12,8)}
 rocm_version_range = {"min": (5,5), "max": (6,4)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
-jetson_version_range = {"min": (5,1), "max": (6,2)}
+jetson_version_range = {"min": (6,0), "max": (6,2)}
 
 # ---------------------------------------------------------------------
 # Python environment references

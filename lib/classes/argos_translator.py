@@ -5,7 +5,7 @@ import argostranslate.translate
 
 from iso639 import Lang
 from lib.conf import models_dir
-from lib.lang import language_mapping
+from lib.conf_lang import language_mapping
 
 # NOTE: source_lang and target_lang must be iso639-1 (2 letters)
 

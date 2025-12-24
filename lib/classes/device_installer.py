@@ -27,7 +27,7 @@ class DeviceInstaller():
             os_env = 'linux' if name == 'jetson' else self.check_platform
         elif mode == 'build_docker':
             os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
-            pyvenv = [3,10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
+            pyvenv = [3,10] if tag in ['jetson60', 'jetson61'] else pyvenv
         if all([name, tag, os_env, arch, pyvenv]):
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
             return json.dumps(device_info)
@@ -171,27 +171,10 @@ class DeviceInstaller():
             rev_major = int(parts[0])
             rev_minor = int(parts[1]) if len(parts) > 1 else 0
             rev_patch = int(parts[2]) if len(parts) > 2 else 0
-            if l4t_major < 35:
-                msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 5.1+. Falling back to CPU.'
+            if l4t_major < 36:
+                msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 6.0+. Falling back to CPU.'
                 return ('unsupported', msg)
-            if l4t_major == 35:
-                if rev_major == 0 and rev_minor <= 1:
-                    msg = 'JetPack 5.0/5.0.1 detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
-                    return ('cpu', msg)
-                if rev_major == 0 and rev_minor >= 2:
-                    msg = 'JetPack 5.0.x detected. Please upgrade to JetPack 5.1+ to use the GPU. Failing back to CPU'
-                    return ('cpu', msg)
-                if rev_major == 1 and rev_minor == 0:
-                    msg = 'JetPack 5.1.0 detected. Please upgrade to JetPack 5.1.2 or newer.'
-                    return ('51', msg)
-                if rev_major == 1 and rev_minor == 1:
-                    msg = 'JetPack 5.1.1 detected. Please upgrade to JetPack 5.1.2 or newer.'
-                    return ('51', msg)
-                if (rev_major > 1) or (rev_major == 1 and rev_minor >= 2):
-                    return ('51', msg)
-                msg = 'Unrecognized JetPack 5.x version. Falling back to CPU.'
-                return ('unknown', msg)
-            if l4t_major == 36:
+            else:
                 if rev_major == 2:
                     return ('60', msg)
                 else:
@@ -734,7 +717,8 @@ class DeviceInstaller():
                                         torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'scikit-learn'])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-binary=scikit-learn', 'scikit-learn'])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-cache-dir', '--no-binary=scipy', 'scipy'])
                                     elif device_info['name'] == devices['MPS']['proc']:
                                         torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
                                         torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
