@@ -166,7 +166,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     pth_voice_dir = os.path.join(bark_dir, speaker)
                     pth_voice_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
                     tts_dyn_params = {}
-                    if speaker not in self.engine.speakers:
+                    if speaker not in self.engine.speakers or not os.path.exists(pth_voice_file):
                         tts_dyn_params['speaker_wav'] = self.params['voice_path']
                     fine_tuned_params = {
                         key.removeprefix("bark_"): cast_type(self.session[key])
