@@ -603,7 +603,7 @@ def convert2epub(id:str)-> bool:
                     '--smarten-punctuation',
                     '--enable-heuristics',
                     '--disable-format-scene-breaks',
-                    '--replace-scene-breaks=[pause]',
+                    '--replace-scene-breaks="\[pause\]"',
                     '--verbose'
                 ]
             if title:
