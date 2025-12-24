@@ -608,9 +608,6 @@ def convert2epub(id:str)-> bool:
                     '--disable-font-rescaling',
                     '--pretty-print',
                     '--smarten-punctuation',
-                    '--enable-heuristics',
-                    '--disable-format-scene-breaks',
-                    '--replace-scene-breaks=[pause]',
                     '--verbose'
                 ]
             if title:
