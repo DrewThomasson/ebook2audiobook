@@ -867,8 +867,6 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                 if typ == 'heading':
                     text_list.append(payload.strip())
                 elif typ in ('break', 'pause'):
-                    if text_list and text_list[-1] and text_list[-1][-1].isalnum():
-                        text_list[-1] += '.'
                     if prev_typ != typ:
                         text_list.append(TTS_SML[typ])
                 elif typ == 'table':
@@ -902,7 +900,15 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
             i = 0
             while i < len(text_list):
                 current = text_list[i]
-                if current == '‡break‡':
+                if current in ('[pause]', '‡pause‡'):
+                    if clean_list:
+                        prev = clean_list[-1]
+                        if prev and prev[-1].isalnum():
+                            clean_list[-1] = prev + '.'
+                    clean_list.append(current)
+                    i += 1
+                    continue
+                elif current == '‡break‡':
                     if clean_list:
                         prev = clean_list[-1]
                         if prev in ('‡break‡', '‡pause‡'):
