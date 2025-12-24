@@ -1045,9 +1045,11 @@ def build_interface(args:dict)->gr.Blocks:
 
             def confirm_deletion(voice_path:str, custom_model:str, audiobook:str, id:str, method:str|None=None)->tuple:
                 try:
+                    nonlocal models
                     if method is not None:
                         session = context.get_session(id)
                         if session:
+                            models = load_engine_presets(session['tts_engine'])
                             if method == 'confirm_voice_del':
                                 selected_name = Path(voice_path).stem
                                 pattern = re.sub(r'\.wav$', '*.wav', voice_path)
@@ -1248,6 +1250,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return dir_path
 
             def change_gr_custom_model_file(f:str|None, t:str, id:str)->tuple:
+                nonlocal models
                 if f is not None:
                     state = {}
                     if len(custom_model_options) > max_custom_model:
@@ -1257,6 +1260,7 @@ def build_interface(args:dict)->gr.Blocks:
                     else:
                         session = context.get_session(id)
                         if session:
+                            models = load_engine_presets(session['tts_engine'])
                             session['tts_engine'] = t
                             if analyze_uploaded_file(f, models['internal']['files']):
                                 model = extract_custom_model(f, id, models[default_fine_tuned]['files'])
@@ -1323,6 +1327,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if selected:
                     session = context.get_session(id)
                     if session:
+                        models = load_engine_presets(session['tts_engine'])
                         session['fine_tuned'] = selected
                         visible_custom_model = False
                         if selected == 'internal':
