@@ -25,10 +25,11 @@ class VoiceExtractor:
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir,'htdemucs', voice_name)
         self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
-        self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
         self.final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
         self.silence_threshold = -60
+        models = load_engine_presets(session['tts_engine'])
+        self.samplerate = models[session['fine_tuned']]['samplerate']
 
     def _validate_format(self)->tuple[bool,str]:
         file_extension = os.path.splitext(self.voice_file)[1].lower()
