@@ -788,9 +788,6 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                         last_text_char = text[-1] if text else last_text_char
                 elif isinstance(child, Tag):
                     name = child.name.lower()
-                    if name == 'span' and child.get('data-pause') == '1':
-                        yield ('pause', TTS_SML['pause'])
-                        continue
                     if name in heading_tags:
                         title = child.get_text(strip=True)
                         if title:
