@@ -12,6 +12,7 @@ from io import BytesIO
 from pydub import AudioSegment, silence
 from pydub.silence import detect_silence
 
+from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 from lib.classes.background_detector import BackgroundDetector
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.conf import voice_formats, default_audio_proc_samplerate
