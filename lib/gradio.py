@@ -1100,8 +1100,10 @@ def build_interface(args:dict)->gr.Blocks:
             def update_gr_voice_list(id:str)->dict:
                 try:
                     nonlocal voice_options
+                    nonlocal models
                     session = context.get_session(id)
                     if session:
+                        models = load_engine_presets(session['tts_engine'])
                         lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
                         file_pattern = "*.wav"
                         eng_options = []
@@ -1197,8 +1199,10 @@ def build_interface(args:dict)->gr.Blocks:
             def update_gr_fine_tuned_list(id:str)->dict:
                 try:
                     nonlocal fine_tuned_options
+                    nonlocal models
                     session = context.get_session(id)
                     if session:
+                        models = load_engine_presets(session['tts_engine'])
                         fine_tuned_options = [
                             name
                             for name, details in models.items()
@@ -1277,9 +1281,9 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_tts_engine_list(engine:str, id:str)->tuple:
                 nonlocal models
-                models = load_engine_presets(engine)
                 session = context.get_session(id)
                 if session:
+                    models = load_engine_presets(engine)
                     session['tts_engine'] = engine
                     session['fine_tuned'] = default_fine_tuned
                     session['voice'] = models[session['fine_tuned']]['voice']
@@ -1338,7 +1342,7 @@ def build_interface(args:dict)->gr.Blocks:
                     visible_fine_tuned = True if selected is None else False
                     visible_del_btn = False if selected is None else True
                     return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(id)
-                return gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update()
 
             def change_gr_output_format_list(val:str, id:str)->None:
                 session = context.get_session(id)
@@ -1600,9 +1604,9 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.set_session(str(uuid.uuid4()))
                     else:
                         session = context.set_session(data.get('id'))
-                    if len(active_sessions) == 0 or data['status'] is None:
-                        restore_session_from_data(data, session)
-                        session['status'] = None
+                        if len(active_sessions) == 0 or data['status'] is None:
+                            restore_session_from_data(data, session)
+                            session['status'] = None
                     if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                         return gr.update(), gr.update(), gr.update(value=''), update_gr_glassmask(str=error)
