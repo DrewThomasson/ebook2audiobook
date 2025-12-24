@@ -511,6 +511,13 @@ def convert2epub(id:str)-> bool:
                 error = f'Unsupported file format: {file_ext}'
                 print(error)
                 return False
+            if file_ext == '.txt':
+                with open(file_input, 'r', encoding='utf-8') as f:
+                    text = f.read()
+                text = text.replace('\r\n', '\n')
+                text = text.replace('\n\n', '\n[pause]\n')
+                with open(file_input, 'w', encoding='utf-8') as f:
+                    f.write(text)
             elif file_ext == '.pdf':
                 msg = 'File input is a PDF. flatten it in XHTML...'
                 print(msg)
@@ -603,7 +610,7 @@ def convert2epub(id:str)-> bool:
                     '--smarten-punctuation',
                     '--enable-heuristics',
                     '--disable-format-scene-breaks',
-                    '--replace-scene-breaks=AAAAAAA',
+                    '--replace-scene-breaks=[pause]',
                     '--verbose'
                 ]
             if title:
