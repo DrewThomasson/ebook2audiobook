@@ -180,7 +180,7 @@ class TTSUtils:
                         if speaker in default_engine_settings[xtts]['voices'].keys():
                             gpt_cond_latent, speaker_embedding = self.xtts_speakers[default_engine_settings[xtts]['voices'][speaker]].values()
                         else:
-                            gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[voice_path])
+                            gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[voice_path], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)
                         fine_tuned_params = {
                             key.removeprefix("xtts_"): cast_type(self.session[key])
                             for key, cast_type in {
