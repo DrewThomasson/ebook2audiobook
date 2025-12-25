@@ -166,8 +166,11 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 **speaker_argument
                             )
                     if is_audio_data_valid(audio_sentence):
-                        sourceTensor = self._tensor_type(audio_sentence)
-                        audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                        if not isinstance(audio_sentence, torch.Tensor):
+                            error = 'XTTSv2 inference did not return a torch.Tensor'
+                            print(error)
+                            return False
+                        audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
                         if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         if audio_tensor is not None and audio_tensor.numel() > 0:
