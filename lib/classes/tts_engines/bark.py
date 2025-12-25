@@ -165,6 +165,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         """
                     pth_voice_dir = os.path.join(bark_dir, speaker)
                     pth_voice_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
+                    self.engine.synthesizer.voice_dir = pth_voice_dir
                     tts_dyn_params = {}
                     if not os.path.exists(pth_voice_file) or speaker not in self.engine.speakers:
                         tts_dyn_params['speaker_wav'] = self.params['voice_path']
