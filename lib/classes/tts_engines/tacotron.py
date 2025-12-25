@@ -231,6 +231,10 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                 error = f"Cannot create {final_sentence_file}"
                                 print(error)
                                 return False
+                        else:
+                            error = f"audio_tensor not valid"
+                            print(error)
+                            return False
                     else:
                         error = f"audio_sentence not valid"
                         print(error)

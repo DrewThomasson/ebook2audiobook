@@ -146,8 +146,8 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                             print(error)
                             return False
                         audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
-                            if sentence[-1].isalnum() or sentence[-1] == '—':
-                                audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                        if sentence[-1].isalnum() or sentence[-1] == '—':
+                            audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         if audio_tensor is not None and audio_tensor.numel() > 0:
                             self.audio_segments.append(audio_tensor)
                             if not re.search(r'\w$', sentence, flags=re.UNICODE) and sentence[-1] != '—':
