@@ -163,7 +163,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
     headless_optional_group = parser.add_argument_group('optional parameters')
     headless_optional_group.add_argument(options[7], type=str, default=None, help='''(Optional) Path to the voice cloning file for TTS engine. 
     Uses the default voice if not present.''')
-    headless_optional_group.add_argument(options[8], type=str, default=default_device, choices=list(devices.values()), help=f'''(Optional) Pprocessor unit type for the conversion. 
+    headless_optional_group.add_argument(options[8], type=str, default=default_device, choices=list(devices.keys()), help=f'''(Optional) Processor unit type for the conversion.
     Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.''')
     headless_optional_group.add_argument(options[9], type=str, default=None, choices=tts_engine_list_keys+tts_engine_list_values, help=f'''(Optional) Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
     Default depends on the selected language. The tts engine should be compatible with the chosen language''')
