@@ -959,9 +959,15 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_voice_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
                 if session:
-                    voice_value = voice_options[0][1] if voice_options else None
-                    session['voice'] = next((value for label, value in voice_options if value == selected), voice_value)
-                    visible = True if session['voice'] is not None else False
+                    if not voice_options:
+                        session['voice'] = None
+                    else:
+                        voice_value = voice_options[0][1]
+                        session['voice'] = next(
+                            (value for label, value in voice_options if value == selected),
+                            voice_value,
+                        )
+                    visible = session['voice'] is not None
                     return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
                 return gr.update(), gr.update(), gr.update()
                 
@@ -1067,8 +1073,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 shutil.rmtree(custom_model, ignore_errors=True)                           
                                 msg = f'Custom model {selected_name} deleted!'
                                 if session['custom_model'] in session['voice']:
-                                    voice_value = voice_options[0][1] if voice_options else None
-                                    session['voice'] = None if voice_value == None else models[session['fine_tuned']]['voice']
+                                    if voice_options:
+                                        session['voice'] = models[session['fine_tuned']]['voice']
+                                    else:
+                                        session['voice'] = None
                                 session['custom_model'] = None
                                 show_alert({"type": "warning", "msg": msg})
                                 return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
