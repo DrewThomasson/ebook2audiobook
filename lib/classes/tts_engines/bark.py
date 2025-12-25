@@ -197,7 +197,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     #if is_audio_data_valid(audio_sentence):
                     #    audio_sentence = audio_sentence.tolist()
                     if is_audio_data_valid(audio_sentence):
-                        if not isinstance(audio_sentence, torch.Tensor):
                         if isinstance(audio_sentence, torch.Tensor):
                             audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
                         elif isinstance(audio_sentence, np.ndarray):
