@@ -228,8 +228,7 @@ to let the web page reconnect to the new connection socket.**
 <a id="help-command-output"></a>
 ```bash
 usage: app.py [-h] [--session SESSION] [--share] [--headless] [--ebook EBOOK] [--ebooks_dir EBOOKS_DIR]
-              [--language LANGUAGE] [--voice VOICE]
-              [--device {{'proc': 'cpu', 'found': True},{'proc': 'cuda', 'found': False},{'proc': 'mps', 'found': False},{'proc': 'rocm', 'found': False},{'proc': 'xpu', 'found': False}}]
+              [--language LANGUAGE] [--voice VOICE] [--device {CPU,CUDA,MPS,ROCM,XPU,JETSON}]
               [--tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}]
               [--custom_model CUSTOM_MODEL] [--fine_tuned FINE_TUNED] [--output_format OUTPUT_FORMAT]
               [--output_channel OUTPUT_CHANNEL] [--temperature TEMPERATURE] [--length_penalty LENGTH_PENALTY]
@@ -264,8 +263,8 @@ options:
 optional parameters:
   --voice VOICE         (Optional) Path to the voice cloning file for TTS engine.
                             Uses the default voice if not present.
-  --device {{'proc': 'cpu', 'found': True},{'proc': 'cuda', 'found': False},{'proc': 'mps', 'found': False},{'proc': 'rocm', 'found': False},{'proc': 'xpu', 'found': False}}
-                        (Optional) Pprocessor unit type for the conversion.
+  --device {CPU,CUDA,MPS,ROCM,XPU,JETSON}
+                        (Optional) Processor unit type for the conversion.
                             Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.
   --tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}
                         (Optional) Preferred TTS engine (available are: ['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
