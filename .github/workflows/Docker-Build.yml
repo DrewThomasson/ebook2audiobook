@@ -155,46 +155,6 @@ jobs:
             -t "$CUDA_TAG_2" \
             -t "$CUDA_TAG_3" \
             --push .
-            
-
-      - name: Prune docker & buildx
-        run: |
-          docker system prune -af --volumes
-          docker buildx prune -af
-
-  huggingface-build:
-    runs-on: [self-hosted, macos]
-    steps:
-
-      - name: Wipe & Re-Clone E2A E2ADockerBuild
-        if: ${{ inputs.wipeAndReinstall }}
-        run: rm -rf ~/E2ADockerBuild/ebook2audiobook
-
-      - name: Clone ebook2audiobook into E2ADockerBuild
-        shell: bash
-        run: |
-          if [ -d ~/E2ADockerBuild/ebook2audiobook ]; then
-            cd ~/E2ADockerBuild/ebook2audiobook
-            git fetch --all
-            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
-          else
-            git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook
-            cd ~/E2ADockerBuild/ebook2audiobook
-            git fetch --all
-            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
-          fi
-          
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          driver: docker-container
-          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and Push Huggingface Docker Image
         run: |
@@ -203,10 +163,10 @@ jobs:
             -f dockerfiles/HuggingfaceDockerfile \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
             --push .
+            
 
       - name: Prune docker & buildx
         run: |
           docker system prune -af --volumes
           docker buildx prune -af
-
             
