@@ -109,11 +109,16 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             **speaker_argument
                         )
                     if is_audio_data_valid(audio_sentence):
-                        if not isinstance(audio_sentence, torch.Tensor):
-                            error = 'XTTSv2 inference did not return a torch.Tensor'
+                        if isinstance(audio_sentence, torch.Tensor):
+                            audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
+                        elif isinstance(audio_sentence, np.ndarray):
+                            audio_tensor = torch.from_numpy(audio_sentence).unsqueeze(0)
+                        elif isinstance(audio_sentence, (list, tuple)):
+                            audio_tensor = torch.tensor(audio_sentence, dtype=torch.float32).unsqueeze(0)
+                        else:
+                            error = f"Unsupported YourTTS wav type: {type(audio_sentence)}"
                             print(error)
                             return False
-                        audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
                         if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         if audio_tensor is not None and audio_tensor.numel() > 0:
