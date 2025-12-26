@@ -63,6 +63,7 @@ PACK_MGR_OPTIONS=""
 BUILD_NAME=""
 ISO3_LANG="eng"
 SUDO="sudo"
+DEVICE_TAG="${DEVICE_TAG:-}"
 
 ARGS=("$@")
 
@@ -719,7 +720,7 @@ function build_docker_image {
 		echo -e "\e[31m=============== Error: Docker must be installed and running!.\e[0m"
 		return 1
 	fi
-	local TAG=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")
+	local TAG=${DEVICE_TAG:-$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")}
 	local cmd_options=""
 	local cmd_extra=""
 	local py_vers="$PYTHON_VERSION"
