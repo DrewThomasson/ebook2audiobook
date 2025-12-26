@@ -132,8 +132,8 @@ to be sure your issue does not exist already.**
 
 
 >[!NOTE]
-**Lacking of any standards structure like what is a chapter, paragraph, preface etc.<br>
-you should first remove manually any text you don't want to be converted in audio.**
+**EPUB format is lacking of any standards structure like what is a chapter, paragraph, preface etc.<br>
+So you should first remove manually any text you don't want to be converted in audio.**
 
 ### Instructions 
 1. **Clone repo**
