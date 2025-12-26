@@ -449,8 +449,9 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
-## Output Formats
-- Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
+## Output and process Formats
+- `'.m4b', '.m4a', '.mp4', '.webm', '.mov', '.mp3', '.flac', '.wav', '.ogg', '.aac'`
+- Process format can be changed in lib/conf.py
 
 ## Your own Ebook2Audiobook customization
 You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
