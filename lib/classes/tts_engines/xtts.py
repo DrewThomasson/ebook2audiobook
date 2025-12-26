@@ -102,7 +102,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         sentence = sentence[:-1]
                     trim_audio_buffer = 0.008
                     sentence = sentence.replace('.', ' ;\n')
-                    sentence += ' ...' if sentence[-1].isalnum() else ''
+                    sentence += ' …' if sentence[-1].isalnum() else ''
                     if self.params['voice_path'] is not None and self.params['voice_path'] in self.params['latent_embedding'].keys():
                         self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['voice_path']]
                     else:
@@ -141,10 +141,16 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         )
                     audio_sentence = result.get('wav')
                     if is_audio_data_valid(audio_sentence):
-                        audio_sentence = audio_sentence.tolist()
-                    if is_audio_data_valid(audio_sentence):
-                        sourceTensor = self._tensor_type(audio_sentence)
-                        audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                        if isinstance(audio_sentence, torch.Tensor):
+                            audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
+                        elif isinstance(audio_sentence, np.ndarray):
+                            audio_tensor = torch.from_numpy(audio_sentence).unsqueeze(0)
+                        elif isinstance(audio_sentence, (list, tuple)):
+                            audio_tensor = torch.tensor(audio_sentence, dtype=torch.float32).unsqueeze(0)
+                        else:
+                            error = f"Unsupported XTTSv2 wav type: {type(audio_sentence)}"
+                            print(error)
+                            return False
                         if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         if audio_tensor is not None and audio_tensor.numel() > 0:
@@ -177,6 +183,10 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                 error = f"Cannot create {final_sentence_file}"
                                 print(error)
                                 return False
+                        else:
+                            error = f"audio_tensor not valid"
+                            print(error)
+                            return False
                     else:
                         error = f"audio_sentence not valid"
                         print(error)

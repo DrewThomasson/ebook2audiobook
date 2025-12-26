@@ -959,9 +959,15 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_voice_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
                 if session:
-                    voice_value = voice_options[0][1] if voice_options else None
-                    session['voice'] = next((value for label, value in voice_options if value == selected), voice_value)
-                    visible = True if session['voice'] is not None else False
+                    if not voice_options:
+                        session['voice'] = None
+                    else:
+                        voice_value = voice_options[0][1]
+                        session['voice'] = next(
+                            (value for label, value in voice_options if value == selected),
+                            voice_value,
+                        )
+                    visible = session['voice'] is not None
                     return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
                 return gr.update(), gr.update(), gr.update()
                 
@@ -1067,8 +1073,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 shutil.rmtree(custom_model, ignore_errors=True)                           
                                 msg = f'Custom model {selected_name} deleted!'
                                 if session['custom_model'] in session['voice']:
-                                    voice_value = voice_options[0][1] if voice_options else None
-                                    session['voice'] = None if voice_value == None else models[session['fine_tuned']]['voice']
+                                    if voice_options:
+                                        session['voice'] = models[session['fine_tuned']]['voice']
+                                    else:
+                                        session['voice'] = None
                                 session['custom_model'] = None
                                 show_alert({"type": "warning", "msg": msg})
                                 return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
@@ -1155,10 +1163,24 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                             voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                         else:
-                            voice_options = sorted(voice_options, key=lambda x: x[0].lower())    
-                        if session['voice'] is not None and session['voice'] not in voice_options:
+                            voice_options = sorted(voice_options, key=lambda x: x[0].lower())
+                        if session['voice'] is None and voice_options and voice_options[0][1] is not None:
+                            session['voice'] = models[session['fine_tuned']]['voice']
+                        if session['voice'] is not None and not any(v[1] == session['voice'] for v in voice_options):
                             new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
-                            session['voice'] = new_voice_path if os.path.exists(new_voice_path) else models[session['fine_tuned']]['voice']
+                            if os.path.exists(new_voice_path):
+                                session['voice'] = new_voice_path
+                            else:
+                                fallback_voice = None
+                                try:
+                                    if isinstance(models, dict):
+                                        fine_tuned_cfg = models.get(session.get('fine_tuned'))
+                                        if isinstance(fine_tuned_cfg, dict):
+                                            fallback_voice = fine_tuned_cfg.get('voice')
+                                except Exception as e:
+                                    error = f"update_gr_voice_list() - failed to resolve fallback_voice: {e}!"
+                                    alert_exception(error, id)
+                                session['voice'] = fallback_voice
                         return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
@@ -1292,10 +1314,7 @@ def build_interface(args:dict)->gr.Blocks:
                     models = load_engine_presets(engine)
                     session['tts_engine'] = engine
                     session['fine_tuned'] = default_fine_tuned
-                    session['voice'] = models[session['fine_tuned']]['voice']
-                    if engine in [TTS_ENGINES['XTTSv2']]:
-                        if session['custom_model'] is not None:
-                            session['voice'] = os.path.join(session['custom_model'], f"{os.path.basename(session['custom_model'])}.wav")
+                    session['voice'] = None if engine not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']] else session['voice']
                     bark_visible = False
                     if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         visible_custom_model = True if session['fine_tuned'] == 'internal' else False
@@ -1329,14 +1348,11 @@ def build_interface(args:dict)->gr.Blocks:
                 if selected:
                     session = context.get_session(id)
                     if session:
-                        models = load_engine_presets(session['tts_engine'])
                         session['fine_tuned'] = selected
-                        visible_custom_model = False
                         if selected == 'internal':
                             visible_custom_model = visible_gr_group_custom_model
                         else:
                             visible_custom_model = False
-                            session['voice'] = models[selected]['voice']
                         return gr.update(visible=visible_custom_model), update_gr_voice_list(id)
                 return gr.update(), gr.update()
 
