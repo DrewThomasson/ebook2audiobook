@@ -129,12 +129,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - GPU (CUDA, ROCm, XPU).
 - MPS (Apple Silicon CPU).
 
-*<i> Modern TTS are very slow on CPU</i>
+*<i> Modern TTS engines are very slow on CPU</i>
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
 to be sure your issue does not exist already.**
-
 
 >[!NOTE]
 **EPUB format lacks any standard structure like what is a chapter, paragraph, preface etc.<br>
@@ -161,12 +160,12 @@ So you should first remove manually any text you don't want to be converted in a
 
    - **Windows**  
      ```bash
-     ebook2audiobook.cmd  # Run launch script or double click on it
+     ebook2audiobook.cmd
      ```
-     <i>Note for Windows users: scoop is installed to install missing programs without administrator privileges.</i>
-     
-   - **Windows Launcher**  
+     or
      Double click `ebook2audiobook.cmd`
+
+     <i>Note for Windows users: scoop is installed to install missing programs without administrator privileges.</i>
    
 1. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks. `http://localhost:7860/`
 2. **For Public Link**:
@@ -444,7 +443,6 @@ one [pause] is a random between 0.8 to 1.6 seconds
 
 For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 
-
 ## Supported eBook Formats
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
@@ -453,13 +451,6 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 
 ## Output Formats
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
-
-## Updating to Latest Version
-```bash
-git pull # Locally/Compose
-
-docker pull athomasson2/ebook2audiobook:latest # For Pre-build docker images
-```
 
 ## Your own Ebook2Audiobook customization
 You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
