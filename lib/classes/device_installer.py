@@ -546,6 +546,7 @@ class DeviceInstaller():
             if forced_tag:
                 tag_letters = re.match(r"[a-zA-Z]+", forced_tag)
                 name = 'cuda' if tag_letters == 'cu' else 'rocm' if tag_letters == 'rocm' else 'jetson' if tag_letters == 'jetson' else 'xpu' if tag_letters == 'xpu' else 'mps' if tag_letters == 'mps' else 'cpu'
+                devices[name.upper()]['found'] = True
                 tag = forced_tag
             else:
                 name = 'cpu'
