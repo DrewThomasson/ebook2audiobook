@@ -181,13 +181,11 @@ to let the web page reconnect to the new connection socket.**
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
-     ./ebook2audiobook.sh --headless --ebook <path_to_ebook_file> \
-         --voice [path_to_voice_file] --language [language_code]
+     ./ebook2audiobook.sh --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
    - **Windows**
      ```bash
-     ebook2audiobook.cmd --headless --ebook <path_to_ebook_file>
-         --voice [path_to_voice_file] --language [language_code]
+     ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
      
   - **[--ebook]**: Path to your eBook file
