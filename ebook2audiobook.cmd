@@ -81,6 +81,8 @@ set "BROWSER_HELPER=%SCRIPT_DIR%\.bh.ps1"
 set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 
+IF NOT DEFINED DEVICE_TAG SET "DEVICE_TAG="
+
 set "OK_SCOOP=0"
 set "OK_CONDA=0"
 set "OK_PROGRAMS=0"
@@ -526,7 +528,13 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-for /f %%A in ('powershell -NoLogo -Command "(ConvertFrom-Json ''%ARG%'').tag"') do set "TAG=%%A"
+if "%DEVICE_TAG%"=="" (
+	for /f "usebackq delims=" %%A in (`powershell -NoLogo -Command "(ConvertFrom-Json '%ARG%').tag"`) do (
+		set "TAG=%%A"
+	)
+) else (
+	set "TAG=%DEVICE_TAG%"
+)
 "%PS_EXE%" %PS_ARGS% -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
 "%PS_EXE%" %PS_ARGS% -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
