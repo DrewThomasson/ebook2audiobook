@@ -200,7 +200,7 @@ class TTSUtils:
                             if self.session.get(key) is not None
                         }
                         with torch.no_grad():
-                            result = engine.inference(
+                            audio_sentence = engine.inference(
                                 text=default_text.strip(),
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=gpt_cond_latent,
