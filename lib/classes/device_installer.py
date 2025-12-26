@@ -426,7 +426,7 @@ class DeviceInstaller():
                     if version_out:
                         break
             if not version_out:
-                msg = 'ROCm hardware detected but ROCm toolkit version file not found.'
+                msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
             else:
                 version_str = toolkit_version_parse(version_out)
                 cmp = toolkit_version_compare(version_str, rocm_version_range)
@@ -470,7 +470,7 @@ class DeviceInstaller():
                                 version_out = f.read()
                             break
             if not version_out:
-                msg = 'CUDA hardware detected but CUDA toolkit version file not found.'
+                msg = 'CUDA hardware detected but NVIDIA CUDA Toolkit not installed.'
             else:
                 version_str = toolkit_version_parse(version_out)
                 cmp = toolkit_version_compare(version_str, cuda_version_range)
@@ -528,7 +528,7 @@ class DeviceInstaller():
                     name = 'xpu'
                     tag = 'xpu'
                 else:
-                    msg = 'Intel GPU detected but not compatible or oneAPI runtime is missing.'
+                    msg = 'Intel GPU detected but Intel oneAPI Base Toolkit not installed.'
 
         # ============================================================
         # APPLE MPS
