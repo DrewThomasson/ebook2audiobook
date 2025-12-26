@@ -1164,7 +1164,7 @@ def build_interface(args:dict)->gr.Blocks:
                             voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                         else:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
-                        session['voice'] = models[session['fine_tuned']]['voice'] if session['voice'] is None and voice_options[0][1] is not None
+                        session['voice'] = models[session['fine_tuned']]['voice'] if session['voice'] is None and voice_options[0][1] is not None else session['custom_model']
                         if session['voice'] is not None and session['voice'] not in voice_options:
                             new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
                             session['voice'] = new_voice_path if os.path.exists(new_voice_path) else models[session['fine_tuned']]['voice']
@@ -1201,7 +1201,7 @@ def build_interface(args:dict)->gr.Blocks:
                             for dir in os.listdir(custom_model_tts_dir)
                             if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                         ]
-                        session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1] else session['custom_model']
+                        session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
                         model_paths = {v[1] for v in custom_model_options}
                         return gr.update(choices=custom_model_options, value=session['custom_model'])
                 except Exception as e:
