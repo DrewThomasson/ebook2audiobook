@@ -371,8 +371,6 @@ one [pause] is a random between 0.8 to 1.6 seconds
 
 
 ### Docker
-
-#### Steps to Run
 1. **Clone the Repository**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
