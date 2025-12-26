@@ -165,6 +165,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         """
                     pth_voice_dir = os.path.join(bark_dir, speaker)
                     pth_voice_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
+                    self.engine.synthesizer.voice_dir = pth_voice_dir
                     tts_dyn_params = {}
                     if not os.path.exists(pth_voice_file) or speaker not in self.engine.speakers:
                         tts_dyn_params['speaker_wav'] = self.params['voice_path']
@@ -197,8 +198,16 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     #if is_audio_data_valid(audio_sentence):
                     #    audio_sentence = audio_sentence.tolist()
                     if is_audio_data_valid(audio_sentence):
-                        sourceTensor = self._tensor_type(audio_sentence)
-                        audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                        if isinstance(audio_sentence, torch.Tensor):
+                            audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
+                        elif isinstance(audio_sentence, np.ndarray):
+                            audio_tensor = torch.from_numpy(audio_sentence).unsqueeze(0)
+                        elif isinstance(audio_sentence, (list, tuple)):
+                            audio_tensor = torch.tensor(audio_sentence, dtype=torch.float32).unsqueeze(0)
+                        else:
+                            error = f"Unsupported Bark wav type: {type(audio_sentence)}"
+                            print(error)
+                            return False
                         if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         if audio_tensor is not None and audio_tensor.numel() > 0:
@@ -231,6 +240,10 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 error = f"Cannot create {final_sentence_file}"
                                 print(error)
                                 return False
+                        else:
+                            error = f"audio_tensor not valid"
+                            print(error)
+                            return False
                     else:
                         error = f"audio_sentence not valid"
                         print(error)

@@ -207,7 +207,16 @@ class TTSUtils:
                                 speaker_embedding=speaker_embedding,
                                 **fine_tuned_params,
                             )
-                        audio_sentence = result.get('wav') if isinstance(result, dict) else None
+                        if isinstance(audio_sentence, torch.Tensor):
+                            audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
+                        elif isinstance(audio_sentence, np.ndarray):
+                            audio_tensor = torch.from_numpy(audio_sentence).unsqueeze(0)
+                        elif isinstance(audio_sentence, (list, tuple)):
+                            audio_tensor = torch.tensor(audio_sentence, dtype=torch.float32).unsqueeze(0)
+                        else:
+                            error = f"Unsupported XTTSv2 wav type: {type(audio_sentence)}"
+                            print(error)
+                            return False
                         if audio_sentence is not None:
                             audio_sentence = audio_sentence.tolist()
                             sourceTensor = self._tensor_type(audio_sentence)
