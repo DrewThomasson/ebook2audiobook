@@ -199,20 +199,17 @@ to let the web page reconnect to the new connection socket.**
   (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
      ```bash
-     ./ebook2audiobook.sh --headless --ebook <ebook_file_path> \
-         --language <language> --custom_model <custom_model_path>
+     ./ebook2audiobook.sh --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
    - **Windows**
      ```bash
-     ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
-         --language <language> --custom_model <custom_model_path>
+     ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
      <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
      
 - **<custom_model_path>**: Path to `model_name.zip` file,
       which must contain (according to the tts engine) all the mandatory files<br>
       (see ./lib/models.py).
-
 
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**
