@@ -444,13 +444,13 @@ one [pause] is a random between 0.8 to 1.6 seconds
 For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 
 ## Supported eBook Formats
-- `.epub, .pdf, .mobi, .txt, .html, .rtf, .chm, .lit,
-  .pdb, .fb2, .odt, .cbr, .cbz, .prc, .lrf, .pml,
-  .snb, .cbc, .rb, .tcr`
+- `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
+  `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
+  `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
 ## Output and process Formats
-- `.m4b, .m4a, .mp4, .webm, .mov, .mp3, .flac, .wav, .ogg, .aac`
+- `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - Process format can be changed in lib/conf.py
 
 ## Your own Ebook2Audiobook customization
