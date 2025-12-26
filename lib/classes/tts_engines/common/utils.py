@@ -150,6 +150,7 @@ class TTSUtils:
             raise ValueError(error)
 
     def _check_xtts_builtin_speakers(self, voice_path:str, speaker:str)->str|bool:
+        new_voice_path = ''
         try:
             voice_parts = Path(voice_path).parts
             if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
@@ -200,7 +201,7 @@ class TTSUtils:
                             if self.session.get(key) is not None
                         }
                         with torch.no_grad():
-                            result = engine.inference(
+                            audio_sentence = engine.inference(
                                 text=default_text.strip(),
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=gpt_cond_latent,
