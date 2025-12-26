@@ -469,7 +469,7 @@ athomasson2/ebook2audiobook:VERSION_NUM # For Pre-build docker images -> Example
 
 ## Common Issues:
 - My NVIDIA/ROCm/XPU/MPS GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
--  CPU is slow (better on server smp CPU) while NVIDIA GPU can have almost real time conversion.
+-  CPU is slow (better on server smp CPU) while GPU can have almost real time conversion.
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    For faster multilingual generation I would suggest my other
    [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead
