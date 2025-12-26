@@ -123,8 +123,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 ##  Hardware Requirements
 - 2gb RAM minimum, 8GB recommended
 - Virtualization enabled if running on windows (Docker only)
-- CPU (intel, AMD, ARM), GPU (Nvidia, AMD*, Intel*) (Recommended), MPS (Apple Silicon CPU)
-*available very soon
+- CPU (intel, AMD, ARM)*
+- GPU (CUDA, ROCm, XPU)
+- MPS (Apple Silicon CPU)
+
+*<i> Modern TTS are very slow on CPU</i>
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
@@ -132,8 +135,8 @@ to be sure your issue does not exist already.**
 
 
 >[!NOTE]
-**Lacking of any standards structure like what is a chapter, paragraph, preface etc.<br>
-you should first remove manually any text you don't want to be converted in audio.**
+**EPUB format lacks any standard structure like what is a chapter, paragraph, preface etc.<br>
+So you should first remove manually any text you don't want to be converted in audio.**
 
 ### Instructions 
 1. **Clone repo**
