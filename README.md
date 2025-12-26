@@ -102,10 +102,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## Features
 - 📚 Splits eBook into chapters for organized audio.
-- 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) (and more).
+- 🎙️ High-quality text-to-speech with [Xttsv2](https://huggingface.co/coqui/XTTS-v2), [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) and much more.
 - 🗣️ Optional voice cloning with your own voice file.
-- 🌍 Supports +1110 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
-- 🖥️ Designed to run on 4GB RAM.
+- 🗣️ Optional custom model with your own training model.
+- 🌍 Supports 1158 languages. [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- 🖥️ Designed to run on 2GB RAM 1GB VRAM Min.
 
 
 ## Supported Languages
@@ -121,11 +122,12 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ##  Hardware Requirements
-- 2gb RAM minimum, 8GB recommended
-- Virtualization enabled if running on windows (Docker only)
-- CPU (intel, AMD, ARM)*
-- GPU (CUDA, ROCm, XPU)
-- MPS (Apple Silicon CPU)
+- 2gb RAM min, 8GB recommended.
+- 1GB VRAM min, 4GB recommended.
+- Virtualization enabled if running on windows (Docker only).
+- CPU (intel, AMD, ARM)*.
+- GPU (CUDA, ROCm, XPU).
+- MPS (Apple Silicon CPU).
 
 *<i> Modern TTS are very slow on CPU</i>
 
