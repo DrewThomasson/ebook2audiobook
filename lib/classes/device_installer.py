@@ -543,11 +543,11 @@ class DeviceInstaller():
         # ============================================================
         if tag is None:
             forced_tag = os.environ.get("DEVICE_TAG")
+            print(f'---------{forced_tag}----------')
             if forced_tag:
                 tag_letters = re.match(r"[a-zA-Z]+", forced_tag)
                 name = 'cuda' if tag_letters == 'cu' else 'rocm' if tag_letters == 'rocm' else 'jetson' if tag_letters == 'jetson' else 'xpu' if tag_letters == 'xpu' else 'mps' if tag_letters == 'mps' else 'cpu'
                 devices[name.upper()]['found'] = True
-                print(f'----------{name}-----------')
                 tag = forced_tag
             else:
                 name = 'cpu'
