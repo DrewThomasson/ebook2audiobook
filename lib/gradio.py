@@ -1177,8 +1177,9 @@ def build_interface(args:dict)->gr.Blocks:
                                         fine_tuned_cfg = models.get(session.get('fine_tuned'))
                                         if isinstance(fine_tuned_cfg, dict):
                                             fallback_voice = fine_tuned_cfg.get('voice')
-                                except Exception:
-                                    fallback_voice = None
+                                except Exception as e:
+                                    error = f"update_gr_voice_list() - failed to resolve fallback_voice: {e}!"
+                                    alert_exception(error, id)
                                 session['voice'] = fallback_voice
                         return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
