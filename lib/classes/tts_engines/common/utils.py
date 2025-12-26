@@ -202,13 +202,14 @@ class TTSUtils:
                             if self.session.get(key) is not None
                         }
                         with torch.no_grad():
-                            audio_sentence = engine.inference(
+                            result = engine.inference(
                                 text=default_text.strip(),
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=gpt_cond_latent,
                                 speaker_embedding=speaker_embedding,
                                 **fine_tuned_params,
                             )
+                        audio_sentence = result.get('wav')
                         if isinstance(audio_sentence, torch.Tensor):
                             audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
                         elif isinstance(audio_sentence, np.ndarray):
