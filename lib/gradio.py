@@ -1164,11 +1164,22 @@ def build_interface(args:dict)->gr.Blocks:
                             voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                         else:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
-                        session['voice'] = models[session['fine_tuned']]['voice'] if session['voice'] is None and voice_options[0][1] is not None else session['voice']
-                        if session['voice'] is not None and session['voice'] not in voice_options:
+                        if session['voice'] is None and voice_options and voice_options[0][1] is not None:
+                            session['voice'] = models[session['fine_tuned']]['voice']
+                        if session['voice'] is not None and not any(v[1] == session['voice'] for v in voice_options):
                             new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
                             if os.path.exists(new_voice_path):
                                 session['voice'] = new_voice_path
+                            else:
+                                fallback_voice = None
+                                try:
+                                    if isinstance(models, dict):
+                                        fine_tuned_cfg = models.get(session.get('fine_tuned'))
+                                        if isinstance(fine_tuned_cfg, dict):
+                                            fallback_voice = fine_tuned_cfg.get('voice')
+                                except Exception:
+                                    fallback_voice = None
+                                session['voice'] = fallback_voice
                         return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
@@ -1337,7 +1348,6 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(id)
                     if session:
                         session['fine_tuned'] = selected
-                        visible_custom_model = False
                         if selected == 'internal':
                             visible_custom_model = visible_gr_group_custom_model
                         else:

@@ -151,6 +151,7 @@ class TTSUtils:
 
     def _check_xtts_builtin_speakers(self, voice_path:str, speaker:str)->str|bool:
         new_voice_path = ''
+        proc_voice_path = ''
         try:
             voice_parts = Path(voice_path).parts
             if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
