@@ -641,7 +641,7 @@ if defined arguments.help (
 			call docker image inspect "%DOCKER_IMG_NAME%:%TAG%" >nul 2>&1
 			if errorlevel 0 (
 				echo [STOP] Docker image '%DOCKER_IMG_NAME%:%TAG%' already exists. Aborting build.
-				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:%TAG%
+				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:%TAG% --force
 				goto :failed
 			)
 			call :build_docker_image "%deviceinfo%"
