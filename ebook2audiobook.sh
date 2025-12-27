@@ -784,7 +784,7 @@ else
 				echo "check_device_info() error: result is empty"
 				exit 1
 			fi
-			TAG=${DEVICE_TAG:-$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$device_info_str")}
+			export TAG=${DEVICE_TAG:-$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$device_info_str")}
 			if docker image inspect "${DOCKER_IMG_NAME}:${TAG}" >/dev/null 2>&1; then
 				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${TAG}' already exists. Aborting build."
 				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${TAG} --force"
