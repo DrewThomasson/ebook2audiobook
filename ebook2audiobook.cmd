@@ -639,7 +639,7 @@ if defined arguments.help (
 				set "TAG=%DEVICE_TAG%"
 			)
 			call docker image inspect "%DOCKER_IMG_NAME%:%TAG%" >nul 2>&1
-			if errorlevel 0 (
+			if not errorlevel 1 (
 				echo [STOP] Docker image '%DOCKER_IMG_NAME%:%TAG%' already exists. Aborting build.
 				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:%TAG% --force
 				goto :failed
