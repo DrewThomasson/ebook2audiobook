@@ -628,11 +628,14 @@ if defined arguments.help (
 			)
 			call :check_docker
 			if errorlevel 1 goto :failed
-			call :check_device_info "%SCRIPT_MODE%"
-			set "deviceinfo=%errorlevel%"
-			if errorlevel 1 goto :failed
+			set "device_info_str="
+			for /f "delims=" %%A in ('call :check_device_info "%SCRIPT_MODE%"') do ( set "device_info_str=%%A" )
+			if "!device_info_str!"=="" (
+				echo check_device_info() error: result is empty!
+				goto :failed
+			)
 			if "%DEVICE_TAG%"=="" (
-				for /f "usebackq delims=" %%A in (`powershell -NoLogo -Command "(ConvertFrom-Json '%deviceinfo%').tag"`) do (
+				for /f "usebackq delims=" %%A in (`powershell -NoLogo -Command "(ConvertFrom-Json '%device_info_str%').tag"`) do (
 					set "TAG=%%A"
 				)
 			) else (
@@ -644,7 +647,7 @@ if defined arguments.help (
 				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:%TAG% --force
 				goto :failed
 			)
-			call :build_docker_image "%deviceinfo%"
+			call :build_docker_image "%device_info_str%"
 			if errorlevel 1 goto :failed
 		) else (
 			call :install_python_packages
