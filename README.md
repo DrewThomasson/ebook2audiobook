@@ -463,8 +463,6 @@ as an official ebook2audiobook fine tuned model so please contact us and we'll a
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
-
-athomasson2/ebook2audiobook:VERSION_NUM # For Pre-build docker images -> Example: athomasson2/ebook2audiobook:v25.7.7
 ```
 
 ## Common Issues:
