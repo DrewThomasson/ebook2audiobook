@@ -528,13 +528,6 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-if "%DEVICE_TAG%"=="" (
-	for /f "usebackq delims=" %%A in (`powershell -NoLogo -Command "(ConvertFrom-Json '%ARG%').tag"`) do (
-		set "TAG=%%A"
-	)
-) else (
-	set "TAG=%DEVICE_TAG%"
-)
 "%PS_EXE%" %PS_ARGS% -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
 "%PS_EXE%" %PS_ARGS% -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
@@ -635,15 +628,22 @@ if defined arguments.help (
 			)
 			call :check_docker
 			if errorlevel 1 goto :failed
-			call docker image inspect "%DOCKER_IMG_NAME%" >nul 2>&1
-			if errorlevel 0 (
-				echo [STOP] Docker image '%DOCKER_IMG_NAME%' already exists. Aborting build.
-				echo Delete it using: docker rmi %DOCKER_IMG_NAME%
-				goto :failed
-			)
 			call :check_device_info "%SCRIPT_MODE%"
 			set "deviceinfo=%errorlevel%"
 			if errorlevel 1 goto :failed
+			if "%DEVICE_TAG%"=="" (
+				for /f "usebackq delims=" %%A in (`powershell -NoLogo -Command "(ConvertFrom-Json '%deviceinfo%').tag"`) do (
+					set "TAG=%%A"
+				)
+			) else (
+				set "TAG=%DEVICE_TAG%"
+			)
+			call docker image inspect "%DOCKER_IMG_NAME%:%TAG%" >nul 2>&1
+			if errorlevel 0 (
+				echo [STOP] Docker image '%DOCKER_IMG_NAME%:%TAG%' already exists. Aborting build.
+				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:%TAG%
+				goto :failed
+			)
 			call :build_docker_image "%deviceinfo%"
 			if errorlevel 1 goto :failed
 		) else (
