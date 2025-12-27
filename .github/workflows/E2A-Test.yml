@@ -263,6 +263,16 @@ jobs:
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
 
+      - name: Hungarian XTTSv2 headless Custom-Voice single test
+        shell: bash
+        run: |
+          echo "Running hungarian XTTSv2 headless Custom-Voice single test..."
+          cd ~/ebook2audiobook
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language hun --ebook "tools/workflow-testing/hun-test.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
+
+
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
         shell: bash
         run: |
