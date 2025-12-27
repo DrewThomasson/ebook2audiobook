@@ -413,12 +413,12 @@ one [pause] is a random between 0.8 to 1.6 seconds
 
     # Docker Compose (example for cuda 12.9)
     docker-compose up -d
-    DEVICE_TAG=cu128 docker compose up -d # add --build if needed
+    DEVICE_TAG=cu128 docker compose up -d
     # To stop -> docker-compose down
 
     # Podman Compose (example for cuda 12.8)
     podman compose -f podman-compose.yml up
-    DEVICE_TAG=cu128 podman-compose up -d # add --build if needed
+    DEVICE_TAG=cu128 podman-compose up -d
     # To stop -> podman compose -f podman-compose.yml down
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
@@ -463,8 +463,6 @@ as an official ebook2audiobook fine tuned model so please contact us and we'll a
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
-
-athomasson2/ebook2audiobook:VERSION_NUM # For Pre-build docker images -> Example: athomasson2/ebook2audiobook:v25.7.7
 ```
 
 ## Common Issues:
