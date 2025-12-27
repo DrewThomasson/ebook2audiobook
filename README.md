@@ -413,12 +413,12 @@ one [pause] is a random between 0.8 to 1.6 seconds
 
     # Docker Compose (example for cuda 12.9)
     docker-compose up -d
-    DEVICE_TAG=cu128 docker compose up -d # add --build if needed
+    DEVICE_TAG=cu128 docker compose up -d
     # To stop -> docker-compose down
 
     # Podman Compose (example for cuda 12.8)
     podman compose -f podman-compose.yml up
-    DEVICE_TAG=cu128 podman-compose up -d # add --build if needed
+    DEVICE_TAG=cu128 podman-compose up -d
     # To stop -> podman compose -f podman-compose.yml down
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
