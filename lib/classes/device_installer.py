@@ -548,7 +548,6 @@ class DeviceInstaller():
         forced_tag = os.environ.get("DEVICE_TAG")
         if forced_tag:
             tag_letters = re.match(r"[a-zA-Z]+", forced_tag)
-            print(f'tag_letters: {tag_letters}')
             if tag_letters:
                 tag_letters = tag_letters.group(0).lower()
                 name = 'cuda' if tag_letters == 'cu' else 'rocm' if tag_letters == 'rocm' else 'jetson' if tag_letters == 'jetson' else 'xpu' if tag_letters == 'xpu' else 'mps' if tag_letters == 'mps' else 'cpu'
