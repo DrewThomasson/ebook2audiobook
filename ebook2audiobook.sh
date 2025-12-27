@@ -716,11 +716,6 @@ function build_docker_image {
 		echo "build_docker_image() error: ARG is empty"
 		return 1
 	fi
-	if ! command -v docker >/dev/null 2>&1; then
-		echo -e "\e[31m=============== Error: Docker must be installed and running!.\e[0m"
-		return 1
-	fi
-	local TAG=${DEVICE_TAG:-$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$ARG")}
 	local cmd_options=""
 	local cmd_extra=""
 	local py_vers="$PYTHON_VERSION"
@@ -784,14 +779,15 @@ else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
 			check_docker || exit 1
-			if docker image inspect "$DOCKER_IMG_NAME" >/dev/null 2>&1; then
-				echo "[STOP] Docker image '$DOCKER_IMG_NAME' already exists. Aborting build."
-				echo "Delete it using: docker rmi $DOCKER_IMG_NAME"
-				exit 1
-			fi
 			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
 			if [[ "$device_info_str" == "" ]]; then
 				echo "check_device_info() error: result is empty"
+				exit 1
+			fi
+			TAG=${DEVICE_TAG:-$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$device_info_str")}
+			if docker image inspect "${DOCKER_IMG_NAME}:${TAG}" >/dev/null 2>&1; then
+				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${TAG}' already exists. Aborting build."
+				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${TAG} --force"
 				exit 1
 			fi
 			build_docker_image "$device_info_str" || exit 1
