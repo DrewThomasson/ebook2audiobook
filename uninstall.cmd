@@ -30,7 +30,7 @@ if /i not "%SELF%"=="%TEMP_UNINSTALL%" (
     copy "%SELF%" "%TEMP_UNINSTALL%" >nul
 
     echo Relaunching installer from safe location...
-    start "" "%TEMP_UNINSTALL%" "%SCRIPT_DIR%"
+	start "" cmd /c "%TEMP_UNINSTALL%" "%SCRIPT_DIR%"
     echo Cleaning handoff...
     exit /b
 )
