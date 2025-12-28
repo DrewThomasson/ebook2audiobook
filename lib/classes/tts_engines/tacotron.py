@@ -198,10 +198,12 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
                         elif isinstance(audio_sentence, np.ndarray):
                             audio_tensor = torch.from_numpy(audio_sentence).unsqueeze(0)
+                            audio_tensor = audio_tensor.cpu()
                         elif isinstance(audio_sentence, (list, tuple)):
                             audio_tensor = torch.tensor(audio_sentence, dtype=torch.float32).unsqueeze(0)
+                            audio_tensor = audio_tensor.cpu()
                         else:
-                            error = f"Unsupported Tacotron2 wav type: {type(audio_sentence)}"
+                            error = f"{self.session['tts_engine']}: Unsupported wav type: {type(audio_sentence)}"
                             print(error)
                             return False
                         if sentence[-1].isalnum() or sentence[-1] == '—':
