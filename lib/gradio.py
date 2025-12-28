@@ -1182,7 +1182,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
                     alert_exception(error, id)
-                return gr.update() = 
+                return gr.update()
 
             def update_gr_tts_engine_list(id:str)->dict:
                 try:
