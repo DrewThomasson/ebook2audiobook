@@ -142,16 +142,17 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     audio_sentence = result.get('wav')
                     if is_audio_data_valid(audio_sentence):
                         if isinstance(audio_sentence, torch.Tensor):
-                            audio_tensor = audio_sentence.detach().unsqueeze(0)
+                            audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
                         elif isinstance(audio_sentence, np.ndarray):
                             audio_tensor = torch.from_numpy(audio_sentence).unsqueeze(0)
+                            audio_tensor = audio_tensor.cpu()
                         elif isinstance(audio_sentence, (list, tuple)):
                             audio_tensor = torch.tensor(audio_sentence, dtype=torch.float32).unsqueeze(0)
+                            audio_tensor = audio_tensor.cpu()
                         else:
-                            error = f"Unsupported XTTSv2 wav type: {type(audio_sentence)}"
+                            error = f"{self.session['tts_engine']}: Unsupported wav type: {type(audio_sentence)}"
                             print(error)
                             return False
-                        audio_tensor = audio_tensor.cpu()
                         if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         if audio_tensor is not None and audio_tensor.numel() > 0:
