@@ -95,6 +95,7 @@ jobs:
           BASE_REF="${{ github.event.pull_request.base.ref }}"
           HEAD_REF="${{ github.event.pull_request.head.ref }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          HEAD_REPO_URL="${{ github.event.pull_request.head.repo.clone_url }}"
           TRIGGER_SHA="${{ github.sha }}"
           FRESH_CLONE=0
        
@@ -126,9 +127,17 @@ jobs:
           if [ "$IS_PR" = "true" ]; then
             echo "==> PR detected: simulating GitHub merge (base: $BASE_REF ← head: $HEAD_REF)"
        
-            # Fetch both branches
+            # Fetch both branches. For the head, we must fetch from the actual source repo (fork)
+            # because 'origin' might not have the fork's branch.
             git fetch origin "$BASE_REF":"origin/$BASE_REF"
-            git fetch origin "$HEAD_REF":"origin/$HEAD_REF"
+            
+            if [ -n "$HEAD_REPO_URL" ]; then
+              echo "==> Fetching head from fork: $HEAD_REPO_URL"
+              git fetch "$HEAD_REPO_URL" "$HEAD_REF":refs/remotes/origin/$HEAD_REF
+            else
+              # Fallback (shouldn't happen for PRs)
+              git fetch origin "$HEAD_REF":"origin/$HEAD_REF"
+            fi
        
             # Reset to base branch
             git checkout -B "$BASE_REF" "remotes/origin/$BASE_REF"
@@ -237,6 +246,14 @@ jobs:
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
+
+      - name: Hungarian VITS Custom-Voice headless single test
+        shell: bash
+        run: |
+          cd ~/ebook2audiobook
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language hun --ebook "tools/workflow-testing/hun-test.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
 
       - name: English YOURTTS Custom-Voice headless batch test
         shell: bash
