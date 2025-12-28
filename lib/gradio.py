@@ -1073,10 +1073,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 shutil.rmtree(custom_model, ignore_errors=True)                           
                                 msg = f'Custom model {selected_name} deleted!'
                                 if session['custom_model'] in session['voice']:
-                                    if voice_options:
-                                        session['voice'] = models[session['fine_tuned']]['voice']
-                                    else:
-                                        session['voice'] = None
+                                    session['voice'] = models[session['fine_tuned']]['voice']
                                 session['custom_model'] = None
                                 show_alert({"type": "warning", "msg": msg})
                                 return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
@@ -1166,21 +1163,22 @@ def build_interface(args:dict)->gr.Blocks:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                         if session['voice'] is None and voice_options and voice_options[0][1] is not None:
                             session['voice'] = models[session['fine_tuned']]['voice']
-                        if session['voice'] is not None and not any(v[1] == session['voice'] for v in voice_options):
-                            new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
-                            if os.path.exists(new_voice_path):
-                                session['voice'] = new_voice_path
-                            else:
-                                fallback_voice = None
-                                try:
-                                    if isinstance(models, dict):
-                                        fine_tuned_cfg = models.get(session.get('fine_tuned'))
-                                        if isinstance(fine_tuned_cfg, dict):
-                                            fallback_voice = fine_tuned_cfg.get('voice')
-                                except Exception as e:
-                                    error = f"update_gr_voice_list() - failed to resolve fallback_voice: {e}!"
-                                    alert_exception(error, id)
-                                session['voice'] = fallback_voice
+                        if session['voice'] is not None:
+                            if not any(v[1] == session['voice'] for v in voice_options):
+                                new_voice_path = session['voice'].replace('/eng/', f"/{session['language']}/")
+                                if os.path.exists(new_voice_path):
+                                    session['voice'] = new_voice_path
+                                else:
+                                    fallback_voice = None
+                                    try:
+                                        if isinstance(models, dict):
+                                            fine_tuned_cfg = models.get(session.get('fine_tuned'))
+                                            if isinstance(fine_tuned_cfg, dict):
+                                                fallback_voice = fine_tuned_cfg.get('voice')
+                                    except Exception as e:
+                                        error = f"update_gr_voice_list() - failed to resolve fallback_voice: {e}!"
+                                        alert_exception(error, id)
+                                    session['voice'] = fallback_voice
                         return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
@@ -1256,6 +1254,9 @@ def build_interface(args:dict)->gr.Blocks:
                     if session:
                         prev = session['language']      
                         session['language'] = selected
+                        if session['voice'] is not None:
+                            if voice_options:
+                                session['voice'] = voice_options[0][1]
                         return (
                             gr.update(value=session['language']),
                             update_gr_tts_engine_list(id),
