@@ -1167,16 +1167,18 @@ def build_interface(args:dict)->gr.Blocks:
                                 if not any(v[1] == session['voice'] for v in voice_options):
                                     voice_path = Path(session['voice'])
                                     parts = list(voice_path.parts)
-                                    idx = parts.index("voices")
-                                    parts[idx + 1] = session['language']
-                                    new_voice_path = str(Path(*parts))
-                                    if os.path.exists(new_voice_path):
-                                        session['voice'] = new_voice_path
-                                    else:
-                                        parts[idx + 1] = 'eng'
-                                        session['voice'] = str(Path(*parts))
+                                    if "voices" in parts:
+                                        idx = parts.index("voices")
+                                        if idx + 1 < len(parts):
+                                            parts[idx + 1] = session['language']
+                                            new_voice_path = str(Path(*parts))
+                                            if os.path.exists(new_voice_path):
+                                                session['voice'] = new_voice_path
+                                            else:
+                                                parts[idx + 1] = 'eng'
+                                                session['voice'] = str(Path(*parts))
                         else:
-                            if session['voice'] is None and voice_options and voice_options[0][1] is not None:
+                            if voice_options and voice_options[0][1] is not None:
                                 session['voice'] = models[session['fine_tuned']]['voice']
                         return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:

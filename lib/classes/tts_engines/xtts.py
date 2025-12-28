@@ -151,6 +151,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                             error = f"Unsupported XTTSv2 wav type: {type(audio_sentence)}"
                             print(error)
                             return False
+                        audio_tensor = audio_tensor.detach().cpu()
                         if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         if audio_tensor is not None and audio_tensor.numel() > 0:
