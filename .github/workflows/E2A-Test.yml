@@ -186,7 +186,6 @@ jobs:
         if: matrix.os != 'windows'
         shell: bash
         run: |
-          echo "Adding set -e at beginning of ebook2audiobook.sh (for error passing)..."
           cd ~/ebook2audiobook
           conda deactivate 2>/dev/null || true
           sed -i.bak '1s;^;set -e\n;' ebook2audiobook.sh && rm -f ebook2audiobook.sh.bak
@@ -194,7 +193,6 @@ jobs:
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
         run: |
-          echo "Running English TACOTRON2 Custom-Voice headless single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
           
@@ -203,7 +201,6 @@ jobs:
       - name: English FAIRSEQ OCR headless single test
         shell: bash
         run: |
-          echo "Running English FAIRSEQ OCR headless single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
@@ -212,7 +209,6 @@ jobs:
       - name: Haitian Creole FAIRSEQ OCR headless single test
         shell: bash
         run: |
-          echo "Running Haitian Creole FAIRSEQ OCR headless single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
@@ -221,7 +217,6 @@ jobs:
       - name: English FAIRSEQ Custom-Voice headless single test
         shell: bash
         run: |
-          echo "Running English FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
@@ -230,7 +225,6 @@ jobs:
       - name: Unusual FAIRSEQ Custom-Voice headless single test
         shell: bash
         run: |
-          echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
@@ -239,7 +233,6 @@ jobs:
       - name: English VITS Custom-Voice headless single test
         shell: bash
         run: |
-          echo "Running English VITS Custom-Voice headless single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
@@ -248,7 +241,6 @@ jobs:
       - name: English YOURTTS Custom-Voice headless batch test
         shell: bash
         run: |
-          echo "Running English YOURTTS Custom-Voice headless batch test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
@@ -257,16 +249,23 @@ jobs:
       - name: Default XTTSv2 headless Custom-Voice single test
         shell: bash
         run: |
-          echo "Running Default XTTSv2 headless Custom-Voice single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
 
+      - name: Hungarian XTTSv2 headless Custom-Voice single test
+        shell: bash
+        run: |
+          cd ~/ebook2audiobook
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language hun --ebook "tools/workflow-testing/hun-test.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
+
+
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
         shell: bash
         run: |
-          echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
@@ -275,7 +274,6 @@ jobs:
       - name: English XTTSv2 headless custom fine-tuned XTTSv2 model single test
         shell: bash
         run: |
-          echo "English XTTSv2 headless custom fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
@@ -290,7 +288,6 @@ jobs:
       - name: English BARK Custom-Voice headless single test
         shell: bash
         run: |
-          echo "Running English BARK headless Custom-Voice single test..."
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
