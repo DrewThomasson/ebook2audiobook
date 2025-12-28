@@ -46,7 +46,7 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
             error = "audio_data must be a 1D tensor (mono audio)."
             raise ValueError(error)
             return torch.tensor([], dtype=torch.float32)  # just for static analyzers
-        if audio_data.is_cuda:
+        if audio_data.device.type != "cpu":
             audio_data = audio_data.cpu()
         # Detect non-silent indices
         non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
