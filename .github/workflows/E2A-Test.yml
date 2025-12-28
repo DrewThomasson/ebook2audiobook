@@ -247,6 +247,14 @@ jobs:
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
 
+      - name: Hungarian VITS Custom-Voice headless single test
+        shell: bash
+        run: |
+          cd ~/ebook2audiobook
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language hun --ebook "tools/workflow-testing/hun-test.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
+
       - name: English YOURTTS Custom-Voice headless batch test
         shell: bash
         run: |
