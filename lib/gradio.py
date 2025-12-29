@@ -1166,7 +1166,7 @@ def build_interface(args:dict)->gr.Blocks:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                         if session['voice'] is not None and isinstance(session.get('voice'), str):
                             if session['voice_dir'] not in session['voice']:
-                                if not any(v[0] == session['voice'] for v in voice_options):
+                                if not any(v[1] == session['voice'] for v in voice_options):
                                     voice_path = Path(session['voice'])
                                     parts = list(voice_path.parts)
                                     if "voices" in parts:
@@ -1174,7 +1174,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         if idx + 1 < len(parts):
                                             parts[idx + 1] = session['language']
                                             new_voice_path = str(Path(*parts))
-                                            if not any(v[0] == new_voice_path for v in voice_options) and os.path.exists(new_voice_path):
+                                            if not any(v[1] == new_voice_path for v in voice_options) and os.path.exists(new_voice_path):
                                                 session['voice'] = new_voice_path
                                             else:
                                                 parts[idx + 1] = 'eng'
