@@ -141,12 +141,11 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         )
                     audio_sentence = result.get('wav')
                     if is_audio_data_valid(audio_sentence):
-                        audio_sentence = result.get('wav')
                         sourceTensor = self._tensor_type(audio_sentence)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                        if sentence[-1].isalnum() or sentence[-1] == '—':
-                            audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         if audio_tensor is not None and audio_tensor.numel() > 0:
+                            if sentence[-1].isalnum() or sentence[-1] == '—':
+                                audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                             self.audio_segments.append(audio_tensor)
                             if not re.search(r'\w$', sentence, flags=re.UNICODE) and sentence[-1] != '—':
                                 silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
