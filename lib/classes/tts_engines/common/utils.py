@@ -229,7 +229,7 @@ class TTSUtils:
                             proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
                             torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
                             if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
-                                del audio_sentence, sourceTensor, audio_tensor
+                                del audio_sentence, audio_tensor
                                 Path(proc_voice_path).unlink(missing_ok=True)
                                 gc.collect()
                                 self.engine = loaded_tts.get(self.tts_key, False)
