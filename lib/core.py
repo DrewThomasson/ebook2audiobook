@@ -59,14 +59,6 @@ from lib import *
 context = None
 context_tracker = None
 active_sessions = None
-env = os.environ.copy()
-for k in (
-    "MallocStackLogging",
-    "MallocStackLoggingNoCompact",
-    "MallocScribble",
-    "MallocGuardEdges",
-):
-    env.pop(k, None)
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
@@ -1825,7 +1817,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                 '-of', 'json',
                 filepath
             ]
-            result = subprocess.run(ffprobe_cmd, env=env, capture_output=True, text=True)
+            result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
             try:
                 return float(json.loads(result.stdout)['format']['duration'])
             except Exception:
@@ -1912,7 +1904,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                 '-show_entries', 'stream=codec_name,sample_rate,sample_fmt',
                 '-of', 'default=nokey=1:noprint_wrappers=1', ffmpeg_combined_audio
             ]
-            probe = subprocess.run(ffprobe_cmd, env=env, capture_output=True, text=True)
+            probe = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
             codec_info = probe.stdout.strip().splitlines()
             input_codec = codec_info[0] if len(codec_info) > 0 else None
             input_rate = codec_info[1] if len(codec_info) > 1 else None
@@ -2139,7 +2131,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
                                 [shutil.which("ffprobe"), "-v", "error",
                                  "-show_entries", "format=duration",
                                  "-of", "default=noprint_wrappers=1:nokey=1", file_path],
-                                env=env, capture_output=True, text=True
+                                capture_output=True, text=True
                             )
                             try:
                                 total_duration += float(result.stdout.strip())
