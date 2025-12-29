@@ -1,0 +1,11 @@
+lib/__pycache__/
+lib/classes/__pycache__/
+lib/classes/tts_engines/__pycache__/
+lib/classes/tts_engines/common/__pycache__/
+lib/classes/tts_engines/presets/__pycache__/
+
+python_env/
+
+tmp/gradio/
+
+.DS_Store
