@@ -1,4 +1,5 @@
 import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf, numpy as np
+from lib.classes.tts_engines.common.audio import is_audio_data_valid
 
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
@@ -210,36 +211,27 @@ class TTSUtils:
                                 **fine_tuned_params,
                             )
                         audio_sentence = result.get('wav')
-                        if isinstance(audio_sentence, torch.Tensor):
-                            audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
-                        elif isinstance(audio_sentence, np.ndarray):
-                            audio_tensor = torch.from_numpy(audio_sentence).unsqueeze(0)
-                            audio_tensor = audio_tensor.cpu()
-                        elif isinstance(audio_sentence, (list, tuple)):
-                            audio_tensor = torch.tensor(audio_sentence, dtype=torch.float32).unsqueeze(0)
-                            audio_tensor = audio_tensor.cpu()
-                        else:
-                            error = f"{self.session['tts_engine']}: Unsupported wav type: {type(audio_sentence)}"
-                            print(error)
-                            return False
-                        if audio_tensor is not None and audio_tensor.numel() > 0:
-                            # CON is a reserved name on windows
-                            lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
-                            new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
-                            proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
-                            torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
-                            if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
-                                del audio_sentence, audio_tensor
-                                Path(proc_voice_path).unlink(missing_ok=True)
-                                gc.collect()
-                                self.engine = loaded_tts.get(self.tts_key, False)
-                                if not self.engine:
-                                    self._load_engine()
-                                return new_voice_path
+                        if is_audio_data_valid(audio_sentence):
+                            sourceTensor = self._tensor_type(audio_sentence)
+                            audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                            if audio_tensor is not None and audio_tensor.numel() > 0:
+                                # CON is a reserved name on windows
+                                lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
+                                new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
+                                proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
+                                torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
+                                if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
+                                    del audio_sentence, sourceTensor, audio_tensor
+                                    Path(proc_voice_path).unlink(missing_ok=True)
+                                    gc.collect()
+                                    self.engine = loaded_tts.get(self.tts_key, False)
+                                    if not self.engine:
+                                        self._load_engine()
+                                    return new_voice_path
+                                else:
+                                    error = 'normalize_audio() error:'
                             else:
-                                error = 'normalize_audio() error:'
-                        else:
-                            error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
+                                error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
                     else:
                         error = f"_check_xtts_builtin_speakers() error: {xtts} is False"
                 else:
