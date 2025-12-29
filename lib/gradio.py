@@ -1332,7 +1332,7 @@ def build_interface(args:dict)->gr.Blocks:
                             bark_visible = visible_gr_tab_bark_params
                         return (
                             gr.update(value=show_rating(session['tts_engine'])),
-                            gr.update(visible=False),
+                            gr.update(visible=visible_gr_tab_bark_params),
                             gr.update(visible=bark_visible), 
                             gr.update(visible=False),
                             update_gr_fine_tuned_list(id),
