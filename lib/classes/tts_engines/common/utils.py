@@ -1,4 +1,5 @@
 import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf, numpy as np
+from lib.classes.tts_engines.common.audio import is_audio_data_valid
 
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
