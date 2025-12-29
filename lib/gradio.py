@@ -1118,20 +1118,21 @@ def build_interface(args:dict)->gr.Blocks:
                         file_pattern = "*.wav"
                         eng_options = []
                         bark_options = []
+                        builtin_dir = Path(os.path.join(voices_dir, lang_dir))
+                        builtin_options = [
+                            (base, str(f))
+                            for f in builtin_dir.rglob(file_pattern)
+                            for base in [os.path.splitext(f.name)[0]]
+                        ]
+                        builtin_names = {t[0]: None for t in builtin_options}
                         if session['language'] in default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {}):
                             eng_dir = Path(os.path.join(voices_dir, "eng"))
                             eng_options = [
                                 (base, str(f))
                                 for f in eng_dir.rglob(file_pattern)
                                 for base in [os.path.splitext(f.name)[0]]
+                                if base not in builtin_names
                             ]
-                        builtin_names = {t[0]: None for t in eng_options}
-                        builtin_options = [
-                            (base, str(f))
-                            for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
-                            for base in [os.path.splitext(f.name)[0]]
-                            if base not in builtin_names
-                        ]
                         if session['tts_engine'] == TTS_ENGINES['BARK']:
                             lang_dict = Lang(session['language'])
                             if lang_dict:
