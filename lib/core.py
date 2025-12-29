@@ -59,6 +59,14 @@ from lib import *
 context = None
 context_tracker = None
 active_sessions = None
+env = os.environ.copy()
+for k in (
+    "MallocStackLogging",
+    "MallocStackLoggingNoCompact",
+    "MallocScribble",
+    "MallocGuardEdges",
+):
+    env.pop(k, None)
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
