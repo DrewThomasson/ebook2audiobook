@@ -1177,8 +1177,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
                                                 session['voice'] = new_voice_path
                                             else:
-                                                parts[idx + 1] = 'eng'
-                                                session['voice'] = str(Path(*parts))
+                                                session['voice'] = models[session['fine_tuned']]['voice']
                         else:
                             if voice_options and voice_options[0][1] is not None:
                                 session['voice'] = models[session['fine_tuned']]['voice']
