@@ -1,5 +1,6 @@
 from lib.core import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.classes.tts_engines.common.audio import is_audio_data_valid
 
 def build_interface(args:dict)->gr.Blocks:
     try:
