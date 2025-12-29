@@ -3,7 +3,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ARG APP_VERSION=25.12.29
+ARG APP_VERSION=25.12.30
 ARG DEVICE_TAG=cpu
 ARG DOCKER_DEVICE_STR='{"name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg nodejs npm espeak-ng sox tesseract-ocr"

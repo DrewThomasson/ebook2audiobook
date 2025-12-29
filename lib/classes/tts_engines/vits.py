@@ -85,7 +85,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         return False
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
-                self.engine.to(device)
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 if sentence == TTS_SML['break']:
                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
@@ -115,6 +114,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                         tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                         with torch.no_grad():
+                            self.engine.to(device)
                             self.engine.tts_to_file(
                                 text=sentence,
                                 file_path=tmp_in_wav,
@@ -158,6 +158,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             self.params['samplerate'] = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
                             source_wav = self._resample_wav(tmp_out_wav, self.params['samplerate'])
                             target_wav = self._resample_wav(self.params['voice_path'], self.params['samplerate'])
+                            self.engine_zs.to(device)
                             audio_sentence = self.engine_zs.voice_conversion(
                                 source_wav=source_wav,
                                 target_wav=target_wav
@@ -174,13 +175,14 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             os.remove(source_wav)
                     else:
                         with torch.no_grad():
+                            self.engine.to(device)
                             audio_sentence = self.engine.tts(
                                 text=sentence,
                                 **speaker_argument
                             )
                     if is_audio_data_valid(audio_sentence):
-                        sourceTensor = self._tensor_type(audio_sentence)
-                        audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                        src_tensor = self._tensor_type(audio_sentence)
+                        audio_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
                         if audio_tensor is not None and audio_tensor.numel() > 0:
                             if sentence[-1].isalnum() or sentence[-1] == '—':
                                 audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
