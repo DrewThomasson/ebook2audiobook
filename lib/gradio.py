@@ -1162,7 +1162,7 @@ def build_interface(args:dict)->gr.Blocks:
                             voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                         else:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
-                        if session['voice'] is not None:
+                        if session['voice'] is not None and isinstance(session.get('voice'), str):
                             if session['voice_dir'] not in session['voice']:
                                 if not any(v[1] == session['voice'] for v in voice_options):
                                     voice_path = Path(session['voice'])
