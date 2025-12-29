@@ -1822,7 +1822,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_file.upload(
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
-                outputs=[gr_custom_model_file, gr_custom_model_list, gr_voice_list],
+                outputs=[gr_custom_model_file, gr_custom_model_list],
                 show_progress_on=[gr_custom_model_list]
             ).then(
                 fn=update_gr_voice_list,
