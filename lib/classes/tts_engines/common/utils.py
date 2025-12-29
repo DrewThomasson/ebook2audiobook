@@ -214,16 +214,15 @@ class TTSUtils:
                             audio_tensor = audio_sentence.detach().cpu().unsqueeze(0)
                         elif isinstance(audio_sentence, np.ndarray):
                             audio_tensor = torch.from_numpy(audio_sentence).unsqueeze(0)
+                            audio_tensor = audio_tensor.cpu()
                         elif isinstance(audio_sentence, (list, tuple)):
                             audio_tensor = torch.tensor(audio_sentence, dtype=torch.float32).unsqueeze(0)
+                            audio_tensor = audio_tensor.cpu()
                         else:
-                            error = f"Unsupported XTTSv2 wav type: {type(audio_sentence)}"
+                            error = f"{self.session['tts_engine']}: Unsupported wav type: {type(audio_sentence)}"
                             print(error)
                             return False
-                        if audio_sentence is not None:
-                            audio_sentence = audio_sentence.tolist()
-                            sourceTensor = self._tensor_type(audio_sentence)
-                            audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                        if audio_tensor is not None and audio_tensor.numel() > 0:
                             # CON is a reserved name on windows
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
