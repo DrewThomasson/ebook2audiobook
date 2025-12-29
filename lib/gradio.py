@@ -1118,12 +1118,14 @@ def build_interface(args:dict)->gr.Blocks:
                         file_pattern = "*.wav"
                         eng_options = []
                         bark_options = []
+                        builtin_dir = Path(os.path.join(voices_dir, lang_dir))
                         builtin_options = [
-                            (os.path.splitext(f.name)[0], str(f))
-                            for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
+                            (base, str(f))
+                            for f in builtin_dir.rglob(file_pattern)
+                            for base in [os.path.splitext(f.name)[0]]
                         ]
+                        builtin_names = {t[0]: None for t in builtin_options}
                         if session['language'] in default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {}):
-                            builtin_names = {t[0]: None for t in builtin_options}
                             eng_dir = Path(os.path.join(voices_dir, "eng"))
                             eng_options = [
                                 (base, str(f))
@@ -1162,7 +1164,7 @@ def build_interface(args:dict)->gr.Blocks:
                             voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                         else:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
-                        if session['voice'] is not None:
+                        if session['voice'] is not None and isinstance(session.get('voice'), str):
                             if session['voice_dir'] not in session['voice']:
                                 if not any(v[1] == session['voice'] for v in voice_options):
                                     voice_path = Path(session['voice'])
@@ -1332,7 +1334,7 @@ def build_interface(args:dict)->gr.Blocks:
                             bark_visible = visible_gr_tab_bark_params
                         return (
                             gr.update(value=show_rating(session['tts_engine'])),
-                            gr.update(visible=False),
+                            gr.update(visible=visible_gr_tab_bark_params),
                             gr.update(visible=bark_visible), 
                             gr.update(visible=False),
                             update_gr_fine_tuned_list(id),
