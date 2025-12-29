@@ -266,6 +266,11 @@ class DeviceInstaller():
                 if has_cmd("lspci"):
                     out = try_cmd("lspci -nn").lower()
                     return "10de:" in out and (" vga " in out or " 3d " in out)
+                # WSL2: nvidia-smi works but PCI isn't exposed normally
+                if has_cmd("nvidia-smi"):
+                    out = try_cmd("nvidia-smi -L").lower()
+                    if "gpu" in out and "nvidia" in out:
+                        return True
                 return False
             # ---------- Windows ----------
             if os.name == "nt":
