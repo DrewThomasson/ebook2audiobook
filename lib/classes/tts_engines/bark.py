@@ -9,7 +9,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.cache_dir = tts_dir
             self.speakers_path = None
             self.tts_key = self.session['model_cache']
-            self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
@@ -30,7 +29,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self._load_engine()
-            self.engine_zs = self._load_engine_zs()
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
@@ -123,7 +121,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         print(msg)
                         return False
             if self.engine:
-                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 if sentence == TTS_SML['break']:
                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
@@ -186,6 +183,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             **fine_tuned_params
                         )
                         """
+                        device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                         self.engine.to(device)
                         audio_sentence = self.engine.tts(
                             text=sentence,
@@ -194,6 +192,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             **tts_dyn_params,
                             **fine_tuned_params
                         )
+                        self.engine.to('cpu')
                     if is_audio_data_valid(audio_sentence):
                         src_tensor = self._tensor_type(audio_sentence)
                         audio_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()

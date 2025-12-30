@@ -107,6 +107,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
+                            self.engine.to('cpu')
                         if self.params['voice_path'] in self.params['semitones'].keys():
                             semitones = self.params['semitones'][self.params['voice_path']]
                         else:
@@ -150,6 +151,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 source_wav=source_wav,
                                 target_wav=target_wav
                             )
+                            self.engine_zs.to('cpu')
                         else:
                             error = f'Engine {self.tts_zs_key} is None'
                             print(error)
@@ -167,6 +169,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                 **speaker_argument
                             )
+                            self.engine.to('cpu')
                     if is_audio_data_valid(audio_sentence):
                         src_tensor = self._tensor_type(audio_sentence)
                         audio_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
