@@ -72,7 +72,7 @@ class DeviceInstaller():
             except Exception:
                 return ''
 
-        def toolkit_version_parse(text:str)->Union[str, None]:
+        def lib_version_parse(text:str)->Union[str, None]:
             if not text:
                 return None
             text = text.strip()
@@ -377,222 +377,9 @@ class DeviceInstaller():
 
         name = None
         tag = None
-        msg = ''
         arch = platform.machine().lower()
-
-        # ============================================================
-        # JETSON
-        # ============================================================
-        if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
-            raw = tegra_version()
-            jp_code, msg = jetpack_version(raw)
-            if jp_code in ['unsupported', 'unknown']:
-                pass
-            elif os.path.exists('/etc/nv_tegra_release'):
-                devices['JETSON']['found'] = True
-                name = 'jetson'
-                tag = f'jetson{jp_code}'
-            elif os.path.exists('/proc/device-tree/compatible'):
-                out = try_cmd('cat /proc/device-tree/compatible')
-                if 'tegra' in out:
-                    devices['JETSON']['found'] = True
-                    name = 'jetson'
-                    tag = f'jetson{jp_code}'
-            else:
-                out = try_cmd('uname -a')
-                if 'tegra' in out:
-                    msg = 'Jetson GPU detected but not(?) compatible'
-                
-        # ============================================================
-        # ROCm
-        # ============================================================
-        elif has_working_rocm() and has_amd_gpu_pci():
-            version_out = ''
-            if os.name == 'posix':
-                for p in (
-                    '/opt/rocm/.info/version',
-                    '/opt/rocm/version',
-                ):
-                    if os.path.exists(p):
-                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                            version_out = f.read()
-                        break
-            elif os.name == 'nt':
-                for env in ('ROCM_PATH', 'HIP_PATH'):
-                    base = os.environ.get(env)
-                    if base:
-                        for p in (
-                            os.path.join(base, 'version'),
-                            os.path.join(base, '.info', 'version'),
-                        ):
-                            if os.path.exists(p):
-                                with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                    version_out = f.read()
-                                break
-                    if version_out:
-                        break
-            if not version_out:
-                msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
-            else:
-                version_str = toolkit_version_parse(version_out)
-                cmp = toolkit_version_compare(version_str, rocm_version_range)
-                if cmp == -1:
-                    msg = f'ROCm {version_str} < min {rocm_version_range["min"]}. Please upgrade.'
-                elif cmp == 1:
-                    msg = f'ROCm {version_str} > max {rocm_version_range["max"]}. Falling back to CPU.'
-                elif cmp == 0:
-                    devices['ROCM']['found'] = True
-                    parts = version_str.split(".")
-                    major = parts[0]
-                    minor = parts[1] if len(parts) > 1 else 0
-                    name = 'rocm'
-                    tag = f'rocm{major}{minor}'
-                else:
-                    msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
-                
-        # ============================================================
-        # CUDA
-        # ============================================================
-        elif has_working_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
-            version_out = ''
-            msg = ''
-            # 1) CUDA RUNTIME detection
-            try:
-                import ctypes
-                libcudart = None
-                if os.name == "nt":
-                    # Native Windows: CUDA runtime is a DLL
-                    for dll in (
-                        "cudart64_130.dll",
-                        "cudart64_121.dll",
-                        "cudart64_120.dll",
-                        "cudart64_118.dll",
-                        "cudart64_117.dll",
-                        "cudart64_116.dll",
-                        "cudart64_115.dll",
-                    ):
-                        try:
-                            libcudart = ctypes.CDLL(dll)
-                            break
-                        except OSError:
-                            pass
-                else:
-                    # Linux + WSL2
-                    libcudart = ctypes.CDLL("libcudart.so")
-                if not libcudart:
-                    raise OSError
-                version = ctypes.c_int()
-                if libcudart.cudaRuntimeGetVersion(ctypes.byref(version)) == 0:
-                    device_count = ctypes.c_int()
-                    if libcudart.cudaGetDeviceCount(ctypes.byref(device_count)) == 0:
-                        v = version.value
-                        major = v // 1000
-                        minor = (v % 1000) // 10
-                        if device_count.value > 0:
-                            version_out = f"{major}.{minor}"
-                        else:
-                            msg = f'Runtime present ({major}.{minor}) but no devices.'
-            except (OSError, AttributeError):
-                pass
-            # CUDA TOOLKIT detection (fallback only)
-            if not version_out:
-                if os.name == 'posix':
-                    for p in (
-                        '/usr/local/cuda/version.json',
-                        '/usr/local/cuda/version.txt',
-                    ):
-                        if os.path.exists(p):
-                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                version_out = f.read()
-                            break
-                elif os.name == 'nt':
-                    cuda_path = os.environ.get('CUDA_PATH')
-                    if cuda_path:
-                        for p in (
-                            os.path.join(cuda_path, 'version.json'),
-                            os.path.join(cuda_path, 'version.txt'),
-                        ):
-                            if os.path.exists(p):
-                                with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                    version_out = f.read()
-                                break
-            if not version_out:
-                if not msg:
-                    msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
-            else:
-                version_str = toolkit_version_parse(version_out)
-                cmp = toolkit_version_compare(version_str, cuda_version_range)
-                if cmp == -1:
-                    msg = f'CUDA {version_str} < min {cuda_version_range["min"]}. Please upgrade.'
-                elif cmp == 1:
-                    msg = f'CUDA {version_str} > max {cuda_version_range["max"]}. Falling back to CPU.'
-                elif cmp == 0:
-                    devices['CUDA']['found'] = True
-                    parts = version_str.split(".")
-                    major = parts[0]
-                    minor = parts[1] if len(parts) > 1 else 0
-                    name = 'cuda'
-                    tag = f'cu{major}{minor}'
-                else:
-                    msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
-
-        # ============================================================
-        # INTEL XPU
-        # ============================================================
-        elif has_working_xpu() and has_intel_gpu_pci():
-            version_out = ''
-            if os.name == 'posix':
-                for p in (
-                    '/opt/intel/oneapi/version.txt',
-                    '/opt/intel/oneapi/compiler/latest/version.txt',
-                    '/opt/intel/oneapi/runtime/latest/version.txt',
-                ):
-                    if os.path.exists(p):
-                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                            version_out = f.read()
-                        break
-            elif os.name == 'nt':
-                oneapi_root = os.environ.get('ONEAPI_ROOT')
-                if oneapi_root:
-                    for p in (
-                        os.path.join(oneapi_root, 'version.txt'),
-                        os.path.join(oneapi_root, 'compiler', 'latest', 'version.txt'),
-                        os.path.join(oneapi_root, 'runtime', 'latest', 'version.txt'),
-                    ):
-                        if os.path.exists(p):
-                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                version_out = f.read()
-                            break
-            if not version_out:
-                msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
-            else:
-                version_str = toolkit_version_parse(version_out)
-                cmp = toolkit_version_compare(version_str, xpu_version_range)
-                if cmp == -1 or cmp == 1:
-                    msg = f'XPU {version_str} out of supported range {xpu_version_range}. Falling back to CPU.'
-                elif cmp == 0:
-                    devices['XPU']['found'] = True
-                    name = 'xpu'
-                    tag = 'xpu'
-                else:
-                    msg = 'Intel GPU detected but Intel oneAPI Base Toolkit not installed.'
-
-        # ============================================================
-        # APPLE MPS
-        # ============================================================
-        elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
-            devices['MPS']['found'] = True
-            name = 'mps'
-            tag = 'mps'
-
-        # ============================================================
-        # CPU
-        # ============================================================
-        if tag is None:
-            name = 'cpu'
-            tag = 'cpu'
-
         forced_tag = os.environ.get("DEVICE_TAG")
+
         if forced_tag:
             tag_letters = re.match(r"[a-zA-Z]+", forced_tag)
             if tag_letters:
@@ -601,6 +388,221 @@ class DeviceInstaller():
                 devices[name.upper()]['found'] = True
                 tag = forced_tag
                 msg = f'Hardware forced from DEVICE_TAG={tag}'
+            else:
+                msg = f'DEVICE_TAG not valid'
+        else:
+            # ============================================================
+            # JETSON
+            # ============================================================
+            if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
+                raw = tegra_version()
+                jp_code, msg = jetpack_version(raw)
+                if jp_code in ['unsupported', 'unknown']:
+                    pass
+                elif os.path.exists('/etc/nv_tegra_release'):
+                    devices['JETSON']['found'] = True
+                    name = 'jetson'
+                    tag = f'jetson{jp_code}'
+                elif os.path.exists('/proc/device-tree/compatible'):
+                    out = try_cmd('cat /proc/device-tree/compatible')
+                    if 'tegra' in out:
+                        devices['JETSON']['found'] = True
+                        name = 'jetson'
+                        tag = f'jetson{jp_code}'
+                else:
+                    out = try_cmd('uname -a')
+                    if 'tegra' in out:
+                        msg = 'Jetson GPU detected but not(?) compatible'
+                    
+            # ============================================================
+            # ROCm
+            # ============================================================
+            elif has_working_rocm() and has_amd_gpu_pci():
+                version = ''
+                msg = ''
+                if os.name == 'posix':
+                    for p in (
+                        '/opt/rocm/.info/version',
+                        '/opt/rocm/version',
+                    ):
+                        if os.path.exists(p):
+                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                version = f.read()
+                            break
+                elif os.name == 'nt':
+                    for env in ('ROCM_PATH', 'HIP_PATH'):
+                        base = os.environ.get(env)
+                        if base:
+                            for p in (
+                                os.path.join(base, 'version'),
+                                os.path.join(base, '.info', 'version'),
+                            ):
+                                if os.path.exists(p):
+                                    with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                        v = f.read()
+                                        version = lib_version_parse(v)
+                                    break
+                        if version:
+                            break
+                if version:
+                    cmp = toolkit_version_compare(version, rocm_version_range)
+                    if cmp == -1:
+                        msg = f'ROCm {version} < min {rocm_version_range["min"]}. Please upgrade.'
+                    elif cmp == 1:
+                        msg = f'ROCm {version} > max {rocm_version_range["max"]}. Falling back to CPU.'
+                    elif cmp == 0:
+                        devices['ROCM']['found'] = True
+                        parts = version.split(".")
+                        major = parts[0]
+                        minor = parts[1] if len(parts) > 1 else 0
+                        name = 'rocm'
+                        tag = f'rocm{major}{minor}'
+                    else:
+                        msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
+                else:
+                    msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
+
+            # ============================================================
+            # CUDA
+            # ============================================================
+            elif has_working_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
+                version = ''
+                msg = ''
+                # 1) CUDA RUNTIME detection
+                try:
+                    import ctypes
+                    libcudart = None
+                    if os.name == "nt":
+                        min_major, min_minor = cuda_version_range["min"]
+                        max_major, max_minor = cuda_version_range["max"]
+                        for major in range(min_major, max_major + 1):
+                            start_minor = min_minor if major == min_major else 0
+                            end_minor = max_minor if major == max_major else 9
+                            for minor in range(start_minor, end_minor + 1):
+                                dll = f"cudart64_{major}{minor}.dll"
+                                try:
+                                    libcudart = ctypes.CDLL(dll)
+                                    break
+                                except OSError:
+                                    pass
+                            if libcudart:
+                                break
+                    else:
+                        # Linux + WSL2
+                        libcudart = ctypes.CDLL("libcudart.so")
+                    if libcudart:
+                        v_int = ctypes.c_int()
+                        if libcudart.cudaRuntimeGetVersion(ctypes.byref(v_int)) == 0:
+                            device_count = ctypes.c_int()
+                            if libcudart.cudaGetDeviceCount(ctypes.byref(device_count)) == 0:
+                                v = v_int.value
+                                major = v // 1000
+                                minor = (v % 1000) // 10
+                                if device_count.value > 0:
+                                    version = f'{major}.{minor}'
+                                else:
+                                    msg = f'Runtime present ({major}.{minor}) but no devices.'
+                except (OSError, AttributeError):
+                    pass
+                # CUDA TOOLKIT detection (fallback only)
+                if not version:
+                    if os.name == 'posix':
+                        for p in (
+                            '/usr/local/cuda/version.json',
+                            '/usr/local/cuda/version.txt',
+                        ):
+                            if os.path.exists(p):
+                                with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                    v = f.read()
+                                    version = lib_version_parse(v)
+                                break
+                    elif os.name == 'nt':
+                        cuda_path = os.environ.get('CUDA_PATH')
+                        if cuda_path:
+                            for p in (
+                                os.path.join(cuda_path, 'version.json'),
+                                os.path.join(cuda_path, 'version.txt'),
+                            ):
+                                if os.path.exists(p):
+                                    with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                        v = f.read()
+                                        version = lib_version_parse(v)
+                                    break
+                if version:
+                    cmp = toolkit_version_compare(version, cuda_version_range)
+                    if cmp == -1:
+                        msg = f'CUDA {version} < min {cuda_version_range["min"]}. Please upgrade.'
+                    elif cmp == 1:
+                        msg = f'CUDA {version} > max {cuda_version_range["max"]}. Falling back to CPU.'
+                    elif cmp == 0:
+                        devices['CUDA']['found'] = True
+                        parts = version.split(".")
+                        major = parts[0]
+                        minor = parts[1] if len(parts) > 1 else 0
+                        name = 'cuda'
+                        tag = f'cu{major}{minor}'
+                    else:
+                        msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
+                else:
+                    msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
+
+            # ============================================================
+            # INTEL XPU
+            # ============================================================
+            elif has_working_xpu() and has_intel_gpu_pci():
+                version = ''
+                msg = ''
+                if os.name == 'posix':
+                    for p in (
+                        '/opt/intel/oneapi/version.txt',
+                        '/opt/intel/oneapi/compiler/latest/version.txt',
+                        '/opt/intel/oneapi/runtime/latest/version.txt',
+                    ):
+                        if os.path.exists(p):
+                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                v = f.read()
+                                version = lib_version_parse(v)
+                            break
+                elif os.name == 'nt':
+                    oneapi_root = os.environ.get('ONEAPI_ROOT')
+                    if oneapi_root:
+                        for p in (
+                            os.path.join(oneapi_root, 'version.txt'),
+                            os.path.join(oneapi_root, 'compiler', 'latest', 'version.txt'),
+                            os.path.join(oneapi_root, 'runtime', 'latest', 'version.txt'),
+                        ):
+                            if os.path.exists(p):
+                                with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                    v = f.read()
+                                    version = lib_version_parse(v)
+                                break
+                if version:
+                    cmp = toolkit_version_compare(version, xpu_version_range)
+                    if cmp == -1 or cmp == 1:
+                        msg = f'XPU {version} out of supported range {xpu_version_range}. Falling back to CPU.'
+                    elif cmp == 0:
+                        devices['XPU']['found'] = True
+                        name = 'xpu'
+                        tag = 'xpu'
+                    else:
+                        msg = 'Intel GPU detected but Intel oneAPI Base Toolkit not installed.'
+                else:
+                    msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
+
+            # ============================================================
+            # APPLE MPS
+            # ============================================================
+            elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
+                devices['MPS']['found'] = True
+                name = 'mps'
+                tag = 'mps'
+
+            # ============================================================
+            # CPU
+            # ============================================================
+            if tag is None:
+                name = 'cpu'
+                tag = 'cpu'
 
         name, tag, msg = (v.strip() if isinstance(v, str) else v for v in (name, tag, msg))
         return (name, tag, msg)
