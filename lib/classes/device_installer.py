@@ -485,13 +485,13 @@ class DeviceInstaller():
                 if libcudart.cudaRuntimeGetVersion(ctypes.byref(version)) == 0:
                     device_count = ctypes.c_int()
                     if libcudart.cudaGetDeviceCount(ctypes.byref(device_count)) == 0:
+                        v = version.value
+                        major = v // 1000
+                        minor = (v % 1000) // 10
                         if device_count.value > 0:
-                            v = version.value
-                            major = v // 1000
-                            minor = (v % 1000) // 10
                             version_out = f"{major}.{minor}"
                         else:
-                            msg = f'Runtime present ({version.value}) but no devices'
+                            msg = f'Runtime present ({major}.{minor}) but no devices.'
             except (OSError, AttributeError):
                 pass
             # CUDA TOOLKIT detection (fallback only)
@@ -517,8 +517,8 @@ class DeviceInstaller():
                                     version_out = f.read()
                                 break
             if not version_out:
-                if msg == '':
-                    msg = 'CUDA runtime detected but NVIDIA CUDA Toolkit or Runtime not installed.'
+                if not msg:
+                    msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
             else:
                 version_str = toolkit_version_parse(version_out)
                 cmp = toolkit_version_compare(version_str, cuda_version_range)
