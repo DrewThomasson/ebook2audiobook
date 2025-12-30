@@ -1679,55 +1679,56 @@ def convert_chapters2audio(id:str)->bool:
             print(msg)
             if session['is_gui_process']:
                 progress_bar = gr.Progress(track_tqdm=False)
-            ebook_name = Path(session['ebook']).name
-            with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                for x in range(0, total_chapters):
-                    chapter_num = x + 1
-                    chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
-                    sentences = session['chapters'][x]
-                    sentences_count = sum(1 for row in sentences if row.strip() not in TTS_SML.values())
-                    start = sentence_number
-                    msg = f'Block {chapter_num} containing {sentences_count} sentences...'
-                    print(msg)
-                    for i, sentence in enumerate(sentences):
-                        if session['cancellation_requested']:
-                            msg = 'Cancel requested'
-                            print(msg)
-                            return False
-                        if sentence_number in missing_sentences or sentence_number > resume_sentence or (sentence_number == 0 and resume_sentence == 0):
-                            if sentence_number <= resume_sentence and sentence_number > 0:
-                                msg = f'**Recovering missing file sentence {sentence_number}'
+            if session['ebook']:
+                ebook_name = Path(session['ebook']).name
+                with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
+                    for x in range(0, total_chapters):
+                        chapter_num = x + 1
+                        chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
+                        sentences = session['chapters'][x]
+                        sentences_count = sum(1 for row in sentences if row.strip() not in TTS_SML.values())
+                        start = sentence_number
+                        msg = f'Block {chapter_num} containing {sentences_count} sentences...'
+                        print(msg)
+                        for i, sentence in enumerate(sentences):
+                            if session['cancellation_requested']:
+                                msg = 'Cancel requested'
                                 print(msg)
-                            sentence = sentence.strip()
-                            success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
-                            if success:
-                                total_progress = (t.n + 1) / total_iterations
-                                if session['is_gui_process']:
-                                    progress_bar(progress=total_progress, desc=ebook_name)
-                                is_sentence = sentence.strip() not in TTS_SML.values()
-                                percentage = total_progress * 100
-                                t.set_description(f"{percentage:.2f}%")
-                                msg = f' : {sentence}' if is_sentence else f' : {sentence}'
+                                return False
+                            if sentence_number in missing_sentences or sentence_number > resume_sentence or (sentence_number == 0 and resume_sentence == 0):
+                                if sentence_number <= resume_sentence and sentence_number > 0:
+                                    msg = f'**Recovering missing file sentence {sentence_number}'
+                                    print(msg)
+                                sentence = sentence.strip()
+                                success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
+                                if success:
+                                    total_progress = (t.n + 1) / total_iterations
+                                    if session['is_gui_process']:
+                                        progress_bar(progress=total_progress, desc=ebook_name)
+                                    is_sentence = sentence.strip() not in TTS_SML.values()
+                                    percentage = total_progress * 100
+                                    t.set_description(f"{percentage:.2f}%")
+                                    msg = f' : {sentence}' if is_sentence else f' : {sentence}'
+                                    print(msg)
+                                else:
+                                    return False
+                            if sentence.strip() not in TTS_SML.values():
+                                sentence_number += 1
+                            t.update(1)
+                        end = sentence_number - 1 if sentence_number > 1 else sentence_number
+                        msg = f'End of Block {chapter_num}'
+                        print(msg)
+                        if chapter_num in missing_chapters or sentence_number > resume_sentence:
+                            if chapter_num <= resume_chapter:
+                                msg = f'**Recovering missing file block {chapter_num}'
+                                print(msg)
+                            if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
+                                msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
                                 print(msg)
                             else:
+                                msg = 'combine_audio_sentences() failed!'
+                                print(msg)
                                 return False
-                        if sentence.strip() not in TTS_SML.values():
-                            sentence_number += 1
-                        t.update(1)
-                    end = sentence_number - 1 if sentence_number > 1 else sentence_number
-                    msg = f'End of Block {chapter_num}'
-                    print(msg)
-                    if chapter_num in missing_chapters or sentence_number > resume_sentence:
-                        if chapter_num <= resume_chapter:
-                            msg = f'**Recovering missing file block {chapter_num}'
-                            print(msg)
-                        if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
-                            msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
-                            print(msg)
-                        else:
-                            msg = 'combine_audio_sentences() failed!'
-                            print(msg)
-                            return False
             return True
         except Exception as e:
             DependencyError(e)
