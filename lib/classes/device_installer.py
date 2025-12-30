@@ -377,6 +377,7 @@ class DeviceInstaller():
 
         name = None
         tag = None
+        msg = ''
         arch = platform.machine().lower()
         forced_tag = os.environ.get("DEVICE_TAG")
 
