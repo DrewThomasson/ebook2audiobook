@@ -203,6 +203,8 @@ class TTSUtils:
                             if self.session.get(key) is not None
                         }
                         with torch.no_grad():
+                            device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
+                            engine.to(device)
                             result = engine.inference(
                                 text=default_text.strip(),
                                 language=self.session['language_iso1'],
@@ -210,6 +212,7 @@ class TTSUtils:
                                 speaker_embedding=speaker_embedding,
                                 **fine_tuned_params,
                             )
+                            engine.to('cpu')
                         audio_sentence = result.get('wav')
                         if is_audio_data_valid(audio_sentence):
                             sourceTensor = self._tensor_type(audio_sentence)

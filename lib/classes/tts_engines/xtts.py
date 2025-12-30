@@ -84,7 +84,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         print(msg)
                         return False
             if self.engine:
-                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 if sentence == TTS_SML['break']:
                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
@@ -131,6 +130,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         if self.session.get(key) is not None
                     }
                     with torch.no_grad():
+                        device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                         self.engine.to(device)
                         result = self.engine.inference(
                             text=sentence,
@@ -139,6 +139,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                             speaker_embedding=self.params['speaker_embedding'],
                             **fine_tuned_params
                         )
+                        self.engine.to('cpu')
                     audio_sentence = result.get('wav')
                     if is_audio_data_valid(audio_sentence):
                         src_tensor = self._tensor_type(audio_sentence)
