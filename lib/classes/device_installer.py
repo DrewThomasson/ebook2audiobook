@@ -428,7 +428,8 @@ class DeviceInstaller():
                     ):
                         if os.path.exists(p):
                             with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                version = f.read()
+                                v = f.read()
+                                version = lib_version_parse(v)
                             break
                 elif os.name == 'nt':
                     for env in ('ROCM_PATH', 'HIP_PATH'):
@@ -447,10 +448,14 @@ class DeviceInstaller():
                             break
                 if version:
                     cmp = toolkit_version_compare(version, rocm_version_range)
+                    min_version = rocm_version_range["min"]
+                    max_version = rocm_version_range["max"]
+                    min_version_str = ".".join(map(str, min_version)) if isinstance(min_version, (tuple, list)) else str(min_version)
+                    max_version_str = ".".join(map(str, max_version)) if isinstance(max_version, (tuple, list)) else str(max_version)
                     if cmp == -1:
-                        msg = f'ROCm {version} < min {rocm_version_range["min"]}. Please upgrade.'
+                        msg = f'ROCm {version} < min {min_version_str}. Please upgrade.'
                     elif cmp == 1:
-                        msg = f'ROCm {version} > max {rocm_version_range["max"]}. Falling back to CPU.'
+                        msg = f'ROCm {version} > max {max_version_str}. Falling back to CPU.'
                     elif cmp == 0:
                         devices['ROCM']['found'] = True
                         parts = version.split(".")
@@ -531,10 +536,12 @@ class DeviceInstaller():
                                     break
                 if version:
                     cmp = toolkit_version_compare(version, cuda_version_range)
+                    min_ver = ".".join(str(part) for part in cuda_version_range["min"])
+                    max_ver = ".".join(str(part) for part in cuda_version_range["max"])
                     if cmp == -1:
-                        msg = f'CUDA {version} < min {cuda_version_range["min"]}. Please upgrade.'
+                        msg = f'CUDA {version} < min {min_ver}. Please upgrade.'
                     elif cmp == 1:
-                        msg = f'CUDA {version} > max {cuda_version_range["max"]}. Falling back to CPU.'
+                        msg = f'CUDA {version} > max {max_ver}. Falling back to CPU.'
                     elif cmp == 0:
                         devices['CUDA']['found'] = True
                         parts = version.split(".")
@@ -580,7 +587,14 @@ class DeviceInstaller():
                 if version:
                     cmp = toolkit_version_compare(version, xpu_version_range)
                     if cmp == -1 or cmp == 1:
-                        msg = f'XPU {version} out of supported range {xpu_version_range}. Falling back to CPU.'
+                        range_display = (
+                            f"{xpu_version_range.get('min')} to {xpu_version_range.get('max')}"
+                            if isinstance(xpu_version_range, dict)
+                            and 'min' in xpu_version_range
+                            and 'max' in xpu_version_range
+                            else str(xpu_version_range)
+                        )
+                        msg = f'XPU {version} out of supported range {range_display}. Falling back to CPU.'
                     elif cmp == 0:
                         devices['XPU']['found'] = True
                         name = 'xpu'
