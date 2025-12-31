@@ -1047,11 +1047,7 @@ def get_sentences(text:str, id:str)->list|None:
                         """
                         import nagisa
                         tokens = nagisa.tagging(segment).words
-                        result.extend([
-                            f' {token}'
-                            for token in tokens
-                            if token.strip()
-                        ])
+                        result.extend(tokens)
                     elif lang == 'kor':
                         from soynlp.tokenizer import LTokenizer
                         ltokenizer = LTokenizer()
@@ -1951,11 +1947,10 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     target_rate = '48000'
                     cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
                 cmd += ['-map_metadata', '1'] 
-            if 'output_channel' in session:
-                if session['output_channel'] == 'mono':
-                    cmd += ['-ac', '1']
-                elif session['output_channel'] == 'stereo':
-                    cmd += ['-ac', '2']
+            if session['output_channel'] == 'stereo':
+                cmd += ['-ac', '2']
+            else:
+                cmd += ['-ac', '1']
             if input_codec == target_codec and input_rate == target_rate:
                 cmd = [
                     shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio,
@@ -2327,6 +2322,7 @@ def convert_ebook(args:dict)->tuple:
                 session['bark_waveform_temp'] =  float(args['bark_waveform_temp'])
                 session['audiobooks_dir'] = str(args['audiobooks_dir']) if args['audiobooks_dir'] else None
                 session['output_format'] = str(args['output_format'])
+                session['output_channel'] = str(args['output_channel'])
                 session['output_split'] = bool(args['output_split'])
                 session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
                 session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
