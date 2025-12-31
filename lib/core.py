@@ -2248,7 +2248,7 @@ def convert_ebook_batch(args:dict)->tuple:
                     print(msg)
                     if not args['is_gui_process']:
                         sys.exit(1)
-                args['ebook_list'].remove(file) 
+                #args['ebook_list'].remove(file) 
         reset_session(args['session'])
         return progress_status, passed
     else:
