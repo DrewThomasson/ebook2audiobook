@@ -1048,7 +1048,7 @@ def get_sentences(text:str, id:str)->list|None:
                         import nagisa
                         tokens = nagisa.tagging(segment).words
                         result.extend([
-                            token
+                            f' {token}'
                             for token in tokens
                             if token.strip()
                         ])
