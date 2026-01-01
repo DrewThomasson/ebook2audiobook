@@ -1013,42 +1013,34 @@ def get_sentences(text:str, id:str)->list|None:
         return result
 
     def segment_ideogramms(text:str)->list[str]:
-        sml_pattern = '|'.join(re.escape(token) for token in sml_tokens)
-        segments = re.split(f'({sml_pattern})', text)
         result = []
         try:
-            for segment in segments:
-                if not segment:
-                    continue
-                if re.fullmatch(sml_pattern, segment):
-                    result.append(segment)
-                else:
-                    if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
-                        import pycantonese as pc
-                        result.extend([t for t in pc.segment(segment) if t.strip()])
-                    elif lang == 'zho':
-                        import jieba
-                        jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
-                        result.extend([t for t in jieba.cut(segment) if t.strip()])
-                    elif lang == 'jpn':
-                        """
-                        from sudachipy import dictionary, tokenizer
-                        sudachi = dictionary.Dictionary().create()
-                        mode = tokenizer.Tokenizer.SplitMode.C
-                        result.extend([m.surface() for m in sudachi.tokenize(segment, mode) if m.surface().strip()])
-                        """
-                        import nagisa
-                        tokens = nagisa.tagging(segment).words
-                        result.extend(tokens)
-                    elif lang == 'kor':
-                        from soynlp.tokenizer import LTokenizer
-                        ltokenizer = LTokenizer()
-                        result.extend([t for t in ltokenizer.tokenize(segment) if t.strip()])
-                    elif lang in ['tha','lao','mya','khm']:
-                        from pythainlp.tokenize import word_tokenize
-                        result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
-                    else:
-                        result.append(segment.strip())
+            if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
+                import pycantonese as pc
+                result.extend([t for t in pc.segment(text) if t.strip()])
+            elif lang == 'zho':
+                import jieba
+                jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
+                result.extend([t for t in jieba.cut(text) if t.strip()])
+            elif lang == 'jpn':
+                """
+                from sudachipy import dictionary, tokenizer
+                sudachi = dictionary.Dictionary().create()
+                mode = tokenizer.Tokenizer.SplitMode.C
+                result.extend([m.surface() for m in sudachi.tokenize(text, mode) if m.surface().strip()])
+                """
+                import nagisa
+                tokens = nagisa.tagging(text).words
+                result.extend(tokens)
+            elif lang == 'kor':
+                from soynlp.tokenizer import LTokenizer
+                ltokenizer = LTokenizer()
+                result.extend([t for t in ltokenizer.tokenize(text) if t.strip()])
+            elif lang in ['tha','lao','mya','khm']:
+                from pythainlp.tokenize import word_tokenize
+                result.extend([t for t in word_tokenize(text, engine='newmm') if t.strip()])
+            else:
+                result.append(text.strip())
             return result
         except Exception as e:
             DependencyError(e)
@@ -1058,20 +1050,10 @@ def get_sentences(text:str, id:str)->list|None:
         try:
             buffer = ''
             for token in idg_list:
-             # 1) On sml token: flush & emit buffer, then emit the token
-                if token.strip() in sml_tokens:
-                    if buffer:
-                        yield buffer
-                        buffer = ''
-                    yield token
-                    continue
-                # 2) If adding this token would overflow, flush current buffer first
                 if buffer and len(buffer) + len(token) > max_chars:
                     yield buffer
                     buffer = ''
-                # 3) Append the token (word, punctuation, whatever) unless it's a sml token (already checked)
                 buffer += token
-            # 4) Flush any trailing text
             if buffer:
                 yield buffer
         except Exception as e:
@@ -1085,55 +1067,46 @@ def get_sentences(text:str, id:str)->list|None:
             lang, tts_engine = session['language'], session['tts_engine']
             max_chars = int(language_mapping[lang]['max_chars'] / 2)
             min_tokens = 5
-            # List or tuple of tokens that must never be appended to buffer
-            sml_tokens = tuple(TTS_SML.values())
-            sml_list = re.split(rf"({'|'.join(map(re.escape, sml_tokens))})", text)
-            sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
+
             pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
             pattern = re.compile(rf"(.*?(?:{pattern_split}){''.join(punctuation_list_set)})(?=\s|$)", re.DOTALL)
             hard_list = []
-            for s in sml_list:
-                if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
-                    hard_list.append(s)
+            if len(text) <= max_chars:
+                hard_list.append(text)
+            else:
+                parts = split_inclusive(text, pattern)
+                if parts:
+                    for text_part in parts:
+                        text_part = text_part.strip()
+                        if text_part:
+                            hard_list.append(f' {text_part}')
                 else:
-                    parts = split_inclusive(s, pattern)
-                    if parts:
-                        for text_part in parts:
-                            text_part = text_part.strip()
-                            if text_part:
-                                hard_list.append(f' {text_part}')
-                    else:
-                        s = s.strip()
-                        if s:
-                            hard_list.append(s)
-            # Check if some hard_list entries exceed max_chars, so split on soft punctuation
+                    text = text.strip()
+                    if text:
+                        hard_list.append(text)
+
             pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
             pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
             soft_list = []
             for s in hard_list:
-                if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
+                if len(s) <= max_chars:
                     soft_list.append(s)
                 elif len(s) > max_chars:
                     parts = [p for p in split_inclusive(s, pattern) if p]
                     if parts:
                         buffer = ''
                         for idx, part in enumerate(parts):
-                            # Predict length if we glue this part
                             predicted_length = len(buffer) + (1 if buffer else 0) + len(part)
-                            # Peek ahead to see if gluing will exceed max_chars
                             if predicted_length <= max_chars:
                                 buffer = (buffer + ' ' + part).strip() if buffer else part
                             else:
-                                # If we overshoot, check if buffer ends with punctuation
                                 if buffer and not any(buffer.rstrip().endswith(p) for p in punctuation_split_soft_set):
-                                    # Try to backtrack to last punctuation inside buffer
                                     last_punct_idx = max((buffer.rfind(p) for p in punctuation_split_soft_set if p in buffer), default=-1)
                                     if last_punct_idx != -1:
                                         soft_list.append(buffer[:last_punct_idx+1].strip())
                                         leftover = buffer[last_punct_idx+1:].strip()
                                         buffer = leftover + ' ' + part if leftover else part
                                     else:
-                                        # No punctuation, just split as-is
                                         soft_list.append(buffer.strip())
                                         buffer = part
                                 else:
@@ -1152,28 +1125,22 @@ def get_sentences(text:str, id:str)->list|None:
                     if any(ch.isalnum() for ch in cleaned):
                         soft_list.append(s.strip())
             soft_list = [s for s in soft_list if any(ch.isalnum() for ch in re.sub(r'[^\p{L}\p{N} ]+', '', s))]
+
             if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 result = []
                 for s in soft_list:
-                    if s in [TTS_SML['break'], TTS_SML['pause']]:
-                        result.append(s)
+                    tokens = segment_ideogramms(s)
+                    if isinstance(tokens, list):
+                        result.extend([t for t in tokens if t.strip()])
                     else:
-                        tokens = segment_ideogramms(s)
-                        if isinstance(tokens, list):
-                            result.extend([t for t in tokens if t.strip()])
-                        else:
-                            tokens = tokens.strip()
-                            if tokens:
-                                result.append(tokens)
+                        tokens = tokens.strip()
+                        if tokens:
+                            result.append(tokens)
                 return list(join_ideogramms(result))
             else:
                 sentences = []
                 for s in soft_list:
-                    if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
-                        if sentences and s in (TTS_SML['break'], TTS_SML['pause']):
-                            last = sentences[-1]
-                            if last and last[-1].isalnum():
-                                sentences[-1] = last + ";\n"
+                    if len(s) <= max_chars:
                         sentences.append(s)
                     else:
                         words = s.split(' ')
@@ -1679,13 +1646,13 @@ def convert_chapters2audio(id:str)->bool:
                 progress_bar = gr.Progress(track_tqdm=False)
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
-                sentence_num = 0
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
+                    sentence_num = 0
+                    sml_values = set(TTS_SML.values())
                     for c in range(0, total_chapters):
-                        chapter_num = c + 1
-                        chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
+                        chapter_idx = c + 1
+                        chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
                         sentences = session['chapters'][c]
-                        sentences_count = sum(1 for row in sentences if row.strip() not in TTS_SML.values())
                         start = sentence_num
                         if c in missing_chapters:
                             msg = f'********* Recovering missing block {c} *********'
@@ -1693,7 +1660,7 @@ def convert_chapters2audio(id:str)->bool:
                         elif resume_chapter == c and c > 0:
                             msg = f'********* Resuming from block {resume_chapter} *********'
                             print(msg)
-                        msg = f'Block {chapter_num} containing {sentences_count} sentences...'
+                        msg = f'Block {chapter_idx} containing {len(sentences)} sentences...'
                         print(msg)
                         for sentence_num, sentence in enumerate(sentences):
                             if session['cancellation_requested']:
@@ -1720,11 +1687,11 @@ def convert_chapters2audio(id:str)->bool:
                             print(msg)    
                             t.update(1)
                         end = sentence_num
-                        msg = f'End of Block {chapter_num}'
+                        msg = f'End of Block {chapter_idx}'
                         print(msg)
-                        if chapter_num in missing_chapters or sentence_num > resume_sentence:
+                        if chapter_idx in missing_chapters or sentence_num > resume_sentence:
                             if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
-                                msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
+                                msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                                 print(msg)
                             else:
                                 msg = 'combine_audio_sentences() failed!'
