@@ -1679,6 +1679,7 @@ def convert_chapters2audio(id:str)->bool:
                 progress_bar = gr.Progress(track_tqdm=False)
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
+                sentence_num = 0
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     for c in range(0, total_chapters):
                         chapter_audio_file = f'chapter_{c+1}.{default_audio_proc_format}'
