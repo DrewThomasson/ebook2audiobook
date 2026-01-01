@@ -1697,20 +1697,20 @@ def convert_chapters2audio(id:str)->bool:
                                     msg = f'**Recovering missing file sentence {sentence_number}'
                                     print(msg)
                                 sentence = sentence.strip()
-                                success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
-                                if success:
-                                    total_progress = (t.n + 1) / total_iterations
-                                    if session['is_gui_process']:
-                                        progress_bar(progress=total_progress, desc=ebook_name)
-                                    is_sentence = sentence.strip() not in TTS_SML.values()
-                                    percentage = total_progress * 100
-                                    t.set_description(f"{percentage:.2f}%")
-                                    msg = f' : {sentence}' if is_sentence else f' : {sentence}'
-                                    print(msg)
-                                else:
-                                    return False
-                            if sentence.strip() not in TTS_SML.values():
-                                sentence_number += 1
+                                if len(sentence) > 2 an any(c.isalnum() for c in sentence):
+                                    success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
+                                    if success:
+                                        total_progress = (t.n + 1) / total_iterations
+                                        if session['is_gui_process']:
+                                            progress_bar(progress=total_progress, desc=ebook_name)
+                                        is_sentence = sentence.strip() not in TTS_SML.values()
+                                        percentage = total_progress * 100
+                                        t.set_description(f"{percentage:.2f}%")
+                                        msg = f' : {sentence}' if is_sentence else f' : {sentence}'
+                                        print(msg)
+                                    else:
+                                        return False
+                            sentence_number = i + 1
                             t.update(1)
                         end = sentence_number - 1 if sentence_number > 1 else sentence_number
                         msg = f'End of Block {chapter_num}'

@@ -122,9 +122,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         return False
             if self.engine:
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
-                s = sentence.strip()
-                if len(s) < 3 or not any(c.isalnum() for c in s):
-                    return True
                 if sentence == TTS_SML['break']:
                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                     break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
