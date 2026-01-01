@@ -1700,7 +1700,7 @@ def convert_chapters2audio(id:str)->bool:
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return False
-                            if sentence_num in missing_sentences or sentence_num > resume_sentence or (sentence_num == 0 and resume_sentence == 0):
+                            if sentence_num in missing_sentences or sentence_num >= resume_sentence:
                                 sentence = sentence.strip()
                                 if len(sentence) > 2 and any(c.isalnum() for c in sentence):
                                     if sentence_num in missing_sentences:
@@ -1720,7 +1720,7 @@ def convert_chapters2audio(id:str)->bool:
                                         print(msg)
                                     else:
                                         return False
-                            t.update(1)
+                                    t.update(1)
                         end = sentence_num
                         msg = f'End of Block {chapter_num}'
                         print(msg)
