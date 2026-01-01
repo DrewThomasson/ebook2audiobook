@@ -1703,7 +1703,7 @@ def convert_chapters2audio(id:str)->bool:
                             if sentence_num in missing_sentences or sentence_num > resume_sentence or (sentence_num == 0 and resume_sentence == 0):
                                 sentence = sentence.strip()
                                 if len(sentence) > 2 and any(c.isalnum() for c in sentence):
-                                    if sentence_num in missing_chapters:
+                                    if sentence_num in missing_sentences:
                                         msg = f'********* Recovering missing sentence {sentence_num} *********'
                                     elif resume_sentence == sentence_num and sentence_num > 0:
                                         msg = f'********* Resuming from sentence {resume_sentence} ********'
