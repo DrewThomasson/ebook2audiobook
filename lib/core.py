@@ -230,14 +230,9 @@ def prepare_dirs(src:str, id:str)->bool:
             os.makedirs(session['custom_model_dir'], exist_ok=True)
             os.makedirs(session['voice_dir'], exist_ok=True)
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
-            session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
-            if os.path.exists(session['ebook']):
-                if compare_files_by_hash(session['ebook'], src):
-                    resume = True
-            if not resume:
-                shutil.rmtree(session['chapters_dir'], ignore_errors=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir_sentences'], exist_ok=True)
+            session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
             shutil.copy(src, session['ebook']) 
             return True
     except Exception as e:
@@ -366,9 +361,6 @@ def calculate_hash(filepath, hash_algorithm='sha256'):
         while chunk := f.read(8192):  # Read in chunks to handle large files
             hash_func.update(chunk)
     return hash_func.hexdigest()
-
-def compare_files_by_hash(file1, file2, hash_algorithm='sha256'):
-    return calculate_hash(file1, hash_algorithm) == calculate_hash(file2, hash_algorithm)
 
 def compare_dict_keys(d1, d2):
     if not isinstance(d1, Mapping) or not isinstance(d2, Mapping):
@@ -2248,7 +2240,7 @@ def convert_ebook_batch(args:dict)->tuple:
                     print(msg)
                     if not args['is_gui_process']:
                         sys.exit(1)
-                #args['ebook_list'].remove(file) 
+                args['ebook_list'].remove(file) 
         reset_session(args['session'])
         return progress_status, passed
     else:
