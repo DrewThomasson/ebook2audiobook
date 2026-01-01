@@ -1687,6 +1687,12 @@ def convert_chapters2audio(id:str)->bool:
                         sentences = session['chapters'][c]
                         sentences_count = sum(1 for row in sentences if row.strip() not in TTS_SML.values())
                         start = sentence_num
+                        if c in missing_chapters:
+                            msg = f'********* Recovering missing block {c} *********'
+                            print(msg)
+                        elif resume_chapter == c and c > 0:
+                            msg = f'********* Resuming from block {resume_chapter} *********'
+                            print(msg)
                         msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                         print(msg)
                         for sentence_num, sentence in enumerate(sentences):
@@ -1697,6 +1703,11 @@ def convert_chapters2audio(id:str)->bool:
                             if sentence_num in missing_sentences or sentence_num > resume_sentence or (sentence_num == 0 and resume_sentence == 0):
                                 sentence = sentence.strip()
                                 if len(sentence) > 2 and any(c.isalnum() for c in sentence):
+                                    if sentence_num in missing_chapters:
+                                        msg = f'********* Recovering missing sentence {sentence_num} *********'
+                                    elif resume_sentence == sentence_num and sentence_num > 0:
+                                        msg = f'********* Resuming from sentence {resume_sentence} ********'
+                                        print(msg)
                                     success = tts_manager.convert_sentence2audio(sentence_num, sentence) if sentence else True
                                     if success:
                                         total_progress = (t.n + 1) / total_iterations
