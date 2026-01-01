@@ -1697,7 +1697,7 @@ def convert_chapters2audio(id:str)->bool:
                                     msg = f'**Recovering missing file sentence {sentence_number}'
                                     print(msg)
                                 sentence = sentence.strip()
-                                if len(sentence) > 2 an any(c.isalnum() for c in sentence):
+                                if len(sentence) > 2 and any(c.isalnum() for c in sentence):
                                     success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
                                     if success:
                                         total_progress = (t.n + 1) / total_iterations
