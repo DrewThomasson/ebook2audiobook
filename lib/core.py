@@ -1000,7 +1000,6 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
         return None
 
 def get_sentences(text:str, id:str)->list|None:
-
     def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
         last_end = 0
