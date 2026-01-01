@@ -158,12 +158,14 @@ jobs:
           CUDA_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cu128"
           CUDA_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cu128"
           CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu128"
+          CUDA_TAG_4="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest"
           docker buildx build --pull --platform linux/amd64 \
             --build-arg DEVICE_TAG=cu128 \
             --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "CUDA 12.8"}' \
             -t "$CUDA_TAG_1" \
             -t "$CUDA_TAG_2" \
             -t "$CUDA_TAG_3" \
+            -t "$CUDA_TAG_4" \
             --push .
 
       # ==================== Huggingface Docker Build (linux/amd64 only) ====================
