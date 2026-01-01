@@ -1705,7 +1705,7 @@ def convert_chapters2audio(id:str)->bool:
                                 if len(sentence) > 2 and any(c.isalnum() for c in sentence):
                                     if sentence_num in missing_sentences:
                                         msg = f'********* Recovering missing sentence {sentence_num} *********'
-                                    elif resume_sentence == sentence_num and sentence_num > 0:
+                                    elif resume_sentence == sentence_num and resume_sentence > 0:
                                         msg = f'********* Resuming from sentence {resume_sentence} ********'
                                         print(msg)
                                     success = tts_manager.convert_sentence2audio(sentence_num, sentence) if sentence else True
