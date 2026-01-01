@@ -1083,13 +1083,12 @@ def get_sentences(text:str, id:str)->list|None:
 		if not hard_list:
 			hard_list = [text.strip()]
 		hard_list = [s.strip() for s in hard_list if s.strip()]
-
+        """
 		# PASS 2 — soft punctuation
 		soft_pattern = re.compile(
 			rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
 			re.DOTALL
 		)
-
 		soft_list = []
 		for s in hard_list:
 			s = s.strip()
@@ -1112,12 +1111,11 @@ def get_sentences(text:str, id:str)->list|None:
 				final_list.append(s)
 			else:
 				final_list.extend(split_at_space_limit(s))
-
-		final_list = [s.strip() for s in final_list if s.strip()]
-
+        """
+		hard_list = [s.strip() for s in hard_list if s.strip()]
 		if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
 			result = []
-			for s in final_list:
+			for s in hard_list:
 				tokens = segment_ideogramms(s)
 				if isinstance(tokens, list):
 					result.extend([t for t in tokens if t.strip()])
@@ -1127,7 +1125,7 @@ def get_sentences(text:str, id:str)->list|None:
 						result.append(tokens)
 			return result
 		else:
-			return final_list
+			return hard_list
 
 	except Exception as e:
 		print(f'get_sentences() error: {e}')
