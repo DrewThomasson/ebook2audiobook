@@ -1650,7 +1650,6 @@ def convert_chapters2audio(id:str)->bool:
                 [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')],
                 key=lambda x: int(re.search(r'\d+', x).group())
             )
-            print(f'----------{existing_sentences}----------')
             if existing_sentences:
                 resume_sentence = max(int(re.search(r'\d+', f).group()) for f in existing_sentences)
                 msg = f'Resuming from sentence {resume_sentence}'
