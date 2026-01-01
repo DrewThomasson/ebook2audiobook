@@ -1000,147 +1000,138 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
         return None
 
 def get_sentences(text:str, id:str)->list|None:
-    def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
-        result = []
-        last_end = 0
-        for match in pattern.finditer(text):
-            result.append(text[last_end:match.end()].strip())
-            last_end = match.end()
-        if last_end < len(text):
-            tail = text[last_end:].strip()
-            if tail:
-                result.append(tail)
-        return result
+	def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
+		result = []
+		last_end = 0
+		for match in pattern.finditer(text):
+			result.append(text[last_end:match.end()].strip())
+			last_end = match.end()
+		if last_end < len(text):
+			tail = text[last_end:].strip()
+			if tail:
+				result.append(tail)
+		return result
 
-    def strip_sml(s:str)->str:
-        if not sml_values:
-            return s
-        for v in sml_values:
-            s = s.replace(v, '')
-        return s
+	def strip_sml(s:str)->str:
+		if not sml_values:
+			return s
+		for v in sml_values:
+			s = s.replace(v, '')
+		return s
 
-    def split_at_space_max(text:str)->list[str]:
-        words = text.split()
-        if not words:
-            return []
-        out = []
-        buffer = words[0]
-        for w in words[1:]:
-            candidate = buffer + ' ' + w
-            if len(strip_sml(candidate)) <= max_chars:
-                buffer = candidate
-            else:
-                out.append(buffer.strip())
-                buffer = w
-        if buffer.strip():
-            out.append(buffer.strip())
-        return out
+	def split_at_space_limit(s:str)->list[str]:
+		out = []
+		rest = s.strip()
+		while rest and len(strip_sml(rest)) > max_chars:
+			cut = rest[:max_chars + 1]
+			idx = cut.rfind(' ')
+			if idx == -1:
+				out.append(rest[:max_chars].strip())
+				rest = rest[max_chars:].strip()
+			else:
+				out.append(rest[:idx].strip())
+				rest = rest[idx + 1:].strip()
+		if rest:
+			out.append(rest.strip())
+		return out
 
-    def segment_ideogramms(text:str)->list[str]:
-        result = []
-        try:
-            if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
-                import pycantonese as pc
-                result.extend([t for t in pc.segment(text) if t.strip()])
-            elif lang == 'zho':
-                import jieba
-                jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
-                result.extend([t for t in jieba.cut(text) if t.strip()])
-            elif lang == 'jpn':
-                """
-                from sudachipy import dictionary, tokenizer
-                sudachi = dictionary.Dictionary().create()
-                mode = tokenizer.Tokenizer.SplitMode.C
-                result.extend([m.surface() for m in sudachi.tokenize(text, mode) if m.surface().strip()])
-                """
-                import nagisa
-                tokens = nagisa.tagging(text).words
-                result.extend(tokens)
-            elif lang == 'kor':
-                from soynlp.tokenizer import LTokenizer
-                ltokenizer = LTokenizer()
-                result.extend([t for t in ltokenizer.tokenize(text) if t.strip()])
-            elif lang in ['tha','lao','mya','khm']:
-                from pythainlp.tokenize import word_tokenize
-                result.extend([t for t in word_tokenize(text, engine='newmm') if t.strip()])
-            else:
-                result.append(text.strip())
-            return result
-        except Exception as e:
-            DependencyError(e)
-            return [text] 
+	def segment_ideogramms(text:str)->list[str]:
+		result = []
+		try:
+			if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
+				import pycantonese as pc
+				result.extend([t for t in pc.segment(text) if t.strip()])
+			elif lang == 'zho':
+				import jieba
+				jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
+				result.extend([t for t in jieba.cut(text) if t.strip()])
+			elif lang == 'jpn':
+				import nagisa
+				result.extend(nagisa.tagging(text).words)
+			elif lang == 'kor':
+				from soynlp.tokenizer import LTokenizer
+				ltokenizer = LTokenizer()
+				result.extend([t for t in ltokenizer.tokenize(text) if t.strip()])
+			elif lang in ['tha','lao','mya','khm']:
+				from pythainlp.tokenize import word_tokenize
+				result.extend([t for t in word_tokenize(text, engine='newmm') if t.strip()])
+			else:
+				result.append(text.strip())
+			return result
+		except Exception as e:
+			DependencyError(e)
+			return [text]
 
-    def join_ideogramms(idg_list:list[str])->str:
-        try:
-            buffer = ''
-            for token in idg_list:
-                if buffer and len(strip_sml(buffer + token)) > max_chars:
-                    yield buffer.strip()
-                    buffer = ''
-                buffer += token
-            if buffer:
-                yield buffer.strip()
-        except Exception as e:
-            DependencyError(e)
-            if buffer:
-                yield buffer.strip()
+	try:
+		session = context.get_session(id)
+		if not session:
+			return None
 
-    try:
-        session = context.get_session(id)
-        if session:
-            lang, tts_engine = session['language'], session['tts_engine']
-            max_chars = int(language_mapping[lang]['max_chars'] / 2)
-            min_tokens = 5
-            sml_values = tuple(TTS_SML.values()) if 'TTS_SML' in globals() else ()
-            pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
-            pattern = re.compile(rf"(.*?(?:{pattern_split}){''.join(punctuation_list_set)})(?=\s|$)", re.DOTALL)
-            hard_list = split_inclusive(text, pattern)
-            if not hard_list:
-                hard_list = [text.strip()]
-            hard_list = [s.strip() for s in hard_list if s and s.strip()]
-            pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
-            pattern_soft = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
-            soft_list = []
-            for s in hard_list:
-                s = s.strip()
-                if len(strip_sml(s)) <= max_chars:
-                    soft_list.append(s)
-                else:
-                    parts = split_inclusive(s, pattern_soft)
-                    if parts:
-                        soft_list.extend([p.strip() for p in parts if p and p.strip()])
-                    else:
-                        soft_list.append(s)
-            final_list = []
-            for s in soft_list:
-                s = s.strip()
-                if not s:
-                    continue
-                if len(strip_sml(s)) <= max_chars:
-                    final_list.append(s)
-                else:
-                    final_list.extend(split_at_space_max(s))
+		lang, tts_engine = session['language'], session['tts_engine']
+		max_chars = int(language_mapping[lang]['max_chars'] / 2)
 
-            final_list = [s.strip() for s in final_list if s and s.strip()]
+		sml_values = tuple(TTS_SML.values()) if 'TTS_SML' in globals() else ()
 
-            if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                result = []
-                for s in final_list:
-                    tokens = segment_ideogramms(s)
-                    if isinstance(tokens, list):
-                        result.extend([t for t in tokens if t.strip()])
-                    else:
-                        tokens = tokens.strip()
-                        if tokens:
-                            result.append(tokens)
-                return list(join_ideogramms(result))
-            else:
-                return final_list
-            return None
-    except Exception as e:
-        error = f'get_sentences() error: {e}'
-        print(error)
-        return None
+		# PASS 1 — hard punctuation
+		hard_pattern = re.compile(
+			rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))})"
+			rf"{''.join(punctuation_list_set)})(?=\s|$)",
+			re.DOTALL
+		)
+
+		hard_list = split_inclusive(text, hard_pattern)
+		if not hard_list:
+			hard_list = [text.strip()]
+		hard_list = [s.strip() for s in hard_list if s.strip()]
+
+		# PASS 2 — soft punctuation
+		soft_pattern = re.compile(
+			rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
+			re.DOTALL
+		)
+
+		soft_list = []
+		for s in hard_list:
+			s = s.strip()
+			if len(strip_sml(s)) <= max_chars:
+				soft_list.append(s)
+			else:
+				parts = split_inclusive(s, soft_pattern)
+				if parts:
+					soft_list.extend([p.strip() for p in parts if p.strip()])
+				else:
+					soft_list.append(s)
+
+		# PASS 3 — space split (last resort)
+		final_list = []
+		for s in soft_list:
+			s = s.strip()
+			if not s:
+				continue
+			if len(strip_sml(s)) <= max_chars:
+				final_list.append(s)
+			else:
+				final_list.extend(split_at_space_limit(s))
+
+		final_list = [s.strip() for s in final_list if s.strip()]
+
+		if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+			result = []
+			for s in final_list:
+				tokens = segment_ideogramms(s)
+				if isinstance(tokens, list):
+					result.extend([t for t in tokens if t.strip()])
+				else:
+					tokens = tokens.strip()
+					if tokens:
+						result.append(tokens)
+			return result
+		else:
+			return final_list
+
+	except Exception as e:
+		print(f'get_sentences() error: {e}')
+		return None
 
 def get_sanitized(str:str, replacement:str='_')->str:
     str = str.replace('&', 'And')
