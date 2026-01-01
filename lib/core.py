@@ -1682,7 +1682,8 @@ def convert_chapters2audio(id:str)->bool:
                 sentence_num = 0
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     for c in range(0, total_chapters):
-                        chapter_audio_file = f'chapter_{c+1}.{default_audio_proc_format}'
+                        chapter_num = c + 1
+                        chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
                         sentences = session['chapters'][c]
                         sentences_count = sum(1 for row in sentences if row.strip() not in TTS_SML.values())
                         start = sentence_num
