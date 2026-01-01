@@ -36,7 +36,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
 
     def _load_engine(self)->Any:
         try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
             self._cleanup_memory()
             engine = loaded_tts.get(self.tts_key, False)
@@ -103,7 +103,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     if self.params['voice_path'] is not None and self.params['voice_path'] in self.params['latent_embedding'].keys():
                         self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['voice_path']]
                     else:
-                        msg = 'Computing speaker latents...'
+                        msg = 'Computing speaker latents…'
                         print(msg)
                         if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
                             self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()

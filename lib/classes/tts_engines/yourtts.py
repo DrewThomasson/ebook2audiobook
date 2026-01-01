@@ -35,7 +35,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
 
     def _load_engine(self)->Any:
         try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
             self._cleanup_memory()
             engine = loaded_tts.get(self.tts_key, False)
@@ -87,8 +87,11 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 else:
                     if sentence.endswith("'"):
                         sentence = sentence[:-1]
-                    trim_audio_buffer = 0.002
-                    sentence += '...' if sentence[-1].isalnum() else ''
+                    if sentence[-1].isalnum():
+                        sentence += '…'
+                        trim_audio_buffer = 0
+                    else:
+                        trim_audio_buffer = 0.002
                     speaker_argument = {}
                     not_supported_punc_pattern = re.compile(r'[—]')
                     language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'

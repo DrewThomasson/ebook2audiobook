@@ -37,7 +37,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
 
     def _load_engine(self)->Any:
         try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
             self._cleanup_memory()
             engine = loaded_tts.get(self.tts_key, False)
@@ -117,7 +117,11 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     if sentence.endswith("'"):
                         sentence = sentence[:-1]
                     trim_audio_buffer = 0.004
-                    sentence += '...' if sentence[-1].isalnum() else ''
+                    if sentence[-1].isalnum():
+                        sentence += '…'
+                        trim_audio_buffer = 0
+                    else:
+                        trim_audio_buffer = 0.004
                     speaker_argument = {}
                     if self.session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                         not_supported_punc_pattern = re.compile(r'\p{P}+')
@@ -145,7 +149,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             print(msg)
                             if voice_builtin_gender != voice_path_gender:
                                 semitones = -4 if voice_path_gender == 'male' else 4
-                                msg = f"Adapting builtin voice frequencies from the clone voice..."
+                                msg = f"Adapting builtin voice frequencies from the clone voice…"
                                 print(msg)
                             else:
                                 semitones = 0

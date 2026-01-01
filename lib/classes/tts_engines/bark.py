@@ -35,7 +35,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
 
     def _load_engine(self)->Any:
         try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
             self._cleanup_memory()
             engine = loaded_tts.get(self.tts_key, False)
@@ -144,7 +144,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         [music]
                         [gasps]
                         [clears throat]
-                        — or ... for hesitations
+                        — or … for hesitations
                         ♪ for song lyrics
                         CAPITALIZATION for emphasis of a word
                         [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively

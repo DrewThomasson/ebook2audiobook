@@ -37,7 +37,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
 
     def _load_engine(self)->Any:
         try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
             self._cleanup_memory()
             engine = loaded_tts.get(self.tts_key, False)
@@ -117,7 +117,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                             print(msg)
                             if voice_builtin_gender != voice_path_gender:
                                 semitones = -4 if voice_path_gender == 'male' else 4
-                                msg = f"Adapting builtin voice frequencies from the clone voice..."
+                                msg = f"Adapting builtin voice frequencies from the clone voice…"
                                 print(msg)
                             else:
                                 semitones = 0
