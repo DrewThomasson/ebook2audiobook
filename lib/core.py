@@ -1718,16 +1718,14 @@ def convert_chapters2audio(id:str)->bool:
                                         t.set_description(f"{percentage:.2f}%")
                                         msg = f' : {sentence}' if is_sentence else f' : {sentence}'
                                         print(msg)
+                                        t.update(1
                                     else:
                                         return False
-                                    t.update(1)
+                                    )
                         end = sentence_num
                         msg = f'End of Block {chapter_num}'
                         print(msg)
                         if chapter_num in missing_chapters or sentence_num > resume_sentence:
-                            if chapter_num <= resume_chapter:
-                                msg = f'**Recovering missing file block {chapter_num}'
-                                print(msg)
                             if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
                                 msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
                                 print(msg)
