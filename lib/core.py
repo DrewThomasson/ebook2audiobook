@@ -1709,17 +1709,15 @@ def convert_chapters2audio(id:str)->bool:
                                         msg = f'********* Resuming from sentence {resume_sentence} ********'
                                         print(msg)
                                     success = tts_manager.convert_sentence2audio(sentence_num, sentence) if sentence else True
-                                    if success:
-                                        total_progress = (t.n + 1) / total_iterations
-                                        if session['is_gui_process']:
-                                            progress_bar(progress=total_progress, desc=ebook_name)
-                                        is_sentence = sentence not in TTS_SML.values()
-                                        percentage = total_progress * 100
-                                        t.set_description(f"{percentage:.2f}%")
-                                        msg = f' : {sentence}' if is_sentence else f' : {sentence}'
-                                        print(msg)
-                                    else:
+                                    if not success:
                                         return False
+                            total_progress = (t.n + 1) / total_iterations
+                            if session['is_gui_process']:
+                                progress_bar(progress=total_progress, desc=ebook_name)
+                            percentage = total_progress * 100
+                            t.set_description(f"{percentage:.2f}%")
+                            msg = f' : {sentence}'
+                            print(msg)    
                             t.update(1)
                         end = sentence_num
                         msg = f'End of Block {chapter_num}'
