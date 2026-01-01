@@ -1083,7 +1083,7 @@ def get_sentences(text:str, id:str)->list|None:
 		if not hard_list:
 			hard_list = [text.strip()]
 		hard_list = [s.strip() for s in hard_list if s.strip()]
-        """
+        r"""
 		# PASS 2 — soft punctuation
 		soft_pattern = re.compile(
 			rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
