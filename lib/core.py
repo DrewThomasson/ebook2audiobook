@@ -1718,9 +1718,9 @@ def convert_chapters2audio(id:str)->bool:
                                         t.set_description(f"{percentage:.2f}%")
                                         msg = f' : {sentence}' if is_sentence else f' : {sentence}'
                                         print(msg)
-                                        t.update(1)
                                     else:
                                         return False
+                            t.update(1)
                         end = sentence_num
                         msg = f'End of Block {chapter_num}'
                         print(msg)
