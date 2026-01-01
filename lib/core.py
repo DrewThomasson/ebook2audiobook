@@ -1652,7 +1652,7 @@ def convert_chapters2audio(id:str)->bool:
             )
             if existing_sentences:
                 resume_sentence = max(int(re.search(r'\d+', f).group()) for f in existing_sentences)
-                msg = f'********* Resuming from sentence {resume_sentence} ********'
+                msg = f'********* Resuming from row {resume_sentence} ********'
                 print(msg)
                 existing_sentence_numbers = {int(re.search(r'\d+', f).group()) for f in existing_sentences}
                 missing_sentences = [
