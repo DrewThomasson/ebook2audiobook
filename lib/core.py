@@ -1012,6 +1012,13 @@ def get_sentences(text:str, id:str)->list|None:
                 result.append(tail)
         return result
 
+    def strip_sml(s:str)->str:
+        if not sml_values:
+            return s
+        for v in sml_values:
+            s = s.replace(v, '')
+        return s
+
     def segment_ideogramms(text:str)->list[str]:
         result = []
         try:
@@ -1023,15 +1030,8 @@ def get_sentences(text:str, id:str)->list|None:
                 jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
                 result.extend([t for t in jieba.cut(text) if t.strip()])
             elif lang == 'jpn':
-                """
-                from sudachipy import dictionary, tokenizer
-                sudachi = dictionary.Dictionary().create()
-                mode = tokenizer.Tokenizer.SplitMode.C
-                result.extend([m.surface() for m in sudachi.tokenize(text, mode) if m.surface().strip()])
-                """
                 import nagisa
-                tokens = nagisa.tagging(text).words
-                result.extend(tokens)
+                result.extend(nagisa.tagging(text).words)
             elif lang == 'kor':
                 from soynlp.tokenizer import LTokenizer
                 ltokenizer = LTokenizer()
@@ -1044,125 +1044,69 @@ def get_sentences(text:str, id:str)->list|None:
             return result
         except Exception as e:
             DependencyError(e)
-            return [text] 
-
-    def join_ideogramms(idg_list:list[str])->str:
-        try:
-            buffer = ''
-            for token in idg_list:
-                if buffer and len(buffer) + len(token) > max_chars:
-                    yield buffer
-                    buffer = ''
-                buffer += token
-            if buffer:
-                yield buffer
-        except Exception as e:
-            DependencyError(e)
-            if buffer:
-                yield buffer
+            return [text]
 
     try:
         session = context.get_session(id)
-        if session:
-            lang, tts_engine = session['language'], session['tts_engine']
-            max_chars = int(language_mapping[lang]['max_chars'] / 2)
-            min_tokens = 5
-
-            pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
-            pattern = re.compile(rf"(.*?(?:{pattern_split}){''.join(punctuation_list_set)})(?=\s|$)", re.DOTALL)
-            hard_list = []
-            if len(text) <= max_chars:
-                hard_list.append(text)
-            else:
-                parts = split_inclusive(text, pattern)
-                if parts:
-                    for text_part in parts:
-                        text_part = text_part.strip()
-                        if text_part:
-                            hard_list.append(f' {text_part}')
-                else:
-                    text = text.strip()
-                    if text:
-                        hard_list.append(text)
-
-            pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
-            pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
-            soft_list = []
-            for s in hard_list:
-                if len(s) <= max_chars:
-                    soft_list.append(s)
-                elif len(s) > max_chars:
-                    parts = [p for p in split_inclusive(s, pattern) if p]
-                    if parts:
-                        buffer = ''
-                        for idx, part in enumerate(parts):
-                            predicted_length = len(buffer) + (1 if buffer else 0) + len(part)
-                            if predicted_length <= max_chars:
-                                buffer = (buffer + ' ' + part).strip() if buffer else part
-                            else:
-                                if buffer and not any(buffer.rstrip().endswith(p) for p in punctuation_split_soft_set):
-                                    last_punct_idx = max((buffer.rfind(p) for p in punctuation_split_soft_set if p in buffer), default=-1)
-                                    if last_punct_idx != -1:
-                                        soft_list.append(buffer[:last_punct_idx+1].strip())
-                                        leftover = buffer[last_punct_idx+1:].strip()
-                                        buffer = leftover + ' ' + part if leftover else part
-                                    else:
-                                        soft_list.append(buffer.strip())
-                                        buffer = part
-                                else:
-                                    soft_list.append(buffer.strip())
-                                    buffer = part
-                        if buffer:
-                            cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
-                            if any(ch.isalnum() for ch in cleaned):
-                                soft_list.append(buffer.strip())
-                    else:
-                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
-                        if any(ch.isalnum() for ch in cleaned):
-                            soft_list.append(s.strip())
-                else:
-                    cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
-                    if any(ch.isalnum() for ch in cleaned):
-                        soft_list.append(s.strip())
-            soft_list = [s for s in soft_list if any(ch.isalnum() for ch in re.sub(r'[^\p{L}\p{N} ]+', '', s))]
-
-            if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                result = []
-                for s in soft_list:
-                    tokens = segment_ideogramms(s)
-                    if isinstance(tokens, list):
-                        result.extend([t for t in tokens if t.strip()])
-                    else:
-                        tokens = tokens.strip()
-                        if tokens:
-                            result.append(tokens)
-                return list(join_ideogramms(result))
-            else:
-                sentences = []
-                for s in soft_list:
-                    if len(s) <= max_chars:
-                        sentences.append(s)
-                    else:
-                        words = s.split(' ')
-                        text_part = words[0]
-                        for w in words[1:]:
-                            if len(text_part) + 1 + len(w) <= max_chars:
-                                text_part += ' ' + w
-                            else:
-                                text_part = text_part.strip()
-                                if text_part:
-                                    sentences.append(text_part)
-                                text_part = w
-                        if text_part:
-                            cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part).strip()
-                            if not any(ch.isalnum() for ch in cleaned):
-                                continue
-                            sentences.append(text_part)
-                return sentences
+        if not session:
             return None
+        lang, tts_engine = session['language'], session['tts_engine']
+        max_chars = int(language_mapping[lang]['max_chars'] / 2)
+        sml_values = tuple(TTS_SML.values()) if 'TTS_SML' in globals() else ()
+        hard_pat = re.compile(
+            rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))})"
+            rf"{''.join(punctuation_list_set)})(?=\s|$)",
+            re.DOTALL
+        )
+        hard_list = split_inclusive(text, hard_pat) if len(strip_sml(text)) > max_chars else [text.strip()]
+        soft_pat = re.compile(
+            rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
+            re.DOTALL
+        )
+        final_list = []
+        for s in hard_list:
+            s = s.strip()
+            if len(strip_sml(s)) <= max_chars:
+                final_list.append(s)
+                continue
+            parts = split_inclusive(s, soft_pat)
+            if parts:
+                for p in parts:
+                    p = p.strip()
+                    if len(strip_sml(p)) <= max_chars:
+                        final_list.append(p)
+                    else:
+                        words = p.split()
+                        buf = words[0]
+                        for w in words[1:]:
+                            if len(strip_sml(buf + ' ' + w)) <= max_chars:
+                                buf += ' ' + w
+                            else:
+                                final_list.append(buf.strip())
+                                buf = w
+                        if buf.strip():
+                            final_list.append(buf.strip())
+            else:
+                words = s.split()
+                buf = words[0]
+                for w in words[1:]:
+                    if len(strip_sml(buf + ' ' + w)) <= max_chars:
+                        buf += ' ' + w
+                    else:
+                        final_list.append(buf.strip())
+                        buf = w
+                if buf.strip():
+                    final_list.append(buf.strip())
+        final_list = [s.strip() for s in final_list if s.strip()]
+        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            tokens = []
+            for s in final_list:
+                tokens.extend(segment_ideogramms(s))
+            return list(tokens)
+        else:
+            return final_list
     except Exception as e:
-        error = f'get_sentences() error: {e}'
-        print(error)
+        print(f'get_sentences() error: {e}')
         return None
 
 def get_sanitized(str:str, replacement:str='_')->str:
