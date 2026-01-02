@@ -1613,7 +1613,7 @@ def convert_chapters2audio(id:str)->bool:
                 print(error)
                 return False
             total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
-            total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
+            total_sentences = sum(sum(1 for row in chapter) for chapter in session['chapters'])
             if total_sentences == 0:
                 error = 'No sentences found!'
                 print(error)
