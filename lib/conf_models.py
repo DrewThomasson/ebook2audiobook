@@ -1,4 +1,4 @@
-import os
+import os, regex as re
 from lib.conf import tts_dir, voices_dir
 
 loaded_tts = {}
@@ -22,14 +22,16 @@ TTS_VOICE_CONVERSION = {
 
 TTS_SML = {
     "break": "‡break‡",
-    "pause": "‡pause‡",
-    "###": "‡pause‡"
+    "pause": re.compile(r'^‡pause(?::(\d+(?:\.\d+)?))?‡$'),
+    "###": "‡pause‡",
+    "voice": re.compile(r'^‡voice:([^‡]+)‡$')
 }
 
 default_tts_engine = TTS_ENGINES['XTTSv2']
 default_fine_tuned = 'internal'
 default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
 default_voice_detection_model = 'drewThomasson/segmentation'
+default_sml_pattern = re.compile(r'(‡[A-Za-z][^‡]*‡)')
 
 max_custom_model = 100
 max_custom_voices = 1000
