@@ -1565,11 +1565,6 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # remove unwanted chars
     chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
     text = text.translate(chars_remove_table)
-    # replace double quotes by a comma if no punctuation precedes it
-    text = re.sub(r'\s+"', '"', text)
-    text = re.sub(r'(?<![\p{L}\p{N}])"', ', ', text)
-    text = re.sub(r'"(?=[\p{L}\p{N}])', ', ', text)
-    text = re.sub(r'"', '', text)
     # Replace multiple and spaces with single space
     text = re.sub(r'\s+', ' ', text)
     # Replace ok by 'Owkey'
