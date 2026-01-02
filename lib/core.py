@@ -1526,7 +1526,7 @@ def filter_sml(text:str)->str:
 		lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
 		text
 	)
-	text = TTS_SML['voice'].sub(
+	text = TTS_SML['voice']['match'].sub(
 		lambda m: f' ‡voice:{m.group(1)}‡ ',
 		text
 	)
