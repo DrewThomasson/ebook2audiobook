@@ -136,7 +136,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.audio_segments.append(pause_tensor.clone())
         elif TTS_SML['voice'].fullmatch(sml):
             self.session['voice'] = os.path.abspath(TTS_SML['voice'].fullmatch(sml).group(1))
-            if os.path.exists(self.session['voice'])
+            if os.path.exists(self.session['voice']):
                 if not self.set_voice():
                     return False
             else:
