@@ -23,15 +23,12 @@ def build_interface(args:dict)->gr.Blocks:
         fine_tuned_options = []
         audiobook_options = []
         options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
-        
         src_label_file = 'Upload File'
         src_label_dir = 'Select a Directory'
-        
         visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
-
         theme = gr.themes.Origin(
             primary_hue='green',
             secondary_hue='amber',
@@ -39,7 +36,6 @@ def build_interface(args:dict)->gr.Blocks:
             radius_size='lg',
             font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
         )
-
         header_css = '''
             <style>
                 /* Global Scrollbar Customization */
@@ -1323,7 +1319,6 @@ def build_interface(args:dict)->gr.Blocks:
                     session['tts_engine'] = engine
                     session['fine_tuned'] = default_fine_tuned
                     session['voice'] = None if engine not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']] else session['voice']
-                    bark_visible = False
                     if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         visible_custom_model = True if session['fine_tuned'] == 'internal' else False
                         return (
@@ -1340,8 +1335,8 @@ def build_interface(args:dict)->gr.Blocks:
                             bark_visible = visible_gr_tab_bark_params
                         return (
                             gr.update(value=show_rating(session['tts_engine'])),
-                            gr.update(visible=visible_gr_tab_bark_params),
-                            gr.update(visible=bark_visible), 
+                            gr.update(visible=False),
+                            gr.update(visible=visible_gr_tab_bark_params), 
                             gr.update(visible=False),
                             update_gr_fine_tuned_list(id),
                             gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
