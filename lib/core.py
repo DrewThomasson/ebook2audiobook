@@ -819,8 +819,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
         if session:
             lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
             heading_tags = [f'h{i}' for i in range(1, 5)]
-            break_tags = ['br', 'p']
-            pause_tags = ['div', 'span']
+            break_tags = ['br', 'p', 'span']
             proc_tags = heading_tags + break_tags + pause_tags
             doc_body = doc.get_body_content()
             raw_html = doc_body.decode('utf-8') if isinstance(doc_body, bytes) else doc_body
