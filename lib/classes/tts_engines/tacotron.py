@@ -114,14 +114,9 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     self.audio_segments.append(pause_tensor.clone())
                     return True
                 else:
+                    trim_audio_buffer = 0.004
                     if sentence.endswith("'"):
                         sentence = sentence[:-1]
-                    trim_audio_buffer = 0.004
-                    if sentence[-1].isalnum():
-                        sentence += '…'
-                        trim_audio_buffer = 0
-                    else:
-                        trim_audio_buffer = 0.004
                     speaker_argument = {}
                     if self.session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                         not_supported_punc_pattern = re.compile(r'\p{P}+')
