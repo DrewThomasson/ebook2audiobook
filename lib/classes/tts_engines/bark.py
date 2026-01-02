@@ -136,7 +136,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if sentence.endswith("'"):
                         sentence = sentence[:-1]
                     trim_audio_buffer = 0.002
-                    sentence += '…' if sentence[-1].isalnum() else ''
                     '''
                         [laughter]
                         [laughs]
