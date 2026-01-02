@@ -1078,8 +1078,7 @@ def get_sentences(text:str, id:str)->list|None:
         hard_list = split_inclusive(text, hard_pattern)
         if not hard_list:
             hard_list = [text.strip()]
-        final_list = [s.strip() for s in hard_list if s.strip()]
-        """
+        hard_list = [s.strip() for s in hard_list if s.strip()]
         # PASS 2 — soft punctuation
         soft_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
@@ -1090,13 +1089,21 @@ def get_sentences(text:str, id:str)->list|None:
             s = s.strip()
             if len(strip_sml(s)) <= max_chars:
                 soft_list.append(s)
-            else:
-                parts = split_inclusive(s, soft_pattern)
-                if parts:
+                continue
+            parts = split_inclusive(s, soft_pattern)
+            if parts:
+                valid = False
+                for p in parts:
+                    if len(strip_sml(p.strip())) <= max_chars:
+                        valid = True
+                        break
+                if valid:
                     soft_list.extend([p.strip() for p in parts if p.strip()])
                 else:
                     soft_list.append(s)
-
+            else:
+                soft_list.append(s)
+        """
         # PASS 3 — space split (last resort)
         final_list = []
         for s in soft_list:
@@ -1121,7 +1128,7 @@ def get_sentences(text:str, id:str)->list|None:
                         result.append(tokens)
             return result
         else:
-            return final_list
+            return soft_list
 
     except Exception as e:
         print(f'get_sentences() error: {e}')
