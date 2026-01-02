@@ -804,9 +804,9 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                                 if name in break_tags:
                                     # Only yield break if last char is NOT alnum or space
                                     if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
-                                        yield ('break', TTS_SML['break'])
+                                        yield ('break', TTS_SML['break']['token'])
                                 elif name in heading_tags or name in pause_tags:
-                                    yield ('pause', TTS_SML['pause'])
+                                    yield ('pause', TTS_SML['pause']['token'])
                         else:
                             yield from tuple_row(child, last_text_char)
         except Exception as e:
@@ -1520,9 +1520,9 @@ def foreign2latin(text, base_lang):
     return out
 
 def filter_sml(text:str)->str:
-	text = TTS_SML['###'].sub(' ‡pause‡ ', text)
-	text = TTS_SML['break'].sub(' ‡break‡ ', text)
-	text = TTS_SML['pause'].sub(
+	text = TTS_SML['###']['match'].sub(' ‡pause‡ ', text)
+	text = TTS_SML['break']['match'].sub(' ‡break‡ ', text)
+	text = TTS_SML['pause']['match'].sub(
 		lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
 		text
 	)
@@ -1559,13 +1559,13 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Prepare SML tags
-    #text = filter_sml(text)
+    text = filter_sml(text)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
+    text = re.sub(pattern, f" {TTS_SML['pause']['token']} ", text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
@@ -2167,7 +2167,7 @@ def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="…")->str:
 def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     # avoid None and embedded NULs which some muxers accidentally keep
     title = (title or '').replace('\x00', '')
-    title = title.replace(TTS_SML['pause'], '')
+    title = title.replace(TTS_SML['pause']['token'], '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
 
 def delete_unused_tmp_dirs(web_dir:str, days:int, id:str)->None:
