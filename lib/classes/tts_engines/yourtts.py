@@ -85,13 +85,11 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     self.audio_segments.append(pause_tensor.clone())
                     return True
                 else:
+                    trim_audio_buffer = 0.002
                     if sentence.endswith("'"):
                         sentence = sentence[:-1]
                     if sentence[-1].isalnum():
                         sentence += '…'
-                        trim_audio_buffer = 0
-                    else:
-                        trim_audio_buffer = 0.002
                     speaker_argument = {}
                     not_supported_punc_pattern = re.compile(r'[—]')
                     language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
@@ -117,10 +115,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             if sentence[-1].isalnum() or sentence[-1] == '—':
                                 audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                             self.audio_segments.append(audio_tensor)
-                            if not re.search(r'\w$', sentence, flags=re.UNICODE) and sentence[-1] != '—':
-                                silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                self.audio_segments.append(break_tensor.clone())
                             if self.audio_segments:
                                 audio_tensor = torch.cat(self.audio_segments, dim=-1)
                                 start_time = self.sentences_total_time
