@@ -1104,6 +1104,7 @@ def get_sentences(text:str, id:str)->list|None:
             else:
                 soft_list.append(s)
         # PASS 3 — space split (last resort)
+        """
         final_list = []
         for s in soft_list:
             s = s.strip()
@@ -1125,6 +1126,7 @@ def get_sentences(text:str, id:str)->list|None:
                 else:
                     final_list.append(rest[:idx].strip())
             rest = rest[idx + 1:].strip()
+        """
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
@@ -1137,7 +1139,7 @@ def get_sentences(text:str, id:str)->list|None:
                         result.append(tokens)
             return result
         else:
-            return final_list
+            return soft_list
 
     except Exception as e:
         print(f'get_sentences() error: {e}')
