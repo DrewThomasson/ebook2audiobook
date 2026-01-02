@@ -1520,22 +1520,31 @@ def foreign2latin(text, base_lang):
     return out
 
 def filter_sml(text:str)->str:
-    for key, value in TTS_SML.items():
-        pattern = re.escape(key) if key == '###' else r'\[' + re.escape(key) + r'\]'
-        text = re.sub(pattern, f' {value} ', text)
-    return text
+	text = TTS_SML['###'].sub(' ‡pause‡ ', text)
+	text = TTS_SML['break'].sub(' ‡break‡ ', text)
+	text = TTS_SML['pause'].sub(
+		lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
+		text
+	)
+	text = TTS_SML['voice'].sub(
+		lambda m: f' ‡voice:{m.group(1)}‡ ',
+		text
+	)
+	return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
+
+    def repl_abbreviations(match:re.Match)->str:
+        token = match.group(1)
+        for k, expansion in mapping.items():
+            if token.lower() == k.lower():
+                return expansion
+        return token  # fallback
+            
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
-        def repl_abbreviations(match: re.Match) -> str:
-            token = match.group(1)
-            for k, expansion in mapping.items():
-                if token.lower() == k.lower():
-                    return expansion
-            return token  # fallback
         mapping = abbreviations_mapping[lang]
         # Sort keys by descending length so longer ones match first
         keys = sorted(mapping.keys(), key=len, reverse=True)
@@ -1565,6 +1574,11 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # remove unwanted chars
     chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
     text = text.translate(chars_remove_table)
+    # replace double quotes by a comma if no punctuation precedes it
+    text = re.sub(r'\s+"', '"', text)
+    text = re.sub(r'(?<![\p{L}\p{N}])"', ', ', text)
+    text = re.sub(r'"(?=[\p{L}\p{N}])', ', ', text)
+    text = re.sub(r'"', '', text)
     # Replace multiple and spaces with single space
     text = re.sub(r'\s+', ' ', text)
     # Replace ok by 'Owkey'
