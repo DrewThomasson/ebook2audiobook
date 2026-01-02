@@ -1319,11 +1319,14 @@ def build_interface(args:dict)->gr.Blocks:
                     session['tts_engine'] = engine
                     session['fine_tuned'] = default_fine_tuned
                     session['voice'] = None if engine not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']] else session['voice']
+                    visible_bark = False
+                    visible_xtts = False
                     if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         visible_custom_model = True if session['fine_tuned'] == 'internal' else False
+                        visible_xtts = visible_gr_tab_xtts_params
                         return (
                             gr.update(value=show_rating(session['tts_engine'])), 
-                            gr.update(visible=visible_gr_tab_xtts_params),
+                            gr.update(visible=visible_xtts),
                             gr.update(visible=False),
                             gr.update(visible=visible_custom_model),
                             update_gr_fine_tuned_list(id),
@@ -1332,11 +1335,11 @@ def build_interface(args:dict)->gr.Blocks:
                         )
                     else:
                         if session['tts_engine'] == TTS_ENGINES['BARK']:
-                            bark_visible = visible_gr_tab_bark_params
+                            visible_bark = visible_gr_tab_bark_params
                         return (
                             gr.update(value=show_rating(session['tts_engine'])),
                             gr.update(visible=False),
-                            gr.update(visible=visible_gr_tab_bark_params), 
+                            gr.update(visible=visible_bark), 
                             gr.update(visible=False),
                             update_gr_fine_tuned_list(id),
                             gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
