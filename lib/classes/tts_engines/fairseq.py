@@ -92,7 +92,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                     if sentence.endswith("'"):
                         sentence = sentence[:-1]
                     trim_audio_buffer = 0.004
-                    sentence += '—' if sentence[-1].isalnum() else ''
                     speaker_argument = {}
                     not_supported_punc_pattern = re.compile(r"[.:—]")
                     if self.params['voice_path'] is not None:
