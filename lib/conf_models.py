@@ -32,7 +32,7 @@ TTS_SML = {
 	"voice": {
         "match": re.compile(r'(?:‡|\[)voice:([^\]‡]+)(?:‡|\])'),
         "token": "‡voice‡"
-    }
+    },
 	"###": {
         "match": re.compile(r'###'),
         "token": "###"
