@@ -857,7 +857,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                     text_list.append(payload.strip())
                 elif typ in ('break', 'pause'):
                     if prev_typ != typ:
-                        text_list.append(TTS_SML[typ])
+                        text_list.append(TTS_SML[typ]['token'])
                 elif typ == 'table':
                     table = payload
                     if table in handled_tables:
@@ -1087,7 +1087,11 @@ def get_sentences(text:str, id:str)->list|None:
 
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-        sml_values = tuple(TTS_SML.values()) if 'TTS_SML' in globals() else ()
+        sml_values = tuple(
+            v['token']
+            for v in TTS_SML.values()
+            if isinstance(v, dict) and isinstance(v.get('token'), str)
+        ) if 'TTS_SML' in globals() else ()
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
@@ -1491,7 +1495,11 @@ def foreign2latin(text, base_lang):
         except:
             return unidecode(word)
 
-    tts_markers = set(TTS_SML.values())
+    tts_markers = {
+        v['token']
+        for v in TTS_SML.values()
+        if isinstance(v, dict) and 'token' in v
+    }
     protected = {}
     for i, m in enumerate(tts_markers):
         key = f'__TTS_MARKER_{i}__'
@@ -1662,7 +1670,11 @@ def convert_chapters2audio(id:str)->bool:
                 ebook_name = Path(session['ebook']).name
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     sentence_num = 0
-                    sml_values = set(TTS_SML.values())
+                    sml_values = {
+                        v['token']
+                        for v in TTS_SML.values()
+                        if isinstance(v, dict) and 'token' in v
+                    }
                     for c in range(0, total_chapters):
                         chapter_idx = c + 1
                         chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
