@@ -83,12 +83,12 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
         return True
 
     def convert_sml(self, sml:str)->None:
-        if sml == TTS_SML['break']:
+        if sml == TTS_SML['break']['token']:
             silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
             break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
             self.audio_segments.append(break_tensor.clone())
-        elif isinstance(TTS_SML['pause'], re.Pattern) and TTS_SML['pause'].fullmatch(sml):
-            m = TTS_SML['pause'].fullmatch(sml)
+        elif TTS_SML['pause']['match'].fullmatch(sml):
+            m = TTS_SML['pause']['match'].fullmatch(sml)
             duration = float(m.group(1)) if m.group(1) is not None else None
             if duration is not None:
                 silence_time = float(duration)
@@ -96,7 +96,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 silence_time = float(np.random.uniform(1.0, 1.6) * 100) / 100
             pause_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 1.0 to 1.6 seconds
             self.audio_segments.append(pause_tensor.clone())
-        elif TTS_SML['voice'].fullmatch(sml):
+        elif TTS_SML['voice']['match'].fullmatch(sml):
             self.session['voice'] = os.path.abspath(TTS_SML['voice'].fullmatch(sml).group(1))
             if os.path.exists(self.session['voice']):
                 if not self.set_voice():
