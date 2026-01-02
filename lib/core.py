@@ -1104,29 +1104,31 @@ def get_sentences(text:str, id:str)->list|None:
             else:
                 soft_list.append(s)
         # PASS 3 — space split (last resort)
-        """
         final_list = []
         for s in soft_list:
             s = s.strip()
             if not s:
                 continue
-            if len(strip_sml(s)) <= max_chars:
-                final_list.append(s)
-                continue
             rest = s
             while rest:
-                if len(strip_sml(rest)) <= max_chars:
-                    final_list.append(rest)
+                clean_len = len(strip_sml(rest))
+                if clean_len <= max_chars:
+                    final_list.append(rest.strip())
                     break
                 cut = rest[:max_chars + 1]
                 idx = cut.rfind(' ')
-                if idx == -1:
-                    final_list.append(rest[:max_chars].strip())
-                    rest = rest[max_chars:].strip()
+                if idx > 0:
+                    left = rest[:idx].strip()
+                    right = rest[idx + 1:].strip()
                 else:
-                    final_list.append(rest[:idx].strip())
-            rest = rest[idx + 1:].strip()
-        """
+                    left = rest[:max_chars].strip()
+                    right = rest[max_chars:].strip()
+                # 🔒 GUARANTEE PROGRESS
+                if not left or right == rest:
+                    final_list.append(rest.strip())
+                    break
+                final_list.append(left)
+                rest = right
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
@@ -1139,7 +1141,7 @@ def get_sentences(text:str, id:str)->list|None:
                         result.append(tokens)
             return result
         else:
-            return soft_list
+            return final_list
 
     except Exception as e:
         print(f'get_sentences() error: {e}')
