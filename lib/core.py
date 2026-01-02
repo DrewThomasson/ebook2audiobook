@@ -1988,7 +1988,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                 if cur_part:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
-                temp_export = os.path.join(session['process_dir'], "export")
+                temp_export = os.path.join(session['process_dir'], 'export')
                 os.makedirs(temp_export, exist_ok=True)
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
                     with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
@@ -2036,7 +2036,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                         if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
                             exported_files.append(str(final_file))
             else:
-                temp_export = os.path.join(session['process_dir'], "export")
+                temp_export = os.path.join(session['process_dir'], 'export')
                 os.makedirs(temp_export, exist_ok=True)
                 with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
                     txt = os.path.join(temp_dir, 'all_chapters.txt')
