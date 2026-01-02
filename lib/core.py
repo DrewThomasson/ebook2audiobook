@@ -1078,7 +1078,8 @@ def get_sentences(text:str, id:str)->list|None:
         hard_list = split_inclusive(text, hard_pattern)
         if not hard_list:
             hard_list = [text.strip()]
-        hard_list = [s.strip() for s in hard_list if s.strip()]
+        final_list = [s.strip() for s in hard_list if s.strip()]
+        """
         # PASS 2 — soft punctuation
         soft_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
@@ -1107,6 +1108,7 @@ def get_sentences(text:str, id:str)->list|None:
             else:
                 final_list.extend(split_at_space_limit(s))
         final_list = [s.strip() for s in final_list if s.strip()]
+        """
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
