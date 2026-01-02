@@ -97,7 +97,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                 else:
                     if sentence.endswith("'"):
                         sentence = sentence[:-1]
-                    trim_audio_buffer = 0.008
+                    trim_audio_buffer = 0.006
                     sentence = sentence.replace('.', ' ;\n')
                     if self.params['voice_path'] is not None and self.params['voice_path'] in self.params['latent_embedding'].keys():
                         self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['voice_path']]
