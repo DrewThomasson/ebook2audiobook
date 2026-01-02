@@ -1062,6 +1062,24 @@ def get_sentences(text:str, id:str)->list|None:
             DependencyError(e)
             return [text]
 
+    def join_ideogramms(idg_list:list[str])->str:
+        try:
+            buffer = ''
+            for token in idg_list:
+                # If adding this token would overflow, flush current buffer first
+                if buffer and len(buffer) + len(token) > max_chars:
+                    yield buffer
+                    buffer = ''
+                # 3) Append the token (word, punctuation, whatever) unless it's a sml token (already checked)
+                buffer += token
+            # 4) Flush any trailing text
+            if buffer:
+                yield buffer
+        except Exception as e:
+            DependencyError(e)
+            if buffer:
+                yield buffer
+
     try:
         session = context.get_session(id)
         if not session:
@@ -1131,7 +1149,7 @@ def get_sentences(text:str, id:str)->list|None:
                 rest = right
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
-            for s in final_list:
+            for s in soft_list:
                 tokens = segment_ideogramms(s)
                 if isinstance(tokens, list):
                     result.extend([t for t in tokens if t.strip()])
@@ -1139,7 +1157,7 @@ def get_sentences(text:str, id:str)->list|None:
                     tokens = tokens.strip()
                     if tokens:
                         result.append(tokens)
-            return result
+            return list(join_ideogramms(result))
         else:
             return final_list
 
