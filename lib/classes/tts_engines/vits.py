@@ -100,7 +100,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     if sentence.endswith("'"):
                         sentence = sentence[:-1]
                     trim_audio_buffer = 0.004
-                    sentence += '—' if sentence[-1].isalnum() else ''
                     speaker_argument = {}
                     if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
                         if self.session['language'] in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
