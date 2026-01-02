@@ -318,7 +318,7 @@ def extract_custom_model(file_src:str, id, required_files:list)->str|None:
                                 shutil.copyfileobj(src, dst)
                         t.update(1)
             if model_path is not None:
-                msg = f'Extracted files to {model_path}. Normalizing ref.wav...'
+                msg = f'Extracted files to {model_path}. Normalizing ref.wav…'
                 print(msg)
                 voice_ref = os.path.join(model_path, 'ref.wav')
                 voice_output = os.path.join(model_path, f'{model_name}.wav')
@@ -397,7 +397,7 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
                 os.makedirs(tessdata_dir, exist_ok=True)
                 url = f'https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata'
                 dest_path = os.path.join(tessdata_dir, f'{lang}.traineddata')
-                msg = f'Downloading {lang}.traineddata into {tessdata_dir}...'
+                msg = f'Downloading {lang}.traineddata into {tessdata_dir}…'
                 print(msg)
                 response = requests.get(url, timeout=15)
                 if response.status_code == 200:
@@ -511,7 +511,7 @@ def convert2epub(id:str)-> bool:
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
-                msg = 'File input is a PDF. flatten it in XHTML...'
+                msg = 'File input is a PDF. flatten it in XHTML…'
                 print(msg)
                 doc = fitz.open(file_input)
                 file_meta = doc.metadata
@@ -526,7 +526,7 @@ def convert2epub(id:str)-> bool:
                         print(f'Error extracting text from page {i+1}: {e}')
                         text = ''
                     if not text:
-                        msg = f'The page {i+1} seems to be image-based. Using OCR...'
+                        msg = f'The page {i+1} seems to be image-based. Using OCR…'
                         print(msg)
                         if session['is_gui_process']:
                             show_alert({"type": "warning", "msg": msg})
@@ -557,7 +557,7 @@ def convert2epub(id:str)-> bool:
                     return False
             elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
                 filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
-                msg = f'File input is an image ({file_ext}). Running OCR...'
+                msg = f'File input is an image ({file_ext}). Running OCR…'
                 print(msg)
                 img = Image.open(file_input)
                 xhtml_pages = []
@@ -643,7 +643,7 @@ def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
         title_tag = soup.select_one('head > title')
         if title_tag and title_tag.text.strip():
             return title_tag.text.strip()
-        # 3. Try <img alt = '...'> if no visible <title>
+        # 3. Try <img alt = '…'> if no visible <title>
         img = soup.find('img',alt = True)
         if img:
             alt = img['alt'].strip()
@@ -754,7 +754,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     error = f'Stanza model initialization error: {e}'
                     return error, None
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
-            msg = 'Analyzing numbers, maths signs, dates and time to convert in words...'
+            msg = 'Analyzing numbers, maths signs, dates and time to convert in words…'
             print(msg)
             for doc in all_docs:
                 sentences_list = filter_chapter(doc, id, stanza_nlp, is_num2words_compat)
@@ -1527,7 +1527,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             flags=re.IGNORECASE
         )
         text = pattern.sub(repl_abbreviations, text)
-    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
+    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc…
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
@@ -1642,7 +1642,7 @@ def convert_chapters2audio(id:str)->bool:
                         elif resume_chapter == c and c > 0:
                             msg = f'********* Resuming from block {resume_chapter} *********'
                             print(msg)
-                        msg = f'Block {chapter_idx} containing {len(sentences)} sentences...'
+                        msg = f'Block {chapter_idx} containing {len(sentences)} sentences…'
                         print(msg)
                         for sentence_num, sentence in enumerate(sentences):
                             if session['cancellation_requested']:
@@ -1918,7 +1918,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                         if session['cover'] is not None:
                             cover_path = session['cover']
-                            msg = f'Adding cover {cover_path} into the final audiobook file...'
+                            msg = f'Adding cover {cover_path} into the final audiobook file…'
                             print(msg)
                             if session['output_format'] == 'mp3':
                                 from mutagen.mp3 import MP3
@@ -2112,7 +2112,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
         print(error)
         return False
 
-def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="...")->str:
+def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="…")->str:
     s = "" if s is None else str(s)
     if max_bytes <= 0:
         return ""
@@ -2444,7 +2444,7 @@ def finalize_audiobook(id:str)->tuple:
     if session:
         if session['chapters'] is not None:
             if convert_chapters2audio(session['id']):
-                msg = 'Conversion successful. Combining sentences and chapters...'
+                msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
                 exported_files = combine_audio_chapters(session['id'])               
                 if exported_files is not None:
