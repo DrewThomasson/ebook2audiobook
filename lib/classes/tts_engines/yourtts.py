@@ -134,7 +134,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                     **speaker_argument
                                 )
                                 self.engine.to('cpu')
-                            print(f'audio_part: {audio_part}')
                             if is_audio_data_valid(audio_part):
                                 src_tensor = self._tensor_type(audio_part)
                                 part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
