@@ -102,6 +102,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 sentence_parts = re.split(default_sml_pattern, sentence)
+                self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
                     if not part or ((part and not part.replace('—', '')) or not part.isalnum() or len(part) < 3):
@@ -133,8 +134,8 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                     **speaker_argument
                                 )
                                 self.engine.to('cpu')
+                            print(f'audio_part: {audio_part}')
                             if is_audio_data_valid(audio_part):
-                                print(f'audio_part: {audio_part}')
                                 src_tensor = self._tensor_type(audio_part)
                                 part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
                                 if part_tensor is not None and part_tensor.numel() > 0:
@@ -171,7 +172,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
                         del segment_tensor
                         self._cleanup_memory()
-                self.audio_segments = []
+                    self.audio_segments = []
                 if os.path.exists(final_sentence_file):
                     return True
                 else:

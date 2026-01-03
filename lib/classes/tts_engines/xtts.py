@@ -111,6 +111,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             if self.engine:
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 sentence_parts = re.split(default_sml_pattern, sentence)
+                self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
                     if not part or not part.replace('—', ''):
@@ -201,7 +202,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         torchaudio.save(final_sentence_file, audio_tensor, self.params['samplerate'], format=default_audio_proc_format)
                         del audio_tensor
                         self._cleanup_memory()
-                self.audio_segments = []
+                    self.audio_segments = []
                 if os.path.exists(final_sentence_file):
                     return True
                 else:

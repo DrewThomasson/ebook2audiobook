@@ -130,6 +130,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 sentence_parts = re.split(default_sml_pattern, sentence)
+                self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
                     if not part or not part.replace('—', ''):
@@ -242,8 +243,8 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             error = f"audio_part not valid"
                             print(error)
                             return False
-                if self.audio_segments:
-                    audio_tensor = torch.cat(self.audio_segments, dim=-1)
+                if audio_segments:
+                    audio_tensor = torch.cat(audio_segments, dim=-1)
                     start_time = self.sentences_total_time
                     duration = round((audio_tensor.shape[-1] / self.params['samplerate']), 2)
                     end_time = start_time + duration
@@ -259,7 +260,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                         torchaudio.save(final_sentence_file, audio_tensor, self.params['samplerate'], format=default_audio_proc_format)
                         del audio_tensor
                         self._cleanup_memory()
-                self.audio_segments = []
+                    self.audio_segments = []
                 if os.path.exists(final_sentence_file):
                     return True
                 else:
