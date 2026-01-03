@@ -197,28 +197,27 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                         **speaker_argument
                                     )
                                     self.engine.to('cpu')
-                        if is_audio_data_valid(audio_part):
-                            src_tensor = self._tensor_type(audio_part)
-                            part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                            if part_tensor is not None and part_tensor.numel() > 0:
-                                if part[-1].isalnum() or part[-1] == '—':
-                                    part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                self.audio_segments.append(part_tensor)
-                                if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                    break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                    self.audio_segments.append(break_tensor.clone())
+                            if is_audio_data_valid(audio_part):
+                                src_tensor = self._tensor_type(audio_part)
+                                part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
+                                if part_tensor is not None and part_tensor.numel() > 0:
+                                    if part[-1].isalnum() or part[-1] == '—':
+                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                    self.audio_segments.append(part_tensor)
+                                    if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
+                                        silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                        break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
+                                        self.audio_segments.append(break_tensor.clone())
+                                else:
+                                    error = f"part_tensor not valid"
+                                    print(error)
+                                    return False
                             else:
-                                error = f"part_tensor not valid"
+                                error = f"audio_sentence not valid"
                                 print(error)
                                 return False
                         else:
-                            error = f"audio_sentence not valid"
-                            print(error)
                             return False
-                    else:
-                        return False
-
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     start_time = self.sentences_total_time
