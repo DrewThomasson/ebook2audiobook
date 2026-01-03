@@ -155,7 +155,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                 error = f"audio_part not valid"
                                 print(error)
                                 return False
-                print(self.audio_segments)
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     start_time = self.sentences_total_time
@@ -174,12 +173,12 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         del segment_tensor
                         self._cleanup_memory()
                     self.audio_segments = []
-                if os.path.exists(final_sentence_file):
-                    return True
-                else:
-                    error = f"Cannot create {final_sentence_file}"
-                    print(error)
-                    return False
+                    if os.path.exists(final_sentence_file):
+                        return True
+                    else:
+                        error = f"Cannot create {final_sentence_file}"
+                        print(error)
+                        return False
             else:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 print(error)
