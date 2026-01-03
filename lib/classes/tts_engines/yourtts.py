@@ -178,7 +178,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     else:
                         error = f"Cannot create {final_sentence_file}"
                         print(error)
-                else
+                else:
                     error = 'self.audio_segments is empty!'
                     print(error) 
             else:
