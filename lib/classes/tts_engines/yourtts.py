@@ -155,7 +155,8 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                 error = f"audio_part not valid"
                                 print(error)
                                 return False
-                if len(self.audio_segments) > 0:
+                print(self.audio_segments)
+                if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     start_time = self.sentences_total_time
                     duration = round((segment_tensor.shape[-1] / self.params['samplerate']), 2)
