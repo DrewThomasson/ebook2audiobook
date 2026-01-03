@@ -107,7 +107,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     part = part.strip()
                     if not part:
                         continue
-                    if not part.replace('—', '') or not part.isalnum() or len(part) < 3
+                    if not part.replace('—', '') or not part.isalnum() or len(part) < 3:
                         continue
                     if default_sml_pattern.fullmatch(part):
                         if not self.convert_sml(part):
