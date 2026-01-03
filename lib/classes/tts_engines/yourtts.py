@@ -120,6 +120,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         not_supported_punc_pattern = re.compile(r'[—]')
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                         if self.set_voice():
+                            print('set_voice ok')
                             if self.params['voice_path'] is not None:
                                 speaker_wav = self.params['voice_path']
                                 speaker_argument = {"speaker_wav": speaker_wav}
