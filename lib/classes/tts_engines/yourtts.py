@@ -104,8 +104,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 sentence_parts = re.split(default_sml_pattern, sentence)
                 for part in sentence_parts:
                     part = part.strip()
-                    print(f'------------{part}-----------')
-                    if not part or not part.replace('—', ''):
+                    if not part or not part.replace('—', '') or not part.isalnum() or len(part) < 2:
                         continue
                     if default_sml_pattern.fullmatch(part):
                         if not self.convert_sml(part):
