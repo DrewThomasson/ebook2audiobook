@@ -104,7 +104,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 sentence_parts = re.split(default_sml_pattern, sentence)
                 for part in sentence_parts:
                     part = part.strip()
-                    print(part)
                     if not part or ((part and not part.replace('—', '')) or not part.isalnum() or len(part) < 3):
                         continue
                     if default_sml_pattern.fullmatch(part):
@@ -135,6 +134,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                 )
                                 self.engine.to('cpu')
                             if is_audio_data_valid(audio_part):
+                                print(f'audio_part: {audio_part}')
                                 src_tensor = self._tensor_type(audio_part)
                                 part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
                                 if part_tensor is not None and part_tensor.numel() > 0:
