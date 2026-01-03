@@ -240,8 +240,8 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 error = f"audio_part not valid"
                                 print(error)
                                 return False
-                    else:
-                        return False
+                        else:
+                            return False
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     start_time = self.sentences_total_time
