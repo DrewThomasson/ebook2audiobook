@@ -1154,13 +1154,21 @@ def get_sentences(text:str, id:str)->list|None:
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
-                tokens = segment_ideogramms(s)
-                if isinstance(tokens, list):
-                    result.extend([t for t in tokens if t.strip()])
-                else:
-                    tokens = tokens.strip()
-                    if tokens:
-                        result.append(tokens)
+                parts = re.split(default_sml_pattern, s)
+                for part in parts:
+                    part = part.strip()
+                    if not part:
+                        continue
+                    if default_sml_pattern.fullmatch(part):
+                        result.append(part)
+                        continue
+                    tokens = segment_ideogramms(part)
+                    if isinstance(tokens, list):
+                        result.extend([t for t in tokens if t.strip()])
+                    else:
+                        tokens = tokens.strip()
+                        if tokens:
+                            result.append(tokens)
             return list(join_ideogramms(result))
         else:
             return final_list
