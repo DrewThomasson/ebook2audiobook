@@ -246,8 +246,8 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                 return False
                         else:
                             return False
-                if audio_segments:
-                    segment_tensor = torch.cat(audio_segments, dim=-1)
+                if self.audio_segments:
+                    segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     start_time = self.sentences_total_time
                     duration = round((segment_tensor.shape[-1] / self.params['samplerate']), 2)
                     end_time = start_time + duration
