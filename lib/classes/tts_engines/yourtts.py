@@ -102,9 +102,9 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 sentence_parts = re.split(default_sml_pattern, sentence)
-                print(sentence_parts)
                 for part in sentence_parts:
                     part = part.strip()
+                    print(part)
                     if not part or ((part and not part.replace('—', '')) or not part.isalnum() or len(part) < 3):
                         continue
                     if default_sml_pattern.fullmatch(part):
