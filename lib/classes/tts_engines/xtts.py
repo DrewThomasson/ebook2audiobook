@@ -203,12 +203,12 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         del audio_tensor
                         self._cleanup_memory()
                     self.audio_segments = []
-                if os.path.exists(final_sentence_file):
-                    return True
-                else:
-                    error = f"Cannot create {final_sentence_file}"
-                    print(error)
-                    return False
+                    if os.path.exists(final_sentence_file):
+                        return True
+                    else:
+                        error = f"Cannot create {final_sentence_file}"
+                        print(error)
+                        return False
             else:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 print(error)
