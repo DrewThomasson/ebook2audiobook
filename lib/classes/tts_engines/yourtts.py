@@ -102,9 +102,12 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 sentence_parts = re.split(default_sml_pattern, sentence)
+                print(sentence_parts)
                 for part in sentence_parts:
                     part = part.strip()
-                    if not part or not part.replace('—', '') or not part.isalnum() or len(part) < 3:
+                    if not part:
+                        continue
+                    if not part.replace('—', '') or not part.isalnum() or len(part) < 3
                         continue
                     if default_sml_pattern.fullmatch(part):
                         if not self.convert_sml(part):
@@ -135,17 +138,18 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                 self.engine.to('cpu')
                             if is_audio_data_valid(audio_part):
                                 src_tensor = self._tensor_type(audio_part)
-                                audio_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                                if audio_tensor is not None and audio_tensor.numel() > 0:
+                                part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
+                                if part_tensor is not None and part_tensor.numel() > 0:
                                     if part[-1].isalnum() or part[-1] == '—':
-                                        audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                    self.audio_segments.append(audio_tensor)
+                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                    self.audio_segments.append(part_tensor)
                                     if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
                                         silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                                         break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
                                         self.audio_segments.append(break_tensor.clone())
+                                    del part_tensor
                                 else:
-                                    error = f"audio_tensor not valid"
+                                    error = f"part_tensor not valid"
                                     print(error)
                                     return False
                             else:
@@ -153,9 +157,9 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                 print(error)
                                 return False
                 if self.audio_segments:
-                    audio_tensor = torch.cat(self.audio_segments, dim=-1)
+                    segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     start_time = self.sentences_total_time
-                    duration = round((audio_tensor.shape[-1] / self.params['samplerate']), 2)
+                    duration = round((segment_tensor.shape[-1] / self.params['samplerate']), 2)
                     end_time = start_time + duration
                     self.sentences_total_time = end_time
                     sentence_obj = {
@@ -166,8 +170,8 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     }
                     self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)
                     if self.sentence_idx:
-                        torchaudio.save(final_sentence_file, audio_tensor, self.params['samplerate'], format=default_audio_proc_format)
-                        del audio_tensor
+                        torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
+                        del segment_tensor
                         self._cleanup_memory()
                 self.audio_segments = []
                 if os.path.exists(final_sentence_file):
