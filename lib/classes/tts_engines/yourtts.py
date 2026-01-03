@@ -178,11 +178,13 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     else:
                         error = f"Cannot create {final_sentence_file}"
                         print(error)
-                        return False
+                else
+                    error = 'self.audio_segments is empty!'
+                    print(error) 
             else:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 print(error)
-                return False
+            return False
         except Exception as e:
             error = f'YourTTS.convert(): {e}'
             raise ValueError(e)
