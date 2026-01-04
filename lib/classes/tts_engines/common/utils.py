@@ -310,7 +310,7 @@ class TTSUtils:
             with open(path, "a", encoding="utf-8") as f:
                 start = format_timestamp(float(sentence_obj["start"]))
                 end = format_timestamp(float(sentence_obj["end"]))
-                text = re.sub(r"[\r\n]+", " ", str(sentence_obj["text"])).strip()
+                text = re.sub(r'\s+', ' ', default_sml_pattern.sub('', str(sentence_obj["text"]))).strip()
                 f.write(f"{start} --> {end}\n{text}\n\n")
             return index + 1
         except Exception as e:
