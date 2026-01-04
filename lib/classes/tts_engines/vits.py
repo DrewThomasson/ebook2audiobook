@@ -240,7 +240,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     sentence_obj = {
                         "start": start_time,
                         "end": end_time,
-                        "text": sentence,
+                        "text": re.sub(r'\s+', ' ', default_sml_pattern.sub('', sentence)).strip(),
                         "idx": self.sentence_idx
                     }
                     self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)
