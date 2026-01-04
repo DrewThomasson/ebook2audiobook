@@ -1107,8 +1107,24 @@ def get_sentences(text:str, id:str)->list|None:
             re.DOTALL
         )
         soft_list = []
-        for s in hard_list:
-            s = s.strip()
+        i = 0
+        n = len(hard_list)
+        while i < n:
+            s = hard_list[i].strip()
+            if not s:
+                i += 1
+                continue
+            if i + 1 < n:
+                next_s = hard_list[i + 1].strip()
+                next_clean = strip_sml(next_s)
+
+                if next_clean and sum(c.isalnum() for c in next_clean) < 3:
+                    s = f"{s} {next_s}"
+                    i += 2
+                else:
+                    i += 1
+            else:
+                i += 1
             if len(strip_sml(s)) <= max_chars:
                 soft_list.append(s)
                 continue
