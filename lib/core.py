@@ -1084,7 +1084,6 @@ def get_sentences(text:str, id:str)->list|None:
         session = context.get_session(id)
         if not session:
             return None
-
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
         sml_values = tuple(
@@ -1145,7 +1144,6 @@ def get_sentences(text:str, id:str)->list|None:
                 else:
                     left = rest[:max_chars].strip()
                     right = rest[max_chars:].strip()
-                # 🔒 GUARANTEE PROGRESS
                 if not left or right == rest:
                     final_list.append(rest.strip())
                     break
