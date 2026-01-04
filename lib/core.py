@@ -318,7 +318,7 @@ def extract_custom_model(file_src:str, id, required_files:list)->str|None:
                                 shutil.copyfileobj(src, dst)
                         t.update(1)
             if model_path is not None:
-                msg = f'Extracted files to {model_path}. Normalizing ref.wav...'
+                msg = f'Extracted files to {model_path}. Normalizing ref.wav…'
                 print(msg)
                 voice_ref = os.path.join(model_path, 'ref.wav')
                 voice_output = os.path.join(model_path, f'{model_name}.wav')
@@ -397,7 +397,7 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
                 os.makedirs(tessdata_dir, exist_ok=True)
                 url = f'https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata'
                 dest_path = os.path.join(tessdata_dir, f'{lang}.traineddata')
-                msg = f'Downloading {lang}.traineddata into {tessdata_dir}...'
+                msg = f'Downloading {lang}.traineddata into {tessdata_dir}…'
                 print(msg)
                 response = requests.get(url, timeout=15)
                 if response.status_code == 200:
@@ -511,7 +511,7 @@ def convert2epub(id:str)-> bool:
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
-                msg = 'File input is a PDF. flatten it in XHTML...'
+                msg = 'File input is a PDF. flatten it in XHTML…'
                 print(msg)
                 doc = fitz.open(file_input)
                 file_meta = doc.metadata
@@ -526,7 +526,7 @@ def convert2epub(id:str)-> bool:
                         print(f'Error extracting text from page {i+1}: {e}')
                         text = ''
                     if not text:
-                        msg = f'The page {i+1} seems to be image-based. Using OCR...'
+                        msg = f'The page {i+1} seems to be image-based. Using OCR…'
                         print(msg)
                         if session['is_gui_process']:
                             show_alert({"type": "warning", "msg": msg})
@@ -557,7 +557,7 @@ def convert2epub(id:str)-> bool:
                     return False
             elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
                 filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
-                msg = f'File input is an image ({file_ext}). Running OCR...'
+                msg = f'File input is an image ({file_ext}). Running OCR…'
                 print(msg)
                 img = Image.open(file_input)
                 xhtml_pages = []
@@ -643,7 +643,7 @@ def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
         title_tag = soup.select_one('head > title')
         if title_tag and title_tag.text.strip():
             return title_tag.text.strip()
-        # 3. Try <img alt = '...'> if no visible <title>
+        # 3. Try <img alt = '…'> if no visible <title>
         img = soup.find('img',alt = True)
         if img:
             alt = img['alt'].strip()
@@ -754,7 +754,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     error = f'Stanza model initialization error: {e}'
                     return error, None
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
-            msg = 'Analyzing numbers, maths signs, dates and time to convert in words...'
+            msg = 'Analyzing numbers, maths signs, dates and time to convert in words…'
             print(msg)
             for doc in all_docs:
                 sentences_list = filter_chapter(doc, id, stanza_nlp, is_num2words_compat)
@@ -804,9 +804,9 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                                 if name in break_tags:
                                     # Only yield break if last char is NOT alnum or space
                                     if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
-                                        yield ('break', TTS_SML['break'])
+                                        yield ('break', TTS_SML['break']['token'])
                                 elif name in heading_tags or name in pause_tags:
-                                    yield ('pause', TTS_SML['pause'])
+                                    yield ('pause', TTS_SML['pause']['token'])
                         else:
                             yield from tuple_row(child, last_text_char)
         except Exception as e:
@@ -819,8 +819,8 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
         if session:
             lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
             heading_tags = [f'h{i}' for i in range(1, 5)]
-            break_tags = ['br', 'p']
-            pause_tags = ['div', 'span']
+            break_tags = ['br', 'p', 'span']
+            pause_tags = ['div']
             proc_tags = heading_tags + break_tags + pause_tags
             doc_body = doc.get_body_content()
             raw_html = doc_body.decode('utf-8') if isinstance(doc_body, bytes) else doc_body
@@ -857,7 +857,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                     text_list.append(payload.strip())
                 elif typ in ('break', 'pause'):
                     if prev_typ != typ:
-                        text_list.append(TTS_SML[typ])
+                        text_list.append(TTS_SML[typ]['token'])
                 elif typ == 'table':
                     table = payload
                     if table in handled_tables:
@@ -1012,60 +1012,61 @@ def get_sentences(text:str, id:str)->list|None:
                 result.append(tail)
         return result
 
+    def strip_sml(s:str)->str:
+        if not sml_values:
+            return s
+        for v in sml_values:
+            s = s.replace(v, '')
+        return s
+
+    def split_at_space_limit(s:str)->list[str]:
+        out = []
+        rest = s.strip()
+        while rest and len(strip_sml(rest)) > max_chars:
+            cut = rest[:max_chars + 1]
+            idx = cut.rfind(' ')
+            if idx == -1:
+                out.append(rest[:max_chars].strip())
+                rest = rest[max_chars:].strip()
+            else:
+                out.append(rest[:idx].strip())
+                rest = rest[idx + 1:].strip()
+        if rest:
+            out.append(rest.strip())
+        return out
+
     def segment_ideogramms(text:str)->list[str]:
-        sml_pattern = '|'.join(re.escape(token) for token in sml_tokens)
-        segments = re.split(f'({sml_pattern})', text)
         result = []
         try:
-            for segment in segments:
-                if not segment:
-                    continue
-                if re.fullmatch(sml_pattern, segment):
-                    result.append(segment)
-                else:
-                    if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
-                        import pycantonese as pc
-                        result.extend([t for t in pc.segment(segment) if t.strip()])
-                    elif lang == 'zho':
-                        import jieba
-                        jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
-                        result.extend([t for t in jieba.cut(segment) if t.strip()])
-                    elif lang == 'jpn':
-                        """
-                        from sudachipy import dictionary, tokenizer
-                        sudachi = dictionary.Dictionary().create()
-                        mode = tokenizer.Tokenizer.SplitMode.C
-                        result.extend([m.surface() for m in sudachi.tokenize(segment, mode) if m.surface().strip()])
-                        """
-                        import nagisa
-                        tokens = nagisa.tagging(segment).words
-                        result.extend(tokens)
-                    elif lang == 'kor':
-                        from soynlp.tokenizer import LTokenizer
-                        ltokenizer = LTokenizer()
-                        result.extend([t for t in ltokenizer.tokenize(segment) if t.strip()])
-                    elif lang in ['tha','lao','mya','khm']:
-                        from pythainlp.tokenize import word_tokenize
-                        result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
-                    else:
-                        result.append(segment.strip())
+            if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
+                import pycantonese as pc
+                result.extend([t for t in pc.segment(text) if t.strip()])
+            elif lang == 'zho':
+                import jieba
+                jieba.dt.cache_file = os.path.join(models_dir, 'jieba.cache')
+                result.extend([t for t in jieba.cut(text) if t.strip()])
+            elif lang == 'jpn':
+                import nagisa
+                result.extend(nagisa.tagging(text).words)
+            elif lang == 'kor':
+                from soynlp.tokenizer import LTokenizer
+                ltokenizer = LTokenizer()
+                result.extend([t for t in ltokenizer.tokenize(text) if t.strip()])
+            elif lang in ['tha','lao','mya','khm']:
+                from pythainlp.tokenize import word_tokenize
+                result.extend([t for t in word_tokenize(text, engine='newmm') if t.strip()])
+            else:
+                result.append(text.strip())
             return result
         except Exception as e:
             DependencyError(e)
-            return [text] 
+            return [text]
 
     def join_ideogramms(idg_list:list[str])->str:
         try:
             buffer = ''
             for token in idg_list:
-             # 1) On sml token: flush & emit buffer, then emit the token
-                if token.strip() in sml_tokens:
-                    if buffer:
-                        yield buffer
-                        buffer = ''
-                    yield token
-                    continue
-                # 2) If adding this token would overflow, flush current buffer first
+                # If adding this token would overflow, flush current buffer first
                 if buffer and len(buffer) + len(token) > max_chars:
                     yield buffer
                     buffer = ''
@@ -1081,121 +1082,97 @@ def get_sentences(text:str, id:str)->list|None:
 
     try:
         session = context.get_session(id)
-        if session:
-            lang, tts_engine = session['language'], session['tts_engine']
-            max_chars = int(language_mapping[lang]['max_chars'] / 2)
-            min_tokens = 5
-            # List or tuple of tokens that must never be appended to buffer
-            sml_tokens = tuple(TTS_SML.values())
-            sml_list = re.split(rf"({'|'.join(map(re.escape, sml_tokens))})", text)
-            sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
-            pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
-            pattern = re.compile(rf"(.*?(?:{pattern_split}){''.join(punctuation_list_set)})(?=\s|$)", re.DOTALL)
-            hard_list = []
-            for s in sml_list:
-                if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
-                    hard_list.append(s)
-                else:
-                    parts = split_inclusive(s, pattern)
-                    if parts:
-                        for text_part in parts:
-                            text_part = text_part.strip()
-                            if text_part:
-                                hard_list.append(f' {text_part}')
-                    else:
-                        s = s.strip()
-                        if s:
-                            hard_list.append(s)
-            # Check if some hard_list entries exceed max_chars, so split on soft punctuation
-            pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
-            pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
-            soft_list = []
-            for s in hard_list:
-                if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
-                    soft_list.append(s)
-                elif len(s) > max_chars:
-                    parts = [p for p in split_inclusive(s, pattern) if p]
-                    if parts:
-                        buffer = ''
-                        for idx, part in enumerate(parts):
-                            # Predict length if we glue this part
-                            predicted_length = len(buffer) + (1 if buffer else 0) + len(part)
-                            # Peek ahead to see if gluing will exceed max_chars
-                            if predicted_length <= max_chars:
-                                buffer = (buffer + ' ' + part).strip() if buffer else part
-                            else:
-                                # If we overshoot, check if buffer ends with punctuation
-                                if buffer and not any(buffer.rstrip().endswith(p) for p in punctuation_split_soft_set):
-                                    # Try to backtrack to last punctuation inside buffer
-                                    last_punct_idx = max((buffer.rfind(p) for p in punctuation_split_soft_set if p in buffer), default=-1)
-                                    if last_punct_idx != -1:
-                                        soft_list.append(buffer[:last_punct_idx+1].strip())
-                                        leftover = buffer[last_punct_idx+1:].strip()
-                                        buffer = leftover + ' ' + part if leftover else part
-                                    else:
-                                        # No punctuation, just split as-is
-                                        soft_list.append(buffer.strip())
-                                        buffer = part
-                                else:
-                                    soft_list.append(buffer.strip())
-                                    buffer = part
-                        if buffer:
-                            cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
-                            if any(ch.isalnum() for ch in cleaned):
-                                soft_list.append(buffer.strip())
-                    else:
-                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
-                        if any(ch.isalnum() for ch in cleaned):
-                            soft_list.append(s.strip())
-                else:
-                    cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
-                    if any(ch.isalnum() for ch in cleaned):
-                        soft_list.append(s.strip())
-            soft_list = [s for s in soft_list if any(ch.isalnum() for ch in re.sub(r'[^\p{L}\p{N} ]+', '', s))]
-            if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                result = []
-                for s in soft_list:
-                    if s in [TTS_SML['break'], TTS_SML['pause']]:
-                        result.append(s)
-                    else:
-                        tokens = segment_ideogramms(s)
-                        if isinstance(tokens, list):
-                            result.extend([t for t in tokens if t.strip()])
-                        else:
-                            tokens = tokens.strip()
-                            if tokens:
-                                result.append(tokens)
-                return list(join_ideogramms(result))
-            else:
-                sentences = []
-                for s in soft_list:
-                    if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
-                        if sentences and s in (TTS_SML['break'], TTS_SML['pause']):
-                            last = sentences[-1]
-                            if last and last[-1].isalnum():
-                                sentences[-1] = last + ";\n"
-                        sentences.append(s)
-                    else:
-                        words = s.split(' ')
-                        text_part = words[0]
-                        for w in words[1:]:
-                            if len(text_part) + 1 + len(w) <= max_chars:
-                                text_part += ' ' + w
-                            else:
-                                text_part = text_part.strip()
-                                if text_part:
-                                    sentences.append(text_part)
-                                text_part = w
-                        if text_part:
-                            cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part).strip()
-                            if not any(ch.isalnum() for ch in cleaned):
-                                continue
-                            sentences.append(text_part)
-                return sentences
+        if not session:
             return None
+        lang, tts_engine = session['language'], session['tts_engine']
+        max_chars = int(language_mapping[lang]['max_chars'] / 2)
+        sml_values = tuple(
+            v['token']
+            for v in TTS_SML.values()
+            if isinstance(v, dict) and isinstance(v.get('token'), str)
+        ) if 'TTS_SML' in globals() else ()
+        # PASS 1 — hard punctuation
+        hard_pattern = re.compile(
+            rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
+            re.DOTALL
+        )
+        hard_list = split_inclusive(text, hard_pattern)
+        if not hard_list:
+            hard_list = [text.strip()]
+        hard_list = [s.strip() for s in hard_list if s.strip()]
+        # PASS 2 — soft punctuation
+        soft_pattern = re.compile(
+            rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
+            re.DOTALL
+        )
+        soft_list = []
+        for s in hard_list:
+            s = s.strip()
+            if len(strip_sml(s)) <= max_chars:
+                soft_list.append(s)
+                continue
+            parts = split_inclusive(s, soft_pattern)
+            if parts:
+                valid = False
+                for p in parts:
+                    if len(strip_sml(p.strip())) <= max_chars:
+                        valid = True
+                        break
+                if valid:
+                    soft_list.extend([p.strip() for p in parts if p.strip()])
+                else:
+                    soft_list.append(s)
+            else:
+                soft_list.append(s)
+        # PASS 3 — space split (last resort)
+        final_list = []
+        for s in soft_list:
+            s = s.strip()
+            if not s:
+                continue
+            rest = s
+            while rest:
+                clean_len = len(strip_sml(rest))
+                if clean_len <= max_chars:
+                    final_list.append(rest.strip())
+                    break
+                cut = rest[:max_chars + 1]
+                idx = cut.rfind(' ')
+                if idx > 0:
+                    left = rest[:idx].strip()
+                    right = rest[idx + 1:].strip()
+                else:
+                    left = rest[:max_chars].strip()
+                    right = rest[max_chars:].strip()
+                if not left or right == rest:
+                    final_list.append(rest.strip())
+                    break
+                final_list.append(left)
+                rest = right
+        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            result = []
+            for s in soft_list:
+                parts = re.split(default_sml_pattern, s)
+                for part in parts:
+                    part = part.strip()
+                    if not part:
+                        continue
+                    if default_sml_pattern.fullmatch(part):
+                        result.append(part)
+                        continue
+                    tokens = segment_ideogramms(part)
+                    if isinstance(tokens, list):
+                        result.extend([t for t in tokens if t.strip()])
+                    else:
+                        tokens = tokens.strip()
+                        if tokens:
+                            result.append(tokens)
+            return list(join_ideogramms(result))
+        else:
+            return final_list
+
     except Exception as e:
-        error = f'get_sentences() error: {e}'
-        print(error)
+        print(f'get_sentences() error: {e}')
         return None
 
 def get_sanitized(str:str, replacement:str='_')->str:
@@ -1524,7 +1501,11 @@ def foreign2latin(text, base_lang):
         except:
             return unidecode(word)
 
-    tts_markers = set(TTS_SML.values())
+    tts_markers = {
+        v['token']
+        for v in TTS_SML.values()
+        if isinstance(v, dict) and 'token' in v
+    }
     protected = {}
     for i, m in enumerate(tts_markers):
         key = f'__TTS_MARKER_{i}__'
@@ -1553,22 +1534,31 @@ def foreign2latin(text, base_lang):
     return out
 
 def filter_sml(text:str)->str:
-    for key, value in TTS_SML.items():
-        pattern = re.escape(key) if key == '###' else r'\[' + re.escape(key) + r'\]'
-        text = re.sub(pattern, f' {value} ', text)
-    return text
+	text = TTS_SML['###']['match'].sub(' ‡pause‡ ', text)
+	text = TTS_SML['break']['match'].sub(' ‡break‡ ', text)
+	text = TTS_SML['pause']['match'].sub(
+		lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
+		text
+	)
+	text = TTS_SML['voice']['match'].sub(
+		lambda m: f' ‡voice:{m.group(1)}‡ ',
+		text
+	)
+	return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
+
+    def repl_abbreviations(match:re.Match)->str:
+        token = match.group(1)
+        for k, expansion in mapping.items():
+            if token.lower() == k.lower():
+                return expansion
+        return token  # fallback
+            
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
-        def repl_abbreviations(match: re.Match) -> str:
-            token = match.group(1)
-            for k, expansion in mapping.items():
-                if token.lower() == k.lower():
-                    return expansion
-            return token  # fallback
         mapping = abbreviations_mapping[lang]
         # Sort keys by descending length so longer ones match first
         keys = sorted(mapping.keys(), key=len, reverse=True)
@@ -1578,7 +1568,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             flags=re.IGNORECASE
         )
         text = pattern.sub(repl_abbreviations, text)
-    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
+    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc…
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
@@ -1589,7 +1579,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
         text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
+    text = re.sub(pattern, f" {TTS_SML['pause']['token']} ", text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
@@ -1598,6 +1588,11 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # remove unwanted chars
     chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
     text = text.translate(chars_remove_table)
+    # replace double quotes by a comma if no punctuation precedes it
+    text = re.sub(r'\s+"', '"', text)
+    text = re.sub(r'(?<![\p{L}\p{N}])"', ', ', text)
+    text = re.sub(r'"(?=[\p{L}\p{N}])', ', ', text)
+    text = re.sub(r'"', '', text)
     # Replace multiple and spaces with single space
     text = re.sub(r'\s+', ' ', text)
     # Replace ok by 'Owkey'
@@ -1630,48 +1625,49 @@ def convert_chapters2audio(id:str)->bool:
             tts_manager = TTSManager(session)
             resume_chapter = 0
             missing_chapters = []
+            chapter_re = re.compile(r'^chapter_(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
+            existing_chapters = [
+                f for f in os.listdir(session['chapters_dir'])
+                if chapter_re.match(f)
+            ]
+            existing_numbers = sorted(
+                int(chapter_re.match(f).group(1))
+                for f in existing_chapters
+            )
+            if existing_numbers:
+                expected = set(range(0, max(existing_numbers) + 1))
+                missing_chapters = sorted(expected - set(existing_numbers))
+                if not missing_chapters:
+                    missing_chapters = [max(existing_numbers) + 1]
+                resume_chapter = existing_numbers[-1]
             resume_sentence = 0
             missing_sentences = []
-            existing_chapters = sorted(
-                [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')],
-                key=lambda x: int(re.search(r'\d+', x).group())
+            sentence_re = re.compile(r'^(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
+            existing_sentences = [
+                f for f in os.listdir(session['chapters_dir_sentences'])
+                if sentence_re.match(f)
+            ]
+            existing_numbers = sorted(
+                int(sentence_re.match(f).group(1))
+                for f in existing_sentences
             )
-            if existing_chapters:
-                resume_chapter = max(int(re.search(r'\d+', f).group()) for f in existing_chapters) 
-                msg = f'Resuming from block {resume_chapter}'
-                print(msg)
-                existing_chapter_numbers = {int(re.search(r'\d+', f).group()) for f in existing_chapters}
-                missing_chapters = [
-                    i for i in range(1, resume_chapter) if i not in existing_chapter_numbers
-                ]
-                if resume_chapter not in missing_chapters:
-                    missing_chapters.append(resume_chapter)
-            existing_sentences = sorted(
-                [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')],
-                key=lambda x: int(re.search(r'\d+', x).group())
-            )
-            if existing_sentences:
-                resume_sentence = max(int(re.search(r'\d+', f).group()) for f in existing_sentences)
-                msg = f'Resuming from sentence {resume_sentence}'
-                print(msg)
-                existing_sentence_numbers = {int(re.search(r'\d+', f).group()) for f in existing_sentences}
-                missing_sentences = [
-                    i for i in range(1, resume_sentence) if i not in existing_sentence_numbers
-                ]
-                if resume_sentence not in missing_sentences:
-                    missing_sentences.append(resume_sentence)
+            if existing_numbers:
+                expected = set(range(0, max(existing_numbers) + 1))
+                missing_sentences = sorted(expected - set(existing_numbers))
+                if not missing_sentences:
+                    missing_sentences = [max(existing_numbers) + 1]
+                resume_sentence = existing_numbers[-1]
             total_chapters = len(session['chapters'])
             if total_chapters == 0:
                 error = 'No chapterrs found!'
                 print(error)
                 return False
             total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
-            total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
+            total_sentences = sum(sum(1 for row in chapter) for chapter in session['chapters'])
             if total_sentences == 0:
                 error = 'No sentences found!'
                 print(error)
                 return False           
-            sentence_number = 0
             msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
             print(msg)
             if session['is_gui_process']:
@@ -1679,48 +1675,55 @@ def convert_chapters2audio(id:str)->bool:
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                    for x in range(0, total_chapters):
-                        chapter_num = x + 1
-                        chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
-                        sentences = session['chapters'][x]
-                        sentences_count = sum(1 for row in sentences if row.strip() not in TTS_SML.values())
-                        start = sentence_number
-                        msg = f'Block {chapter_num} containing {sentences_count} sentences...'
+                    sentence_num = 0
+                    sml_values = {
+                        v['token']
+                        for v in TTS_SML.values()
+                        if isinstance(v, dict) and 'token' in v
+                    }
+                    for c in range(0, total_chapters):
+                        chapter_idx = c + 1
+                        chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
+                        sentences = session['chapters'][c]
+                        start = sentence_num
+                        if c in missing_chapters:
+                            msg = f'********* Recovering missing block {c} *********'
+                            print(msg)
+                        elif resume_chapter == c and c > 0:
+                            msg = f'********* Resuming from block {resume_chapter} *********'
+                            print(msg)
+                        msg = f'Block {chapter_idx} containing {len(sentences)} sentences…'
                         print(msg)
-                        for i, sentence in enumerate(sentences):
+                        for sentence_num, sentence in enumerate(sentences):
                             if session['cancellation_requested']:
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return False
-                            if sentence_number in missing_sentences or sentence_number > resume_sentence or (sentence_number == 0 and resume_sentence == 0):
-                                if sentence_number <= resume_sentence and sentence_number > 0:
-                                    msg = f'**Recovering missing file sentence {sentence_number}'
-                                    print(msg)
+                            if sentence_num in missing_sentences or sentence_num >= resume_sentence:
                                 sentence = sentence.strip()
-                                success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
-                                if success:
-                                    total_progress = (t.n + 1) / total_iterations
-                                    if session['is_gui_process']:
-                                        progress_bar(progress=total_progress, desc=ebook_name)
-                                    is_sentence = sentence.strip() not in TTS_SML.values()
-                                    percentage = total_progress * 100
-                                    t.set_description(f"{percentage:.2f}%")
-                                    msg = f' : {sentence}' if is_sentence else f' : {sentence}'
-                                    print(msg)
-                                else:
-                                    return False
-                            if sentence.strip() not in TTS_SML.values():
-                                sentence_number += 1
+                                if len(sentence) > 2 and any(c.isalnum() for c in sentence):
+                                    if sentence_num in missing_sentences:
+                                        msg = f'********* Recovering missing sentence {sentence_num} *********'
+                                    elif resume_sentence == sentence_num and resume_sentence > 0:
+                                        msg = f'********* Resuming from sentence {resume_sentence} ********'
+                                        print(msg)
+                                    success = tts_manager.convert_sentence2audio(sentence_num, sentence) if sentence else True
+                                    if not success:
+                                        return False
+                            total_progress = (t.n + 1) / total_iterations
+                            if session['is_gui_process']:
+                                progress_bar(progress=total_progress, desc=ebook_name)
+                            percentage = total_progress * 100
+                            t.set_description(f"{percentage:.2f}%")
+                            msg = f' : {sentence}'
+                            print(msg)    
                             t.update(1)
-                        end = sentence_number - 1 if sentence_number > 1 else sentence_number
-                        msg = f'End of Block {chapter_num}'
+                        end = sentence_num
+                        msg = f'End of Block {chapter_idx}'
                         print(msg)
-                        if chapter_num in missing_chapters or sentence_number > resume_sentence:
-                            if chapter_num <= resume_chapter:
-                                msg = f'**Recovering missing file block {chapter_num}'
-                                print(msg)
+                        if chapter_idx in missing_chapters or sentence_num > resume_sentence:
                             if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
-                                msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
+                                msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                                 print(msg)
                             else:
                                 msg = 'combine_audio_sentences() failed!'
@@ -1965,7 +1968,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                         if session['cover'] is not None:
                             cover_path = session['cover']
-                            msg = f'Adding cover {cover_path} into the final audiobook file...'
+                            msg = f'Adding cover {cover_path} into the final audiobook file…'
                             print(msg)
                             if session['output_format'] == 'mp3':
                                 from mutagen.mp3 import MP3
@@ -2039,7 +2042,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                 if cur_part:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
-                temp_export = os.path.join(session['process_dir'], "export")
+                temp_export = os.path.join(session['process_dir'], 'export')
                 os.makedirs(temp_export, exist_ok=True)
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
                     with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
@@ -2087,7 +2090,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                         if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
                             exported_files.append(str(final_file))
             else:
-                temp_export = os.path.join(session['process_dir'], "export")
+                temp_export = os.path.join(session['process_dir'], 'export')
                 os.makedirs(temp_export, exist_ok=True)
                 with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
                     txt = os.path.join(temp_dir, 'all_chapters.txt')
@@ -2159,7 +2162,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
         print(error)
         return False
 
-def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="...")->str:
+def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="…")->str:
     s = "" if s is None else str(s)
     if max_bytes <= 0:
         return ""
@@ -2182,7 +2185,7 @@ def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="...")->str:
 def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     # avoid None and embedded NULs which some muxers accidentally keep
     title = (title or '').replace('\x00', '')
-    title = title.replace(TTS_SML['pause'], '')
+    title = title.replace(TTS_SML['pause']['token'], '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
 
 def delete_unused_tmp_dirs(web_dir:str, days:int, id:str)->None:
@@ -2491,7 +2494,7 @@ def finalize_audiobook(id:str)->tuple:
     if session:
         if session['chapters'] is not None:
             if convert_chapters2audio(session['id']):
-                msg = 'Conversion successful. Combining sentences and chapters...'
+                msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
                 exported_files = combine_audio_chapters(session['id'])               
                 if exported_files is not None:
