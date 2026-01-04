@@ -71,7 +71,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     return False
         return True
 
-    def convert_sml(self, sml:str)->None:
+    def convert_sml(self, sml:str)->bool:
         if sml == TTS_SML['break']['token']:
             silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
             break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
@@ -86,14 +86,14 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             pause_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 1.0 to 1.6 seconds
             self.audio_segments.append(pause_tensor.clone())
         elif TTS_SML['voice']['match'].fullmatch(sml):
-            self.session['voice'] = os.path.abspath(TTS_SML['voice'].fullmatch(sml).group(1))
+            self.session['voice'] = os.path.abspath(TTS_SML['voice']['match'].fullmatch(sml).group(1))
             if os.path.exists(self.session['voice']):
-                if not self.set_voice():
-                    return False
+                if self.set_voice():
+                    return True
             else:
                 error = f"convert_sml() error: voice {self.session['voice']} does not exist!"
                 print(error)
-        return True
+        return False
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
@@ -165,7 +165,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     sentence_obj = {
                         "start": start_time,
                         "end": end_time,
-                        "text": part,
+                        "text": sentence,
                         "idx": self.sentence_idx
                     }
                     self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)

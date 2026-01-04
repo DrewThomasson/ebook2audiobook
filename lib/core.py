@@ -1000,6 +1000,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
         return None
 
 def get_sentences(text:str, id:str)->list|None:
+
     def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
         last_end = 0
@@ -1675,17 +1676,17 @@ def convert_chapters2audio(id:str)->bool:
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                    sentence_num = 0
+                    sentence_idx = 0
                     sml_values = {
                         v['token']
                         for v in TTS_SML.values()
                         if isinstance(v, dict) and 'token' in v
                     }
                     for c in range(0, total_chapters):
-                        chapter_idx = c + 1
+                        chapter_idx = c
                         chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
                         sentences = session['chapters'][c]
-                        start = sentence_num
+                        start = sentence_idx
                         if c in missing_chapters:
                             msg = f'********* Recovering missing block {c} *********'
                             print(msg)
@@ -1694,20 +1695,20 @@ def convert_chapters2audio(id:str)->bool:
                             print(msg)
                         msg = f'Block {chapter_idx} containing {len(sentences)} sentences…'
                         print(msg)
-                        for sentence_num, sentence in enumerate(sentences):
+                        for sentence_idx, sentence in enumerate(sentences):
                             if session['cancellation_requested']:
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return False
-                            if sentence_num in missing_sentences or sentence_num >= resume_sentence:
+                            if sentence_idx in missing_sentences or sentence_idx >= resume_sentence:
                                 sentence = sentence.strip()
                                 if len(sentence) > 2 and any(c.isalnum() for c in sentence):
-                                    if sentence_num in missing_sentences:
-                                        msg = f'********* Recovering missing sentence {sentence_num} *********'
-                                    elif resume_sentence == sentence_num and resume_sentence > 0:
+                                    if sentence_idx in missing_sentences:
+                                        msg = f'********* Recovering missing sentence {sentence_idx} *********'
+                                    elif resume_sentence == sentence_idx and resume_sentence > 0:
                                         msg = f'********* Resuming from sentence {resume_sentence} ********'
                                         print(msg)
-                                    success = tts_manager.convert_sentence2audio(sentence_num, sentence) if sentence else True
+                                    success = tts_manager.convert_sentence2audio(sentence_idx, sentence) if sentence else True
                                     if not success:
                                         return False
                             total_progress = (t.n + 1) / total_iterations
@@ -1718,10 +1719,10 @@ def convert_chapters2audio(id:str)->bool:
                             msg = f' : {sentence}'
                             print(msg)    
                             t.update(1)
-                        end = sentence_num
+                        end = sentence_idx
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
-                        if chapter_idx in missing_chapters or sentence_num > resume_sentence:
+                        if chapter_idx in missing_chapters or sentence_idx > resume_sentence:
                             if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
                                 msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                                 print(msg)
