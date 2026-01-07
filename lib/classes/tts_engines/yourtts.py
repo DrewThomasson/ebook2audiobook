@@ -85,12 +85,13 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
         elif TTS_SML['voice']['match'].fullmatch(sml):
             self.session['voice'] = os.path.abspath(TTS_SML['voice']['match'].fullmatch(sml).group(1))
             if os.path.exists(self.session['voice']):
-                if self.set_voice():
-                    return True
+                if not self.set_voice():
+                    return False
             else:
                 error = f"convert_sml() error: voice {self.session['voice']} does not exist!"
                 print(error)
-        return False
+                return False
+        return True
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
