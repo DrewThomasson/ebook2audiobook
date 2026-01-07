@@ -289,7 +289,7 @@ class TTSUtils:
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
         return tmp_path
 
-    def _format_timestamp(seconds:float)->str:
+    def _format_timestamp(self, seconds:float)->str:
         m, s = divmod(seconds, 60)
         h, m = divmod(m, 60)
         return f"{int(h):02}:{int(m):02}:{s:06.3f}"
@@ -309,8 +309,8 @@ class TTSUtils:
                 duration = audio.frame_count() / audio.frame_rate
                 end_time = start_time + duration
                 sentences_total_time = end_time
-                start = _format_timestamp(start_time)
-                end = _format_timestamp(end_time)
+                start = self._format_timestamp(start_time)
+                end = self._format_timestamp(end_time)
                 text = re.sub(
                     r'\s+',
                     ' ',
