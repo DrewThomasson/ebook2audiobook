@@ -266,6 +266,6 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
     def create_vtt(self, all_sentences:list)->bool:
         audio_dir = self.session['chapters_dir_sentences']
         vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
-        if self._build_vtt_file(all_sentences, audio_dir, vtt_path)
+        if self._build_vtt_file(all_sentences, audio_dir, vtt_path):
             return True
         return False
