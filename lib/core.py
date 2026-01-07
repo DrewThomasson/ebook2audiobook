@@ -1691,6 +1691,7 @@ def convert_chapters2audio(id:str)->bool:
                 progress_bar = gr.Progress(track_tqdm=False)
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
+                all_sentences = []
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     sentence_idx = 0
                     sml_values = {
@@ -1746,7 +1747,11 @@ def convert_chapters2audio(id:str)->bool:
                                 msg = 'combine_audio_sentences() failed!'
                                 print(msg)
                                 return False
-            return True
+            all_sentences = []
+            for chapter_sentences in session['chapters']:
+                all_sentences.extend(chapter_sentences)
+            assert len(all_sentences) == sum(len(c) for c in session['chapters'])
+            return tts_manager.create_sentences2vtt(all_sentences)
         except Exception as e:
             DependencyError(e)
             return False
@@ -1782,7 +1787,7 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
                 chunk_list = []
                 total_batches = (len(selected_files)+batch_size-1)//batch_size
                 iterator = tqdm(range(0,len(selected_files),batch_size),total=total_batches,desc="Preparing batches",unit="batch")
-                for idx,i in enumerate(iterator):
+                for idx, i in enumerate(iterator):
                     if session.get('is_gui_progress') and gr_progress:
                         gr_progress((idx+1)/total_batches,"Preparing batches")
                     if session['cancellation_requested']:
