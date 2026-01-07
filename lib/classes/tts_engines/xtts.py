@@ -63,46 +63,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             error = f'load_engine() error: {e}'
             raise ValueError(error)
 
-    def set_voice(self)->bool:
-        self.params['voice_path'] = (
-            self.session['voice'] if self.session['voice'] is not None 
-            else self.models[self.session['fine_tuned']]['voice']
-        )
-        if self.params['voice_path'] is not None:
-            speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['voice_path']))
-            if self.params['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['voice_path']:
-                self.session['voice'] = self.params['voice_path'] = self._check_xtts_builtin_speakers(self.params['voice_path'], speaker)
-                if not self.params['voice_path']:
-                    msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
-                    print(msg)
-                    return False
-        return True
-
-    def convert_sml(self, sml:str)->bool:
-        if sml == TTS_SML['break']['token']:
-            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-            break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
-            self.audio_segments.append(break_tensor.clone())
-        elif TTS_SML['pause']['match'].fullmatch(sml):
-            m = TTS_SML['pause']['match'].fullmatch(sml)
-            duration = float(m.group(1)) if m.group(1) is not None else None
-            if duration is not None:
-                silence_time = float(duration)
-            else:
-                silence_time = float(np.random.uniform(1.0, 1.6) * 100) / 100
-            pause_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 1.0 to 1.6 seconds
-            self.audio_segments.append(pause_tensor.clone())
-        elif TTS_SML['voice']['match'].fullmatch(sml):
-            self.session['voice'] = os.path.abspath(TTS_SML['voice']['match'].fullmatch(sml).group(1))
-            if os.path.exists(self.session['voice']):
-                if not self.set_voice():
-                    return False
-            else:
-                error = f"convert_sml() error: voice {self.session['voice']} does not exist!"
-                print(error)
-                return False
-        return True
-
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
             speaker = None
@@ -124,7 +84,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         if part.endswith("'"):
                             part = part[:-1]
                         part = part.replace('.', ' ;\n')
-                        if self.set_voice():
+                        if self._set_voice():
                             if self.params['voice_path'] is not None and self.params['voice_path'] in self.params['latent_embedding'].keys():
                                 self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['voice_path']]
                             else:
