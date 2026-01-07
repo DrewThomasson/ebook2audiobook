@@ -260,7 +260,7 @@ class TTSUtils:
         elif isinstance(audio_data,list):
             return torch.tensor(audio_data,dtype=torch.float32)
         else:
-            raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
+            raise TypeError(f"_tensor_type() srror: Unsupported type for audio_data: {type(audio_data)}")
             
     def _get_resampler(self,orig_sr:int,target_sr:int)->torchaudio.transforms.Resample:
         key=(orig_sr,target_sr)
@@ -289,18 +289,63 @@ class TTSUtils:
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
         return tmp_path
 
-    def _format_timestamp(self, seconds:float)->str:
+    def _set_voice(self)->bool:
+        self.params['voice_path'] = (
+            self.session['voice'] if self.session['voice'] is not None 
+            else self.models[self.session['fine_tuned']]['voice']
+        )
+        if self.params['voice_path'] is not None:
+            speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['voice_path']))
+            if self.params['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['voice_path']:
+                self.session['voice'] = self.params['voice_path'] = self._check_xtts_builtin_speakers(self.params['voice_path'], speaker)
+                if not self.params['voice_path']:
+                    msg = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
+                    print(msg)
+                    return False
+        return True
+
+    def _convert_sml(self, sml:str)->bool:
+        if sml == TTS_SML['break']['token']:
+            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+            break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
+            self.audio_segments.append(break_tensor.clone())
+        elif TTS_SML['pause']['match'].fullmatch(sml):
+            m = TTS_SML['pause']['match'].fullmatch(sml)
+            duration = float(m.group(1)) if m.group(1) is not None else None
+            if duration is not None:
+                silence_time = float(duration)
+            else:
+                silence_time = float(np.random.uniform(1.0, 1.6) * 100) / 100
+            pause_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 1.0 to 1.6 seconds
+            self.audio_segments.append(pause_tensor.clone())
+        elif TTS_SML['voice']['match'].fullmatch(sml):
+            self.session['voice'] = os.path.abspath(TTS_SML['voice']['match'].fullmatch(sml).group(1))
+            if os.path.exists(self.session['voice']):
+                if not self.set_voice():
+                    return False
+            else:
+                error = f"_convert_sml() error: voice {self.session['voice']} does not exist!"
+                print(error)
+                return False
+        return True
+
+    def _format_timestamp(self, seconds: float) -> str:
         m, s = divmod(seconds, 60)
         h, m = divmod(m, 60)
         return f"{int(h):02}:{int(m):02}:{s:06.3f}"
 
-    def _build_vtt_file(self, all_sentences:list, audio_dir:str, vtt_path:str)->bool:
+    def _build_vtt_file(self, all_sentences: list, audio_dir: str, vtt_path: str) -> bool:
         try:
             sentences_dir = Path(audio_dir)
             audio_files = sorted(
                 sentences_dir.glob(f"*.{default_audio_proc_format}"),
                 key=lambda p: int(p.stem)
             )
+            if len(audio_files) != len(all_sentences):
+                raise ValueError(
+                    f"Audio/sentence mismatch: {len(audio_files)} audio files vs "
+                    f"{len(all_sentences)} sentences"
+                )
             sentences_total_time = 0.0
             vtt_blocks = []
             for idx, audio_path in enumerate(audio_files):
@@ -316,9 +361,7 @@ class TTSUtils:
                     ' ',
                     default_sml_pattern.sub('', str(all_sentences[idx]))
                 ).strip()
-                vtt_blocks.append(
-                    f"{start} --> {end}\n{text}\n"
-                )
+                vtt_blocks.append(f"{start} --> {end}\n{text}\n")
             with open(vtt_path, "w", encoding="utf-8") as f:
                 f.write("WEBVTT\n\n")
                 f.write("\n".join(vtt_blocks))
