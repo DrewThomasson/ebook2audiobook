@@ -10,14 +10,11 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             self.speakers_path = None
             self.tts_key = self.session['model_cache']
             self.pth_voice_file = None
-            self.sentences_total_time = 0.0
-            self.sentence_idx = 1
             self.resampler_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
             self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
-            self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             using_gpu = self.session['device'] != devices['CPU']['proc']
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
@@ -28,12 +25,12 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             if has_cuda:
                 self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
-            self.engine = self._load_engine()
+            self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
 
-    def _load_engine(self)->Any:
+    def load_engine(self)->Any:
         try:
             msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
@@ -50,10 +47,10 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
             else:
-                error = '_load_engine() failed!'
+                error = 'load_engine() failed!'
                 raise ValueError(error)
         except Exception as e:
-            error = f'_load_engine() error: {e}'
+            error = f'load_engine() error: {e}'
             raise ValueError(error)
     
     def set_voice(self)->bool:
@@ -158,21 +155,9 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             return False
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
-                    start_time = self.sentences_total_time
-                    duration = round((segment_tensor.shape[-1] / self.params['samplerate']), 2)
-                    end_time = start_time + duration
-                    self.sentences_total_time = end_time
-                    sentence_obj = {
-                        "start": start_time,
-                        "end": end_time,
-                        "text": sentence,
-                        "idx": self.sentence_idx
-                    }
-                    self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)
-                    if self.sentence_idx:
-                        torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
-                        del segment_tensor
-                        self._cleanup_memory()
+                    torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
+                    del segment_tensor
+                    self._cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(final_sentence_file):
                         error = f"Cannot create {final_sentence_file}"
@@ -187,3 +172,10 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             error = f'YourTTS.convert(): {e}'
             raise ValueError(e)
             return False
+
+    def create_vtt(self, all_sentences:list)->bool:
+        audio_dir = self.session['chapters_dir_sentences']
+        vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
+        if self._build_vtt_file(all_sentences, audio_dir, vtt_path)
+            return True
+        return False

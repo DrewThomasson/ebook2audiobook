@@ -5,6 +5,7 @@ from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
 from safetensors.torch import save_file
 from pathlib import Path
+from pydub import AudioSegment
 from torch import Tensor
 from torch.nn import Module
 
@@ -288,32 +289,41 @@ class TTSUtils:
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
         return tmp_path
 
-    def _append_sentence2vtt(self, sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
+    def _format_timestamp(seconds:float)->str:
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        return f"{int(h):02}:{int(m):02}:{s:06.3f}"
 
-        def format_timestamp(seconds:float)->str:
-            m, s = divmod(seconds, 60)
-            h, m = divmod(m, 60)
-            return f"{int(h):02}:{int(m):02}:{s:06.3f}"
-
+    def _build_vtt_file(self, all_sentences:list, audio_dir:str, vtt_path:str)->bool:
         try:
-            index = 1
-            if os.path.exists(path):
-                with open(path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        if "-->" in line:
-                            index += 1
-            if index > 1 and "resume_check" in sentence_obj and sentence_obj["resume_check"] < index:
-                return index  # Already written
-            if not os.path.exists(path):
-                with open(path, "w", encoding="utf-8") as f:
-                    f.write("WEBVTT\n\n")
-            with open(path, "a", encoding="utf-8") as f:
-                start = format_timestamp(float(sentence_obj["start"]))
-                end = format_timestamp(float(sentence_obj["end"]))
-                text = re.sub(r'\s+', ' ', default_sml_pattern.sub('', str(sentence_obj["text"]))).strip()
-                f.write(f"{start} --> {end}\n{text}\n\n")
-            return index + 1
+            sentences_dir = Path(audio_dir)
+            audio_files = sorted(
+                sentences_dir.glob(f"*.{default_audio_proc_format}"),
+                key=lambda p: int(p.stem)
+            )
+            sentences_total_time = 0.0
+            vtt_blocks = []
+            for idx, audio_path in enumerate(audio_files):
+                audio = AudioSegment.from_file(audio_path)
+                start_time = sentences_total_time
+                duration = audio.frame_count() / audio.frame_rate
+                end_time = start_time + duration
+                sentences_total_time = end_time
+                start = _format_timestamp(start_time)
+                end = _format_timestamp(end_time)
+                text = re.sub(
+                    r'\s+',
+                    ' ',
+                    default_sml_pattern.sub('', str(all_sentences[idx]))
+                ).strip()
+                vtt_blocks.append(
+                    f"{start} --> {end}\n{text}\n"
+                )
+            with open(vtt_path, "w", encoding="utf-8") as f:
+                f.write("WEBVTT\n\n")
+                f.write("\n".join(vtt_blocks))
+            return True
         except Exception as e:
-            error = f"self._append_sentence2vtt() error: {e}"
+            error = f'Bark.create_vtt(): {e}'
             print(error)
             return False
