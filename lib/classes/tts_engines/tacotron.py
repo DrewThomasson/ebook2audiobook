@@ -94,8 +94,8 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     if not part or (part and sum(c.isalnum() for c in part) < 3):
                         continue
                     if default_sml_pattern.fullmatch(part):
-                        if not self.convert_sml(part):
-                            error = f'convert_sml failed: {part}'
+                        if not self._convert_sml(part):
+                            error = f'_convert_sml failed: {part}'
                             print(error)
                             return False
                     else:
