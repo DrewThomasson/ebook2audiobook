@@ -27,7 +27,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
-            self.engine_zs = self.load_engine_zs()
+            self.engine_zs = self._load_engine_zs()
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
