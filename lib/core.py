@@ -1712,20 +1712,20 @@ def convert_chapters2audio(id:str)->bool:
                             print(msg)
                         msg = f'Block {chapter_idx} containing {len(sentences)} sentences…'
                         print(msg)
-                        for sentence_idx, sentence in enumerate(sentences):
+                        for idx, sentence in enumerate(sentences):
                             if session['cancellation_requested']:
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return False
-                            if sentence_idx in missing_sentences or sentence_idx >= resume_sentence:
+                            if idx in missing_sentences or idx >= resume_sentence:
                                 sentence = sentence.strip()
                                 if len(sentence) > 2 and any(c.isalnum() for c in sentence):
-                                    if sentence_idx in missing_sentences:
-                                        msg = f'********* Recovering missing sentence {sentence_idx} *********'
-                                    elif resume_sentence == sentence_idx and resume_sentence > 0:
+                                    if idx in missing_sentences:
+                                        msg = f'********* Recovering missing sentence {idx} *********'
+                                    elif resume_sentence == idx and resume_sentence > 0:
                                         msg = f'********* Resuming from sentence {resume_sentence} ********'
                                         print(msg)
-                                    success = tts_manager.convert_sentence2audio(sentence_idx, sentence) if sentence else True
+                                    success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
                                     if not success:
                                         return False
                             total_progress = (t.n + 1) / total_iterations
@@ -1737,7 +1737,6 @@ def convert_chapters2audio(id:str)->bool:
                             print(msg)    
                             t.update(1)
                         end = sentence_idx
-                        print(f'start: {start}, end:{end}')
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
                         if chapter_idx in missing_chapters or sentence_idx > resume_sentence:
