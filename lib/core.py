@@ -1717,18 +1717,18 @@ def convert_chapters2audio(id:str)->bool:
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return False
-                                sentence = sentence.strip()
-                                if len(sentence) > 2 and any(c.isalnum() for c in sentence):
-                                    final_sentences.append(sentence)
-                                    if idx in missing_sentences or idx >= resume_sentence:
-                                        if idx in missing_sentences:
-                                            msg = f'********* Recovering missing sentence {idx} *********'
-                                        elif resume_sentence == idx and resume_sentence > 0:
-                                            msg = f'********* Resuming from sentence {resume_sentence} ********'
-                                            print(msg)
-                                        success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
-                                        if not success:
-                                            return False
+                            sentence = sentence.strip()
+                            if len(sentence) > 2 and any(c.isalnum() for c in sentence):
+                                final_sentences.append(sentence)
+                                if idx in missing_sentences or idx >= resume_sentence:
+                                    if idx in missing_sentences:
+                                        msg = f'********* Recovering missing sentence {idx} *********'
+                                    elif resume_sentence == idx and resume_sentence > 0:
+                                        msg = f'********* Resuming from sentence {resume_sentence} ********'
+                                        print(msg)
+                                    success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
+                                    if not success:
+                                        return False
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
                                 progress_bar(progress=total_progress, desc=ebook_name)
