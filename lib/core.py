@@ -1736,7 +1736,7 @@ def convert_chapters2audio(id:str)->bool:
                             msg = f' : {sentence}'
                             print(msg)    
                             t.update(1)
-                        end = sentence_idx
+                        end = (chapter_idx + 1) * len(sentences)
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
                         if chapter_idx in missing_chapters or sentence_idx > resume_sentence:
