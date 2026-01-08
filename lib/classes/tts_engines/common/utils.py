@@ -348,7 +348,6 @@ class TTSUtils:
                 )
             sentences_total_time = 0.0
             vtt_blocks = []
-            print(f'-----------{audio_files}-------------')
             for idx, file in enumerate(audio_files):
                 audio = AudioSegment.from_file(file)
                 start_time = sentences_total_time
