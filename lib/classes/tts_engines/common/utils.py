@@ -368,6 +368,6 @@ class TTSUtils:
                 f.write("\n".join(vtt_blocks))
             return True
         except Exception as e:
-            error = f'Bark.create_vtt(): {e}'
+            error = f'_build_vtt_file(): {e}'
             print(error)
             return False
