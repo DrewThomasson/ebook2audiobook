@@ -1691,7 +1691,7 @@ def convert_chapters2audio(id:str)->bool:
                 progress_bar = gr.Progress(track_tqdm=False)
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
-                all_sentences = []
+                final_sentences = []
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     sentence_idx = 0
                     sml_values = {
@@ -1717,17 +1717,18 @@ def convert_chapters2audio(id:str)->bool:
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return False
-                            if idx in missing_sentences or idx >= resume_sentence:
                                 sentence = sentence.strip()
                                 if len(sentence) > 2 and any(c.isalnum() for c in sentence):
-                                    if idx in missing_sentences:
-                                        msg = f'********* Recovering missing sentence {idx} *********'
-                                    elif resume_sentence == idx and resume_sentence > 0:
-                                        msg = f'********* Resuming from sentence {resume_sentence} ********'
-                                        print(msg)
-                                    success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
-                                    if not success:
-                                        return False
+                                    final_sentences.append(sentence)
+                                    if idx in missing_sentences or idx >= resume_sentence:
+                                        if idx in missing_sentences:
+                                            msg = f'********* Recovering missing sentence {idx} *********'
+                                        elif resume_sentence == idx and resume_sentence > 0:
+                                            msg = f'********* Resuming from sentence {resume_sentence} ********'
+                                            print(msg)
+                                        success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
+                                        if not success:
+                                            return False
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
                                 progress_bar(progress=total_progress, desc=ebook_name)
@@ -1747,11 +1748,7 @@ def convert_chapters2audio(id:str)->bool:
                                 msg = 'combine_audio_sentences() failed!'
                                 print(msg)
                                 return False
-            all_sentences = []
-            for chapter_sentences in session['chapters']:
-                all_sentences.extend(chapter_sentences)
-            assert len(all_sentences) == sum(len(c) for c in session['chapters'])
-            return tts_manager.create_sentences2vtt(all_sentences)
+            return tts_manager.create_sentences2vtt(final_sentences)
         except Exception as e:
             DependencyError(e)
             return False
