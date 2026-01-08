@@ -1719,6 +1719,7 @@ def convert_chapters2audio(id:str)->bool:
                                 return False
                             sentence = sentence.strip()
                             if len(sentence) > 2 and any(c.isalnum() for c in sentence):
+                                print(sentence)
                                 final_sentences.append(sentence)
                                 if idx in missing_sentences or idx >= resume_sentence:
                                     if idx in missing_sentences:
