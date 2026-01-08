@@ -1551,17 +1551,17 @@ def foreign2latin(text, base_lang):
     return out
 
 def filter_sml(text:str)->str:
-	text = TTS_SML['###']['match'].sub(' ‡pause‡ ', text)
-	text = TTS_SML['break']['match'].sub(' ‡break‡ ', text)
-	text = TTS_SML['pause']['match'].sub(
-		lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
-		text
-	)
-	text = TTS_SML['voice']['match'].sub(
-		lambda m: f' ‡voice:{m.group(1)}‡ ',
-		text
-	)
-	return text
+    text = TTS_SML['###']['match'].sub(' ‡pause‡ ', text)
+    text = TTS_SML['break']['match'].sub(' ‡break‡ ', text)
+    text = TTS_SML['pause']['match'].sub(
+        lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
+        text
+    )
+    text = TTS_SML['voice']['match'].sub(
+        lambda m: f' ‡voice:{m.group(1)}‡ ',
+        text
+    )
+    return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
@@ -1719,8 +1719,8 @@ def convert_chapters2audio(id:str)->bool:
                                 return False
                             sentence = sentence.strip()
                             if len(sentence) > 2 and any(c.isalnum() for c in sentence):
-                                print(sentence)
-                                final_sentences.append(sentence)
+                                if not any(v["match"].fullmatch(sentence) for v in TTS_SML.values()):
+                                    final_sentences.append(sentence)
                                 if idx in missing_sentences or idx >= resume_sentence:
                                     if idx in missing_sentences:
                                         msg = f'********* Recovering missing sentence {idx} *********'
