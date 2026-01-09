@@ -1719,7 +1719,7 @@ def convert_chapters2audio(id:str)->bool:
                                 return False
                             sentence = sentence.strip()
                             if len(sentence) > 2 and any(c.isalnum() for c in sentence):
-                                if not any(v["match"].fullmatch(sentence) for v in TTS_SML.values()):
+                                if not any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) or (any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) and idx == len(sentences)):
                                     print(f'===> add setnence: {sentence}')
                                     final_sentences.append(sentence)
                                 if idx in missing_sentences or idx >= resume_sentence:
