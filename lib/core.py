@@ -2515,7 +2515,7 @@ def finalize_audiobook(id:str)->tuple:
     session = context.get_session(id)
     if session:
         if session['chapters'] is not None:
-            if convert_chapters2audio(session['id']):
+            if convert_chapters2audio(id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
                 exported_files = combine_audio_chapters(session['id'])               
