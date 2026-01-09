@@ -358,7 +358,7 @@ class TTSUtils:
                     f"Audio/sentence mismatch: {audio_files_length} audio files vs "
                     f"{all_sentences_length} sentences"
                 )
-                 return False
+                return False
             sentences_total_time = 0.0
             vtt_blocks = []
             if self.session['is_gui_process']:
