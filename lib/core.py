@@ -1741,7 +1741,7 @@ def convert_chapters2audio(id:str)->bool:
                         end = (chapter_idx + 1) * len(sentences)
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
-                        if chapter_idx in missing_chapters or sentence_idx > resume_sentence:
+                        if chapter_idx in missing_chapters or sentence_idx >= resume_sentence:
                             if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
                                 msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                                 print(msg)
