@@ -16,15 +16,11 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones":{}}
             self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
-            using_gpu = self.session['device'] != devices['CPU']['proc']
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
             #np.random.seed(seed)
-            torch.manual_seed(seed)
-            has_cuda = (torch.version.cuda is not None and torch.cuda.is_available())
-            if has_cuda:
-                self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
+            self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
@@ -102,6 +98,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
                             part = part[:-1]
+                        part = re.sub(not_supported_punc_pattern, ' ', part)
                         speaker_argument = {}
                         if self._set_voice():
                             if self.session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
@@ -115,12 +112,22 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                 tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                                 with torch.no_grad():
                                     self.engine.to(device)
-                                    self.engine.tts_to_file(
-                                        text=re.sub(not_supported_punc_pattern, ' ', part),
-                                        file_path=tmp_in_wav,
-                                        **speaker_argument
-                                    )
-                                    self.engine.to('cpu')
+                                    if device == devices['CPU']['proc']:
+                                        self.engine.tts_to_file(
+                                            text=part,
+                                            file_path=tmp_in_wav,
+                                            **speaker_argument
+                                        )
+                                    else:
+                                        with torch.autocast(
+                                            dtype=self.amp_dtype
+                                        ):
+                                            self.engine.tts_to_file(
+                                                text=part,
+                                                file_path=tmp_in_wav,
+                                                **speaker_argument
+                                            )
+                                    self.engine.to(devices['CPU']['proc'])
                                 if self.params['voice_path'] in self.params['semitones'].keys():
                                     semitones = self.params['semitones'][self.params['voice_path']]
                                 else:
@@ -164,7 +171,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                         source_wav=source_wav,
                                         target_wav=target_wav
                                     )
-                                    self.engine_zs.to('cpu')
+                                    self.engine_zs.to(devices['CPU']['proc'])
                                 else:
                                     error = f'Engine {self.tts_zs_key} is None'
                                     print(error)
@@ -178,11 +185,20 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             else:
                                 with torch.no_grad():
                                     self.engine.to(device)
-                                    audio_part = self.engine.tts(
-                                        text=re.sub(not_supported_punc_pattern, ' ', part),
-                                        **speaker_argument
-                                    )
-                                    self.engine.to('cpu')
+                                    if device == devices['CPU']['proc']:
+                                        audio_part = self.engine.tts(
+                                            text=part,
+                                            **speaker_argument
+                                        )
+                                    else:
+                                        with torch.autocast(
+                                            dtype=self.amp_dtype
+                                        ):
+                                            audio_part = self.engine.tts(
+                                                text=part,
+                                                **speaker_argument
+                                            )
+                                    self.engine.to(devices['CPU']['proc'])
                             if is_audio_data_valid(audio_part):
                                 src_tensor = self._tensor_type(audio_part)
                                 part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()

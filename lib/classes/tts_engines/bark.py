@@ -15,15 +15,11 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
             self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
-            using_gpu = self.session['device'] != devices['CPU']['proc']
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
             #np.random.seed(seed)
-            torch.manual_seed(seed)
-            has_cuda = (torch.version.cuda is not None and torch.cuda.is_available())
-            if has_cuda:
-                self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
+            self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
         except Exception as e:
@@ -90,6 +86,29 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             voice_dir=pth_voice_dir,
                             **fine_tuned_params
                         )
+                        
+                    with torch.no_grad():
+                        self.engine.to(device)
+                        if device == devices['CPU']['proc']:
+                            result = self.engine.synthesize(
+                                default_text,
+                                speaker_wav=voice_path,
+                                speaker=speaker,
+                                voice_dir=pth_voice_dir,
+                                **fine_tuned_params
+                            )
+                        else:
+                            with torch.autocast(
+                                dtype=self.amp_dtype
+                            ):
+                                result = self.engine.synthesize(
+                                    default_text,
+                                    speaker_wav=voice_path,
+                                    speaker=speaker,
+                                    voice_dir=pth_voice_dir,
+                                    **fine_tuned_params
+                                )
+                        self.engine.to(devices['CPU']['proc'])
                     del result
                     msg = f"Saved file: {pth_voice_file}"
                     print(msg)
@@ -159,7 +178,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                     "bark_waveform_temp": float
                                 }.items()
                                 if self.session.get(key) is not None
-                            }
+                            }         
                             with torch.no_grad():
                                 """
                                 result = self.engine.synthesize(
@@ -171,14 +190,26 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 )
                                 """
                                 self.engine.to(device)
-                                audio_part = self.engine.tts(
-                                    text=part,
-                                    speaker=speaker,
-                                    voice_dir=pth_voice_dir,
-                                    **tts_dyn_params,
-                                    **fine_tuned_params
-                                )
-                                self.engine.to('cpu')
+                                if device == devices['CPU']['proc']:
+                                    audio_part = self.engine.tts(
+                                        text=part,
+                                        speaker=speaker,
+                                        voice_dir=pth_voice_dir,
+                                        **tts_dyn_params,
+                                        **fine_tuned_params
+                                    )
+                                else:
+                                    with torch.autocast(
+                                        dtype=self.amp_dtype
+                                    ):
+                                        audio_part = self.engine.tts(
+                                            text=part,
+                                            speaker=speaker,
+                                            voice_dir=pth_voice_dir,
+                                            **tts_dyn_params,
+                                            **fine_tuned_params
+                                        )
+                                self.engine.to(devices['CPU']['proc'])
                             if is_audio_data_valid(audio_part):
                                 src_tensor = self._tensor_type(audio_part)
                                 part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()

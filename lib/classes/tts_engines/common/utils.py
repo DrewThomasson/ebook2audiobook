@@ -54,26 +54,112 @@ class TTSUtils:
                 "self._load_xtts_builtin_list() failed"
             ) from error
 
-    def _apply_cuda_policy(self, using_gpu:bool, enough_vram:bool, seed:int)->None:
-        torch.cuda.manual_seed_all(0)
-        if using_gpu and enough_vram:
-            torch.cuda.set_per_process_memory_fraction(0.95)
-            torch.backends.cudnn.enabled = True
-            torch.backends.cudnn.benchmark = True
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.allow_tf32 = True
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-            torch.cuda.manual_seed_all(seed)
-        else:
-            torch.cuda.set_per_process_memory_fraction(0.7)
-            torch.backends.cudnn.enabled = True
-            torch.backends.cudnn.benchmark = False
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.allow_tf32 = False
-            torch.backends.cuda.matmul.allow_tf32 = False
-            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-            torch.cuda.manual_seed_all(seed)
+    def _apply_gpu_policy(self, enough_vram: bool, seed: int) -> torch.dtype:
+        using_gpu = self.session['device'] != devices['CPU']['proc']
+        device = self.session['device']
+        torch.manual_seed(seed)
+        has_cuda = hasattr(torch, "cuda") and torch.cuda.is_available()
+        has_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+        has_xpu = hasattr(torch, "xpu") and torch.xpu.is_available()
+        is_rocm = bool(getattr(torch.version, "hip", None))
+        is_cuda = bool(getattr(torch.version, "cuda", None)) and not is_rocm
+        quality_mode = bool(using_gpu and enough_vram)
+        amp_dtype = torch.float32
+        # Default matmul precision (PyTorch >= 2.2)
+        try:
+            torch.set_float32_matmul_precision("high" if quality_mode else "medium")
+        except Exception:
+            pass
+        if not using_gpu:
+            return amp_dtype
+        # ================= CUDA / Jetson / ROCm =================
+        if has_cuda:
+            try:
+                torch.cuda.manual_seed_all(seed)
+            except Exception:
+                pass
+            # Memory pressure handling
+            if hasattr(torch.cuda, "set_per_process_memory_fraction"):
+                try:
+                    torch.cuda.set_per_process_memory_fraction(0.95 if quality_mode else 0.70)
+                except Exception:
+                    pass
+            # cuDNN base config
+            if hasattr(torch.backends, "cudnn"):
+                torch.backends.cudnn.enabled = True
+                torch.backends.cudnn.deterministic = True
+                torch.backends.cudnn.benchmark = bool(quality_mode)
+            # Detect Jetson (ARM + CUDA)
+            is_jetson = False
+            try:
+                is_jetson = is_cuda and torch.cuda.get_device_properties(0).multi_processor_count < 32
+            except Exception:
+                is_jetson = False
+            # TF32 handling
+            tf32_ok = False
+            if is_cuda and not is_jetson:
+                try:
+                    cc_major = torch.cuda.get_device_capability(0)[0]
+                    tf32_ok = bool(cc_major >= 8 and quality_mode)
+                except Exception:
+                    tf32_ok = False
+            # Disable TF32 explicitly on Jetson + ROCm
+            if is_jetson or is_rocm:
+                tf32_ok = False
+            # Apply matmul / cuDNN flags
+            if hasattr(torch.backends, "cuda") and hasattr(torch.backends.cuda, "matmul"):
+                try:
+                    torch.backends.cuda.matmul.allow_tf32 = tf32_ok
+                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = bool(quality_mode)
+                except Exception:
+                    pass
+            if hasattr(torch.backends, "cudnn"):
+                try:
+                    torch.backends.cudnn.allow_tf32 = tf32_ok
+                except Exception:
+                    pass
+            # AMP dtype selection
+            # Jetson + ROCm → FP16 only (BF16 unstable / slow)
+            if is_jetson or is_rocm:
+                amp_dtype = torch.float16
+            else:
+                if quality_mode:
+                    try:
+                        if hasattr(torch.cuda, "is_bf16_supported") and torch.cuda.is_bf16_supported():
+                            amp_dtype = torch.bfloat16
+                        else:
+                            amp_dtype = torch.float16
+                    except Exception:
+                        amp_dtype = torch.float16
+                else:
+                    amp_dtype = torch.float16
+
+            return amp_dtype
+        # ================= Apple MPS =================
+        if has_mps:
+            try:
+                torch.mps.manual_seed(seed)
+            except Exception:
+                pass
+            try:
+                if quality_mode and hasattr(torch.backends.mps, "is_bf16_supported") and torch.backends.mps.is_bf16_supported():
+                    amp_dtype = torch.bfloat16
+                else:
+                    amp_dtype = torch.float16
+            except Exception:
+                amp_dtype = torch.float16
+            return amp_dtype
+        # ================= Intel XPU =================
+        if has_xpu:
+            try:
+                torch.xpu.manual_seed_all(seed)
+            except Exception:
+                try:
+                    torch.xpu.manual_seed(seed)
+                except Exception:
+                    pass
+            return torch.bfloat16
+        return amp_dtype
 
     def _load_api(self, key:str, model_path:str)->Any:
         try:
