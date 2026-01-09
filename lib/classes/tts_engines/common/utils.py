@@ -1,9 +1,10 @@
-import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf, numpy as np
+import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf, numpy as np, gradio as gr
 from lib.classes.tts_engines.common.audio import is_audio_data_valid
 
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
 from safetensors.torch import save_file
+from tqdm import tqdm
 from pathlib import Path
 from pydub import AudioSegment
 from torch import Tensor
@@ -336,38 +337,47 @@ class TTSUtils:
 
     def _build_vtt_file(self, all_sentences: list, audio_dir: str, vtt_path: str) -> bool:
         try:
+            print('VTT file creation started...')
             sentences_dir = Path(audio_dir)
             audio_files = sorted(
                 sentences_dir.glob(f"*.{default_audio_proc_format}"),
                 key=lambda p: int(p.stem)
             )
-            if len(audio_files) != len(all_sentences):
+            all_sentences_length = len(all_sentences)
+            audio_files_length = len(audio_files)
+            if audio_files_length != all_sentences_length:
                 raise ValueError(
-                    f"Audio/sentence mismatch: {len(audio_files)} audio files vs "
-                    f"{len(all_sentences)} sentences"
+                    f"Audio/sentence mismatch: {audio_files_length} audio files vs "
+                    f"{all_sentences_length} sentences"
                 )
             sentences_total_time = 0.0
             vtt_blocks = []
-            print(f'-----------{audio_files}-------------')
-            for idx, file in enumerate(audio_files):
-                audio = AudioSegment.from_file(file)
-                start_time = sentences_total_time
-                duration = audio.frame_count() / audio.frame_rate
-                end_time = start_time + duration
-                sentences_total_time = end_time
-                start = self._format_timestamp(start_time)
-                end = self._format_timestamp(end_time)
-                text = re.sub(
-                    r'\s+',
-                    ' ',
-                    default_sml_pattern.sub('', str(all_sentences[idx]))
-                ).strip()
-                vtt_blocks.append(f"{start} --> {end}\n{text}\n")
+            if self.session['is_gui_process']:
+                progress_bar = gr.Progress(track_tqdm=False)
+            with tqdm(total=audio_files_length, unit='files') as t:
+                for idx, file in enumerate(audio_files):
+                    audio = AudioSegment.from_file(file)
+                    start_time = sentences_total_time
+                    duration = audio.frame_count() / audio.frame_rate
+                    end_time = start_time + duration
+                    sentences_total_time = end_time
+                    start = self._format_timestamp(start_time)
+                    end = self._format_timestamp(end_time)
+                    text = re.sub(
+                        r'\s+',
+                        ' ',
+                        default_sml_pattern.sub('', str(all_sentences[idx]))
+                    ).strip()
+                    vtt_blocks.append(f"{start} --> {end}\n{text}\n")
+                    if self.session['is_gui_process']:
+                        total_progress = (t.n + 1) / audio_files_length
+                        progress_bar(progress=total_progress, desc=f'Writing vtt idx {idx}')
+                    t.update(1)
             with open(vtt_path, "w", encoding="utf-8") as f:
                 f.write("WEBVTT\n\n")
                 f.write("\n".join(vtt_blocks))
             return True
         except Exception as e:
-            error = f'Bark.create_vtt(): {e}'
+            error = f'_build_vtt_file(): {e}'
             print(error)
             return False

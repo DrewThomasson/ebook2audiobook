@@ -1363,7 +1363,7 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             phrase = lc['past'].format(hour=n2w(h), minute=n2w(mnt)) if mnt != 0 else lc['oclock'].format(hour=n2w(h))
         else:
             minute_to_hour = 60 - mnt
-            phrase = lc['to'].format(next_hour=n2w(next_hour), minute=n2w(minute_to_hour))
+            phrase = lc['to'].format(next_hour=n2w(next_hour), minute_to_hour=n2w(minute_to_hour))
         # Append seconds if present
         if sec is not None and sec > 0:
             second_phrase = lc['second'].format(second=n2w(sec))
@@ -1551,17 +1551,17 @@ def foreign2latin(text, base_lang):
     return out
 
 def filter_sml(text:str)->str:
-	text = TTS_SML['###']['match'].sub(' ‡pause‡ ', text)
-	text = TTS_SML['break']['match'].sub(' ‡break‡ ', text)
-	text = TTS_SML['pause']['match'].sub(
-		lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
-		text
-	)
-	text = TTS_SML['voice']['match'].sub(
-		lambda m: f' ‡voice:{m.group(1)}‡ ',
-		text
-	)
-	return text
+    text = TTS_SML['###']['match'].sub(' ‡pause‡ ', text)
+    text = TTS_SML['break']['match'].sub(' ‡break‡ ', text)
+    text = TTS_SML['pause']['match'].sub(
+        lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
+        text
+    )
+    text = TTS_SML['voice']['match'].sub(
+        lambda m: f' ‡voice:{m.group(1)}‡ ',
+        text
+    )
+    return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
@@ -1691,9 +1691,9 @@ def convert_chapters2audio(id:str)->bool:
                 progress_bar = gr.Progress(track_tqdm=False)
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
-                all_sentences = []
+                final_sentences = []
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                    sentence_idx = 0
+                    idx_target = 0
                     sml_values = {
                         v['token']
                         for v in TTS_SML.values()
@@ -1703,7 +1703,7 @@ def convert_chapters2audio(id:str)->bool:
                         chapter_idx = c
                         chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
                         sentences = session['chapters'][c]
-                        start = sentence_idx
+                        start = idx_target
                         if c in missing_chapters:
                             msg = f'********* Recovering missing block {c} *********'
                             print(msg)
@@ -1712,22 +1712,25 @@ def convert_chapters2audio(id:str)->bool:
                             print(msg)
                         msg = f'Block {chapter_idx} containing {len(sentences)} sentences…'
                         print(msg)
-                        for sentence_idx, sentence in enumerate(sentences):
+                        for idx, sentence in enumerate(sentences):
                             if session['cancellation_requested']:
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return False
-                            if sentence_idx in missing_sentences or sentence_idx >= resume_sentence:
-                                sentence = sentence.strip()
-                                if len(sentence) > 2 and any(c.isalnum() for c in sentence):
-                                    if sentence_idx in missing_sentences:
-                                        msg = f'********* Recovering missing sentence {sentence_idx} *********'
-                                    elif resume_sentence == sentence_idx and resume_sentence > 0:
+                            sentence = sentence.strip()
+                            if len(sentence) > 2 and any(c.isalnum() for c in sentence):
+                                if not any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) or (any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) and idx == len(sentences)):
+                                    final_sentences.append(sentence)
+                                if idx in missing_sentences or idx >= resume_sentence:
+                                    if idx in missing_sentences:
+                                        msg = f'********* Recovering missing sentence {idx} *********'
+                                    elif resume_sentence == idx and resume_sentence > 0:
                                         msg = f'********* Resuming from sentence {resume_sentence} ********'
                                         print(msg)
-                                    success = tts_manager.convert_sentence2audio(sentence_idx, sentence) if sentence else True
+                                    success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
                                     if not success:
                                         return False
+                            idx_target = idx
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
                                 progress_bar(progress=total_progress, desc=ebook_name)
@@ -1736,10 +1739,10 @@ def convert_chapters2audio(id:str)->bool:
                             msg = f' : {sentence}'
                             print(msg)    
                             t.update(1)
-                        end = sentence_idx
+                        end = (chapter_idx + 1) * len(sentences)
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
-                        if chapter_idx in missing_chapters or sentence_idx > resume_sentence:
+                        if chapter_idx in missing_chapters or idx_target >= resume_sentence:
                             if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
                                 msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                                 print(msg)
@@ -1747,11 +1750,7 @@ def convert_chapters2audio(id:str)->bool:
                                 msg = 'combine_audio_sentences() failed!'
                                 print(msg)
                                 return False
-            all_sentences = []
-            for chapter_sentences in session['chapters']:
-                all_sentences.extend(chapter_sentences)
-            assert len(all_sentences) == sum(len(c) for c in session['chapters'])
-            return tts_manager.create_sentences2vtt(all_sentences)
+            return tts_manager.create_sentences2vtt(final_sentences)
         except Exception as e:
             DependencyError(e)
             return False
@@ -1760,7 +1759,7 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
     try:
         session = context.get_session(id)
         if session:
-            audio_file = os.path.join(session['chapters_dir'], file)
+            chapter_audio_file = os.path.join(session['chapters_dir'], file)
             chapters_dir_sentences = session['chapters_dir_sentences']
             batch_size = 1024
             start = int(start)
@@ -1776,7 +1775,7 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
             selected_files = [
                 os.path.join(chapters_dir_sentences, f)
                 for f in sentences_ordered
-                if start <= int(os.path.splitext(f)[0]) <= end
+                if int(start) <= int(os.path.splitext(f)[0]) <= int(end)
             ]
             if not selected_files:
                 print('No audio files found in the specified range.')
@@ -1813,13 +1812,14 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
                     print(error)
                     return False
                 final_list = os.path.join(temp_dir, 'sentences_final.txt')
+                print(f'final_list: {final_list}')
                 with open(final_list, 'w') as f:
                     for _, chunk_path, _ in chunk_list:
                         f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
                 if session.get('is_gui_progress') and gr_progress:
                     gr_progress(1.0,"Final merge")
-                if assemble_chunks(final_list, audio_file, is_gui_process):
-                    msg = f'********* Combined block audio file saved in {audio_file}'
+                if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
+                    msg = f'********* Combined block audio file saved in {chapter_audio_file}'
                     print(msg)
                     return True
                 else:
@@ -1831,6 +1831,7 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
     return False
 
 def combine_audio_chapters(id:str)->list[str]|None:
+
     def get_audio_duration(filepath:str)->float:
         try:
             ffprobe_cmd = [
@@ -2515,7 +2516,7 @@ def finalize_audiobook(id:str)->tuple:
     session = context.get_session(id)
     if session:
         if session['chapters'] is not None:
-            if convert_chapters2audio(session['id']):
+            if convert_chapters2audio(id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
                 exported_files = combine_audio_chapters(session['id'])               
