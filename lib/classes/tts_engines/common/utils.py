@@ -1,9 +1,10 @@
-import os, threading, gc, torch, torchaudio, shutil, tempfile, tqdm, regex as re, soundfile as sf, numpy as np, gradio as gr
+import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf, numpy as np, gradio as gr
 from lib.classes.tts_engines.common.audio import is_audio_data_valid
 
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
 from safetensors.torch import save_file
+from tqdm import tqdm
 from pathlib import Path
 from pydub import AudioSegment
 from torch import Tensor
