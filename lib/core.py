@@ -1693,7 +1693,7 @@ def convert_chapters2audio(id:str)->bool:
                 ebook_name = Path(session['ebook']).name
                 final_sentences = []
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                    sentence_idx = 0
+                    idx_target = 0
                     sml_values = {
                         v['token']
                         for v in TTS_SML.values()
@@ -1703,7 +1703,7 @@ def convert_chapters2audio(id:str)->bool:
                         chapter_idx = c
                         chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
                         sentences = session['chapters'][c]
-                        start = sentence_idx
+                        start = idx_target
                         if c in missing_chapters:
                             msg = f'********* Recovering missing block {c} *********'
                             print(msg)
@@ -1730,6 +1730,7 @@ def convert_chapters2audio(id:str)->bool:
                                     success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
                                     if not success:
                                         return False
+                            idx_target = idx
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
                                 progress_bar(progress=total_progress, desc=ebook_name)
@@ -1741,7 +1742,7 @@ def convert_chapters2audio(id:str)->bool:
                         end = (chapter_idx + 1) * len(sentences)
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
-                        if chapter_idx in missing_chapters or sentence_idx >= resume_sentence:
+                        if chapter_idx in missing_chapters or idx_target >= resume_sentence:
                             if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
                                 msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                                 print(msg)
