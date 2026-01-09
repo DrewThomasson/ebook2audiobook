@@ -345,11 +345,20 @@ class TTSUtils:
             )
             all_sentences_length = len(all_sentences)
             audio_files_length = len(audio_files)
+            expected_indices = list(range(audio_files_length))
+            actual_indices = [int(p.stem) for p in audio_files]
+            if actual_indices != expected_indices:
+                missing = sorted(set(expected_indices) - set(actual_indices))
+                raise ValueError(
+                    f"Missing audio sentence files: {missing}"
+                )
+                return False
             if audio_files_length != all_sentences_length:
                 raise ValueError(
                     f"Audio/sentence mismatch: {audio_files_length} audio files vs "
                     f"{all_sentences_length} sentences"
                 )
+                 return False
             sentences_total_time = 0.0
             vtt_blocks = []
             if self.session['is_gui_process']:
