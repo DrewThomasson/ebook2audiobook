@@ -351,7 +351,7 @@ class TTSUtils:
                 )
             sentences_total_time = 0.0
             vtt_blocks = []
-            if session['is_gui_process']:
+            if self.session['is_gui_process']:
                 progress_bar = gr.Progress(track_tqdm=False)
             with tqdm(total=audio_files_length, unit='files') as t:
                 for idx, file in enumerate(audio_files):
@@ -368,7 +368,7 @@ class TTSUtils:
                         default_sml_pattern.sub('', str(all_sentences[idx]))
                     ).strip()
                     vtt_blocks.append(f"{start} --> {end}\n{text}\n")
-                    if session['is_gui_process']:
+                    if self.session['is_gui_process']:
                         total_progress = (t.n + 1) / audio_files_length
                         progress_bar(progress=total_progress, desc=f'Writing vtt idx {idx}')
                     t.update(1)
