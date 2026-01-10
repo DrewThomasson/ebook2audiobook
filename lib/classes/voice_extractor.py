@@ -114,6 +114,29 @@ class VoiceExtractor:
             error = f'_demucs_voice() error: {str(e)}'
         return False, error
 
+    def _get_audio_duration(self, filepath:str)->float:
+        try:
+            cmd = [
+                shutil.which('ffprobe'),
+                '-v', 'error',
+                '-show_entries', 'format=duration',
+                '-of', 'json',
+                filepath
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            try:
+                duration = json.loads(result.stdout)['format']['duration']
+                return float(duration)
+            except Exception:
+                return 0
+        except subprocess.CalledProcessError as e:
+            DependencyError(e)
+            return 0
+        except Exception as e:
+            error = f"get_audio_duration() Error: Failed to process {filepath}: {e}"
+            print(error)
+            return 0
+
     def _remove_silences(audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
         msg = "Removing empty audio..."
         print(msg)
@@ -197,29 +220,6 @@ class VoiceExtractor:
             error = f"_trim_and_clean() error: {e}"
             print(error)
             return False, error
-
-    def _get_audio_duration(self, filepath:str)->float:
-        try:
-            cmd = [
-                shutil.which('ffprobe'),
-                '-v', 'error',
-                '-show_entries', 'format=duration',
-                '-of', 'json',
-                filepath
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            try:
-                duration = json.loads(result.stdout)['format']['duration']
-                return float(duration)
-            except Exception:
-                return 0
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
-            return 0
-        except Exception as e:
-            error = f"get_audio_duration() Error: Failed to process {filepath}: {e}"
-            print(error)
-            return 0
 
     def normalize_audio(self, src_file:str=None, proc_file:str=None, dst_file:str=None)->tuple[bool, str]:
         try:
