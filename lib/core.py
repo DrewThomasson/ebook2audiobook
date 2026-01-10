@@ -1150,7 +1150,7 @@ def get_sentences(text:str, id:str)->list|None:
             rest = s
             while rest:
                 clean_len = len(strip_sml(rest))
-                if clean_len <= max_chars + 20:
+                if clean_len <= max_chars:
                     final_list.append(rest.strip())
                     break
                 cut = rest[:max_chars + 1]
@@ -1166,6 +1166,19 @@ def get_sentences(text:str, id:str)->list|None:
                     break
                 final_list.append(left)
                 rest = right
+        # PASS 4 — merge very short rows (<= 20 chars) with previous
+        merged_list = []
+        half_max_chars = int(max_chars / 2)
+        for s in final_list:
+            s = s.strip()
+            if not s:
+                continue
+            clean_len = len(strip_sml(s))
+            if merged_list and clean_len <= half_max_chars:
+                merged_list[-1] = f"{merged_list[-1]} {s}"
+            else:
+                merged_list.append(s)
+        final_list = merged_list
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
