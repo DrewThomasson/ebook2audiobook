@@ -2148,7 +2148,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
             print(error)
             return False
         cmd = [
-            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
+            shutil.which('ffmpeg'), '-hide_banner', '-progress pipe:2', '-nostats', '-y',
             '-safe', '0', '-f', 'concat', '-i', txt_file,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '0', out_file
         ]
