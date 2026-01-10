@@ -123,3 +123,25 @@ def is_audio_data_valid(audio_data:Any)->bool:
     except ImportError:
         pass
     return False
+    
+def get_audio_duration(filepath:str)->float:
+    try:
+        ffprobe_cmd = [
+            shutil.which('ffprobe'),
+            '-v', 'error',
+            '-show_entries', 'format=duration',
+            '-of', 'json',
+            filepath
+        ]
+        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+        try:
+            return float(json.loads(result.stdout)['format']['duration'])
+        except Exception:
+            return 0
+    except subprocess.CalledProcessError as e:
+        DependencyError(e)
+        return 0
+    except Exception as e:
+        error = f'get_audio_duration() Error: Failed to process: {e}'
+        print(error)
+        return 0

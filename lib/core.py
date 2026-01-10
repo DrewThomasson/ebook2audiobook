@@ -47,6 +47,7 @@ from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
+from lib.classes.tts_engines.common.audio import get_audio_duration
 
 from lib import *
 
@@ -1842,28 +1843,6 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
     except Exception as e:
         DependencyError(e)
     return False
-
-def get_audio_duration(filepath:str)->float:
-    try:
-        ffprobe_cmd = [
-            shutil.which('ffprobe'),
-            '-v', 'error',
-            '-show_entries', 'format=duration',
-            '-of', 'json',
-            filepath
-        ]
-        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-        try:
-            return float(json.loads(result.stdout)['format']['duration'])
-        except Exception:
-            return 0
-    except subprocess.CalledProcessError as e:
-        DependencyError(e)
-        return 0
-    except Exception as e:
-        error = f'get_audio_duration() Error: Failed to process: {e}'
-        print(error)
-        return 0
 
 def combine_audio_chapters(id:str)->list[str]|None:
 

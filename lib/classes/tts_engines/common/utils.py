@@ -6,12 +6,11 @@ from huggingface_hub import hf_hub_download
 from safetensors.torch import save_file
 from tqdm import tqdm
 from pathlib import Path
-from pydub import AudioSegment
 from torch import Tensor
 from torch.nn import Module
 
 from lib.classes.vram_detector import VRAMDetector
-from lib.classes.tts_engines.common.audio import normalize_audio
+from lib.classes.tts_engines.common.audio import normalize_audio, get_audio_duration
 from lib import *
 
 _lock = threading.Lock()
@@ -451,9 +450,8 @@ class TTSUtils:
                 progress_bar = gr.Progress(track_tqdm=False)
             with tqdm(total=audio_files_length, unit='files') as t:
                 for idx, file in enumerate(audio_files):
-                    audio = AudioSegment.from_file(file)
                     start_time = sentences_total_time
-                    duration = audio.frame_count() / audio.frame_rate
+                    duration = get_audio_duration(file)
                     end_time = start_time + duration
                     sentences_total_time = end_time
                     start = self._format_timestamp(start_time)
