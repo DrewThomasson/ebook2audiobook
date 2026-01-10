@@ -74,9 +74,9 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         speaker_argument = {}
                         if part.endswith("'"):
                             part = part[:-1]
-                        part = re.sub(not_supported_punc_pattern, ' ', part)
+                        not_supported_punc_pattern = re.compile(r"[.:—]")
+                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         if self._set_voice():
-                            not_supported_punc_pattern = re.compile(r"[.:—]")
                             if self.params['voice_path'] is not None:
                                 proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                                 os.makedirs(proc_dir, exist_ok=True)

@@ -98,13 +98,13 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
                             part = part[:-1]
-                        part = re.sub(not_supported_punc_pattern, ' ', part)
+                        if self.session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                            not_supported_punc_pattern = re.compile(r'\p{P}+')
+                        else:
+                            not_supported_punc_pattern = re.compile(r'["—…¡¿]')
+                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         speaker_argument = {}
                         if self._set_voice():
-                            if self.session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                                not_supported_punc_pattern = re.compile(r'\p{P}+')
-                            else:
-                                not_supported_punc_pattern = re.compile(r'["—…¡¿]')
                             if self.params['voice_path'] is not None:
                                 proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                                 os.makedirs(proc_dir, exist_ok=True)
