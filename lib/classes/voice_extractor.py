@@ -42,7 +42,7 @@ class VoiceExtractor:
             msg = 'Convert to WAV...'
             print(msg)
             if self.is_gui_process:
-                self.progress_bar(100, desc=msg)
+                self.progress_bar(1, desc=msg)
             self.wav_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
             cmd = [
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
@@ -72,7 +72,7 @@ class VoiceExtractor:
             msg = 'Detecting if any background...'
             print(msg)
             if self.is_gui_process:
-                self.progress_bar(100, desc=msg)
+                self.progress_bar(1, desc=msg)
             detector = BackgroundDetector(wav_file = self.wav_file)
             status,report = detector.detect(vad_ratio_thresh = 0.15)
             print(report)
