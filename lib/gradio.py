@@ -1357,8 +1357,9 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_custom_model = visible_gr_group_custom_model
                         else:
                             visible_custom_model = False
-                        return gr.update(visible=visible_custom_model), update_gr_voice_list(id)
-                return gr.update(), gr.update()
+                            session['voice'] = models[session['fine_tuned']]['voice']
+                        return gr.update(visible=visible_custom_model)
+                return gr.update()
 
             def change_gr_custom_model_list(selected:str|None, id:str)->tuple:
                 session = context.get_session(id)
@@ -1815,7 +1816,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_fine_tuned_list.change(
                 fn=change_gr_fine_tuned_list,
                 inputs=[gr_fine_tuned_list, gr_session],
-                outputs=[gr_group_custom_model, gr_voice_list]
+                outputs=[gr_group_custom_model]
+            ).then(
+                fn=update_gr_voice_list,
+                inputs=[gr_session],
+                outputs=[gr_voice_list]
             )
             gr_custom_model_file.upload(
                 fn=change_gr_custom_model_file,
