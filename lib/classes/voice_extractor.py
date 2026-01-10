@@ -141,7 +141,7 @@ class VoiceExtractor:
             print(error)
             return 0
 
-    def _remove_silences(audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
+    def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
         msg = "Removing empty audio..."
         print(msg)
         if self.is_gui_process:
