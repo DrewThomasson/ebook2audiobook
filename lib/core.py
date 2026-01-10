@@ -2148,9 +2148,18 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
             print(error)
             return False
         cmd = [
-            shutil.which('ffmpeg'), '-hide_banner', '-progress pipe:2', '-nostats', '-y',
-            '-safe', '0', '-f', 'concat', '-i', txt_file,
-            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '0', out_file
+            shutil.which('ffmpeg'),
+            '-hide_banner',
+            '-y',
+            '-safe', '0',
+            '-f', 'concat',
+            '-i', txt_file,
+            '-c:a', default_audio_proc_format,
+            '-map_metadata', '-1',
+            '-threads', '0',
+            '-progress', 'pipe:2',
+            '-nostats',
+            out_file
         ]
         proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble')
         if proc_pipe:
