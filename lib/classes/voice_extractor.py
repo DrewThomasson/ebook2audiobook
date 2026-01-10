@@ -159,7 +159,7 @@ class VoiceExtractor:
         for i, chunk in enumerate(chunks):
             final_audio += chunk
             if self.is_gui_process:
-                percent = int((i / max(1, total - 1)) * 100)
+                percent = int(i / max(1, total - 1))
                 self.progress_bar(percent, desc=msg)
         final_audio.export(self.voice_track, format = "wav")
         return final_audio
@@ -202,7 +202,7 @@ class VoiceExtractor:
                         best_score = entropy
                         best_start = start
                     if self.is_gui_process:
-                        percent = int((i / max(1, total_steps - 1)) * 100)
+                        percent = int(i / max(1, total_steps - 1)
                         self.progress_bar(percent, desc=msg)
                 best_end = best_start + window
                 nonsilent = detect_nonsilent(
