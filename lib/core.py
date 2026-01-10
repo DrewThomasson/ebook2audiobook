@@ -1168,7 +1168,7 @@ def get_sentences(text:str, id:str)->list|None:
                 rest = right
         # PASS 4 — merge very short rows (<= 20 chars) with previous
         merged_list = []
-        merge_max_chars = int(max_chars / 4)
+        merge_max_chars = int((max_chars / 2) / 4)
         for s in final_list:
             s = s.strip()
             if not s:
