@@ -114,91 +114,87 @@ class VoiceExtractor:
             error = f'_demucs_voice() error: {str(e)}'
         return False, error
 
-    def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int = 200, keep_silence:int = 300)->None:
-        msg = f"Removing empty audio..."
+    def _remove_silences(audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
+        msg = "Removing empty audio..."
         print(msg)
         if self.is_gui_process:
             self.progress_bar(0, desc=msg)
-        final_audio = AudioSegment.silent(duration = 0)
         chunks = silence.split_on_silence(
             audio,
             min_silence_len = min_silence_len,
             silence_thresh = silence_threshold,
             keep_silence = keep_silence
         )
-        for chunk in chunks:
+        if not chunks:
+            return audio
+        final_audio = AudioSegment.silent(duration = 0)
+        total = len(chunks)
+        for i, chunk in enumerate(chunks):
             final_audio += chunk
             if self.is_gui_process:
-                self.progress_bar(100, desc=msg)
-        final_audio.export(self.voice_track, format = 'wav')
+                percent = int((i / max(1, total - 1)) * 100)
+                self.progress_bar(percent, desc=msg)
+        final_audio.export(self.voice_track, format = "wav")
+        return final_audio
     
-    def _trim_and_clean(self, silence_threshold:int, min_silence_len:int = 200, chunk_size:int = 100)->tuple[bool, str]:
+    def _trim_and_clean(self, silence_threshold:int, min_silence_len:int=200, chunk_size:int=100)->tuple[bool, str]:
         try:
             audio = AudioSegment.from_file(self.voice_track)
+            audio = self._remove_silences(
+                audio,
+                silence_threshold,
+                min_silence_len = min_silence_len
+            )
             total_duration = len(audio)
-            min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000
-            self._remove_silences(audio, silence_threshold)
+            min_required_duration = 20000 if self.session["tts_engine"] == TTS_ENGINES["BARK"] else 12000
+            msg = "Removing long pauses..."
+            print(msg)
+            if self.is_gui_process:
+                self.progress_bar(0, desc=msg)
             if total_duration <= min_required_duration:
-                msg = f"Audio length is correct"
+                msg = f"Audio is only {total_duration / 1000:.2f}s long; skipping audio trimming..."
                 return True, msg
-            else:
-                if total_duration > (min_required_duration * 2):
-                    msg = f"Audio too long. Start rimming..."
-                    print(msg)
+            if total_duration > min_required_duration * 2:
+                window = min_required_duration
+                hop = max(1, window // 4)
+                best_score = -float("inf")
+                best_start = 0
+                total_steps = ((total_duration - window) // hop) + 1
+                min_dbfs = silence_threshold + 10
+                for i, start in enumerate(range(0, total_duration - window + 1, hop)):
+                    chunk = audio[start:start + window]
+                    if chunk.dBFS == float("-inf") or chunk.dBFS < min_dbfs:
+                        continue
+                    samples = np.array(chunk.get_array_of_samples()).astype(np.float32)
+                    if chunk.channels > 1:
+                        samples = samples.reshape((-1, chunk.channels)).mean(axis=1)
+                    spectrum = np.abs(np.fft.rfft(samples))
+                    p = spectrum / (np.sum(spectrum) + 1e-10)
+                    entropy = -np.sum(p * np.log2(p + 1e-10))
+                    if entropy > best_score:
+                        best_score = entropy
+                        best_start = start
                     if self.is_gui_process:
-                        self.progress_bar(0, desc=msg)
-                    window = min_required_duration
-                    hop = max(1, window // 4)
-                    best_var = -float("inf")
-                    best_start = 0
-                    sr = audio.frame_rate
-                    for start in range(0, total_duration - window + 1, hop):
-                        chunk = audio[start : start + window]
-                        samples = np.array(chunk.get_array_of_samples()).astype(float)
-                        spectrum = np.abs(scipy.fftpack.fft(samples))
-                        p = spectrum / (np.sum(spectrum) + 1e-10)
-                        entropy = -np.sum(p * np.log2(p + 1e-10))
-                        if entropy > best_var:
-                            best_var = entropy
-                            best_start = start
-                        total_steps = ((total_duration - window) // hop) + 1
-                        step = start // hop
-                        percent = int((step / total_steps) * 100)
-                        print(f'{msg} {percent}')
-                        if self.is_gui_process:
-                            self.progress_bar(percent, desc=msg)
-                    best_end = best_start + window
-                    msg = (
-                        f"Selected most‐diverse‐spectrum window "
-                        f"{best_start / 1000:.2f}s–{best_end / 1000:.2f}s "
-                        f"(@ entropy {best_var:.2f} bits)"
-                    )
-                    print(msg)
-                    silence_spans = detect_silence(
-                        audio,
-                        min_silence_len = min_silence_len,
-                        silence_thresh = silence_threshold
-                    )
-                    prev_ends = [end for (start, end) in silence_spans if end <= best_start]
-                    if prev_ends:
-                        new_start = max(prev_ends)
-                    else:
-                        new_start = 0
-                    next_starts = [start for (start, end) in silence_spans if start >= best_end]
-                    if next_starts:
-                        new_end = min(next_starts)
-                    else:
-                        new_end = total_duration
-                    best_start, best_end = new_start, new_end
-                else:
-                    best_start = 0
-                    best_end = total_duration
+                        percent = int((i / max(1, total_steps - 1)) * 100)
+                        self.progress_bar(percent, desc=msg)
+                best_end = best_start + window
+                nonsilent = detect_nonsilent(
+                    audio,
+                    min_silence_len = min_silence_len,
+                    silence_thresh = silence_threshold
+                )
+                if nonsilent:
+                    best_start = max(best_start, nonsilent[0][0])
+                    best_end = min(best_end, nonsilent[-1][1])
+            else:
+                best_start = 0
+                best_end = total_duration
             trimmed_audio = audio[best_start:best_end]
-            trimmed_audio.export(self.voice_track, format = 'wav')
-            msg = 'Audio trimmed and cleaned!'
+            trimmed_audio.export(self.voice_track, format = "wav")
+            msg = "Audio trimmed and cleaned!"
             return True, msg
         except Exception as e:
-            error = f'_trim_and_clean() error: {e}'
+            error = f"_trim_and_clean() error: {e}"
             print(error)
             return False, error
 
