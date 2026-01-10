@@ -3,7 +3,7 @@ import os, subprocess, shutil, json, numpy as np, regex as re, scipy.fftpack, so
 from typing import Any
 from io import BytesIO
 from pydub import AudioSegment, silence
-from pydub.silence import detect_silence
+from pydub.silence import detect_nonsilent
 
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 from lib.classes.background_detector import BackgroundDetector
