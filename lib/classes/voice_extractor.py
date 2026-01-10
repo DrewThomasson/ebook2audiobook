@@ -282,35 +282,35 @@ class VoiceExtractor:
             result, msg = self._validate_format()
             print(msg)
             if self.is_gui_process:
-                self.progress_bar((int(result) * 100), desc=msg)
+                self.progress_bar(int(result), desc=msg)
             if result:
                 result, msg = self._convert2wav()
                 print(msg)
                 if self.is_gui_process:
-                    self.progress_bar((int(result) * 100), desc=msg)
+                    self.progress_bar(int(result), desc=msg)
                 if result:
                     result, status, msg = self._detect_background()
                     print(msg)
                     if self.is_gui_process:
-                        self.progress_bar((int(result) * 100), desc=msg)
+                        self.progress_bar(int(result), desc=msg)
                     if result:
                         if status:
                             result, msg = self._demucs_voice()
                             print(msg)
                             if self.is_gui_process:
-                                self.progress_bar((int(result) * 100), desc=msg)
+                                self.progress_bar(int(result), desc=msg)
                         else:
                             self.voice_track = self.wav_file
                         if result:
                             result, msg = self._trim_and_clean(self.silence_threshold)
                             print(msg)
                             if self.is_gui_process:
-                                self.progress_bar((int(result) * 100), desc=msg)
+                                self.progress_bar(int(result), desc=msg)
                             if result:
                                 result, msg = self.normalize_audio()
                                 print(msg)
                                 if self.is_gui_process:
-                                    self.progress_bar((int(result) * 100), desc=msg)
+                                    self.progress_bar(int(result), desc=msg)
         except Exception as e:
             msg = f'extract_voice() error: {e}'
         shutil.rmtree(self.demucs_dir, ignore_errors = True)
