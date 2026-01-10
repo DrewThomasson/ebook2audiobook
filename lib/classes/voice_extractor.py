@@ -23,11 +23,11 @@ class VoiceExtractor:
         self.proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
         self.final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
         self.silence_threshold = -60
-        self.samplerate = models[session['fine_tuned']]['samplerate']
         self.is_gui_process = session['is_gui_process']
         if self.is_gui_process:
             self.progress_bar=gr.Progress(track_tqdm=False)
         models = load_engine_presets(session['tts_engine'])
+        self.samplerate = models[session['fine_tuned']]['samplerate']
 
     def _validate_format(self)->tuple[bool,str]:
         file_extension = os.path.splitext(self.voice_file)[1].lower()
