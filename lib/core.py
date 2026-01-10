@@ -2163,12 +2163,6 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
                     if line.strip().startswith("file"):
                         file_path = line.strip().split("file ")[1].strip().strip("'").strip('"')
                         if os.path.exists(file_path):
-                            result = subprocess.run(
-                                [shutil.which("ffprobe"), "-v", "error",
-                                 "-show_entries", "format=duration",
-                                 "-of", "default=noprint_wrappers=1:nokey=1", file_path],
-                                capture_output=True, text=True
-                            )
                             total_duration += get_audio_duration(file_path)
         except Exception as e:
             error = f'assemble_chunks() open file {txt_file} Error: {e}'
