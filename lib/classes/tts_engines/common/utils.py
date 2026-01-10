@@ -1,10 +1,12 @@
-import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf, numpy as np
+import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf, numpy as np, gradio as gr
 from lib.classes.tts_engines.common.audio import is_audio_data_valid
 
 from typing import Any, Union, Dict
 from huggingface_hub import hf_hub_download
 from safetensors.torch import save_file
+from tqdm import tqdm
 from pathlib import Path
+from pydub import AudioSegment
 from torch import Tensor
 from torch.nn import Module
 
@@ -52,26 +54,112 @@ class TTSUtils:
                 "self._load_xtts_builtin_list() failed"
             ) from error
 
-    def _apply_cuda_policy(self, using_gpu:bool, enough_vram:bool, seed:int)->None:
-        torch.cuda.manual_seed_all(0)
-        if using_gpu and enough_vram:
-            torch.cuda.set_per_process_memory_fraction(0.95)
-            torch.backends.cudnn.enabled = True
-            torch.backends.cudnn.benchmark = True
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.allow_tf32 = True
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-            torch.cuda.manual_seed_all(seed)
-        else:
-            torch.cuda.set_per_process_memory_fraction(0.7)
-            torch.backends.cudnn.enabled = True
-            torch.backends.cudnn.benchmark = False
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.allow_tf32 = False
-            torch.backends.cuda.matmul.allow_tf32 = False
-            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-            torch.cuda.manual_seed_all(seed)
+    def _apply_gpu_policy(self, enough_vram: bool, seed: int) -> torch.dtype:
+        using_gpu = self.session['device'] != devices['CPU']['proc']
+        device = self.session['device']
+        torch.manual_seed(seed)
+        has_cuda = hasattr(torch, "cuda") and torch.cuda.is_available()
+        has_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+        has_xpu = hasattr(torch, "xpu") and torch.xpu.is_available()
+        is_rocm = bool(getattr(torch.version, "hip", None))
+        is_cuda = bool(getattr(torch.version, "cuda", None)) and not is_rocm
+        quality_mode = bool(using_gpu and enough_vram)
+        amp_dtype = torch.float32
+        # Default matmul precision (PyTorch >= 2.2)
+        try:
+            torch.set_float32_matmul_precision("high" if quality_mode else "medium")
+        except Exception:
+            pass
+        if not using_gpu:
+            return amp_dtype
+        # ================= CUDA / Jetson / ROCm =================
+        if has_cuda:
+            try:
+                torch.cuda.manual_seed_all(seed)
+            except Exception:
+                pass
+            # Memory pressure handling
+            if hasattr(torch.cuda, "set_per_process_memory_fraction"):
+                try:
+                    torch.cuda.set_per_process_memory_fraction(0.95 if quality_mode else 0.70)
+                except Exception:
+                    pass
+            # cuDNN base config
+            if hasattr(torch.backends, "cudnn"):
+                torch.backends.cudnn.enabled = True
+                torch.backends.cudnn.deterministic = True
+                torch.backends.cudnn.benchmark = bool(quality_mode)
+            # Detect Jetson (ARM + CUDA)
+            is_jetson = False
+            try:
+                is_jetson = is_cuda and torch.cuda.get_device_properties(0).multi_processor_count < 32
+            except Exception:
+                is_jetson = False
+            # TF32 handling
+            tf32_ok = False
+            if is_cuda and not is_jetson:
+                try:
+                    cc_major = torch.cuda.get_device_capability(0)[0]
+                    tf32_ok = bool(cc_major >= 8 and quality_mode)
+                except Exception:
+                    tf32_ok = False
+            # Disable TF32 explicitly on Jetson + ROCm
+            if is_jetson or is_rocm:
+                tf32_ok = False
+            # Apply matmul / cuDNN flags
+            if hasattr(torch.backends, "cuda") and hasattr(torch.backends.cuda, "matmul"):
+                try:
+                    torch.backends.cuda.matmul.allow_tf32 = tf32_ok
+                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = bool(quality_mode)
+                except Exception:
+                    pass
+            if hasattr(torch.backends, "cudnn"):
+                try:
+                    torch.backends.cudnn.allow_tf32 = tf32_ok
+                except Exception:
+                    pass
+            # AMP dtype selection
+            # Jetson + ROCm → FP16 only (BF16 unstable / slow)
+            if is_jetson or is_rocm:
+                amp_dtype = torch.float16
+            else:
+                if quality_mode:
+                    try:
+                        if hasattr(torch.cuda, "is_bf16_supported") and torch.cuda.is_bf16_supported():
+                            amp_dtype = torch.bfloat16
+                        else:
+                            amp_dtype = torch.float16
+                    except Exception:
+                        amp_dtype = torch.float16
+                else:
+                    amp_dtype = torch.float16
+
+            return amp_dtype
+        # ================= Apple MPS =================
+        if has_mps:
+            try:
+                torch.mps.manual_seed(seed)
+            except Exception:
+                pass
+            try:
+                if quality_mode and hasattr(torch.backends.mps, "is_bf16_supported") and torch.backends.mps.is_bf16_supported():
+                    amp_dtype = torch.bfloat16
+                else:
+                    amp_dtype = torch.float16
+            except Exception:
+                amp_dtype = torch.float16
+            return amp_dtype
+        # ================= Intel XPU =================
+        if has_xpu:
+            try:
+                torch.xpu.manual_seed_all(seed)
+            except Exception:
+                try:
+                    torch.xpu.manual_seed(seed)
+                except Exception:
+                    pass
+            return torch.bfloat16
+        return amp_dtype
 
     def _load_api(self, key:str, model_path:str)->Any:
         try:
@@ -259,7 +347,7 @@ class TTSUtils:
         elif isinstance(audio_data,list):
             return torch.tensor(audio_data,dtype=torch.float32)
         else:
-            raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
+            raise TypeError(f"_tensor_type() srror: Unsupported type for audio_data: {type(audio_data)}")
             
     def _get_resampler(self,orig_sr:int,target_sr:int)->torchaudio.transforms.Resample:
         key=(orig_sr,target_sr)
@@ -288,32 +376,103 @@ class TTSUtils:
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
         return tmp_path
 
-    def _append_sentence2vtt(self, sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
+    def _set_voice(self)->bool:
+        self.params['voice_path'] = (
+            self.session['voice'] if self.session['voice'] is not None 
+            else self.models[self.session['fine_tuned']]['voice']
+        )
+        if self.params['voice_path'] is not None:
+            self.speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['voice_path']))
+            if self.params['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['voice_path']:
+                self.session['voice'] = self.params['voice_path'] = self._check_xtts_builtin_speakers(self.params['voice_path'], self.speaker)
+                if not self.params['voice_path']:
+                    msg = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
+                    print(msg)
+                    return False
+        return True
 
-        def format_timestamp(seconds:float)->str:
-            m, s = divmod(seconds, 60)
-            h, m = divmod(m, 60)
-            return f"{int(h):02}:{int(m):02}:{s:06.3f}"
+    def _convert_sml(self, sml:str)->bool:
+        if sml == TTS_SML['break']['token']:
+            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+            break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
+            self.audio_segments.append(break_tensor.clone())
+        elif TTS_SML['pause']['match'].fullmatch(sml):
+            m = TTS_SML['pause']['match'].fullmatch(sml)
+            duration = float(m.group(1)) if m.group(1) is not None else None
+            if duration is not None:
+                silence_time = float(duration)
+            else:
+                silence_time = float(np.random.uniform(1.0, 1.6) * 100) / 100
+            pause_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 1.0 to 1.6 seconds
+            self.audio_segments.append(pause_tensor.clone())
+        elif TTS_SML['voice']['match'].fullmatch(sml):
+            self.session['voice'] = os.path.abspath(TTS_SML['voice']['match'].fullmatch(sml).group(1))
+            if os.path.exists(self.session['voice']):
+                if not self.set_voice():
+                    return False
+            else:
+                error = f"_convert_sml() error: voice {self.session['voice']} does not exist!"
+                print(error)
+                return False
+        return True
 
+    def _format_timestamp(self, seconds: float) -> str:
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        return f"{int(h):02}:{int(m):02}:{s:06.3f}"
+
+    def _build_vtt_file(self, all_sentences: list, audio_dir: str, vtt_path: str) -> bool:
         try:
-            index = 1
-            if os.path.exists(path):
-                with open(path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        if "-->" in line:
-                            index += 1
-            if index > 1 and "resume_check" in sentence_obj and sentence_obj["resume_check"] < index:
-                return index  # Already written
-            if not os.path.exists(path):
-                with open(path, "w", encoding="utf-8") as f:
-                    f.write("WEBVTT\n\n")
-            with open(path, "a", encoding="utf-8") as f:
-                start = format_timestamp(float(sentence_obj["start"]))
-                end = format_timestamp(float(sentence_obj["end"]))
-                text = re.sub(r'\s+', ' ', default_sml_pattern.sub('', str(sentence_obj["text"]))).strip()
-                f.write(f"{start} --> {end}\n{text}\n\n")
-            return index + 1
+            print('VTT file creation started...')
+            sentences_dir = Path(audio_dir)
+            audio_files = sorted(
+                sentences_dir.glob(f"*.{default_audio_proc_format}"),
+                key=lambda p: int(p.stem)
+            )
+            all_sentences_length = len(all_sentences)
+            audio_files_length = len(audio_files)
+            expected_indices = list(range(audio_files_length))
+            actual_indices = [int(p.stem) for p in audio_files]
+            if actual_indices != expected_indices:
+                missing = sorted(set(expected_indices) - set(actual_indices))
+                raise ValueError(
+                    f"Missing audio sentence files: {missing}"
+                )
+                return False
+            if audio_files_length != all_sentences_length:
+                raise ValueError(
+                    f"Audio/sentence mismatch: {audio_files_length} audio files vs "
+                    f"{all_sentences_length} sentences"
+                )
+                return False
+            sentences_total_time = 0.0
+            vtt_blocks = []
+            if self.session['is_gui_process']:
+                progress_bar = gr.Progress(track_tqdm=False)
+            with tqdm(total=audio_files_length, unit='files') as t:
+                for idx, file in enumerate(audio_files):
+                    audio = AudioSegment.from_file(file)
+                    start_time = sentences_total_time
+                    duration = audio.frame_count() / audio.frame_rate
+                    end_time = start_time + duration
+                    sentences_total_time = end_time
+                    start = self._format_timestamp(start_time)
+                    end = self._format_timestamp(end_time)
+                    text = re.sub(
+                        r'\s+',
+                        ' ',
+                        default_sml_pattern.sub('', str(all_sentences[idx]))
+                    ).strip()
+                    vtt_blocks.append(f"{start} --> {end}\n{text}\n")
+                    if self.session['is_gui_process']:
+                        total_progress = (t.n + 1) / audio_files_length
+                        progress_bar(progress=total_progress, desc=f'Writing vtt idx {idx}')
+                    t.update(1)
+            with open(vtt_path, "w", encoding="utf-8") as f:
+                f.write("WEBVTT\n\n")
+                f.write("\n".join(vtt_blocks))
+            return True
         except Exception as e:
-            error = f"self._append_sentence2vtt() error: {e}"
+            error = f'_build_vtt_file(): {e}'
             print(error)
             return False

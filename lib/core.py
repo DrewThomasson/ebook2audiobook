@@ -1166,6 +1166,19 @@ def get_sentences(text:str, id:str)->list|None:
                     break
                 final_list.append(left)
                 rest = right
+        # PASS 4 — merge very short rows (<= 20 chars) with previous
+        merged_list = []
+        merge_max_chars = int((max_chars / 2) / 4)
+        for s in final_list:
+            s = s.strip()
+            if not s:
+                continue
+            clean_len = len(strip_sml(s))
+            if merged_list and clean_len <= merge_max_chars:
+                merged_list[-1] = f"{merged_list[-1]} {s}"
+            else:
+                merged_list.append(s)
+        final_list = merged_list
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
@@ -1363,7 +1376,7 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             phrase = lc['past'].format(hour=n2w(h), minute=n2w(mnt)) if mnt != 0 else lc['oclock'].format(hour=n2w(h))
         else:
             minute_to_hour = 60 - mnt
-            phrase = lc['to'].format(next_hour=n2w(next_hour), minute=n2w(minute_to_hour))
+            phrase = lc['to'].format(next_hour=n2w(next_hour), minute_to_hour=n2w(minute_to_hour))
         # Append seconds if present
         if sec is not None and sec > 0:
             second_phrase = lc['second'].format(second=n2w(sec))
@@ -1551,17 +1564,17 @@ def foreign2latin(text, base_lang):
     return out
 
 def filter_sml(text:str)->str:
-	text = TTS_SML['###']['match'].sub(' ‡pause‡ ', text)
-	text = TTS_SML['break']['match'].sub(' ‡break‡ ', text)
-	text = TTS_SML['pause']['match'].sub(
-		lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
-		text
-	)
-	text = TTS_SML['voice']['match'].sub(
-		lambda m: f' ‡voice:{m.group(1)}‡ ',
-		text
-	)
-	return text
+    text = TTS_SML['###']['match'].sub(' ‡pause‡ ', text)
+    text = TTS_SML['break']['match'].sub(' ‡break‡ ', text)
+    text = TTS_SML['pause']['match'].sub(
+        lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
+        text
+    )
+    text = TTS_SML['voice']['match'].sub(
+        lambda m: f' ‡voice:{m.group(1)}‡ ',
+        text
+    )
+    return text
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
@@ -1691,8 +1704,9 @@ def convert_chapters2audio(id:str)->bool:
                 progress_bar = gr.Progress(track_tqdm=False)
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
+                final_sentences = []
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                    sentence_idx = 0
+                    idx_target = 0
                     sml_values = {
                         v['token']
                         for v in TTS_SML.values()
@@ -1702,7 +1716,7 @@ def convert_chapters2audio(id:str)->bool:
                         chapter_idx = c
                         chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
                         sentences = session['chapters'][c]
-                        start = sentence_idx
+                        start = idx_target
                         if c in missing_chapters:
                             msg = f'********* Recovering missing block {c} *********'
                             print(msg)
@@ -1711,22 +1725,25 @@ def convert_chapters2audio(id:str)->bool:
                             print(msg)
                         msg = f'Block {chapter_idx} containing {len(sentences)} sentences…'
                         print(msg)
-                        for sentence_idx, sentence in enumerate(sentences):
+                        for idx, sentence in enumerate(sentences):
                             if session['cancellation_requested']:
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return False
-                            if sentence_idx in missing_sentences or sentence_idx >= resume_sentence:
-                                sentence = sentence.strip()
-                                if len(sentence) > 2 and any(c.isalnum() for c in sentence):
-                                    if sentence_idx in missing_sentences:
-                                        msg = f'********* Recovering missing sentence {sentence_idx} *********'
-                                    elif resume_sentence == sentence_idx and resume_sentence > 0:
+                            sentence = sentence.strip()
+                            if any(c.isalnum() for c in sentence):
+                                if not any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) or (any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) and idx == len(sentences) - 1):
+                                    final_sentences.append(sentence)
+                                if idx in missing_sentences or idx >= resume_sentence:
+                                    if idx in missing_sentences:
+                                        msg = f'********* Recovering missing sentence {idx} *********'
+                                    elif resume_sentence == idx and resume_sentence > 0:
                                         msg = f'********* Resuming from sentence {resume_sentence} ********'
                                         print(msg)
-                                    success = tts_manager.convert_sentence2audio(sentence_idx, sentence) if sentence else True
+                                    success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
                                     if not success:
                                         return False
+                            idx_target = idx
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
                                 progress_bar(progress=total_progress, desc=ebook_name)
@@ -1735,10 +1752,10 @@ def convert_chapters2audio(id:str)->bool:
                             msg = f' : {sentence}'
                             print(msg)    
                             t.update(1)
-                        end = sentence_idx
+                        end = (chapter_idx + 1) * len(sentences)
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
-                        if chapter_idx in missing_chapters or sentence_idx > resume_sentence:
+                        if chapter_idx in missing_chapters or idx_target >= resume_sentence:
                             if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
                                 msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                                 print(msg)
@@ -1746,7 +1763,7 @@ def convert_chapters2audio(id:str)->bool:
                                 msg = 'combine_audio_sentences() failed!'
                                 print(msg)
                                 return False
-            return True
+            return tts_manager.create_sentences2vtt(final_sentences)
         except Exception as e:
             DependencyError(e)
             return False
@@ -1755,7 +1772,7 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
     try:
         session = context.get_session(id)
         if session:
-            audio_file = os.path.join(session['chapters_dir'], file)
+            chapter_audio_file = os.path.join(session['chapters_dir'], file)
             chapters_dir_sentences = session['chapters_dir_sentences']
             batch_size = 1024
             start = int(start)
@@ -1771,7 +1788,7 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
             selected_files = [
                 os.path.join(chapters_dir_sentences, f)
                 for f in sentences_ordered
-                if start <= int(os.path.splitext(f)[0]) <= end
+                if int(start) <= int(os.path.splitext(f)[0]) <= int(end)
             ]
             if not selected_files:
                 print('No audio files found in the specified range.')
@@ -1782,7 +1799,7 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
                 chunk_list = []
                 total_batches = (len(selected_files)+batch_size-1)//batch_size
                 iterator = tqdm(range(0,len(selected_files),batch_size),total=total_batches,desc="Preparing batches",unit="batch")
-                for idx,i in enumerate(iterator):
+                for idx, i in enumerate(iterator):
                     if session.get('is_gui_progress') and gr_progress:
                         gr_progress((idx+1)/total_batches,"Preparing batches")
                     if session['cancellation_requested']:
@@ -1808,13 +1825,14 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
                     print(error)
                     return False
                 final_list = os.path.join(temp_dir, 'sentences_final.txt')
+                print(f'final_list: {final_list}')
                 with open(final_list, 'w') as f:
                     for _, chunk_path, _ in chunk_list:
                         f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
                 if session.get('is_gui_progress') and gr_progress:
                     gr_progress(1.0,"Final merge")
-                if assemble_chunks(final_list, audio_file, is_gui_process):
-                    msg = f'********* Combined block audio file saved in {audio_file}'
+                if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
+                    msg = f'********* Combined block audio file saved in {chapter_audio_file}'
                     print(msg)
                     return True
                 else:
@@ -1825,28 +1843,29 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
         DependencyError(e)
     return False
 
-def combine_audio_chapters(id:str)->list[str]|None:
-    def get_audio_duration(filepath:str)->float:
+def get_audio_duration(filepath:str)->float:
+    try:
+        ffprobe_cmd = [
+            shutil.which('ffprobe'),
+            '-v', 'error',
+            '-show_entries', 'format=duration',
+            '-of', 'json',
+            filepath
+        ]
+        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
         try:
-            ffprobe_cmd = [
-                shutil.which('ffprobe'),
-                '-v', 'error',
-                '-show_entries', 'format=duration',
-                '-of', 'json',
-                filepath
-            ]
-            result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-            try:
-                return float(json.loads(result.stdout)['format']['duration'])
-            except Exception:
-                return 0
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
+            return float(json.loads(result.stdout)['format']['duration'])
+        except Exception:
             return 0
-        except Exception as e:
-            error = f'get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}'
-            print(error)
-            return 0
+    except subprocess.CalledProcessError as e:
+        DependencyError(e)
+        return 0
+    except Exception as e:
+        error = f'get_audio_duration() Error: Failed to process: {e}'
+        print(error)
+        return 0
+
+def combine_audio_chapters(id:str)->list[str]|None:
 
     def generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
         try:
@@ -2144,16 +2163,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
                     if line.strip().startswith("file"):
                         file_path = line.strip().split("file ")[1].strip().strip("'").strip('"')
                         if os.path.exists(file_path):
-                            result = subprocess.run(
-                                [shutil.which("ffprobe"), "-v", "error",
-                                 "-show_entries", "format=duration",
-                                 "-of", "default=noprint_wrappers=1:nokey=1", file_path],
-                                capture_output=True, text=True
-                            )
-                            try:
-                                total_duration += float(result.stdout.strip())
-                            except ValueError:
-                                pass
+                            total_duration += get_audio_duration(file_path)
         except Exception as e:
             error = f'assemble_chunks() open file {txt_file} Error: {e}'
             print(error)
@@ -2510,7 +2520,7 @@ def finalize_audiobook(id:str)->tuple:
     session = context.get_session(id)
     if session:
         if session['chapters'] is not None:
-            if convert_chapters2audio(session['id']):
+            if convert_chapters2audio(id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
                 exported_files = combine_audio_chapters(session['id'])               
@@ -2520,7 +2530,7 @@ def finalize_audiobook(id:str)->tuple:
                     if not session['is_gui_process']:
                         process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
                         shutil.rmtree(process_dir, ignore_errors=True)
-                    info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
+                    info_session = f"\n*********** Session: {id} **************\nIn headless mode, Store it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
                     print(info_session)
                     return progress_status, True
                 else:
