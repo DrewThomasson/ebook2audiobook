@@ -2169,10 +2169,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
                                  "-of", "default=noprint_wrappers=1:nokey=1", file_path],
                                 capture_output=True, text=True
                             )
-                            try:
-                                total_duration += float(result.stdout.strip())
-                            except ValueError:
-                                pass
+                            total_duration += get_audio_duration(file_path)
         except Exception as e:
             error = f'assemble_chunks() open file {txt_file} Error: {e}'
             print(error)
