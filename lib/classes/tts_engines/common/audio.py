@@ -75,10 +75,11 @@ def get_audio_duration(filepath:str)->float:
         except Exception:
             return 0
     except subprocess.CalledProcessError as e:
-        DependencyError(e)
+        error = f'get_audio_duration() Error: Failed to process: {e}'
+        print(error)
         return 0
     except Exception as e:
-        error = f"get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}"
+        error = f'get_audio_duration() Error: Failed to process: {e}'
         print(error)
         return 0
 
@@ -102,7 +103,7 @@ def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_proc
         '-ar', str(samplerate),
         '-y', output_file
     ]
-    proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(input_file), msg='Normalize')
+    proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(str(input_file)), msg='Normalize')
     if proc_pipe:
         return True
     else:
@@ -123,25 +124,3 @@ def is_audio_data_valid(audio_data:Any)->bool:
     except ImportError:
         pass
     return False
-    
-def get_audio_duration(filepath:str)->float:
-    try:
-        ffprobe_cmd = [
-            shutil.which('ffprobe'),
-            '-v', 'error',
-            '-show_entries', 'format=duration',
-            '-of', 'json',
-            filepath
-        ]
-        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-        try:
-            return float(json.loads(result.stdout)['format']['duration'])
-        except Exception:
-            return 0
-    except subprocess.CalledProcessError as e:
-        DependencyError(e)
-        return 0
-    except Exception as e:
-        error = f'get_audio_duration() Error: Failed to process: {e}'
-        print(error)
-        return 0

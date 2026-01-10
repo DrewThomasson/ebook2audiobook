@@ -99,6 +99,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             )
                         else:
                             with torch.autocast(
+                                device_type=device,
                                 dtype=self.amp_dtype
                             ):
                                 result = self.engine.synthesize(
@@ -199,6 +200,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                     )
                                 else:
                                     with torch.autocast(
+                                        device_type=device,
                                         dtype=self.amp_dtype
                                     ):
                                         audio_part = self.engine.tts(

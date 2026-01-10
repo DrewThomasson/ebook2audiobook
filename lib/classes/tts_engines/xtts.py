@@ -123,6 +123,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                     )
                                 else:
                                     with torch.autocast(
+                                        device_type=device,
                                         dtype=self.amp_dtype
                                     ):
                                         result = self.engine.inference(
