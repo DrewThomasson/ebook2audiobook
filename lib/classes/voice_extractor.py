@@ -34,11 +34,15 @@ class VoiceExtractor:
         if file_extension in voice_formats:
             msg = 'Input file is valid'
             return True,msg
-        error = f'Unsupported file format: {file_extension}. Supported formats are: {", ".join(voice_formats)}'
+        error = f'Unsupported format: {file_extension}'
         return False,error
 
     def _convert2wav(self)->tuple[bool, str]:
         try:
+            msg = 'Convert to WAV...'
+            print(msg)
+            if self.is_gui_process:
+                self.progress_bar(100, desc=msg)
             self.wav_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
             cmd = [
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
@@ -47,29 +51,25 @@ class VoiceExtractor:
             proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self._get_audio_duration(self.voice_file), msg='Demux')
             if not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
                 error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
-                return False, error
             else:
                 if proc:
-                    msg = 'Conversion to .wav format for processing successful'
+                    msg = 'WAV conversion successful'
                     return True, msg
                 else:
-                    error = f'_convert2wav() SubprocessPipe Error.'
-                    return False, error
+                    error = f'_convert2wav() SubprocessPipe error'
         except subprocess.CalledProcessError as e:
             try:
                 stderr_text = e.stderr.decode('utf-8', errors='replace')
             except Exception:
                 stderr_text = str(e)
             error = f'_convert2wav ffmpeg.Error: {stderr_text}'
-            raise ValueError(error)
         except Exception as e:
             error = f'_convert2wav() error: {e}'
-            raise ValueError(error)
         return False, error
 
     def _detect_background(self)->tuple[bool,bool,str]:
         try:
-            msg = 'Analyzing if any background noise or music...'
+            msg = 'Detecting if any background...'
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(100, desc=msg)
@@ -77,9 +77,9 @@ class VoiceExtractor:
             status,report = detector.detect(vad_ratio_thresh = 0.15)
             print(report)
             if status:
-                msg = 'Background noise or music detected. Proceeding voice extraction...'
+                msg = 'Background detected...'
             else:
-                msg = 'No background noise or music detected. Skipping separation...'
+                msg = 'No background detected'
             return True, status, msg
         except Exception as e:
             error = f'_detect_background() error: {e}'
@@ -98,7 +98,7 @@ class VoiceExtractor:
             ]
             proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self._get_audio_duration(self.wav_file), msg='Denoising')
             if proc:
-                msg = 'Voice track isolation successful'
+                msg = 'Voice exctracted!'
                 return True, msg
             else:
                 error = f'_demucs_voice() SubprocessPipe Error.'
@@ -109,12 +109,16 @@ class VoiceExtractor:
                 f'stderr: {e.stderr}'
             )
         except FileNotFoundError:
-            error = f'_demucs_voice() subprocess FileNotFoundError error: The "demucs" command was not found. Ensure it is installed and in PATH.'
+            error = f'_demucs_voice() error: The "demucs" command was not found'
         except Exception as e:
-            error = f'_demucs_voice() subprocess Exception error: {str(e)}'
+            error = f'_demucs_voice() error: {str(e)}'
         return False, error
 
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int = 200, keep_silence:int = 300)->None:
+        msg = f"Removing empty audio..."
+        print(msg)
+        if self.is_gui_process:
+            self.progress_bar(0, desc=msg)
         final_audio = AudioSegment.silent(duration = 0)
         chunks = silence.split_on_silence(
             audio,
@@ -124,6 +128,8 @@ class VoiceExtractor:
         )
         for chunk in chunks:
             final_audio += chunk
+            if self.is_gui_process:
+                self.progress_bar(100, desc=msg)
         final_audio.export(self.voice_track, format = 'wav')
     
     def _trim_and_clean(self, silence_threshold:int, min_silence_len:int = 200, chunk_size:int = 100)->tuple[bool, str]:
@@ -131,18 +137,16 @@ class VoiceExtractor:
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)
             min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000
-            msg = f"Removing long pauses..."
-            print(msg)
-            if self.is_gui_process:
-                self.progress_bar(100, desc=msg)
             self._remove_silences(audio, silence_threshold)
             if total_duration <= min_required_duration:
-                msg = f"Audio is only {total_duration / 1000:.2f}s long; skipping audio trimming..."
+                msg = f"Audio length is correct"
                 return True, msg
             else:
                 if total_duration > (min_required_duration * 2):
-                    msg = f"Audio longer than the max allowed. Proceeding to audio trimming..."
+                    msg = f"Audio too long. Start rimming..."
                     print(msg)
+                    if self.is_gui_process:
+                        self.progress_bar(0, desc=msg)
                     window = min_required_duration
                     hop = max(1, window // 4)
                     best_var = -float("inf")
@@ -223,6 +227,10 @@ class VoiceExtractor:
 
     def normalize_audio(self, src_file:str=None, proc_file:str=None, dst_file:str=None)->tuple[bool, str]:
         try:
+            msg = 'Normalize audio...'
+            print(msg)
+            if self.is_gui_process:
+                self.progress_bar(0, desc=msg)
             src_file = src_file or self.voice_track
             proc_file = proc_file or self.proc_voice_file
             dst_file = dst_file or self.final_voice_file
@@ -249,7 +257,6 @@ class VoiceExtractor:
                 proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self._get_audio_duration(src_file), msg='Normalize')
                 if not os.path.exists(proc_file) or os.path.getsize(proc_file) == 0:
                     error = f'normalize_audio() error: {proc_file} was not created or is empty.'
-                    return False, error
                 else:
                     if proc:
                         if proc_file != dst_file:
@@ -259,7 +266,6 @@ class VoiceExtractor:
                         return True, msg
                     else:
                         error = f'normalize_audio() SubprocessPipe Error.'
-                        return False, error
             except subprocess.CalledProcessError as e:
                 stderr = getattr(e, "stderr", None)
                 if isinstance(stderr, (bytes, bytearray)):
@@ -267,13 +273,11 @@ class VoiceExtractor:
                 else:
                     stderr_msg = str(e)
                 error = f'normalize_audio() ffmpeg.Error: {stderr_msg}'
-                return False, error
         except FileNotFoundError as e:
             error = f'normalize_audio() FileNotFoundError: {e}. Input file or FFmpeg PATH not found!'
-            return False, error
         except Exception as e:
             error = f'normalize_audio() error: {e}'
-            return False, error
+        return False, error
 
     def extract_voice(self)->tuple[bool,str|None]:
         result = 0
