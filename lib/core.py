@@ -1166,6 +1166,19 @@ def get_sentences(text:str, id:str)->list|None:
                     break
                 final_list.append(left)
                 rest = right
+        # PASS 4 — merge very short rows (<= 20 chars) with previous
+        merged_list = []
+        merge_max_chars = int(max_chars / 4)
+        for s in final_list:
+            s = s.strip()
+            if not s:
+                continue
+            clean_len = len(strip_sml(s))
+            if merged_list and clean_len <= merge_max_chars:
+                merged_list[-1] = f"{merged_list[-1]} {s}"
+            else:
+                merged_list.append(s)
+        final_list = merged_list
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
@@ -1719,7 +1732,7 @@ def convert_chapters2audio(id:str)->bool:
                                 return False
                             sentence = sentence.strip()
                             if any(c.isalnum() for c in sentence):
-                                if not any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) or (any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) and idx == len(sentences)):
+                                if not any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) or (any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) and idx == len(sentences) - 1):
                                     final_sentences.append(sentence)
                                 if idx in missing_sentences or idx >= resume_sentence:
                                     if idx in missing_sentences:
@@ -2156,10 +2169,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
                                  "-of", "default=noprint_wrappers=1:nokey=1", file_path],
                                 capture_output=True, text=True
                             )
-                            try:
-                                total_duration += float(result.stdout.strip())
-                            except ValueError:
-                                pass
+                            total_duration += get_audio_duration(file_path)
         except Exception as e:
             error = f'assemble_chunks() open file {txt_file} Error: {e}'
             print(error)
@@ -2526,7 +2536,7 @@ def finalize_audiobook(id:str)->tuple:
                     if not session['is_gui_process']:
                         process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
                         shutil.rmtree(process_dir, ignore_errors=True)
-                    info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
+                    info_session = f"\n*********** Session: {id} **************\nIn headless mode, Store it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
                     print(info_session)
                     return progress_status, True
                 else:

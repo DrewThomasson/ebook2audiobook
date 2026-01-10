@@ -8,6 +8,8 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
+            self.speaker = None
+            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
@@ -16,15 +18,11 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"latent_embedding":{}}
             self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
-            using_gpu = self.session['device'] != devices['CPU']['proc']
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
             #np.random.seed(seed)
-            torch.manual_seed(seed)
-            has_cuda = (torch.version.cuda is not None and torch.cuda.is_available())
-            if has_cuda:
-                self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
+            self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
         except Exception as e:
@@ -65,9 +63,9 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
-            speaker = None
             if self.engine:
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
+                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 sentence_parts = re.split(default_sml_pattern, sentence)
                 self.audio_segments = []
                 for part in sentence_parts:
@@ -90,8 +88,8 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                             else:
                                 msg = 'Computing speaker latents…'
                                 print(msg)
-                                if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
+                                if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
+                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
                                 else:
                                     self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['voice_path']], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)  
                                 self.params['latent_embedding'][self.params['voice_path']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
@@ -114,16 +112,28 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                 if self.session.get(key) is not None
                             }
                             with torch.no_grad():
-                                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                                 self.engine.to(device)
-                                result = self.engine.inference(
-                                    text=part,
-                                    language=self.session['language_iso1'],
-                                    gpt_cond_latent=self.params['gpt_cond_latent'],
-                                    speaker_embedding=self.params['speaker_embedding'],
-                                    **fine_tuned_params
-                                )
-                                self.engine.to('cpu')
+                                if device == devices['CPU']['proc']:
+                                    result = self.engine.inference(
+                                        text=part,
+                                        language=self.session['language_iso1'],
+                                        gpt_cond_latent=self.params['gpt_cond_latent'],
+                                        speaker_embedding=self.params['speaker_embedding'],
+                                        **fine_tuned_params
+                                    )
+                                else:
+                                    with torch.autocast(
+                                        dtype=self.amp_dtype
+                                    ):
+                                        result = self.engine.inference(
+                                            text=part,
+                                            language=self.session['language_iso1'],
+                                            gpt_cond_latent=self.params['gpt_cond_latent'],
+                                            speaker_embedding=self.params['speaker_embedding'],
+                                            **fine_tuned_params
+                                        )
+                                self.engine.to(devices['CPU']['proc'])
+    
                             audio_part = result.get('wav')
                             if is_audio_data_valid(audio_part):
                                 src_tensor = self._tensor_type(audio_part)

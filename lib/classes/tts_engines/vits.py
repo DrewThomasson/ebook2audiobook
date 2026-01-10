@@ -8,6 +8,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
+            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
@@ -16,16 +17,11 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones":{}}
             self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
-            using_gpu = self.session['device'] != devices['CPU']['proc']
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
             #np.random.seed(seed)
-            torch.manual_seed(seed)
-            has_cuda = (torch.version.cuda is not None and torch.cuda.is_available())
-            if has_cuda:
-                self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
-            self.xtts_speakers = self._load_xtts_builtin_list()
+            self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
         except Exception as e:
@@ -66,7 +62,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
-            speaker = None
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
@@ -100,12 +95,22 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                                 with torch.no_grad():
                                     self.engine.to(device)
-                                    self.engine.tts_to_file(
-                                        text=part,
-                                        file_path=tmp_in_wav,
-                                        **speaker_argument
-                                    )
-                                    self.engine.to('cpu')
+                                    if device == devices['CPU']['proc']:
+                                        self.engine.tts_to_file(
+                                            text=part,
+                                            file_path=tmp_in_wav,
+                                            **speaker_argument
+                                        )
+                                    else:
+                                        with torch.autocast(
+                                            dtype=self.amp_dtype
+                                        ):
+                                            self.engine.tts_to_file(
+                                                text=part,
+                                                file_path=tmp_in_wav,
+                                                **speaker_argument
+                                            )
+                                    self.engine.to(devices['CPU']['proc'])
                                 if self.params['voice_path'] in self.params['semitones'].keys():
                                     semitones = self.params['semitones'][self.params['voice_path']]
                                 else:
@@ -149,7 +154,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                         source_wav=source_wav,
                                         target_wav=target_wav
                                     )
-                                    self.engine_zs.to('cpu')
+                                    self.engine_zs.to(devices['CPU']['proc'])
                                 else:
                                     error = f'Engine {self.tts_zs_key} is None'
                                     print(error)
@@ -163,11 +168,20 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             else:
                                 with torch.no_grad():
                                     self.engine.to(device)
-                                    audio_part = self.engine.tts(
-                                        text=part,
-                                        **speaker_argument
-                                    )
-                                    self.engine.to('cpu')
+                                    if device == devices['CPU']['proc']:
+                                        audio_part = self.engine.tts(
+                                            text=part,
+                                            **speaker_argument
+                                        )
+                                    else:
+                                        with torch.autocast(
+                                            dtype=self.amp_dtype
+                                        ):
+                                            audio_part = self.engine.tts(
+                                                text=part,
+                                                **speaker_argument
+                                            )
+                                    self.engine.to(devices['CPU']['proc'])
                             if is_audio_data_valid(audio_part):
                                 src_tensor = self._tensor_type(audio_part)
                                 part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
