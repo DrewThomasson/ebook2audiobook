@@ -8,6 +8,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
+            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.pth_voice_file = None
             self.resampler_cache = {}
@@ -20,7 +21,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             #random.seed(seed)
             #np.random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
-            self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -51,7 +51,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
-            speaker = None
             if self.engine:
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']

@@ -8,6 +8,8 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
+            self.speaker = None
+            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
@@ -61,7 +63,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
-            speaker = None
             if self.engine:
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
@@ -87,8 +88,8 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                             else:
                                 msg = 'Computing speaker latents…'
                                 print(msg)
-                                if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
+                                if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
+                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
                                 else:
                                     self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['voice_path']], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)  
                                 self.params['latent_embedding'][self.params['voice_path']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']

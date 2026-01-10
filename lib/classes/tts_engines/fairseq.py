@@ -8,6 +8,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
+            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
@@ -21,7 +22,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             #random.seed(seed)
             #np.random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
-            self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
         except Exception as e:
@@ -54,7 +54,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
-            speaker = None
             if self.engine:
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']

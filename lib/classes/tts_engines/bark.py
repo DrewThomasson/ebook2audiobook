@@ -8,6 +8,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
+            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.pth_voice_file = None
             self.resampler_cache = {}
@@ -20,7 +21,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             #random.seed(seed)
             #np.random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
-            self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -123,7 +123,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
  
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
-            speaker = None
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
@@ -155,21 +154,21 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 CAPITALIZATION for emphasis of a word
                                 [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                             '''
-                            if speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
+                            if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
                                 bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
                             else:
                                 bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
                                 """
-                                if not self._check_bark_npz(self.params['voice_path'], bark_dir, speaker):
+                                if not self._check_bark_npz(self.params['voice_path'], bark_dir, self.speaker):
                                     error = 'Could not create pth voice file!'
                                     print(error)
                                     return False
                                 """
-                            pth_voice_dir = os.path.join(bark_dir, speaker)
-                            pth_voice_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
+                            pth_voice_dir = os.path.join(bark_dir, self.speaker)
+                            pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
                             self.engine.synthesizer.voice_dir = pth_voice_dir
                             tts_dyn_params = {}
-                            if not os.path.exists(pth_voice_file) or speaker not in self.engine.speakers:
+                            if not os.path.exists(pth_voice_file) or self.speaker not in self.engine.speakers:
                                 tts_dyn_params['speaker_wav'] = self.params['voice_path']
                             fine_tuned_params = {
                                 key.removeprefix("bark_"): cast_type(self.session[key])
@@ -184,7 +183,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 result = self.engine.synthesize(
                                     part,
                                     #speaker_wav=self.params['voice_path'],
-                                    speaker=speaker,
+                                    speaker=self.speaker,
                                     voice_dir=pth_voice_dir,
                                     **fine_tuned_params
                                 )
@@ -193,7 +192,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 if device == devices['CPU']['proc']:
                                     audio_part = self.engine.tts(
                                         text=part,
-                                        speaker=speaker,
+                                        speaker=self.speaker,
                                         voice_dir=pth_voice_dir,
                                         **tts_dyn_params,
                                         **fine_tuned_params
@@ -204,7 +203,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                     ):
                                         audio_part = self.engine.tts(
                                             text=part,
-                                            speaker=speaker,
+                                            speaker=self.speaker,
                                             voice_dir=pth_voice_dir,
                                             **tts_dyn_params,
                                             **fine_tuned_params
