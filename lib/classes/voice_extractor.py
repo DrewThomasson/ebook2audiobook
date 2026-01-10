@@ -1,11 +1,4 @@
-import os
-import numpy as np
-import regex as re
-import scipy.fftpack
-import soundfile as sf
-import subprocess
-import shutil
-import json
+import os, subprocess, shutil, json, numpy as np, regex as re, scipy.fftpack, soundfile as sf, gradio as gr
 
 from typing import Any
 from io import BytesIO
@@ -30,8 +23,11 @@ class VoiceExtractor:
         self.proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
         self.final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
         self.silence_threshold = -60
-        models = load_engine_presets(session['tts_engine'])
         self.samplerate = models[session['fine_tuned']]['samplerate']
+        self.is_gui_process = session['is_gui_process']
+        if self.is_gui_process:
+            self.progress_bar=gr.Progress(track_tqdm=False)
+        models = load_engine_presets(session['tts_engine'])
 
     def _validate_format(self)->tuple[bool,str]:
         file_extension = os.path.splitext(self.voice_file)[1].lower()
@@ -48,7 +44,7 @@ class VoiceExtractor:
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
                 '-ac', '1', '-y', self.wav_file
             ]   
-            proc = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_file), msg='Convert')
+            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self._get_audio_duration(self.voice_file), msg='Demux')
             if not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
                 error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
                 return False, error
@@ -73,8 +69,10 @@ class VoiceExtractor:
 
     def _detect_background(self)->tuple[bool,bool,str]:
         try:
-            msg = 'Detecting any background noise or music...'
+            msg = 'Analyzing if any background noise or music...'
             print(msg)
+            if self.is_gui_process:
+                self.progress_bar(100, desc=msg)
             detector = BackgroundDetector(wav_file = self.wav_file)
             status,report = detector.detect(vad_ratio_thresh = 0.15)
             print(report)
@@ -82,13 +80,14 @@ class VoiceExtractor:
                 msg = 'Background noise or music detected. Proceeding voice extraction...'
             else:
                 msg = 'No background noise or music detected. Skipping separation...'
-            return True,status,msg
+            return True, status, msg
         except Exception as e:
             error = f'_detect_background() error: {e}'
-            raise ValueError(error)
-            return False,False,error
+            print(error)
+            return False, False, error
 
     def _demucs_voice(self)->tuple[bool, str]:
+        error = '_demucs_voice() error'
         try:
             cmd = [
                 "demucs",
@@ -97,26 +96,23 @@ class VoiceExtractor:
                 "--out", self.output_dir,
                 self.wav_file
             ]
-            proc = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.wav_file), msg='Denoising')
+            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self._get_audio_duration(self.wav_file), msg='Denoising')
             if proc:
                 msg = 'Voice track isolation successful'
                 return True, msg
             else:
                 error = f'_demucs_voice() SubprocessPipe Error.'
-                return False, error
         except subprocess.CalledProcessError as e:
             error = (
                 f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'
                 f'stdout: {e.output}\n\n'
                 f'stderr: {e.stderr}'
             )
-            return False, error
         except FileNotFoundError:
             error = f'_demucs_voice() subprocess FileNotFoundError error: The "demucs" command was not found. Ensure it is installed and in PATH.'
-            return False, error
         except Exception as e:
             error = f'_demucs_voice() subprocess Exception error: {str(e)}'
-            return False, error
+        return False, error
 
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int = 200, keep_silence:int = 300)->None:
         final_audio = AudioSegment.silent(duration = 0)
@@ -137,6 +133,8 @@ class VoiceExtractor:
             min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000
             msg = f"Removing long pauses..."
             print(msg)
+            if self.is_gui_process:
+                self.progress_bar(100, desc=msg)
             self._remove_silences(audio, silence_threshold)
             if total_duration <= min_required_duration:
                 msg = f"Audio is only {total_duration / 1000:.2f}s long; skipping audio trimming..."
@@ -159,6 +157,12 @@ class VoiceExtractor:
                         if entropy > best_var:
                             best_var = entropy
                             best_start = start
+                        total_steps = ((total_duration - window) // hop) + 1
+                        step = start // hop
+                        percent = int((step / total_steps) * 100)
+                        print(f'{msg} {percent}')
+                        if self.is_gui_process:
+                            self.progress_bar(percent, desc=msg)
                     best_end = best_start + window
                     msg = (
                         f"Selected most‐diverse‐spectrum window "
@@ -191,7 +195,8 @@ class VoiceExtractor:
             return True, msg
         except Exception as e:
             error = f'_trim_and_clean() error: {e}'
-            raise ValueError(error)
+            print(error)
+            return False, error
 
     def _get_audio_duration(self, filepath:str)->float:
         try:
@@ -241,7 +246,7 @@ class VoiceExtractor:
                 '-y', proc_file
             ]
             try:
-                proc = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(src_file), msg='Normalize')
+                proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self._get_audio_duration(src_file), msg='Normalize')
                 if not os.path.exists(proc_file) or os.path.getsize(proc_file) == 0:
                     error = f'normalize_audio() error: {proc_file} was not created or is empty.'
                     return False, error
@@ -271,31 +276,42 @@ class VoiceExtractor:
             return False, error
 
     def extract_voice(self)->tuple[bool,str|None]:
-        success = False
+        result = 0
         msg = None
         try:
-            success, msg = self._validate_format()
+            result, msg = self._validate_format()
             print(msg)
-            if success:
-                success, msg = self._convert2wav()
+            if self.is_gui_process:
+                self.progress_bar((int(result) * 100), desc=msg)
+            if result:
+                result, msg = self._convert2wav()
                 print(msg)
-                if success:
-                    success, status, msg = self._detect_background()
+                if self.is_gui_process:
+                    self.progress_bar((int(result) * 100), desc=msg)
+                if result:
+                    result, status, msg = self._detect_background()
                     print(msg)
-                    if success:
+                    if self.is_gui_process:
+                        self.progress_bar((int(result) * 100), desc=msg)
+                    if result:
                         if status:
-                            success, msg = self._demucs_voice()
+                            result, msg = self._demucs_voice()
                             print(msg)
+                            if self.is_gui_process:
+                                self.progress_bar((int(result) * 100), desc=msg)
                         else:
                             self.voice_track = self.wav_file
-                        if success:
-                            success, msg = self._trim_and_clean(self.silence_threshold)
+                        if result:
+                            result, msg = self._trim_and_clean(self.silence_threshold)
                             print(msg)
-                            if success:
-                                success, msg = self.normalize_audio()
+                            if self.is_gui_process:
+                                self.progress_bar((int(result) * 100), desc=msg)
+                            if result:
+                                result, msg = self.normalize_audio()
                                 print(msg)
+                                if self.is_gui_process:
+                                    self.progress_bar((int(result) * 100), desc=msg)
         except Exception as e:
             msg = f'extract_voice() error: {e}'
-            raise ValueError(msg)
         shutil.rmtree(self.demucs_dir, ignore_errors = True)
-        return success, msg
+        return result, msg
