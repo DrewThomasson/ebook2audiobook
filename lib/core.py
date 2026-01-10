@@ -1168,7 +1168,7 @@ def get_sentences(text:str, id:str)->list|None:
                 rest = right
         # PASS 4 — merge very short rows (<= 20 chars) with previous
         merged_list = []
-        merge_max_chars = int(max_chars / 4)
+        merge_max_chars = int((max_chars / 2) / 4)
         for s in final_list:
             s = s.strip()
             if not s:
@@ -1843,29 +1843,29 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
         DependencyError(e)
     return False
 
-def combine_audio_chapters(id:str)->list[str]|None:
-
-    def get_audio_duration(filepath:str)->float:
+def get_audio_duration(filepath:str)->float:
+    try:
+        ffprobe_cmd = [
+            shutil.which('ffprobe'),
+            '-v', 'error',
+            '-show_entries', 'format=duration',
+            '-of', 'json',
+            filepath
+        ]
+        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
         try:
-            ffprobe_cmd = [
-                shutil.which('ffprobe'),
-                '-v', 'error',
-                '-show_entries', 'format=duration',
-                '-of', 'json',
-                filepath
-            ]
-            result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-            try:
-                return float(json.loads(result.stdout)['format']['duration'])
-            except Exception:
-                return 0
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
+            return float(json.loads(result.stdout)['format']['duration'])
+        except Exception:
             return 0
-        except Exception as e:
-            error = f'get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}'
-            print(error)
-            return 0
+    except subprocess.CalledProcessError as e:
+        DependencyError(e)
+        return 0
+    except Exception as e:
+        error = f'get_audio_duration() Error: Failed to process: {e}'
+        print(error)
+        return 0
+
+def combine_audio_chapters(id:str)->list[str]|None:
 
     def generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
         try:
@@ -2163,12 +2163,6 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
                     if line.strip().startswith("file"):
                         file_path = line.strip().split("file ")[1].strip().strip("'").strip('"')
                         if os.path.exists(file_path):
-                            result = subprocess.run(
-                                [shutil.which("ffprobe"), "-v", "error",
-                                 "-show_entries", "format=duration",
-                                 "-of", "default=noprint_wrappers=1:nokey=1", file_path],
-                                capture_output=True, text=True
-                            )
                             total_duration += get_audio_duration(file_path)
         except Exception as e:
             error = f'assemble_chunks() open file {txt_file} Error: {e}'
