@@ -1150,7 +1150,7 @@ def get_sentences(text:str, id:str)->list|None:
             rest = s
             while rest:
                 clean_len = len(strip_sml(rest))
-                if clean_len <= max_chars:
+                if clean_len <= max_chars + 20:
                     final_list.append(rest.strip())
                     break
                 cut = rest[:max_chars + 1]
