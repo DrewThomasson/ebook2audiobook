@@ -2518,7 +2518,7 @@ def finalize_audiobook(id:str)->tuple:
                     if not session['is_gui_process']:
                         process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
                         shutil.rmtree(process_dir, ignore_errors=True)
-                    info_session = f"\n*********** Session: {id} **************\nIn headless mode, Store it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
+                    info_session = f"\n*********** Session: {id} **************\nIn headless mode, store it in case of interruption, crash, or reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option."
                     print(info_session)
                     return progress_status, True
                 else:
