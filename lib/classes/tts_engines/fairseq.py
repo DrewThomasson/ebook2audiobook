@@ -91,6 +91,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                         )
                                     else:
                                         with torch.autocast(
+                                            device_type=device,
                                             dtype=self.amp_dtype
                                         ):
                                             self.engine.tts_to_file(
@@ -163,6 +164,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                         )
                                     else:
                                         with torch.autocast(
+                                            device_type=device,
                                             dtype=self.amp_dtype
                                         ):
                                             audio_part = self.engine.tts(

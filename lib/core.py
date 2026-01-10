@@ -2148,9 +2148,18 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
             print(error)
             return False
         cmd = [
-            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
-            '-safe', '0', '-f', 'concat', '-i', txt_file,
-            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '0', out_file
+            shutil.which('ffmpeg'),
+            '-hide_banner',
+            '-y',
+            '-safe', '0',
+            '-f', 'concat',
+            '-i', txt_file,
+            '-c:a', default_audio_proc_format,
+            '-map_metadata', '-1',
+            '-threads', '0',
+            '-progress', 'pipe:2',
+            '-nostats',
+            out_file
         ]
         proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble')
         if proc_pipe:
@@ -2509,7 +2518,7 @@ def finalize_audiobook(id:str)->tuple:
                     if not session['is_gui_process']:
                         process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
                         shutil.rmtree(process_dir, ignore_errors=True)
-                    info_session = f"\n*********** Session: {id} **************\nIn headless mode, Store it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
+                    info_session = f"\n*********** Session: {id} **************\nIn headless mode, store it in case of interruption, crash, or reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option."
                     print(info_session)
                     return progress_status, True
                 else:

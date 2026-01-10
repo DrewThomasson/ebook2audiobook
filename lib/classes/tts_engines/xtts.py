@@ -9,7 +9,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             self.cache_dir = tts_dir
             self.speakers_path = None
             self.speaker = None
-            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
@@ -123,6 +122,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                     )
                                 else:
                                     with torch.autocast(
+                                        device_type=device,
                                         dtype=self.amp_dtype
                                     ):
                                         result = self.engine.inference(

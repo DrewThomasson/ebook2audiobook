@@ -346,7 +346,7 @@ class TTSUtils:
         elif isinstance(audio_data,list):
             return torch.tensor(audio_data,dtype=torch.float32)
         else:
-            raise TypeError(f"_tensor_type() srror: Unsupported type for audio_data: {type(audio_data)}")
+            raise TypeError(f"_tensor_type() error: Unsupported type for audio_data: {type(audio_data)}")
             
     def _get_resampler(self,orig_sr:int,target_sr:int)->torchaudio.transforms.Resample:
         key=(orig_sr,target_sr)
@@ -407,7 +407,7 @@ class TTSUtils:
         elif TTS_SML['voice']['match'].fullmatch(sml):
             self.session['voice'] = os.path.abspath(TTS_SML['voice']['match'].fullmatch(sml).group(1))
             if os.path.exists(self.session['voice']):
-                if not self.set_voice():
+                if not self._set_voice():
                     return False
             else:
                 error = f"_convert_sml() error: voice {self.session['voice']} does not exist!"
@@ -434,15 +434,12 @@ class TTSUtils:
             actual_indices = [int(p.stem) for p in audio_files]
             if actual_indices != expected_indices:
                 missing = sorted(set(expected_indices) - set(actual_indices))
-                raise ValueError(
-                    f"Missing audio sentence files: {missing}"
-                )
+                error = f"Missing audio sentence files: {missing}"
+                print(error)
                 return False
             if audio_files_length != all_sentences_length:
-                raise ValueError(
-                    f"Audio/sentence mismatch: {audio_files_length} audio files vs "
-                    f"{all_sentences_length} sentences"
-                )
+                error = f"Audio/sentence mismatch: {audio_files_length} audio files vs {all_sentences_length} sentences"
+                print(error)
                 return False
             sentences_total_time = 0.0
             vtt_blocks = []
@@ -451,7 +448,7 @@ class TTSUtils:
             with tqdm(total=audio_files_length, unit='files') as t:
                 for idx, file in enumerate(audio_files):
                     start_time = sentences_total_time
-                    duration = get_audio_duration(file)
+                    duration = get_audio_duration(str(file))
                     end_time = start_time + duration
                     sentences_total_time = end_time
                     start = self._format_timestamp(start_time)
