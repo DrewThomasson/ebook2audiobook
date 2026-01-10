@@ -141,27 +141,30 @@ class VoiceExtractor:
             print(error)
             return 0
 
-    def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
-        msg = "Removing empty audio..."
+    def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int=200)->AudioSegment:
+        msg = "Collecting voice segments..."
         print(msg)
         if self.is_gui_process:
-            self.progress_bar(0, desc=msg)
-        chunks = silence.split_on_silence(
+            self.progress_bar(0.0, desc=msg)
+        silences = detect_silence(
             audio,
             min_silence_len = min_silence_len,
-            silence_thresh = silence_threshold,
-            keep_silence = keep_silence
+            silence_thresh = silence_threshold
         )
-        if not chunks:
+        if not silences:
             return audio
-        final_audio = AudioSegment.silent(duration = 0)
-        total = len(chunks)
-        for i, chunk in enumerate(chunks):
-            final_audio += chunk
+        final_audio = AudioSegment.silent(duration=0)
+        prev_end = 0
+        total = len(silences)
+        for i, (start, end) in enumerate(silences):
+            if start > prev_end:
+                final_audio += audio[prev_end:start]
+            prev_end = end
             if self.is_gui_process:
-                percent = int(i / max(1, total - 1))
-                self.progress_bar(percent, desc=msg)
-        final_audio.export(self.voice_track, format = "wav")
+                progress = i / max(1, total - 1)
+                self.progress_bar(progress, desc=msg)
+        if prev_end < len(audio):
+            final_audio += audio[prev_end:]
         return final_audio
     
     def _trim_and_clean(self, silence_threshold:int, min_silence_len:int=200, chunk_size:int=100)->tuple[bool, str]:
