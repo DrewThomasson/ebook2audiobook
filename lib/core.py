@@ -47,7 +47,7 @@ from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
-from lib.classes.tts_engines.common import get_audio_duration
+from lib.classes.tts_engines.common.audio import get_audio_duration
 
 from lib import *
 
