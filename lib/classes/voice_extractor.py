@@ -103,6 +103,7 @@ class VoiceExtractor:
             proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self._get_audio_duration(self.wav_file), msg=msg)
             if proc:
                 msg = 'Voice exctracted!'
+                sys.exit(1)
                 return True, msg
             else:
                 error = f'_demucs_voice() SubprocessPipe Error.'
