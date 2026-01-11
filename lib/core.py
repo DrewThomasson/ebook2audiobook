@@ -839,7 +839,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
             soup = BeautifulSoup(raw_html, 'html.parser')
             body = soup.body
             if not body or not body.get_text(strip=True):
-                msg = 'No body text found. Skip to next doc…'
+                msg = 'No body found. Skip to next doc…'
                 print(msg)
                 return []
             # Skip known non-chapter types
@@ -854,7 +854,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                 'appendix', 'bibliography', 'copyright-page', 'landmark'
             }
             if any(part in epub_type for part in excluded):
-                msg = 'Doc not part of any chapter text. Skip to next doc…'
+                msg = 'No body part. Skip to next doc…'
                 print(msg)
                 return []
             # remove scripts/styles
