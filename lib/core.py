@@ -755,8 +755,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     error = f'Stanza model initialization error: {e}'
                     return error, None
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
-            msg = 'Analyzing numbers, maths signs, dates and time to convert in words…'
-            print(msg)
             for doc in all_docs:
                 sentences_list = filter_chapter(doc, id, stanza_nlp, is_num2words_compat)
                 if sentences_list is None:
@@ -816,6 +814,8 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
             return None
 
     try:
+        msg = f'Parsing doc {}'
+        print(msg)
         session = context.get_session(id)
         if session:
             lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
@@ -984,10 +984,20 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                             lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
                             text
                         )
-            #text = roman2number(text)
-            #text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-            #text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+            msg = 'Convert romans to numbers…'
+            print(msg)
+            text = roman2number(text)
+            msg = 'Convert dates and time to words…'
+            print(msg)
+            text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+            msg = 'Convert numbers, maths signs to words…'
+            print(msg)
+            text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+            msg = 'Normalize text...'
+            print(msg)
             text = normalize_text(text, lang, lang_iso1, tts_engine)
+            msg = f'Get sentences...'
+            print(msg)
             sentences = get_sentences(text, id)
             if sentences and len(sentences) == 0:
                 error = 'No sentences found!'
