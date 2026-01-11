@@ -1772,6 +1772,10 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=None
             )
             gr_voice_file.upload(
+                fn=disable_components,
+                inputs=None,
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+            ).then(
                 fn=change_gr_voice_file,
                 inputs=[gr_voice_file, gr_session],
                 outputs=[gr_voice_list]
@@ -1779,6 +1783,10 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=lambda: gr.update(value=None),
                 inputs=None,
                 outputs=[gr_voice_file]
+            ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             )
             gr_voice_list.change(
                 fn=change_gr_voice_list,
