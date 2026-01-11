@@ -133,7 +133,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                             **fine_tuned_params
                                         )
                                 self.engine.to(devices['CPU']['proc'])
-    
                             audio_part = result.get('wav')
                             if is_audio_data_valid(audio_part):
                                 src_tensor = self._tensor_type(audio_part)

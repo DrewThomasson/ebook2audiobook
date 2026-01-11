@@ -2269,7 +2269,8 @@ def convert_ebook_batch(args:dict)->tuple:
 def convert_ebook(args:dict)->tuple:
     try:
         if args.get('event') == 'blocks_confirmed':
-            return finalize_audiobook(args['id'])
+            progress_status, passed = finalize_audiobook(args['id'])
+            return progress_status, passed
         else:
             global context        
             error = None
@@ -2474,10 +2475,10 @@ def convert_ebook(args:dict)->tuple:
                                                 session['toc'], session['chapters'] = get_chapters(epubBook, id)
                                                 if session['chapters'] is not None:
                                                     #if session['chapters_preview']:
-                                                    #    return 'confirm_blocks', True
+                                                    #   return 'confirm_blocks', True
                                                     #else:
-                                                    #    return finalize_audiobook(id)
-                                                    return finalize_audiobook(id)
+                                                    progress_status, passed = finalize_audiobook(id)
+                                                    return progress_status, passed
                                                 else:
                                                     error = 'get_chapters() failed! '+session['toc']
                                             else:
