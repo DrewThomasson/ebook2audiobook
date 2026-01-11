@@ -79,18 +79,18 @@ class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
 
-    def start_session(self, id:str)->bool:
+    def start_session(self, session_id:str)->bool:
         with self.lock:
-            session = context.get_session(id)
+            session = context.get_session(session_id)
             if session['status'] is None:
                 session['status'] = 'ready'
                 return True
         return False
 
-    def end_session(self, id:str, socket_hash:str)->None:
+    def end_session(self, session_id:str, socket_hash:str)->None:
         active_sessions.discard(socket_hash)
         with self.lock:
-            context.sessions.pop(id, None)
+            context.sessions.pop(session_id, None)
 
 class SessionContext:
     def __init__(self):
@@ -118,10 +118,10 @@ class SessionContext:
             print(error)
             return None
 
-    def set_session(self, id:str)->Any:
-        self.sessions[id] = self._recursive_proxy({
+    def set_session(self, session_id:str)->Any:
+        self.sessions[session_id] = self._recursive_proxy({
             "script_mode": NATIVE,
-            "id": id,
+            "id": session_id,
             "tab_id": None,
             "is_gui_process": False,
             "free_vram_gb": 0,
@@ -199,15 +199,15 @@ class SessionContext:
             "playback_time": 0,
             "playback_volume": 0
         }, manager=self.manager)
-        return self.sessions[id]
+        return self.sessions[session_id]
 
-    def get_session(self, id:str)->Any:
-        if id in self.sessions:
-            return self.sessions[id]
+    def get_session(self, session_id:str)->Any:
+        if session_id in self.sessions:
+            return self.sessions[session_id]
         return False
 
     def find_id_by_hash(self, socket_hash:str)->str|None:
-        for id, session in self.sessions.items():
+        for idx, session in self.sessions.items():
             if socket_hash in session:
                 return session['id']
         return None
@@ -220,9 +220,9 @@ class JSONDictProxyEncoder(json.JSONEncoder):
             return list(o)
         return super().default(o)
 
-def prepare_dirs(src:str, id:str)->bool:
+def prepare_dirs(src:str, session_id:str)->bool:
     try:
-        session = context.get_session(id)
+        session = context.get_session(session_id)
         if session:
             resume = False
             os.makedirs(os.path.join(models_dir,'tts'), exist_ok=True)
@@ -296,8 +296,8 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         print(error)
         return False
 
-def extract_custom_model(file_src:str, id, required_files:list)->str|None:
-    session = context.get_session(id)
+def extract_custom_model(file_src:str, session_id, required_files:list)->str|None:
+    session = context.get_session(session_id)
     if session:
         model_path = None
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
@@ -479,8 +479,34 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
         print(error)
         return False
 
-def convert2epub(id:str)-> bool:
-    session = context.get_session(id)
+def save_json_chapters(session_id:str, filepath:str)->bool:
+    try:
+        session = context.get_session(session_id)
+        if session:
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(
+                    session["chapters"],
+                    f,
+                    ensure_ascii=False,
+                    indent=2
+                )
+            return True
+    except Exception as e:
+        error = f'save_json_chapters error: {e}'
+        print(error)
+    return False
+
+def load_json_chapters(filepath:str)->list:
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        error = f'load_json_chapters error: {e}'
+        print(error)
+        return []
+
+def convert2epub(session_id:str)-> bool:
+    session = context.get_session(session_id)
     if session:
         if session['cancellation_requested']:
             msg = 'Cancel requested'
@@ -652,9 +678,9 @@ def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
                 return alt
     return None
 
-def get_cover(epubBook:EpubBook, id:str)->bool|str:
+def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
     try:
-        session = context.get_session(id)
+        session = context.get_session(session_id)
         if session:
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
@@ -683,7 +709,7 @@ def get_cover(epubBook:EpubBook, id:str)->bool|str:
         DependencyError(e)
         return False
 
-def get_chapters(epubBook:EpubBook, id:str)->tuple[Any,Any]:
+def get_chapters(epubBook:EpubBook, session_id:str)->tuple[Any,Any]:
     try:
         msg = r'''
 *******************************************************************************
@@ -696,7 +722,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 *******************************************************************************
         '''
         print(msg)
-        session = context.get_session(id)
+        session = context.get_session(session_id)
         if session:
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
@@ -756,7 +782,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     return error, None
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
             for doc_idx, doc in enumerate(all_docs):
-                sentences_list = filter_chapter(doc_idx, doc, id, stanza_nlp, is_num2words_compat)
+                sentences_list = filter_chapter(doc_idx, doc, session_id, stanza_nlp, is_num2words_compat)
                 if sentences_list is None:
                     break
                 elif len(sentences_list) > 0:
@@ -771,7 +797,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return error, None
 
-def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
+def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -827,7 +853,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
     try:
         msg = f'----------\nParsing doc {idx}'
         print(msg)
-        session = context.get_session(id)
+        session = context.get_session(session_id)
         if session:
             lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
             heading_tags = [f'h{i}' for i in range(1, 5)]
@@ -1007,7 +1033,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
             text = normalize_text(text, lang, lang_iso1, tts_engine)
             msg = f'Get sentences…'
             print(msg)
-            sentences = get_sentences(text, id)
+            sentences = get_sentences(text, session_id)
             if sentences and len(sentences) == 0:
                 error = 'No sentences found!'
                 print(error)
@@ -1019,7 +1045,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
         DependencyError(error)
         return None
 
-def get_sentences(text:str, id:str)->list|None:
+def get_sentences(text:str, session_id:str)->list|None:
 
     def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
@@ -1102,7 +1128,7 @@ def get_sentences(text:str, id:str)->list|None:
                 yield buffer
 
     try:
-        session = context.get_session(id)
+        session = context.get_session(session_id)
         if not session:
             return None
         lang, tts_engine = session['language'], session['tts_engine']
@@ -1700,8 +1726,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = ' '.join(text.split())
     return text
 
-def convert_chapters2audio(id:str)->bool:
-    session = context.get_session(id)
+def convert_chapters2audio(session_id:str)->bool:
+    session = context.get_session(session_id)
     if session:
         try:
             if session['cancellation_requested']:
@@ -1812,7 +1838,7 @@ def convert_chapters2audio(id:str)->bool:
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
                         if chapter_idx in missing_chapters or idx_target >= resume_sentence:
-                            if combine_audio_sentences(chapter_audio_file, int(start), int(end), id):
+                            if combine_audio_sentences(chapter_audio_file, int(start), int(end), session_id):
                                 msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                                 print(msg)
                             else:
@@ -1824,9 +1850,9 @@ def convert_chapters2audio(id:str)->bool:
             DependencyError(e)
             return False
 
-def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
+def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
     try:
-        session = context.get_session(id)
+        session = context.get_session(session_id)
         if session:
             chapter_audio_file = os.path.join(session['chapters_dir'], file)
             chapters_dir_sentences = session['chapters_dir_sentences']
@@ -1899,7 +1925,7 @@ def combine_audio_sentences(file:str, start:int, end:int, id:str)->bool:
         DependencyError(e)
     return False
 
-def combine_audio_chapters(id:str)->list[str]|None:
+def combine_audio_chapters(session_id:str)->list[str]|None:
 
     def generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
         try:
@@ -2072,7 +2098,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
             return False
 
     try:
-        session = context.get_session(id)
+        session = context.get_session(session_id)
         if session:
             chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
@@ -2258,8 +2284,8 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(TTS_SML['pause']['token'], '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
 
-def delete_unused_tmp_dirs(web_dir:str, days:int, id:str)->None:
-    session = context.get_session(id)
+def delete_unused_tmp_dirs(web_dir:str, days:int, session_id:str)->None:
+    session = context.get_session(session_id)
     if session:
         dir_array = [
             tmp_dir,
@@ -2329,7 +2355,7 @@ def convert_ebook(args:dict)->tuple:
         else:
             global context        
             error = None
-            id = None
+            session_id = None
             info_session = None
             if args['language'] is not None:
                 if not os.path.splitext(args['ebook'])[1]:
@@ -2355,12 +2381,12 @@ def convert_ebook(args:dict)->tuple:
                     print(error)
                     return error, False
                 if args['session'] is not None:
-                    id = str(args['session'])
-                    session = context.get_session(id)
+                    session_id = str(args['session'])
+                    session = context.get_session(session_id)
                 else:
-                    id = str(uuid.uuid4())
-                    session = context.set_session(id)
-                    if not context_tracker.start_session(id):
+                    session_id = str(uuid.uuid4())
+                    session = context.set_session(session_id)
+                    if not context_tracker.start_session(session_id):
                         error = 'convert_ebook() error: Session initialization failed!'
                         print(error)
                         return error, False                        
@@ -2408,7 +2434,7 @@ def convert_ebook(args:dict)->tuple:
                         if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
                             try:
                                 if analyze_uploaded_file(session['custom_model'], default_engine_settings[session['tts_engine']]['internal']['files']):
-                                    model = extract_custom_model(session['custom_model'], id, default_engine_settings[session['tts_engine']]['files'])
+                                    model = extract_custom_model(session['custom_model'], session_id, default_engine_settings[session['tts_engine']]['files'])
                                     if model is not None:
                                         session['custom_model'] = model
                                     else:
@@ -2446,7 +2472,7 @@ def convert_ebook(args:dict)->tuple:
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                         session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
-                        if prepare_dirs(args['ebook'], id):
+                        if prepare_dirs(args['ebook'], session_id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
                             msg_extra = ''
@@ -2495,7 +2521,7 @@ def convert_ebook(args:dict)->tuple:
                                     show_alert({"type": "warning", "msg": msg})
                                 print(msg.replace('<br/>','\n'))
                                 session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
-                                if convert2epub(id):
+                                if convert2epub(session_id):
                                     epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                     if epubBook:
                                         metadata = dict(session['metadata'])
@@ -2525,14 +2551,14 @@ def convert_ebook(args:dict)->tuple:
                                             session.get('language') in default_engine_settings[session['tts_engine']].get('languages', {})
                                         )
                                         if is_lang_in_tts_engine:
-                                            session['cover'] = get_cover(epubBook, id)
+                                            session['cover'] = get_cover(epubBook, session_id)
                                             if session['cover']:
-                                                session['toc'], session['chapters'] = get_chapters(epubBook, id)
+                                                session['toc'], session['chapters'] = get_chapters(epubBook, session_id)
                                                 if session['chapters'] is not None:
                                                     #if session['chapters_preview']:
                                                     #   return 'confirm_blocks', True
                                                     #else:
-                                                    progress_status, passed = finalize_audiobook(id)
+                                                    progress_status, passed = finalize_audiobook(session_id)
                                                     return progress_status, passed
                                                 else:
                                                     error = 'get_chapters() failed! '+session['toc']
@@ -2560,11 +2586,11 @@ def convert_ebook(args:dict)->tuple:
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def finalize_audiobook(id:str)->tuple:
-    session = context.get_session(id)
+def finalize_audiobook(session_id:str)->tuple:
+    session = context.get_session(session_id)
     if session:
         if session['chapters'] is not None:
-            if convert_chapters2audio(id):
+            if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
                 exported_files = combine_audio_chapters(session['id'])               
@@ -2574,7 +2600,7 @@ def finalize_audiobook(id:str)->tuple:
                     if not session['is_gui_process']:
                         process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
                         shutil.rmtree(process_dir, ignore_errors=True)
-                    info_session = f"\n*********** Session: {id} **************\nIn headless mode, store it in case of interruption, crash, or reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option."
+                    info_session = f"\n*********** Session: {session_id} **************\nIn headless mode, store it in case of interruption, crash, or reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option."
                     print(info_session)
                     return progress_status, True
                 else:
@@ -2604,8 +2630,8 @@ def cleanup_session(req:gr.Request)->None:
         session_id = context.find_id_by_hash(socket_hash)
         context_tracker.end_session(session_id, socket_hash)
 
-def reset_session(id:str)->None:
-    session = context.get_session(id)
+def reset_session(session_id:str)->None:
+    session = context.get_session(session_id)
     data = {
         "ebook": None,
         "toc": None,
@@ -2670,9 +2696,9 @@ def show_alert(state:dict)->None:
             elif state['type'] == 'success':
                 gr.Success(state['msg'])
 
-def alert_exception(error:str, id:str|None)->None:
-    if id is not None:
-        session = context.get_session(id)
+def alert_exception(error:str, session_id:str|None)->None:
+    if session_id is not None:
+        session = context.get_session(session_id)
         if session:
             session['status'] = 'ready'
     print(error)
