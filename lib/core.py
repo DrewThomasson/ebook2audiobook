@@ -1093,6 +1093,7 @@ def get_sentences(text:str, id:str)->list|None:
             for v in TTS_SML.values()
             if isinstance(v, dict) and isinstance(v.get('token'), str)
         ) if 'TTS_SML' in globals() else ()
+
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
@@ -1102,6 +1103,7 @@ def get_sentences(text:str, id:str)->list|None:
         if not hard_list:
             hard_list = [text.strip()]
         hard_list = [s.strip() for s in hard_list if s.strip()]
+
         # PASS 2 — soft punctuation
         soft_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
@@ -1142,6 +1144,7 @@ def get_sentences(text:str, id:str)->list|None:
                     soft_list.append(s)
             else:
                 soft_list.append(s)
+
         # PASS 3 — space split (last resort)
         final_list = []
         for s in soft_list:
@@ -1167,7 +1170,8 @@ def get_sentences(text:str, id:str)->list|None:
                     break
                 final_list.append(left)
                 rest = right
-        # PASS 4 — merge very short rows (<= 20 chars) with previous
+
+        # PASS 4 — merge very short rows
         merged_list = []
         merge_max_chars = int((max_chars / 2) / 4)
         for s in final_list:
@@ -1176,10 +1180,12 @@ def get_sentences(text:str, id:str)->list|None:
                 continue
             clean_len = len(strip_sml(s))
             if merged_list and clean_len <= merge_max_chars:
-                merged_list[-1] = f"{merged_list[-1]} {s}"
+                sep = TTS_SML['pause']['token'] if len(merged_list) == 1 else " "
+                merged_list[-1] = merged_list[-1].rstrip() + sep + s.lstrip()
             else:
                 merged_list.append(s)
         final_list = merged_list
+
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
