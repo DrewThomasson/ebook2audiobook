@@ -985,7 +985,7 @@ def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compa
                             text
                         )
             text = roman2number(text)
-            text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+            #text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
             text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
             text = normalize_text(text, lang, lang_iso1, tts_engine)
             sentences = get_sentences(text, id)
