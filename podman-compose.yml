@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.1.10}
+        APP_VERSION: ${APP_VERSION:-26.1.12}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}         # e.g. cu124, cu128, rocm, xpu, cpu etc.
     container_name: ebook2audiobook
     working_dir: /app

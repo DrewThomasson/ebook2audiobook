@@ -119,6 +119,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                         )
                                     else:
                                         with torch.autocast(
+                                            device_type=device,
                                             dtype=self.amp_dtype
                                         ):
                                             self.engine.tts_to_file(
@@ -191,6 +192,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                         )
                                     else:
                                         with torch.autocast(
+                                            device_type=device,
                                             dtype=self.amp_dtype
                                         ):
                                             audio_part = self.engine.tts(

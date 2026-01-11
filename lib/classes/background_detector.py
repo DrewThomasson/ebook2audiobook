@@ -1,12 +1,9 @@
-import torch
-import librosa
-import threading
+import torch, librosa, threading
 
 from pyannote.audio import Model
 from pyannote.audio.pipelines import VoiceActivityDetection
 from lib.conf import tts_dir
 from lib.conf_models import default_voice_detection_model
-
 
 _PIPELINE_CACHE = {}
 _PIPELINE_LOCK = threading.Lock()
