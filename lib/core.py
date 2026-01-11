@@ -2269,8 +2269,7 @@ def convert_ebook_batch(args:dict)->tuple:
 def convert_ebook(args:dict)->tuple:
     try:
         if args.get('event') == 'blocks_confirmed':
-            id = args['id']
-            progress_status, passed = finalize_audiobook(id)
+            progress_status, passed = finalize_audiobook(args['id'])
             return progress_status, passed
         else:
             global context        
