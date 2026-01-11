@@ -678,14 +678,14 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
                 
-            def disable_on_upload()->tuple:
+            def disable_on_voice_upload()->tuple:
                 return (
                     *([gr.update(interactive=False) for _ in range(8)]),
                     gr.update(visible=False),
                     gr.update(visible=False)
                 )
             
-            def enable_on_upload(id: str) -> tuple:
+            def enable_on_voice_upload(id: str) -> tuple:
                 session = context.get_session(id)
                 visible = False
                 if session:
@@ -706,6 +706,21 @@ def build_interface(args:dict)->gr.Blocks:
                     gr.update(visible=False),
                     gr.update(visible=False)
                 )
+
+            def disable_on_custom_upload()->tuple:
+                outputs = tuple([gr.update(interactive=False) for _ in range(7)])
+                return outputs
+            
+            def enable_on_custom_upload(id:str)->tuple:
+                session = context.get_session(id)
+                if session:
+                    if session['event'] == 'confirm_blocks':
+                        outputs = tuple([gr.update() for _ in range(7)])
+                        return outputs
+                    outputs = tuple([gr.update(interactive=True) for _ in range(7)])
+                    return outputs
+                outputs = tuple([gr.update() for _ in range(7)])
+                return outputs
 
             def show_gr_modal(type:str, msg:str)->str:
                 return f'''
@@ -1803,7 +1818,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=None
             )
             gr_voice_file.upload(
-                fn=disable_on_upload,
+                fn=disable_on_voice_upload,
                 inputs=None,
                 outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_convert_btn, gr_voice_play, gr_voice_del_btn]
             ).then(
@@ -1815,7 +1830,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=[gr_voice_file]
             ).then(
-                fn=enable_on_upload,
+                fn=enable_on_voice_upload,
                 inputs=[gr_session],
                 outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_convert_btn, gr_voice_play, gr_voice_del_btn]
             )
@@ -1862,6 +1877,10 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_voice_list]
             )
             gr_custom_model_file.upload(
+                fn=disable_on_custom_upload,
+                inputs=None,
+                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_voice_file, gr_convert_btn]
+            ).then(
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
                 outputs=[gr_custom_model_file, gr_custom_model_list],
@@ -1870,6 +1889,10 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_voice_list,
                 inputs=[gr_session],
                 outputs=[gr_voice_list]
+            ).then(
+                fn=enable_on_custom_upload,
+                inputs=[gr_session],
+                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_voice_file, gr_convert_btn]
             )
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
