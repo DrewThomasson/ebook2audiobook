@@ -755,8 +755,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     error = f'Stanza model initialization error: {e}'
                     return error, None
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
-            for doc in all_docs:
-                sentences_list = filter_chapter(doc, id, stanza_nlp, is_num2words_compat)
+            for doc_idx, doc in enumerate(all_docs):
+                sentences_list = filter_chapter(doc_idx, doc, id, stanza_nlp, is_num2words_compat)
                 if sentences_list is None:
                     break
                 elif len(sentences_list) > 0:
@@ -771,7 +771,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return error, None
 
-def filter_chapter(doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
+def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
 
     def tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
