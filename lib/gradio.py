@@ -673,8 +673,22 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['event'] == 'confirm_blocks':
                         outputs = tuple([gr.update() for _ in range(12)])
                         return outputs
-                outputs = tuple([gr.update(interactive=True) for _ in range(12)])
+                    outputs = tuple([gr.update(interactive=True) for _ in range(12)])
+                    return outputs
+                outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
+                
+            def disable_on_upload()->tuple:
+                return gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=False)
+            
+            def enable_on_upload(id:str)->tuple:
+                session = context.get_session(id)
+                if session:
+                    visible = True if session['voice'] is not None else False
+                    if session['event'] == 'confirm_blocks':
+                        return gr.update(), gr.update(), gr.update(), gr.update(visible=visible), gr.update(visible=visible)
+                    return gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(visible=visible), gr.update(visible=visible)
+                return gr.update(), gr.update(), gr.update(), gr.update(visible=visible), gr.update(visible=visible)
 
             def show_gr_modal(type:str, msg:str)->str:
                 return f'''
@@ -1772,9 +1786,9 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=None
             )
             gr_voice_file.upload(
-                fn=disable_components,
+                fn=disable_on_upload,
                 inputs=None,
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=[gr_ebook_file, gr_ebook_mode, gr_convert_btn, gr_voice_play, gr_voice_del_btn]
             ).then(
                 fn=change_gr_voice_file,
                 inputs=[gr_voice_file, gr_session],
@@ -1784,9 +1798,9 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=[gr_voice_file]
             ).then(
-                fn=enable_components,
+                fn=enable_on_upload,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=[gr_ebook_file, gr_ebook_mode, gr_convert_btn, gr_voice_play, gr_voice_del_btn]
             )
             gr_voice_list.change(
                 fn=change_gr_voice_list,
