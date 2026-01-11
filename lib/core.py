@@ -1383,7 +1383,11 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             phrase = lc['past'].format(hour=n2w(h), minute=n2w(mnt)) if mnt != 0 else lc['oclock'].format(hour=n2w(h))
         else:
             minute_to_hour = 60 - mnt
-            phrase = lc['to'].format(next_hour=n2w(next_hour), minute_to_hour=n2w(minute_to_hour))
+            phrase = lc['to'].format(
+                next_hour=n2w(next_hour),
+                minute=n2w(minute_to_hour),
+                minute_to_hour=n2w(minute_to_hour)
+            )
         # Append seconds if present
         if sec is not None and sec > 0:
             second_phrase = lc['second'].format(second=n2w(sec))
