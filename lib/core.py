@@ -814,7 +814,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
             return None
 
     try:
-        msg = f'Parsing doc {}'
+        msg = f'Parsing doc {idx}'
         print(msg)
         session = context.get_session(id)
         if session:
