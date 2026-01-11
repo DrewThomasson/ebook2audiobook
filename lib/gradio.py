@@ -678,9 +678,12 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
                 
-            def disable_on_upload()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(8)])
-                return outputs, gr.update(visible=False), gr.update(visible=False)
+            def disable_on_upload() -> tuple:
+                return (
+                    *([gr.update(interactive=False) for _ in range(8)]),
+                    gr.update(visible=False),
+                    gr.update(visible=False)
+                )
             
             def enable_on_upload(id:str)->tuple:
                 session = context.get_session(id)
