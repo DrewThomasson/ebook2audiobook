@@ -887,6 +887,8 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                     if text:
                         text_list.append(text)
                 prev_typ = typ
+            msg = f'Flattening as raw text...'
+            print(msg)
             max_chars = int(language_mapping[lang]['max_chars'] / 2)
             clean_list = []
             i = 0
