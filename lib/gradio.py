@@ -678,24 +678,34 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
                 
-            def disable_on_upload() -> tuple:
+            def disable_on_upload()->tuple:
                 return (
                     *([gr.update(interactive=False) for _ in range(8)]),
                     gr.update(visible=False),
                     gr.update(visible=False)
                 )
             
-            def enable_on_upload(id:str)->tuple:
+            def enable_on_upload(id: str) -> tuple:
                 session = context.get_session(id)
+                visible = False
                 if session:
-                    visible = True if session['voice'] is not None else False
-                    if session['event'] == 'confirm_blocks':
-                        outputs = tuple([gr.update() for _ in range(8)])
-                        return outputs, gr.update(visible=visible), gr.update(visible=visible)
-                    outputs = tuple([gr.update(interactive=True) for _ in range(8)])
-                    return outputs, gr.update(visible=visible), gr.update(visible=visible)
-                outputs = tuple([gr.update() for _ in range(8)])
-                return outputs, gr.update(), gr.update()
+                    visible = session.get('voice') is not None
+                    if session.get('event') == 'confirm_blocks':
+                        return (
+                            *([gr.update() for _ in range(8)]),
+                            gr.update(visible=visible),
+                            gr.update(visible=visible)
+                        )
+                    return (
+                        *([gr.update(interactive=True) for _ in range(8)]),
+                        gr.update(visible=visible),
+                        gr.update(visible=visible)
+                    )
+                return (
+                    *([gr.update() for _ in range(8)]),
+                    gr.update(visible=False),
+                    gr.update(visible=False)
+                )
 
             def show_gr_modal(type:str, msg:str)->str:
                 return f'''
