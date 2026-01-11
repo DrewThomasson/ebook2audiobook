@@ -850,6 +850,8 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                 error = 'No tuples_list from body created!'
                 print(error)
                 return None
+            msg = f'Parsing xhtml markers...'
+            print(msg)
             text_list = []
             handled_tables = set()
             prev_typ = None
