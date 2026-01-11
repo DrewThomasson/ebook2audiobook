@@ -839,7 +839,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
             soup = BeautifulSoup(raw_html, 'html.parser')
             body = soup.body
             if not body or not body.get_text(strip=True):
-                msg = 'No body text found. Skip to next doc...'
+                msg = 'No body text found. Skip to next doc…'
                 print(msg)
                 return []
             # Skip known non-chapter types
@@ -854,7 +854,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                 'appendix', 'bibliography', 'copyright-page', 'landmark'
             }
             if any(part in epub_type for part in excluded):
-                msg = 'Doc not part of any chapter text. Skip to next doc...'
+                msg = 'Doc not part of any chapter text. Skip to next doc…'
                 print(msg)
                 return []
             # remove scripts/styles
@@ -865,7 +865,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                 error = 'No tuples_list from body created!'
                 print(error)
                 return None
-            msg = f'Parsing xhtml markers...'
+            msg = f'Parsing xhtml markers…'
             print(msg)
             text_list = []
             handled_tables = set()
@@ -902,7 +902,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                     if text:
                         text_list.append(text)
                 prev_typ = typ
-            msg = f'Flattening as raw text...'
+            msg = f'Flattening as raw text…'
             print(msg)
             max_chars = int(language_mapping[lang]['max_chars'] / 2)
             clean_list = []
@@ -939,7 +939,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                 print(error)
                 return None
             if stanza_nlp:
-                msg = 'Check if there are positive integers so possible date to convert…'
+                msg = 'Converting dates and years to words…'
                 print(msg)
                 re_ordinal = re.compile(
                     r'(?<!\w)(0?[1-9]|[12][0-9]|3[01])(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)',
@@ -996,16 +996,16 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
             msg = 'Convert romans to numbers…'
             print(msg)
             text = roman2number(text)
-            msg = 'Convert dates and time to words…'
+            msg = 'Convert time to words…'
             print(msg)
             text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
             msg = 'Convert numbers, maths signs to words…'
             print(msg)
             text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-            msg = 'Normalize text...'
+            msg = 'Normalize text…'
             print(msg)
             text = normalize_text(text, lang, lang_iso1, tts_engine)
-            msg = f'Get sentences...'
+            msg = f'Get sentences…'
             print(msg)
             sentences = get_sentences(text, id)
             if sentences and len(sentences) == 0:
