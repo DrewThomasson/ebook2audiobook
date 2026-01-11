@@ -103,7 +103,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                         )
                                     else:
                                         with torch.autocast(
-                                             device_type=device,
+                                            device_type=device,
                                             dtype=self.amp_dtype
                                         ):
                                             self.engine.tts_to_file(
@@ -176,7 +176,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                         )
                                     else:
                                         with torch.autocast(
-                                             device_type=device,
+                                            device_type=device,
                                             dtype=self.amp_dtype
                                         ):
                                             audio_part = self.engine.tts(

@@ -90,7 +90,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                     )
                                 else:
                                     with torch.autocast(
-                                         device_type=device,
+                                        device_type=device,
                                         dtype=self.amp_dtype
                                     ):
                                         audio_part = self.engine.tts(
