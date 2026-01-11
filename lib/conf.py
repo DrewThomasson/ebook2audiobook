@@ -1,7 +1,4 @@
-import os
-import platform
-import tempfile
-import sys
+import os, platform, tempfile, sys
 
 # ---------------------------------------------------------------------
 # Global configuration
