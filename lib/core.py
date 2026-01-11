@@ -1440,55 +1440,81 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     return text
 
 def roman2number(text:str)->str:
-    def is_valid_roman(s:str)->bool:
-        return bool(valid_roman.fullmatch(s))
 
-    def to_int(s:str)->str:
-        s = s.upper()
-        i, result = 0, 0
-        while i < len(s):
-            for roman, value in roman_numbers_tuples:
-                if s[i:i+len(roman)] == roman:
-                    result += value
-                    i += len(roman)
-                    break
-            else:
-                return s
-        return str(result)
+	def is_valid_roman(s: str) -> bool:
+		return bool(valid_roman.fullmatch(s))
 
-    def repl_heading(m:re.Match)->str:
-        roman = m.group(1)
-        if not is_valid_roman(roman):
-            return m.group(0)
-        val = to_int(roman)
-        return f'{val}{m.group(2)}{m.group(3)}'
+	def to_int(s: str) -> str:
+		s = s.upper()
+		i = 0
+		result = 0
+		while i < len(s):
+			for roman, value in roman_numbers_tuples:
+				if s[i:i + len(roman)] == roman:
+					result += value
+					i += len(roman)
+					break
+			else:
+				return s
+		return str(result)
 
-    def repl_standalone(m:re.Match)->str:
-        roman = m.group(1)
-        if not is_valid_roman(roman):
-            return m.group(0)
-        val = to_int(roman)
-        return f'{val}{m.group(2)}'
+	def repl_heading(m: re.Match) -> str:
+		roman = m.group(1)
+		if not is_valid_roman(roman):
+			return m.group(0)
+		return f"{to_int(roman)}{m.group(2)}{m.group(3)}"
 
-    def repl_word(m:re.Match)->str:
-        roman = m.group(1)
-        if not is_valid_roman(roman):
-            return m.group(0)
-        val = to_int(roman)
-        return str(val)
+	def repl_standalone(m: re.Match) -> str:
+		roman = m.group(1)
+		if not is_valid_roman(roman):
+			return m.group(0)
+		return f"{to_int(roman)}{m.group(2)}"
 
-    # Well-formed Romans up to 3999
-    valid_roman = re.compile(
-        r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
-        re.IGNORECASE
-    )
-    # Your heading/standalone rules stay
-    text = re.sub(r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)', repl_heading, text, flags=re.MULTILINE)
-    text = re.sub(r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$', repl_standalone, text, flags=re.MULTILINE)
-    # NEW: only convert whitespace-delimited tokens of length >= 2
-    # This avoids: 19C, 19°C, °C, AC/DC, CD-ROM, single-letter "I"
-    text = re.sub(r'(?<!\S)([IVXLCDM]{2,})(?!\S)', repl_word, text)
-    return text
+	def repl_word(m: re.Match) -> str:
+		roman = m.group(1)
+		if not is_valid_roman(roman):
+			return m.group(0)
+		return to_int(roman)
+
+	def repl_chapter_single(m: re.Match) -> str:
+		word = m.group(1)
+		roman = m.group(2)
+		if not is_valid_roman(roman):
+			return m.group(0)
+		return f"{word} {to_int(roman)}"
+
+	valid_roman = re.compile(
+		r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
+		re.IGNORECASE
+	)
+	chapter_words = sorted(
+		{w for words in chapter_word_mapping.values() for w in words},
+		key=len,
+		reverse=True
+	)
+	chapter_words_re = re.compile(
+		rf'\b({"|".join(map(re.escape, chapter_words))})\s+([IVXLCDM])\b',
+		re.IGNORECASE | re.UNICODE
+	)
+	text = re.sub(
+		r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
+		repl_heading,
+		text,
+		flags=re.MULTILINE
+	)
+	text = re.sub(
+		r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
+		repl_standalone,
+		text,
+		flags=re.MULTILINE
+	)
+	text = chapter_words_re.sub(repl_chapter_single, text)
+	text = re.sub(
+		r'(?<!\S)([IVXLCDM]{2,})(?!\S)',
+		repl_word,
+		text
+	)
+	return text
     
 def is_latin(s: str) -> bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
