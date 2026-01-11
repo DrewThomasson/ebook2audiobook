@@ -773,7 +773,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 
 def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
 
-    def tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
+    def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             for child in node.children:
                 if isinstance(child, NavigableString):
@@ -793,7 +793,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                     else:
                         return_data = False
                         if name in proc_tags:
-                            for inner in tuple_row(child, last_text_char):
+                            for inner in _tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
                                 # Track last char if this is text or heading
@@ -807,11 +807,22 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                                 elif name in heading_tags or name in pause_tags:
                                     yield ('pause', TTS_SML['pause']['token'])
                         else:
-                            yield from tuple_row(child, last_text_char)
+                            yield from _tuple_row(child, last_text_char)
         except Exception as e:
-            error = f'filter_chapter() tuple_row() error: {e}'
+            error = f'filter_chapter() _tuple_row() error: {e}'
             DependencyError(error)
             return None
+
+    def _num_repl(m):
+        s = m.group(0)
+        # leave years alone (already handled above)
+        if re.fullmatch(r"\d{4}", s):
+            return s
+        n = float(s) if '.' in s else int(s)
+        if is_num2words_compat:
+            return num2words(n, lang=(lang_iso1 or 'en'))
+        else:
+            return math2words(m, lang, lang_iso1, tts_engine, is_num2words_compat)
 
     try:
         msg = f'----------\nParsing doc {idx}'
@@ -845,7 +856,7 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
             # remove scripts/styles
             for tag in soup(['script', 'style']):
                 tag.decompose()
-            tuples_list = list(tuple_row(body))
+            tuples_list = list(_tuple_row(body))
             if not tuples_list:
                 error = 'No tuples_list from body created!'
                 print(error)
@@ -924,7 +935,8 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                 print(error)
                 return None
             if stanza_nlp:
-                # Check if there are positive integers so possible date to convert
+                msg = 'Check if there are positive integers so possible date to convert…'
+                print(msg)
                 re_ordinal = re.compile(
                     r'(?<!\w)(0?[1-9]|[12][0-9]|3[01])(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)',
                     re.IGNORECASE
@@ -956,22 +968,11 @@ def filter_chapter(idx:int, doc:EpubHtml, id:str, stanza_nlp:Pipeline, is_num2wo
                                     processed
                                 )
                             # 3) convert other numbers (skip 4-digit years)
-                            def _num_repl(m):
-                                s = m.group(0)
-                                # leave years alone (already handled above)
-                                if re.fullmatch(r"\d{4}", s):
-                                    return s
-                                n = float(s) if '.' in s else int(s)
-                                if is_num2words_compat:
-                                    return num2words(n, lang=(lang_iso1 or 'en'))
-                                else:
-                                    return math2words(m, lang, lang_iso1, tts_engine, is_num2words_compat)
-
                             processed = re_num.sub(_num_repl, processed)
                             result.append(processed)
                             last_pos = end
                         result.append(text[last_pos:])
-                        text = ''.join(result)
+                        text = ' '.join(result)
                     else:
                         if is_num2words_compat:
                             text = re_ordinal.sub(
