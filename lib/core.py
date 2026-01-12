@@ -1253,15 +1253,17 @@ def get_sentences(text:str, session_id:str)->list|None:
             
         # PASS 5 = remove unwanted breaks
         break_match = TTS_SML['break']['match'].pattern
-        break_cleanup_re = re.compile(
-            rf'(?<=[\w ]){break_match}(?=[\w ]|$)',
+        strip_break_spaces_re = re.compile(
+            rf' *{break_match} *'
+        )
+        break_between_alnum_re = re.compile(
+            rf'(?<=[\w]){break_match}(?=[\w])',
             flags=re.UNICODE
         )
-        space_collapse_re = re.compile(r' {2,}')
         final_list = []
         for s in merge_list:
-            s = break_cleanup_re.sub('', s)
-            s = space_collapse_re.sub(' ', s)
+            s = strip_break_spaces_re.sub(TTS_SML['break']['token'], s)
+            s = break_between_alnum_re.sub(' ', s)
             final_list.append(s)
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
@@ -1899,7 +1901,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
                 chunk_list = []
                 total_batches = (len(selected_files)+batch_size-1)//batch_size
-                iterator = tqdm(range(0,len(selected_files),batch_size),total=total_batches,desc="Preparing batches",unit="batch")
+                iterator = tqdm(range(0, len(selected_files), batch_size), total=total_batches, desc="Preparing batches", unit="batch")
                 for idx, i in enumerate(iterator):
                     if session.get('is_gui_progress') and gr_progress:
                         gr_progress((idx+1)/total_batches,"Preparing batches")
@@ -2165,7 +2167,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         batch_size = 1024
                         chunk_list = []
                         total_batches = (len(part_file_list)+batch_size-1)//batch_size
-                        iterator = tqdm(range(0,len(part_file_list),batch_size),total=total_batches,desc=f"Part {part_idx+1} batches",unit="batch")
+                        iterator = tqdm(range(0, len(part_file_list), batch_size),total=total_batches, desc=f"Part {part_idx+1} batches", unit="batch")
                         for idx,i in enumerate(iterator):
                             if session.get('is_gui_progress') and gr_progress:
                                 gr_progress((idx+1)/total_batches,f"Part {part_idx+1} batches")
