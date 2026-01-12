@@ -1878,7 +1878,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             selected_files = [
                 os.path.join(chapters_dir_sentences, f)
                 for f in sentences_ordered
-                if int(start) <= int(os.path.splitext(f)[0]) <= int(end)
+                if int(start) <= int(os.path.splitext(f)[0]) < int(end)
             ]
             if not selected_files:
                 print('No audio files found in the specified range.')
