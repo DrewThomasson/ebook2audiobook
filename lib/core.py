@@ -148,7 +148,7 @@ class SessionContext:
             "ebook_mode": "single",
             "chapters_preview": default_chapters_preview,
             "chapters_dir": None,
-            "chapters_dir_sentences": None,
+            "sentences_dir": None,
             "epub_path": None,
             "filename_noext": None,
             "voice": None,
