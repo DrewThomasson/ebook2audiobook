@@ -1833,7 +1833,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                     success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
                                     if not success:
                                         return False
-                            idx_target = idx
+                            idx_target += 1
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
                                 progress_bar(progress=total_progress, desc=ebook_name)
@@ -1878,7 +1878,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             selected_files = [
                 os.path.join(chapters_dir_sentences, f)
                 for f in sentences_ordered
-                if int(start) <= int(os.path.splitext(f)[0]) < int(end)
+                if int(start) <= int(os.path.splitext(f)[0]) <= int(end)
             ]
             if not selected_files:
                 print('No audio files found in the specified range.')
