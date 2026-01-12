@@ -839,6 +839,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                                         and not last_text_char.isalnum()
                                         and not last_text_char.isspace()
                                     ):
+                                        print(f'------------{node.children}-------------'
                                         yield ('break', TTS_SML['break']['token'])
                                 elif name in heading_tags or name in pause_tags:
                                     yield ('pause', TTS_SML['pause']['token'])
