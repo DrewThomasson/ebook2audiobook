@@ -1253,15 +1253,15 @@ def get_sentences(text:str, session_id:str)->list|None:
             
         # PASS 5 = remove unwanted breaks
         break_match = TTS_SML['break']['match'].pattern
-        # before: alnum or space
-        # after : alnum, space, or end-of-string
         break_cleanup_re = re.compile(
             rf'(?<=[\w ]){break_match}(?=[\w ]|$)',
             flags=re.UNICODE
         )
+        space_collapse_re = re.compile(r' {2,}')
         final_list = []
         for s in merge_list:
             s = break_cleanup_re.sub('', s)
+            s = space_collapse_re.sub(' ', s)
             final_list.append(s)
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
