@@ -956,7 +956,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             i = 0
             while i < len(text_list):
                 current = text_list[i]
-                if current == '‡break‡':
+                if current in ('‡break‡', '‡pause‡'):
                     if clean_list:
                         prev = clean_list[-1]
                         if prev in ('‡break‡', '‡pause‡'):
@@ -965,19 +965,28 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                         if prev and (prev[-1].isalnum() or prev[-1] == ' '):
                             if i + 1 < len(text_list):
                                 next_sentence = text_list[i + 1]
+                                if next_sentence in ('‡break‡', '‡pause‡'):
+                                    clean_list.append(current)
+                                    i += 1
+                                    continue
                                 merged_length = len(prev.rstrip()) + 1 + len(next_sentence.lstrip())
                                 if merged_length <= max_chars:
-                                    # Merge with space handling
+                                    # Merge text but KEEP the TTS token
                                     if not prev.endswith(' ') and not next_sentence.startswith(' '):
-                                        clean_list[-1] = prev + ' ' + next_sentence
+                                        merged = prev + ' ' + next_sentence
                                     else:
-                                        clean_list[-1] = prev + next_sentence
+                                        merged = prev + next_sentence
+                                    clean_list[-1] = merged
+                                    clean_list.append(current)
                                     i += 2
                                     continue
                                 else:
                                     clean_list.append(current)
                                     i += 1
                                     continue
+                    clean_list.append(current)
+                    i += 1
+                    continue
                 clean_list.append(current)
                 i += 1
             text = ' '.join(clean_list)
