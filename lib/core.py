@@ -801,36 +801,48 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
 
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
+            prev_child_had_data = False
             for idx, child in enumerate(node.children):
-                is_first_child = (idx == 0)
+                current_child_had_data = False
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
+                        if prev_child_had_data:
+                            yield ('break', TTS_SML['break']['token'])
                         yield ('text', text)
                         last_text_char = text[-1]
+                        current_child_had_data = True
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
                         title = child.get_text(strip=True)
                         if title:
+                            if prev_child_had_data:
+                                yield ('break', TTS_SML['break']['token'])
                             yield ('heading', title)
                             last_text_char = title[-1]
+                            current_child_had_data = True
                     elif name == 'table':
+                        if prev_child_had_data:
+                            yield ('break', TTS_SML['break']['token'])
                         yield ('table', child)
+                        current_child_had_data = True
                     else:
                         return_data = False
                         if name in proc_tags:
                             is_header = False
+                            if prev_child_had_data and name in break_tags:
+                                yield ('break', TTS_SML['break']['token'])
                             for inner in _tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
                                 last_text_char = inner[1][-1]
+                                current_child_had_data = True
                                 if inner[0] in ('text', 'heading') and inner[1]:
                                     is_header = True
                             if return_data:
                                 if name in break_tags:
-                                    # Only yield break if last char is NOT alnum or space
-                                    if is_first_child or is_header or (
+                                    if is_header or (
                                         last_text_char
                                         and not last_text_char.isalnum()
                                         and not last_text_char.isspace()
@@ -840,6 +852,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                                     yield ('pause', TTS_SML['pause']['token'])
                         else:
                             yield from _tuple_row(child, last_text_char)
+                            current_child_had_data = True
+                prev_child_had_data = current_child_had_data
         except Exception as e:
             error = f'filter_chapter() _tuple_row() error: {e}'
             DependencyError(error)
