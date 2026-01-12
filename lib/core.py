@@ -1190,34 +1190,6 @@ def get_sentences(text:str, session_id:str)->list|None:
             else:
                 soft_list.append(s)
 
-        # PASS 3 — space split (last resort)
-        final_list = []
-        for s in soft_list:
-            s = s.strip()
-            if not s:
-                continue
-            rest = s
-            while rest:
-                clean_len = len(strip_sml(rest))
-                if clean_len <= max_chars:
-                    final_list.append(rest.strip())
-                    break
-                cut = rest[:max_chars + 1]
-                idx = cut.rfind(' ')
-                if idx > 0:
-                    left = rest[:idx].strip()
-                    right = rest[idx + 1:].strip()
-                else:
-                    left = rest[:max_chars].strip()
-                    right = rest[max_chars:].strip()
-                if not left or right == rest:
-                    final_list.append(rest.strip())
-                    break
-                final_list.append(left)
-                rest = right
-
-
-
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
