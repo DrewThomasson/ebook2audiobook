@@ -828,8 +828,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                             if return_data:
                                 if name in break_tags:
                                     # Only yield break if last char is NOT alnum or space
-                                    #if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
-                                    yield ('break', TTS_SML['break']['token'])
+                                    if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
+                                        yield ('break', TTS_SML['break']['token'])
                                 elif name in heading_tags or name in pause_tags:
                                     yield ('pause', TTS_SML['pause']['token'])
                         else:
@@ -1216,20 +1216,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 final_list.append(left)
                 rest = right
 
-        # PASS 4 — merge very short rows
-        merged_list = []
-        merge_max_chars = int((max_chars / 2) / 4)
-        for s in final_list:
-            s = s.strip()
-            if not s:
-                continue
-            clean_len = len(strip_sml(s))
-            if merged_list and clean_len <= merge_max_chars:
-                sep = TTS_SML['pause']['token'] if len(merged_list) == 1 else " "
-                merged_list[-1] = merged_list[-1].rstrip() + sep + s.lstrip()
-            else:
-                merged_list.append(s)
-        final_list = merged_list
+
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
