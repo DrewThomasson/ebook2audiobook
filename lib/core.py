@@ -801,14 +801,13 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
 
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
-            first_tuple = True
-            for child in node.children:
+            for idx, child in enumerate(node.children):
+                is_first_child = (idx == 0)
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
                         yield ('text', text)
                         last_text_char = text[-1]
-                        first_tuple = False
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
@@ -816,10 +815,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                         if title:
                             yield ('heading', title)
                             last_text_char = title[-1]
-                            first_tuple = False
                     elif name == 'table':
                         yield ('table', child)
-                        first_tuple = False
                     else:
                         return_data = False
                         if name in proc_tags:
@@ -833,16 +830,14 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                             if return_data:
                                 if name in break_tags:
                                     # Only yield break if last char is NOT alnum or space
-                                    if first_tuple or is_header or (
+                                    if is_first_child or is_header or (
                                         last_text_char
                                         and not last_text_char.isalnum()
                                         and not last_text_char.isspace()
                                     ):
-                                        print(f'------------{node.children}-------------')
                                         yield ('break', TTS_SML['break']['token'])
                                 elif name in heading_tags or name in pause_tags:
                                     yield ('pause', TTS_SML['pause']['token'])
-                            first_tuple = False
                         else:
                             yield from _tuple_row(child, last_text_char)
         except Exception as e:
