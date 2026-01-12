@@ -1,6 +1,7 @@
 # 📚 ebook2audiobook
-CPU/GPU Converter from eBooks to audiobooks with chapters and metadata<br/>
-using XTTSv2, Bark, Vits, Fairseq, YourTTS, Tacotron2 and more. Supports voice cloning and 1158 languages!
+CPU/GPU Converter from E-Book to audiobook with chapters and metadata<br/>
+using XTTSv2, Piper-TTS, Vits, Fairseq, Tacotron2, YourTTS and much more.<br/>
+Supports voice cloning and 1158 languages!
 > [!IMPORTANT]
 **This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
@@ -101,12 +102,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ## Features
-- 📚 Splits eBook into chapters for organized audio.
-- 🎙️ High-quality text-to-speech with [XTTSv2](https://huggingface.co/coqui/XTTS-v2), [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) and much more.
-- 🗣️ Optional voice cloning with your own voice file.
-- 🗣️ Optional custom model with your own training model.
-- 🌍 Supports 1158 languages. [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
-- 🖥️ Designed to run on 2GB RAM 1GB VRAM Min.
+- 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`
+- 🔍 **OCR scanning** for e-books with pages scanned as images
+- 🔊 **High-quality text-to-speech** with XTTSv2, Fairseq, and more
+- 🗣️ **Optional voice cloning** using your own voice file
+- 🧩 **Optional custom model** using your own trained model
+- 🌐 **Supports 1158 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 💻 **Low-resource friendly** — runs on **2 GB RAM / 1 GB VRAM (minimum)**
+- 🎵 **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 
 
 ## Supported Languages
