@@ -968,7 +968,6 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 clean_list.append(current)
                 i += 1
             text = ' '.join(clean_list)
-            print(clean_list)
             if not re.search(r"[^\W_]", text):
                 error = 'No valid text found!'
                 print(error)
