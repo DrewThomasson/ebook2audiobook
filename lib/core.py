@@ -841,7 +841,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                                 if inner[0] in ('text', 'heading') and inner[1]:
                                     is_header = True
                             if return_data:
-                                if name in break_tags:
+                                if name in break_tags and name != 'span':
                                     if is_header or (
                                         last_text_char
                                         and not last_text_char.isalnum()
