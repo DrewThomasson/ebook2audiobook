@@ -479,31 +479,31 @@ def ocr2xhtml(img: Image.Image, lang: str) -> str:
         print(error)
         return False
 
-def save_json_chapters(session_id:str, filepath:str)->bool:
-    try:
-        session = context.get_session(session_id)
-        if session:
-            with open(filepath, "w", encoding="utf-8") as f:
-                json.dump(
-                    session["chapters"],
-                    f,
-                    ensure_ascii=False,
-                    indent=2
-                )
-            return True
-    except Exception as e:
-        error = f'save_json_chapters error: {e}'
-        print(error)
-    return False
+def save_json_chapters(session_id: str, filepath: str) -> bool:
+	try:
+		session = context.get_session(session_id)
+		if not session:
+			print(f"save_json_chapters error: session not found ({session_id})")
+			return False
+		with open(filepath, "w", encoding="utf-8") as f:
+			json.dump(
+				session["chapters"],
+				f,
+				ensure_ascii=False,
+				indent=2
+			)
+		return True
+	except Exception as e:
+		print(f"save_json_chapters error: {e}")
+		return False
 
-def load_json_chapters(filepath:str)->list:
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        error = f'load_json_chapters error: {e}'
-        print(error)
-        return []
+def load_json_chapters(filepath: str) -> list:
+	try:
+		with open(filepath, "r", encoding="utf-8") as f:
+			return json.load(f)
+	except Exception as e:
+		print(f"load_json_chapters error: {e}")
+		return []
 
 def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
