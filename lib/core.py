@@ -819,6 +819,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                     else:
                         return_data = False
                         if name in proc_tags:
+                            print(f'----------- tag: {name}')
                             for inner in _tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
@@ -826,6 +827,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                                 if inner[0] in ('text', 'heading') and inner[1]:
                                     last_text_char = inner[1][-1]
                             if return_data:
+                                print(f'----------- tag: {name}')
                                 if name in break_tags:
                                     # Only yield break if last char is NOT alnum or space
                                     if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
@@ -1189,8 +1191,47 @@ def get_sentences(text:str, session_id:str)->list|None:
                     soft_list.append(s)
             else:
                 soft_list.append(s)
-                
-        final_list = soft_list;
+
+        # PASS 3 — space split (last resort)
+        final_list = []
+        for s in soft_list:
+            s = s.strip()
+            if not s:
+                continue
+            rest = s
+            while rest:
+                clean_len = len(strip_sml(rest))
+                if clean_len <= max_chars:
+                    final_list.append(rest.strip())
+                    break
+                cut = rest[:max_chars + 1]
+                idx = cut.rfind(' ')
+                if idx > 0:
+                    left = rest[:idx].strip()
+                    right = rest[idx + 1:].strip()
+                else:
+                    left = rest[:max_chars].strip()
+                    right = rest[max_chars:].strip()
+                if not left or right == rest:
+                    final_list.append(rest.strip())
+                    break
+                final_list.append(left)
+                rest = right
+
+        # PASS 4 — merge very short rows
+        merged_list = []
+        merge_max_chars = int((max_chars / 2) / 4)
+        for s in final_list:
+            s = s.strip()
+            if not s:
+                continue
+            clean_len = len(strip_sml(s))
+            if merged_list and clean_len <= merge_max_chars:
+                sep = TTS_SML['pause']['token'] if len(merged_list) == 1 else " "
+                merged_list[-1] = merged_list[-1].rstrip() + sep + s.lstrip()
+            else:
+                merged_list.append(s)
+        final_list = merged_list
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
