@@ -1244,7 +1244,6 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session:
                         tts_engine_options = get_compatible_tts_engines(session['language'])
-                        print(f"--------------------- tts engine: {session['tts_engine']} --------------")
                         session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
                         return gr.update(choices=tts_engine_options, value=session['tts_engine'])
                 except Exception as e:
@@ -1682,6 +1681,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if len(active_sessions) == 0 or (data and data.get('status', None) is None):
                         restore_session_from_data(data, session)
                         session['status'] = None
+                    print(session)
                     if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                         return gr.update(), gr.update(), gr.update(value=''), update_gr_glassmask(str=error)
