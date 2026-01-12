@@ -1746,14 +1746,8 @@ def convert_chapters2audio(session_id:str)->bool:
             resume_chapter = 0
             missing_chapters = []
             chapter_re = re.compile(r'^chapter_(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
-            existing_chapters = [
-                f for f in os.listdir(session['chapters_dir'])
-                if chapter_re.match(f)
-            ]
-            existing_numbers = sorted(
-                int(chapter_re.match(f).group(1))
-                for f in existing_chapters
-            )
+            existing_chapters = [f for f in os.listdir(session['chapters_dir']) if chapter_re.match(f)]
+            existing_numbers = sorted(int(chapter_re.match(f).group(1)) for f in existing_chapters)
             if existing_numbers:
                 expected = set(range(0, max(existing_numbers) + 1))
                 missing_chapters = sorted(expected - set(existing_numbers))
@@ -1763,14 +1757,8 @@ def convert_chapters2audio(session_id:str)->bool:
             resume_sentence = 0
             missing_sentences = []
             sentence_re = re.compile(r'^(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
-            existing_sentences = [
-                f for f in os.listdir(session['chapters_dir_sentences'])
-                if sentence_re.match(f)
-            ]
-            existing_numbers = sorted(
-                int(sentence_re.match(f).group(1))
-                for f in existing_sentences
-            )
+            existing_sentences = [f for f in os.listdir(session['chapters_dir_sentences']) if sentence_re.match(f)]
+            existing_numbers = sorted(int(sentence_re.match(f).group(1)) for f in existing_sentences)
             if existing_numbers:
                 expected = set(range(0, max(existing_numbers) + 1))
                 missing_sentences = sorted(expected - set(existing_numbers))
@@ -1787,7 +1775,7 @@ def convert_chapters2audio(session_id:str)->bool:
             if total_sentences == 0:
                 error = 'No sentences found!'
                 print(error)
-                return False           
+                return False
             msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
             print(msg)
             if session['is_gui_process']:
@@ -1797,11 +1785,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 final_sentences = []
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     idx_target = 0
-                    sml_values = {
-                        v['token']
-                        for v in TTS_SML.values()
-                        if isinstance(v, dict) and 'token' in v
-                    }
                     for c in range(0, total_chapters):
                         chapter_idx = c
                         chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
@@ -1824,13 +1807,14 @@ def convert_chapters2audio(session_id:str)->bool:
                             if any(c.isalnum() for c in sentence):
                                 if not any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) or (any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) and idx == len(sentences) - 1):
                                     final_sentences.append(sentence)
-                                if idx in missing_sentences or idx >= resume_sentence:
-                                    if idx in missing_sentences:
-                                        msg = f'********* Recovering missing sentence {idx} *********'
-                                    elif resume_sentence == idx and resume_sentence > 0:
+                                if idx_target in missing_sentences or idx_target >= resume_sentence:
+                                    if idx_target in missing_sentences:
+                                        msg = f'********* Recovering missing sentence {idx_target} *********'
+                                        print(msg)
+                                    elif resume_sentence == idx_target and resume_sentence > 0:
                                         msg = f'********* Resuming from sentence {resume_sentence} ********'
                                         print(msg)
-                                    success = tts_manager.convert_sentence2audio(idx, sentence) if sentence else True
+                                    success = tts_manager.convert_sentence2audio(idx_target, sentence) if sentence else True
                                     if not success:
                                         return False
                             idx_target += 1
@@ -1840,9 +1824,9 @@ def convert_chapters2audio(session_id:str)->bool:
                             percentage = total_progress * 100
                             t.set_description(f"{percentage:.2f}%")
                             msg = f' : {sentence}'
-                            print(msg)    
+                            print(msg)
                             t.update(1)
-                        end = (chapter_idx + 1) * len(sentences)
+                        end = idx_target
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
                         if chapter_idx in missing_chapters or idx_target >= resume_sentence:
@@ -1856,6 +1840,8 @@ def convert_chapters2audio(session_id:str)->bool:
             return tts_manager.create_sentences2vtt(final_sentences)
         except Exception as e:
             DependencyError(e)
+            error = f'convert_chapters2audio() error: {e}'
+            print(error)
             return False
 
 def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
