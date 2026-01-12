@@ -1244,6 +1244,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session:
                         tts_engine_options = get_compatible_tts_engines(session['language'])
+                        print(f"--------------------- tts engine: {session['tts_engine']} --------------")
                         session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
                         return gr.update(choices=tts_engine_options, value=session['tts_engine'])
                 except Exception as e:
@@ -1717,9 +1718,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                     os.makedirs(session['custom_model_dir'], exist_ok=True)
-                    os.makedirs(session['voice_dir'], exist_ok=True)
-                    # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
-                    #[shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]                
+                    os.makedirs(session['voice_dir'], exist_ok=True)     
                     if is_gui_shared:
                         msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
                         session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
