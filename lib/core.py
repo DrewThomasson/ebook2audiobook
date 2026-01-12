@@ -1189,6 +1189,8 @@ def get_sentences(text:str, session_id:str)->list|None:
                     soft_list.append(s)
             else:
                 soft_list.append(s)
+                
+        final_list = soft_list;
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
