@@ -2530,7 +2530,7 @@ def convert_ebook(args:dict)->tuple:
                                 session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
                                 checksum, error = compare_checksums(session['ebook'], os.path.join(session['process_dir'], 'checksum'))
                                 if error is None:
-                                    ebook_name = ebook_name = Path(session['ebook']).name
+                                    ebook_name = Path(session['ebook']).name
                                     saved_json_chapters = os.path.join(session['process_dir'], f'{ebook_name}.json')
                                     if checksum:
                                         session['chapters'] = []
@@ -2573,7 +2573,6 @@ def convert_ebook(args:dict)->tuple:
                                                     if not session['chapters']:
                                                         session['chapters'] = get_chapters(epubBook, session_id)
                                                     if session['chapters']:
-                                                        save_json_chapters(session_id, saved_json_chapters)
                                                         #if session['chapters_preview']:
                                                         #   return 'confirm_blocks', True
                                                         #else:
@@ -2607,6 +2606,9 @@ def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session:
         if session['chapters']:
+            ebook_name = Path(session['ebook']).name
+            saved_json_chapters = os.path.join(session['process_dir'], f'{ebook_name}.json')
+            save_json_chapters(session_id, saved_json_chapters)
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
