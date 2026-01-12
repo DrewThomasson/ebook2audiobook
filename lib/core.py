@@ -803,7 +803,6 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
         try:
             prev_child_had_data = False
             for idx, child in enumerate(node.children):
-                print(f'--------child: {child}------------')
                 current_child_had_data = False
                 if isinstance(child, NavigableString):
                     text = child.strip()
@@ -854,7 +853,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                         else:
                             yield from _tuple_row(child, last_text_char)
                             current_child_had_data = True
-                prev_child_had_data = current_child_had_data
+                if current_child_had_data:
+                    prev_child_had_data = True
         except Exception as e:
             error = f'filter_chapter() _tuple_row() error: {e}'
             DependencyError(error)
