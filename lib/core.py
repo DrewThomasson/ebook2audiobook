@@ -908,7 +908,6 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             for tag in soup(['script', 'style']):
                 tag.decompose()
             tuples_list = list(_tuple_row(body))
-            print(tuples_list)
             if not tuples_list:
                 error = 'No tuples_list from body created!'
                 print(error)
@@ -950,6 +949,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                     if text:
                         text_list.append(text)
                 prev_typ = typ
+            print(tuples_list)
             msg = f'Flattening as raw text…'
             print(msg)
             max_chars = int(language_mapping[lang]['max_chars'] / 2)
