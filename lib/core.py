@@ -801,35 +801,44 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
 
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
+            first_tuple = True
             for child in node.children:
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
                         yield ('text', text)
-                        last_text_char = text[-1] if text else last_text_char
+                        last_text_char = text[-1]
+                        first_tuple = False
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
                         title = child.get_text(strip=True)
                         if title:
                             yield ('heading', title)
-                            last_text_char = title[-1] if title else last_text_char
+                            last_text_char = title[-1]
+                            first_tuple = False
                     elif name == 'table':
                         yield ('table', child)
+                        first_tuple = False
                     else:
                         return_data = False
                         if name in proc_tags:
+                            is_header = False
                             for inner in _tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
-                                is_header = False
+                                first_tuple = False
                                 last_text_char = inner[1][-1]
                                 if inner[0] in ('text', 'heading') and inner[1]:
                                     is_header = True
                             if return_data:
                                 if name in break_tags:
                                     # Only yield break if last char is NOT alnum or space
-                                    if is_header or not last_text_char.isalnum() or not last_text_char.isspace():
+                                    if first_tuple or is_header or (
+                                        last_text_char
+                                        and not last_text_char.isalnum()
+                                        and not last_text_char.isspace()
+                                    ):
                                         yield ('break', TTS_SML['break']['token'])
                                 elif name in heading_tags or name in pause_tags:
                                     yield ('pause', TTS_SML['pause']['token'])
