@@ -1833,7 +1833,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             idx_target += 1
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
-                                progress_bar(progress=total_progress, desc=ebook_name)
+                                progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
                             percentage = total_progress * 100
                             t.set_description(f"{percentage:.2f}%")
                             msg = f' : {sentence}'
