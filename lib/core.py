@@ -949,7 +949,6 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                     if text:
                         text_list.append(text)
                 prev_typ = typ
-            print(tuples_list)
             msg = f'Flattening as raw text…'
             print(msg)
             max_chars = int(language_mapping[lang]['max_chars'] / 2)
@@ -982,6 +981,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 clean_list.append(current)
                 i += 1
             text = ' '.join(clean_list)
+            print(clean_list)
             if not re.search(r"[^\W_]", text):
                 error = 'No valid text found!'
                 print(error)
