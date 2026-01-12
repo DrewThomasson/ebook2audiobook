@@ -827,7 +827,6 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                             for inner in _tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
-                                first_tuple = False
                                 last_text_char = inner[1][-1]
                                 if inner[0] in ('text', 'heading') and inner[1]:
                                     is_header = True
@@ -843,6 +842,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                                         yield ('break', TTS_SML['break']['token'])
                                 elif name in heading_tags or name in pause_tags:
                                     yield ('pause', TTS_SML['pause']['token'])
+                            first_tuple = False
                         else:
                             yield from _tuple_row(child, last_text_char)
         except Exception as e:
