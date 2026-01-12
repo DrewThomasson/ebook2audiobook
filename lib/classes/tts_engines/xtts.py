@@ -176,7 +176,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             return False
 
     def create_vtt(self, all_sentences:list)->bool:
-        audio_dir = self.session['chapters_dir_sentences']
+        audio_dir = self.session['sentences_dir']
         vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
         if self._build_vtt_file(all_sentences, audio_dir, vtt_path):
             return True
