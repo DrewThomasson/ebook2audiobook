@@ -819,7 +819,6 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                     else:
                         return_data = False
                         if name in proc_tags:
-                            print(f'----------- tag: {name}')
                             for inner in _tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
@@ -827,8 +826,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                                 if inner[0] in ('text', 'heading') and inner[1]:
                                     last_text_char = inner[1][-1]
                             if return_data:
-                                print(f'----------- tag: {name}')
                                 if name in break_tags:
+                                    print(f'----------- tag: {name}')
                                     # Only yield break if last char is NOT alnum or space
                                     if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
                                         yield ('break', TTS_SML['break']['token'])
