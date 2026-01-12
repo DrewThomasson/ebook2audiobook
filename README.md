@@ -106,7 +106,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **OCR scanning** for e-books with pages scanned as images
 - 🔊 **High-quality text-to-speech**  from near realtime to near real voice
 - 🗣️ **Optional voice cloning** using your own voice file
-- 🧩 **Optional custom model** using your own trained model
+- 🧩 **Optional custom model** using your own trained model (XTTSv2 only, other on request)
 - 🌐 **Supports 1158 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Low-resource friendly** — runs on **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
