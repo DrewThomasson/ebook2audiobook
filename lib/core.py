@@ -1212,7 +1212,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 soft_list.append(s)
 
         # PASS 3 — space split (last resort)
-        final_list = []
+        last_list = []
         for s in soft_list:
             s = s.strip()
             if not s:
@@ -1221,7 +1221,7 @@ def get_sentences(text:str, session_id:str)->list|None:
             while rest:
                 clean_len = len(strip_sml(rest))
                 if clean_len <= max_chars:
-                    final_list.append(rest.strip())
+                    last_list.append(rest.strip())
                     break
                 cut = rest[:max_chars + 1]
                 idx = cut.rfind(' ')
@@ -1232,25 +1232,37 @@ def get_sentences(text:str, session_id:str)->list|None:
                     left = rest[:max_chars].strip()
                     right = rest[max_chars:].strip()
                 if not left or right == rest:
-                    final_list.append(rest.strip())
+                    last_list.append(rest.strip())
                     break
-                final_list.append(left)
+                last_list.append(left)
                 rest = right
 
         # PASS 4 — merge very short rows
-        merged_list = []
+        merge_list = []
         merge_max_chars = int((max_chars / 2) / 4)
-        for s in final_list:
+        for s in last_list:
             s = s.strip()
             if not s:
                 continue
             clean_len = len(strip_sml(s))
-            if merged_list and clean_len <= merge_max_chars:
-                sep = TTS_SML['pause']['token'] if len(merged_list) == 1 else " "
-                merged_list[-1] = merged_list[-1].rstrip() + sep + s.lstrip()
+            if merge_list and clean_len <= merge_max_chars:
+                sep = TTS_SML['pause']['token'] if len(merge_list) == 1 else " "
+                merge_list[-1] = merge_list[-1].rstrip() + sep + s.lstrip()
             else:
-                merged_list.append(s)
-        final_list = merged_list
+                merge_list.append(s)
+            
+        # PASS 5 = remove unwanted breaks
+        break_match = TTS_SML['break']['match'].pattern
+        # before: alnum or space
+        # after : alnum, space, or end-of-string
+        break_cleanup_re = re.compile(
+            rf'(?<=[\w ]){break_match}(?=[\w ]|$)',
+            flags=re.UNICODE
+        )
+        final_list = []
+        for s in merge_list:
+            s = break_cleanup_re.sub('', s)
+            final_list.append(s)
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
@@ -2527,11 +2539,10 @@ def convert_ebook(args:dict)->tuple:
                                 if session['is_gui_process']:
                                     show_alert({"type": "warning", "msg": msg})
                                 print(msg.replace('<br/>','\n'))
-                                session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
+                                session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                                 checksum, error = compare_checksums(session['ebook'], os.path.join(session['process_dir'], 'checksum'))
                                 if error is None:
-                                    ebook_name = Path(session['ebook']).name
-                                    saved_json_chapters = os.path.join(session['process_dir'], f'{ebook_name}.json')
+                                    saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
                                     if checksum:
                                         session['chapters'] = []
                                         if not convert2epub(session_id):
@@ -2606,8 +2617,7 @@ def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session:
         if session['chapters']:
-            ebook_name = Path(session['ebook']).name
-            saved_json_chapters = os.path.join(session['process_dir'], f'{ebook_name}.json')
+            saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
             save_json_chapters(session_id, saved_json_chapters)
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
