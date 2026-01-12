@@ -355,10 +355,10 @@ def hash_proxy_dict(proxy_dict)->str:
     data_str = json.dumps(data, sort_keys=True, default=str)
     return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
-def file_checksum(filepath:str, checksum_path:str, hash_algorithm:str='sha256')->tuple[bool, str|None]:
+def compare_checksums(src_path:str, checksum_path:str, hash_algorithm:str='sha256')->tuple[bool, str|None]:
 	try:
 		hash_func = hashlib.new(hash_algorithm)
-		with open(filepath, 'rb') as f:
+		with open(src_path, 'rb') as f:
 			while chunk := f.read(8192):
 				hash_func.update(chunk)
 		new_checksum = hash_func.hexdigest()
@@ -374,7 +374,7 @@ def file_checksum(filepath:str, checksum_path:str, hash_algorithm:str='sha256')-
 			f.write(new_checksum)
 		return True, None
 	except Exception as e:
-		return False, f'file_checksum() error: {e}'
+		return False, f'compare_checksums() error: {e}'
 
 def compare_dict_keys(d1, d2):
     if not isinstance(d1, Mapping) or not isinstance(d2, Mapping):
@@ -500,7 +500,7 @@ def load_json_chapters(filepath:str)->list:
 		print(f"load_json_chapters() error: {e}")
 		return []
 
-def save_json_chapters(session_id: str, filepath: str)->bool:
+def save_json_chapters(session_id:str, filepath:str)->bool:
 	try:
 		session = context.get_session(session_id)
 		if not session:
@@ -2528,14 +2528,15 @@ def convert_ebook(args:dict)->tuple:
                                     show_alert({"type": "warning", "msg": msg})
                                 print(msg.replace('<br/>','\n'))
                                 session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
-                                checksum, error = file_checksum(session['ebook'], os.path.join(session['process_dir'], 'checksum'))
+                                checksum, error = compare_checksums(session['ebook'], os.path.join(session['process_dir'], 'checksum'))
                                 if error is None:
+                                    ebook_name = ebook_name = Path(session['ebook']).name
+                                    saved_json_chapters = os.path.join(session['process_dir'], f'{ebook_name}.json')
                                     if checksum:
                                         if not convert2epub(session_id):
                                             error = 'convert2epub() failed!'
                                     else:
-                                        ebook_name = ebook_name = Path(session['ebook']).name
-                                        session['chapters'] = load_json_chapters(os.path.join(session['process_dir'], f'{ebook_name}.json'))
+                                        session['chapters'] = load_json_chapters(saved_json_chapters)
                                     if error is None:
                                         epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                         if epubBook:
@@ -2571,6 +2572,7 @@ def convert_ebook(args:dict)->tuple:
                                                     if not session['chapters']:
                                                         session['chapters'] = get_chapters(epubBook, session_id)
                                                     if session['chapters']:
+                                                        save_json_chapters(session_id, saved_json_chapters)
                                                         #if session['chapters_preview']:
                                                         #   return 'confirm_blocks', True
                                                         #else:
