@@ -55,7 +55,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
             if self.engine:
-                final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
+                final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 sentence_parts = re.split(default_sml_pattern, sentence)
                 self.audio_segments = []

@@ -2572,7 +2572,6 @@ def convert_ebook(args:dict)->tuple:
                                                 if session['cover']:
                                                     if not session['chapters']:
                                                         session['chapters'] = get_chapters(epubBook, session_id)
-                                                    print(session['chapters'])
                                                     if session['chapters']:
                                                         save_json_chapters(session_id, saved_json_chapters)
                                                         #if session['chapters_preview']:
