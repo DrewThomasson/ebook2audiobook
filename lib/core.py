@@ -2533,6 +2533,7 @@ def convert_ebook(args:dict)->tuple:
                                     ebook_name = ebook_name = Path(session['ebook']).name
                                     saved_json_chapters = os.path.join(session['process_dir'], f'{ebook_name}.json')
                                     if checksum:
+                                        session['chapters'] = []
                                         if not convert2epub(session_id):
                                             error = 'convert2epub() failed!'
                                     else:
