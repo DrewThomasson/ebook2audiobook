@@ -908,6 +908,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             for tag in soup(['script', 'style']):
                 tag.decompose()
             tuples_list = list(_tuple_row(body))
+            print(tuples_list)
             if not tuples_list:
                 error = 'No tuples_list from body created!'
                 print(error)
