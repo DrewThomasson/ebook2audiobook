@@ -797,6 +797,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if not os.path.exists(file_path):
                     return False
                 gradio_cache = os.path.normpath(utils.get_cache_folder())
+                print(f'---------{gradio_cache}----------')
                 file_path = os.path.normpath(file_path)
                 return file_path.startswith(gradio_cache)
 
