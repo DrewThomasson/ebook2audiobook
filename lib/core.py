@@ -1917,7 +1917,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                         for file in batch:
                             f.write(f"file '{file.replace(os.sep, '/')}'\n")
                     chunk_list.append((txt, out, is_gui_process))
-                    if session.get('is_gui_progress'):
+                    if session['is_gui_process']:
                         total_progress = (idx + 1) / total_batches
                         progress_bar(progress=total_progress, desc=f'Preparing batches: {os.path.basename(out)}')
                 try:
@@ -2185,7 +2185,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                     path = Path(session['chapters_dir']) / file
                                     f.write(f"file '{path.as_posix()}'\n")
                             chunk_list.append((str(txt), str(out), session['is_gui_process']))
-                            if session.get('is_gui_progress'):
+                            if session['is_gui_process']:
                                 total_progress = (idx + 1) / total_batches
                                 progress_bar(progress=total_progress, desc=f"Part {part_idx+1} batches")
                         with Pool(cpu_count()) as pool:
