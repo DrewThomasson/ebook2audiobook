@@ -807,7 +807,6 @@ def build_interface(args:dict)->gr.Blocks:
                             if not ebook_data:
                                 ebook_data = None
                         elif isinstance(session['ebook'], str) and file_count == 'single':
-                            session['ebook_list'] = None
                             if os.path.exists(session['ebook']):
                                 ebook_data = session['ebook']
                             else:
@@ -1689,7 +1688,7 @@ def build_interface(args:dict)->gr.Blocks:
                         active_sessions.add(req.session_hash)
                         session[req.session_hash] = req.session_hash
                         session['cancellation_requested'] = False
-                    if isinstance(session['ebook'], str):
+                    if session['ebook'] is not None:
                         if not os.path.exists(session['ebook']):
                             session['ebook'] = None
                     if session['voice'] is not None:
