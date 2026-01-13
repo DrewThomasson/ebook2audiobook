@@ -80,7 +80,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
             if self.engine:
-                final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
+                final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 sentence_parts = re.split(default_sml_pattern, sentence)
                 self.audio_segments = []
@@ -242,7 +242,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             return False
 
     def create_vtt(self, all_sentences:list)->bool:
-        audio_dir = self.session['chapters_dir_sentences']
+        audio_dir = self.session['sentences_dir']
         vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
         if self._build_vtt_file(all_sentences, audio_dir, vtt_path):
             return True
