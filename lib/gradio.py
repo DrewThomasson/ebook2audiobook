@@ -1335,9 +1335,9 @@ def build_interface(args:dict)->gr.Blocks:
                         os.makedirs(dir_path, exist_ok=True)
                 return dir_path
 
-            def change_gr_custom_model_file(f:str|None, t:str, session_id:str)->tuple:
+            def change_gr_custom_model_file(custom_file:str|None, tts_engine:str, session_id:str)->tuple:
                 nonlocal models
-                if f is not None:
+                if custom_file is not None:
                     state = {}
                     if len(custom_model_options) > max_custom_model:
                         error = f'You are allowed to upload a max of {max_custom_models} models'   
@@ -1347,9 +1347,9 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.get_session(session_id)
                         if session:
                             models = load_engine_presets(session['tts_engine'])
-                            session['tts_engine'] = t
-                            if analyze_uploaded_file(f, models['internal']['files']):
-                                model = extract_custom_model(f, session_id, models[default_fine_tuned]['files'])
+                            session['tts_engine'] = tts_engine
+                            if analyze_uploaded_file(custom_file, models['internal']['files']):
+                                model = extract_custom_model(custom_file, session_id, models[default_fine_tuned]['files'])
                                 if model is not None:
                                     session['custom_model'] = model
                                     session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')
@@ -1359,11 +1359,11 @@ def build_interface(args:dict)->gr.Blocks:
                                     show_alert(state)
                                     return gr.update(value=None), update_gr_custom_model_list(session_id)
                                 else:
-                                    error = f'Cannot extract custom model zip file {os.path.basename(f)}'
+                                    error = f'Cannot extract custom model zip file {os.path.basename(custom_file)}'
                                     state['type'] = 'warning'
                                     state['msg'] = error
                             else:
-                                error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                                error = f'{os.path.basename(custom_file)} is not a valid model or some required files are missing'
                                 state['type'] = 'warning'
                                 state['msg'] = error
                     show_alert(state)
@@ -1710,10 +1710,14 @@ def build_interface(args:dict)->gr.Blocks:
                         if not os.path.exists(session['custom_model_dir']):
                             session['custom_model'] = None 
                     if session['fine_tuned'] is not None:
+                        print('pass 1')
                         if session['tts_engine'] is not None:
+                            print('pass 2')
                             models = load_engine_presets(session['tts_engine'])
                             if session['tts_engine'] in models.keys():
+                                print('pass 3')
                                 if session['fine_tuned'] not in models.keys():
+                                    print('pass 4')
                                     session['fine_tuned'] = default_fine_tuned
                             else:
                                 session['tts_engine'] = default_tts_engine
