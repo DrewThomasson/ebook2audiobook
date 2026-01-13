@@ -791,16 +791,6 @@ def build_interface(args:dict)->gr.Blocks:
                     </div>
                 '''
 
-            def is_valid_cache_file(file_path:str)->bool:
-                if not file_path:
-                    return False
-                if not os.path.exists(file_path):
-                    return False
-                gradio_cache = os.path.normpath(utils.get_cache_folder())
-                print(f'---------{gradio_cache}----------')
-                file_path = os.path.normpath(file_path)
-                return file_path.startswith(gradio_cache)
-
             def restore_interface(session_id:str, req:gr.Request)->tuple:
                 try:
                     session = context.get_session(session_id)
@@ -825,6 +815,7 @@ def build_interface(args:dict)->gr.Blocks:
                             ebook_data = session['ebook'] = None
                         if ebook_data is not None:
                             gradio_cache_dir = os.path.normpath(utils.get_cache_folder())
+                            print(f'---------{gradio_cache_dir}----------')
                             if isinstance(ebook_data, list):
                                 ebook_data = [
                                     f for f in ebook_data
