@@ -168,7 +168,7 @@ class TTSUtils:
                 if not engine:
                     engine = TTSEngine(model_path)
                 if engine:
-                    vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['scrpt_mode'])
+                    vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                     self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
                     if self.session['free_vram_gb'] > models_loaded_size_gb:
@@ -210,7 +210,7 @@ class TTSUtils:
                         eval = True
                     ) 
                 if engine:
-                    vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['scrpt_mode'])
+                    vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                     self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
                     if self.session['free_vram_gb'] > models_loaded_size_gb:
@@ -255,7 +255,7 @@ class TTSUtils:
                     self._cleanup_memory()
                     engine = loaded_tts.get(key, False)
                     if not engine:
-                        vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['scrpt_mode'])
+                        vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                         self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                         models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
                         if self.session['free_vram_gb'] <= models_loaded_size_gb:
