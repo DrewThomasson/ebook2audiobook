@@ -24,13 +24,14 @@ class VRAMDetector:
         for p in paths:
             if os.path.exists(p):
                 try:
-                    val = open(p).read().strip()
-                    if val.isdigit():
-                        limit = int(val)
-                        if limit > 0 and limit < (1 << 60):
-                            used = psutil.virtual_memory().used
-                            free = max(limit - used, 0)
-                            return free, limit
+                    with open(p, "rt") as f:
+                        val = f.read().strip()
+                        if val.isdigit():
+                            limit = int(val)
+                            if limit > 0 and limit < (1 << 60):
+                                used = psutil.virtual_memory().used
+                                free = max(limit - used, 0)
+                                return free, limit
                 except Exception:
                     pass
         mem = psutil.virtual_memory()
