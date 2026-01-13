@@ -1710,10 +1710,9 @@ def build_interface(args:dict)->gr.Blocks:
                         if not os.path.exists(session['custom_model_dir']):
                             session['custom_model'] = None 
                     if session['fine_tuned'] is not None:
-                        print('pass 1')
                         if session['tts_engine'] is not None:
-                            print('pass 2')
                             models = load_engine_presets(session['tts_engine'])
+                            print(models)
                             if session['tts_engine'] in models.keys():
                                 print('pass 3')
                                 if session['fine_tuned'] not in models.keys():
