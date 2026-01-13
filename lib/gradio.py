@@ -1700,17 +1700,17 @@ def build_interface(args:dict)->gr.Blocks:
                         active_sessions.add(req.session_hash)
                         session[req.session_hash] = req.session_hash
                         session['cancellation_requested'] = False
-                    if session['ebook'] is not None:
+                    if isinstance(session.get('ebook'), str):
                         if not os.path.exists(session['ebook']):
                             session['ebook'] = None
-                    if session['voice'] is not None:
+                    if isinstance(session.get('voice'), str):
                         if not os.path.exists(session['voice']):
                             session['voice'] = None
-                    if session['custom_model'] is not None:
+                    if isinstance(session.get('custom_model'), str):
                         if not os.path.exists(session['custom_model_dir']):
                             session['custom_model'] = None 
-                    if session['fine_tuned'] is not None:
-                        if session['tts_engine'] is not None:
+                    if isinstance(session.get('fine_tuned'), str):
+                        if isinstance(session.get('tts_engine'), str):
                             models = load_engine_presets(session['tts_engine'])
                             if models:
                                 if session['fine_tuned'] not in models.keys():
@@ -1718,7 +1718,7 @@ def build_interface(args:dict)->gr.Blocks:
                             else:
                                 session['tts_engine'] = default_tts_engine
                                 session['fine_tuned'] = default_fine_tuned
-                    if session['audiobook'] is not None:
+                    if isinstance(session.get('audiobook'), str):
                         if not os.path.exists(session['audiobook']):
                             session['audiobook'] = None
                     if session['status'] == 'converting':
