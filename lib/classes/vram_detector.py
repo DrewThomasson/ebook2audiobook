@@ -1,4 +1,4 @@
-import os, platform, json, psutil, subprocess, re
+import os, platform, json, psutil, subprocess, re, math
 
 from typing import Any
 from lib.conf import NATIVE, FULL_DOCKER
@@ -42,63 +42,52 @@ class VRAMDetector:
         return float(f"{b/(1024**3):.2f}")
 
     @staticmethod
-    def _gb(b: int, decimals: int = 2) -> float:
-        return round(b / (1024 ** 3), decimals) if b > 0 else 0.0
+    def _ceil_gb(b: int) -> int:
+        return math.ceil(b / (1024 ** 3)) if b > 0 else 0
 
     def detect_vram(self, device:str, script_mode:str, as_json:bool=False)->Any:
         info = {}
         try:
             import torch
             in_docker = self._in_docker()
-            # ─────────────────────────── CPU / Docker fallback
-            if script_mode == FULL_DOCKER and in_docker:
-                free, total = self._docker_memory()
-                info = {
-                    "os": self.system,
-                    "device_type": "docker",
-                    "device_name": "Docker Container Memory",
-                    "free_bytes": free,
-                    "total_bytes": total,
-                    "free_vram_gb": self._fmt(free),
-                    "total_vram_gb": self._fmt(total),
-                    "note": "Running inside Docker container."
-                }
+
             # ───────────────────────────── Jetson (Unified Memory)
-            elif device == 'jetson':
+            if device == 'jetson':
                 if os.path.exists('/etc/nv_tegra_release'):
                     try:
                         out = subprocess.check_output(['tegrastats','--interval','1000'],timeout=3).decode()
                         m = re.search(r'RAM\s+(\d+)/(\d+)MB',out)
                         if m:
-                            used=int(m.group(1))*1024*1024
-                            total=int(m.group(2))*1024*1024
-                            free=total-used
-                            info={
-                                "os":self.system,
-                                "device_type":"jetson",
-                                "device_name":"NVIDIA Jetson (Unified Memory)",
-                                "used_bytes":used,
-                                "free_bytes":free,
-                                "total_bytes":total,
-                                "used_vram_gb":self._fmt(used),
-                                "free_vram_gb":self._fmt(free),
-                                "total_vram_gb":self._fmt(total),
-                                "note":"Jetson uses unified system RAM as VRAM."
+                            used = int(m.group(1)) * 1024 * 1024
+                            total = int(m.group(2)) * 1024 * 1024
+                            free = total - used
+                            info = {
+                                "os": self.system,
+                                "device_type": "jetson",
+                                "device_name": "NVIDIA Jetson (Unified Memory)",
+                                "used_bytes": used,
+                                "free_bytes": free,
+                                "total_bytes": total,
+                                "used_vram_gb": self._ceil_gb(used),
+                                "free_vram_gb": self._ceil_gb(free),
+                                "total_vram_gb": self._ceil_gb(total),
+                                "note": "Jetson uses unified system RAM as VRAM."
                             }
-                            return json.dumps(info,indent=2) if as_json else info
+                            return json.dumps(info, indent=2) if as_json else info
                     except (subprocess.CalledProcessError, Exception):
-                        mem=psutil.virtual_memory()
-                        info={
-                            "os":self.system,
-                            "device_type":"jetson",
-                            "device_name":"NVIDIA Jetson (Unified Memory)",
-                            "free_bytes":mem.available,
-                            "total_bytes":mem.total,
-                            "free_vram_gb":self._fmt(mem.available),
-                            "total_vram_gb":self._fmt(mem.total),
-                            "note":"tegrastats unavailable; reporting system RAM."
+                        mem = psutil.virtual_memory()
+                        info = {
+                            "os": self.system,
+                            "device_type": "jetson",
+                            "device_name": "NVIDIA Jetson (Unified Memory)",
+                            "free_bytes": mem.available,
+                            "total_bytes": mem.total,
+                            "free_vram_gb": self._ceil_gb(mem.available),
+                            "total_vram_gb": self._ceil_gb(mem.total),
+                            "note": "tegrastats unavailable; reporting system RAM."
                         }
-                        return json.dumps(info,indent=2) if as_json else info
+                        return json.dumps(info, indent=2) if as_json else info
+
             # ───────────────────────────── CUDA (NVIDIA)
             elif device == 'cuda':
                 if torch.cuda.is_available():
@@ -113,10 +102,10 @@ class VRAMDetector:
                         "total_bytes": total,
                         "allocated_bytes": alloc,
                         "reserved_bytes": resv,
-                        "free_vram_gb": self._fmt(free),
-                        "total_vram_gb": self._fmt(total),
-                        "allocated_human": self._fmt(alloc),
-                        "reserved_human": self._fmt(resv),
+                        "free_vram_gb": self._ceil_gb(free),
+                        "total_vram_gb": self._ceil_gb(total),
+                        "allocated_vram_gb": self._ceil_gb(alloc),
+                        "reserved_vram_gb": self._ceil_gb(resv),
                     }
                     return json.dumps(info, indent=2) if as_json else info
 
@@ -133,10 +122,10 @@ class VRAMDetector:
                     "total_bytes": total,
                     "allocated_bytes": alloc,
                     "reserved_bytes": resv,
-                    "free_vram_gb": self._fmt(free),
-                    "total_vram_gb": self._fmt(total),
-                    "allocated_human": self._fmt(alloc),
-                    "reserved_human": self._fmt(resv),
+                    "free_vram_gb": self._ceil_gb(free),
+                    "total_vram_gb": self._ceil_gb(total),
+                    "allocated_vram_gb": self._ceil_gb(alloc),
+                    "reserved_vram_gb": self._ceil_gb(resv),
                 }
                 return json.dumps(info, indent=2) if as_json else info
 
@@ -153,33 +142,45 @@ class VRAMDetector:
                     "total_bytes": total,
                     "allocated_bytes": alloc,
                     "reserved_bytes": resv,
-                    "free_vram_gb": self._fmt(free),
-                    "total_vram_gb": self._fmt(total),
-                    "allocated_human": self._fmt(alloc),
-                    "reserved_human": self._fmt(resv),
+                    "free_vram_gb": self._ceil_gb(free),
+                    "total_vram_gb": self._ceil_gb(total),
+                    "allocated_vram_gb": self._ceil_gb(alloc),
+                    "reserved_vram_gb": self._ceil_gb(resv),
                 }
                 return json.dumps(info, indent=2) if as_json else info
 
             # ─────────────────────────── Apple MPS (Metal)
             elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                mem = psutil.virtual_memory()
                 info = {
                     "os": self.system,
                     "device_type": "mps",
                     "device_name": "Apple GPU (Metal)",
-                    "note": "PyTorch MPS does not expose memory info; reporting system RAM",
+                    "free_bytes": mem.available,
+                    "total_bytes": mem.total,
+                    "free_vram_gb": self._ceil_gb(mem.available),
+                    "total_vram_gb": self._ceil_gb(mem.total),
+                    "note": "PyTorch MPS does not expose memory info; reporting system RAM"
                 }
-                mem = psutil.virtual_memory()
-                info['free_bytes'] = mem.available
-                info['total_bytes'] = mem.total
-                info['free_vram_gb'] = self._fmt(mem.available)
-                info['total_vram_gb'] = self._fmt(mem.total)
                 return json.dumps(info, indent=2) if as_json else info
 
         except Exception:
             pass
 
-        if not info:
-            # ─────────────────────────── CPU fallback
+        # ─────────────────────────── CPU / Docker fallback
+        if script_mode == FULL_DOCKER and in_docker:
+            free, total = self._docker_memory()
+            info = {
+                "os": self.system,
+                "device_type": "docker",
+                "device_name": "Docker Container Memory",
+                "free_bytes": free,
+                "total_bytes": total,
+                "free_vram_gb": self._ceil_gb(free),
+                "total_vram_gb": self._ceil_gb(total),
+                "note": "Running inside Docker container."
+            }
+        else:
             mem = psutil.virtual_memory()
             info = {
                 "os": self.system,
@@ -187,8 +188,8 @@ class VRAMDetector:
                 "device_name": "System RAM",
                 "free_bytes": mem.available,
                 "total_bytes": mem.total,
-                "free_vram_gb": self._fmt(mem.available),
-                "total_vram_gb": self._fmt(mem.total),
+                "free_vram_gb": self._ceil_gb(mem.available),
+                "total_vram_gb": self._ceil_gb(mem.total),
             }
 
         if as_json:
@@ -196,7 +197,10 @@ class VRAMDetector:
 
         total_vram_bytes = info.get('total_bytes', 4096)
         free_vram_bytes = info.get('free_bytes', 0)
-        total_vram_gb = int(round(total_vram_bytes / (1024 ** 3)))
-        free_vram_gb = self._gb(free_vram_bytes)
+        info['total_vram_gb'] = info.get('total_vram_gb', self._ceil_gb(total_vram_bytes))
+        info['free_vram_gb'] = info.get('free_vram_gb', self._ceil_gb(free_vram_bytes))
 
-        return {"total_vram_gb": total_vram_gb, "free_vram_gb": free_vram_gb}
+        return {
+            "total_vram_gb": info['total_vram_gb'],
+            "free_vram_gb": info['free_vram_gb']
+        }
