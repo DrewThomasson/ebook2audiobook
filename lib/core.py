@@ -849,7 +849,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                             for inner in _tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
-                                last_text_char = inner[1][-1]
+                                if len(inner) > 1 and inner[1]:
+                                    last_text_char = inner[1][-1]
                                 current_child_had_data = True
                                 if inner[0] in ('text', 'heading') and inner[1]:
                                     is_header = True
@@ -1577,7 +1578,7 @@ def roman2number(text: str)->str:
         reverse=True
     )
     chapter_words_re = re.compile(
-        rf'\b({"|".join(map(re.escape, chapter_words))})\s+([IVXLCDM])\b',
+        rf'\b({"|".join(map(re.escape, chapter_words))})\s+([IVXLCDM]+)\b',
         re.IGNORECASE | re.UNICODE
     )
     text = re.sub(
@@ -1843,7 +1844,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                     success = tts_manager.convert_sentence2audio(idx_target, sentence) if sentence else True
                                     if not success:
                                         return False
-                            idx_target += 1
+                                idx_target += 1
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
                                 progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
@@ -1852,7 +1853,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             msg = f' : {sentence}'
                             print(msg)
                             t.update(1)
-                        end = idx_target
+                        end = idx_target - 1
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
                         if chapter_idx in missing_chapters or idx_target >= resume_sentence:
