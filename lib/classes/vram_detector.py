@@ -44,14 +44,13 @@ class VRAMDetector:
 
     @staticmethod
     def _ceil_gb(b: int) -> int:
-        return math.ceil(b / (1024 ** 3)) if b > 0 else 0
+        return math.ceil(b / (1024 ** 3))
 
     def detect_vram(self, device:str, script_mode:str, as_json:bool=False)->Any:
         info = {}
+        in_docker = self._in_docker()
         try:
             import torch
-            in_docker = self._in_docker()
-
             # ───────────────────────────── Jetson (Unified Memory)
             if device == 'jetson':
                 if os.path.exists('/etc/nv_tegra_release'):
