@@ -24,6 +24,7 @@ from ebooklib import epub
 from ebooklib.epub import EpubBook
 from ebooklib.epub import EpubHtml
 from glob import glob
+from gradio import utils
 from iso639 import Lang
 from markdown import markdown
 from multiprocessing import Pool, cpu_count

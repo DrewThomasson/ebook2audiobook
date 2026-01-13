@@ -791,6 +791,15 @@ def build_interface(args:dict)->gr.Blocks:
                     </div>
                 '''
 
+        def is_valid_cache_file(file_path:str)->bool:
+            if not file_path:
+                return False
+            if not os.path.exists(file_path):
+                return False
+            gradio_cache = os.path.normpath(utils.get_cache_folder())
+            file_path = os.path.normpath(file_path)
+            return file_path.startswith(gradio_cache)
+
             def restore_interface(session_id:str, req:gr.Request)->tuple:
                 try:
                     session = context.get_session(session_id)
@@ -814,12 +823,18 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             ebook_data = session['ebook'] = None
                         if ebook_data is not None:
-                            current_dir_cache = tempfile.gettempdir()
-                            current_dir_cache_norm = os.path.normpath(current_dir_cache)
-                            prev_cache_dir = os.path.normpath(os.path.dirname(ebook_data[0]) if isinstance(ebook_data, list) else os.path.dirname(ebook_data))
-                            #if prev_cache_dir != current_dir_cache_norm:
-                            #    ebook_data = None
-                            #session['ebook'] = ebook_data
+                            gradio_cache_dir = os.path.normpath(utils.get_cache_folder())
+                            if isinstance(ebook_data, list):
+                                ebook_data = [
+                                    f for f in ebook_data
+                                    if os.path.normpath(f).startswith(gradio_cache_dir)
+                                ]
+                                if not ebook_data:
+                                    ebook_data = None
+                            else:
+                                if not os.path.normpath(ebook_data).startswith(gradio_cache_dir):
+                                    ebook_data = None
+                            session['ebook'] = ebook_data
                         visible_row_split_hours = True if session['output_split'] else False
                         return (
                             gr.update(value=ebook_data),
