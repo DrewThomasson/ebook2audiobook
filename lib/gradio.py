@@ -1707,8 +1707,9 @@ def build_interface(args:dict)->gr.Blocks:
                         if not os.path.exists(session['voice']):
                             session['voice'] = None
                     if isinstance(session.get('custom_model'), str):
-                        if not os.path.exists(session['custom_model_dir']):
-                            session['custom_model'] = None 
+                        custom_model_dir = session.get('custom_model_dir')
+                        if isinstance(custom_model_dir, str) and not os.path.exists(custom_model_dir):
+                            session['custom_model'] = None
                     if isinstance(session.get('fine_tuned'), str):
                         if isinstance(session.get('tts_engine'), str):
                             models = load_engine_presets(session['tts_engine'])
