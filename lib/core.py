@@ -2499,7 +2499,7 @@ def convert_ebook(args:dict)->tuple:
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
                             msg_extra = ''
-                            vram_dict = VRAMDetector().detect_vram(session['device'], session['scrpt_mode'])
+                            vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
                             print(f'vram_dict: {vram_dict}')
                             total_vram_gb = vram_dict.get('total_vram_gb', 0)
                             session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
