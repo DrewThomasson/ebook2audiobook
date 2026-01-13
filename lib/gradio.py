@@ -835,10 +835,10 @@ def build_interface(args:dict)->gr.Blocks:
                             else:
                                 if not os.path.normpath(ebook_data).startswith(gradio_cache_dir):
                                     ebook_data = None
-                            session['ebook'] = ebook_data
+                        session['ebook'] = ebook_data
                         visible_row_split_hours = True if session['output_split'] else False
                         return (
-                            gr.update(value=ebook_data),
+                            gr.update(value=session['ebook']),
                             gr.update(value=session['ebook_mode']),
                             gr.update(value=bool(session['chapters_preview'])),
                             gr.update(value=session['device']),
