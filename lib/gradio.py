@@ -745,21 +745,21 @@ def build_interface(args:dict)->gr.Blocks:
                 else:
                     return '<div class="spinner"></div>'
 
-            def show_rating(tts_engine:str)->str:
-                def yellow_stars(n:int):
-                    return "".join(
-                        "<span style='color:#f0bc00; font-size:12px'>★</span>" for _ in range(n)
-                    )
+            def yellow_stars(n:int):
+                return "".join(
+                    "<span style='color:#f0bc00; font-size:12px'>★</span>" for _ in range(n)
+                )
 
-                def color_box(value:int)->str:
-                    if value <= 4:
-                        color = "#4CAF50"  # Green = low
-                    elif value <= 8:
-                        color = "#FF9800"  # Orange = medium
-                    else:
-                        color = "#F44336"  # Red = high
-                    return f"<span style='background:{color};color:white; padding: 0 3px 0 3px; border-radius:3px; font-size:11px; white-space: nowrap'>{str(value)} GB</span>"
-                
+            def color_box(value:int)->str:
+                if value <= 4:
+                    color = "#4CAF50"  # Green = low
+                elif value <= 8:
+                    color = "#FF9800"  # Orange = medium
+                else:
+                    color = "#F44336"  # Red = high
+                return f"<span style='background:{color};color:white; padding: 0 3px 0 3px; border-radius:3px; font-size:11px; white-space: nowrap'>{str(value)} GB</span>"
+
+            def show_rating(tts_engine:str)->str:
                 rating = default_engine_settings[tts_engine]['rating']
                 return f'''
                     <div style="display:flex; justify-content:space-between; align-items:flex-end;">
@@ -791,14 +791,14 @@ def build_interface(args:dict)->gr.Blocks:
                     </div>
                 '''
 
-        def is_valid_cache_file(file_path:str)->bool:
-            if not file_path:
-                return False
-            if not os.path.exists(file_path):
-                return False
-            gradio_cache = os.path.normpath(utils.get_cache_folder())
-            file_path = os.path.normpath(file_path)
-            return file_path.startswith(gradio_cache)
+            def is_valid_cache_file(file_path:str)->bool:
+                if not file_path:
+                    return False
+                if not os.path.exists(file_path):
+                    return False
+                gradio_cache = os.path.normpath(utils.get_cache_folder())
+                file_path = os.path.normpath(file_path)
+                return file_path.startswith(gradio_cache)
 
             def restore_interface(session_id:str, req:gr.Request)->tuple:
                 try:
