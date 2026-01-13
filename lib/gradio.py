@@ -813,7 +813,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 ebook_data = session['ebook'] = None
                         else:
                             ebook_data = session['ebook'] = None
-                        print('f-------- ebook_data: {ebook_data} ---------')
+                        print(f'-------- ebook_data: {ebook_data} ---------')
                         if ebook_data is not None:
                             current_dir_cache = tempfile.gettempdir()
                             current_dir_cache_norm = os.path.normpath(current_dir_cache)
