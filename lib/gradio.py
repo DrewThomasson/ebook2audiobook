@@ -1712,11 +1712,8 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['fine_tuned'] is not None:
                         if session['tts_engine'] is not None:
                             models = load_engine_presets(session['tts_engine'])
-                            print(models)
-                            if session['tts_engine'] in models.keys():
-                                print('pass 3')
+                            if models:
                                 if session['fine_tuned'] not in models.keys():
-                                    print('pass 4')
                                     session['fine_tuned'] = default_fine_tuned
                             else:
                                 session['tts_engine'] = default_tts_engine
