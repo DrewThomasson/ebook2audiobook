@@ -813,14 +813,13 @@ def build_interface(args:dict)->gr.Blocks:
                                 ebook_data = session['ebook'] = None
                         else:
                             ebook_data = session['ebook'] = None
-                        print(f'-------- ebook_data: {ebook_data} ---------')
                         if ebook_data is not None:
                             current_dir_cache = tempfile.gettempdir()
                             current_dir_cache_norm = os.path.normpath(current_dir_cache)
                             prev_cache_dir = os.path.normpath(os.path.dirname(ebook_data[0]) if isinstance(ebook_data, list) else os.path.dirname(ebook_data))
-                            if prev_cache_dir != current_dir_cache_norm:
-                                ebook_data = None
-                            session['ebook'] = ebook_data
+                            #if prev_cache_dir != current_dir_cache_norm:
+                            #    ebook_data = None
+                            #session['ebook'] = ebook_data
                         visible_row_split_hours = True if session['output_split'] else False
                         return (
                             gr.update(value=ebook_data),
