@@ -792,7 +792,7 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
 
             def is_valid_gradio_cache(path):
-                gradio_cache_root = os.path.normpath(tmp_dir, 'gradio')
+                gradio_cache_root = os.path.normpath(os.path.join(tmp_dir, 'gradio'))
                 if not path or not os.path.isfile(path):
                     return False
                 path = os.path.normpath(path)
