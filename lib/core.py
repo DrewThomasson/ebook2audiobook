@@ -357,25 +357,25 @@ def hash_proxy_dict(proxy_dict)->str:
     return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
 def compare_checksums(src_path:str, checksum_path:str, hash_algorithm:str='sha256')->tuple[bool, str|None]:
-	try:
-		hash_func = hashlib.new(hash_algorithm)
-		with open(src_path, 'rb') as f:
-			while chunk := f.read(8192):
-				hash_func.update(chunk)
-		new_checksum = hash_func.hexdigest()
-		if not os.path.exists(checksum_path):
-			with open(checksum_path, 'w', encoding='utf-8') as f:
-				f.write(new_checksum)
-			return True, None
-		with open(checksum_path, 'r', encoding='utf-8') as f:
-			old_checksum = f.read().strip()
-		if old_checksum == new_checksum:
-			return False, None
-		with open(checksum_path, 'w', encoding='utf-8') as f:
-			f.write(new_checksum)
-		return True, None
-	except Exception as e:
-		return False, f'compare_checksums() error: {e}'
+    try:
+        hash_func = hashlib.new(hash_algorithm)
+        with open(src_path, 'rb') as f:
+            while chunk := f.read(8192):
+                hash_func.update(chunk)
+        new_checksum = hash_func.hexdigest()
+        if not os.path.exists(checksum_path):
+            with open(checksum_path, 'w', encoding='utf-8') as f:
+                f.write(new_checksum)
+            return True, None
+        with open(checksum_path, 'r', encoding='utf-8') as f:
+            old_checksum = f.read().strip()
+        if old_checksum == new_checksum:
+            return False, None
+        with open(checksum_path, 'w', encoding='utf-8') as f:
+            f.write(new_checksum)
+        return True, None
+    except Exception as e:
+        return False, f'compare_checksums() error: {e}'
 
 def compare_dict_keys(d1, d2):
     if not isinstance(d1, Mapping) or not isinstance(d2, Mapping):
@@ -494,25 +494,25 @@ def ocr2xhtml(img: Image.Image, lang: str)->str:
         return False
 
 def load_json_chapters(filepath:str)->list:
-	try:
-		with open(filepath, "r", encoding="utf-8") as f:
-			return json.load(f)
-	except Exception as e:
-		print(f"load_json_chapters() error: {e}")
-		return []
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"load_json_chapters() error: {e}")
+        return []
 
 def save_json_chapters(session_id:str, filepath:str)->bool:
-	try:
-		session = context.get_session(session_id)
-		if not session:
-			print(f"save_json_chapters error: session not found ({session_id})")
-			return False
-		with open(filepath, "w", encoding="utf-8") as f:
-			json.dump(session["chapters"], f, ensure_ascii=False, indent=2)
-		return True
-	except Exception as e:
-		print(f"save_json_chapters() error: {e}")
-		return False
+    try:
+        session = context.get_session(session_id)
+        if not session:
+            print(f"save_json_chapters error: session not found ({session_id})")
+            return False
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(session["chapters"], f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"save_json_chapters() error: {e}")
+        return False
 
 def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
@@ -1526,80 +1526,80 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
 
 def roman2number(text: str)->str:
 
-	def is_valid_roman(s: str)->bool:
-		return bool(valid_roman.fullmatch(s))
+    def is_valid_roman(s: str)->bool:
+        return bool(valid_roman.fullmatch(s))
 
-	def to_int(s: str)->str:
-		s = s.upper()
-		i = 0
-		result = 0
-		while i < len(s):
-			for roman, value in roman_numbers_tuples:
-				if s[i:i + len(roman)] == roman:
-					result += value
-					i += len(roman)
-					break
-			else:
-				return s
-		return str(result)
+    def to_int(s: str)->str:
+        s = s.upper()
+        i = 0
+        result = 0
+        while i < len(s):
+            for roman, value in roman_numbers_tuples:
+                if s[i:i + len(roman)] == roman:
+                    result += value
+                    i += len(roman)
+                    break
+            else:
+                return s
+        return str(result)
 
-	def repl_heading(m: re.Match)->str:
-		roman = m.group(1)
-		if not is_valid_roman(roman):
-			return m.group(0)
-		return f"{to_int(roman)}{m.group(2)}{m.group(3)}"
+    def repl_heading(m: re.Match)->str:
+        roman = m.group(1)
+        if not is_valid_roman(roman):
+            return m.group(0)
+        return f"{to_int(roman)}{m.group(2)}{m.group(3)}"
 
-	def repl_standalone(m: re.Match)->str:
-		roman = m.group(1)
-		if not is_valid_roman(roman):
-			return m.group(0)
-		return f"{to_int(roman)}{m.group(2)}"
+    def repl_standalone(m: re.Match)->str:
+        roman = m.group(1)
+        if not is_valid_roman(roman):
+            return m.group(0)
+        return f"{to_int(roman)}{m.group(2)}"
 
-	def repl_word(m: re.Match)->str:
-		roman = m.group(1)
-		if not is_valid_roman(roman):
-			return m.group(0)
-		return to_int(roman)
+    def repl_word(m: re.Match)->str:
+        roman = m.group(1)
+        if not is_valid_roman(roman):
+            return m.group(0)
+        return to_int(roman)
 
-	def repl_chapter_single(m: re.Match)->str:
-		word = m.group(1)
-		roman = m.group(2)
-		if not is_valid_roman(roman):
-			return m.group(0)
-		return f"{word} {to_int(roman)}"
+    def repl_chapter_single(m: re.Match)->str:
+        word = m.group(1)
+        roman = m.group(2)
+        if not is_valid_roman(roman):
+            return m.group(0)
+        return f"{word} {to_int(roman)}"
 
-	valid_roman = re.compile(
-		r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
-		re.IGNORECASE
-	)
-	chapter_words = sorted(
-		{w for words in chapter_word_mapping.values() for w in words},
-		key=len,
-		reverse=True
-	)
-	chapter_words_re = re.compile(
-		rf'\b({"|".join(map(re.escape, chapter_words))})\s+([IVXLCDM])\b',
-		re.IGNORECASE | re.UNICODE
-	)
-	text = re.sub(
-		r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
-		repl_heading,
-		text,
-		flags=re.MULTILINE
-	)
-	text = re.sub(
-		r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
-		repl_standalone,
-		text,
-		flags=re.MULTILINE
-	)
-	text = chapter_words_re.sub(repl_chapter_single, text)
-	text = re.sub(
-		r'(?<!\S)([IVXLCDM]{2,})(?!\S)',
-		repl_word,
-		text
-	)
-	return text
+    valid_roman = re.compile(
+        r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
+        re.IGNORECASE
+    )
+    chapter_words = sorted(
+        {w for words in chapter_word_mapping.values() for w in words},
+        key=len,
+        reverse=True
+    )
+    chapter_words_re = re.compile(
+        rf'\b({"|".join(map(re.escape, chapter_words))})\s+([IVXLCDM])\b',
+        re.IGNORECASE | re.UNICODE
+    )
+    text = re.sub(
+        r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
+        repl_heading,
+        text,
+        flags=re.MULTILINE
+    )
+    text = re.sub(
+        r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
+        repl_standalone,
+        text,
+        flags=re.MULTILINE
+    )
+    text = chapter_words_re.sub(repl_chapter_single, text)
+    text = re.sub(
+        r'(?<!\S)([IVXLCDM]{2,})(?!\S)',
+        repl_word,
+        text
+    )
+    return text
     
 def is_latin(s: str)->bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
@@ -1899,13 +1899,13 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                 return False
             temp_sentence = os.path.join(session['process_dir'], "sentence_chunks")
             os.makedirs(temp_sentence, exist_ok=True)
+            if session['is_gui_process']:
+                progress_bar = gr.Progress(track_tqdm=False)
             with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
                 chunk_list = []
-                total_batches = (len(selected_files)+batch_size-1)//batch_size
-                iterator = tqdm(range(0, len(selected_files), batch_size), total=total_batches, desc="Preparing batches", unit="batch")
+                total_batches = (len(selected_files)+batch_size-1)//batch_size 
+                iterator = tqdm(range(0, len(selected_files), batch_size), total=total_batches, desc='Preparing batches', unit='batch')
                 for idx, i in enumerate(iterator):
-                    if session.get('is_gui_progress') and gr_progress:
-                        gr_progress((idx+1)/total_batches,"Preparing batches")
                     if session['cancellation_requested']:
                         msg = 'Cancel requested'
                         print(msg)
@@ -1917,6 +1917,9 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                         for file in batch:
                             f.write(f"file '{file.replace(os.sep, '/')}'\n")
                     chunk_list.append((txt, out, is_gui_process))
+                    if session.get('is_gui_progress'):
+                        total_progress = (idx + 1) / total_batches
+                        progress_bar(progress=total_progress, desc=f'Preparing batches: {os.path.basename(out)}')
                 try:
                     with Pool(cpu_count()) as pool:
                         results = pool.starmap(assemble_chunks, chunk_list)
@@ -1933,8 +1936,6 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                 with open(final_list, 'w') as f:
                     for _, chunk_path, _ in chunk_list:
                         f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-                if session.get('is_gui_progress') and gr_progress:
-                    gr_progress(1.0,"Final merge")
                 if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
                     msg = f'********* Combined block audio file saved in {chapter_audio_file}'
                     print(msg)
@@ -2122,6 +2123,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
     try:
         session = context.get_session(session_id)
         if session:
+            if session['is_gui_process']:
+                progress_bar = gr.Progress(track_tqdm=False)
             chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]
@@ -2168,11 +2171,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         batch_size = 1024
                         chunk_list = []
                         total_batches = (len(part_file_list)+batch_size-1)//batch_size
-                        iterator = tqdm(range(0, len(part_file_list), batch_size),total=total_batches, desc=f"Part {part_idx+1} batches", unit="batch")
-                        for idx,i in enumerate(iterator):
-                            if session.get('is_gui_progress') and gr_progress:
-                                gr_progress((idx+1)/total_batches,f"Part {part_idx+1} batches")
-                            if session.get('cancellation_requested'):
+                        iterator = tqdm(range(0, len(part_file_list), batch_size), total=total_batches, desc=f"Part {part_idx+1} batches", unit="batch")
+                        for idx, i in enumerate(iterator):
+                            if session['cancellation_requested']:
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return None
@@ -2184,6 +2185,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                     path = Path(session['chapters_dir']) / file
                                     f.write(f"file '{path.as_posix()}'\n")
                             chunk_list.append((str(txt), str(out), session['is_gui_process']))
+                            if session.get('is_gui_progress'):
+                                total_progress = (idx + 1) / total_batches
+                                progress_bar(progress=total_progress, desc=f"Part {part_idx+1} batches")
                         with Pool(cpu_count()) as pool:
                             results = pool.starmap(assemble_chunks, chunk_list)
                         if not all(results):
@@ -2195,8 +2199,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         with open(final_list, 'w') as f:
                             for _, chunk_path, _ in chunk_list:
                                 f.write(f"file '{Path(chunk_path).as_posix()}'\n")
-                        if session.get('is_gui_progress') and gr_progress:
-                            gr_progress(1.0,f"Part {part_idx+1} final merge")
                         if not assemble_chunks(str(final_list), str(combined_chapters_file), session['is_gui_process']):
                             error = f'assemble_chunks() Final merge failed for part {part_idx+1}.'
                             print(error)
