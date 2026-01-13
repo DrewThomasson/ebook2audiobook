@@ -441,9 +441,9 @@ class TTSUtils:
     def _build_vtt_file(self, all_sentences: list, audio_dir: str, vtt_path: str) -> bool:
         try:
             print('VTT file creation started...')
-            sentences_dir = Path(audio_dir)
+            audio_sentences_dir = Path(audio_dir)
             audio_files = sorted(
-                sentences_dir.glob(f"*.{default_audio_proc_format}"),
+                audio_sentences_dir.glob(f"*.{default_audio_proc_format}"),
                 key=lambda p: int(p.stem)
             )
             all_sentences_length = len(all_sentences)
