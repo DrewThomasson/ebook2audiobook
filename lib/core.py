@@ -1915,7 +1915,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                     out = os.path.join(temp_dir, f'chunk_{i:04d}.{default_audio_proc_format}')
                     with open(txt, 'w') as f:
                         for file in batch:
-                            f.write(f'file '{file.replace(os.sep, '/')}'\n')
+                            f.write(f"file '{file.replace(os.sep, '/')}'\n")
                     chunk_list.append((txt, out, is_gui_process))
                     if session.get('is_gui_progress'):
                         total_progress = (idx + 1) / total_batches
@@ -1935,7 +1935,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                 print(f'final_list: {final_list}')
                 with open(final_list, 'w') as f:
                     for _, chunk_path, _ in chunk_list:
-                        f.write(f'file '{chunk_path.replace(os.sep, '/')}'\n')
+                        f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
                 if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
                     msg = f'********* Combined block audio file saved in {chapter_audio_file}'
                     print(msg)
