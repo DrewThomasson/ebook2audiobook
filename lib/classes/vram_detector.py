@@ -1,21 +1,70 @@
 import os, platform, json, psutil, subprocess, re
+
 from typing import Any
+from lib.conf import NATIVE, FULL_DOCKER
 
 class VRAMDetector:
     def __init__(self):
         self.system = platform.system().lower()
+
+    def _in_docker(self)->bool:
+        if os.path.exists("/.dockerenv"):
+            return True
+        try:
+            with open("/proc/1/cgroup", "rt", errors="ignore") as f:
+                return any("docker" in line or "containerd" in line for line in f)
+        except Exception:
+            return False
+
+    def _docker_memory(self):
+        paths = [
+            "/sys/fs/cgroup/memory.max",                     # cgroups v2
+            "/sys/fs/cgroup/memory/memory.limit_in_bytes"   # cgroups v1
+        ]
+        for p in paths:
+            if os.path.exists(p):
+                try:
+                    val = open(p).read().strip()
+                    if val.isdigit():
+                        limit = int(val)
+                        if limit > 0 and limit < (1 << 60):
+                            used = psutil.virtual_memory().used
+                            free = max(limit - used, 0)
+                            return free, limit
+                except Exception:
+                    pass
+        mem = psutil.virtual_memory()
+        return mem.available, mem.total
 
     @staticmethod
     def _fmt(b:int)->float:
         if not b: return 0.0
         return float(f"{b/(1024**3):.2f}")
 
-    def detect_vram(self, device:str, as_json:bool=False)->Any:
+    @staticmethod
+    def _gb(b: int, decimals: int = 2) -> float:
+        return round(b / (1024 ** 3), decimals) if b > 0 else 0.0
+
+    def detect_vram(self, device:str, script_mode:str, as_json:bool=False)->Any:
         info = {}
         try:
             import torch
+            in_docker = self._in_docker()
+            # ─────────────────────────── CPU / Docker fallback
+            if script_mode == FULL_DOCKER and in_docker:
+                free, total = self._docker_memory()
+                info = {
+                    "os": self.system,
+                    "device_type": "docker",
+                    "device_name": "Docker Container Memory",
+                    "free_bytes": free,
+                    "total_bytes": total,
+                    "free_vram_gb": self._fmt(free),
+                    "total_vram_gb": self._fmt(total),
+                    "note": "Running inside Docker container."
+                }
             # ───────────────────────────── Jetson (Unified Memory)
-            if device == 'jetson':
+            elif device == 'jetson':
                 if os.path.exists('/etc/nv_tegra_release'):
                     try:
                         out = subprocess.check_output(['tegrastats','--interval','1000'],timeout=3).decode()
@@ -129,22 +178,25 @@ class VRAMDetector:
         except Exception:
             pass
 
-        # ─────────────────────────── CPU fallback
-        mem = psutil.virtual_memory()
-        info = {
-            "os": self.system,
-            "device_type": "cpu",
-            "device_name": "System RAM",
-            "free_bytes": mem.available,
-            "total_bytes": mem.total,
-            "free_vram_gb": self._fmt(mem.available),
-            "total_vram_gb": self._fmt(mem.total),
-        }
-        
-        vram_dict = json.dumps(info, indent=2) if as_json else info
-        total_vram_bytes = vram_dict.get('total_bytes', 4096)
-        total_vram_gb = int(((total_vram_bytes / (1024 ** 3) * 100) / 100) + 0.1)
-        free_vram_bytes = vram_dict.get('free_bytes', 0)
-        free_vram_gb = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
-        
+        if not info:
+            # ─────────────────────────── CPU fallback
+            mem = psutil.virtual_memory()
+            info = {
+                "os": self.system,
+                "device_type": "cpu",
+                "device_name": "System RAM",
+                "free_bytes": mem.available,
+                "total_bytes": mem.total,
+                "free_vram_gb": self._fmt(mem.available),
+                "total_vram_gb": self._fmt(mem.total),
+            }
+
+        if as_json:
+            return json.dumps(info, indent=2)
+
+        total_vram_bytes = info.get('total_bytes', 4096)
+        free_vram_bytes = info.get('free_bytes', 0)
+        total_vram_gb = int(round(total_vram_bytes / (1024 ** 3)))
+        free_vram_gb = self._gb(free_vram_bytes)
+
         return {"total_vram_gb": total_vram_gb, "free_vram_gb": free_vram_gb}
