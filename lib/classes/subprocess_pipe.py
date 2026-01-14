@@ -9,12 +9,9 @@ class SubprocessPipe:
         self.process = None
         self._stop_requested = False
         self.progress_bar = False
-        if self.is_gui_process and self._is_main_process():
+        if self.is_gui_process:
             self.progress_bar = gr.Progress(track_tqdm=False)
         self._run_process()
-        
-    def _is_main_process(self):
-        return os.getpid() == os.getppid() or multiprocessing.current_process().name == "MainProcess"
 
     def _on_progress(self,percent:float)->None:
         sys.stdout.write(f'\r{self.msg} - {percent:.1f}%')
