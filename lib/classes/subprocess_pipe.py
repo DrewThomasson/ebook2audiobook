@@ -10,6 +10,7 @@ class SubprocessPipe:
         self.msg = msg
         self.process = None
         self._stop_requested = False
+        self.on_progress = on_progress
         self.progress_bar = False
         if self.is_gui_process:
             self.progress_bar = gr.Progress(track_tqdm=False)
@@ -22,12 +23,6 @@ class SubprocessPipe:
             self.on_progress(percent)
         elif self.progress_bar:
             self.progress_bar(percent / 100.0, desc=self.msg)
-
-    def _on_progress(self,percent:float)->None:
-        sys.stdout.write(f'\r{self.msg} - {percent:.1f}%')
-        sys.stdout.flush()
-        if self.is_gui_process:
-            self.progress_bar((percent / 100), desc=self.msg)
 
     def _on_complete(self)->None:
         msg = f"\n{self.msg} completed!"
@@ -78,10 +73,10 @@ class SubprocessPipe:
                         current_time=int(match.group(1))/1_000_000
                         percent=min((current_time/self.total_duration)*100,100)
                         if abs(percent-last_percent) >= 0.5:
-                            self._on_progress(percent)
+                            self._emit_progress(percent)
                             last_percent=percent
                     elif b'progress=end' in raw_line:
-                        self._on_progress(100)
+                        self._emit_progress(100.0)
                         break
             else:
                 if self.progress_bar:
@@ -106,7 +101,7 @@ class SubprocessPipe:
                                 if match:
                                     percent = min(float(match.group(1)), 100.0)
                                     if percent - last_percent >= 0.5:
-                                        self._on_progress(percent)
+                                        self._emit_progress(percent)
                                         last_percent = percent
             self.process.wait()
             if self._stop_requested:
