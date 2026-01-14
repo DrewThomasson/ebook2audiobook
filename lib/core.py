@@ -2648,7 +2648,7 @@ def convert_ebook(args:dict)->tuple:
                                                         progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
                                                     else:
-                                                        error = 'get_chapters() failed! '+session['toc']
+                                                        error = f"get_chapters() failed! {session['chapters']}"
                                                 else:
                                                     error = 'get_cover() failed!'
                                             else:
