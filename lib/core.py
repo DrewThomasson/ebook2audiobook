@@ -1881,6 +1881,8 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             start = int(start)
             end = int(end)
             is_gui_process = session.get('is_gui_process')
+            manager = multiprocessing.Manager()
+            progress_queue = manager.Queue()
             sentence_files = [
                 f for f in os.listdir(sentences_dir)
                 if f.endswith(f'.{default_audio_proc_format}')
@@ -1899,8 +1901,6 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             temp_sentence = os.path.join(session['process_dir'], "sentence_chunks")
             os.makedirs(temp_sentence, exist_ok=True)
             with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
-                manager = multiprocessing.Manager()
-                progress_queue = manager.Queue()
                 chunk_list = []
                 total_batches = (len(selected_files)+batch_size-1)//batch_size 
                 for idx, i in enumerate(range(0, len(selected_files), batch_size)):
@@ -2157,6 +2157,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 durations.append(get_audio_duration(filepath))
             total_duration = sum(durations)
             exported_files = []
+            manager = multiprocessing.Manager()
+            progress_queue = manager.Queue()
             if session['output_split']:
                 part_files = []
                 part_chapter_indices = []
@@ -2188,8 +2190,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
                         temp_dir = Path(temp_dir)
                         batch_size = 1024
-                        manager = multiprocessing.Manager()
-                        progress_queue = manager.Queue()
                         chunk_list = []
                         total_batches = (len(part_file_list)+batch_size-1)//batch_size
                         for idx, i in enumerate(range(0, len(part_file_list), batch_size)):
