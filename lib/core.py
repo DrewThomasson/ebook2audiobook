@@ -5,14 +5,12 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-from __future__ import annotations
-
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
 import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
 
-from typing import Any
+from typing import Any, TypeAlias
 from PIL import Image, ImageSequence
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -60,6 +58,9 @@ from lib import *
 context = None
 context_tracker = None
 active_sessions = None
+
+ProgressEvent:TypeAlias = tuple[int, float]
+ProgressQueue:TypeAlias = queue.Queue[ProgressEvent]
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
@@ -1848,8 +1849,8 @@ def convert_chapters2audio(session_id:str)->bool:
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
                                 progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
-                            percentage = total_progress * 100
-                            t.set_description(f"{percentage:.2f}%")
+                            percent = total_progress * 100
+                            t.set_description(f"{percent:.2f}%")
                             msg = f' : {sentence}'
                             print(msg)
                             t.update(1)
@@ -2281,22 +2282,25 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool, progress_queue=None, job_id=None)->bool:
+def assemble_chunks( txt_file:str, out_file:str, is_gui_process:bool, progress_queue=None, job_id=None)->bool:
     try:
         total_duration = 0.0
         try:
             with open(txt_file, 'r') as f:
                 for line in f:
-                    if line.strip().startswith("file"):
-                        file_path = line.strip().split("file ")[1].strip().strip("'").strip('"')
+                    if line.strip().startswith('file'):
+                        file_path = (
+                            line.strip()
+                            .split('file ")[1]
+                            .strip()
+                            .strip("'")
+                            .strip('"')
+                        )
                         if os.path.exists(file_path):
                             total_duration += get_audio_duration(file_path)
         except Exception as e:
-            error = f'assemble_chunks() open file {txt_file} Error: {e}'
-            print(error)
+            print(f'assemble_chunks() open file {txt_file} Error: {e}')
             return False
-        if progress_queue is not None and job_id is not None:
-            progress_queue.put((job_id, percent))
         cmd = [
             shutil.which('ffmpeg'),
             '-hide_banner',
@@ -2309,49 +2313,56 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool, progress_qu
             '-threads', '0',
             '-progress', 'pipe:2',
             '-nostats',
-            out_file
+            out_file,
         ]
-        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble', on_progress=lambda p: progress_queue.put((job_id, p)))
+        on_progress = None
+        if progress_queue is not None and job_id is not None:
+            on_progress = lambda p: progress_queue.put((job_id, p))
+        proc_pipe = SubprocessPipe(
+            cmd=cmd,
+            is_gui_process=is_gui_process,
+            total_duration=total_duration,
+            msg='Assemble',
+            on_progress=on_progress,
+        )
         if proc_pipe:
-            msg = f'Completed → {out_file}'
-            print(msg)
+            print(f'Completed → {out_file}')
             return True
         else:
-            error = f'Failed (proc_pipe) → {out_file}'
+            print(f'Failed (proc_pipe) → {out_file}')
             return False
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return False
     except Exception as e:
-        error = f'assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}'
-        print(error)
+        print(f'assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}')
         return False
 
-def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="…")->str:
-    s = "" if s is None else str(s)
+def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str='…')->str:
+    s = '' if s is None else str(s)
     if max_bytes <= 0:
-        return ""
-    raw = s.encode("utf-8")
-    e = ellipsis.encode("utf-8")
+        return ''
+    raw = s.encode('utf-8')
+    e = ellipsis.encode('utf-8')
     if len(raw) <= max_bytes:
         return s
     if len(e) >= max_bytes:
         # return as many bytes of the ellipsis as fit
-        return e[:max_bytes].decode("utf-8", errors="ignore")
+        return e[:max_bytes].decode('utf-8', errors='ignore')
     budget = max_bytes - len(e)
     out = bytearray()
     for ch in s:
-        b = ch.encode("utf-8")
+        b = ch.encode('utf-8')
         if len(out) + len(b) > budget:
             break
         out.extend(b)
-    return out.decode("utf-8") + ellipsis
+    return out.decode('utf-8') + ellipsis
 
 def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     # avoid None and embedded NULs which some muxers accidentally keep
     title = (title or '').replace('\x00', '')
     title = title.replace(TTS_SML['pause']['token'], '')
-    return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
+    return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
 def delete_unused_tmp_dirs(web_dir:str, days:int, session_id:str)->None:
     session = context.get_session(session_id)
