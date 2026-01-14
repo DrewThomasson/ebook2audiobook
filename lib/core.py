@@ -1898,13 +1898,10 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                 return False
             temp_sentence = os.path.join(session['process_dir'], "sentence_chunks")
             os.makedirs(temp_sentence, exist_ok=True)
-            if session['is_gui_process']:
-                progress_bar = gr.Progress(track_tqdm=False)
             with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
                 chunk_list = []
                 total_batches = (len(selected_files)+batch_size-1)//batch_size 
-                iterator = tqdm(range(0, len(selected_files), batch_size), total=total_batches, desc='Preparing batches', unit='batch')
-                for idx, i in enumerate(iterator):
+                for idx, i in enumerate(range(0, len(selected_files), batch_size)):
                     if session['cancellation_requested']:
                         msg = 'Cancel requested'
                         print(msg)
@@ -1916,9 +1913,6 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                         for file in batch:
                             f.write(f"file '{file.replace(os.sep, '/')}'\n")
                     chunk_list.append((txt, out, is_gui_process))
-                    if session['is_gui_process']:
-                        total_progress = (idx + 1) / total_batches
-                        progress_bar(progress=total_progress, desc=f'Preparing batches: {os.path.basename(out)}')
                 try:
                     with Pool(cpu_count()) as pool:
                         results = pool.starmap(assemble_chunks, chunk_list)
@@ -2122,8 +2116,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
     try:
         session = context.get_session(session_id)
         if session:
-            if session['is_gui_process']:
-                progress_bar = gr.Progress(track_tqdm=False)
             chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]
@@ -2170,8 +2162,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         batch_size = 1024
                         chunk_list = []
                         total_batches = (len(part_file_list)+batch_size-1)//batch_size
-                        iterator = tqdm(range(0, len(part_file_list), batch_size), total=total_batches, desc=f"Part {part_idx+1} batches", unit="batch")
-                        for idx, i in enumerate(iterator):
+                        for idx, i in enumerate(range(0, len(part_file_list), batch_size)):
                             if session['cancellation_requested']:
                                 msg = 'Cancel requested'
                                 print(msg)
@@ -2184,9 +2175,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                     path = Path(session['chapters_dir']) / file
                                     f.write(f"file '{path.as_posix()}'\n")
                             chunk_list.append((str(txt), str(out), session['is_gui_process']))
-                            if session['is_gui_process']:
-                                total_progress = (idx + 1) / total_batches
-                                progress_bar(progress=total_progress, desc=f"Part {part_idx+1} batches")
                         with Pool(cpu_count()) as pool:
                             results = pool.starmap(assemble_chunks, chunk_list)
                         if not all(results):
