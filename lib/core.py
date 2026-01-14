@@ -15,8 +15,7 @@ from PIL import Image, ImageSequence
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import Counter
-from collections.abc import Mapping
-from collections.abc import MutableMapping
+from collections.abc import Mapping, MutableMapping
 from datetime import datetime
 from ebooklib import epub
 from ebooklib.epub import EpubBook
