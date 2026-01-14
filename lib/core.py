@@ -205,10 +205,10 @@ class SessionContext:
             return self.sessions[session_id]
         return False
 
-    def find_id_by_hash(self, socket_hash:str)->str|None:
-        for idx, session in self.sessions.items():
+    def find_id_by_hash(self, socket_hash: str) -> str | None:
+        for session_id, session in list(self.sessions.items()):
             if socket_hash in session:
-                return session['id']
+                return session_id
         return None
 
 class JSONDictProxyEncoder(json.JSONEncoder):
@@ -2324,10 +2324,12 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
             on_progress=on_progress,
         )
         if proc_pipe:
-            print(f'Completed → {out_file}')
+            msg = f'Completed → {out_file}'
+            print(msg)
             return True
         else:
-            print(f'Failed (proc_pipe) → {out_file}')
+            error = f'Failed (proc_pipe) → {out_file}'
+            print(error)
             return False
     except subprocess.CalledProcessError as e:
         DependencyError(e)
