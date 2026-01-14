@@ -8,34 +8,27 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
+            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.pth_voice_file = None
-            self.sentences_total_time = 0.0
-            self.sentence_idx = 1
             self.resampler_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
             self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
-            self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
-            using_gpu = self.session['device'] != devices['CPU']['proc']
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
             #np.random.seed(seed)
-            torch.manual_seed(seed)
-            has_cuda = (torch.version.cuda is not None and torch.cuda.is_available())
-            if has_cuda:
-                self._apply_cuda_policy(using_gpu=using_gpu, enough_vram=enough_vram, seed=seed)
-            self.xtts_speakers = self._load_xtts_builtin_list()
-            self.engine = self._load_engine()
+            self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
+            self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
 
-    def _load_engine(self)->Any:
+    def load_engine(self)->Any:
         try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
             self._cleanup_memory()
             engine = loaded_tts.get(self.tts_key, False)
@@ -50,109 +43,95 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
             else:
-                error = '_load_engine() failed!'
+                error = 'load_engine() failed!'
                 raise ValueError(error)
         except Exception as e:
-            error = f'_load_engine() error: {e}'
+            error = f'load_engine() error: {e}'
             raise ValueError(error)
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
-            speaker = None
-            audio_sentence = False
-            self.params['voice_path'] = (
-                self.session['voice'] if self.session['voice'] is not None 
-                else self.models[self.session['fine_tuned']]['voice']
-            )
-            if self.params['voice_path'] is not None:
-                speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['voice_path']))
-                if self.params['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['voice_path']:
-                    self.session['voice'] = self.params['voice_path'] = self._check_xtts_builtin_speakers(self.params['voice_path'], speaker)
-                    if not self.params['voice_path']:
-                        msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
-                        print(msg)
-                        return False
             if self.engine:
-                final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_index}.{default_audio_proc_format}')
-                s = sentence.strip()
-                if len(s) < 3 or not any(c.isalnum() for c in s):
-                    return True
-                if sentence == TTS_SML['break']:
-                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                    break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
-                    self.audio_segments.append(break_tensor.clone())
-                    return True
-                elif not sentence.replace('—', '').strip() or sentence == TTS_SML['pause']:
-                    silence_time = int(np.random.uniform(1.0, 1.8) * 100) / 100
-                    pause_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 1.0 to 1.8 seconds
-                    self.audio_segments.append(pause_tensor.clone())
-                    return True
-                else:
-                    if sentence.endswith("'"):
-                        sentence = sentence[:-1]
-                    trim_audio_buffer = 0.002
-                    sentence += '...' if sentence[-1].isalnum() else ''
-                    speaker_argument = {}
-                    not_supported_punc_pattern = re.compile(r'[—]')
-                    language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
-                    if self.params['voice_path'] is not None:
-                        speaker_wav = self.params['voice_path']
-                        speaker_argument = {"speaker_wav": speaker_wav}
-                    else:
-                        voice_key = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
-                        speaker_argument = {"speaker": voice_key}
-                    with torch.no_grad():
-                        device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
-                        self.engine.to(device)
-                        audio_sentence = self.engine.tts(
-                            text=re.sub(not_supported_punc_pattern, ' ', sentence),
-                            language=language,
-                            **speaker_argument
-                        )
-                        self.engine.to('cpu')
-                    if is_audio_data_valid(audio_sentence):
-                        src_tensor = self._tensor_type(audio_sentence)
-                        audio_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                        if audio_tensor is not None and audio_tensor.numel() > 0:
-                            if sentence[-1].isalnum() or sentence[-1] == '—':
-                                audio_tensor = trim_audio(audio_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                            self.audio_segments.append(audio_tensor)
-                            if not re.search(r'\w$', sentence, flags=re.UNICODE) and sentence[-1] != '—':
-                                silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                self.audio_segments.append(break_tensor.clone())
-                            if self.audio_segments:
-                                audio_tensor = torch.cat(self.audio_segments, dim=-1)
-                                start_time = self.sentences_total_time
-                                duration = round((audio_tensor.shape[-1] / self.params['samplerate']), 2)
-                                end_time = start_time + duration
-                                self.sentences_total_time = end_time
-                                sentence_obj = {
-                                    "start": start_time,
-                                    "end": end_time,
-                                    "text": sentence,
-                                    "resume_check": self.sentence_idx
-                                }
-                                self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)
-                                if self.sentence_idx:
-                                    torchaudio.save(final_sentence_file, audio_tensor, self.params['samplerate'], format=default_audio_proc_format)
-                                    del audio_tensor
-                                    self._cleanup_memory()
-                            self.audio_segments = []
-                            if os.path.exists(final_sentence_file):
-                                return True
-                            else:
-                                error = f"Cannot create {final_sentence_file}"
-                                print(error)
-                                return False
-                        else:
-                            error = f"audio_tensor not valid"
+                final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
+                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
+                language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
+                sentence_parts = re.split(default_sml_pattern, sentence)
+                self.audio_segments = []
+                for part in sentence_parts:
+                    part = part.strip()
+                    if not part or (part and sum(c.isalnum() for c in part) < 3):
+                        continue
+                    if default_sml_pattern.fullmatch(part):
+                        if not self._convert_sml(part):
+                            error = f'_convert_sml failed: {part}'
                             print(error)
                             return False
                     else:
-                        error = f"audio_sentence not valid"
+                        trim_audio_buffer = 0.002
+                        if part.endswith("'"):
+                            part = part[:-1]
+                        speaker_argument = {}
+                        not_supported_punc_pattern = re.compile(r'[—]')
+                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()
+                        if self._set_voice():
+                            if self.params['voice_path'] is not None:
+                                speaker_wav = self.params['voice_path']
+                                speaker_argument = {"speaker_wav": speaker_wav}
+                            else:
+                                voice_key = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
+                                speaker_argument = {"speaker": voice_key}                         
+                            with torch.no_grad():
+                                self.engine.to(device)
+                                if device == devices['CPU']['proc']:
+                                    audio_part = self.engine.tts(
+                                        text=part,
+                                        language=language,
+                                        **speaker_argument
+                                    )
+                                else:
+                                    with torch.autocast(
+                                        device_type=device,
+                                        dtype=self.amp_dtype
+                                    ):
+                                        audio_part = self.engine.tts(
+                                            text=part,
+                                            language=language,
+                                            **speaker_argument
+                                        )
+                                self.engine.to(devices['CPU']['proc'])
+                            if is_audio_data_valid(audio_part):
+                                src_tensor = self._tensor_type(audio_part)
+                                part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
+                                if part_tensor is not None and part_tensor.numel() > 0:
+                                    if part[-1].isalnum() or part[-1] == '—':
+                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                    self.audio_segments.append(part_tensor)
+                                    if not re.search(r'\w$', part, flags=re.UNICODE):
+                                        silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                        break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
+                                        self.audio_segments.append(break_tensor.clone())
+                                    del part_tensor
+                                else:
+                                    error = f"part_tensor not valid"
+                                    print(error)
+                                    return False
+                            else:
+                                error = f"audio_part not valid"
+                                print(error)
+                                return False
+                        else:
+                            return False
+                if self.audio_segments:
+                    segment_tensor = torch.cat(self.audio_segments, dim=-1)
+                    torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
+                    del segment_tensor
+                    self._cleanup_memory()
+                    self.audio_segments = []
+                    if not os.path.exists(final_sentence_file):
+                        error = f"Cannot create {final_sentence_file}"
                         print(error)
                         return False
+                return True
             else:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 print(error)
@@ -161,3 +140,10 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             error = f'YourTTS.convert(): {e}'
             raise ValueError(e)
             return False
+
+    def create_vtt(self, all_sentences:list)->bool:
+        audio_dir = self.session['sentences_dir']
+        vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
+        if self._build_vtt_file(all_sentences, audio_dir, vtt_path):
+            return True
+        return False

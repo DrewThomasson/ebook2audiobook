@@ -1,8 +1,4 @@
-import numpy as np
-import torch
-import subprocess
-import shutil
-import json
+import torch, subprocess, shutil, json, numpy as np
 
 from torch import Tensor
 from typing import Any, Union
@@ -75,10 +71,11 @@ def get_audio_duration(filepath:str)->float:
         except Exception:
             return 0
     except subprocess.CalledProcessError as e:
-        DependencyError(e)
+        error = f'get_audio_duration() Error: Failed to process: {e}'
+        print(error)
         return 0
     except Exception as e:
-        error = f"get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}"
+        error = f'get_audio_duration() Error: Failed to process: {e}'
         print(error)
         return 0
 
@@ -102,7 +99,7 @@ def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_proc
         '-ar', str(samplerate),
         '-y', output_file
     ]
-    proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(input_file), msg='Normalize')
+    proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(str(input_file)), msg='Normalize')
     if proc_pipe:
         return True
     else:

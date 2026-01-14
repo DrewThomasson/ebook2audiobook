@@ -6,7 +6,7 @@ chcp 65001 >nul
 
 :: Prefer PowerShell 7, fallback to Windows PowerShell 5.1
 set "PS_EXE=pwsh"
-where /Q pwsh >nul 2>&1 || set "PS_EXE=powershell"
+where.exe /Q pwsh >nul 2>&1 || set "PS_EXE=powershell"
 
 :: One canonical set of flags for every PowerShell call in this script
 set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass"
@@ -234,7 +234,7 @@ echo eng
 exit /b
 
 :check_scoop
-where /Q scoop
+where.exe /Q scoop
 if errorlevel 1 (
 	echo Scoop is not installed.
 	set "OK_SCOOP=1"
@@ -253,7 +253,7 @@ for %%p in (%HOST_PROGRAMS%) do (
 	set "prog=%%p"
 	if "%%p"=="nodejs" set "prog=node"
 	if "%%p"=="calibre-normal" set "prog=calibre"
-	where /Q !prog!
+	where.exe /Q !prog!
 	if errorlevel 1 (
 		echo %%p is not installed.
 		set "missing_prog_array=!missing_prog_array! %%p"
@@ -296,7 +296,7 @@ if not "%OK_CONDA%"=="0" (
 	echo Installing Miniforge...
 	call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
-	where /Q conda
+	where.exe /Q conda
 	if not errorlevel 1 (
 		echo %ESC%[32m=============== Miniforge3 is installed! ===============%ESC%[0m
 		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
@@ -329,7 +329,7 @@ if not "%OK_PROGRAMS%"=="0" (
 		set "prog=%%p"
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
 		if "%%p"=="tesseract" (
-			where /Q !prog!
+			where.exe /Q !prog!
 			if not errorlevel 1 (
 				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
 				echo Detected system language: !OS_LANG! → downloading OCR language: %ISO3_LANG%
@@ -346,9 +346,9 @@ if not "%OK_PROGRAMS%"=="0" (
 		)
 		if "%%p"=="python" (
 			set "PY_FOUND="
-			where /Q python  && set PY_FOUND=1
-			where /Q python3 && set PY_FOUND=1
-			where /Q py      && set PY_FOUND=1
+			where.exe /Q python  && set PY_FOUND=1
+			where.exe /Q python3 && set PY_FOUND=1
+			where.exe /Q py      && set PY_FOUND=1
 			if not defined PY_FOUND (
 				echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
 				goto :failed
@@ -365,7 +365,7 @@ if not "%OK_PROGRAMS%"=="0" (
 				set "PATH=%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;%PATH%"
 			)
 		)
-		where /Q !prog!
+		where.exe /Q !prog!
 		if not errorlevel 1 (
 			echo %ESC%[32m=============== %%p is installed! ===============%ESC%[0m
 			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
@@ -386,7 +386,7 @@ goto :dispatch
 exit /b
 
 :check_conda
-where /Q conda
+where.exe /Q conda
 if errorlevel 1 (
 	echo Miniforge3 is not installed.
 	set "OK_CONDA=1"
@@ -400,7 +400,7 @@ if defined CONDA_DEFAULT_ENV (
 if defined VIRTUAL_ENV (
 	set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
-for /f "delims=" %%i in ('where python') do (
+for /f "delims=" %%i in ('where.exe python') do (
 	if defined CONDA_PREFIX (
 		if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
 			set "CURRENT_ENV=%CONDA_PREFIX%"
@@ -438,7 +438,7 @@ goto :check_required_programs
 exit /b 0
 
 :check_docker
-where /Q docker
+where.exe /Q docker
 if errorlevel 1 (
 	echo %ESC%[31m=============== Docker is not installed or not running. Please install or run Docker manually.%ESC%[0m
 	exit /b 1
@@ -551,7 +551,8 @@ if /i "%TAG:~0,2%"=="cu" (
 set "HAS_COMPOSE=%errorlevel%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 if %HAS_COMPOSE%==0 (
-	BUILD_NAME="%DOCKER_IMG_NAME%" docker compose --progress=plain build --no-cache ^
+	set "BUILD_NAME=%DOCKER_IMG_NAME%"
+	docker compose --progress=plain build --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%TAG%" ^
@@ -607,7 +608,7 @@ exit /b
 :main
 if defined arguments.help (
 	if /I "!arguments.help!"=="true" (
-		where /Q conda
+		where.exe /Q conda
 		if errorlevel 0 (
 			call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 			call python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
@@ -621,7 +622,7 @@ if defined arguments.help (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		if "!DOCKER_DEVICE_STR!"=="" (
 			call %PYTHON_SCOOP% --version >null 2>&1 || call scoop install %PYTHON_SCOOP% 2>null
-			where /Q %PYTHON_SCOOP%
+			where.exe /Q %PYTHON_SCOOP%
 			if errorlevel 1 (
 				echo %ESC%[31m=============== %PYTHON_SCOOP% installation failed.%ESC%[0m
 				goto :failed
@@ -643,6 +644,7 @@ if defined arguments.help (
 			) else (
 				set "TAG=%DEVICE_TAG%"
 			)
+			set "DEVICE_TAG=%TAG%"
 			call docker image inspect "%DOCKER_IMG_NAME%:%TAG%" >nul 2>&1
 			if not errorlevel 1 (
 				echo [STOP] Docker image '%DOCKER_IMG_NAME%:%TAG%' already exists. Aborting build.
@@ -674,7 +676,10 @@ exit /b 0
 
 :failed
 echo =============== ebook2audiobook is not correctly installed.
-where conda >nul 2>&1 && call conda deactivate >nul 2>&1 && call conda deactivate >nul
+where.exe /Q conda && (
+	call conda deactivate >nul 2>&1
+	call conda deactivate >nul
+)
 exit /b 1
 
 endlocal
