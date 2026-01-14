@@ -1954,7 +1954,8 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                 final_list = os.path.join(temp_dir, 'sentences_final.txt')
                 print(f'final_list: {final_list}')
                 with open(final_list, 'w') as f:
-                    for _, chunk_path, _ in chunk_list:
+                    for item in chunk_list:
+                        chunk_path = item[1]
                         f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
                 if assemble_audio_chunks_worker(final_list, chapter_audio_file, is_gui_process):
                     msg = f'********* Combined block audio file saved in {chapter_audio_file}'
@@ -2237,7 +2238,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
                         final_list = temp_dir / f'part_{part_idx+1:02d}_final.txt'
                         with open(final_list, 'w') as f:
-                            for _, chunk_path, _ in chunk_list:
+                            for item in chunk_list:
+                                chunk_path = item[1]
                                 f.write(f"file '{Path(chunk_path).as_posix()}'\n")
                         if not assemble_audio_chunks_worker(str(final_list), str(combined_chapters_file), session['is_gui_process']):
                             error = f'assemble_audio_chunks_worker() Final merge failed for part {part_idx+1}.'
