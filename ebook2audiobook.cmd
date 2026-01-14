@@ -551,7 +551,8 @@ if /i "%TAG:~0,2%"=="cu" (
 set "HAS_COMPOSE=%errorlevel%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 if %HAS_COMPOSE%==0 (
-	BUILD_NAME="%DOCKER_IMG_NAME%" docker compose --progress=plain build --no-cache ^
+	set "BUILD_NAME=%DOCKER_IMG_NAME%"
+	docker compose --progress=plain build --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%TAG%" ^
@@ -643,6 +644,7 @@ if defined arguments.help (
 			) else (
 				set "TAG=%DEVICE_TAG%"
 			)
+			set "DEVICE_TAG=%TAG%"
 			call docker image inspect "%DOCKER_IMG_NAME%:%TAG%" >nul 2>&1
 			if not errorlevel 1 (
 				echo [STOP] Docker image '%DOCKER_IMG_NAME%:%TAG%' already exists. Aborting build.
