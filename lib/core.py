@@ -2282,7 +2282,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_chunks( txt_file:str, out_file:str, is_gui_process:bool, progress_queue=None, job_id=None)->bool:
+def assemble_chunks( txt_file:str, out_file:str, is_gui_process:bool, progress_queue:ProgressQueue=None, job_id=None)->bool:
     try:
         total_duration = 0.0
         try:
