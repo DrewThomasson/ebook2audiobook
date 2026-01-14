@@ -44,7 +44,7 @@ class VRAMDetector:
 
     @staticmethod
     def _ceil_gb(b: int) -> int:
-        return math.ceil(b / (1024 ** 3))
+        return math.ceil(b / (1024 ** 3)) if b > 0 else 0
 
     def detect_vram(self, device:str, script_mode:str, as_json:bool=False)->Any:
         info = {}
