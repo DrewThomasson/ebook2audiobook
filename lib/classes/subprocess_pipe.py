@@ -1,4 +1,4 @@
-import os, subprocess, re, sys, gradio as gr
+import os, subprocess, multiprocessing, re, sys, gradio as gr
 
 class SubprocessPipe:
     def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing'):
@@ -8,10 +8,13 @@ class SubprocessPipe:
         self.msg = msg
         self.process = None
         self._stop_requested = False
-        self.progress_bar = None
-        if self.is_gui_process:
-            self.progress_bar=gr.Progress(track_tqdm=False)
+        self.progress_bar = False
+        if self.is_gui_process and self._is_main_process():
+            self.progress_bar = gr.Progress(track_tqdm=False)
         self._run_process()
+        
+    def _is_main_process(self):
+        return os.getpid() == os.getppid() or multiprocessing.current_process().name == "MainProcess"
 
     def _on_progress(self,percent:float)->None:
         sys.stdout.write(f'\r{self.msg} - {percent:.1f}%')
@@ -22,13 +25,13 @@ class SubprocessPipe:
     def _on_complete(self)->None:
         msg = f"\n{self.msg} completed!"
         print(msg)
-        if self.is_gui_process:
+        if self.progress_bar:
             self.progress_bar(1.0, desc=msg)
 
     def _on_error(self, err:Exception)->None:
         error = f"{self.msg} failed! {err}"
         print(error)
-        if self.is_gui_process:
+        if self.progress_bar:
             self.progress_bar(0.0, desc=error)
 
     def _run_process(self)->bool:
@@ -43,7 +46,7 @@ class SubprocessPipe:
                     bufsize=0
                 )
             else:
-                if self.is_gui_process:
+                if self.progress_bar:
                     self.process = subprocess.Popen(
                         self.cmd,
                         stdout=subprocess.PIPE,
@@ -74,7 +77,7 @@ class SubprocessPipe:
                         self._on_progress(100)
                         break
             else:
-                if self.is_gui_process:
+                if self.progress_bar:
                     tqdm_re = re.compile(rb'(\d{1,3})%\|')
                     last_percent = 0.0
                     buffer = b""
