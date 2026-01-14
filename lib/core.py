@@ -205,10 +205,10 @@ class SessionContext:
             return self.sessions[session_id]
         return False
 
-    def find_id_by_hash(self, socket_hash:str)->str|None:
-        for idx, session in self.sessions.items():
+    def find_id_by_hash(self, socket_hash: str) -> str | None:
+        for session_id, session in list(self.sessions.items()):
             if socket_hash in session:
-                return session['id']
+                return session_id
         return None
 
 class JSONDictProxyEncoder(json.JSONEncoder):
