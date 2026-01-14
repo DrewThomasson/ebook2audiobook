@@ -2311,7 +2311,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool, progress_qu
             '-nostats',
             out_file
         ]
-        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble')
+        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble', on_progress=lambda p: progress_queue.put((job_id, p))
         if proc_pipe:
             msg = f'Completed → {out_file}'
             print(msg)

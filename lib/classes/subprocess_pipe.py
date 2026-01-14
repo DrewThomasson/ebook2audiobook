@@ -1,7 +1,9 @@
 import os, subprocess, multiprocessing, re, sys, gradio as gr
 
+from collections.abc import Callable
+
 class SubprocessPipe:
-    def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing'):
+    def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing', on_progress:Callable[[float], None]|None=None)->None:
         self.cmd = cmd
         self.is_gui_process = is_gui_process
         self.total_duration = total_duration
@@ -12,6 +14,14 @@ class SubprocessPipe:
         if self.is_gui_process:
             self.progress_bar = gr.Progress(track_tqdm=False)
         self._run_process()
+        
+    def _emit_progress(self, percent:float)->None:
+        sys.stdout.write(f"\r{self.msg} - {percent:.1f}%")
+        sys.stdout.flush()
+        if self.on_progress is not None:
+            self.on_progress(percent)
+        elif self.progress_bar:
+            self.progress_bar(percent / 100.0, desc=self.msg)
 
     def _on_progress(self,percent:float)->None:
         sys.stdout.write(f'\r{self.msg} - {percent:.1f}%')
