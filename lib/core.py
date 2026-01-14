@@ -1912,7 +1912,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                     with open(txt, 'w') as f:
                         for file in batch:
                             f.write(f"file '{file.replace(os.sep, '/')}'\n")
-                    chunk_list.append((txt, out, is_gui_process))
+                    chunk_list.append((txt, out, False))
                 try:
                     with Pool(cpu_count()) as pool:
                         results = pool.starmap(assemble_chunks, chunk_list)
@@ -2174,7 +2174,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                 for file in batch:
                                     path = Path(session['chapters_dir']) / file
                                     f.write(f"file '{path.as_posix()}'\n")
-                            chunk_list.append((str(txt), str(out), session['is_gui_process']))
+                            chunk_list.append((str(txt), str(out), False))
                         with Pool(cpu_count()) as pool:
                             results = pool.starmap(assemble_chunks, chunk_list)
                         if not all(results):
