@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
 import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
-import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz
+import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib
 
 from typing import Any
@@ -1899,6 +1899,8 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             temp_sentence = os.path.join(session['process_dir'], "sentence_chunks")
             os.makedirs(temp_sentence, exist_ok=True)
             with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
+                manager = multiprocessing.Manager()
+                progress_queue = manager.Queue()
                 chunk_list = []
                 total_batches = (len(selected_files)+batch_size-1)//batch_size 
                 for idx, i in enumerate(range(0, len(selected_files), batch_size)):
@@ -1912,10 +1914,36 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                     with open(txt, 'w') as f:
                         for file in batch:
                             f.write(f"file '{file.replace(os.sep, '/')}'\n")
-                    chunk_list.append((txt, out, is_gui_process))
+                    chunk_list.append((str(txt), str(out), False, progress_queue, idx))
                 try:
+                    if session['is_gui_process']:
+                        progress_bar = gr.Progress(track_tqdm=False)
+                    #with Pool(cpu_count()) as pool:
+                    #    results = pool.starmap(assemble_chunks, chunk_list)
+                    results = []
+                    total_jobs = len(chunk_list)
+                    progress_state = {}
                     with Pool(cpu_count()) as pool:
-                        results = pool.starmap(assemble_chunks, chunk_list)
+                        async_results = [
+                            pool.apply_async(assemble_chunks, args=args)
+                            for args in chunk_list
+                        ]
+                        while len(results) < total_jobs:
+                            try:
+                                job_id, percent = progress_queue.get(timeout=0.1)
+                                progress_state[job_id] = percent
+                                overall = sum(progress_state.values()) / total_jobs
+                                if is_gui_process:
+                                    progress_bar(
+                                        min(overall / 100, 1.0),
+                                        desc="Combining sentence batches"
+                                    )
+                            except queue.Empty:
+                                pass
+                            for r in async_results[:]:
+                                if r.ready():
+                                    results.append(r.get())
+                                    async_results.remove(r)
                 except Exception as e:
                     error = f'combine_audio_sentences() multiprocessing error: {e}'
                     print(error)
@@ -2160,6 +2188,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
                         temp_dir = Path(temp_dir)
                         batch_size = 1024
+                        manager = multiprocessing.Manager()
+                        progress_queue = manager.Queue()
                         chunk_list = []
                         total_batches = (len(part_file_list)+batch_size-1)//batch_size
                         for idx, i in enumerate(range(0, len(part_file_list), batch_size)):
@@ -2174,9 +2204,35 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                 for file in batch:
                                     path = Path(session['chapters_dir']) / file
                                     f.write(f"file '{path.as_posix()}'\n")
-                            chunk_list.append((str(txt), str(out), session['is_gui_process']))
+                            chunk_list.append((str(txt), str(out), False, progress_queue, idx))
+                        if session['is_gui_process']:
+                            progress_bar = gr.Progress(track_tqdm=False)
+                        #with Pool(cpu_count()) as pool:
+                        #    results = pool.starmap(assemble_chunks, chunk_list)
+                        results = []
+                        total_jobs = len(chunk_list)
+                        progress_state = {}
                         with Pool(cpu_count()) as pool:
-                            results = pool.starmap(assemble_chunks, chunk_list)
+                            async_results = [
+                                pool.apply_async(assemble_chunks, args=args)
+                                for args in chunk_list
+                            ]
+                            while len(results) < total_jobs:
+                                try:
+                                    job_id, percent = progress_queue.get(timeout=0.1)
+                                    progress_state[job_id] = percent
+                                    overall = sum(progress_state.values()) / total_jobs
+                                    if is_gui_process:
+                                        progress_bar(
+                                            min(overall / 100, 1.0),
+                                            desc="Combining sentence batches"
+                                        )
+                                except queue.Empty:
+                                    pass
+                                for r in async_results[:]:
+                                    if r.ready():
+                                        results.append(r.get())
+                                        async_results.remove(r)
                         if not all(results):
                             error = f'assemble_chunks() One or more chunks failed for part {part_idx+1}.'
                             print(error)
@@ -2225,7 +2281,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
+def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool, progress_queue=None, job_id=None)->bool:
     try:
         total_duration = 0.0
         try:
@@ -2239,6 +2295,8 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
             error = f'assemble_chunks() open file {txt_file} Error: {e}'
             print(error)
             return False
+        if progress_queue is not None and job_id is not None:
+            progress_queue.put((job_id, percent))
         cmd = [
             shutil.which('ffmpeg'),
             '-hide_banner',
@@ -2253,7 +2311,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
             '-nostats',
             out_file
         ]
-        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble')
+        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble', on_progress=lambda p: progress_queue.put((job_id, p)))
         if proc_pipe:
             msg = f'Completed → {out_file}'
             print(msg)

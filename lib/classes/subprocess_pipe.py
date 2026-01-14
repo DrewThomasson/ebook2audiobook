@@ -1,17 +1,27 @@
-import os, subprocess, re, sys, gradio as gr
+import os, subprocess, multiprocessing, re, sys, gradio as gr
+
+from collections.abc import Callable
 
 class SubprocessPipe:
-    def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing'):
+    def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing', on_progress:Callable[[float], None]|None=None)->None:
         self.cmd = cmd
         self.is_gui_process = is_gui_process
         self.total_duration = total_duration
         self.msg = msg
         self.process = None
         self._stop_requested = False
-        self.progress_bar = None
+        self.progress_bar = False
         if self.is_gui_process:
-            self.progress_bar=gr.Progress(track_tqdm=False)
+            self.progress_bar = gr.Progress(track_tqdm=False)
         self._run_process()
+        
+    def _emit_progress(self, percent:float)->None:
+        sys.stdout.write(f"\r{self.msg} - {percent:.1f}%")
+        sys.stdout.flush()
+        if self.on_progress is not None:
+            self.on_progress(percent)
+        elif self.progress_bar:
+            self.progress_bar(percent / 100.0, desc=self.msg)
 
     def _on_progress(self,percent:float)->None:
         sys.stdout.write(f'\r{self.msg} - {percent:.1f}%')
@@ -22,13 +32,13 @@ class SubprocessPipe:
     def _on_complete(self)->None:
         msg = f"\n{self.msg} completed!"
         print(msg)
-        if self.is_gui_process:
+        if self.progress_bar:
             self.progress_bar(1.0, desc=msg)
 
     def _on_error(self, err:Exception)->None:
         error = f"{self.msg} failed! {err}"
         print(error)
-        if self.is_gui_process:
+        if self.progress_bar:
             self.progress_bar(0.0, desc=error)
 
     def _run_process(self)->bool:
@@ -43,7 +53,7 @@ class SubprocessPipe:
                     bufsize=0
                 )
             else:
-                if self.is_gui_process:
+                if self.progress_bar:
                     self.process = subprocess.Popen(
                         self.cmd,
                         stdout=subprocess.PIPE,
@@ -74,7 +84,7 @@ class SubprocessPipe:
                         self._on_progress(100)
                         break
             else:
-                if self.is_gui_process:
+                if self.progress_bar:
                     tqdm_re = re.compile(rb'(\d{1,3})%\|')
                     last_percent = 0.0
                     buffer = b""
