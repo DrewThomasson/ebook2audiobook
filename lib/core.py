@@ -1916,7 +1916,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                             f.write(f"file '{file.replace(os.sep, '/')}'\n")
                     chunk_list.append((str(txt), str(out), False, progress_queue, idx))
                 try:
-                    if session['is_gui_process']:
+                    if is_gui_process:
                         progress_bar = gr.Progress(track_tqdm=False)
                     results = []
                     total_jobs = len(chunk_list)
@@ -1956,7 +1956,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                     for item in chunk_list:
                         chunk_path = item[1]
                         f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-                if assemble_audio_chunks_worker(final_list, chapter_audio_file, is_gui_process):
+                if assemble_audio_chunks_worker(final_list, chapter_audio_file, is_gui_process, progress_queue, 1):
                     msg = f'********* Combined block audio file saved in {chapter_audio_file}'
                     print(msg)
                     return True
@@ -2146,6 +2146,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]
+            is_gui_process = session['is_gui_process']
             if len(chapter_files) == 0:
                 print('No block files exists!')
                 return None
@@ -2204,7 +2205,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                     path = Path(session['chapters_dir']) / file
                                     f.write(f"file '{path.as_posix()}'\n")
                             chunk_list.append((str(txt), str(out), False, progress_queue, idx))
-                        if session['is_gui_process']:
+                        if is_gui_process:
                             progress_bar = gr.Progress(track_tqdm=False)
                         results = []
                         total_jobs = len(chunk_list)
@@ -2240,7 +2241,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             for item in chunk_list:
                                 chunk_path = item[1]
                                 f.write(f"file '{Path(chunk_path).as_posix()}'\n")
-                        if not assemble_audio_chunks_worker(str(final_list), str(combined_chapters_file), session['is_gui_process']):
+                        if not assemble_audio_chunks_worker(str(final_list), str(combined_chapters_file), is_gui_process, progress_queue, 1):
                             error = f'assemble_audio_chunks_worker() Final merge failed for part {part_idx+1}.'
                             print(error)
                             return None
@@ -2264,7 +2265,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                 return None
                             path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                             f.write(f"file '{path}'\n")
-                    if not assemble_audio_chunks_worker(txt, merged_tmp, session['is_gui_process']):
+                    if not assemble_audio_chunks_worker(txt, merged_tmp, is_gui_process, progress_queue, 1):
                         print(f'assemble_audio_chunks_worker() Final merge failed for {merged_tmp}.')
                         return None
                     metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
