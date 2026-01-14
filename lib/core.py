@@ -26,7 +26,7 @@ from iso639 import Lang
 from markdown import markdown
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
-from multiprocessing.managers import DictProxy, ListProxy
+from multiprocessing.managers import DictProxy, ListProxy, SyncManager
 from stanza.pipeline.core import Pipeline, DownloadMethod
 from num2words import num2words
 from pathlib import Path
@@ -99,7 +99,7 @@ class SessionContext:
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
         self.cancellation_events = {}
         
-    def _recursive_proxy(self, data:Any, manager:Manager|None)->Any:
+    def _recursive_proxy(self, data:Any, manager:SyncManager|None)->Any:
         if manager is None:
             manager = Manager()
         if isinstance(data, dict):
