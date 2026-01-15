@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "ebook2audiobook"
-version = "25.12.33"
+version = "26.1.14"
 
 [tool.setuptools.dynamic]
 version = {file = "VERSION.txt"}

@@ -1,12 +1,12 @@
 services:
   ebook2audiobook:
-    image: ebook2audiobook:${DEVICE_TAG:-cpu}  # e.g. DEVICE_TAG=cu128 → ebook2audiobook:cu128 etc.
+    image: ebook2audiobook:${DEVICE_TAG:-cu128}  # e.g. DEVICE_TAG=cu128 → ebook2audiobook:cu128 etc.
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-25.12.33}
-        DEVICE_TAG: ${DEVICE_TAG:-cpu}         # e.g. cu124, cu128, rocm, xpu, cpu etc.
+        APP_VERSION: ${APP_VERSION:-26.1.14}
+        DEVICE_TAG: ${DEVICE_TAG:-cu128}         # e.g. cu124, cu128, rocm, xpu, cpu etc.
     container_name: ebook2audiobook
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
