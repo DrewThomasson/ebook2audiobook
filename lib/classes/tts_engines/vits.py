@@ -65,13 +65,13 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
-                sentence_parts = re.split(default_sml_pattern, sentence)
+                sentence_parts = re.split(default_frontend_sml_pattern, sentence)
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
                     if not part or (part and sum(c.isalnum() for c in part) < 2):
                         continue
-                    if default_sml_pattern.fullmatch(part):
+                    if default_frontend_sml_pattern.fullmatch(part):
                         if not self._convert_sml(part):
                             error = f'_convert_sml failed: {part}'
                             print(error)
