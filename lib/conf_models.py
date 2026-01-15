@@ -27,17 +27,15 @@ TTS_SML = {
 	"###": {"paired": False},
 }
 
-sml_tag_keys = "|".join(map(re.escape, TTS_SML.keys()))
-
 SML_TAG_PATTERN = re.compile(
 	rf'(?:‡|\['
 	rf')(?P<close>/)?'
-	rf'(?P<tag>{sml_tag_keys})'
+	rf'(?P<tag>{'|'.join(map(re.escape, TTS_SML.keys()))})'
 	rf'(?:\:(?P<value>[^\]‡]+))?'
 	rf'(?:‡|\])'
 )
 
-default_sml_pattern = re.compile(r'(###|‡[^‡]+‡)')
+default_frontend_sml_pattern = re.compile(r'(###|‡[^‡]+‡)')
 default_tts_engine = TTS_ENGINES['XTTSv2']
 default_fine_tuned = 'internal'
 default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']

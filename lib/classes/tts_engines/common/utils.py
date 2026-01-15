@@ -493,7 +493,7 @@ class TTSUtils:
                     text = re.sub(
                         r'\s+',
                         ' ',
-                        default_sml_pattern.sub('', str(all_sentences[idx]))
+                        default_frontend_sml_pattern.sub('', str(all_sentences[idx]))
                     ).strip()
                     vtt_blocks.append(f"{start} --> {end}\n{text}\n")
                     if self.session['is_gui_process']:
