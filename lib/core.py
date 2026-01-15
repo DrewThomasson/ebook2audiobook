@@ -275,9 +275,10 @@ def check_connex(session_id:str, timeout:int=120)->bool:
     if session['cancellation_requested']:
         return False
     heartbeat = session['heartbeat']
-    if not heartbeat:
-        return True
-    return (time.time() - heartbeat) <= timeout
+    #if not heartbeat:
+    #    return True
+    #return (time.time() - heartbeat) <= timeout
+    return True
 
 def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     try:

@@ -1756,8 +1756,6 @@ def build_interface(args:dict)->gr.Blocks:
                     if session_id and session_id in context.sessions:
                         session = context.get_session(session_id)
                         if session:
-                            session['heartbeat'] = time.time()
-                            print(f"heartbeat: ------------ {session['heartbeat']} ---------")
                             previous_hash = state.get("hash")
                             if session.get("status") == "converting":
                                 try:
