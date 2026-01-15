@@ -131,7 +131,7 @@ class SessionContext:
             "status": None,
             "event": None,
             "ticker": 0,
-            "heartbeat": 0,
+            "heartbeat": time.time(),
             "progress_queue": None,
             "cancellation_requested": False,
             "device": default_device,
