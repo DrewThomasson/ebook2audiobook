@@ -10,7 +10,7 @@ import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvi
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
 
-from typing import Any, TypeAlias, Generator, Callable, Iterable
+from typing import Any, TypeAlias, Generator, Callable, Iterable, Dict
 from PIL import Image, ImageSequence
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -830,7 +830,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                     text = child.strip()
                     if text:
                         if prev_child_had_data:
-                            yield ('break', TTS_SML['break']['token'])
+                            yield ('break', sml_token("break"))
                         yield ('text', text)
                         last_text_char = text[-1]
                         current_child_had_data = True
@@ -840,13 +840,13 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                         title = child.get_text(strip=True)
                         if title:
                             if prev_child_had_data:
-                                yield ('break', TTS_SML['break']['token'])
+                                yield ('break', sml_token("break"))
                             yield ('heading', title)
                             last_text_char = title[-1]
                             current_child_had_data = True
                     elif name == 'table':
                         if prev_child_had_data:
-                            yield ('break', TTS_SML['break']['token'])
+                            yield ('break', sml_token("break"))
                         yield ('table', child)
                         current_child_had_data = True
                     else:
@@ -854,7 +854,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                         if name in proc_tags:
                             is_header = False
                             if prev_child_had_data and name in break_tags:
-                                yield ('break', TTS_SML['break']['token'])
+                                yield ('break', sml_token("break"))
                             for inner in _tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
@@ -870,9 +870,9 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                                         and not last_text_char.isalnum()
                                         and not last_text_char.isspace()
                                     ):
-                                        yield ('break', TTS_SML['break']['token'])
+                                        yield ('break', sml_token("break"))
                                 elif name in heading_tags or name in pause_tags:
-                                    yield ('pause', TTS_SML['pause']['token'])
+                                    yield ('pause', sml_token("pause"))
                         else:
                             yield from _tuple_row(child, last_text_char)
                             current_child_had_data = True
@@ -945,7 +945,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                     text_list.append(payload.strip())
                 elif typ in ('break', 'pause'):
                     if prev_typ != typ:
-                        text_list.append(TTS_SML[typ]['token'])
+                        text_list.append(sml_token(typ))
                 elif typ == 'table':
                     table = payload
                     if table in handled_tables:
@@ -1091,11 +1091,7 @@ def get_sentences(text:str, session_id:str)->list|None:
         return result
 
     def strip_sml(s:str)->str:
-        if not sml_values:
-            return s
-        for v in sml_values:
-            s = s.replace(v, '')
-        return s
+        return SML_TAG_PATTERN.sub('', s)
         
     def clean_len(s:str)->int:
         return len(strip_sml(s))
@@ -1167,11 +1163,6 @@ def get_sentences(text:str, session_id:str)->list|None:
             return None
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-        sml_values = tuple(
-            v['token']
-            for v in TTS_SML.values()
-            if isinstance(v, dict) and isinstance(v.get('token'), str)
-        ) if 'TTS_SML' in globals() else ()
 
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
@@ -1260,13 +1251,13 @@ def get_sentences(text:str, session_id:str)->list|None:
             if merge_list:
                 prev = merge_list[-1]
                 if clean_len(prev) + clean_len(s) <= merge_max_chars * 2:
-                    sep = TTS_SML['pause']['token']
+                    sep = sml_token('pause')
                     merge_list[-1] = prev.rstrip() + sep + s.lstrip()
                     continue
             merge_list.append(s)
             
         # PASS 5 = remove unwanted breaks
-        break_token = re.escape(TTS_SML['break']['token'])
+        break_token = re.escape(sml_token('break'))
         strip_break_spaces_re = re.compile(
             rf'\s*{break_token}\s*'
         )
@@ -1276,7 +1267,7 @@ def get_sentences(text:str, session_id:str)->list|None:
         )
         final_list = []
         for s in merge_list:
-            s = strip_break_spaces_re.sub(TTS_SML['break']['token'], s)
+            s = strip_break_spaces_re.sub(sml_token('break'), s)
             s = break_between_alnum_re.sub(' ', s)
             final_list.append(s)
 
@@ -1614,101 +1605,114 @@ def roman2number(text: str)->str:
     )
     return text
     
-def is_latin(s: str)->bool:
+def is_latin(s:str)->bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
-def foreign2latin(text, base_lang):
-    def script_of(word):
-        for ch in word:
-            if ch.isalpha():
-                name = unicodedata.name(ch, '')
-                if 'CYRILLIC' in name:
-                    return 'cyrillic'
-                if 'LATIN' in name:
-                    return 'latin'
-                if 'ARABIC' in name:
-                    return 'arabic'
-                if 'HANGUL' in name:
-                    return 'hangul'
-                if 'HIRAGANA' in name or 'KATAKANA' in name:
-                    return 'japanese'
-                if 'CJK' in name or 'IDEOGRAPH' in name:
-                    return 'chinese'
-        return 'unknown'
+from typing import Dict
+import unicodedata
+import regex as re
+from unidecode import unidecode
+from phonemizer import phonemize
 
-    def romanize(word):
-        scr = script_of(word)
-        if scr == 'latin':
-            return word
-        try:
-            if scr == 'chinese':
-                from pypinyin import pinyin, Style
-                return ''.join(x[0] for x in pinyin(word, style=Style.NORMAL))
-            if scr == 'japanese':
-                import pykakasi
-                k = pykakasi.kakasi()
-                k.setMode('H', 'a')
-                k.setMode('K', 'a')
-                k.setMode('J', 'a')
-                k.setMode('r', 'Hepburn')
-                return k.getConverter().do(word)
-            if scr == 'hangul':
-                return unidecode(word)
-            if scr == 'arabic':
-                return unidecode(phonemize(word, language='ar', backend='espeak'))
-            if scr == 'cyrillic':
-                return unidecode(phonemize(word, language='ru', backend='espeak'))
-            return unidecode(word)
-        except:
-            return unidecode(word)
 
-    tts_markers = {
-        v['token']
-        for v in TTS_SML.values()
-        if isinstance(v, dict) and 'token' in v
-    }
-    protected = {}
-    for i, m in enumerate(tts_markers):
-        key = f'__TTS_MARKER_{i}__'
-        protected[key] = m
-        text = text.replace(m, key)
-    tokens = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
-    buf = []
-    for t in tokens:
-        if t in protected:
-            buf.append(t)
-        elif re.match(r"^\w+$", t):
-            buf.append(romanize(t))
-        else:
-            buf.append(t)
-    out = ''
-    for i, t in enumerate(buf):
-        if i == 0:
-            out += t
-        else:
-            if re.match(r"^\w+$", buf[i-1]) and re.match(r"^\w+$", t):
-                out += ' ' + t
-            else:
-                out += t
-    for k, v in protected.items():
-        out = out.replace(k, v)
-    return out
+def foreign2latin(text:str, base_lang:str)->str:
+
+	def script_of(word:str)->str:
+		for ch in word:
+			if ch.isalpha():
+				name = unicodedata.name(ch, '')
+				if 'CYRILLIC' in name:
+					return 'cyrillic'
+				if 'LATIN' in name:
+					return 'latin'
+				if 'ARABIC' in name:
+					return 'arabic'
+				if 'HANGUL' in name:
+					return 'hangul'
+				if 'HIRAGANA' in name or 'KATAKANA' in name:
+					return 'japanese'
+				if 'CJK' in name or 'IDEOGRAPH' in name:
+					return 'chinese'
+		return 'unknown'
+
+	def romanize(word:str)->str:
+		scr = script_of(word)
+		if scr == 'latin':
+			return word
+		try:
+			if scr == 'chinese':
+				from pypinyin import pinyin, Style
+				return ''.join(x[0] for x in pinyin(word, style=Style.NORMAL))
+			if scr == 'japanese':
+				import pykakasi
+				k = pykakasi.kakasi()
+				k.setMode('H', 'a')
+				k.setMode('K', 'a')
+				k.setMode('J', 'a')
+				k.setMode('r', 'Hepburn')
+				return k.getConverter().do(word)
+			if scr == 'hangul':
+				return unidecode(word)
+			if scr == 'arabic':
+				return unidecode(phonemize(word, language='ar', backend='espeak'))
+			if scr == 'cyrillic':
+				return unidecode(phonemize(word, language='ru', backend='espeak'))
+			return unidecode(word)
+		except Exception:
+			return unidecode(word)
+
+	# Protect ALL SML tags using the global grammar
+	protected: Dict[str, str] = {}
+	for i, m in enumerate(SML_TAG_PATTERN.finditer(text)):
+		key: str = f'__TTS_MARKER_{i}__'
+		protected[key] = m.group(0)
+		text = text.replace(m.group(0), key)
+	tokens: list[str] = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+	buf: list[str] = []
+	for t in tokens:
+		if t in protected:
+			buf.append(t)
+		elif re.match(r"^\w+$", t):
+			buf.append(romanize(t))
+		else:
+			buf.append(t)
+	out: str = ''
+	for i, t in enumerate(buf):
+		if i == 0:
+			out += t
+		else:
+			if re.match(r"^\w+$", buf[i - 1]) and re.match(r"^\w+$", t):
+				out += ' ' + t
+			else:
+				out += t
+	for k, v in protected.items():
+		out = out.replace(k, v)
+	return out
 
 def filter_sml(text:str)->str:
 
-	def check_sml(m):
-		tag = m.group("tag")
-		close = m.group("close")
-		value = m.group("value")
-		if tag == "###":
-			return " ‡pause‡ "
-		if close:
-			return f" ‡/{tag}‡ "
-		if value:
-			return f" ‡{tag}:{value}‡ "
-		return f" ‡{tag}‡ "
+    def check_sml(m):
+        tag = m.group("tag")
+        close = m.group("close")
+        value = m.group("value")
+        if tag == "###":
+            return " ‡pause‡ "
+        if close:
+            return f" ‡/{tag}‡ "
+        if value:
+            return f" ‡{tag}:{value}‡ "
+        return f" ‡{tag}‡ "
 
-	return SML_TAG_PATTERN.sub(check_sml, text)
+    return SML_TAG_PATTERN.sub(check_sml, text)
+    
+def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
+    if tag == "###":
+        return "###"
+    if close:
+        return f"‡/{tag}‡"
+    if value is not None:
+        return f"‡{tag}:{value}‡"
+    return f"‡{tag}‡"
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
@@ -2353,12 +2357,12 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
 def clear_folder(folder_path:str)->None:
-	for name in os.listdir(folder_path):
-		path = os.path.join(folder_path, name)
-		if os.path.isfile(path) or os.path.islink(path):
-			os.unlink(path)
-		else:
-			shutil.rmtree(path)
+    for name in os.listdir(folder_path):
+        path = os.path.join(folder_path, name)
+        if os.path.isfile(path) or os.path.islink(path):
+            os.unlink(path)
+        else:
+            shutil.rmtree(path)
 
 def delete_unused_tmp_dirs(web_dir:str, days:int, session_id:str)->None:
     session = context.get_session(session_id)
