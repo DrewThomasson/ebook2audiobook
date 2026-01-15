@@ -128,7 +128,7 @@ class SessionContext:
             "process_id": None,
             "status": None,
             "event": None,
-            "progress": 0,
+            "ticker": 0,
             "progress_queue": None,
             "cancellation_requested": False,
             "device": default_device,
@@ -233,7 +233,9 @@ def prepare_dirs(src:str, session_id:str)->bool:
             os.makedirs(session['voice_dir'], exist_ok=True)
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
+            os.makedirs(session['chapters_worker_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
+            os.makedirs(session['sentences_worker_dir'], exist_ok=True)
             session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
             shutil.copy(src, session['ebook']) 
             return True
@@ -1884,87 +1886,71 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             end = int(end)
             is_gui_process = session.get('is_gui_process')
             progress_queue = session["progress_queue"]
-            sentence_files = [
-                f for f in os.listdir(sentences_dir)
-                if f.endswith(f'.{default_audio_proc_format}')
-            ]
-            sentences_ordered = sorted(
-                sentence_files, key=lambda x: int(os.path.splitext(x)[0])
-            )
-            selected_files = [
-                os.path.join(sentences_dir, f)
-                for f in sentences_ordered
-                if int(start) <= int(os.path.splitext(f)[0]) <= int(end)
-            ]
+            sentence_files = [f for f in os.listdir(sentences_dir) if f.endswith(f'.{default_audio_proc_format}')]
+            sentences_ordered = sorted(sentence_files, key=lambda x: int(os.path.splitext(x)[0]))
+            selected_files = [os.path.join(sentences_dir, f) for f in sentences_ordered if int(start) <= int(os.path.splitext(f)[0]) <= int(end)]
             if not selected_files:
                 print('No audio files found in the specified range.')
                 return False
-            temp_sentence = os.path.join(session['process_dir'], "sentence_chunks")
-            os.makedirs(temp_sentence, exist_ok=True)
-            with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
-                chunk_list = []
-                total_batches = (len(selected_files)+batch_size-1)//batch_size 
-                for idx, i in enumerate(range(0, len(selected_files), batch_size)):
-                    if session['cancellation_requested']:
-                        msg = 'Cancel requested'
-                        print(msg)
-                        return False
-                    batch = selected_files[i:i + batch_size]
-                    txt = os.path.join(temp_dir, f'chunk_{i:04d}.txt')
-                    out = os.path.join(temp_dir, f'chunk_{i:04d}.{default_audio_proc_format}')
-                    with open(txt, 'w') as f:
-                        for file in batch:
-                            f.write(f"file '{file.replace(os.sep, '/')}'\n")
-                    chunk_list.append((str(txt), str(out), False, progress_queue, idx))
-                try:
-                    if is_gui_process:
-                        progress_bar = gr.Progress(track_tqdm=False)
-                    results = []
-                    total_jobs = len(chunk_list)
-                    progress_state = {}
-                    with Pool(cpu_count()) as pool:
-                        async_results = [
-                            pool.apply_async(assemble_audio_chunks_worker, args=args)
-                            for args in chunk_list
-                        ]
-                        while len(results) < total_jobs:
-                            try:
-                                job_id, percent = progress_queue.get(timeout=0.1)
-                                progress_state[job_id] = percent
-                                overall = sum(progress_state.values()) / total_jobs
-                                if is_gui_process:
-                                    progress_bar(
-                                        min(overall / 100, 1.0),
-                                        desc="Combining audio sentences"
-                                    )
-                            except queue.Empty:
-                                pass
-                            for r in async_results[:]:
-                                if r.ready():
-                                    results.append(r.get())
-                                    async_results.remove(r)
-                except Exception as e:
-                    error = f'combine_audio_sentences() multiprocessing error: {e}'
-                    print(error)
-                    return False
-                if not all(results):
-                    error = 'combine_audio_sentences() One or more chunks failed.'
-                    print(error)
-                    return False
-                final_list = os.path.join(temp_dir, 'sentences_final.txt')
-                print(f'final_list: {final_list}')
-                with open(final_list, 'w') as f:
-                    for item in chunk_list:
-                        chunk_path = item[1]
-                        f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-                if assemble_audio_chunks_worker(final_list, chapter_audio_file, is_gui_process, progress_queue, 1):
-                    msg = f'********* Combined block audio file saved in {chapter_audio_file}'
+            worker_dir = session['sentences_worker_dir']
+            os.makedirs(worker_dir, exist_ok=True)
+            chunk_list = []
+            total_batches = (len(selected_files)+batch_size-1)//batch_size
+            for idx, i in enumerate(range(0, len(selected_files), batch_size)):
+                if session['cancellation_requested']:
+                    msg = 'Cancel requested'
                     print(msg)
-                    return True
-                else:
-                    error = 'combine_audio_sentences() Final merge failed.'
-                    print(error)
                     return False
+                batch = selected_files[i:i + batch_size]
+                txt = os.path.join(worker_dir, f'chunk_{i:04d}.txt')
+                out = os.path.join(worker_dir, f'chunk_{i:04d}.{default_audio_proc_format}')
+                with open(txt, 'w') as f:
+                    for file in batch:
+                        f.write(f"file '{file.replace(os.sep, '/')}'\n")
+                chunk_list.append((str(txt), str(out), False, progress_queue, idx))
+            try:
+                if is_gui_process:
+                    progress_bar = gr.Progress(track_tqdm=False)
+                results = []
+                total_jobs = len(chunk_list)
+                progress_state = {}
+                with Pool(cpu_count()) as pool:
+                    async_results = [pool.apply_async(assemble_audio_chunks_worker, args=args) for args in chunk_list]
+                    while len(results) < total_jobs:
+                        try:
+                            job_id, percent = progress_queue.get(timeout=0.1)
+                            progress_state[job_id] = percent
+                            overall = sum(progress_state.values()) / total_jobs
+                            if is_gui_process:
+                                progress_bar(min(overall / 100, 1.0), desc="Combining audio sentences")
+                        except queue.Empty:
+                            pass
+                        for r in async_results[:]:
+                            if r.ready():
+                                results.append(r.get())
+                                async_results.remove(r)
+            except Exception as e:
+                error = f'combine_audio_sentences() multiprocessing error: {e}'
+                print(error)
+                return False
+            if not all(results):
+                error = 'combine_audio_sentences() One or more chunks failed.'
+                print(error)
+                return False
+            final_list = os.path.join(worker_dir, 'sentences_final.txt')
+            print(f'final_list: {final_list}')
+            with open(final_list, 'w') as f:
+                for item in chunk_list:
+                    chunk_path = item[1]
+                    f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
+            if assemble_audio_chunks_worker(final_list, chapter_audio_file, is_gui_process, progress_queue, 1):
+                msg = f'********* Combined block audio file saved in {chapter_audio_file}'
+                print(msg)
+                return True
+            else:
+                error = 'combine_audio_sentences() Final merge failed.'
+                print(error)
+                return False
     except Exception as e:
         DependencyError(e)
     return False
@@ -2152,13 +2138,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             if len(chapter_files) == 0:
                 print('No block files exists!')
                 return None
-            # Calculate total duration
             durations = []
             for file in chapter_files:
                 filepath = os.path.join(session['chapters_dir'], file)
                 durations.append(get_audio_duration(filepath))
             total_duration = sum(durations)
             exported_files = []
+            worker_dir = session['chapters_worker_dir']
+            os.makedirs(worker_dir, exist_ok=True)
             if session['output_split']:
                 part_files = []
                 part_chapter_indices = []
@@ -2184,96 +2171,83 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 if cur_part:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
-                temp_export = os.path.join(session['process_dir'], 'export')
-                os.makedirs(temp_export, exist_ok=True)
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                    with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
-                        temp_dir = Path(temp_dir)
-                        batch_size = 1024
-                        chunk_list = []
-                        total_batches = (len(part_file_list)+batch_size-1)//batch_size
-                        for idx, i in enumerate(range(0, len(part_file_list), batch_size)):
-                            if session['cancellation_requested']:
-                                msg = 'Cancel requested'
-                                print(msg)
-                                return None
-                            batch = part_file_list[i:i + batch_size]
-                            txt = temp_dir / f'chunk_{i:04d}.txt'
-                            out = temp_dir / f'chunk_{i:04d}.{default_audio_proc_format}'
-                            with open(txt, 'w') as f:
-                                for file in batch:
-                                    path = Path(session['chapters_dir']) / file
-                                    f.write(f"file '{path.as_posix()}'\n")
-                            chunk_list.append((str(txt), str(out), False, progress_queue, idx))
-                        if is_gui_process:
-                            progress_bar = gr.Progress(track_tqdm=False)
-                        results = []
-                        total_jobs = len(chunk_list)
-                        progress_state = {}
-                        with Pool(cpu_count()) as pool:
-                            async_results = [
-                                pool.apply_async(assemble_audio_chunks_worker, args=args)
-                                for args in chunk_list
-                            ]
-                            while len(results) < total_jobs:
-                                try:
-                                    job_id, percent = progress_queue.get(timeout=0.1)
-                                    progress_state[job_id] = percent
-                                    overall = sum(progress_state.values()) / total_jobs
-                                    if is_gui_process:
-                                        progress_bar(
-                                            min(overall / 100, 1.0),
-                                            desc="Combining audio chapters"
-                                        )
-                                except queue.Empty:
-                                    pass
-                                for r in async_results[:]:
-                                    if r.ready():
-                                        results.append(r.get())
-                                        async_results.remove(r)
-                        if not all(results):
-                            error = f'assemble_audio_chunks_worker() One or more chunks failed for part {part_idx+1}.'
-                            print(error)
+                    batch_size = 1024
+                    chunk_list = []
+                    total_batches = (len(part_file_list)+batch_size-1)//batch_size
+                    for idx, i in enumerate(range(0, len(part_file_list), batch_size)):
+                        if session['cancellation_requested']:
+                            msg = 'Cancel requested'
+                            print(msg)
                             return None
-                        combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
-                        final_list = temp_dir / f'part_{part_idx+1:02d}_final.txt'
-                        with open(final_list, 'w') as f:
-                            for item in chunk_list:
-                                chunk_path = item[1]
-                                f.write(f"file '{Path(chunk_path).as_posix()}'\n")
-                        if not assemble_audio_chunks_worker(str(final_list), str(combined_chapters_file), is_gui_process, progress_queue, 1):
-                            error = f'assemble_audio_chunks_worker() Final merge failed for part {part_idx+1}.'
-                            print(error)
-                            return None
-                        metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
-                        part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                        generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                        final_file = Path(session['audiobooks_dir']) / (f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name'])
-                        if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
-                            exported_files.append(str(final_file))
-            else:
-                temp_export = os.path.join(session['process_dir'], 'export')
-                os.makedirs(temp_export, exist_ok=True)
-                with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
-                    txt = os.path.join(temp_dir, 'all_chapters.txt')
-                    merged_tmp = os.path.join(temp_dir, f'all.{default_audio_proc_format}')
-                    with open(txt, 'w') as f:
-                        for file in chapter_files:
-                            if session['cancellation_requested']:
-                                msg = 'Cancel requested'
-                                print(msg)
-                                return None
-                            path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
-                            f.write(f"file '{path}'\n")
-                    if not assemble_audio_chunks_worker(txt, merged_tmp, is_gui_process, progress_queue, 1):
-                        print(f'assemble_audio_chunks_worker() Final merge failed for {merged_tmp}.')
+                        batch = part_file_list[i:i + batch_size]
+                        txt = os.path.join(worker_dir, f'part{part_idx+1}_chunk_{i:04d}.txt')
+                        out = os.path.join(worker_dir, f'part{part_idx+1}_chunk_{i:04d}.{default_audio_proc_format}')
+                        with open(txt, 'w') as f:
+                            for file in batch:
+                                path = Path(session['chapters_dir']) / file
+                                f.write(f"file '{path.as_posix()}'\n")
+                        chunk_list.append((str(txt), str(out), False, progress_queue, idx))
+                    if is_gui_process:
+                        progress_bar = gr.Progress(track_tqdm=False)
+                    results = []
+                    total_jobs = len(chunk_list)
+                    progress_state = {}
+                    with Pool(cpu_count()) as pool:
+                        async_results = [pool.apply_async(assemble_audio_chunks_worker, args=args) for args in chunk_list]
+                        while len(results) < total_jobs:
+                            try:
+                                job_id, percent = progress_queue.get(timeout=0.1)
+                                progress_state[job_id] = percent
+                                overall = sum(progress_state.values()) / total_jobs
+                                if is_gui_process:
+                                    progress_bar(min(overall / 100, 1.0), desc="Combining audio chapters")
+                            except queue.Empty:
+                                pass
+                            for r in async_results[:]:
+                                if r.ready():
+                                    results.append(r.get())
+                                    async_results.remove(r)
+                    if not all(results):
+                        error = f'assemble_audio_chunks_worker() One or more chunks failed for part {part_idx+1}.'
+                        print(error)
                         return None
-                    metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-                    all_chapters = list(zip(chapter_files, chapter_titles))
-                    generate_ffmpeg_metadata(all_chapters, metadata_file, default_audio_proc_format)
-                    final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-                    if export_audio(merged_tmp, metadata_file, final_file):
-                        exported_files.append(final_file)
+                    combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
+                    final_list = os.path.join(worker_dir, f'part_{part_idx+1:02d}_final.txt')
+                    with open(final_list, 'w') as f:
+                        for item in chunk_list:
+                            chunk_path = item[1]
+                            f.write(f"file '{Path(chunk_path).as_posix()}'\n")
+                    if not assemble_audio_chunks_worker(str(final_list), str(combined_chapters_file), is_gui_process, progress_queue, 1):
+                        error = f'assemble_audio_chunks_worker() Final merge failed for part {part_idx+1}.'
+                        print(error)
+                        return None
+                    metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
+                    part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
+                    generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
+                    final_file = Path(session['audiobooks_dir']) / (f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name'])
+                    if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
+                        exported_files.append(str(final_file))
+            else:
+                txt = os.path.join(worker_dir, 'all_chapters.txt')
+                merged_tmp = os.path.join(worker_dir, f'all.{default_audio_proc_format}')
+                with open(txt, 'w') as f:
+                    for file in chapter_files:
+                        if session['cancellation_requested']:
+                            msg = 'Cancel requested'
+                            print(msg)
+                            return None
+                        path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
+                        f.write(f"file '{path}'\n")
+                if not assemble_audio_chunks_worker(txt, merged_tmp, is_gui_process, progress_queue, 1):
+                    print(f'assemble_audio_chunks_worker() Final merge failed for {merged_tmp}.')
+                    return None
+                metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
+                all_chapters = list(zip(chapter_files, chapter_titles))
+                generate_ffmpeg_metadata(all_chapters, metadata_file, default_audio_proc_format)
+                final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
+                if export_audio(merged_tmp, metadata_file, final_file):
+                    exported_files.append(final_file)
             return exported_files if exported_files else None
         return None
     except Exception as e:
@@ -2551,7 +2525,9 @@ def convert_ebook(args:dict)->tuple:
                         session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                        session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')       
+                        session['chapters_worker_dir'] = os.path.join(session['chapters_dir'], "workers")
+                        session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+                        session['sentences_worker_dir'] = os.path.join(session['sentences_dir'], 'workers')
                         if prepare_dirs(args['ebook'], session_id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
@@ -2725,7 +2701,7 @@ def reset_session(session_id:str)->None:
     data = {
         "process_id": None,
         "event": None,
-        "progress": 0,
+        "ticker": 0,
         "process_dir": None,
         "ebook": None,
         "ebook_list": None,
