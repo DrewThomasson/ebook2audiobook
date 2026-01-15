@@ -1747,7 +1747,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
         text = foreign2latin(text, lang)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, f" {TTS_SML['pause']['token']} ", text)
+    text = re.sub(pattern, f" {sml_token('pause')} ", text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
@@ -2353,7 +2353,7 @@ def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str='…')->str:
 def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     # avoid None and embedded NULs which some muxers accidentally keep
     title = (title or '').replace('\x00', '')
-    title = title.replace(TTS_SML['pause']['token'], '')
+    title = title.replace(sml_token('pause'), '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
 def clear_folder(folder_path:str)->None:
