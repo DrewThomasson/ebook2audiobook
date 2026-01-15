@@ -1689,20 +1689,21 @@ def foreign2latin(text, base_lang):
         out = out.replace(k, v)
     return out
 
-def filter_sml(text: str) -> str:
-	text = TTS_SML['###']['match'].sub(' ‡pause‡ ', text)
-	text = TTS_SML['break']['match'].sub(' ‡break‡ ', text)
-	text = TTS_SML['pause']['match'].sub(
-		lambda m: f' ‡pause:{m.group(1)}‡ ' if m.group(1) else ' ‡pause‡ ',
-		text
-	)
-	text = TTS_SML['voice']['match'].sub(
-		lambda m: f' ‡voice:{m.group(1)}‡ ',
-		text
-	)
-	if TTS_SML['voice'].get("close_match"):
-		text = TTS_SML['voice']['close_match'].sub(' ‡/voice‡ ', text)
-	return text
+def filter_sml(text:str)->str:
+
+	def check_sml(m):
+		tag = m.group("tag")
+		close = m.group("close")
+		value = m.group("value")
+		if tag == "###":
+			return " ‡pause‡ "
+		if close:
+			return f" ‡/{tag}‡ "
+		if value:
+			return f" ‡{tag}:{value}‡ "
+		return f" ‡{tag}‡ "
+
+	return SML_TAG.sub(check_sml, text)
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
