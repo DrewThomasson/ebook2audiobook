@@ -412,7 +412,7 @@ class TTSUtils:
         return True
 
     def _convert_sml(self, sml:str)->bool:
-        m = SML_TAG_PATTERN_PATTERN.fullmatch(sml)
+        m = SML_TAG_PATTERN.fullmatch(sml)
         if not m:
             return False
         tag = m.group("tag")
