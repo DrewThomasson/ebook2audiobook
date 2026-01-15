@@ -27,10 +27,11 @@ TTS_SML = {
 	"###": {"paired": False},
 }
 
+sml_tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
 SML_TAG_PATTERN = re.compile(
 	rf'(?:‡|\['
 	rf')(?P<close>/)?'
-	rf'(?P<tag>{'|'.join(map(re.escape, TTS_SML.keys()))})'
+	rf'(?P<tag>{sml_tag_keys})'
 	rf'(?:\:(?P<value>[^\]‡]+))?'
 	rf'(?:‡|\])'
 )
