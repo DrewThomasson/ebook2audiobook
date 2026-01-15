@@ -268,6 +268,17 @@ def check_programs(prog_name:str, command:str, options:str)->bool:
         DependencyError(e)
     return False
 
+def check_connex(session_id:str, timeout:int=60)->bool:
+    session = context.get_session(session_id)
+    if not session:
+        return False
+    if session['cancellation_requested']:
+        return False
+    heartbeat = session['heartbeat']
+    if not heartbeat:
+        return True
+    return (time.time() - heartbeat) <= timeout
+
 def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     try:
         if not os.path.exists(zip_path):
