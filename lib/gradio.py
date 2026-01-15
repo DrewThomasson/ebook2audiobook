@@ -663,6 +663,17 @@ def build_interface(args:dict)->gr.Blocks:
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden') 
 
+            def check_connex(session_id:str, timeout:int=60)->bool:
+                session = context.get_session(session_id)
+                if not session:
+                    return False
+                if session['cancellation_requested']:
+                    return False
+                heartbeat = session['heartbeat']
+                if not heartbeat:
+                    return True
+                return (time.time() - heartbeat) <= timeout
+
             def disable_components()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(12)])
                 return outputs
@@ -1756,6 +1767,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session_id and session_id in context.sessions:
                         session = context.get_session(session_id)
                         if session:
+                            session["heartbeat"] = time.time()
                             previous_hash = state.get("hash")
                             if session.get("status") == "converting":
                                 try:

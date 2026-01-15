@@ -131,6 +131,7 @@ class SessionContext:
             "status": None,
             "event": None,
             "ticker": 0,
+            "heartbeat": 0,
             "progress_queue": None,
             "cancellation_requested": False,
             "device": default_device,
@@ -524,7 +525,7 @@ def save_json_chapters(session_id:str, filepath:str)->bool:
 def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
     if session:
-        if session['cancellation_requested']:
+        if session.get['cancellation_requested'] or not check_connex(session_id):
             msg = 'Cancel requested'
             print(msg)
             return False
@@ -698,7 +699,7 @@ def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
     try:
         session = context.get_session(session_id)
         if session:
-            if session['cancellation_requested']:
+            if session.get['cancellation_requested'] or not check_connex(session_id):
                 msg = 'Cancel requested'
                 print(msg)
                 return False
@@ -725,7 +726,7 @@ def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
         DependencyError(e)
         return False
 
-def get_chapters(epubBook:EpubBook, session_id:str)->list:
+def get_chapters(session_id:str, epubBook:EpubBook)->list:
     try:
         msg = r'''
 *******************************************************************************
@@ -740,7 +741,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         print(msg)
         session = context.get_session(session_id)
         if session:
-            if session['cancellation_requested']:
+            if session.get['cancellation_requested'] or not check_connex(session_id):
                 msg = 'Cancel requested'
                 print(msg)
                 return []
@@ -1776,7 +1777,7 @@ def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
     if session:
         try:
-            if session['cancellation_requested']:
+            if session.get['cancellation_requested'] or not check_connex(session_id):
                 msg = 'Cancel requested'
                 print(msg)
                 return False
@@ -1837,7 +1838,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         msg = f'Block {chapter_idx} containing {len(sentences)} sentences…'
                         print(msg)
                         for idx, sentence in enumerate(sentences):
-                            if session['cancellation_requested']:
+                            if session.get['cancellation_requested'] or not check_connex(session_id):
                                 msg = 'Cancel requested'
                                 print(msg)
                                 return False
@@ -1868,7 +1869,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
                         if chapter_idx in missing_chapters or idx_target >= resume_sentence:
-                            if combine_audio_sentences(chapter_audio_file, int(start), int(end), session_id):
+                            if combine_audio_sentences(session_id, chapter_audio_file, int(start), int(end)):
                                 msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                                 print(msg)
                             else:
@@ -1882,7 +1883,7 @@ def convert_chapters2audio(session_id:str)->bool:
             print(error)
             return False
 
-def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
+def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
     try:
         session = context.get_session(session_id)
         if session:
@@ -1905,7 +1906,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             chunk_list = []
             total_batches = (len(selected_files)+batch_size-1)//batch_size
             for idx, i in enumerate(range(0, len(selected_files), batch_size)):
-                if session['cancellation_requested']:
+                if session.get['cancellation_requested'] or not check_connex(session_id):
                     msg = 'Cancel requested'
                     print(msg)
                     return False
@@ -2008,7 +2009,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         ffmpeg_metadata += f"{tag('asin')}={asin}\n"
             start_time = 0
             for filename, chapter_title in part_chapters:
-                if session['cancellation_requested']:
+                if session.get['cancellation_requested'] or not check_connex(session_id):
                     msg = 'Cancel requested'
                     print(msg)
                     return False
@@ -2029,7 +2030,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
     def export_audio(ffmpeg_combined_audio:str, ffmpeg_metadata_file:str, ffmpeg_final_file:str)->bool:
         try:
-            if session['cancellation_requested']:
+            if session.get['cancellation_requested'] or not check_connex(session_id):
                 msg = 'Cancel requested'
                 print(msg)
                 return False
@@ -2164,7 +2165,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 max_part_duration = int(session['output_split_hours']) * 3600
                 needs_split = total_duration > (int(session['output_split_hours']) * 2) * 3600
                 for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
-                    if session['cancellation_requested']:
+                    if session.get['cancellation_requested'] or not check_connex(session_id):
                         msg = 'Cancel requested'
                         print(msg)
                         return None
@@ -2185,7 +2186,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     chunk_list = []
                     total_batches = (len(part_file_list)+batch_size-1)//batch_size
                     for idx, i in enumerate(range(0, len(part_file_list), batch_size)):
-                        if session['cancellation_requested']:
+                        if session.get['cancellation_requested'] or not check_connex(session_id):
                             msg = 'Cancel requested'
                             print(msg)
                             return None
@@ -2242,7 +2243,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 merged_tmp = os.path.join(worker_dir, f'all.{default_audio_proc_format}')
                 with open(txt, 'w') as f:
                     for file in chapter_files:
-                        if session['cancellation_requested']:
+                        if session.get['cancellation_requested'] or not check_connex(session_id):
                             msg = 'Cancel requested'
                             print(msg)
                             return None
@@ -2637,7 +2638,7 @@ def convert_ebook(args:dict)->tuple:
                                                 session['cover'] = get_cover(epubBook, session_id)
                                                 if session['cover']:
                                                     if not session['chapters']:
-                                                        session['chapters'] = get_chapters(epubBook, session_id)
+                                                        session['chapters'] = get_chapters(session_id, epubBook)
                                                     if session['chapters']:
                                                         #if session['chapters_preview']:
                                                         #   return 'confirm_blocks', True
@@ -2658,7 +2659,7 @@ def convert_ebook(args:dict)->tuple:
                             error = f"Temporary directory {session['process_dir']} not removed due to failure."
             else:
                 error = f"Language {args['language']} is not supported."
-        if session['cancellation_requested']:
+        if session.get['cancellation_requested'] or not check_connex(session_id):
             error = 'Cancelled' if error is None else error + '. Cancelled'
         print(error)
         if session['is_gui_process']:
