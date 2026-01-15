@@ -1912,7 +1912,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
                 with open(txt, 'w') as f:
                     for file in batch:
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
-                chunk_list.append((str(txt), str(out), False, progress_queue, idx))
+                chunk_list.append((str(txt), str(out), False, idx))
             try:
                 if is_gui_process:
                     progress_bar = gr.Progress(track_tqdm=False)
@@ -2193,7 +2193,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             for file in batch:
                                 path = Path(session['chapters_dir']) / file
                                 f.write(f"file '{path.as_posix()}'\n")
-                        chunk_list.append((str(txt), str(out), False, progress_queue, idx))
+                        chunk_list.append((str(txt), str(out), False, idx))
                     if is_gui_process:
                         progress_bar = gr.Progress(track_tqdm=False)
                     results = []
@@ -2260,8 +2260,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool, progress_queue:ProgressQueue=None, job_id:int|None=None)->bool:
+def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool, job_id:int|None=None)->bool:
     try:
+        global progress_queue
         total_duration = 0.0
         try:
             with open(txt_file, 'r') as f:
