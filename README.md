@@ -117,11 +117,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2GB RAM min, 8GB recommended.
 - 1GB VRAM min, 4GB recommended.
 - Virtualization enabled if running on windows (Docker only).
-- CPU (intel, AMD, ARM)*.
-- GPU (CUDA, ROCm, XPU).
-- MPS (Apple Silicon CPU).
+- CPU, XPU (intel, AMD, ARM)*.
+- CUDA, ROCm, JETSON
+- MPS (Apple Silicon CPU)
 
-*<i> Modern TTS engines are very slow on CPU</i>
+*<i> Modern TTS engines are very slow on CPU. on CPU Always use low level TTS like YourTTS, Tacotron2 etc..</i>
 
 ## Supported Languages
 | **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
