@@ -1096,6 +1096,9 @@ def get_sentences(text:str, session_id:str)->list|None:
         for v in sml_values:
             s = s.replace(v, '')
         return s
+        
+    def clean_len(s:str)->int:
+        return len(strip_sml(s))
 
     def split_at_space_limit(s:str)->list[str]:
         out = []
@@ -1254,12 +1257,13 @@ def get_sentences(text:str, session_id:str)->list|None:
             s = s.strip()
             if not s:
                 continue
-            clean_len = len(strip_sml(s))
-            if merge_list and clean_len <= merge_max_chars:
-                sep = TTS_SML['pause']['token'] if len(merge_list) == 1 else " "
-                merge_list[-1] = merge_list[-1].rstrip() + sep + s.lstrip()
-            else:
-                merge_list.append(s)
+            if merge_list:
+                prev = merge_list[-1]
+                if clean_len(prev) + clean_len(s) <= merge_max_chars * 2:
+                    sep = TTS_SML['pause']['token']
+                    merge_list[-1] = prev.rstrip() + sep + s.lstrip()
+                    continue
+            merge_list.append(s)
             
         # PASS 5 = remove unwanted breaks
         break_token = re.escape(TTS_SML['break']['token'])
