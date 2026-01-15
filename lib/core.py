@@ -237,7 +237,9 @@ def prepare_dirs(src:str, session_id:str)->bool:
             os.makedirs(session['sentences_dir'], exist_ok=True)
             os.makedirs(session['sentences_worker_dir'], exist_ok=True)
             session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
-            shutil.copy(src, session['ebook']) 
+            shutil.copy(src, session['ebook'])
+            clear_folder(session['chapters_worker_dir'])
+            clear_folder(session['sentences_worker_dir'])
             return True
     except Exception as e:
         DependencyError(e)
@@ -2337,6 +2339,14 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = (title or '').replace('\x00', '')
     title = title.replace(TTS_SML['pause']['token'], '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
+
+def clear_folder(folder_path:str)->None:
+	for name in os.listdir(folder_path):
+		path = os.path.join(folder_path, name)
+		if os.path.isfile(path) or os.path.islink(path):
+			os.unlink(path)
+		else:
+			shutil.rmtree(path)
 
 def delete_unused_tmp_dirs(web_dir:str, days:int, session_id:str)->None:
     session = context.get_session(session_id)
