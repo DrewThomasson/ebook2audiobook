@@ -268,7 +268,7 @@ def check_programs(prog_name:str, command:str, options:str)->bool:
         DependencyError(e)
     return False
 
-def check_connex(session_id:str, timeout:int=60)->bool:
+def check_connex(session_id:str, timeout:int=120)->bool:
     session = context.get_session(session_id)
     if not session:
         return False
