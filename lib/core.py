@@ -60,6 +60,7 @@ active_sessions = None
 
 ProgressEvent:TypeAlias = tuple[int, float]
 ProgressQueue:TypeAlias = queue.Queue[ProgressEvent]
+progress_queue = None
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
@@ -1882,6 +1883,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
     try:
         session = context.get_session(session_id)
         if session:
+            global progress_queue
             chapter_audio_file = os.path.join(session['chapters_dir'], file)
             sentences_dir = session['sentences_dir']
             batch_size = 1024
@@ -2133,6 +2135,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
     try:
         session = context.get_session(session_id)
         if session:
+            global progress_queue
             chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]

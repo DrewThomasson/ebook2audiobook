@@ -23,19 +23,23 @@ TTS_VOICE_CONVERSION = {
 TTS_SML = {
 	"break": {
         "match": re.compile(r'(?:‡|\[)break(?:‡|\])'),
-        "token": "‡break‡"
+        "token": "‡break‡",
+        "close": False
      },
 	"pause": {
         "match": re.compile(r'(?:‡|\[)pause(?::(\d+(?:\.\d+)?))?(?:‡|\])'),
-        "token": "‡pause‡"
+        "token": "‡pause‡",
+        "close": False
     },
 	"voice": {
         "match": re.compile(r'(?:‡|\[)voice:([^\]‡]+)(?:‡|\])'),
-        "token": "‡voice‡"
+        "token": "‡voice‡",
+        "close": True
     },
 	"###": {
         "match": re.compile(r'###'),
-        "token": "###"
+        "token": "###",
+        "close": False
     }
 }
 
