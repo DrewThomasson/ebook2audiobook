@@ -1273,12 +1273,12 @@ def get_sentences(text:str, session_id:str)->list|None:
                 merge_list.append(s)
             
         # PASS 5 = remove unwanted breaks
-        break_match = TTS_SML['break']['match'].pattern
+        break_token = re.escape(TTS_SML['break']['token'])
         strip_break_spaces_re = re.compile(
-            rf' *{break_match} *'
+            rf'\s*{break_token}\s*'
         )
         break_between_alnum_re = re.compile(
-            rf'(?<=[\w]){break_match}(?=[\w])',
+            rf'(?<=[\w]){break_token}(?=[\w])',
             flags=re.UNICODE
         )
         final_list = []
@@ -1855,7 +1855,8 @@ def convert_chapters2audio(session_id:str)->bool:
                                 return False
                             sentence = sentence.strip()
                             if any(c.isalnum() for c in sentence):
-                                if not any(v['match'].fullmatch(sentence) for v in TTS_SML.values()) or (any(v['match'].fullmatch(sentence) for v in TTS_SML.values()) and idx == len(sentences) - 1):
+                                is_sml = bool(SML_TAG.fullmatch(sentence)) or sentence == "###"
+                                if (not is_sml) or (idx == len(sentences) - 1):
                                     final_sentences.append(sentence)
                                 if idx_target in missing_sentences or idx_target >= resume_sentence:
                                     if idx_target in missing_sentences:
