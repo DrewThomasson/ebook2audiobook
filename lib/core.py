@@ -97,6 +97,7 @@ class SessionContext:
         self.manager:Manager = Manager()
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
         self.cancellation_events = {}
+        self.progress_queues = {}
 
     def _recursive_proxy(self, data:Any, manager:SyncManager|None)->Any:
         if manager is None:
@@ -199,7 +200,7 @@ class SessionContext:
             "playback_time": 0,
             "playback_volume": 0
         }, manager=self.manager)
-        self.sessions[session_id]["progress_queue"] = multiprocessing.Queue()
+        self.progress_queues[session_id] = multiprocessing.Queue()
         return self.sessions[session_id]
 
     def get_session(self, session_id:str)->Any:
@@ -1887,7 +1888,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             start = int(start)
             end = int(end)
             is_gui_process = session.get('is_gui_process')
-            progress_queue = session["progress_queue"]
+            progress_queue = context.progress_queues.get(session_id)
             sentence_files = [f for f in os.listdir(sentences_dir) if f.endswith(f'.{default_audio_proc_format}')]
             sentences_ordered = sorted(sentence_files, key=lambda x: int(os.path.splitext(x)[0]))
             selected_files = [os.path.join(sentences_dir, f) for f in sentences_ordered if int(start) <= int(os.path.splitext(f)[0]) <= int(end)]
@@ -2136,7 +2137,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]
             is_gui_process = session['is_gui_process']
-            progress_queue = session["progress_queue"]
+            progress_queue = context.progress_queues.get(session_id)
             if len(chapter_files) == 0:
                 print('No block files exists!')
                 return None
