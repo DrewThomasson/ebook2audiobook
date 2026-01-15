@@ -1097,8 +1097,8 @@ def get_sentences(text:str, session_id:str)->list|None:
         return len(strip_sml(s))
 
     def split_at_space_limit(s:str)->list[str]:
-        out = []
-        rest = s.strip()
+        local out = []
+        local rest = s.strip()
         while rest and len(strip_sml(rest)) > max_chars:
             cut = rest[:max_chars + 1]
             idx = cut.rfind(' ')
@@ -1190,7 +1190,6 @@ def get_sentences(text:str, session_id:str)->list|None:
             if i + 1 < n:
                 next_s = hard_list[i + 1].strip()
                 next_clean = strip_sml(next_s)
-
                 if next_clean and sum(c.isalnum() for c in next_clean) < 3:
                     s = f"{s} {next_s}"
                     i += 2
@@ -1223,8 +1222,8 @@ def get_sentences(text:str, session_id:str)->list|None:
                 continue
             rest = s
             while rest:
-                clean_len = len(strip_sml(rest))
-                if clean_len <= max_chars:
+                current_len = len(strip_sml(rest))   # ← rename variable
+                if current_len <= max_chars:
                     last_list.append(rest.strip())
                     break
                 cut = rest[:max_chars + 1]
@@ -1292,7 +1291,6 @@ def get_sentences(text:str, session_id:str)->list|None:
             return list(join_ideogramms(result))
         else:
             return final_list
-
     except Exception as e:
         print(f'get_sentences() error: {e}')
         return None
