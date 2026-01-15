@@ -104,12 +104,24 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 ## Features
 - 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`
 - 🔍 **OCR scanning** for e-books with pages scanned as images
-- 🔊 **High-quality text-to-speech**  from near realtime to near real voice
+- 🔊 **High-quality text-to-speech** from near realtime to near real voice
 - 🗣️ **Optional voice cloning** using your own voice file
 - 🧩 **Optional custom model** using your own trained model (XTTSv2 only, other on request)
 - 🌐 **Supports 1158 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Low-resource friendly** — runs on **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
+- 🧠 **SML tags supported** — fine-grained control of breaks, pauses, voice switching and more ([see available SML tags below](#sml-tags-available))
+
+
+##  Hardware Requirements
+- 2GB RAM min, 8GB recommended.
+- 1GB VRAM min, 4GB recommended.
+- Virtualization enabled if running on windows (Docker only).
+- CPU (intel, AMD, ARM)*.
+- GPU (CUDA, ROCm, XPU).
+- MPS (Apple Silicon CPU).
+
+*<i> Modern TTS engines are very slow on CPU</i>
 
 
 ## Supported Languages
@@ -122,17 +134,25 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 | **Persian (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesian (id)**|
 | **Slovak (sk)**    | **Croatian (hr)**   | **Tamil (ta)**     | **Danish (da)**    |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+s
 
 
-##  Hardware Requirements
-- 2GB RAM min, 8GB recommended.
-- 1GB VRAM min, 4GB recommended.
-- Virtualization enabled if running on windows (Docker only).
-- CPU (intel, AMD, ARM)*.
-- GPU (CUDA, ROCm, XPU).
-- MPS (Apple Silicon CPU).
+## Supported eBook Formats
+- `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
+  `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
+  `.snb`, `.cbc`, `.rb`, `.tcr`
+- **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
-*<i> Modern TTS engines are very slow on CPU</i>
+## Output and process Formats
+- `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
+- Process format can be changed in lib/conf.py
+
+## SML tags available
+- `[break]` — silence (random range **0.3–0.6 s**)
+- `[pause]`, `###` — silence (random range **1.0–1.6 s**)
+- `[pause:3]` — fixed pause (**3 seconds**)
+- `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
+
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
@@ -445,16 +465,6 @@ one [pause] is a random between 0.8 to 1.6 seconds
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 
 For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
-
-## Supported eBook Formats
-- `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
-  `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
-  `.snb`, `.cbc`, `.rb`, `.tcr`
-- **Best results**: `.epub` or `.mobi` for automatic chapter detection
-
-## Output and process Formats
-- `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
-- Process format can be changed in lib/conf.py
 
 ## Your own Ebook2Audiobook customization
 You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
