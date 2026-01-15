@@ -22,21 +22,25 @@ TTS_VOICE_CONVERSION = {
 
 TTS_SML = {
 	"break": {
-        "match": re.compile(r'(?:‡|\[)break(?:‡|\])'),
-        "token": "‡break‡"
-     },
+		"match": re.compile(r'(?:‡|\[)break(?:‡|\])'),
+		"close_match": None,
+		"token": "‡break‡"
+	},
 	"pause": {
-        "match": re.compile(r'(?:‡|\[)pause(?::(\d+(?:\.\d+)?))?(?:‡|\])'),
-        "token": "‡pause‡"
-    },
+		"match": re.compile(r'(?:‡|\[)pause(?::(\d+(?:\.\d+)?))?(?:‡|\])'),
+		"close_match": None,
+		"token": "‡pause‡"
+	},
 	"voice": {
-        "match": re.compile(r'(?:‡|\[)voice:([^\]‡]+)(?:‡|\])'),
-        "token": "‡voice‡"
-    },
+		"match": re.compile(r'(?:‡|\[)voice:([^\]‡]+)(?:‡|\])'),
+		"close_match": re.compile(r'(?:‡|\[)/voice(?:‡|\])'),
+		"token": "‡voice‡"
+	},
 	"###": {
-        "match": re.compile(r'###'),
-        "token": "###"
-    }
+		"match": re.compile(r'###'),
+		"close_match": None,
+		"token": "###"
+	}
 }
 
 default_tts_engine = TTS_ENGINES['XTTSv2']
