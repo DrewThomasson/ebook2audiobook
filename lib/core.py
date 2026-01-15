@@ -1097,8 +1097,8 @@ def get_sentences(text:str, session_id:str)->list|None:
         return len(strip_sml(s))
 
     def split_at_space_limit(s:str)->list[str]:
-        local out = []
-        local rest = s.strip()
+        out = []
+        rest = s.strip()
         while rest and len(strip_sml(rest)) > max_chars:
             cut = rest[:max_chars + 1]
             idx = cut.rfind(' ')
