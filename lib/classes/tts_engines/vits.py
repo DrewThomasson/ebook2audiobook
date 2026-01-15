@@ -22,6 +22,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             #random.seed(seed)
             #np.random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
+            self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
         except Exception as e:
