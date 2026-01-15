@@ -148,7 +148,7 @@ s
 ## SML tags available
 - `[break]` — silence (random range **0.3–0.6 s**)
 - `[pause]`, `###` — silence (random range **1.0–1.6 s**)
-- `[pause:3]` — fixed pause (**3 seconds**)
+- `[pause:N]` — fixed pause (**N seconds**)
 - `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
 
 > [!IMPORTANT]
