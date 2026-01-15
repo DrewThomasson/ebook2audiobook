@@ -97,10 +97,10 @@ class SessionContext:
         self.manager:Manager = Manager()
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
         self.cancellation_events = {}
-        
+
     def _recursive_proxy(self, data:Any, manager:SyncManager|None)->Any:
         if manager is None:
-            manager = Manager()
+            manager = self.manager
         if isinstance(data, dict):
             proxy_dict = manager.dict()
             for key, value in data.items():
@@ -129,6 +129,7 @@ class SessionContext:
             "status": None,
             "event": None,
             "progress": 0,
+            "progress_queue": None,
             "cancellation_requested": False,
             "device": default_device,
             "tts_engine": default_tts_engine,
@@ -198,6 +199,7 @@ class SessionContext:
             "playback_time": 0,
             "playback_volume": 0
         }, manager=self.manager)
+        self.sessions[session_id]["progress_queue"] = multiprocessing.Queue()
         return self.sessions[session_id]
 
     def get_session(self, session_id:str)->Any:
@@ -507,7 +509,7 @@ def save_json_chapters(session_id:str, filepath:str)->bool:
             print(f"save_json_chapters error: session not found ({session_id})")
             return False
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(session["chapters"], f, ensure_ascii=False, indent=2)
+            json.dump(session['chapters'], f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
         print(f"save_json_chapters() error: {e}")
@@ -1832,7 +1834,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 return False
                             sentence = sentence.strip()
                             if any(c.isalnum() for c in sentence):
-                                if not any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) or (any(v["match"].fullmatch(sentence) for v in TTS_SML.values()) and idx == len(sentences) - 1):
+                                if not any(v['match'].fullmatch(sentence) for v in TTS_SML.values()) or (any(v['match'].fullmatch(sentence) for v in TTS_SML.values()) and idx == len(sentences) - 1):
                                     final_sentences.append(sentence)
                                 if idx_target in missing_sentences or idx_target >= resume_sentence:
                                     if idx_target in missing_sentences:
@@ -1881,8 +1883,7 @@ def combine_audio_sentences(file:str, start:int, end:int, session_id:str)->bool:
             start = int(start)
             end = int(end)
             is_gui_process = session.get('is_gui_process')
-            manager = multiprocessing.Manager()
-            progress_queue = manager.Queue()
+            progress_queue = session["progress_queue"]
             sentence_files = [
                 f for f in os.listdir(sentences_dir)
                 if f.endswith(f'.{default_audio_proc_format}')
@@ -2147,6 +2148,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]
             is_gui_process = session['is_gui_process']
+            progress_queue = session["progress_queue"]
             if len(chapter_files) == 0:
                 print('No block files exists!')
                 return None
@@ -2157,8 +2159,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 durations.append(get_audio_duration(filepath))
             total_duration = sum(durations)
             exported_files = []
-            manager = multiprocessing.Manager()
-            progress_queue = manager.Queue()
             if session['output_split']:
                 part_files = []
                 part_chapter_indices = []
@@ -2586,12 +2586,12 @@ def convert_ebook(args:dict)->tuple:
                                     msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
                             if session['tts_engine'] == TTS_ENGINES['BARK']:
                                 if session['free_vram_gb'] < 12.0:
-                                    os.environ["SUNO_OFFLOAD_CPU"] = "True"
-                                    os.environ["SUNO_USE_SMALL_MODELS"] = "True"
+                                    os.environ['SUNO_OFFLOAD_CPU'] = "True"
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = "True"
                                     msg_extra += f"<br/>Switching BARK to SMALL models"  
                                 else:
-                                    os.environ["SUNO_OFFLOAD_CPU"] = "False"
-                                    os.environ["SUNO_USE_SMALL_MODELS"] = "False"
+                                    os.environ['SUNO_OFFLOAD_CPU'] = "False"
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = "False"
                             if msg == '':
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;
