@@ -143,15 +143,18 @@ s
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
+
 ## Output and process Formats
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - Process format can be changed in lib/conf.py
+
 
 ## SML tags available
 - `[break]` — silence (random range **0.3–0.6 s**)
 - `[pause]`, `###` — silence (random range **1.0–1.6 s**)
 - `[pause:3]` — fixed pause (**3 seconds**)
 - `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
+
 
 
 > [!IMPORTANT]
@@ -161,6 +164,8 @@ to be sure your issue does not exist already.**
 >[!NOTE]
 **EPUB format lacks any standard structure like what is a chapter, paragraph, preface etc.<br>
 So you should first remove manually any text you don't want to be converted in audio.**
+
+
 
 ### Instructions 
 1. **Clone repo**
