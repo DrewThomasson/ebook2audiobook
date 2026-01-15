@@ -123,7 +123,6 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 *<i> Modern TTS engines are very slow on CPU</i>
 
-
 ## Supported Languages
 | **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -136,26 +135,21 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 s
 
-
 ## Supported eBook Formats
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
-
 ## Output and process Formats
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - Process format can be changed in lib/conf.py
-
 
 ## SML tags available
 - `[break]` — silence (random range **0.3–0.6 s**)
 - `[pause]`, `###` — silence (random range **1.0–1.6 s**)
 - `[pause:3]` — fixed pause (**3 seconds**)
 - `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
-
-
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
@@ -164,7 +158,6 @@ to be sure your issue does not exist already.**
 >[!NOTE]
 **EPUB format lacks any standard structure like what is a chapter, paragraph, preface etc.<br>
 So you should first remove manually any text you don't want to be converted in audio.**
-
 
 
 ### Instructions 
