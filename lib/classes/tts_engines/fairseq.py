@@ -61,7 +61,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
-                    if not part or (part and sum(c.isalnum() for c in part) < 3):
+                    if not part or (part and sum(c.isalnum() for c in part) < 2):
                         continue
                     if default_sml_pattern.fullmatch(part):
                         if not self._convert_sml(part):
