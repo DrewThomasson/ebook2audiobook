@@ -1715,7 +1715,7 @@ def filter_sml(text:str)->str:
 			return f" ‡{tag}:{value}‡ "
 		return f" ‡{tag}‡ "
 
-	return SML_TAG.sub(check_sml, text)
+	return SML_TAG_PATTERN.sub(check_sml, text)
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
@@ -1855,7 +1855,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 return False
                             sentence = sentence.strip()
                             if any(c.isalnum() for c in sentence):
-                                is_sml = bool(SML_TAG.fullmatch(sentence)) or sentence == "###"
+                                is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence)) or sentence == "###"
                                 if (not is_sml) or (idx == len(sentences) - 1):
                                     final_sentences.append(sentence)
                                 if idx_target in missing_sentences or idx_target >= resume_sentence:
