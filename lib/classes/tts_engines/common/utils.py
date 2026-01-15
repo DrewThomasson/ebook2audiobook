@@ -408,29 +408,36 @@ class TTSUtils:
                     return False
         return True
 
-    def _convert_sml(self, sml:str)->bool:
-        if sml == TTS_SML['break']['token']:
-            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-            break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
-            self.audio_segments.append(break_tensor.clone())
-        elif TTS_SML['pause']['match'].fullmatch(sml):
-            m = TTS_SML['pause']['match'].fullmatch(sml)
-            duration = float(m.group(1)) if m.group(1) is not None else None
-            if duration is not None:
-                silence_time = float(duration)
-            else:
-                silence_time = float(np.random.uniform(1.0, 1.6) * 100) / 100
-            pause_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time)) # 1.0 to 1.6 seconds
-            self.audio_segments.append(pause_tensor.clone())
-        elif TTS_SML['voice']['match'].fullmatch(sml):
-            self.session['voice'] = os.path.abspath(TTS_SML['voice']['match'].fullmatch(sml).group(1))
-            if os.path.exists(self.session['voice']):
+    def _convert_sml(self, sml: str) -> bool:
+        for name, spec in TTS_SML.items():
+            if spec.get("close_match") and spec["close_match"].fullmatch(sml):
+                if name == "voice":
+                    self.params['voice_path'] = None
+                    if not self._set_voice():
+                        return False
+                return True
+            m = spec["match"].fullmatch(sml)
+            if not m:
+                continue
+            if name == "break":
+                silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                self.audio_segments.append(
+                    torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone()
+                )
+            elif name == "pause":
+                duration = float(m.group(1)) if m.group(1) else None
+                silence_time = duration if duration is not None else float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
+                self.audio_segments.append(
+                    torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone()
+                )
+            elif name == "voice":
+                voice_path = os.path.abspath(m.group(1))
+                if not os.path.exists(voice_path):
+                    print(f"_convert_sml() error: voice {voice_path} does not exist!")
+                    return False
+                self.params['voice_path'] = voice_path
                 if not self._set_voice():
                     return False
-            else:
-                error = f"_convert_sml() error: voice {self.session['voice']} does not exist!"
-                print(error)
-                return False
         return True
 
     def _format_timestamp(self, seconds: float) -> str:

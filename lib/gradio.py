@@ -483,7 +483,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
                                     gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
-                                    gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[(k, v["proc"]) for k, v in devices.items()], type='value', value=default_device, interactive=True)
+                                    gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[(k, v['proc']) for k, v in devices.items()], type='value', value=default_device, interactive=True)
                             with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_tts_engine', elem_classes=['gr-group']):
                                     gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value='TTS Engine')
@@ -775,16 +775,16 @@ def build_interface(args:dict)->gr.Blocks:
                         ">
                           <tr style="border:none; vertical-align:bottom;">
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                              <b>VRAM:</b> {color_box(int(rating["VRAM"]))}
+                              <b>VRAM:</b> {color_box(int(rating['VRAM']))}
                             </td>
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                              <b>CPU:</b> {yellow_stars(int(rating["CPU"]))}
+                              <b>CPU:</b> {yellow_stars(int(rating['CPU']))}
                             </td>
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                              <b>RAM:</b> {color_box(int(rating["RAM"]))}
+                              <b>RAM:</b> {color_box(int(rating['RAM']))}
                             </td>
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                              <b>Realism:</b> {yellow_stars(int(rating["Realism"]))}
+                              <b>Realism:</b> {yellow_stars(int(rating['Realism']))}
                             </td>
                           </tr>
                         </table>
@@ -814,7 +814,7 @@ def build_interface(args:dict)->gr.Blocks:
                         file_count = session['ebook_mode']
                         if session['ebook_list'] is not None and file_count == 'directory':
                             session['ebook'] = None
-                            ebook_data = [f for f in session["ebook_list"] if os.path.exists(f)]
+                            ebook_data = [f for f in session['ebook_list'] if os.path.exists(f)]
                             if not ebook_data:
                                 ebook_data = None
                         elif isinstance(session['ebook'], str) and file_count == 'single':
@@ -832,7 +832,7 @@ def build_interface(args:dict)->gr.Blocks:
                             else:
                                 if not is_valid_gradio_cache(ebook_data):
                                     ebook_data = None
-                        session["ebook"] = ebook_data
+                        session['ebook'] = ebook_data
                         visible_row_split_hours = True if session['output_split'] else False
                         return (
                             gr.update(value=session['ebook']),
@@ -944,11 +944,11 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session:
-                        session["ebook"] = None
-                        session["ebook_list"] = None
+                        session['ebook'] = None
+                        session['ebook_list'] = None
                         if data is None:
                             if session.get("status") == "converting":
-                                session["cancellation_requested"] = True
+                                session['cancellation_requested'] = True
                                 msg = "Cancellation requested, please wait..."
                                 yield gr.update(value=show_gr_modal("wait", msg), visible=True)
                                 return
@@ -957,10 +957,10 @@ def build_interface(args:dict)->gr.Blocks:
                             for f in data:
                                 path = f.get("path") if isinstance(f, dict) else str(f)
                                 ebook_list.append(path)
-                            session["ebook_list"] = ebook_list
+                            session['ebook_list'] = ebook_list
                         else:
-                            session["ebook"] = data
-                        session["cancellation_requested"] = False
+                            session['ebook'] = data
+                        session['cancellation_requested'] = False
                         return gr.update(value='', visible=False)
                 except Exception as e:
                     error = f'change_gr_ebook_file(): {e}'
@@ -1295,7 +1295,7 @@ def build_interface(args:dict)->gr.Blocks:
                         fine_tuned_options = [
                             name
                             for name, details in models.items()
-                            if details.get("lang") in ("multi", session["language"])
+                            if details.get("lang") in ("multi", session['language'])
                         ]
                         if session['fine_tuned'] in fine_tuned_options:
                             fine_tuned = session['fine_tuned']
@@ -1544,7 +1544,7 @@ def build_interface(args:dict)->gr.Blocks:
                             show_alert({"type": "warning", "msg": error})                   
                         else:
                             session['status'] = 'converting'
-                            session['progress'] = len(audiobook_options)
+                            session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
                                 args['chapters_preview'] = None
                                 ebook_list = args['ebook_list'][:]
@@ -1759,10 +1759,10 @@ def build_interface(args:dict)->gr.Blocks:
                             previous_hash = state.get("hash")
                             if session.get("status") == "converting":
                                 try:
-                                    if session.get("progress") != len(audiobook_options):
-                                        session["progress"] = len(audiobook_options)
+                                    if session.get('ticker') != len(audiobook_options):
+                                        session['ticker'] = len(audiobook_options)
                                         new_hash = hash_proxy_dict(MappingProxyType(session))
-                                        state["hash"] = new_hash
+                                        state['hash'] = new_hash
                                         session_dict = json.dumps(
                                             session, cls=JSONDictProxyEncoder
                                         )
@@ -1775,7 +1775,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         yield gr.update(), gr.update(), gr.update()
                                 except NameError:
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
-                                    state["hash"] = new_hash
+                                    state['hash'] = new_hash
                                     session_dict = json.dumps(
                                         session, cls=JSONDictProxyEncoder
                                     )
@@ -1789,7 +1789,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 if previous_hash == new_hash:
                                     yield gr.update(), gr.update(), gr.update()
                                 else:
-                                    state["hash"] = new_hash
+                                    state['hash'] = new_hash
                                     session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
                                     yield (
                                         gr.update(value=session_dict),
