@@ -1904,7 +1904,6 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
             worker_dir = session['sentences_worker_dir']
             os.makedirs(worker_dir, exist_ok=True)
             chunk_list = []
-            total_batches = (len(selected_files)+batch_size-1)//batch_size
             for idx, i in enumerate(range(0, len(selected_files), batch_size)):
                 if session.get['cancellation_requested'] or not check_connex(session_id):
                     msg = 'Cancel requested'
@@ -2184,7 +2183,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
                     batch_size = 1024
                     chunk_list = []
-                    total_batches = (len(part_file_list)+batch_size-1)//batch_size
                     for idx, i in enumerate(range(0, len(part_file_list), batch_size)):
                         if session.get['cancellation_requested'] or not check_connex(session_id):
                             msg = 'Cancel requested'
