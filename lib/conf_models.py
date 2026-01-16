@@ -20,6 +20,8 @@ TTS_VOICE_CONVERSION = {
     "openvoice_v2": {"path": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2", "samplerate": 22050}
 }
 
+default_frontend_sml_pattern = re.compile(r'(###|‡‡[^‡]+‡‡)')
+
 TTS_SML = {
     "break": {"paired": False},
     "pause": {"paired": False},
@@ -29,14 +31,13 @@ TTS_SML = {
 
 sml_tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
 SML_TAG_PATTERN = re.compile(
-    rf'(?:‡|\['
-    rf')(?P<close>/)?'
+    rf'(?:\[\[|‡‡)'
+    rf'(?P<close>/)?'
     rf'(?P<tag>{sml_tag_keys})'
     rf'(?:\:(?P<value>[^\]‡]+))?'
-    rf'(?:‡|\])'
+    rf'(?:\]\]|‡‡)'
 )
 
-default_frontend_sml_pattern = re.compile(r'(###|‡[^‡]+‡)')
 default_tts_engine = TTS_ENGINES['XTTSv2']
 default_fine_tuned = 'internal'
 default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
@@ -157,7 +158,7 @@ default_engine_settings = {
         "rating": {"VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
     },
     TTS_ENGINES['TACOTRON2']: {
-        "languages": {"deu": "de", "eng": "en", "fra": "fr", "jpn": "ja", "spa": "es", "zho": "zh-CN"},
+        "languages": {"deu": "de", "eng": "en", "fra": "fr", "spa": "es"},
         "samplerate": 22050,
         "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
         "voices": {},

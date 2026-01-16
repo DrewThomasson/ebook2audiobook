@@ -410,9 +410,10 @@ class TTSUtils:
         m = SML_TAG_PATTERN.fullmatch(sml)
         if not m:
             return False
-        tag = m.group("tag")
-        close = m.group("close")
-        value = m.group("value")
+        tag:str = m.group("tag")
+        close:str|None = m.group("close")
+        value:str|None = m.group("value")
+        assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
         if tag == "###":
             silence_time = float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
             self.audio_segments.append(
@@ -438,6 +439,7 @@ class TTSUtils:
         elif tag == "voice":
             if close:
                 return self._set_voice()
+            assert value is not None, "voice tag requires a value"
             voice_path = os.path.abspath(value)
             if not os.path.exists(voice_path):
                 print(f"_convert_sml() error: voice {voice_path} does not exist!")

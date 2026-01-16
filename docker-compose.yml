@@ -1,6 +1,6 @@
 services:
   ebook2audiobook:
-    image: ebook2audiobook:${DEVICE_TAG:-cu128}  # e.g. DEVICE_TAG=cu128 → ebook2audiobook:cu128
+    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}  # e.g. DEVICE_TAG=cu128 → ebook2audiobook:cu128
     build:
       context: .
       dockerfile: Dockerfile
