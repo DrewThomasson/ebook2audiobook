@@ -972,7 +972,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 prev_typ = typ
             msg = f'Flattening as raw text…'
             print(msg)
-            max_chars = int(language_mapping[lang]['max_chars'] / 2)
+            max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
             clean_list = []
             i = 0
             while i < len(text_list):
@@ -1240,7 +1240,7 @@ def get_sentences(text:str, session_id:str)->list|None:
 
         # PASS 4 — merge very short rows
         merge_list = []
-        merge_max_chars = int((max_chars / 2) / 4)
+        merge_max_chars = int((max_chars / 2) / 3)
         i = 0
         n = len(last_list)
         while i < n:
