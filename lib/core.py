@@ -1131,14 +1131,17 @@ def get_sentences(text:str, session_id:str)->list|None:
     def join_ideogramms(idg_list:list[str])->str:
         try:
             buffer = ''
+            prev_is_latin = False
             for token in idg_list:
-                # If adding this token would overflow, flush current buffer first
-                if buffer and len(buffer) + len(token) > max_chars:
-                    yield buffer
-                    buffer = ''
-                # 3) Append the token (word, punctuation, whatever) unless it's a sml token (already checked)
+                is_latin = bool(re.match(r'[A-Za-z0-9]', token))
+                if buffer:
+                    if prev_is_latin and is_latin:
+                        buffer += ' '
+                    elif len(buffer) + len(token) > max_chars:
+                        yield buffer
+                        buffer = ''
                 buffer += token
-            # 4) Flush any trailing text
+                prev_is_latin = bool(re.search(r'[A-Za-z0-9]$', token))
             if buffer:
                 yield buffer
         except Exception as e:
