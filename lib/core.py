@@ -2158,10 +2158,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
                     combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
-                    if is_gui_process:
-                        progress_bar = gr.Progress(track_tqdm=False)
-                    ok = assemble_audio_chunks_worker(str(concat_list), str(combined_chapters_file), is_gui_process, session_id, 0)
-                    if not ok:
+                    result = assemble_audio_chunks_worker(str(concat_list), str(combined_chapters_file), is_gui_process)
+                    if not result:
                         error = f'assemble_audio_chunks_worker() Final merge failed for part {part_idx+1}.'
                         print(error)
                         return None
@@ -2184,7 +2182,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         f.write(f"file '{path}'\n")
                 if is_gui_process:
                     progress_bar = gr.Progress(track_tqdm=False)
-                ok = assemble_audio_chunks_worker(concat_list, merged_tmp, is_gui_process, session_id, 0)
+                ok = assemble_audio_chunks_worker(concat_list, merged_tmp, is_gui_process)
                 if not ok:
                     print(f'assemble_audio_chunks_worker() Final merge failed for {merged_tmp}.')
                     return None
