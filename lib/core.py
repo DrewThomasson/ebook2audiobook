@@ -60,7 +60,6 @@ active_sessions = None
 
 ProgressEvent:TypeAlias = tuple[int, float]
 ProgressQueue:TypeAlias = queue.Queue[ProgressEvent]
-progress_queue = None
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
@@ -131,8 +130,7 @@ class SessionContext:
             "status": None,
             "event": None,
             "ticker": 0,
-            "heartbeat": time.time() + 120,
-            "progress_queue": None,
+            "heartbeat": time.time(),
             "cancellation_requested": False,
             "device": default_device,
             "tts_engine": default_tts_engine,
@@ -202,7 +200,7 @@ class SessionContext:
             "playback_time": 0,
             "playback_volume": 0
         }, manager=self.manager)
-        self.progress_queues[session_id] = multiprocessing.Queue()
+        self.progress_queues[session_id] = self.manager.Queue()
         return self.sessions[session_id]
 
     def get_session(self, session_id:str)->Any:
@@ -974,7 +972,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 prev_typ = typ
             msg = f'Flattening as raw text…'
             print(msg)
-            max_chars = int(language_mapping[lang]['max_chars'] / 2)
+            max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
             clean_list = []
             i = 0
             while i < len(text_list):
@@ -1092,7 +1090,7 @@ def get_sentences(text:str, session_id:str)->list|None:
 
     def strip_sml(s:str)->str:
         return SML_TAG_PATTERN.sub('', s)
-        
+
     def clean_len(s:str)->int:
         return len(strip_sml(s))
 
@@ -1242,18 +1240,34 @@ def get_sentences(text:str, session_id:str)->list|None:
 
         # PASS 4 — merge very short rows
         merge_list = []
-        merge_max_chars = int((max_chars / 2) / 4)
-        for s in last_list:
-            s = s.strip()
+        merge_max_chars = int((max_chars / 2) / 3)
+        i = 0
+        n = len(last_list)
+        while i < n:
+            s = last_list[i].strip()
             if not s:
+                i += 1
                 continue
-            if merge_list:
-                prev = merge_list[-1]
-                if clean_len(prev) + clean_len(s) <= merge_max_chars * 2:
-                    sep = sml_token('pause')
-                    merge_list[-1] = prev.rstrip() + sep + s.lstrip()
-                    continue
+            cur_len = clean_len(s)
+            # If current sentence is short, try to glue it
+            if cur_len <= merge_max_chars:
+                # 1) Try backward merge
+                if merge_list:
+                    prev = merge_list[-1]
+                    if clean_len(prev) + cur_len <= max_chars:
+                        merge_list[-1] = prev.rstrip() + " " + s.lstrip()
+                        i += 1
+                        continue
+                # 2) Try forward merge
+                if i + 1 < n:
+                    nxt = last_list[i + 1].strip()
+                    if nxt and cur_len + clean_len(nxt) <= max_chars:
+                        merge_list.append(s.rstrip() + " " + nxt.lstrip())
+                        i += 2
+                        continue
+            # Otherwise keep as-is
             merge_list.append(s)
+            i += 1
             
         # PASS 5 = remove unwanted breaks
         break_token = re.escape(sml_token('break'))
@@ -1606,13 +1620,6 @@ def roman2number(text: str)->str:
 def is_latin(s:str)->bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
-from typing import Dict
-import unicodedata
-import regex as re
-from unidecode import unidecode
-from phonemizer import phonemize
-
-
 def foreign2latin(text:str, base_lang:str)->str:
 
     def script_of(word:str)->str:
@@ -1894,7 +1901,6 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
     try:
         session = context.get_session(session_id)
         if session:
-            global progress_queue
             chapter_audio_file = os.path.join(session['chapters_dir'], file)
             sentences_dir = session['sentences_dir']
             batch_size = 1024
@@ -1922,15 +1928,22 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                 with open(txt, 'w') as f:
                     for file in batch:
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
-                chunk_list.append((str(txt), str(out), False, idx))
+                chunk_list.append((str(txt), str(out), False, session_id, idx))
+            final_list = os.path.join(worker_dir, 'sentences_final.txt')
             try:
                 if is_gui_process:
                     progress_bar = gr.Progress(track_tqdm=False)
                 results = []
-                total_jobs = len(chunk_list)
+                total_jobs = len(chunk_list) + 1
                 progress_state = {}
-                with Pool(cpu_count()) as pool:
+                while not progress_queue.empty():
+                    try:
+                        progress_queue.get_nowait()
+                    except queue.Empty:
+                        break
+                with Pool(cpu_count(), maxtasksperchild=1) as pool:
                     async_results = [pool.apply_async(assemble_audio_chunks_worker, args=args) for args in chunk_list]
+                    async_results.append(pool.apply_async(assemble_audio_chunks_worker, args=(final_list, chapter_audio_file, is_gui_process, session_id, len(chunk_list))))
                     while len(results) < total_jobs:
                         try:
                             job_id, percent = progress_queue.get(timeout=0.1)
@@ -1952,20 +1965,13 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                 error = 'combine_audio_sentences() One or more chunks failed.'
                 print(error)
                 return False
-            final_list = os.path.join(worker_dir, 'sentences_final.txt')
-            print(f'final_list: {final_list}')
             with open(final_list, 'w') as f:
                 for item in chunk_list:
                     chunk_path = item[1]
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            if assemble_audio_chunks_worker(final_list, chapter_audio_file, is_gui_process, 1):
-                msg = f'********* Combined block audio file saved in {chapter_audio_file}'
-                print(msg)
-                return True
-            else:
-                error = 'combine_audio_sentences() Final merge failed.'
-                print(error)
-                return False
+            msg = f'********* Combined block audio file saved in {chapter_audio_file}'
+            print(msg)
+            return True
     except Exception as e:
         DependencyError(e)
     return False
@@ -2145,7 +2151,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
     try:
         session = context.get_session(session_id)
         if session:
-            global progress_queue
             chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]
@@ -2202,14 +2207,21 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             for file in batch:
                                 path = Path(session['chapters_dir']) / file
                                 f.write(f"file '{path.as_posix()}'\n")
-                        chunk_list.append((str(txt), str(out), False, idx))
+                        chunk_list.append((str(txt), str(out), False, session_id, idx))
+                    final_list = os.path.join(worker_dir, f'part_{part_idx+1:02d}_final.txt')
                     if is_gui_process:
                         progress_bar = gr.Progress(track_tqdm=False)
                     results = []
-                    total_jobs = len(chunk_list)
+                    total_jobs = len(chunk_list) + 1
                     progress_state = {}
-                    with Pool(cpu_count()) as pool:
+                    while not progress_queue.empty():
+                        try:
+                            progress_queue.get_nowait()
+                        except queue.Empty:
+                            break
+                    with Pool(cpu_count(), maxtasksperchild=1) as pool:
                         async_results = [pool.apply_async(assemble_audio_chunks_worker, args=args) for args in chunk_list]
+                        async_results.append(pool.apply_async(assemble_audio_chunks_worker, args=(final_list, str(Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"), is_gui_process, session_id, len(chunk_list))))
                         while len(results) < total_jobs:
                             try:
                                 job_id, percent = progress_queue.get(timeout=0.1)
@@ -2227,16 +2239,11 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         error = f'assemble_audio_chunks_worker() One or more chunks failed for part {part_idx+1}.'
                         print(error)
                         return None
-                    combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
-                    final_list = os.path.join(worker_dir, f'part_{part_idx+1:02d}_final.txt')
                     with open(final_list, 'w') as f:
                         for item in chunk_list:
                             chunk_path = item[1]
                             f.write(f"file '{Path(chunk_path).as_posix()}'\n")
-                    if not assemble_audio_chunks_worker(str(final_list), str(combined_chapters_file), is_gui_process, 1):
-                        error = f'assemble_audio_chunks_worker() Final merge failed for part {part_idx+1}.'
-                        print(error)
-                        return None
+                    combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
@@ -2254,7 +2261,32 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             return None
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
-                if not assemble_audio_chunks_worker(txt, merged_tmp, is_gui_process, 1):
+                final_list = txt
+                if is_gui_process:
+                    progress_bar = gr.Progress(track_tqdm=False)
+                results = []
+                total_jobs = 1
+                progress_state = {}
+                while not progress_queue.empty():
+                    try:
+                        progress_queue.get_nowait()
+                    except queue.Empty:
+                        break
+                with Pool(1, maxtasksperchild=1) as pool:
+                    async_results = [pool.apply_async(assemble_audio_chunks_worker, args=(final_list, merged_tmp, is_gui_process, session_id, 0))]
+                    while len(results) < total_jobs:
+                        try:
+                            job_id, percent = progress_queue.get(timeout=0.1)
+                            progress_state[job_id] = percent
+                            if is_gui_process:
+                                progress_bar(min(percent / 100, 1.0), desc="Combining audio chapters")
+                        except queue.Empty:
+                            pass
+                        for r in async_results[:]:
+                            if r.ready():
+                                results.append(r.get())
+                                async_results.remove(r)
+                if not all(results):
                     print(f'assemble_audio_chunks_worker() Final merge failed for {merged_tmp}.')
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
@@ -2269,9 +2301,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool, job_id:int|None=None)->bool:
+def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool, session_id:str, job_id:int|None=None)->bool:
     try:
-        global progress_queue
         total_duration = 0.0
         try:
             with open(txt_file, 'r') as f:
@@ -2303,6 +2334,7 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
             '-nostats',
             out_file,
         ]
+        progress_queue = context.progress_queues.get(session_id)
         on_progress = None
         if progress_queue is not None and job_id is not None:
             on_progress = lambda p: progress_queue.put((job_id, p))
