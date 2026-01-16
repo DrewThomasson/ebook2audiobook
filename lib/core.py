@@ -1271,12 +1271,10 @@ def get_sentences(text:str, session_id:str)->list|None:
                 merge_list.append(cur)
                 i = j
                 continue
+            # Non-short rows: normal behavior
+            merge_list.append(cur)
+            i += 1
 
-    # Non-short rows: normal behavior
-    merge_list.append(cur)
-    i += 1
-
- 
         # PASS 5 = remove unwanted breaks
         break_token = re.escape(sml_token('break'))
         strip_break_spaces_re = re.compile(
