@@ -1904,7 +1904,6 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
             start = int(start)
             end = int(end)
             is_gui_process = session.get('is_gui_process')
-            progress_queue = context.progress_queues.get(session_id)
             sentence_files = [f for f in os.listdir(sentences_dir) if f.endswith(f'.{default_audio_proc_format}')]
             sentences_ordered = sorted(sentence_files, key=lambda x: int(os.path.splitext(x)[0]))
             selected_files = [os.path.join(sentences_dir, f) for f in sentences_ordered if int(start) <= int(os.path.splitext(f)[0]) <= int(end)]
@@ -1921,15 +1920,8 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         print(msg)
                         return False
                     f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            while not progress_queue.empty():
-                try:
-                    progress_queue.get_nowait()
-                except queue.Empty:
-                    break
-            if is_gui_process:
-                progress_bar = gr.Progress(track_tqdm=False)
-            ok = assemble_audio_chunks_worker(concat_list, chapter_audio_file, is_gui_process)
-            if not ok:
+            result = assemble_audio_chunks_worker(concat_list, chapter_audio_file, is_gui_process)
+            if not result:
                 error = 'combine_audio_sentences() FFmpeg concat failed.'
                 print(error)
                 return False
