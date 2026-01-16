@@ -16,15 +16,9 @@ services:
       - "7860:7860"
     privileged: true   # Kept as required for some Unraid users
 
-    # NVIDIA GPU passthrough – works on Docker hosts with NVIDIA Container Toolkit
-    # Ignored safely if toolkit not installed or no NVIDIA GPU
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    # Default profile = CPU (safe everywhere)
+    profiles:
+      - cpu
 
     volumes:
       - .:/app:rw      # Bind mount current directory – works everywhere
@@ -35,3 +29,21 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+
+  ebook2audiobook-gpu:
+    extends:
+      service: ebook2audiobook
+
+    # Explicit GPU profile only
+    profiles:
+      - gpu
+
+    # NVIDIA GPU passthrough – only enabled when profile=gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
