@@ -54,13 +54,6 @@ from lib import *
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
-context = None
-context_tracker = None
-active_sessions = None
-
-ProgressEvent:TypeAlias = tuple[int, float]
-ProgressQueue:TypeAlias = queue.Queue[ProgressEvent]
-
 class DependencyError(Exception):
     def __init__(self, message:str|None):
         super().__init__(message)
@@ -221,6 +214,13 @@ class JSONDictProxyEncoder(json.JSONEncoder):
         elif isinstance(o, ListProxy):
             return list(o)
         return super().default(o)
+        
+ProgressEvent:TypeAlias = tuple[int, float]
+ProgressQueue:TypeAlias = queue.Queue[ProgressEvent]
+
+context = SessionContext()
+context_tracker = None
+active_sessions = None
 
 def prepare_dirs(src:str, session_id:str)->bool:
     try:
@@ -1941,7 +1941,7 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         progress_queue.get_nowait()
                     except queue.Empty:
                         break
-                with Pool(cpu_count(), maxtasksperchild=1) as pool:
+                with Pool(1, maxtasksperchild=10) as pool:
                     async_results = [pool.apply_async(assemble_audio_chunks_worker, args=args) for args in chunk_list]
                     async_results.append(pool.apply_async(assemble_audio_chunks_worker, args=(final_list, chapter_audio_file, is_gui_process, session_id, len(chunk_list))))
                     while len(results) < total_jobs:
@@ -2214,11 +2214,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     results = []
                     total_jobs = len(chunk_list) + 1
                     progress_state = {}
-                    while not progress_queue.empty():
-                        try:
-                            progress_queue.get_nowait()
-                        except queue.Empty:
-                            break
+                    if progress_queue is not None:
+                        while not progress_queue.empty():
+                            try:
+                                progress_queue.get_nowait()
+                            except queue.Empty:
+                                break
                     with Pool(cpu_count(), maxtasksperchild=1) as pool:
                         async_results = [pool.apply_async(assemble_audio_chunks_worker, args=args) for args in chunk_list]
                         async_results.append(pool.apply_async(assemble_audio_chunks_worker, args=(final_list, str(Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"), is_gui_process, session_id, len(chunk_list))))
@@ -2267,11 +2268,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 results = []
                 total_jobs = 1
                 progress_state = {}
-                while not progress_queue.empty():
-                    try:
-                        progress_queue.get_nowait()
-                    except queue.Empty:
-                        break
+                if progress_queue is not None:
+                    while not progress_queue.empty():
+                        try:
+                            progress_queue.get_nowait()
+                        except queue.Empty:
+                            break
                 with Pool(1, maxtasksperchild=1) as pool:
                     async_results = [pool.apply_async(assemble_audio_chunks_worker, args=(final_list, merged_tmp, is_gui_process, session_id, 0))]
                     while len(results) < total_jobs:
