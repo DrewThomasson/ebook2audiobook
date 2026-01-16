@@ -367,14 +367,16 @@ def compare_checksums(src_path:str, checksum_path:str, hash_algorithm:str='sha25
         if not os.path.exists(checksum_path):
             with open(checksum_path, 'w', encoding='utf-8') as f:
                 f.write(new_checksum)
-            return True, None
-        with open(checksum_path, 'r', encoding='utf-8') as f:
-            saved_checksum = f.read().strip()
-        if saved_checksum == new_checksum:
-            return True, None
-        with open(checksum_path, 'w', encoding='utf-8') as f:
-            f.write(new_checksum)
-        return False, None
+            return False, None
+        else:
+            with open(checksum_path, 'r', encoding='utf-8') as f:
+                saved_checksum = f.read().strip()
+            if saved_checksum == new_checksum:
+                return True, None
+            else:
+                with open(checksum_path, 'w', encoding='utf-8') as f:
+                    f.write(new_checksum)
+                    return False, None
     except Exception as e:
         return False, f'compare_checksums() error: {e}'
 
@@ -1085,6 +1087,13 @@ def get_sentences(text:str, session_id:str)->list|None:
     def clean_len(s:str)->int:
         return len(strip_sml(s))
 
+    def is_latin_only(s:str)->bool:
+        s = strip_sml(s)
+        s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
+        has_latin = bool(re.search(r'[A-Za-z]', s))
+        has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
+        return has_latin and not has_nonlatin
+
     def split_at_space_limit(s:str)->list[str]:
         out = []
         rest = s.strip()
@@ -1291,7 +1300,7 @@ def get_sentences(text:str, session_id:str)->list|None:
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
-            for s in soft_list:
+            for s in final_list:
                 parts = re.split(default_frontend_sml_pattern, s)
                 for part in parts:
                     part = part.strip()
@@ -1307,7 +1316,11 @@ def get_sentences(text:str, session_id:str)->list|None:
                         tokens = tokens.strip()
                         if tokens:
                             result.append(tokens)
-            return list(join_ideogramms(result))
+            joined = []
+            for s in join_ideogramms(result):
+                if not is_latin_only(s):
+                    joined.append(s)
+            return joined
         else:
             return final_list
     except Exception as e:
@@ -2539,7 +2552,7 @@ def convert_ebook(args:dict)->tuple:
                                 checksum, error = compare_checksums(session['ebook'], checksum_path)
                                 if error is None:
                                     saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                                    if checksum:
+                                    if not checksum:
                                         session['chapters'] = []
                                         if not convert2epub(session_id):
                                             error = 'convert2epub() failed!'
