@@ -157,7 +157,7 @@ default_engine_settings = {
         "rating": {"VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
     },
     TTS_ENGINES['TACOTRON2']: {
-        "languages": {"deu": "de", "eng": "en", "fra": "fr", "jpn": "ja", "nld": "nl", "spa": "es", "zho": "zh-CN"},
+        "languages": {"deu": "de", "eng": "en", "fra": "fr", "jpn": "ja", "spa": "es", "zho": "zh-CN"},
         "samplerate": 22050,
         "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
         "voices": {},
