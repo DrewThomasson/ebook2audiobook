@@ -373,8 +373,11 @@ Docker run image:
 
     Docker Compose:
         download and run:
-            docker compose up -d
-        build and run (i.e. for cuda 12.8):
+			cpu:
+				docker compose --profile gpu up -d
+			gpu:
+				docker compose --profile gpu up -d
+        build locally and run (i.e. for cuda 12.8):
             DEVICE_TAG=cu128 docker compose up -d build
 
     Podman Compose:
