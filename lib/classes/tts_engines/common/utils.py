@@ -295,11 +295,6 @@ class TTSUtils:
                         }
                         with torch.no_grad():
                             engine.to(device)
-
-                            engine.to('cpu')
-                            
-                        with torch.no_grad():
-                            engine.to(device)
                             if device == devices['CPU']['proc']:
                                 result = engine.inference(
                                     text=default_text.strip(),
@@ -412,7 +407,7 @@ class TTSUtils:
         return True
 
     def _convert_sml(self, sml:str)->bool:
-        m = SML_TAG.fullmatch(sml)
+        m = SML_TAG_PATTERN.fullmatch(sml)
         if not m:
             return False
         tag = m.group("tag")
@@ -493,7 +488,7 @@ class TTSUtils:
                     text = re.sub(
                         r'\s+',
                         ' ',
-                        default_sml_pattern.sub('', str(all_sentences[idx]))
+                        default_frontend_sml_pattern.sub('', str(all_sentences[idx]))
                     ).strip()
                     vtt_blocks.append(f"{start} --> {end}\n{text}\n")
                     if self.session['is_gui_process']:
