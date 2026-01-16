@@ -814,63 +814,63 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 
 def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
 
-	def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
-		try:
-			prev_child_had_data = False
-			for idx, child in enumerate(node.children):
-				current_child_had_data = False
-				if isinstance(child, NavigableString):
-					text = child.strip()
-					if text:
-						if prev_child_had_data:
-							yield ('break', sml_token("break"))
-						yield ('text', text)
-						last_text_char = text[-1]
-						current_child_had_data = True
-				elif isinstance(child, Tag):
-					name = child.name.lower()
-					if name in heading_tags:
-						title = child.get_text(strip=True)
-						if title:
-							if prev_child_had_data:
-								yield ('break', sml_token("break"))
-							yield ('heading', title)
-							last_text_char = title[-1]
-							current_child_had_data = True
-					elif name == 'table':
-						if prev_child_had_data:
-							yield ('break', sml_token("break"))
-						yield ('table', child)
-						current_child_had_data = True
-					else:
-						return_data = False
-						if name in proc_tags:
-							is_header = False
-							if prev_child_had_data and name in break_tags:
-								yield ('break', sml_token("break"))
-							for inner in _tuple_row(child, last_text_char):
-								return_data = True
-								yield inner
-								if len(inner) > 1 and isinstance(inner[1], str) and inner[1]:
-									last_text_char = inner[1][-1]
-								current_child_had_data = True
-								if inner[0] in ('text', 'heading') and isinstance(inner[1], str) and inner[1]:
-									is_header = True
-							if return_data:
-								if name in break_tags and name != 'span':
-									if is_header or (last_text_char and not last_text_char.isalnum() and not last_text_char.isspace()):
-										yield ('break', sml_token("break"))
-								elif name in heading_tags or name in pause_tags:
-									yield ('pause', sml_token("pause"))
-						else:
-							yield from _tuple_row(child, last_text_char)
-							current_child_had_data = True
-				if current_child_had_data:
-					prev_child_had_data = True
-		except Exception as e:
-			error = f'filter_chapter() _tuple_row() error: {e}'
-			DependencyError(error)
-			return None
+    def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
+        try:
+            prev_child_had_data = False
+            for idx, child in enumerate(node.children):
+                current_child_had_data = False
+                if isinstance(child, NavigableString):
+                    text = child.strip()
+                    if text:
+                        if prev_child_had_data:
+                            yield ('break', sml_token("break"))
+                        yield ('text', text)
+                        last_text_char = text[-1]
+                        current_child_had_data = True
+                elif isinstance(child, Tag):
+                    name = child.name.lower()
+                    if name in heading_tags:
+                        title = child.get_text(strip=True)
+                        if title:
+                            if prev_child_had_data:
+                                yield ('break', sml_token("break"))
+                            yield ('heading', title)
+                            last_text_char = title[-1]
+                            current_child_had_data = True
+                    elif name == 'table':
+                        if prev_child_had_data:
+                            yield ('break', sml_token("break"))
+                        yield ('table', child)
+                        current_child_had_data = True
+                    else:
+                        return_data = False
+                        if name in proc_tags:
+                            is_header = False
+                            if prev_child_had_data and name in break_tags:
+                                yield ('break', sml_token("break"))
+                            for inner in _tuple_row(child, last_text_char):
+                                return_data = True
+                                yield inner
+                                if len(inner) > 1 and isinstance(inner[1], str) and inner[1]:
+                                    last_text_char = inner[1][-1]
+                                current_child_had_data = True
+                                if inner[0] in ('text', 'heading') and isinstance(inner[1], str) and inner[1]:
+                                    is_header = True
+                            if return_data:
+                                if name in break_tags and name != 'span':
+                                    if is_header or (last_text_char and not last_text_char.isalnum() and not last_text_char.isspace()):
+                                        yield ('break', sml_token("break"))
+                                elif name in heading_tags or name in pause_tags:
+                                    yield ('pause', sml_token("pause"))
+                        else:
+                            yield from _tuple_row(child, last_text_char)
+                            current_child_had_data = True
+                if current_child_had_data:
+                    prev_child_had_data = True
+        except Exception as e:
+            error = f'filter_chapter() _tuple_row() error: {e}'
+            DependencyError(error)
+            return None
 
     def _num_repl(m):
         s = m.group(0)
@@ -1695,29 +1695,29 @@ def foreign2latin(text:str, base_lang:str)->str:
 
 def filter_sml(text:str)->str:
 
-	def check_sml(m:re.Match[str])->str:
-		tag = m.group("tag")
-		close = m.group("close")
-		value = m.group("value")
+    def check_sml(m:re.Match[str])->str:
+        tag = m.group("tag")
+        close = m.group("close")
+        value = m.group("value")
         assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
-		if tag == "###":
-			return " ‡‡pause‡‡ "
-		if close:
-			return f" ‡‡/{tag}‡‡ "
-		if value:
-			return f" ‡‡{tag}:{value}‡‡ "
-		return f" ‡‡{tag}‡‡ "
+        if tag == "###":
+            return " ‡‡pause‡‡ "
+        if close:
+            return f" ‡‡/{tag}‡‡ "
+        if value:
+            return f" ‡‡{tag}:{value}‡‡ "
+        return f" ‡‡{tag}‡‡ "
 
-	return SML_TAG_PATTERN.sub(check_sml, text)
+    return SML_TAG_PATTERN.sub(check_sml, text)
     
 def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
-	if tag == "###":
-		return "###"
-	if close:
-		return f"‡‡/{tag}‡‡"
-	if value is not None:
-		return f"‡‡{tag}:{value}‡‡"
-	return f"‡‡{tag}‡‡"
+    if tag == "###":
+        return "###"
+    if close:
+        return f"‡‡/{tag}‡‡"
+    if value is not None:
+        return f"‡‡{tag}:{value}‡‡"
+    return f"‡‡{tag}‡‡"
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
