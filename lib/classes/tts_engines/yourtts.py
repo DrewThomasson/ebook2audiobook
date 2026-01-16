@@ -21,6 +21,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             #random.seed(seed)
             #np.random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
+            self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -59,7 +60,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
-                    if not part or (part and sum(c.isalnum() for c in part) < 2):
+                    if not part:
                         continue
                     if default_frontend_sml_pattern.fullmatch(part):
                         if not self._convert_sml(part):
