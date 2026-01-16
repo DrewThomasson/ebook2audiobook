@@ -32,7 +32,7 @@ TTS_SML = {
 sml_tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
 SML_TAG_PATTERN = re.compile(
 	rf'''
-	(?P<hash>###)
+	(?P<hash>\#\#\#)
 	|
 	\[\[
 		(?P<close1>/)?
