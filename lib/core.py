@@ -60,7 +60,8 @@ active_sessions = None
 
 ProgressEvent:TypeAlias = tuple[int, float]
 ProgressQueue:TypeAlias = queue.Queue[ProgressEvent]
-progress_queue = None
+
+_progress_queue = None
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
@@ -1092,7 +1093,7 @@ def get_sentences(text:str, session_id:str)->list|None:
 
     def strip_sml(s:str)->str:
         return SML_TAG_PATTERN.sub('', s)
-        
+
     def clean_len(s:str)->int:
         return len(strip_sml(s))
 
@@ -1606,13 +1607,6 @@ def roman2number(text: str)->str:
 def is_latin(s:str)->bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
-from typing import Dict
-import unicodedata
-import regex as re
-from unidecode import unidecode
-from phonemizer import phonemize
-
-
 def foreign2latin(text:str, base_lang:str)->str:
 
     def script_of(word:str)->str:
@@ -1894,7 +1888,6 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
     try:
         session = context.get_session(session_id)
         if session:
-            global progress_queue
             chapter_audio_file = os.path.join(session['chapters_dir'], file)
             sentences_dir = session['sentences_dir']
             batch_size = 1024
@@ -2145,7 +2138,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
     try:
         session = context.get_session(session_id)
         if session:
-            global progress_queue
             chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]
@@ -2271,7 +2263,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
 def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool, job_id:int|None=None)->bool:
     try:
-        global progress_queue
         total_duration = 0.0
         try:
             with open(txt_file, 'r') as f:
@@ -2303,6 +2294,7 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
             '-nostats',
             out_file,
         ]
+        progress_queue = context.progress_queues.get(session_id)
         on_progress = None
         if progress_queue is not None and job_id is not None:
             on_progress = lambda p: progress_queue.put((job_id, p))
