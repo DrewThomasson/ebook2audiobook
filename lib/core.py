@@ -1087,6 +1087,9 @@ def get_sentences(text:str, session_id:str)->list|None:
     def clean_len(s:str)->int:
         return len(strip_sml(s))
 
+    def is_latin_only(s:str)->bool:
+        return bool(re.search(r'[A-Za-z]', s)) and not re.search(r'[^\x00-\x7F]', s)
+
     def split_at_space_limit(s:str)->list[str]:
         out = []
         rest = s.strip()
@@ -1309,7 +1312,11 @@ def get_sentences(text:str, session_id:str)->list|None:
                         tokens = tokens.strip()
                         if tokens:
                             result.append(tokens)
-            return list(join_ideogramms(result))
+            joined = []
+            for s in join_ideogramms(result):
+                if not is_latin_only(s):
+                    joined.append(s)
+            return joined
         else:
             return final_list
     except Exception as e:
