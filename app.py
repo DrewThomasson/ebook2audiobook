@@ -10,7 +10,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 def init_multiprocessing():
     if sys.platform.startswith("darwin"):
         try:
-            multiprocessing.set_start_method("fork")
+            multiprocessing.set_start_method("spawn")
         except RuntimeError:
             pass
     elif sys.platform.startswith("linux"):

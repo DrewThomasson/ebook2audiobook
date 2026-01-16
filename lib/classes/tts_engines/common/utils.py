@@ -437,7 +437,6 @@ class TTSUtils:
             return True
         elif tag == "voice":
             if close:
-                self.params['voice_path'] = None
                 return self._set_voice()
             voice_path = os.path.abspath(value)
             if not os.path.exists(voice_path):
