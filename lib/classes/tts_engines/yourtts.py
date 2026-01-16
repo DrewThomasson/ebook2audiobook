@@ -60,7 +60,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
-                    if not part:
+                    if not part or not any(c.isalnum() for c in part):
                         continue
                     if default_frontend_sml_pattern.fullmatch(part):
                         if not self._convert_sml(part):
