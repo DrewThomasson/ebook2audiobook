@@ -2539,7 +2539,7 @@ def convert_ebook(args:dict)->tuple:
                                 checksum, error = compare_checksums(session['ebook'], checksum_path)
                                 if error is None:
                                     saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                                    if checksum:
+                                    if not checksum:
                                         session['chapters'] = []
                                         if not convert2epub(session_id):
                                             error = 'convert2epub() failed!'
