@@ -777,19 +777,19 @@ class DeviceInstaller():
                                 try:
                                     from packaging.version import Version
                                     numpy_version = self.get_package_version('numpy')
-                                    numpy_version_base = Version(numpy_version).base_version
-                                    torch_version_base = Version(torch_version).base_version
                                     print(f"Installing the right library packages for {device_info['name']}...")
                                     os_env = device_info['os']
                                     arch = device_info['arch']
                                     tag = device_info['tag']
                                     url = torch_matrix[device_info['tag']]['url']
                                     toolkit_version = "".join(c for c in tag if c.isdigit())
+                                    numpy_version_base = Version(numpy_version).base_version
+                                    torch_version_base = torch_matrix[device_info['tag']]['base']
                                     if device_info['name'] == devices['JETSON']['proc']:
                                         py_major, py_minor = device_info['pyvenv']
                                         tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
-                                        torch_pkg = f"{url}/v{toolkit_version}/torch-{jetson_torch_version_base[tag]}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                        torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{jetson_torch_version_base[tag]}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                        torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                        torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-binary=scikit-learn', 'scikit-learn'])
