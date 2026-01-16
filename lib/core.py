@@ -372,12 +372,12 @@ def compare_checksums(src_path:str, checksum_path:str, hash_algorithm:str='sha25
                 f.write(new_checksum)
             return True, None
         with open(checksum_path, 'r', encoding='utf-8') as f:
-            old_checksum = f.read().strip()
-        if old_checksum == new_checksum:
-            return False, None
+            saved_checksum = f.read().strip()
+        if saved_checksum == new_checksum:
+            return True, None
         with open(checksum_path, 'w', encoding='utf-8') as f:
             f.write(new_checksum)
-        return True, None
+        return False, None
     except Exception as e:
         return False, f'compare_checksums() error: {e}'
 
@@ -2534,7 +2534,8 @@ def convert_ebook(args:dict)->tuple:
                                     show_alert({"type": "warning", "msg": msg})
                                 print(msg.replace('<br/>','\n'))
                                 session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
-                                checksum, error = compare_checksums(session['ebook'], os.path.join(session['process_dir'], 'checksum'))
+                                checksum_path = os.path.join(session['process_dir'], 'checksum')
+                                checksum, error = compare_checksums(session['ebook'], checksum_path)
                                 if error is None:
                                     saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
                                     if checksum:
