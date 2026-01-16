@@ -661,7 +661,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             gr_state_update = gr.State(value={'hash': None})
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
-            gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden') 
+            gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
 
             def disable_components()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(12)])
