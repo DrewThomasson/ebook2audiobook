@@ -1296,7 +1296,7 @@ def get_sentences(text:str, session_id:str)->list|None:
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
-            for s in soft_list:
+            for s in final_list:
                 parts = re.split(default_frontend_sml_pattern, s)
                 for part in parts:
                     part = part.strip()
