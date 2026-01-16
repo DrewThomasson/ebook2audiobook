@@ -295,11 +295,6 @@ class TTSUtils:
                         }
                         with torch.no_grad():
                             engine.to(device)
-
-                            engine.to('cpu')
-                            
-                        with torch.no_grad():
-                            engine.to(device)
                             if device == devices['CPU']['proc']:
                                 result = engine.inference(
                                     text=default_text.strip(),
