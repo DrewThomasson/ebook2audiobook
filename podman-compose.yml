@@ -1,6 +1,6 @@
 services:
   ebook2audiobook:
-    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}  # or ebook2audiobook:${DEVICE_TAG:-cu128} if you run your own local docker
+    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-latest}  # or ebook2audiobook:${DEVICE_TAG:-cu128} if you run your own local docker
     build:
       context: .
       dockerfile: Dockerfile
