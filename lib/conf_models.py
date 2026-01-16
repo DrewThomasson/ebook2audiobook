@@ -21,19 +21,19 @@ TTS_VOICE_CONVERSION = {
 }
 
 TTS_SML = {
-	"break": {"paired": False},
-	"pause": {"paired": False},
-	"voice": {"paired": True},
-	"###": {"paired": False},
+    "break": {"paired": False},
+    "pause": {"paired": False},
+    "voice": {"paired": True},
+    "###": {"paired": False},
 }
 
 sml_tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
 SML_TAG_PATTERN = re.compile(
-	rf'(?:‡|\['
-	rf')(?P<close>/)?'
-	rf'(?P<tag>{sml_tag_keys})'
-	rf'(?:\:(?P<value>[^\]‡]+))?'
-	rf'(?:‡|\])'
+    rf'(?:‡|\['
+    rf')(?P<close>/)?'
+    rf'(?P<tag>{sml_tag_keys})'
+    rf'(?:\:(?P<value>[^\]‡]+))?'
+    rf'(?:‡|\])'
 )
 
 default_frontend_sml_pattern = re.compile(r'(###|‡[^‡]+‡)')

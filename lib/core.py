@@ -1615,77 +1615,77 @@ from phonemizer import phonemize
 
 def foreign2latin(text:str, base_lang:str)->str:
 
-	def script_of(word:str)->str:
-		for ch in word:
-			if ch.isalpha():
-				name = unicodedata.name(ch, '')
-				if 'CYRILLIC' in name:
-					return 'cyrillic'
-				if 'LATIN' in name:
-					return 'latin'
-				if 'ARABIC' in name:
-					return 'arabic'
-				if 'HANGUL' in name:
-					return 'hangul'
-				if 'HIRAGANA' in name or 'KATAKANA' in name:
-					return 'japanese'
-				if 'CJK' in name or 'IDEOGRAPH' in name:
-					return 'chinese'
-		return 'unknown'
+    def script_of(word:str)->str:
+        for ch in word:
+            if ch.isalpha():
+                name = unicodedata.name(ch, '')
+                if 'CYRILLIC' in name:
+                    return 'cyrillic'
+                if 'LATIN' in name:
+                    return 'latin'
+                if 'ARABIC' in name:
+                    return 'arabic'
+                if 'HANGUL' in name:
+                    return 'hangul'
+                if 'HIRAGANA' in name or 'KATAKANA' in name:
+                    return 'japanese'
+                if 'CJK' in name or 'IDEOGRAPH' in name:
+                    return 'chinese'
+        return 'unknown'
 
-	def romanize(word:str)->str:
-		scr = script_of(word)
-		if scr == 'latin':
-			return word
-		try:
-			if scr == 'chinese':
-				from pypinyin import pinyin, Style
-				return ''.join(x[0] for x in pinyin(word, style=Style.NORMAL))
-			if scr == 'japanese':
-				import pykakasi
-				k = pykakasi.kakasi()
-				k.setMode('H', 'a')
-				k.setMode('K', 'a')
-				k.setMode('J', 'a')
-				k.setMode('r', 'Hepburn')
-				return k.getConverter().do(word)
-			if scr == 'hangul':
-				return unidecode(word)
-			if scr == 'arabic':
-				return unidecode(phonemize(word, language='ar', backend='espeak'))
-			if scr == 'cyrillic':
-				return unidecode(phonemize(word, language='ru', backend='espeak'))
-			return unidecode(word)
-		except Exception:
-			return unidecode(word)
+    def romanize(word:str)->str:
+        scr = script_of(word)
+        if scr == 'latin':
+            return word
+        try:
+            if scr == 'chinese':
+                from pypinyin import pinyin, Style
+                return ''.join(x[0] for x in pinyin(word, style=Style.NORMAL))
+            if scr == 'japanese':
+                import pykakasi
+                k = pykakasi.kakasi()
+                k.setMode('H', 'a')
+                k.setMode('K', 'a')
+                k.setMode('J', 'a')
+                k.setMode('r', 'Hepburn')
+                return k.getConverter().do(word)
+            if scr == 'hangul':
+                return unidecode(word)
+            if scr == 'arabic':
+                return unidecode(phonemize(word, language='ar', backend='espeak'))
+            if scr == 'cyrillic':
+                return unidecode(phonemize(word, language='ru', backend='espeak'))
+            return unidecode(word)
+        except Exception:
+            return unidecode(word)
 
-	# Protect ALL SML tags using the global grammar
-	protected: Dict[str, str] = {}
-	for i, m in enumerate(SML_TAG_PATTERN.finditer(text)):
-		key: str = f'__TTS_MARKER_{i}__'
-		protected[key] = m.group(0)
-		text = text.replace(m.group(0), key)
-	tokens: list[str] = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
-	buf: list[str] = []
-	for t in tokens:
-		if t in protected:
-			buf.append(t)
-		elif re.match(r"^\w+$", t):
-			buf.append(romanize(t))
-		else:
-			buf.append(t)
-	out: str = ''
-	for i, t in enumerate(buf):
-		if i == 0:
-			out += t
-		else:
-			if re.match(r"^\w+$", buf[i - 1]) and re.match(r"^\w+$", t):
-				out += ' ' + t
-			else:
-				out += t
-	for k, v in protected.items():
-		out = out.replace(k, v)
-	return out
+    # Protect ALL SML tags using the global grammar
+    protected: Dict[str, str] = {}
+    for i, m in enumerate(SML_TAG_PATTERN.finditer(text)):
+        key: str = f'__TTS_MARKER_{i}__'
+        protected[key] = m.group(0)
+        text = text.replace(m.group(0), key)
+    tokens: list[str] = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+    buf: list[str] = []
+    for t in tokens:
+        if t in protected:
+            buf.append(t)
+        elif re.match(r"^\w+$", t):
+            buf.append(romanize(t))
+        else:
+            buf.append(t)
+    out: str = ''
+    for i, t in enumerate(buf):
+        if i == 0:
+            out += t
+        else:
+            if re.match(r"^\w+$", buf[i - 1]) and re.match(r"^\w+$", t):
+                out += ' ' + t
+            else:
+                out += t
+    for k, v in protected.items():
+        out = out.replace(k, v)
+    return out
 
 def filter_sml(text:str)->str:
 
