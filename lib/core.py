@@ -54,9 +54,6 @@ from lib import *
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
-ProgressEvent:TypeAlias = tuple[int, float]
-ProgressQueue:TypeAlias = queue.Queue[ProgressEvent]
-
 context = None
 context_tracker = None
 active_sessions = None
@@ -2012,7 +2009,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 return False
             cover_path = None
             ffprobe_cmd = [
-                shutil.which('ffprobe'), '-v', 'error', '-select_streams', 'a:0',
+                shutil.which('ffprobe'), '-v', 'error', '-threads', '0', '-select_streams', 'a:0',
                 '-show_entries', 'stream=codec_name,sample_rate,sample_fmt',
                 '-of', 'default=nokey=1:noprint_wrappers=1', ffmpeg_combined_audio
             ]
@@ -2059,7 +2056,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cmd += ['-ac', '1']
             if input_codec == target_codec and input_rate == target_rate:
                 cmd = [
-                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio,
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-i', ffmpeg_combined_audio,
                     '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
                     '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
                     '-y', ffmpeg_final_file
@@ -2228,8 +2225,9 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
         cmd = [
             shutil.which('ffmpeg'),
             '-hide_banner',
-            '-y',
-            '-safe', '0',
+            '-nostats',
+            '-hwaccel', 'auto',
+            '-y', '-safe', '0',
             '-f', 'concat',
             '-i', txt_file,
             '-c:a', default_audio_proc_format,
