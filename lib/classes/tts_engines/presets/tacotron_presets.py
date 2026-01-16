@@ -16,6 +16,7 @@ models = {
         "files": default_engine_settings[TTS_ENGINES['TACOTRON2']]['files'],
         "samplerate": {
             "mai/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
+            "css10/vits": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
             "thorsten/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
             "kokoro/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
             "ljspeech/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
