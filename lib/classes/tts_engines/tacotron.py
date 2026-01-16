@@ -87,7 +87,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
-                    if not part or (part and sum(c.isalnum() for c in part) < 3):
+                    if not part:
                         continue
                     if default_frontend_sml_pattern.fullmatch(part):
                         if not self._convert_sml(part):
