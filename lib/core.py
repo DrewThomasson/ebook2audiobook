@@ -1088,7 +1088,11 @@ def get_sentences(text:str, session_id:str)->list|None:
         return len(strip_sml(s))
 
     def is_latin_only(s:str)->bool:
-        return bool(re.search(r'[A-Za-z]', s)) and not re.search(r'[^\x00-\x7F]', s)
+        s = strip_sml(s)
+        s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
+        has_latin = bool(re.search(r'[A-Za-z]', s))
+        has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
+        return has_latin and not has_nonlatin
 
     def split_at_space_limit(s:str)->list[str]:
         out = []
