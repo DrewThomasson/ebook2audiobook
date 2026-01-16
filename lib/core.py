@@ -368,13 +368,15 @@ def compare_checksums(src_path:str, checksum_path:str, hash_algorithm:str='sha25
             with open(checksum_path, 'w', encoding='utf-8') as f:
                 f.write(new_checksum)
             return False, None
-        with open(checksum_path, 'r', encoding='utf-8') as f:
-            saved_checksum = f.read().strip()
-        if saved_checksum == new_checksum:
-            return True, None
-        with open(checksum_path, 'w', encoding='utf-8') as f:
-            f.write(new_checksum)
-            return False, None
+        else:
+            with open(checksum_path, 'r', encoding='utf-8') as f:
+                saved_checksum = f.read().strip()
+            if saved_checksum == new_checksum:
+                return True, None
+            else:
+                with open(checksum_path, 'w', encoding='utf-8') as f:
+                    f.write(new_checksum)
+                    return False, None
     except Exception as e:
         return False, f'compare_checksums() error: {e}'
 
