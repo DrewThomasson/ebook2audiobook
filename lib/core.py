@@ -54,9 +54,6 @@ from lib import *
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
-ProgressEvent:TypeAlias = tuple[int, float]
-ProgressQueue:TypeAlias = queue.Queue[ProgressEvent]
-
 context = None
 context_tracker = None
 active_sessions = None
@@ -372,12 +369,12 @@ def compare_checksums(src_path:str, checksum_path:str, hash_algorithm:str='sha25
                 f.write(new_checksum)
             return True, None
         with open(checksum_path, 'r', encoding='utf-8') as f:
-            old_checksum = f.read().strip()
-        if old_checksum == new_checksum:
-            return False, None
+            saved_checksum = f.read().strip()
+        if saved_checksum == new_checksum:
+            return True, None
         with open(checksum_path, 'w', encoding='utf-8') as f:
             f.write(new_checksum)
-        return True, None
+        return False, None
     except Exception as e:
         return False, f'compare_checksums() error: {e}'
 
@@ -1242,31 +1239,39 @@ def get_sentences(text:str, session_id:str)->list|None:
         i = 0
         n = len(last_list)
         while i < n:
-            s = last_list[i].strip()
-            if not s:
+            cur = last_list[i].strip()
+            if not cur:
                 i += 1
                 continue
-            cur_len = clean_len(s)
-            # If current sentence is short, try to glue it
+            cur_len = clean_len(cur)
+            # Cascading forward merge for short rows
             if cur_len <= merge_max_chars:
-                # 1) Try backward merge
+                j = i + 1
+                while j < n:
+                    nxt = last_list[j].strip()
+                    if not nxt:
+                        j += 1
+                        continue
+                    if cur_len + clean_len(nxt) <= max_chars:
+                        cur = cur.rstrip() + ' ' + nxt.lstrip()
+                        cur_len = clean_len(cur)
+                        j += 1
+                        continue
+                    break
+                # Try backward merge AFTER forward cascade
                 if merge_list:
                     prev = merge_list[-1]
                     if clean_len(prev) + cur_len <= max_chars:
-                        merge_list[-1] = prev.rstrip() + ' ' + s.lstrip()
-                        i += 1
+                        merge_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
+                        i = j
                         continue
-                # 2) Try forward merge
-                if i + 1 < n:
-                    nxt = last_list[i + 1].strip()
-                    if nxt and cur_len + clean_len(nxt) <= max_chars:
-                        merge_list.append(s.rstrip() + ' ' + nxt.lstrip())
-                        i += 2
-                        continue
-            # Otherwise keep as-is
-            merge_list.append(s)
+                merge_list.append(cur)
+                i = j
+                continue
+            # Non-short rows: normal behavior
+            merge_list.append(cur)
             i += 1
- 
+
         # PASS 5 = remove unwanted breaks
         break_token = re.escape(sml_token('break'))
         strip_break_spaces_re = re.compile(
@@ -2004,7 +2009,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 return False
             cover_path = None
             ffprobe_cmd = [
-                shutil.which('ffprobe'), '-v', 'error', '-select_streams', 'a:0',
+                shutil.which('ffprobe'), '-v', 'error', '-threads', '0', '-select_streams', 'a:0',
                 '-show_entries', 'stream=codec_name,sample_rate,sample_fmt',
                 '-of', 'default=nokey=1:noprint_wrappers=1', ffmpeg_combined_audio
             ]
@@ -2051,7 +2056,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cmd += ['-ac', '1']
             if input_codec == target_codec and input_rate == target_rate:
                 cmd = [
-                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio,
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-i', ffmpeg_combined_audio,
                     '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
                     '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
                     '-y', ffmpeg_final_file
@@ -2220,8 +2225,9 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
         cmd = [
             shutil.which('ffmpeg'),
             '-hide_banner',
-            '-y',
-            '-safe', '0',
+            '-nostats',
+            '-hwaccel', 'auto',
+            '-y', '-safe', '0',
             '-f', 'concat',
             '-i', txt_file,
             '-c:a', default_audio_proc_format,
@@ -2526,7 +2532,8 @@ def convert_ebook(args:dict)->tuple:
                                     show_alert({"type": "warning", "msg": msg})
                                 print(msg.replace('<br/>','\n'))
                                 session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
-                                checksum, error = compare_checksums(session['ebook'], os.path.join(session['process_dir'], 'checksum'))
+                                checksum_path = os.path.join(session['process_dir'], 'checksum')
+                                checksum, error = compare_checksums(session['ebook'], checksum_path)
                                 if error is None:
                                     saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
                                     if checksum:

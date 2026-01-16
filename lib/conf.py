@@ -90,49 +90,36 @@ default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
 
 default_pytorch_url = 'https://download.pytorch.org/whl'
-default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a definitive place where to upload the jetpack5 torch
-
-jetson_torch_version_base = {
-    "jetson60": "2.4.0",
-    "jetson61": "2.5.0"
-}
+default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a permanent website where to upload the jetpack torch
 
 torch_matrix = {
-
     # CUDA
-    "cu118": {"url": default_pytorch_url},
-    "cu121": {"url": default_pytorch_url},
-    "cu124": {"url": default_pytorch_url},
-    "cu126": {"url": default_pytorch_url},
-    "cu128": {"url": default_pytorch_url},
-    
+    "cu118": {"url": default_pytorch_url, "base": "2.7.1"},
+    "cu121": {"url": default_pytorch_url, "base": "2.5.1"},
+    "cu124": {"url": default_pytorch_url, "base": "2.6.0"},
+    "cu126": {"url": default_pytorch_url, "base": "2.7.1"},
+    "cu128": {"url": default_pytorch_url, "base": "2.7.1"},
     # ROCm
-    "rocm5.5":   {"url": default_pytorch_url},
-    "rocm5.6":   {"url": default_pytorch_url},
-    "rocm5.7":   {"url": default_pytorch_url},
-    "rocm6.0":   {"url": default_pytorch_url},
-    "rocm6.1":   {"url": default_pytorch_url},
-    "rocm6.2":   {"url": default_pytorch_url},
-    "rocm6.2.4": {"url": default_pytorch_url},
-    "rocm6.3":   {"url": default_pytorch_url},
-    "rocm6.4":   {"url": default_pytorch_url},
-    
+    "rocm5.7":   {"url": default_pytorch_url, "base": "2.3.1"},
+    "rocm6.0":   {"url": default_pytorch_url, "base": "2.4.1"},
+    "rocm6.1":   {"url": default_pytorch_url, "base": "2.6.0"},
+    "rocm6.2":   {"url": default_pytorch_url, "base": "2.5.1"},
+    "rocm6.2.4": {"url": default_pytorch_url, "base": "2.7.1"},
+    "rocm6.3":   {"url": default_pytorch_url, "base": "2.7.1"},
     # MPS
-    "mps": {"url": default_pytorch_url},
-    
+    "mps": {"url": default_pytorch_url, "base": "2.7.1"},
     # XPU
-    "xpu": {"url": default_pytorch_url},
-    
+    "xpu": {"url": default_pytorch_url, "base": "2.7.1"},
     # JETSON
-    "jetson60": {"url": default_jetson_url},
-    "jetson61": {"url": default_jetson_url}
+    "jetson60": {"url": default_jetson_url, "base": "2.4.0"},
+    "jetson61": {"url": default_jetson_url, "base": "2.5.0"},
 }
 
 cuda_version_range = {"min": (11,8), "max": (12,8)}
-rocm_version_range = {"min": (5,5), "max": (6,4)}
+rocm_version_range = {"min": (5,7), "max": (6,3)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
-jetson_version_range = {"min": (6,0), "max": (6,2)}
+jetson_version_range = {"min": (6,0), "max": (6,1)}
 
 # ---------------------------------------------------------------------
 # Python environment references
