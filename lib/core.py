@@ -1253,15 +1253,16 @@ def get_sentences(text:str, session_id:str)->list|None:
                 if merge_list:
                     prev = merge_list[-1]
                     if clean_len(prev) + cur_len <= max_chars:
-                        merge_list.append(s.rstrip() + " " + nxt.lstrip())
-                        merge_list[-1] = prev.rstrip() + sml_token('pause') + s.lstrip()
+                        merge_list[-1] = prev.rstrip() + ' ' + s.lstrip()
                         i += 1
                         continue
                 # 2) Try forward merge
                 if i + 1 < n:
                     nxt = last_list[i + 1].strip()
                     if nxt and cur_len + clean_len(nxt) <= max_chars:
-                        merge_list.append(s.rstrip() + sml_token('pause') + nxt.lstrip())
+                        merge_list.append(s.rstrip() + ' ' + nxt.lstrip())
+                        i += 2
+                        continue
             # Otherwise keep as-is
             merge_list.append(s)
             i += 1
