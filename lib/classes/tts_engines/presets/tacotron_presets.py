@@ -7,18 +7,14 @@ models = {
         "sub": {
             "mai/tacotron2-DDC": ['fr', 'es'],
             "thorsten/tacotron2-DDC": ['de'],
-            "kokoro/tacotron2-DDC": ['ja'],
-            "ljspeech/tacotron2-DDC": ['en'],
-            "baker/tacotron2-DDC-GST": ['zh-CN']              
+            "ljspeech/tacotron2-DDC": ['en']            
         },
         "voice": None,
         "files": default_engine_settings[TTS_ENGINES['TACOTRON2']]['files'],
         "samplerate": {
             "mai/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
             "thorsten/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
-            "kokoro/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
-            "ljspeech/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
-            "baker/tacotron2-DDC-GST": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate']
+            "ljspeech/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate']
         },
     }
 }
