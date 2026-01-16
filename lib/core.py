@@ -2220,6 +2220,10 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         return None
 
 def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool)->bool:
+
+    def on_progress(p: float)->None:
+        progress(p / 100.0, desc='Assemble')
+
     try:
         total_duration = 0.0
         try:
@@ -2238,6 +2242,9 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
         except Exception as e:
             print(f'assemble_audio_chunks_worker() open file {txt_file} Error: {e}')
             return False
+
+        progress_bar = gr.Progress(track_tqdm=False)
+
         cmd = [
             shutil.which('ffmpeg'),
             '-hide_banner',
@@ -2257,7 +2264,8 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
             cmd=cmd,
             is_gui_process=is_gui_process,
             total_duration=total_duration,
-            msg='Assemble'
+            msg='Assemble',
+            on_progress=on_progress
         )
         if proc_pipe:
             msg = f'Completed → {out_file}'
