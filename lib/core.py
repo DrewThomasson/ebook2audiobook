@@ -1302,12 +1302,12 @@ def get_sentences(text:str, session_id:str)->list|None:
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = re.split(default_frontend_sml_pattern, s)
+                parts = re.split(default_backend_sml_pattern, s)
                 for part in parts:
                     part = part.strip()
                     if not part:
                         continue
-                    if default_frontend_sml_pattern.fullmatch(part):
+                    if default_backend_sml_pattern.fullmatch(part):
                         result.append(part)
                         continue
                     tokens = segment_ideogramms(part)
@@ -1715,7 +1715,7 @@ def foreign2latin(text:str, base_lang:str)->str:
 
 def filter_sml(text:str)->str:
 
-    def check_sml(m: re.Match[str]) -> str:
+    def check_sml(m:re.Match[str])->str:
         if m.group("hash"):
             tag = "###"
             close = False

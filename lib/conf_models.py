@@ -20,7 +20,7 @@ TTS_VOICE_CONVERSION = {
     "openvoice_v2": {"path": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2", "samplerate": 22050}
 }
 
-default_frontend_sml_pattern = re.compile(r'(###|‡‡[^‡]+‡‡)')
+default_backend_sml_pattern = re.compile(r'(###|‡‡[^‡]+‡‡)')
 
 TTS_SML = {
 	"break": {"paired": False},
