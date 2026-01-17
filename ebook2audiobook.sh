@@ -730,10 +730,16 @@ function build_docker_image {
 	esac
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
+	if ! docker compose config --services | grep -q .; then
+		echo "ERROR: docker compose found no services"
+		echo "PWD: $(pwd)"
+		echo "Files:"
+		ls -la
+		return 1
+	fi
 	if docker compose version >/dev/null 2>&1; then
 		echo "docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
-			--progress plain \
 			build \
 			--no-cache \
 			--build-arg PYTHON_VERSION="$py_vers" \
@@ -745,7 +751,6 @@ function build_docker_image {
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
 	else
-		echo "docker"
 		docker build \
 			--no-cache \
 			--progress plain \
