@@ -2234,7 +2234,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
     def on_progress(p: float)->None:
-        progress(p / 100.0, desc='Assemble')
+        progress_bar(p / 100.0, desc='Assemble')
 
     try:
         total_duration = 0.0
