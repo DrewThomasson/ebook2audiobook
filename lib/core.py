@@ -1715,10 +1715,21 @@ def foreign2latin(text:str, base_lang:str)->str:
 
 def filter_sml(text:str)->str:
 
-    def check_sml(m:re.Match[str])->str:
-        tag = m.group("tag")
-        close = m.group("close")
-        value = m.group("value")
+    def check_sml(m: re.Match[str]) -> str:
+        if m.group("hash"):
+            tag = "###"
+            close = False
+            value = None
+        elif m.group("tag1"):
+            tag = m.group("tag1")
+            close = bool(m.group("close1"))
+            value = m.group("value1")
+        elif m.group("tag2"):
+            tag = m.group("tag2")
+            close = bool(m.group("close2"))
+            value = m.group("value2")
+        else:
+            return m.group(0)
         assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
         if tag == "###":
             return " ‡‡pause‡‡ "
