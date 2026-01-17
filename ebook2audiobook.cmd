@@ -550,6 +550,12 @@ if /i "%TAG:~0,2%"=="cu" (
 )
 set "HAS_COMPOSE=%errorlevel%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
+set "_HAS_OUTPUT="
+for /f %%S in ('docker compose config --services') do set "_HAS_OUTPUT=1"
+if not defined _HAS_OUTPUT (
+	echo ERROR: docker compose found no services or yml file is not valid.
+	exit /b 1
+)
 if %HAS_COMPOSE%==0 (
 	set "BUILD_NAME=%DOCKER_IMG_NAME%"
 	docker compose --progress=plain build --no-cache ^

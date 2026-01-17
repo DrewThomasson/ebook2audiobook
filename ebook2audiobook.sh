@@ -731,10 +731,7 @@ function build_docker_image {
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
 	if ! docker compose config --services | grep -q .; then
-		echo "ERROR: docker compose found no services"
-		echo "PWD: $(pwd)"
-		echo "Files:"
-		ls -la
+		echo "ERROR: docker compose found no services or yml file is not valid."
 		return 1
 	fi
 	if docker compose version >/dev/null 2>&1; then
