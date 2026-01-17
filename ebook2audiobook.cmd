@@ -565,7 +565,7 @@ if not defined _HAS_OUTPUT (
 )
 if %HAS_COMPOSE%==0 (
 	set "BUILD_NAME=%DOCKER_IMG_NAME%"
-	docker compose --progress=plain build --no-cache ^
+	docker compose build --progress=plain --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%TAG%" ^
@@ -575,7 +575,7 @@ if %HAS_COMPOSE%==0 (
 		--build-arg ISO3_LANG="%ISO3_LANG%"
 	if errorlevel 1 exit /b 1
 ) else (
-	docker build --no-cache --progress plain ^
+	docker build --progress plain --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%TAG%" ^
