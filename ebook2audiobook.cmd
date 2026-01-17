@@ -548,6 +548,13 @@ if /i "%TAG:~0,2%"=="cu" (
 ) else if /i "%TAG%"=="cpu" (
 	set "cmd_options="
 )
+if /i "%TAG%"=="cpu" (
+	set COMPOSE_PROFILES=cpu
+) else if /i "%TAG%"=="mps" (
+	set COMPOSE_PROFILES=cpu
+) else (
+	set COMPOSE_PROFILES=gpu
+)
 set "HAS_COMPOSE=%errorlevel%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 set "_HAS_OUTPUT="

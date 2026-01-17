@@ -730,6 +730,11 @@ function build_docker_image {
 	esac
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
+	case "$TAG" in
+		cpu|mps)   COMPOSE_PROFILES=cpu ;;
+		*)         COMPOSE_PROFILES=gpu ;;
+	esac
+	export COMPOSE_PROFILES
 	if ! docker compose config --services | grep -q .; then
 		echo "ERROR: docker compose found no services or yml file is not valid."
 		return 1
