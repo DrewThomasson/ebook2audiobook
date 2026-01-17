@@ -728,6 +728,7 @@ function build_docker_image {
 		mps)		cmd_options="" ;;
 		*)			cmd_options="" ;;
 	esac
+	DEVICE_TAG="$TAG"
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
 	case "$TAG" in
@@ -748,7 +749,7 @@ function build_docker_image {
 			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
-			--build-arg DEVICE_TAG="$TAG" \
+			--build-arg DEVICE_TAG="$DEVICE_TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
@@ -768,7 +769,7 @@ function build_docker_image {
 			--no-cache \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
-			--build-arg DEVICE_TAG="$TAG" \
+			--build-arg DEVICE_TAG="$DEVICE_TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
@@ -781,7 +782,7 @@ function build_docker_image {
 			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
-			--build-arg DEVICE_TAG="$TAG" \
+			--build-arg DEVICE_TAG="$DEVICE_TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
