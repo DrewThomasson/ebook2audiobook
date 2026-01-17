@@ -531,6 +531,10 @@ set "ARG=%~1"
 "%PS_EXE%" %PS_ARGS% -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
 "%PS_EXE%" %PS_ARGS% -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
+set "HAS_COMPOSE=%errorlevel%"
+"%PS_EXE%" %PS_ARGS% -command "if (podman-compose version > $null 2>&1) { exit 0 } else { exit 1 }"
+set "HAS_PODMAN_COMPOSE=%errorlevel%"
+set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 set "cmd_options="
 set "cmd_extra="
 set "py_vers=%PYTHON_VERSION% "
@@ -548,11 +552,27 @@ if /i "%TAG:~0,2%"=="cu" (
 ) else if /i "%TAG%"=="cpu" (
 	set "cmd_options="
 )
-set "HAS_COMPOSE=%errorlevel%"
-set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
+if /i "%TAG%"=="cpu" (
+	set COMPOSE_PROFILES=cpu
+) else if /i "%TAG%"=="mps" (
+	set COMPOSE_PROFILES=cpu
+) else (
+	set COMPOSE_PROFILES=gpu
+)
 if %HAS_COMPOSE%==0 (
 	set "BUILD_NAME=%DOCKER_IMG_NAME%"
-	docker compose --progress=plain build --no-cache ^
+	docker compose build --progress=plain --no-cache ^
+		--build-arg PYTHON_VERSION="%py_vers%" ^
+		--build-arg APP_VERSION="%APP_VERSION%" ^
+		--build-arg DEVICE_TAG="%TAG%" ^
+		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
+		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
+		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
+		--build-arg ISO3_LANG="%ISO3_LANG%"
+	if errorlevel 1 exit /b 1
+) else if %HAS_PODMAN_COMPOSE%==0 (
+	set "BUILD_NAME=%DOCKER_IMG_NAME%"
+	podman-compose -f podman-compose.yml build --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%TAG%" ^
@@ -562,7 +582,7 @@ if %HAS_COMPOSE%==0 (
 		--build-arg ISO3_LANG="%ISO3_LANG%"
 	if errorlevel 1 exit /b 1
 ) else (
-	docker build --no-cache --progress plain ^
+	docker build --progress plain --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%TAG%" ^

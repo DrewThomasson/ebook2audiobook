@@ -546,7 +546,7 @@ def convert2epub(session_id:str)-> bool:
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
-                text = re.sub(r'\n{2,}', '.[pause]', text)
+                text = re.sub(r'\n{2,}', '.[[pause]]', text)
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
@@ -1254,8 +1254,11 @@ def get_sentences(text:str, session_id:str)->list|None:
             if not cur:
                 i += 1
                 continue
+            if i == 0:
+                merge_list.append(cur)
+                i += 1
+                continue
             cur_len = clean_len(cur)
-            # Cascading forward merge for short rows
             if cur_len <= merge_max_chars:
                 j = i + 1
                 while j < n:
@@ -1269,7 +1272,6 @@ def get_sentences(text:str, session_id:str)->list|None:
                         j += 1
                         continue
                     break
-                # Try backward merge AFTER forward cascade
                 if merge_list:
                     prev = merge_list[-1]
                     if clean_len(prev) + cur_len <= max_chars:
@@ -1279,7 +1281,6 @@ def get_sentences(text:str, session_id:str)->list|None:
                 merge_list.append(cur)
                 i = j
                 continue
-            # Non-short rows: normal behavior
             merge_list.append(cur)
             i += 1
 
@@ -1301,12 +1302,12 @@ def get_sentences(text:str, session_id:str)->list|None:
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = re.split(default_frontend_sml_pattern, s)
+                parts = re.split(default_backend_sml_pattern, s)
                 for part in parts:
                     part = part.strip()
                     if not part:
                         continue
-                    if default_frontend_sml_pattern.fullmatch(part):
+                    if default_backend_sml_pattern.fullmatch(part):
                         result.append(part)
                         continue
                     tokens = segment_ideogramms(part)
@@ -1715,9 +1716,20 @@ def foreign2latin(text:str, base_lang:str)->str:
 def filter_sml(text:str)->str:
 
     def check_sml(m:re.Match[str])->str:
-        tag = m.group("tag")
-        close = m.group("close")
-        value = m.group("value")
+        if m.group("hash"):
+            tag = "###"
+            close = False
+            value = None
+        elif m.group("tag1"):
+            tag = m.group("tag1")
+            close = bool(m.group("close1"))
+            value = m.group("value1")
+        elif m.group("tag2"):
+            tag = m.group("tag2")
+            close = bool(m.group("close2"))
+            value = m.group("value2")
+        else:
+            return m.group(0)
         assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
         if tag == "###":
             return " ‡‡pause‡‡ "
