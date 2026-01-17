@@ -406,34 +406,42 @@ class TTSUtils:
                     return False
         return True
 
-    def _convert_sml(self, sml:str)->bool:
+    def _convert_sml(self, sml: str) -> bool:
         m = SML_TAG_PATTERN.fullmatch(sml)
         if not m:
             return False
-        tag:str = m.group("tag")
-        close:str|None = m.group("close")
-        value:str|None = m.group("value")
+        if m.group("hash"):
+            tag = "###"
+            close = False
+            value = None
+        elif m.group("tag1"):
+            tag = m.group("tag1")
+            close = bool(m.group("close1"))
+            value = m.group("value1")
+        elif m.group("tag2"):
+            tag = m.group("tag2")
+            close = bool(m.group("close2"))
+            value = m.group("value2")
+        else:
+            return False
         assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
         if tag == "###":
             silence_time = float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
             self.audio_segments.append(
-                torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone()
+                torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
             )
             return True
         elif tag == "break":
             silence_time = float(int(np.random.uniform(0.3, 0.6) * 100) / 100)
             self.audio_segments.append(
-                torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone()
+                torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
             )
             return True
         elif tag == "pause":
             duration = float(value) if value else None
-            silence_time = (
-                duration if duration is not None
-                else float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
-            )
+            silence_time = duration if duration is not None else float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
             self.audio_segments.append(
-                torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone()
+                torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
             )
             return True
         elif tag == "voice":
@@ -444,7 +452,7 @@ class TTSUtils:
             if not os.path.exists(voice_path):
                 print(f"_convert_sml() error: voice {voice_path} does not exist!")
                 return False
-            self.params['voice_path'] = voice_path
+            self.params["voice_path"] = voice_path
             return self._set_voice()
         return True
 
