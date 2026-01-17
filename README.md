@@ -147,8 +147,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## SML tags available
 - `[[break]]` — silence (random range **0.3–0.6 s**)
-- `[[pause]]`, `###` — silence (random range **1.0–1.6 s**)
-- `[[pause:N]]` — fixed pause (**N seconds**)
+- `[[pause]]` — silence (random range **1.0–1.6 sec.**)
+- `[[pause:N]]` — fixed pause (**N sec.**)
 - `[[voice:/path/to/voice/file]]...[[/voice]]` — switch voice from default or selected voice from GUI/CLI
 
 > [!IMPORTANT]
@@ -388,16 +388,12 @@ Docker run image:
 
     * MPS is not exposed in docker so CPU must be used.
 
-Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
+Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[[pause]]".
 
 ```
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
-
-TIP: if it needs some more pauses, just add '###' or 
-'[pause]' between the words you wish more pause. 
-one [pause] is a random between 0.8 to 1.6 seconds
-
+TIP: if it needs some more pause, add '[[pause:3]]' for 3 sec. etc.
 
 ### Docker
 1. **Clone the Repository**:
