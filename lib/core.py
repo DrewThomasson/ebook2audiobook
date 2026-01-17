@@ -546,7 +546,7 @@ def convert2epub(session_id:str)-> bool:
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
-                text = re.sub(r'\n{2,}', '.[pause]', text)
+                text = re.sub(r'\n{2,}', '.[[pause]]', text)
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
