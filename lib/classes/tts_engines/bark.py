@@ -128,7 +128,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
-                sentence_parts = re.split(default_frontend_sml_pattern, sentence)
+                sentence_parts = default_frontend_sml_pattern.split(sentence)
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
