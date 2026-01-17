@@ -1254,8 +1254,11 @@ def get_sentences(text:str, session_id:str)->list|None:
             if not cur:
                 i += 1
                 continue
+            if i == 0:
+                merge_list.append(cur)
+                i += 1
+                continue
             cur_len = clean_len(cur)
-            # Cascading forward merge for short rows
             if cur_len <= merge_max_chars:
                 j = i + 1
                 while j < n:
@@ -1269,7 +1272,6 @@ def get_sentences(text:str, session_id:str)->list|None:
                         j += 1
                         continue
                     break
-                # Try backward merge AFTER forward cascade
                 if merge_list:
                     prev = merge_list[-1]
                     if clean_len(prev) + cur_len <= max_chars:
@@ -1279,7 +1281,6 @@ def get_sentences(text:str, session_id:str)->list|None:
                 merge_list.append(cur)
                 i = j
                 continue
-            # Non-short rows: normal behavior
             merge_list.append(cur)
             i += 1
 
