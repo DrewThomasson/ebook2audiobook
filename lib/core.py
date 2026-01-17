@@ -1441,9 +1441,6 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
         return False
 
 def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
-    time_rx = re.compile(r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?')
-    lc = language_clock.get(lang) if 'language_clock' in globals() else None
-    _n2w_cache = {}
 
     def n2w(n:int)->str:
         key = (n, lang, is_num2words_compat)
@@ -1453,10 +1450,20 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             word = num2words(n, lang=lang_iso1)
         else:
             word = math2words(n, lang, lang_iso1, tts_engine, is_num2words_compat)
+        if not isinstance(word, str):
+            word = str(word)
         _n2w_cache[key] = word
         return word
 
     def repl_num(m:re.Match)->str:
+        # Reject enumeration patterns like "(1.2)"
+        start, end = m.start(), m.end()
+        if (
+            start > 0 and end < len(text)
+            and text[start - 1] == '('
+            and text[end] == ')'
+        ):
+            return m.group(0)
         # Parse hh[:mm[:ss]]
         try:
             h = int(m.group(1))
@@ -1476,10 +1483,8 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             if sec is not None and sec > 0:
                 parts.append(n2w(sec))
             return ' '.join(parts)
-
         next_hour = (h + 1) % 24
         special_hours = lc.get('special_hours', {})
-        # Build main phrase
         if mnt == 0 and (sec is None or sec == 0):
             if h in special_hours:
                 phrase = special_hours[h]
@@ -1488,7 +1493,6 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
         elif mnt == 15:
             phrase = lc['quarter_past'].format(hour=n2w(h))
         elif mnt == 30:
-            # German 'halb drei' (= 2:30) uses next hour
             if lang == 'deu':
                 phrase = lc['half_past'].format(next_hour=n2w(next_hour))
             else:
@@ -1504,12 +1508,16 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
                 minute=n2w(minute_to_hour),
                 minute_to_hour=n2w(minute_to_hour)
             )
-        # Append seconds if present
         if sec is not None and sec > 0:
             second_phrase = lc['second'].format(second=n2w(sec))
             phrase = lc['full'].format(phrase=phrase, second_phrase=second_phrase)
         return phrase
 
+    time_rx = re.compile(
+        r'\b([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?\b'
+    )
+    lc = language_clock.get(lang) if 'language_clock' in globals() else None
+    _n2w_cache = {}
     return time_rx.sub(repl_num, text)
 
 def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
@@ -1715,32 +1723,32 @@ def foreign2latin(text:str, base_lang:str)->str:
 
 def filter_sml(text:str)->str:
 
-	def check_sml(m: re.Match[str]) -> str:
-		if m.group("tag1"):
-			tag = m.group("tag1")
-			close = bool(m.group("close1"))
-			value = m.group("value1")
-		elif m.group("tag2"):
-			tag = m.group("tag2")
-			close = bool(m.group("close2"))
-			value = m.group("value2")
-		else:
-			return m.group(0)
-		assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
-		if close:
-			return f" ‡‡/{tag}‡‡ "
-		if value:
-			return f" ‡‡{tag}:{value}‡‡ "
-		return f" ‡‡{tag}‡‡ "
+    def check_sml(m: re.Match[str]) -> str:
+        if m.group("tag1"):
+            tag = m.group("tag1")
+            close = bool(m.group("close1"))
+            value = m.group("value1")
+        elif m.group("tag2"):
+            tag = m.group("tag2")
+            close = bool(m.group("close2"))
+            value = m.group("value2")
+        else:
+            return m.group(0)
+        assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
+        if close:
+            return f" ‡‡/{tag}‡‡ "
+        if value:
+            return f" ‡‡{tag}:{value}‡‡ "
+        return f" ‡‡{tag}‡‡ "
 
-	return SML_TAG_PATTERN.sub(check_sml, text)
+    return SML_TAG_PATTERN.sub(check_sml, text)
     
 def sml_token(tag:str, value:str | None = None, close:bool=False)->str:
-	if close:
-		return f"‡‡/{tag}‡‡"
-	if value is not None:
-		return f"‡‡{tag}:{value}‡‡"
-	return f"‡‡{tag}‡‡"
+    if close:
+        return f"‡‡/{tag}‡‡"
+    if value is not None:
+        return f"‡‡{tag}:{value}‡‡"
+    return f"‡‡{tag}‡‡"
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
