@@ -56,6 +56,12 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
+                print(
+                    "default_frontend_sml_pattern =",
+                    default_frontend_sml_pattern,
+                    type(default_frontend_sml_pattern),
+                    getattr(default_frontend_sml_pattern, "pattern", None)
+                )
                 sentence_parts = re.split(default_frontend_sml_pattern, sentence)
                 self.audio_segments = []
                 for part in sentence_parts:
