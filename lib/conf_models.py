@@ -1,4 +1,4 @@
-import os, regex as re
+import os, re
 from lib.conf import tts_dir, voices_dir
 
 loaded_tts = {}
