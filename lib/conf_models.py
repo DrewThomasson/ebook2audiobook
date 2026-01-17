@@ -1,4 +1,4 @@
-import os, re
+import os, regex as re
 from lib.conf import tts_dir, voices_dir
 
 loaded_tts = {}
@@ -20,7 +20,7 @@ TTS_VOICE_CONVERSION = {
     "openvoice_v2": {"path": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2", "samplerate": 22050}
 }
 
-default_frontend_sml_pattern = re.compile(r'(###|‡‡[^‡]+‡‡)')
+default_backend_sml_pattern = re.compile(r'(###|‡‡[^‡]+‡‡)')
 
 TTS_SML = {
 	"break": {"paired": False},
@@ -32,7 +32,7 @@ TTS_SML = {
 sml_tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
 SML_TAG_PATTERN = re.compile(
 	rf'''
-	(?P<hash>###)
+	(?P<hash>\#\#\#)
 	|
 	\[\[
 		(?P<close1>/)?

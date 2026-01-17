@@ -124,15 +124,21 @@ Docker run image:
         JETSON:
         docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 
-    Docker Compose (i.e. for cuda 11.8):
-        DEVICE_TAG=cu118 docker compose up -d
+    Docker Compose:
+        download and run:
+            docker compose up -d
+        build and run (i.e. for cuda 12.8):
+            DEVICE_TAG=cu128 docker compose up -d build
 
-    Podman Compose (i.e. for cuda 12.4):
-        DEVICE_TAG=cu124 podman-compose up -d
+    Podman Compose:
+        download and run:
+            podman-compose up -d
+        build and run (i.e. for cuda 12.8):
+            DEVICE_TAG=cu128 podman-compose up -d build
     
     * MPS is not exposed in docker so CPU must be used.
 
-Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
+Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
         ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
