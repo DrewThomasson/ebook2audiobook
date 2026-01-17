@@ -20,20 +20,17 @@ TTS_VOICE_CONVERSION = {
     "openvoice_v2": {"path": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2", "samplerate": 22050}
 }
 
-default_backend_sml_pattern = re.compile(r'(###|‡‡[^‡]+‡‡)')
+default_backend_sml_pattern = re.compile(r'(‡‡[^‡]+‡‡)')
 
 TTS_SML = {
 	"break": {"paired": False},
 	"pause": {"paired": False},
 	"voice": {"paired": True},
-	"###": {"paired": False},
 }
 
 sml_tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
 SML_TAG_PATTERN = re.compile(
 	rf'''
-	(?P<hash>\#\#\#)
-	|
 	\[\[
 		(?P<close1>/)?
 		(?P<tag1>{sml_tag_keys})

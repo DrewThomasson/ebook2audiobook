@@ -406,15 +406,11 @@ class TTSUtils:
                     return False
         return True
 
-    def _convert_sml(self, sml: str) -> bool:
+    def _convert_sml(self, sml:str)->bool:
         m = SML_TAG_PATTERN.fullmatch(sml)
         if not m:
             return False
-        if m.group("hash"):
-            tag = "###"
-            close = False
-            value = None
-        elif m.group("tag1"):
+        if m.group("tag1"):
             tag = m.group("tag1")
             close = bool(m.group("close1"))
             value = m.group("value1")
@@ -425,25 +421,10 @@ class TTSUtils:
         else:
             return False
         assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
-        if tag == "###":
-            silence_time = float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
-            self.audio_segments.append(
-                torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
-            )
-            return True
-        elif tag == "break":
+        if tag == "break":
             silence_time = float(int(np.random.uniform(0.3, 0.6) * 100) / 100)
-            self.audio_segments.append(
-                torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
-            )
-            return True
         elif tag == "pause":
-            duration = float(value) if value else None
-            silence_time = duration if duration is not None else float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
-            self.audio_segments.append(
-                torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
-            )
-            return True
+            silence_time = float(value) if value else float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
         elif tag == "voice":
             if close:
                 return self._set_voice()
@@ -454,6 +435,11 @@ class TTSUtils:
                 return False
             self.params["voice_path"] = voice_path
             return self._set_voice()
+        else:
+            return False
+        self.audio_segments.append(
+            torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
+        )
         return True
 
     def _format_timestamp(self, seconds: float) -> str:

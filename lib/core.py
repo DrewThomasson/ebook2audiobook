@@ -1715,40 +1715,32 @@ def foreign2latin(text:str, base_lang:str)->str:
 
 def filter_sml(text:str)->str:
 
-    def check_sml(m:re.Match[str])->str:
-        if m.group("hash"):
-            tag = "###"
-            close = False
-            value = None
-        elif m.group("tag1"):
-            tag = m.group("tag1")
-            close = bool(m.group("close1"))
-            value = m.group("value1")
-        elif m.group("tag2"):
-            tag = m.group("tag2")
-            close = bool(m.group("close2"))
-            value = m.group("value2")
-        else:
-            return m.group(0)
-        assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
-        if tag == "###":
-            return " ‡‡pause‡‡ "
-        if close:
-            return f" ‡‡/{tag}‡‡ "
-        if value:
-            return f" ‡‡{tag}:{value}‡‡ "
-        return f" ‡‡{tag}‡‡ "
+	def check_sml(m: re.Match[str]) -> str:
+		if m.group("tag1"):
+			tag = m.group("tag1")
+			close = bool(m.group("close1"))
+			value = m.group("value1")
+		elif m.group("tag2"):
+			tag = m.group("tag2")
+			close = bool(m.group("close2"))
+			value = m.group("value2")
+		else:
+			return m.group(0)
+		assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
+		if close:
+			return f" ‡‡/{tag}‡‡ "
+		if value:
+			return f" ‡‡{tag}:{value}‡‡ "
+		return f" ‡‡{tag}‡‡ "
 
-    return SML_TAG_PATTERN.sub(check_sml, text)
+	return SML_TAG_PATTERN.sub(check_sml, text)
     
-def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
-    if tag == "###":
-        return "###"
-    if close:
-        return f"‡‡/{tag}‡‡"
-    if value is not None:
-        return f"‡‡{tag}:{value}‡‡"
-    return f"‡‡{tag}‡‡"
+def sml_token(tag:str, value:str | None = None, close:bool=False)->str:
+	if close:
+		return f"‡‡/{tag}‡‡"
+	if value is not None:
+		return f"‡‡{tag}:{value}‡‡"
+	return f"‡‡{tag}‡‡"
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
@@ -1888,7 +1880,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 return False
                             sentence = sentence.strip()
                             if any(c.isalnum() for c in sentence):
-                                is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence)) or sentence == "###"
+                                is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (idx == len(sentences) - 1):
                                     final_sentences.append(sentence)
                                 if idx_target in missing_sentences or idx_target >= resume_sentence:
