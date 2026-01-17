@@ -754,7 +754,6 @@ function build_docker_image {
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
-
 	elif command -v podman-compose >/dev/null 2>&1; then
 		if command -v podman-compose >/dev/null 2>&1; then
 			if ! podman-compose -f podman-compose.yml config >/dev/null 2>&1; then
@@ -775,7 +774,6 @@ function build_docker_image {
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
-
 	else
 		echo "docker build"
 		docker build \
