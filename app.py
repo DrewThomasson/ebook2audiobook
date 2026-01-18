@@ -284,7 +284,7 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
             if args['voice']:
                 if os.path.exists(args['voice']):
                     args['voice'] = os.path.abspath(args['voice'])
-            if args['custom_model']:
+            if args['custom_model'] is not None:
                 if os.path.exists(args['custom_model']):
                     args['custom_model'] = os.path.abspath(args['custom_model'])
             if not os.path.exists(args['audiobooks_dir']):
