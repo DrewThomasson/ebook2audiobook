@@ -201,7 +201,7 @@ class SessionContext:
     def get_session(self, session_id:str)->Any:
         if session_id in self.sessions:
             return self.sessions[session_id]
-        return False
+        return {}
 
     def find_id_by_hash(self, socket_hash: str) -> str | None:
         for session_id, session in list(self.sessions.items()):
@@ -220,7 +220,7 @@ class JSONDictProxyEncoder(json.JSONEncoder):
 def prepare_dirs(src:str, session_id:str)->bool:
     try:
         session = context.get_session(session_id)
-        if session:
+        if session and isinstance(session, Mapping):
             resume = False
             os.makedirs(os.path.join(models_dir,'tts'), exist_ok=True)
             os.makedirs(session['session_dir'], exist_ok=True)
@@ -299,7 +299,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
 
 def extract_custom_model(file_src:str, session_id, required_files:list)->str|None:
     session = context.get_session(session_id)
-    if session:
+    if session and isinstance(session, Mapping):
         model_path = None
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
         model_name = get_sanitized(model_name)
@@ -519,7 +519,7 @@ def save_json_chapters(session_id:str, filepath:str)->bool:
 
 def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
-    if session:
+    if session and isinstance(session, Mapping):
         if session['cancellation_requested']:
             msg = 'Cancel requested'
             print(msg)
@@ -546,7 +546,7 @@ def convert2epub(session_id:str)-> bool:
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
-                text = re.sub(r'\n{2,}', '.[pause]', text)
+                text = re.sub(r'\n{2,}', '.[[pause]]', text)
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
@@ -693,7 +693,7 @@ def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
 def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
     try:
         session = context.get_session(session_id)
-        if session:
+        if session and isinstance(session, Mapping):
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 print(msg)
@@ -735,7 +735,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         '''
         print(msg)
         session = context.get_session(session_id)
-        if session:
+        if session and isinstance(session, Mapping):
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 print(msg)
@@ -889,7 +889,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
         msg = f'----------\nParsing doc {idx}'
         print(msg)
         session = context.get_session(session_id)
-        if session:
+        if session and isinstance(session, Mapping):
             lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
             heading_tags = [f'h{i}' for i in range(1, 5)]
             break_tags = ['br', 'p', 'span']
@@ -1254,8 +1254,11 @@ def get_sentences(text:str, session_id:str)->list|None:
             if not cur:
                 i += 1
                 continue
+            if i == 0:
+                merge_list.append(cur)
+                i += 1
+                continue
             cur_len = clean_len(cur)
-            # Cascading forward merge for short rows
             if cur_len <= merge_max_chars:
                 j = i + 1
                 while j < n:
@@ -1269,7 +1272,6 @@ def get_sentences(text:str, session_id:str)->list|None:
                         j += 1
                         continue
                     break
-                # Try backward merge AFTER forward cascade
                 if merge_list:
                     prev = merge_list[-1]
                     if clean_len(prev) + cur_len <= max_chars:
@@ -1279,7 +1281,6 @@ def get_sentences(text:str, session_id:str)->list|None:
                 merge_list.append(cur)
                 i = j
                 continue
-            # Non-short rows: normal behavior
             merge_list.append(cur)
             i += 1
 
@@ -1301,12 +1302,12 @@ def get_sentences(text:str, session_id:str)->list|None:
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = re.split(default_frontend_sml_pattern, s)
+                parts = re.split(default_backend_sml_pattern, s)
                 for part in parts:
                     part = part.strip()
                     if not part:
                         continue
-                    if default_frontend_sml_pattern.fullmatch(part):
+                    if default_backend_sml_pattern.fullmatch(part):
                         result.append(part)
                         continue
                     tokens = segment_ideogramms(part)
@@ -1440,9 +1441,6 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
         return False
 
 def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
-    time_rx = re.compile(r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?')
-    lc = language_clock.get(lang) if 'language_clock' in globals() else None
-    _n2w_cache = {}
 
     def n2w(n:int)->str:
         key = (n, lang, is_num2words_compat)
@@ -1452,10 +1450,20 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             word = num2words(n, lang=lang_iso1)
         else:
             word = math2words(n, lang, lang_iso1, tts_engine, is_num2words_compat)
+        if not isinstance(word, str):
+            word = str(word)
         _n2w_cache[key] = word
         return word
 
     def repl_num(m:re.Match)->str:
+        # Reject enumeration patterns like "(1.2)"
+        start, end = m.start(), m.end()
+        if (
+            start > 0 and end < len(text)
+            and text[start - 1] == '('
+            and text[end] == ')'
+        ):
+            return m.group(0)
         # Parse hh[:mm[:ss]]
         try:
             h = int(m.group(1))
@@ -1475,10 +1483,8 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             if sec is not None and sec > 0:
                 parts.append(n2w(sec))
             return ' '.join(parts)
-
         next_hour = (h + 1) % 24
         special_hours = lc.get('special_hours', {})
-        # Build main phrase
         if mnt == 0 and (sec is None or sec == 0):
             if h in special_hours:
                 phrase = special_hours[h]
@@ -1487,7 +1493,6 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
         elif mnt == 15:
             phrase = lc['quarter_past'].format(hour=n2w(h))
         elif mnt == 30:
-            # German 'halb drei' (= 2:30) uses next hour
             if lang == 'deu':
                 phrase = lc['half_past'].format(next_hour=n2w(next_hour))
             else:
@@ -1503,12 +1508,16 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
                 minute=n2w(minute_to_hour),
                 minute_to_hour=n2w(minute_to_hour)
             )
-        # Append seconds if present
         if sec is not None and sec > 0:
             second_phrase = lc['second'].format(second=n2w(sec))
             phrase = lc['full'].format(phrase=phrase, second_phrase=second_phrase)
         return phrase
 
+    time_rx = re.compile(
+        r'\b([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?\b'
+    )
+    lc = language_clock.get(lang) if 'language_clock' in globals() else None
+    _n2w_cache = {}
     return time_rx.sub(repl_num, text)
 
 def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
@@ -1714,13 +1723,18 @@ def foreign2latin(text:str, base_lang:str)->str:
 
 def filter_sml(text:str)->str:
 
-    def check_sml(m:re.Match[str])->str:
-        tag = m.group("tag")
-        close = m.group("close")
-        value = m.group("value")
+    def check_sml(m: re.Match[str]) -> str:
+        if m.group("tag1"):
+            tag = m.group("tag1")
+            close = bool(m.group("close1"))
+            value = m.group("value1")
+        elif m.group("tag2"):
+            tag = m.group("tag2")
+            close = bool(m.group("close2"))
+            value = m.group("value2")
+        else:
+            return m.group(0)
         assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
-        if tag == "###":
-            return " ‡‡pause‡‡ "
         if close:
             return f" ‡‡/{tag}‡‡ "
         if value:
@@ -1729,9 +1743,7 @@ def filter_sml(text:str)->str:
 
     return SML_TAG_PATTERN.sub(check_sml, text)
     
-def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
-    if tag == "###":
-        return "###"
+def sml_token(tag:str, value:str | None = None, close:bool=False)->str:
     if close:
         return f"‡‡/{tag}‡‡"
     if value is not None:
@@ -1807,7 +1819,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
 def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
-    if session:
+    if session and isinstance(session, Mapping):
         try:
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
@@ -1876,7 +1888,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 return False
                             sentence = sentence.strip()
                             if any(c.isalnum() for c in sentence):
-                                is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence)) or sentence == "###"
+                                is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (idx == len(sentences) - 1):
                                     final_sentences.append(sentence)
                                 if idx_target in missing_sentences or idx_target >= resume_sentence:
@@ -1919,7 +1931,7 @@ def convert_chapters2audio(session_id:str)->bool:
 def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
     try:
         session = context.get_session(session_id)
-        if session:
+        if session and isinstance(session, Mapping):
             chapter_audio_file = os.path.join(session['chapters_dir'], file)
             sentences_dir = session['sentences_dir']
             start = int(start)
@@ -2127,7 +2139,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
     try:
         session = context.get_session(session_id)
-        if session:
+        if session and isinstance(session, Mapping):
             chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]
@@ -2222,7 +2234,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
     def on_progress(p: float)->None:
-        progress(p / 100.0, desc='Assemble')
+        progress_bar(p / 100.0, desc='Assemble')
 
     try:
         total_duration = 0.0
@@ -2319,7 +2331,7 @@ def clear_folder(folder_path:str)->None:
 
 def delete_unused_tmp_dirs(web_dir:str, days:int, session_id:str)->None:
     session = context.get_session(session_id)
-    if session:
+    if session and isinstance(session, Mapping):
         dir_array = [
             tmp_dir,
             web_dir,
@@ -2632,7 +2644,7 @@ def convert_ebook(args:dict)->tuple:
 
 def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
-    if session:
+    if session and isinstance(session, Mapping):
         if session['chapters']:
             saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
             save_json_chapters(session_id, saved_json_chapters)
@@ -2745,7 +2757,7 @@ def show_alert(state:dict)->None:
 def alert_exception(error:str, session_id:str|None)->None:
     if session_id is not None:
         session = context.get_session(session_id)
-        if session:
+        if session and isinstance(session, Mapping):
             session['status'] = 'ready'
     print(error)
     gr.Error(error)
