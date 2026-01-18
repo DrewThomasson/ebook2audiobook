@@ -4,6 +4,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-26.1.16}
+        DEVICE_TAG: ${DEVICE_TAG:-cu128}
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     tty: true
@@ -20,6 +23,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-26.1.16}
+        DEVICE_TAG: ${DEVICE_TAG:-cu128}
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     tty: true

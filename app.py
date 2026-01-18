@@ -126,7 +126,7 @@ Docker run image:
 
     Docker Compose (i.e. cuda 12.8:
         Build:
-            DEVICE_TAG=cu128 docker compose --profile gpu up -d build
+            DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up -d --build
         Run:
             DEVICE_TAG=cu128 docker compose --profile gpu up -d
 
