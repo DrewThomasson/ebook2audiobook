@@ -86,11 +86,15 @@ def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
 			else:
 				ref_map[ref] = 0.0
 		for path in filepaths:
+			base = os.path.basename(path)
 			if path in ref_map:
 				durations[path] = ref_map[path]
+			elif base in ref_map:
+				durations[path] = ref_map[base]
 	except Exception:
 		pass
 	return durations
+
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
     filter_complex = (
