@@ -20,6 +20,7 @@ else
 	script_path="$0"
 fi
 
+export BASHRCSOURCED=1
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
