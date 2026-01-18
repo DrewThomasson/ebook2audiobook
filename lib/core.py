@@ -220,7 +220,7 @@ class JSONDictProxyEncoder(json.JSONEncoder):
 def prepare_dirs(src:str, session_id:str)->bool:
     try:
         session = context.get_session(session_id)
-        if session and isinstance(session, Mapping):
+        if session and session.get('id', False):
             resume = False
             os.makedirs(os.path.join(models_dir,'tts'), exist_ok=True)
             os.makedirs(session['session_dir'], exist_ok=True)
@@ -299,7 +299,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
 
 def extract_custom_model(file_src:str, session_id, required_files:list)->str|None:
     session = context.get_session(session_id)
-    if session and isinstance(session, Mapping):
+    if session and session.get('id', False):
         model_path = None
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
         model_name = get_sanitized(model_name)
@@ -519,7 +519,7 @@ def save_json_chapters(session_id:str, filepath:str)->bool:
 
 def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
-    if session and isinstance(session, Mapping):
+    if session and session.get('id', False):
         if session['cancellation_requested']:
             msg = 'Cancel requested'
             print(msg)
@@ -693,7 +693,7 @@ def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
 def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
     try:
         session = context.get_session(session_id)
-        if session and isinstance(session, Mapping):
+        if session and session.get('id', False):
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 print(msg)
@@ -735,7 +735,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         '''
         print(msg)
         session = context.get_session(session_id)
-        if session and isinstance(session, Mapping):
+        if session and session.get('id', False):
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 print(msg)
@@ -889,7 +889,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
         msg = f'----------\nParsing doc {idx}'
         print(msg)
         session = context.get_session(session_id)
-        if session and isinstance(session, Mapping):
+        if session and session.get('id', False):
             lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
             heading_tags = [f'h{i}' for i in range(1, 5)]
             break_tags = ['br', 'p', 'span']
@@ -1819,7 +1819,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
 def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
-    if session and isinstance(session, Mapping):
+    if session and session.get('id', False):
         try:
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
@@ -1931,7 +1931,7 @@ def convert_chapters2audio(session_id:str)->bool:
 def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
     try:
         session = context.get_session(session_id)
-        if session and isinstance(session, Mapping):
+        if session and session.get('id', False):
             chapter_audio_file = os.path.join(session['chapters_dir'], file)
             sentences_dir = session['sentences_dir']
             start = int(start)
@@ -2139,7 +2139,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
     try:
         session = context.get_session(session_id)
-        if session and isinstance(session, Mapping):
+        if session and session.get('id', False):
             chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
             chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
             chapter_titles = [c[0] for c in session['chapters']]
@@ -2331,7 +2331,7 @@ def clear_folder(folder_path:str)->None:
 
 def delete_unused_tmp_dirs(web_dir:str, days:int, session_id:str)->None:
     session = context.get_session(session_id)
-    if session and isinstance(session, Mapping):
+    if session and session.get('id', False):
         dir_array = [
             tmp_dir,
             web_dir,
@@ -2644,7 +2644,7 @@ def convert_ebook(args:dict)->tuple:
 
 def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
-    if session and isinstance(session, Mapping):
+    if session and session.get('id', False):
         if session['chapters']:
             saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
             save_json_chapters(session_id, saved_json_chapters)
@@ -2757,7 +2757,7 @@ def show_alert(state:dict)->None:
 def alert_exception(error:str, session_id:str|None)->None:
     if session_id is not None:
         session = context.get_session(session_id)
-        if session and isinstance(session, Mapping):
+        if session and session.get('id', False):
             session['status'] = 'ready'
     print(error)
     gr.Error(error)
