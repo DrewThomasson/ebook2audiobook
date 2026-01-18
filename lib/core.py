@@ -229,13 +229,9 @@ def prepare_dirs(src:str, session_id:str)->bool:
             os.makedirs(session['voice_dir'], exist_ok=True)
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
-            os.makedirs(session['chapters_worker_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
-            os.makedirs(session['sentences_worker_dir'], exist_ok=True)
             session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
             shutil.copy(src, session['ebook'])
-            clear_folder(session['chapters_worker_dir'])
-            clear_folder(session['sentences_worker_dir'])
             return True
     except Exception as e:
         DependencyError(e)
@@ -1943,9 +1939,8 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
             if not selected_files:
                 print('No audio files found in the specified range.')
                 return False
-            worker_dir = session['sentences_worker_dir']
-            os.makedirs(worker_dir, exist_ok=True)
-            concat_list = os.path.join(worker_dir, 'sentences_final.txt')
+            concat_dir = session['sentences_dir']
+            concat_list = os.path.join(concat_dir, 'sentences_final.txt')
             with open(concat_list, 'w') as f:
                 for path in selected_files:
                     if session['cancellation_requested']:
@@ -2156,8 +2151,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 ]
                 total_duration += sum(get_audiolist_duration(filepaths).values())
             exported_files = []
-            worker_dir = session['chapters_worker_dir']
-            os.makedirs(worker_dir, exist_ok=True)
+            concat_dir = session['chapters_dir']
             if session['output_split']:
                 part_files = []
                 part_chapter_indices = []
@@ -2184,7 +2178,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                    concat_list = os.path.join(worker_dir, f'part_{part_idx+1:02d}_final.txt')
+                    concat_list = os.path.join(concat_dir, f'part_{part_idx+1:02d}_final.txt')
                     with open(concat_list, 'w') as f:
                         for file in part_file_list:
                             if session['cancellation_requested']:
@@ -2206,8 +2200,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
-                concat_list = os.path.join(worker_dir, 'all_chapters.txt')
-                merged_tmp = os.path.join(worker_dir, f'all.{default_audio_proc_format}')
+                concat_list = os.path.join(concat_dir, 'all_chapters.txt')
+                merged_tmp = os.path.join(concat_dir, f'all.{default_audio_proc_format}')
                 with open(concat_list, 'w') as f:
                     for file in chapter_files:
                         if session['cancellation_requested']:
@@ -2525,9 +2519,7 @@ def convert_ebook(args:dict)->tuple:
                         session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                        session['chapters_worker_dir'] = os.path.join(session['chapters_dir'], "workers")
                         session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
-                        session['sentences_worker_dir'] = os.path.join(session['sentences_dir'], 'workers')
                         if prepare_dirs(args['ebook'], session_id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
