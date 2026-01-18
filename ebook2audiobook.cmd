@@ -570,7 +570,7 @@ if %HAS_PODMAN_COMPOSE%==0 (
 	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DOCKER_PROGRAMS_STR=%DOCKER_PROGRAMS%"
 	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%"
 	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
-	podman-compose -f podman-compose.yml build
+	podman-compose -f podman-compose.yml build --network=host
 	if errorlevel 1 exit /b 1
 ) else if %HAS_COMPOSE%==0 (
 	set "BUILD_NAME=%DOCKER_IMG_NAME%"

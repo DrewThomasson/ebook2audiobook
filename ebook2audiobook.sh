@@ -760,7 +760,7 @@ function build_docker_image {
 		PODMAN_BUILD_ARGS_STR=$(printf ' %q' "${PODMAN_BUILD_ARGS[@]}")
 		export PODMAN_BUILD_ARGS="$PODMAN_BUILD_ARGS_STR"
 		BUILD_NAME="$DOCKER_IMG_NAME" \
-		podman-compose -f podman-compose.yml build || return 1
+		podman-compose -f podman-compose.yml build --network=host || return 1
 	elif docker compose version >/dev/null 2>&1; then
 		if ! docker compose config --services | grep -q .; then
 			echo "ERROR: docker compose found no services or yml file is not valid."
