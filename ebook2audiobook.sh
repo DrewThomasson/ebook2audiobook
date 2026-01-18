@@ -43,8 +43,8 @@ PYTHON_ENV="python_env"
 SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
-HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-DOCKER_PROGRAMS=("ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
+DOCKER_PROGRAMS=("ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
@@ -736,7 +736,30 @@ function build_docker_image {
 		*)         COMPOSE_PROFILES=gpu ;;
 	esac
 	export COMPOSE_PROFILES
-	if docker compose version >/dev/null 2>&1; then
+	if command -v podman-compose >/dev/null 2>&1; then
+		if command -v podman-compose >/dev/null 2>&1; then
+			if ! podman-compose -f podman-compose.yml config >/dev/null 2>&1; then
+				echo "ERROR: podman-compose.yml is not valid"
+				return 1
+			fi
+		fi
+		echo "podman-compose"
+		export PODMAN_BUILD_ARGS=(
+			--format docker
+			--no-cache
+			--network=host
+			--build-arg PYTHON_VERSION="$py_vers"
+			--build-arg APP_VERSION="$APP_VERSION"
+			--build-arg DEVICE_TAG="$DEVICE_TAG"
+			--build-arg DOCKER_DEVICE_STR="$ARG"
+			--build-arg DOCKER_PROGRAMS_STR="$DOCKER_PROGRAMS"
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL"
+			--build-arg ISO3_LANG="$ISO3_LANG"
+		)
+		PODMAN_BUILD_ARGS_STR=$(printf ' %q' "${PODMAN_BUILD_ARGS[@]}")
+		export PODMAN_BUILD_ARGS="$PODMAN_BUILD_ARGS_STR"
+		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose -f podman-compose.yml build || return 1
+	elif docker compose version >/dev/null 2>&1; then
 		if ! docker compose config --services | grep -q .; then
 			echo "ERROR: docker compose found no services or yml file is not valid."
 			return 1
@@ -747,26 +770,6 @@ function build_docker_image {
 			build \
 			--no-cache \
 			--progress plain \
-			--build-arg PYTHON_VERSION="$py_vers" \
-			--build-arg APP_VERSION="$APP_VERSION" \
-			--build-arg DEVICE_TAG="$DEVICE_TAG" \
-			--build-arg DOCKER_DEVICE_STR="$ARG" \
-			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
-			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
-			--build-arg ISO3_LANG="$ISO3_LANG" \
-			|| return 1
-	elif command -v podman-compose >/dev/null 2>&1; then
-		if command -v podman-compose >/dev/null 2>&1; then
-			if ! podman-compose -f podman-compose.yml config >/dev/null 2>&1; then
-				echo "ERROR: podman-compose.yml is not valid"
-				return 1
-			fi
-		fi
-		echo "podman-compose"
-		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose \
-			-f podman-compose.yml \
-			build \
-			--no-cache \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$DEVICE_TAG" \

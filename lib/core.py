@@ -44,7 +44,7 @@ from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
-from lib.classes.tts_engines.common.audio import get_audio_duration
+from lib.classes.tts_engines.common.audio import get_audiolist_duration
 
 from lib import *
 
@@ -229,13 +229,9 @@ def prepare_dirs(src:str, session_id:str)->bool:
             os.makedirs(session['voice_dir'], exist_ok=True)
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
-            os.makedirs(session['chapters_worker_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
-            os.makedirs(session['sentences_worker_dir'], exist_ok=True)
             session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
             shutil.copy(src, session['ebook'])
-            clear_folder(session['chapters_worker_dir'])
-            clear_folder(session['sentences_worker_dir'])
             return True
     except Exception as e:
         DependencyError(e)
@@ -1943,9 +1939,8 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
             if not selected_files:
                 print('No audio files found in the specified range.')
                 return False
-            worker_dir = session['sentences_worker_dir']
-            os.makedirs(worker_dir, exist_ok=True)
-            concat_list = os.path.join(worker_dir, 'sentences_final.txt')
+            concat_dir = session['sentences_dir']
+            concat_list = os.path.join(concat_dir, 'sentences_final.txt')
             with open(concat_list, 'w') as f:
                 for path in selected_files:
                     if session['cancellation_requested']:
@@ -2098,7 +2093,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=session['is_gui_process'], total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export')
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=session['is_gui_process'], total_duration=VoiceExtractor.get_audio_duration(ffmpeg_combined_audio), msg='Export')
             if proc_pipe:
                 if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
@@ -2147,14 +2142,16 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             if len(chapter_files) == 0:
                 print('No block files exists!')
                 return None
-            durations = []
-            for file in chapter_files:
-                filepath = os.path.join(session['chapters_dir'], file)
-                durations.append(get_audio_duration(filepath))
-            total_duration = sum(durations)
+            chunks_size = 892
+            total_duration = 0.0
+            for i in range(0, len(chapter_files), chunks_size):
+                filepaths = [
+                    os.path.join(session['chapters_dir'], f)
+                    for f in chapter_files[i:i + chunks_size]
+                ]
+                total_duration += sum(get_audiolist_duration(filepaths).values())
             exported_files = []
-            worker_dir = session['chapters_worker_dir']
-            os.makedirs(worker_dir, exist_ok=True)
+            concat_dir = session['chapters_dir']
             if session['output_split']:
                 part_files = []
                 part_chapter_indices = []
@@ -2181,7 +2178,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                    concat_list = os.path.join(worker_dir, f'part_{part_idx+1:02d}_final.txt')
+                    concat_list = os.path.join(concat_dir, f'part_{part_idx+1:02d}_final.txt')
                     with open(concat_list, 'w') as f:
                         for file in part_file_list:
                             if session['cancellation_requested']:
@@ -2203,8 +2200,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
-                concat_list = os.path.join(worker_dir, 'all_chapters.txt')
-                merged_tmp = os.path.join(worker_dir, f'all.{default_audio_proc_format}')
+                concat_list = os.path.join(concat_dir, 'all_chapters.txt')
+                merged_tmp = os.path.join(concat_dir, f'all.{default_audio_proc_format}')
                 with open(concat_list, 'w') as f:
                     for file in chapter_files:
                         if session['cancellation_requested']:
@@ -2238,6 +2235,7 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
 
     try:
         total_duration = 0.0
+        filepaths = []
         try:
             with open(txt_file, 'r') as f:
                 for line in f:
@@ -2250,7 +2248,12 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
                             .strip('"')
                         )
                         if os.path.exists(file_path):
-                            total_duration += get_audio_duration(file_path)
+                            filepaths.append(file_path)
+            chunks_size = 892
+            for i in range(0, len(filepaths), chunks_size):
+                chunk = filepaths[i:i + chunks_size]
+                durations = get_audiolist_duration(chunk)
+                total_duration += sum(durations.values())
         except Exception as e:
             print(f'assemble_audio_chunks_worker() open file {txt_file} Error: {e}')
             return False
@@ -2516,9 +2519,7 @@ def convert_ebook(args:dict)->tuple:
                         session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                        session['chapters_worker_dir'] = os.path.join(session['chapters_dir'], "workers")
                         session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
-                        session['sentences_worker_dir'] = os.path.join(session['sentences_dir'], 'workers')
                         if prepare_dirs(args['ebook'], session_id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
