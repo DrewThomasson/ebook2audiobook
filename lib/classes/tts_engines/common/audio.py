@@ -56,28 +56,41 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
     raise TypeError(error)
     return torch.tensor([], dtype=torch.float32)
 
-def get_audio_duration(filepath:str)->float:
-    try:
-        ffprobe_cmd = [
-            shutil.which('ffprobe'),
-            '-v', 'error',
-            '-show_entries', 'format=duration',
-            '-of', 'json',
-            filepath
-        ]
-        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-        try:
-            return float(json.loads(result.stdout)['format']['duration'])
-        except Exception:
-            return 0
-    except subprocess.CalledProcessError as e:
-        error = f'get_audio_duration() Error: Failed to process: {e}'
-        print(error)
-        return 0
-    except Exception as e:
-        error = f'get_audio_duration() Error: Failed to process: {e}'
-        print(error)
-        return 0
+def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
+	mediainfo = shutil.which("mediainfo")
+	cmd = [
+		mediainfo,
+		"--Output=JSON",
+	]
+	cmd.extend(filepaths)
+	durations = {path:0.0 for path in filepaths}
+	try:
+		out = subprocess.check_output(cmd, text=True)
+		data = json.loads(out)
+		ref_map = {}
+		for item in data:
+			media = item.get("media", {})
+			ref = media.get("@ref")
+			audio_duration = None
+			general_duration = None
+			for track in media.get("track", []):
+				track_type = track.get("@type")
+				if track_type == "Audio" and "Duration" in track:
+					audio_duration = float(track["Duration"])
+				elif track_type == "General" and "Duration" in track:
+					general_duration = float(track["Duration"])
+			if audio_duration is not None:
+				ref_map[ref] = audio_duration
+			elif general_duration is not None:
+				ref_map[ref] = general_duration
+			else:
+				ref_map[ref] = 0.0
+		for path in filepaths:
+			if path in ref_map:
+				durations[path] = ref_map[path]
+	except Exception:
+		pass
+	return durations
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
     filter_complex = (
