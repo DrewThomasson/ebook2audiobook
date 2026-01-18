@@ -1753,50 +1753,46 @@ def build_interface(args:dict)->gr.Blocks:
 
             async def update_gr_save_session(session_id:str, state:dict)->tuple:
                 try:
-                    if session_id and session_id in context.sessions:
-                        session = context.get_session(session_id)
-                        if session and isinstance(session, Mapping):
-                            previous_hash = state.get("hash")
-                            if session.get("status") == "converting":
-                                try:
-                                    if session.get('ticker') != len(audiobook_options):
-                                        session['ticker'] = len(audiobook_options)
-                                        new_hash = hash_proxy_dict(MappingProxyType(session))
-                                        state['hash'] = new_hash
-                                        session_dict = json.dumps(
-                                            session, cls=JSONDictProxyEncoder
-                                        )
-                                        yield (
-                                            gr.update(value=session_dict),
-                                            gr.update(value=state),
-                                            update_gr_audiobook_list(session_id),
-                                        )
-                                    else:
-                                        yield gr.update(), gr.update(), gr.update()
-                                except NameError:
-                                    new_hash = hash_proxy_dict(MappingProxyType(session))
-                                    state['hash'] = new_hash
-                                    session_dict = json.dumps(
-                                        session, cls=JSONDictProxyEncoder
-                                    )
-                                    yield (
-                                        gr.update(value=session_dict),
-                                        gr.update(value=state),
-                                        gr.update(),
-                                    )
-                            else:
+                    session = context.get_session(session_id)
+                    if not session or not isinstance(session, Mapping):
+                        yield gr.update(), gr.update(), gr.update()
+                        return
+                    previous_hash = state.get("hash")
+                    if session.get("status") == "converting":
+                        try:
+                            if session.get('ticker') != len(audiobook_options):
+                                session['ticker'] = len(audiobook_options)
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
-                                if previous_hash == new_hash:
-                                    yield gr.update(), gr.update(), gr.update()
-                                else:
-                                    state['hash'] = new_hash
-                                    session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
-                                    yield (
-                                        gr.update(value=session_dict),
-                                        gr.update(value=state),
-                                        gr.update(),
-                                    )
-                    yield gr.update(), gr.update(), gr.update()
+                                state['hash'] = new_hash
+                                session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                                yield (
+                                    gr.update(value=session_dict),
+                                    gr.update(value=state),
+                                    update_gr_audiobook_list(session_id),
+                                )
+                            else:
+                                yield gr.update(), gr.update(), gr.update()
+                        except NameError:
+                            new_hash = hash_proxy_dict(MappingProxyType(session))
+                            state['hash'] = new_hash
+                            session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                            yield (
+                                gr.update(value=session_dict),
+                                gr.update(value=state),
+                                gr.update(),
+                            )
+                    else:
+                        new_hash = hash_proxy_dict(MappingProxyType(session))
+                        if previous_hash == new_hash:
+                            yield gr.update(), gr.update(), gr.update()
+                        else:
+                            state['hash'] = new_hash
+                            session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                            yield (
+                                gr.update(value=session_dict),
+                                gr.update(value=state),
+                                gr.update(),
+                            )
                 except Exception as e:
                     error = f'update_gr_save_session(): {e}!'
                     alert_exception(error, session_id)
