@@ -56,7 +56,7 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
     raise TypeError(error)
     return torch.tensor([], dtype=torch.float32)
 
-def get_audio_duration(filepaths:list[str])->dict[str, float]:
+def get_audio_durations(filepaths:list[str])->dict[str, float]:
 	ffprobe = shutil.which("ffprobe")
 	cmd = [
 		ffprobe,
