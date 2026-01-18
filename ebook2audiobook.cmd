@@ -562,7 +562,7 @@ if /i "%TAG%"=="cpu" (
 )
 if %HAS_PODMAN_COMPOSE%==0 (
 	set "BUILD_NAME=%DOCKER_IMG_NAME%"
-	podman-compose -f podman-compose.yml --no-cache --podman-build-args="--format docker" build ^
+	podman-compose -f podman-compose.yml --podman-build-args="--format docker" build --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%DEVICE_TAG%" ^
