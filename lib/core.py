@@ -40,11 +40,11 @@ from phonemizer import phonemize
 
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
-from lib.classes.voice_extractor import VoiceExtractor
+from lib.classes.voice_extractor import VoiceExtractor, get_audio_duration
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
-from lib.classes.tts_engines.common.audio import get_audio_duration
+from lib.classes.tts_engines.common.audio import get_audiolist_duration
 
 from lib import *
 
@@ -2147,11 +2147,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             if len(chapter_files) == 0:
                 print('No block files exists!')
                 return None
-            durations = []
-            for file in chapter_files:
-                filepath = os.path.join(session['chapters_dir'], file)
-                durations.append(get_audio_duration(filepath))
-            total_duration = sum(durations)
+            chunks_size = 892
+            total_duration = 0.0
+            for i in range(0, len(chapter_files), chunks_size):
+                filepaths = [
+                    os.path.join(session['chapters_dir'], f)
+                    for f in chapter_files[i:i + chunks_size]
+                ]
+                total_duration += sum(get_audiolist_duration(filepaths).values())
             exported_files = []
             worker_dir = session['chapters_worker_dir']
             os.makedirs(worker_dir, exist_ok=True)
@@ -2238,6 +2241,7 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
 
     try:
         total_duration = 0.0
+        filepaths = []
         try:
             with open(txt_file, 'r') as f:
                 for line in f:
@@ -2250,7 +2254,12 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
                             .strip('"')
                         )
                         if os.path.exists(file_path):
-                            total_duration += get_audio_duration(file_path)
+                            filepaths.append(file_path)
+            chunks_size = 892
+            for i in range(0, len(filepaths), chunks_size):
+                chunk = filepaths[i:i + chunks_size]
+                durations = get_audiolist_duration(chunk)
+                total_duration += sum(durations.values())
         except Exception as e:
             print(f'assemble_audio_chunks_worker() open file {txt_file} Error: {e}')
             return False
