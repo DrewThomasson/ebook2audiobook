@@ -7,7 +7,6 @@ services:
       args:
         APP_VERSION: ${APP_VERSION:-25.12.33}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
-    container_name: ebook2audiobook
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     tty: true
