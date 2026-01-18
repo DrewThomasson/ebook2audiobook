@@ -1,13 +1,12 @@
 services:
   ebook2audiobook:
-    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-latest}  # e.g. DEVICE_TAG=cu128 → ebook2audiobook:cu128 etc.
+    image: docker.io/athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}  # or ebook2audiobook:${DEVICE_TAG:-cu128} if you run your own local docker
     build:
       context: .
       dockerfile: Dockerfile
       args:
         APP_VERSION: ${APP_VERSION:-25.12.33}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
-    container_name: ebook2audiobook
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     tty: true
