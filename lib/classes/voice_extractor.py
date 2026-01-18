@@ -12,6 +12,7 @@ from lib.conf import voice_formats, default_audio_proc_samplerate
 from lib.conf_models import TTS_ENGINES
 
 class VoiceExtractor:
+
     def __init__(self, session:Any, voice_file:str, voice_name:str):
         self.wav_file = None
         self.session = session
@@ -48,7 +49,7 @@ class VoiceExtractor:
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
                 '-ac', '1', '-y', self.wav_file
             ]   
-            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self.get_audio_duration(self.voice_file), msg='Demux')
+            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=VoiceExtractor.get_audio_duration(self.voice_file), msg='Demux')
             if not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
                 error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
             else:
@@ -100,7 +101,7 @@ class VoiceExtractor:
                 "--out", self.output_dir,
                 self.wav_file
             ]
-            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self.get_audio_duration(self.wav_file), msg=msg)
+            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=VoiceExtractor.get_audio_duration(self.wav_file), msg=msg)
             if proc:
                 msg = 'Voice exctracted!'
                 return True, msg
@@ -118,6 +119,7 @@ class VoiceExtractor:
             error = f'_demucs_voice() error: {str(e)}'
         return False, error
 
+    @staticmethod
     def get_audio_duration(self, filepath:str)->float:
         try:
             cmd = [
@@ -254,7 +256,7 @@ class VoiceExtractor:
                 '-y', proc_file
             ]
             try:
-                proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=self.get_audio_duration(src_file), msg='Normalize')
+                proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=VoiceExtractor.get_audio_duration(src_file), msg='Normalize')
                 if not os.path.exists(proc_file) or os.path.getsize(proc_file) == 0:
                     error = f'normalize_audio() error: {proc_file} was not created or is empty.'
                 else:
