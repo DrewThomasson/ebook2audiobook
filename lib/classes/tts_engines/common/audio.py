@@ -57,21 +57,39 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
     return torch.tensor([], dtype=torch.float32)
 
 def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
-	ffprobe = shutil.which("ffprobe")
+	mediainfo = shutil.which("mediainfo")
 	cmd = [
-		ffprobe,
-		"-v", "error",
-		"-show_entries", "format=duration",
-		"-of", "default=noprint_wrappers=1:nokey=1",
+		mediainfo,
+		"--Output=JSON",
 	]
 	cmd.extend(filepaths)
-	out = subprocess.check_output(cmd, text=True)
-	durations = {}
-	for path, line in zip(filepaths, out.splitlines()):
-		try:
-			durations[path] = float(line)
-		except Exception:
-			durations[path] = 0.0
+	durations = {path:0.0 for path in filepaths}
+	try:
+		out = subprocess.check_output(cmd, text=True)
+		data = json.loads(out)
+		ref_map = {}
+		for item in data:
+			media = item.get("media", {})
+			ref = media.get("@ref")
+			audio_duration = None
+			general_duration = None
+			for track in media.get("track", []):
+				track_type = track.get("@type")
+				if track_type == "Audio" and "Duration" in track:
+					audio_duration = float(track["Duration"])
+				elif track_type == "General" and "Duration" in track:
+					general_duration = float(track["Duration"])
+			if audio_duration is not None:
+				ref_map[ref] = audio_duration
+			elif general_duration is not None:
+				ref_map[ref] = general_duration
+			else:
+				ref_map[ref] = 0.0
+		for path in filepaths:
+			if path in ref_map:
+				durations[path] = ref_map[path]
+	except Exception:
+		pass
 	return durations
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:

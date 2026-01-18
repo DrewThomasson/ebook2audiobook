@@ -123,18 +123,25 @@ class VoiceExtractor:
     def get_audio_duration(self, filepath:str)->float:
         try:
             cmd = [
-                shutil.which('ffprobe'),
-                '-v', 'error',
-                '-show_entries', 'format=duration',
-                '-of', 'json',
+                shutil.which('mediainfo'),
+                '--Output=JSON',
                 filepath
             ]
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            try:
-                duration = json.loads(result.stdout)['format']['duration']
-                return float(duration)
-            except Exception:
-                return 0
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            data = json.loads(result.stdout)
+            audio_duration = None
+            general_duration = None
+            for track in data.get('media', {}).get('track', []):
+                track_type = track.get('@type')
+                if track_type == 'Audio' and 'Duration' in track:
+                    audio_duration = float(track['Duration'])
+                elif track_type == 'General' and 'Duration' in track:
+                    general_duration = float(track['Duration'])
+            if audio_duration is not None:
+                return audio_duration
+            if general_duration is not None:
+                return general_duration
+            return 0
         except subprocess.CalledProcessError as e:
             DependencyError(e)
             return 0
