@@ -745,20 +745,20 @@ function build_docker_image {
 		fi
 		echo "podman-compose"
 		export PODMAN_BUILD_ARGS="--format docker --no-cache"
-		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose \
-			-f podman-compose.yml \
+		BUILD_NAME="$DOCKER_IMG_NAME" \
+		podman-compose -f podman-compose.yml \
 			--podman-build-args="\
-				$PODMAN_BUILD_ARGS \
+				--format docker \
+				--no-cache \
 				--build-arg PYTHON_VERSION=$py_vers \
 				--build-arg APP_VERSION=$APP_VERSION \
 				--build-arg DEVICE_TAG=$DEVICE_TAG \
 				--build-arg DOCKER_DEVICE_STR=$ARG \
-				--build-arg DOCKER_PROGRAMS_STR=${DOCKER_PROGRAMS[*]} \
+				--build-arg DOCKER_PROGRAMS_STR=\"${DOCKER_PROGRAMS}\" \
 				--build-arg CALIBRE_INSTALLER_URL=$CALIBRE_INSTALLER_URL \
 				--build-arg ISO3_LANG=$ISO3_LANG \
 			" \
-			build \
-			|| return 1
+			build || return 1
 	elif docker compose version >/dev/null 2>&1; then
 		if ! docker compose config --services | grep -q .; then
 			echo "ERROR: docker compose found no services or yml file is not valid."

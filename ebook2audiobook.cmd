@@ -562,16 +562,15 @@ if /i "%TAG%"=="cpu" (
 )
 if %HAS_PODMAN_COMPOSE%==0 (
 	set "BUILD_NAME=%DOCKER_IMG_NAME%"
-	podman-compose -f podman-compose.yml ^
-		--podman-build-args="--format docker --no-cache ^
-		--build-arg PYTHON_VERSION=%py_vers% ^
-		--build-arg APP_VERSION=%APP_VERSION% ^
-		--build-arg DEVICE_TAG=%DEVICE_TAG% ^
-		--build-arg DOCKER_DEVICE_STR=%ARG% ^
-		--build-arg DOCKER_PROGRAMS_STR=%DOCKER_PROGRAMS% ^
-		--build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL% ^
-		--build-arg ISO3_LANG=%ISO3_LANG%" ^
-		build
+	set "PODMAN_BUILD_ARGS=--format docker --no-cache"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg PYTHON_VERSION=%py_vers%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg APP_VERSION=%APP_VERSION%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DEVICE_TAG=%DEVICE_TAG%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DOCKER_DEVICE_STR=%ARG%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DOCKER_PROGRAMS_STR=\"%DOCKER_PROGRAMS%\""
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
+	podman-compose -f podman-compose.yml --podman-build-args="%PODMAN_BUILD_ARGS%" build
 	if errorlevel 1 exit /b 1
 ) else if %HAS_COMPOSE%==0 (
 	set "BUILD_NAME=%DOCKER_IMG_NAME%"
