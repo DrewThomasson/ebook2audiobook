@@ -10,7 +10,7 @@ from torch import Tensor
 from torch.nn import Module
 
 from lib.classes.vram_detector import VRAMDetector
-from lib.classes.tts_engines.common.audio import normalize_audio, get_audio_duration
+from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration
 from lib import *
 
 _lock = threading.Lock()
