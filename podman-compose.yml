@@ -4,7 +4,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      network: host
       args:
         APP_VERSION: ${APP_VERSION:-26.1.16}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
