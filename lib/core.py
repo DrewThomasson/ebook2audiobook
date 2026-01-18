@@ -2437,7 +2437,8 @@ def convert_ebook(args:dict)->tuple:
                     if not context_tracker.start_session(session_id):
                         error = 'convert_ebook() error: Session initialization failed!'
                         print(error)
-                        return error, False                        
+                        return error, False     
+                session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
                 session['ebook'] = str(args['ebook']) if args.get('ebook') else None
@@ -2447,7 +2448,7 @@ def convert_ebook(args:dict)->tuple:
                 session['language'] = str(args['language'])
                 session['language_iso1'] = str(args['language_iso1'])
                 session['tts_engine'] = str(args['tts_engine']) if args['tts_engine'] is not None else str(get_compatible_tts_engines(args['language'])[0])
-                session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if session['custom_model'] is not None else None
+                session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if args['custom_model'] is not None else None
                 session['fine_tuned'] = str(args['fine_tuned'])
                 session['voice'] = str(args['voice']) if args['voice'] is not None else None
                 session['xtts_temperature'] =  float(args['xtts_temperature'])
@@ -2471,9 +2472,6 @@ def convert_ebook(args:dict)->tuple:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                     os.makedirs(session['voice_dir'], exist_ok=True)
-                    # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
-                    #[shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
-                    session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
