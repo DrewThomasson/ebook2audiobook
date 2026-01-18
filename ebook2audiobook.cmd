@@ -60,7 +60,7 @@ set "HOST_PROGRAMS=cmake rustup python calibre-normal ffmpeg nodejs espeak-ng so
 set "DOCKER_PROGRAMS=ffmpeg nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
-set "DOCKER_IMG_NAME=ebook2audiobook"
+set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
@@ -552,6 +552,7 @@ if /i "%TAG:~0,2%"=="cu" (
 ) else if /i "%TAG%"=="cpu" (
 	set "cmd_options="
 )
+set "DEVICE_TAG=%TAG%"
 if /i "%TAG%"=="cpu" (
 	set COMPOSE_PROFILES=cpu
 ) else if /i "%TAG%"=="mps" (
@@ -564,7 +565,7 @@ if %HAS_COMPOSE%==0 (
 	docker compose build --progress=plain --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
-		--build-arg DEVICE_TAG="%TAG%" ^
+		--build-arg DEVICE_TAG="%DEVICE_TAG%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
@@ -575,7 +576,7 @@ if %HAS_COMPOSE%==0 (
 	podman-compose -f podman-compose.yml build --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
-		--build-arg DEVICE_TAG="%TAG%" ^
+		--build-arg DEVICE_TAG="%DEVICE_TAG%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
@@ -585,7 +586,7 @@ if %HAS_COMPOSE%==0 (
 	docker build --progress plain --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
-		--build-arg DEVICE_TAG="%TAG%" ^
+		--build-arg DEVICE_TAG="%DEVICE_TAG%" ^
 		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
 		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
 		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
