@@ -6,6 +6,7 @@ from pydub import AudioSegment, silence
 from pydub.silence import detect_nonsilent
 
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.classes.tts_engines.common.audio import get_audio_duration
 from lib.classes.background_detector import BackgroundDetector
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.conf import voice_formats, default_audio_proc_samplerate
@@ -49,7 +50,7 @@ class VoiceExtractor:
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
                 '-ac', '1', '-y', self.wav_file
             ]   
-            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=VoiceExtractor.get_audio_duration(self.voice_file), msg='Demux')
+            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(self.voice_file), msg='Demux')
             if not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
                 error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
             else:
@@ -101,7 +102,7 @@ class VoiceExtractor:
                 "--out", self.output_dir,
                 self.wav_file
             ]
-            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=VoiceExtractor.get_audio_duration(self.wav_file), msg=msg)
+            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(self.wav_file), msg=msg)
             if proc:
                 msg = 'Voice exctracted!'
                 return True, msg
@@ -118,37 +119,6 @@ class VoiceExtractor:
         except Exception as e:
             error = f'_demucs_voice() error: {str(e)}'
         return False, error
-
-    @staticmethod
-    def get_audio_duration(filepath:str)->float:
-        try:
-            cmd = [
-                shutil.which('mediainfo'),
-                '--Output=JSON',
-                filepath
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            data = json.loads(result.stdout)
-            audio_duration = None
-            general_duration = None
-            for track in data.get('media', {}).get('track', []):
-                track_type = track.get('@type')
-                if track_type == 'Audio' and 'Duration' in track:
-                    audio_duration = float(track['Duration'])
-                elif track_type == 'General' and 'Duration' in track:
-                    general_duration = float(track['Duration'])
-            if audio_duration is not None:
-                return audio_duration
-            if general_duration is not None:
-                return general_duration
-            return 0
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
-            return 0
-        except Exception as e:
-            error = f"get_audio_duration() Error: Failed to process {filepath}: {e}"
-            print(error)
-            return 0
 
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
         msg = "Removing empty audio..."
@@ -263,7 +233,7 @@ class VoiceExtractor:
                 '-y', proc_file
             ]
             try:
-                proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=VoiceExtractor.get_audio_duration(src_file), msg='Normalize')
+                proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(src_file), msg='Normalize')
                 if not os.path.exists(proc_file) or os.path.getsize(proc_file) == 0:
                     error = f'normalize_audio() error: {proc_file} was not created or is empty.'
                 else:
