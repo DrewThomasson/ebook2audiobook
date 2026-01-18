@@ -130,7 +130,7 @@ Docker run image:
         Run:
             DEVICE_TAG=cu128 docker compose --profile gpu up -d
 
-    Podman Compose:
+    Podman Compose (i.e. cuda 12.8:
         Build:
             DEVICE_TAG=cu128 podman-compose up -d build
         Run:
