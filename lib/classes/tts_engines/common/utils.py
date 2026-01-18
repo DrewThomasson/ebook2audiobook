@@ -479,7 +479,7 @@ class TTSUtils:
             print(msg)
             for i in range(0, len(audio_files), chunks_size):
                 chunk = audio_files[i:i + chunks_size]
-                durations_map.update(get_audio_durations(map(str, chunk)))
+                durations_map.update(get_audio_duration(map(str, chunk)))
             msg = 'Create VTT blocks...'
             print(msg)
             with tqdm(total=audio_files_length, unit='files') as t:
