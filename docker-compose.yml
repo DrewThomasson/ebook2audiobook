@@ -1,23 +1,41 @@
 services:
   ebook2audiobook:
-    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-latest}  # or just ebook2audiobook:${DEVICE_TAG:-cu128} if you run your own local docker
+    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cpu}
     build:
       context: .
       dockerfile: Dockerfile
       args:
         APP_VERSION: ${APP_VERSION:-26.1.16}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
-    container_name: ebook2audiobook
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     tty: true
     stdin_open: true
     ports:
       - "7860:7860"
-    privileged: true   # Kept as required for some Unraid users
+    volumes:
+      - .:/app:rw
+    restart: unless-stopped
+    profiles: [cpu]
 
-    # NVIDIA GPU passthrough – works on Docker hosts with NVIDIA Container Toolkit
-    # Ignored safely if toolkit not installed or no NVIDIA GPU
+  ebook2audiobook-gpu:
+    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-26.1.16}
+        DEVICE_TAG: ${DEVICE_TAG:-cu128}
+    working_dir: /app
+    entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
+    tty: true
+    stdin_open: true
+    ports:
+      - "7860:7860"
+    volumes:
+      - .:/app:rw
+    restart: unless-stopped
+    profiles: [gpu]
     deploy:
       resources:
         reservations:
@@ -25,13 +43,3 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-
-    volumes:
-      - .:/app:rw      # Bind mount current directory – works everywhere
-
-    restart: unless-stopped
-
-    # Legacy NVIDIA runtime fallback – harmless on non-NVIDIA hosts
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
