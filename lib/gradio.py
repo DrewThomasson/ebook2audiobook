@@ -1754,7 +1754,7 @@ def build_interface(args:dict)->gr.Blocks:
             async def update_gr_save_session(session_id:str, state:dict)->tuple:
                 try:
                     session = context.get_session(session_id)
-                    if not session or not isinstance(session, Mapping):
+                    if not session or (session and not session.get('id', False)):
                         yield gr.update(), gr.update(), gr.update()
                         return
                     previous_hash = state.get("hash")
