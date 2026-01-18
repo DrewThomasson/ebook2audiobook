@@ -120,7 +120,7 @@ class VoiceExtractor:
         return False, error
 
     @staticmethod
-    def get_audio_duration(self, filepath:str)->float:
+    def get_audio_duration(filepath:str)->float:
         try:
             cmd = [
                 shutil.which('mediainfo'),
