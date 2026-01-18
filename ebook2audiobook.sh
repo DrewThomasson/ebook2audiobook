@@ -747,7 +747,7 @@ function build_docker_image {
 		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose \
 			-f podman-compose.yml \
 			build \
-			--no-cache \
+			--no-cache --format docker \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$DEVICE_TAG" \
