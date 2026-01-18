@@ -147,8 +147,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## SML tags available
 - `[[break]]` — silence (random range **0.3–0.6 s**)
-- `[[pause]]`, `###` — silence (random range **1.0–1.6 s**)
-- `[[pause:N]]` — fixed pause (**N seconds**)
+- `[[pause]]` — silence (random range **1.0–1.6 sec.**)
+- `[[pause:N]]` — fixed pause (**N sec.**)
 - `[[voice:/path/to/voice/file]]...[[/voice]]` — switch voice from default or selected voice from GUI/CLI
 
 > [!IMPORTANT]
@@ -371,24 +371,30 @@ Docker run image:
         JETSON:
         docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 
-    Docker Compose (i.e. for cuda 11.8, add --build to rebuild):
-        DEVICE_TAG=cu118 docker compose up -d
+Docker Compose (i.e. cuda 12.8:
+        Build
+            DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up -d --build
+        Run Gradio GUI:
+            DEVICE_TAG=cu128 docker compose --profile gpu up -d
+        Run Headless mode:
+            DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 
-    Podman Compose (i.e. for cuda 12.4, add --build to rebuild):
-        DEVICE_TAG=cu124 podman-compose up -d
+Podman Compose (i.e. cuda 12.8:
+        Build
+            DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d --build
+        Run Gradio GUI:
+            DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d
+        Run Headless mode:
+            DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 
     * MPS is not exposed in docker so CPU must be used.
 
-Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
+Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[[pause]]".
 
 ```
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
-
-TIP: if it needs some more pauses, just add '###' or 
-'[pause]' between the words you wish more pause. 
-one [pause] is a random between 0.8 to 1.6 seconds
-
+TIP: if it needs some more pause, add '[[pause:3]]' for 3 sec. etc.
 
 ### Docker
 1. **Clone the Repository**:

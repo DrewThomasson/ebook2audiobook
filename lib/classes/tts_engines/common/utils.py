@@ -410,32 +410,21 @@ class TTSUtils:
         m = SML_TAG_PATTERN.fullmatch(sml)
         if not m:
             return False
-        tag:str = m.group("tag")
-        close:str|None = m.group("close")
-        value:str|None = m.group("value")
+        if m.group("tag1"):
+            tag = m.group("tag1")
+            close = bool(m.group("close1"))
+            value = m.group("value1")
+        elif m.group("tag2"):
+            tag = m.group("tag2")
+            close = bool(m.group("close2"))
+            value = m.group("value2")
+        else:
+            return False
         assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
-        if tag == "###":
-            silence_time = float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
-            self.audio_segments.append(
-                torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone()
-            )
-            return True
-        elif tag == "break":
+        if tag == "break":
             silence_time = float(int(np.random.uniform(0.3, 0.6) * 100) / 100)
-            self.audio_segments.append(
-                torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone()
-            )
-            return True
         elif tag == "pause":
-            duration = float(value) if value else None
-            silence_time = (
-                duration if duration is not None
-                else float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
-            )
-            self.audio_segments.append(
-                torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone()
-            )
-            return True
+            silence_time = float(value) if value else float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
         elif tag == "voice":
             if close:
                 return self._set_voice()
@@ -444,8 +433,13 @@ class TTSUtils:
             if not os.path.exists(voice_path):
                 print(f"_convert_sml() error: voice {voice_path} does not exist!")
                 return False
-            self.params['voice_path'] = voice_path
+            self.params["voice_path"] = voice_path
             return self._set_voice()
+        else:
+            return False
+        self.audio_segments.append(
+            torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
+        )
         return True
 
     def _format_timestamp(self, seconds: float) -> str:
@@ -489,7 +483,7 @@ class TTSUtils:
                     text = re.sub(
                         r'\s+',
                         ' ',
-                        default_frontend_sml_pattern.sub('', str(all_sentences[idx]))
+                        default_backend_sml_pattern.sub('', str(all_sentences[idx]))
                     ).strip()
                     vtt_blocks.append(f"{start} --> {end}\n{text}\n")
                     if self.session['is_gui_process']:

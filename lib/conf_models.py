@@ -1,4 +1,4 @@
-import os, regex as re
+import os, re
 from lib.conf import tts_dir, voices_dir
 
 loaded_tts = {}
@@ -20,22 +20,30 @@ TTS_VOICE_CONVERSION = {
     "openvoice_v2": {"path": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2", "samplerate": 22050}
 }
 
-default_frontend_sml_pattern = re.compile(r'(###|‡‡[^‡]+‡‡)')
+default_backend_sml_pattern = re.compile(r'(‡‡[^‡]+‡‡)')
 
 TTS_SML = {
-    "break": {"paired": False},
-    "pause": {"paired": False},
-    "voice": {"paired": True},
-    "###": {"paired": False},
+	"break": {"paired": False},
+	"pause": {"paired": False},
+	"voice": {"paired": True},
 }
 
 sml_tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
 SML_TAG_PATTERN = re.compile(
-    rf'(?:\[\[|‡‡)'
-    rf'(?P<close>/)?'
-    rf'(?P<tag>{sml_tag_keys})'
-    rf'(?:\:(?P<value>[^\]‡]+))?'
-    rf'(?:\]\]|‡‡)'
+	rf'''
+	\[\[
+		(?P<close1>/)?
+		(?P<tag1>{sml_tag_keys})
+		(?:\:(?P<value1>[^\]]+))?
+	\]\]
+	|
+	‡‡
+		(?P<close2>/)?
+		(?P<tag2>{sml_tag_keys})
+		(?:\:(?P<value2>[^‡]+))?
+	‡‡
+	''',
+	re.VERBOSE
 )
 
 default_tts_engine = TTS_ENGINES['XTTSv2']

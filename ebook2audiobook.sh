@@ -46,7 +46,7 @@ OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
 DOCKER_PROGRAMS=("ffmpeg" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
-DOCKER_IMG_NAME="$APP_NAME"
+DOCKER_IMG_NAME="athomasson2/$APP_NAME"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 BREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 MINIFORGE_MACOSX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
@@ -728,28 +728,61 @@ function build_docker_image {
 		mps)		cmd_options="" ;;
 		*)			cmd_options="" ;;
 	esac
+	DEVICE_TAG="$TAG"
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
+	case "$TAG" in
+		cpu|mps)   COMPOSE_PROFILES=cpu ;;
+		*)         COMPOSE_PROFILES=gpu ;;
+	esac
+	export COMPOSE_PROFILES
 	if docker compose version >/dev/null 2>&1; then
+		if ! docker compose config --services | grep -q .; then
+			echo "ERROR: docker compose found no services or yml file is not valid."
+			return 1
+		fi
+		echo "docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
+			-f docker-compose.yml \
+			build \
+			--no-cache \
 			--progress plain \
+			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg APP_VERSION="$APP_VERSION" \
+			--build-arg DEVICE_TAG="$DEVICE_TAG" \
+			--build-arg DOCKER_DEVICE_STR="$ARG" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
+			--build-arg ISO3_LANG="$ISO3_LANG" \
+			|| return 1
+	elif command -v podman-compose >/dev/null 2>&1; then
+		if command -v podman-compose >/dev/null 2>&1; then
+			if ! podman-compose -f podman-compose.yml config >/dev/null 2>&1; then
+				echo "ERROR: podman-compose.yml is not valid"
+				return 1
+			fi
+		fi
+		echo "podman-compose"
+		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose \
+			-f podman-compose.yml \
 			build \
 			--no-cache \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
-			--build-arg DEVICE_TAG="$TAG" \
+			--build-arg DEVICE_TAG="$DEVICE_TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
 	else
+		echo "docker build"
 		docker build \
 			--no-cache \
 			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
-			--build-arg DEVICE_TAG="$TAG" \
+			--build-arg DEVICE_TAG="$DEVICE_TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
 			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
