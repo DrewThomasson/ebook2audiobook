@@ -745,20 +745,22 @@ function build_docker_image {
 		fi
 		echo "podman-compose"
 		export PODMAN_BUILD_ARGS="--format docker --no-cache"
+		export PODMAN_BUILD_ARGS=(
+			--format docker
+			--no-cache
+			--build-arg PYTHON_VERSION="$py_vers"
+			--build-arg APP_VERSION="$APP_VERSION"
+			--build-arg DEVICE_TAG="$DEVICE_TAG"
+			--build-arg DOCKER_DEVICE_STR="$ARG"
+			--build-arg DOCKER_PROGRAMS_STR="$DOCKER_PROGRAMS"
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL"
+			--build-arg ISO3_LANG="$ISO3_LANG"
+		)
+		# Convert array → safe string
+		PODMAN_BUILD_ARGS_STR=$(printf ' %q' "${PODMAN_BUILD_ARGS[@]}")
+		export PODMAN_BUILD_ARGS="$PODMAN_BUILD_ARGS_STR"
 		BUILD_NAME="$DOCKER_IMG_NAME" \
-		podman-compose -f podman-compose.yml \
-			--podman-build-args="\
-				--format docker \
-				--no-cache \
-				--build-arg PYTHON_VERSION=$py_vers \
-				--build-arg APP_VERSION=$APP_VERSION \
-				--build-arg DEVICE_TAG=$DEVICE_TAG \
-				--build-arg DOCKER_DEVICE_STR=$ARG \
-				--build-arg DOCKER_PROGRAMS_STR=\"${DOCKER_PROGRAMS}\" \
-				--build-arg CALIBRE_INSTALLER_URL=$CALIBRE_INSTALLER_URL \
-				--build-arg ISO3_LANG=$ISO3_LANG \
-			" \
-			build || return 1
+		podman-compose -f podman-compose.yml build || return 1
 	elif docker compose version >/dev/null 2>&1; then
 		if ! docker compose config --services | grep -q .; then
 			echo "ERROR: docker compose found no services or yml file is not valid."
