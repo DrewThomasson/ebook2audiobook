@@ -125,20 +125,20 @@ Docker run image:
         docker run --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 
 Docker Compose (i.e. cuda 12.8:
-        Build and Run Gradio GUI
+        Build
             DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up -d --build
         Run Gradio GUI:
             DEVICE_TAG=cu128 docker compose --profile gpu up -d
         Run Headless mode:
-            DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+            DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 
 Podman Compose (i.e. cuda 12.8:
-        Build and Run Gradio GUI
-            DEVICE_TAG=cu128 podman-compose --progress plain --profile gpu up -d --build
+        Build
+            DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d --build
         Run Gradio GUI:
-            DEVICE_TAG=cu128 podman-compose --profile gpu up -d
+            DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d
         Run Headless mode:
-            DEVICE_TAG=cu128 podman-compose --profile gpu run --rm ebook2audiobook --headless --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+            DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
     
     * MPS is not exposed in docker so CPU must be used.
 
