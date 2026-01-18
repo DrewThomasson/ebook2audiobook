@@ -449,7 +449,8 @@ class TTSUtils:
 
     def _build_vtt_file(self, all_sentences: list, audio_dir: str, vtt_path: str) -> bool:
         try:
-            print('VTT file creation started...')
+            msg = 'VTT file creation started...'
+            print(msg)
             audio_sentences_dir = Path(audio_dir)
             audio_files = sorted(
                 audio_sentences_dir.glob(f"*.{default_audio_proc_format}"),
@@ -472,10 +473,19 @@ class TTSUtils:
             vtt_blocks = []
             if self.session['is_gui_process']:
                 progress_bar = gr.Progress(track_tqdm=False)
+            chunks_size = 892
+            durations_map = {}
+            msg = 'Get duration of each sentence...'
+            print(msg)
+            for i in range(0, len(audio_files), chunks_size):
+                chunk = audio_files[i:i + chunks_size]
+                durations_map.update(get_audio_durations(map(str, chunk)))
+            msg = 'Create VTT blocks...'
+            print(msg)
             with tqdm(total=audio_files_length, unit='files') as t:
                 for idx, file in enumerate(audio_files):
                     start_time = sentences_total_time
-                    duration = get_audio_duration(str(file))
+                    duration = durations_map.get(str(file), 0.0)
                     end_time = start_time + duration
                     sentences_total_time = end_time
                     start = self._format_timestamp(start_time)
@@ -488,8 +498,13 @@ class TTSUtils:
                     vtt_blocks.append(f"{start} --> {end}\n{text}\n")
                     if self.session['is_gui_process']:
                         total_progress = (t.n + 1) / audio_files_length
-                        progress_bar(progress=total_progress, desc=f'Writing vtt idx {idx}')
+                        progress_bar(
+                            progress=total_progress,
+                            desc=f'Writing vtt idx {idx}'
+                        )
                     t.update(1)
+            msg = 'Write VTT blocks into file...'
+            print(msg)
             with open(vtt_path, "w", encoding="utf-8") as f:
                 f.write("WEBVTT\n\n")
                 f.write("\n".join(vtt_blocks))

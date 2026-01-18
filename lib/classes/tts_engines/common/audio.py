@@ -56,28 +56,23 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
     raise TypeError(error)
     return torch.tensor([], dtype=torch.float32)
 
-def get_audio_duration(filepath:str)->float:
-    try:
-        ffprobe_cmd = [
-            shutil.which('ffprobe'),
-            '-v', 'error',
-            '-show_entries', 'format=duration',
-            '-of', 'json',
-            filepath
-        ]
-        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-        try:
-            return float(json.loads(result.stdout)['format']['duration'])
-        except Exception:
-            return 0
-    except subprocess.CalledProcessError as e:
-        error = f'get_audio_duration() Error: Failed to process: {e}'
-        print(error)
-        return 0
-    except Exception as e:
-        error = f'get_audio_duration() Error: Failed to process: {e}'
-        print(error)
-        return 0
+def get_audio_durations(filepaths:list[str])->dict[str, float]:
+	ffprobe = shutil.which("ffprobe")
+	cmd = [
+		ffprobe,
+		"-v", "error",
+		"-show_entries", "format=duration",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+	]
+	cmd.extend(filepaths)
+	out = subprocess.check_output(cmd, text=True)
+	durations = {}
+	for path, line in zip(filepaths, out.splitlines()):
+		try:
+			durations[path] = float(line)
+		except Exception:
+			durations[path] = 0.0
+	return durations
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
     filter_complex = (
