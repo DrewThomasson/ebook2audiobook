@@ -205,7 +205,8 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
     Default to config.json model.""")
     headless_optional_group.add_argument(options[24], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
     headless_optional_group.add_argument(options[25], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
-    headless_optional_group.add_argument(options[26], action='store_true', help=argparse.SUPPRESS)
+    headless_optional_group.add_argument(options[26], type=str, help=argparse.SUPPRESS)
+    headless_optional_group.add_argument(options[27], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:
