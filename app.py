@@ -205,8 +205,7 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
     Default to config.json model.""")
     headless_optional_group.add_argument(options[24], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
     headless_optional_group.add_argument(options[25], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
-    headless_optional_group.add_argument(options[26], type=str, help=argparse.SUPPRESS)
-    headless_optional_group.add_argument(options[27], action='store_true', help=argparse.SUPPRESS)
+    headless_optional_group.add_argument(options[26], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:
@@ -248,7 +247,7 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
-        # Conditions based on the --headless flag
+        print(args)
         if args['headless']:
             args['id'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
