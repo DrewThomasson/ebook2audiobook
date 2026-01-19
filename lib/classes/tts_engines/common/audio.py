@@ -87,43 +87,43 @@ def get_audio_duration(filepath:str)->float:
         return 0
 
 def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
-	mediainfo = shutil.which("mediainfo")
-	cmd = [
-		mediainfo,
-		"--Output=JSON",
-	]
-	cmd.extend(filepaths)
-	durations = {path:0.0 for path in filepaths}
-	try:
-		out = subprocess.check_output(cmd, text=True)
-		data = json.loads(out)
-		ref_map = {}
-		for item in data:
-			media = item.get("media", {})
-			ref = media.get("@ref")
-			audio_duration = None
-			general_duration = None
-			for track in media.get("track", []):
-				track_type = track.get("@type")
-				if track_type == "Audio" and "Duration" in track:
-					audio_duration = float(track["Duration"])
-				elif track_type == "General" and "Duration" in track:
-					general_duration = float(track["Duration"])
-			if audio_duration is not None:
-				ref_map[ref] = audio_duration
-			elif general_duration is not None:
-				ref_map[ref] = general_duration
-			else:
-				ref_map[ref] = 0.0
-		for path in filepaths:
-			base = os.path.basename(path)
-			if path in ref_map:
-				durations[path] = ref_map[path]
-			elif base in ref_map:
-				durations[path] = ref_map[base]
-	except Exception:
-		pass
-	return durations
+    mediainfo = shutil.which("mediainfo")
+    cmd = [
+        mediainfo,
+        "--Output=JSON",
+    ]
+    cmd.extend(filepaths)
+    durations = {path:0.0 for path in filepaths}
+    try:
+        out = subprocess.check_output(cmd, text=True)
+        data = json.loads(out)
+        ref_map = {}
+        for item in data:
+            media = item.get("media", {})
+            ref = media.get("@ref")
+            audio_duration = None
+            general_duration = None
+            for track in media.get("track", []):
+                track_type = track.get("@type")
+                if track_type == "Audio" and "Duration" in track:
+                    audio_duration = float(track["Duration"])
+                elif track_type == "General" and "Duration" in track:
+                    general_duration = float(track["Duration"])
+            if audio_duration is not None:
+                ref_map[ref] = audio_duration
+            elif general_duration is not None:
+                ref_map[ref] = general_duration
+            else:
+                ref_map[ref] = 0.0
+        for path in filepaths:
+            base = os.path.basename(path)
+            if path in ref_map:
+                durations[path] = ref_map[path]
+            elif base in ref_map:
+                durations[path] = ref_map[base]
+    except Exception:
+        pass
+    return durations
 
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:

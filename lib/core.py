@@ -1948,7 +1948,7 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         print(msg)
                         return False
                     f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunksr(concat_list, chapter_audio_file, is_gui_process)
+            result = assemble_audio_chunks(concat_list, chapter_audio_file, is_gui_process)
             if not result:
                 error = 'combine_audio_sentences() FFmpeg concat failed.'
                 print(error)
@@ -2188,9 +2188,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
                     merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}"
-                    result = assemble_audio_chunksr(str(concat_list), str(merged_audio), is_gui_process)
+                    result = assemble_audio_chunks(str(concat_list), str(merged_audio), is_gui_process)
                     if not result:
-                        error = f'assemble_audio_chunksr() Final merge failed for part {part_idx+1}.'
+                        error = f'assemble_audio_chunks() Final merge failed for part {part_idx+1}.'
                         print(error)
                         return None
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
@@ -2212,9 +2212,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         f.write(f"file '{path}'\n")
                 if is_gui_process:
                     progress_bar = gr.Progress(track_tqdm=False)
-                ok = assemble_audio_chunksr(concat_list, merged_audio, is_gui_process)
+                ok = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
                 if not ok:
-                    print(f'assemble_audio_chunksr() Final merge failed for {merged_audio}.')
+                    print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
                 chapters_zip = list(zip(chapter_files, chapter_titles))
@@ -2228,7 +2228,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_audio_chunksr(txt_file:str, out_file:str, is_gui_process:bool)->bool:
+def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
     def on_progress(p: float)->None:
         progress_bar(p / 100.0, desc='Assemble')
@@ -2255,7 +2255,7 @@ def assemble_audio_chunksr(txt_file:str, out_file:str, is_gui_process:bool)->boo
                 durations = get_audiolist_duration(chunk)
                 total_duration += sum(durations.values())
         except Exception as e:
-            print(f'assemble_audio_chunksr() open file {txt_file} Error: {e}')
+            print(f'assemble_audio_chunks() open file {txt_file} Error: {e}')
             return False
 
         progress_bar = gr.Progress(track_tqdm=False)
@@ -2294,7 +2294,7 @@ def assemble_audio_chunksr(txt_file:str, out_file:str, is_gui_process:bool)->boo
         DependencyError(e)
         return False
     except Exception as e:
-        error = f'assemble_audio_chunksr() Error: Failed to process {txt_file} → {out_file}: {e}'
+        error = f'assemble_audio_chunks() Error: Failed to process {txt_file} → {out_file}: {e}'
         print(error)
         return False
 
