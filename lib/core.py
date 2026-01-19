@@ -44,7 +44,7 @@ from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
-from lib.classes.tts_engines.common.audio import get_audio_duration
+from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
 
 from lib import *
 
@@ -117,8 +117,8 @@ class SessionContext:
 
     def set_session(self, session_id:str)->Any:
         self.sessions[session_id] = self._recursive_proxy({
-            "script_mode": NATIVE,
             "id": session_id,
+            "script_mode": NATIVE,
             "tab_id": None,
             "is_gui_process": False,
             "free_vram_gb": 0,
@@ -229,13 +229,9 @@ def prepare_dirs(src:str, session_id:str)->bool:
             os.makedirs(session['voice_dir'], exist_ok=True)
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
-            os.makedirs(session['chapters_worker_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
-            os.makedirs(session['sentences_worker_dir'], exist_ok=True)
             session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
             shutil.copy(src, session['ebook'])
-            clear_folder(session['chapters_worker_dir'])
-            clear_folder(session['sentences_worker_dir'])
             return True
     except Exception as e:
         DependencyError(e)
@@ -1943,9 +1939,8 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
             if not selected_files:
                 print('No audio files found in the specified range.')
                 return False
-            worker_dir = session['sentences_worker_dir']
-            os.makedirs(worker_dir, exist_ok=True)
-            concat_list = os.path.join(worker_dir, 'sentences_final.txt')
+            concat_dir = session['sentences_dir']
+            concat_list = os.path.join(concat_dir, 'sentences.txt')
             with open(concat_list, 'w') as f:
                 for path in selected_files:
                     if session['cancellation_requested']:
@@ -1953,7 +1948,7 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         print(msg)
                         return False
                     f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunks_worker(concat_list, chapter_audio_file, is_gui_process)
+            result = assemble_audio_chunksr(concat_list, chapter_audio_file, is_gui_process)
             if not result:
                 error = 'combine_audio_sentences() FFmpeg concat failed.'
                 print(error)
@@ -2147,14 +2142,16 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             if len(chapter_files) == 0:
                 print('No block files exists!')
                 return None
-            durations = []
-            for file in chapter_files:
-                filepath = os.path.join(session['chapters_dir'], file)
-                durations.append(get_audio_duration(filepath))
-            total_duration = sum(durations)
+            chunks_size = 892
+            total_duration = 0.0
+            for i in range(0, len(chapter_files), chunks_size):
+                filepaths = [
+                    os.path.join(session['chapters_dir'], f)
+                    for f in chapter_files[i:i + chunks_size]
+                ]
+                total_duration += sum(get_audiolist_duration(filepaths).values())
             exported_files = []
-            worker_dir = session['chapters_worker_dir']
-            os.makedirs(worker_dir, exist_ok=True)
+            concat_dir = session['chapters_dir']
             if session['output_split']:
                 part_files = []
                 part_chapter_indices = []
@@ -2181,7 +2178,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                    concat_list = os.path.join(worker_dir, f'part_{part_idx+1:02d}_final.txt')
+                    concat_list = os.path.join(concat_dir, f'chapters_{part_idx+1:02d}.txt')
                     with open(concat_list, 'w') as f:
                         for file in part_file_list:
                             if session['cancellation_requested']:
@@ -2190,21 +2187,21 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                 return None
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
-                    combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
-                    result = assemble_audio_chunks_worker(str(concat_list), str(combined_chapters_file), is_gui_process)
+                    merged_audio = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
+                    result = assemble_audio_chunksr(str(concat_list), str(merged_audio), is_gui_process)
                     if not result:
-                        error = f'assemble_audio_chunks_worker() Final merge failed for part {part_idx+1}.'
+                        error = f'assemble_audio_chunksr() Final merge failed for part {part_idx+1}.'
                         print(error)
                         return None
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
                     final_file = Path(session['audiobooks_dir']) / (f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name'])
-                    if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
+                    if export_audio(str(merged_audio), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
-                concat_list = os.path.join(worker_dir, 'all_chapters.txt')
-                merged_tmp = os.path.join(worker_dir, f'all.{default_audio_proc_format}')
+                concat_list = os.path.join(concat_dir, 'chapters.txt')
+                merged_audio = os.path.join(session['process_dir'], f'merged.{default_audio_proc_format}')
                 with open(concat_list, 'w') as f:
                     for file in chapter_files:
                         if session['cancellation_requested']:
@@ -2215,15 +2212,15 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         f.write(f"file '{path}'\n")
                 if is_gui_process:
                     progress_bar = gr.Progress(track_tqdm=False)
-                ok = assemble_audio_chunks_worker(concat_list, merged_tmp, is_gui_process)
+                ok = assemble_audio_chunksr(concat_list, merged_audio, is_gui_process)
                 if not ok:
-                    print(f'assemble_audio_chunks_worker() Final merge failed for {merged_tmp}.')
+                    print(f'assemble_audio_chunksr() Final merge failed for {merged_audio}.')
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-                all_chapters = list(zip(chapter_files, chapter_titles))
-                generate_ffmpeg_metadata(all_chapters, metadata_file, default_audio_proc_format)
+                chapters_zip = list(zip(chapter_files, chapter_titles))
+                generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
                 final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-                if export_audio(merged_tmp, metadata_file, final_file):
+                if export_audio(merged_audio, metadata_file, final_file):
                     exported_files.append(final_file)
             return exported_files if exported_files else None
         return None
@@ -2231,13 +2228,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool)->bool:
+def assemble_audio_chunksr(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
     def on_progress(p: float)->None:
         progress_bar(p / 100.0, desc='Assemble')
 
     try:
         total_duration = 0.0
+        filepaths = []
         try:
             with open(txt_file, 'r') as f:
                 for line in f:
@@ -2250,9 +2248,14 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
                             .strip('"')
                         )
                         if os.path.exists(file_path):
-                            total_duration += get_audio_duration(file_path)
+                            filepaths.append(file_path)
+            chunks_size = 892
+            for i in range(0, len(filepaths), chunks_size):
+                chunk = filepaths[i:i + chunks_size]
+                durations = get_audiolist_duration(chunk)
+                total_duration += sum(durations.values())
         except Exception as e:
-            print(f'assemble_audio_chunks_worker() open file {txt_file} Error: {e}')
+            print(f'assemble_audio_chunksr() open file {txt_file} Error: {e}')
             return False
 
         progress_bar = gr.Progress(track_tqdm=False)
@@ -2291,7 +2294,7 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
         DependencyError(e)
         return False
     except Exception as e:
-        error = f'assemble_audio_chunks_worker() Error: Failed to process {txt_file} → {out_file}: {e}'
+        error = f'assemble_audio_chunksr() Error: Failed to process {txt_file} → {out_file}: {e}'
         print(error)
         return False
 
@@ -2384,7 +2387,7 @@ def convert_ebook_batch(args:dict)->tuple:
                     if not args['is_gui_process']:
                         sys.exit(1)
                 args['ebook_list'].remove(file) 
-        reset_session(args['session'])
+        reset_session(args['id'])
         return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'
@@ -2395,8 +2398,13 @@ def convert_ebook_batch(args:dict)->tuple:
 def convert_ebook(args:dict)->tuple:
     try:
         if args.get('event') == 'blocks_confirmed':
-            progress_status, passed = finalize_audiobook(args['id'])
-            return progress_status, passed
+            if args.get('id', False):
+                progress_status, passed = finalize_audiobook(args['id'])
+                return progress_status, passed
+            else:
+                error = f"convert_ebook() error: args['id'] is False"
+                print(error)
+                return error, False
         else:
             global context        
             error = None
@@ -2425,16 +2433,19 @@ def convert_ebook(args:dict)->tuple:
                     error = 'The language you provided is not (yet) supported'
                     print(error)
                     return error, False
-                if args['session'] is not None:
-                    session_id = str(args['session'])
+                if args['id'] is not None:
+                    session_id = str(args['id'])
                     session = context.get_session(session_id)
+                    if not session:
+                        session = context.set_session(session_id)
                 else:
                     session_id = str(uuid.uuid4())
                     session = context.set_session(session_id)
                     if not context_tracker.start_session(session_id):
                         error = 'convert_ebook() error: Session initialization failed!'
                         print(error)
-                        return error, False                        
+                        return error, False     
+                session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
                 session['ebook'] = str(args['ebook']) if args.get('ebook') else None
@@ -2444,7 +2455,7 @@ def convert_ebook(args:dict)->tuple:
                 session['language'] = str(args['language'])
                 session['language_iso1'] = str(args['language_iso1'])
                 session['tts_engine'] = str(args['tts_engine']) if args['tts_engine'] is not None else str(get_compatible_tts_engines(args['language'])[0])
-                session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if session['custom_model'] is not None else None
+                session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if args['custom_model'] is not None else None
                 session['fine_tuned'] = str(args['fine_tuned'])
                 session['voice'] = str(args['voice']) if args['voice'] is not None else None
                 session['xtts_temperature'] =  float(args['xtts_temperature'])
@@ -2468,9 +2479,6 @@ def convert_ebook(args:dict)->tuple:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                     os.makedirs(session['voice_dir'], exist_ok=True)
-                    # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
-                    #[shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
-                    session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
@@ -2516,9 +2524,7 @@ def convert_ebook(args:dict)->tuple:
                         session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                        session['chapters_worker_dir'] = os.path.join(session['chapters_dir'], "workers")
                         session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
-                        session['sentences_worker_dir'] = os.path.join(session['sentences_dir'], 'workers')
                         if prepare_dirs(args['ebook'], session_id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
