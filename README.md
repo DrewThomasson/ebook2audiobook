@@ -146,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - Process format can be changed in lib/conf.py
 
 ## SML tags available
-- `[[break]]` — silence (random range **0.3–0.6 s**)
+- `[[break]]` — silence (random range **0.3–0.6 sec.**)
 - `[[pause]]` — silence (random range **1.0–1.6 sec.**)
 - `[[pause:N]]` — fixed pause (**N sec.**)
 - `[[voice:/path/to/voice/file]]...[[/voice]]` — switch voice from default or selected voice from GUI/CLI
