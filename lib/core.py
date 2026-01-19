@@ -198,10 +198,13 @@ class SessionContext:
         }, manager=self.manager)
         return self.sessions[session_id]
 
-    def get_session(self, session_id:str)->Any:
-        if session_id in self.sessions:
-            return self.sessions[session_id]
-        return {}
+    def get_session(self, session_id: str) -> Any:
+        session = self.sessions.get(session_id)
+        if session is None:
+            return {}
+        session.setdefault('id', session_id)
+        session.setdefault('cancellation_requested', False)
+        return session
 
     def find_id_by_hash(self, socket_hash: str) -> str | None:
         for session_id, session in list(self.sessions.items()):
