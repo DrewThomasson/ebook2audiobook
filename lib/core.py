@@ -1940,7 +1940,7 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                 print('No audio files found in the specified range.')
                 return False
             concat_dir = session['sentences_dir']
-            concat_list = os.path.join(concat_dir, 'sentences_final.txt')
+            concat_list = os.path.join(concat_dir, 'sentences.txt')
             with open(concat_list, 'w') as f:
                 for path in selected_files:
                     if session['cancellation_requested']:
@@ -1948,7 +1948,7 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         print(msg)
                         return False
                     f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunks_worker(concat_list, chapter_audio_file, is_gui_process)
+            result = assemble_audio_chunksr(concat_list, chapter_audio_file, is_gui_process)
             if not result:
                 error = 'combine_audio_sentences() FFmpeg concat failed.'
                 print(error)
@@ -2178,7 +2178,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                    concat_list = os.path.join(concat_dir, f'part_{part_idx+1:02d}_final.txt')
+                    concat_list = os.path.join(concat_dir, f'chapters_{part_idx+1:02d}.txt')
                     with open(concat_list, 'w') as f:
                         for file in part_file_list:
                             if session['cancellation_requested']:
@@ -2187,21 +2187,21 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                 return None
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
-                    combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
-                    result = assemble_audio_chunks_worker(str(concat_list), str(combined_chapters_file), is_gui_process)
+                    merged_audio = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
+                    result = assemble_audio_chunksr(str(concat_list), str(merged_audio), is_gui_process)
                     if not result:
-                        error = f'assemble_audio_chunks_worker() Final merge failed for part {part_idx+1}.'
+                        error = f'assemble_audio_chunksr() Final merge failed for part {part_idx+1}.'
                         print(error)
                         return None
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
                     final_file = Path(session['audiobooks_dir']) / (f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name'])
-                    if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
+                    if export_audio(str(merged_audio), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
-                concat_list = os.path.join(concat_dir, 'all_chapters.txt')
-                merged_tmp = os.path.join(concat_dir, f'all.{default_audio_proc_format}')
+                concat_list = os.path.join(concat_dir, 'chapters.txt')
+                merged_audio = os.path.join(session['process_dir'], f'merged.{default_audio_proc_format}')
                 with open(concat_list, 'w') as f:
                     for file in chapter_files:
                         if session['cancellation_requested']:
@@ -2212,15 +2212,15 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         f.write(f"file '{path}'\n")
                 if is_gui_process:
                     progress_bar = gr.Progress(track_tqdm=False)
-                ok = assemble_audio_chunks_worker(concat_list, merged_tmp, is_gui_process)
+                ok = assemble_audio_chunksr(concat_list, merged_audio, is_gui_process)
                 if not ok:
-                    print(f'assemble_audio_chunks_worker() Final merge failed for {merged_tmp}.')
+                    print(f'assemble_audio_chunksr() Final merge failed for {merged_audio}.')
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-                all_chapters = list(zip(chapter_files, chapter_titles))
-                generate_ffmpeg_metadata(all_chapters, metadata_file, default_audio_proc_format)
+                chapters_zip = list(zip(chapter_files, chapter_titles))
+                generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
                 final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-                if export_audio(merged_tmp, metadata_file, final_file):
+                if export_audio(merged_audio, metadata_file, final_file):
                     exported_files.append(final_file)
             return exported_files if exported_files else None
         return None
@@ -2228,7 +2228,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool)->bool:
+def assemble_audio_chunksr(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
     def on_progress(p: float)->None:
         progress_bar(p / 100.0, desc='Assemble')
@@ -2255,7 +2255,7 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
                 durations = get_audiolist_duration(chunk)
                 total_duration += sum(durations.values())
         except Exception as e:
-            print(f'assemble_audio_chunks_worker() open file {txt_file} Error: {e}')
+            print(f'assemble_audio_chunksr() open file {txt_file} Error: {e}')
             return False
 
         progress_bar = gr.Progress(track_tqdm=False)
@@ -2294,7 +2294,7 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
         DependencyError(e)
         return False
     except Exception as e:
-        error = f'assemble_audio_chunks_worker() Error: Failed to process {txt_file} → {out_file}: {e}'
+        error = f'assemble_audio_chunksr() Error: Failed to process {txt_file} → {out_file}: {e}'
         print(error)
         return False
 
