@@ -1929,15 +1929,29 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
         session = context.get_session(session_id)
         if session and session.get('id', False):
             chapter_audio_file = os.path.join(session['chapters_dir'], file)
-            sentences_dir = session['sentences_dir']
             start = int(start)
             end = int(end)
-            is_gui_process = session.get('is_gui_process')
-            sentence_files = [f for f in os.listdir(sentences_dir) if f.endswith(f'.{default_audio_proc_format}')]
-            sentences_ordered = sorted(sentence_files, key=lambda x: int(os.path.splitext(x)[0]))
-            selected_files = [os.path.join(sentences_dir, f) for f in sentences_ordered if int(start) <= int(os.path.splitext(f)[0]) <= int(end)]
+            base = session['sentences_dir']
+            ext = f".{default_audio_proc_format}"
+            start_i = int(start)
+            end_i = int(end)
+            exists = os.path.exists
+            join = os.path.join
+            missing = []
+            selected_files = []
+            for i in range(start_i, end_i + 1):
+                path = join(base, f"{i}{ext}")
+                if exists(path):
+                    selected_files.append(path)
+                else:
+                    missing.append(i)
+            if missing:
+                error = f"Missing sentence files: {missing}"
+                print(error)
+                return False
             if not selected_files:
-                print('No audio files found in the specified range.')
+                error = 'No audio files found in the specified range.'
+                print(error)
                 return False
             concat_dir = session['process_dir']
             concat_list = os.path.join(concat_dir, 'concat_list_sentences.txt')
@@ -1948,7 +1962,7 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         print(msg)
                         return False
                     f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunks(concat_list, chapter_audio_file, is_gui_process)
+            result = assemble_audio_chunks(concat_list, chapter_audio_file, session.get('is_gui_process'))
             if not result:
                 error = 'combine_audio_sentences() FFmpeg concat failed.'
                 print(error)
@@ -2151,7 +2165,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 ]
                 total_duration += sum(get_audiolist_duration(filepaths).values())
             exported_files = []
-            concat_dir = session['chapters_dir']
+            concat_dir = session['process_dir']
             if session['output_split']:
                 part_files = []
                 part_chapter_indices = []
