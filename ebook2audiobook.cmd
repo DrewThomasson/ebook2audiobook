@@ -56,8 +56,8 @@ set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=cmake rustup python calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
-set "DOCKER_PROGRAMS=ffmpeg nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+set "HOST_PROGRAMS=cmake rustup python calibre-normal ffmpeg mediainfo nodejs espeak-ng sox tesseract"
+set "DOCKER_PROGRAMS=ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
@@ -560,20 +560,20 @@ if /i "%TAG%"=="cpu" (
 ) else (
 	set COMPOSE_PROFILES=gpu
 )
-if %HAS_COMPOSE%==0 (
+if %HAS_PODMAN_COMPOSE%==0 (
+	set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg PYTHON_VERSION=%py_vers%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg APP_VERSION=%APP_VERSION%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DEVICE_TAG=%DEVICE_TAG%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DOCKER_DEVICE_STR=%ARG%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DOCKER_PROGRAMS_STR=%DOCKER_PROGRAMS%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
+	podman-compose -f podman-compose.yml build
+	if errorlevel 1 exit /b 1
+) else if %HAS_COMPOSE%==0 (
 	set "BUILD_NAME=%DOCKER_IMG_NAME%"
 	docker compose build --progress=plain --no-cache ^
-		--build-arg PYTHON_VERSION="%py_vers%" ^
-		--build-arg APP_VERSION="%APP_VERSION%" ^
-		--build-arg DEVICE_TAG="%DEVICE_TAG%" ^
-		--build-arg DOCKER_DEVICE_STR="%ARG%" ^
-		--build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
-		--build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
-		--build-arg ISO3_LANG="%ISO3_LANG%"
-	if errorlevel 1 exit /b 1
-) else if %HAS_PODMAN_COMPOSE%==0 (
-	set "BUILD_NAME=%DOCKER_IMG_NAME%"
-	podman-compose -f podman-compose.yml build --no-cache ^
 		--build-arg PYTHON_VERSION="%py_vers%" ^
 		--build-arg APP_VERSION="%APP_VERSION%" ^
 		--build-arg DEVICE_TAG="%DEVICE_TAG%" ^
