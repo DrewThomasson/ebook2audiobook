@@ -474,7 +474,7 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
 a copy of the original conf.py so on each ebook2audiobook update you will backup your modified conf.py and put
 back the original one. You must plan the same process for models.py. If you wish to make your own custom model
-as an official ebook2audiobook fine tuned model so please contact us and we'll ad it to the models.py list.
+as an official ebook2audiobook fine tuned model so please contact us and we'll add it to the presets list.
 
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
