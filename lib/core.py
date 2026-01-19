@@ -198,13 +198,10 @@ class SessionContext:
         }, manager=self.manager)
         return self.sessions[session_id]
 
-    def get_session(self, session_id: str) -> Any:
-        session = self.sessions.get(session_id)
-        if session is None:
-            return {}
-        session.setdefault('id', session_id)
-        session.setdefault('cancellation_requested', False)
-        return session
+    def get_session(self, session_id:str)->Any:
+        if session_id in self.sessions:
+            return self.sessions[session_id]
+        return {}
 
     def find_id_by_hash(self, socket_hash: str) -> str | None:
         for session_id, session in list(self.sessions.items()):
@@ -2439,6 +2436,8 @@ def convert_ebook(args:dict)->tuple:
                 if args['id'] is not None:
                     session_id = str(args['id'])
                     session = context.get_session(session_id)
+                    if not session:
+                        session = context.set_session(session_id)
                 else:
                     session_id = str(uuid.uuid4())
                     session = context.set_session(session_id)
