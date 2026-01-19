@@ -117,8 +117,8 @@ class SessionContext:
 
     def set_session(self, session_id:str)->Any:
         self.sessions[session_id] = self._recursive_proxy({
-            "script_mode": NATIVE,
             "id": session_id,
+            "script_mode": NATIVE,
             "tab_id": None,
             "is_gui_process": False,
             "free_vram_gb": 0,
