@@ -2200,7 +2200,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     if export_audio(str(merged_audio), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
-                concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:02d}.txt')
+                concat_list = os.path.join(concat_dir, f'concat_list_chapters_1.txt')
                 merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
                 with open(concat_list, 'w') as f:
                     for file in chapter_files:
