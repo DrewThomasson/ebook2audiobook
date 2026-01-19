@@ -1824,7 +1824,7 @@ def convert_chapters2audio(session_id:str)->bool:
             tts_manager = TTSManager(session)
             resume_chapter = 0
             missing_chapters = []
-            chapter_re = re.compile(r'^chapter_(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
+            chapter_re = re.compile(r'^(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
             existing_chapters = [f for f in os.listdir(session['chapters_dir']) if chapter_re.match(f)]
             existing_numbers = sorted(int(chapter_re.match(f).group(1)) for f in existing_chapters)
             if existing_numbers:
@@ -1866,7 +1866,7 @@ def convert_chapters2audio(session_id:str)->bool:
                     idx_target = 0
                     for c in range(0, total_chapters):
                         chapter_idx = c
-                        chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
+                        chapter_audio_file = f'{chapter_idx}.{default_audio_proc_format}'
                         sentences = session['chapters'][c]
                         start = idx_target
                         if c in missing_chapters:
