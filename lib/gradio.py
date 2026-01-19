@@ -1504,9 +1504,9 @@ def build_interface(args:dict)->gr.Blocks:
                 )->tuple:
                 try:
                     session = context.get_session(session_id)
-                    print(session)
                     if session and session.get('id', False):
                         args = {
+                            "id": session_id,
                             "is_gui_process": session['is_gui_process'],
                             "script_mode": script_mode,
                             "chapters_preview": chapters_preview,
