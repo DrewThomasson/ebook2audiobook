@@ -229,7 +229,6 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
             sys.exit(1)
 
         args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
-        args['id'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
         args['share'] =  args['share'] if args['share'] else False
         args['ebook_list'] = None
 
@@ -248,8 +247,8 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
-        # Conditions based on the --headless flag
         if args['headless']:
+            args['id'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
             args['chapters_preview'] = False
             args['event'] = ''
