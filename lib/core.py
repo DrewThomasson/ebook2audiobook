@@ -1939,8 +1939,8 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
             if not selected_files:
                 print('No audio files found in the specified range.')
                 return False
-            concat_dir = session['sentences_dir']
-            concat_list = os.path.join(concat_dir, 'sentences.txt')
+            concat_dir = session['process_dir']
+            concat_list = os.path.join(concat_dir, 'concat_list_sentences.txt')
             with open(concat_list, 'w') as f:
                 for path in selected_files:
                     if session['cancellation_requested']:
@@ -2178,7 +2178,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                    concat_list = os.path.join(concat_dir, f'chapters_{part_idx+1:02d}.txt')
+                    concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:02d}.txt')
                     with open(concat_list, 'w') as f:
                         for file in part_file_list:
                             if session['cancellation_requested']:
@@ -2187,7 +2187,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                 return None
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
-                    merged_audio = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
+                    merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}"
                     result = assemble_audio_chunksr(str(concat_list), str(merged_audio), is_gui_process)
                     if not result:
                         error = f'assemble_audio_chunksr() Final merge failed for part {part_idx+1}.'
@@ -2200,8 +2200,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     if export_audio(str(merged_audio), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
-                concat_list = os.path.join(concat_dir, 'chapters.txt')
-                merged_audio = os.path.join(session['process_dir'], f'merged.{default_audio_proc_format}')
+                concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:02d}.txt')
+                merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
                 with open(concat_list, 'w') as f:
                     for file in chapter_files:
                         if session['cancellation_requested']:
