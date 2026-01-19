@@ -247,7 +247,6 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
-        print(args)
         if args['headless']:
             args['id'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
@@ -268,6 +267,7 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
+            print(args)
             engine_setting_keys = {engine: list(settings.keys()) for engine, settings in default_engine_settings.items()}
             valid_model_keys = engine_setting_keys.get(args['tts_engine'], [])
             renamed_args = {}
