@@ -2387,7 +2387,7 @@ def convert_ebook_batch(args:dict)->tuple:
                     if not args['is_gui_process']:
                         sys.exit(1)
                 args['ebook_list'].remove(file) 
-        reset_session(args['session'])
+        reset_session(args['id'])
         return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'
@@ -2433,8 +2433,8 @@ def convert_ebook(args:dict)->tuple:
                     error = 'The language you provided is not (yet) supported'
                     print(error)
                     return error, False
-                if args['session'] is not None:
-                    session_id = str(args['session'])
+                if args['id'] is not None:
+                    session_id = str(args['id'])
                     session = context.get_session(session_id)
                 else:
                     session_id = str(uuid.uuid4())
