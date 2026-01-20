@@ -834,6 +834,7 @@ else
 			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
+		chmod 777 "$TMPDIR"
 		# Check if running in a Conda or Python virtual environment
 		if [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
 			CURRENT_PYVENV="${CONDA_PREFIX:-}"
