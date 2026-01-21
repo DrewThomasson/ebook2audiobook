@@ -233,16 +233,14 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
         args['ebook_list'] = None
 
         print(f"v{prog_version} {args['script_mode']} mode")
-        
-        if args['script_mode'] == NATIVE:
-            from lib.classes.device_installer import DeviceInstaller
-            manager = DeviceInstaller()
-            if manager.install_python_packages():
-                device_info_str = manager.check_device_info(args['script_mode'])
-                if manager.install_device_packages(device_info_str) == 1:
-                    error = f'Error: Could not installed device packages!'
-                    print(error)
-                    sys.exit(1)
+        from lib.classes.device_installer import DeviceInstaller
+        manager = DeviceInstaller()
+        if manager.install_python_packages():
+            device_info_str = manager.check_device_info(args['script_mode'])
+            if manager.install_device_packages(device_info_str) == 1:
+                error = f'Error: Could not installed device packages!'
+                print(error)
+                sys.exit(1)
         import lib.core as c
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
