@@ -405,37 +405,53 @@ class TTSUtils:
                     print(msg)
                     return False
         return True
+        
+    def _split_sentence_on_sml(self, sentence: str) -> list[str]:
+        parts: list[str] = []
+        last = 0
+        for m in SML_TAG_PATTERN.finditer(sentence):
+            start, end = m.span()
+            if start > last:
+                text = sentence[last:start]
+                if text:
+                    parts.append(text)
+            parts.append(m.group(0))
+            last = end
+        if last < len(sentence):
+            tail = sentence[last:]
+            if tail:
+                parts.append(tail)
+        return parts
 
-    def _convert_sml(self, sml:str)->bool:
+    def _convert_sml(self, sml: str) -> bool:
         m = SML_TAG_PATTERN.fullmatch(sml)
         if not m:
+            error = '_convert_sml SML_TAG_PATTERN error: m is empty'
             return False
-        if m.group("tag1"):
-            tag = m.group("tag1")
-            close = bool(m.group("close1"))
-            value = m.group("value1")
-        elif m.group("tag2"):
-            tag = m.group("tag2")
-            close = bool(m.group("close2"))
-            value = m.group("value2")
-        else:
-            return False
+        tag = m.group("tag")
+        close = bool(m.group("close"))
+        value = m.group("value")
         assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
         if tag == "break":
             silence_time = float(int(np.random.uniform(0.3, 0.6) * 100) / 100)
         elif tag == "pause":
-            silence_time = float(value) if value else float(int(np.random.uniform(1.0, 1.6) * 100) / 100)
+            silence_time = float(value) if value else float(
+                int(np.random.uniform(1.0, 1.6) * 100) / 100
+            )
         elif tag == "voice":
             if close:
                 return self._set_voice()
             assert value is not None, "voice tag requires a value"
             voice_path = os.path.abspath(value)
             if not os.path.exists(voice_path):
-                print(f"_convert_sml() error: voice {voice_path} does not exist!")
+                error = f'_convert_sml() error: voice {voice_path} does not exist!'
+                print(error)
                 return False
             self.params["voice_path"] = voice_path
             return self._set_voice()
         else:
+            error = 'This SML is not recognized'
+            print(error)
             return False
         self.audio_segments.append(
             torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
@@ -493,7 +509,7 @@ class TTSUtils:
                     text = re.sub(
                         r'\s+',
                         ' ',
-                        default_backend_sml_pattern.sub('', str(all_sentences[idx]))
+                        SML_TAG_PATTERN.sub('', str(all_sentences[idx]))
                     ).strip()
                     vtt_blocks.append(f"{start} --> {end}\n{text}\n")
                     if self.session['is_gui_process']:

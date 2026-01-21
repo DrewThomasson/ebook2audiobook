@@ -128,70 +128,86 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
-                sentence_parts = default_backend_sml_pattern.split(sentence)
+                sentence_parts = self._split_sentence_on_sml(sentence)
+                if not self._set_voice():
+                    return False
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
-                    if not part or not any(c.isalnum() for c in part):
+                    if not part:
                         continue
-                    if default_backend_sml_pattern.fullmatch(part):
+                    if SML_TAG_PATTERN.fullmatch(part):
                         if not self._convert_sml(part):
                             error = f'_convert_sml failed: {part}'
                             print(error)
                             return False
+                        continue
+                    if not any(c.isalnum() for c in part):
+                        continue
                     else:
                         trim_audio_buffer = 0.002
                         if part.endswith("'"):
                             part = part[:-1]
-                        if self._set_voice():
-                            '''
-                                [laughter]
-                                [laughs]
-                                [sighs]
-                                [music]
-                                [gasps]
-                                [clears throat]
-                                — or … for hesitations
-                                ♪ for song lyrics
-                                CAPITALIZATION for emphasis of a word
-                                [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
-                            '''
-                            if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
-                                bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
-                            else:
-                                bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
-                                """
-                                if not self._check_bark_npz(self.params['voice_path'], bark_dir, self.speaker):
-                                    error = 'Could not create pth voice file!'
-                                    print(error)
-                                    return False
-                                """
-                            pth_voice_dir = os.path.join(bark_dir, self.speaker)
-                            pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
-                            self.engine.synthesizer.voice_dir = pth_voice_dir
-                            tts_dyn_params = {}
-                            if not os.path.exists(pth_voice_file) or self.speaker not in self.engine.speakers:
-                                tts_dyn_params['speaker_wav'] = self.params['voice_path']
-                            fine_tuned_params = {
-                                key.removeprefix("bark_"): cast_type(self.session[key])
-                                for key, cast_type in {
-                                    "bark_text_temp": float,
-                                    "bark_waveform_temp": float
-                                }.items()
-                                if self.session.get(key) is not None
-                            }         
-                            with torch.no_grad():
-                                """
-                                result = self.engine.synthesize(
-                                    part,
-                                    #speaker_wav=self.params['voice_path'],
+                        '''
+                            [laughter]
+                            [laughs]
+                            [sighs]
+                            [music]
+                            [gasps]
+                            [clears throat]
+                            — or … for hesitations
+                            ♪ for song lyrics
+                            CAPITALIZATION for emphasis of a word
+                            [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
+                        '''
+                        if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
+                            bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
+                        else:
+                            bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
+                            """
+                            if not self._check_bark_npz(self.params['voice_path'], bark_dir, self.speaker):
+                                error = 'Could not create pth voice file!'
+                                print(error)
+                                return False
+                            """
+                        pth_voice_dir = os.path.join(bark_dir, self.speaker)
+                        pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
+                        self.engine.synthesizer.voice_dir = pth_voice_dir
+                        tts_dyn_params = {}
+                        if not os.path.exists(pth_voice_file) or self.speaker not in self.engine.speakers:
+                            tts_dyn_params['speaker_wav'] = self.params['voice_path']
+                        fine_tuned_params = {
+                            key.removeprefix("bark_"): cast_type(self.session[key])
+                            for key, cast_type in {
+                                "bark_text_temp": float,
+                                "bark_waveform_temp": float
+                            }.items()
+                            if self.session.get(key) is not None
+                        }         
+                        with torch.no_grad():
+                            """
+                            result = self.engine.synthesize(
+                                part,
+                                #speaker_wav=self.params['voice_path'],
+                                speaker=self.speaker,
+                                voice_dir=pth_voice_dir,
+                                **fine_tuned_params
+                            )
+                            """
+                            self.engine.to(device)
+                            if device == devices['CPU']['proc']:
+                                audio_part = self.engine.tts(
+                                    text=part,
                                     speaker=self.speaker,
                                     voice_dir=pth_voice_dir,
+                                    **tts_dyn_params,
                                     **fine_tuned_params
                                 )
-                                """
-                                self.engine.to(device)
-                                if device == devices['CPU']['proc']:
+                            else:
+                                with torch.autocast(
+                                    device_type=device,
+                                    dtype=self.amp_dtype
+                                ):
                                     audio_part = self.engine.tts(
                                         text=part,
                                         speaker=self.speaker,
@@ -199,39 +215,25 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                         **tts_dyn_params,
                                         **fine_tuned_params
                                     )
-                                else:
-                                    with torch.autocast(
-                                        device_type=device,
-                                        dtype=self.amp_dtype
-                                    ):
-                                        audio_part = self.engine.tts(
-                                            text=part,
-                                            speaker=self.speaker,
-                                            voice_dir=pth_voice_dir,
-                                            **tts_dyn_params,
-                                            **fine_tuned_params
-                                        )
-                                self.engine.to(devices['CPU']['proc'])
-                            if is_audio_data_valid(audio_part):
-                                src_tensor = self._tensor_type(audio_part)
-                                part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                                if part_tensor is not None and part_tensor.numel() > 0:
-                                    if part[-1].isalnum() or part[-1] == '—':
-                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                    self.audio_segments.append(part_tensor)
-                                    if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                        silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                        break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                        self.audio_segments.append(break_tensor.clone())
-                                else:
-                                    error = f"part_tensor not valid"
-                                    print(error)
-                                    return False
+                            self.engine.to(devices['CPU']['proc'])
+                        if is_audio_data_valid(audio_part):
+                            src_tensor = self._tensor_type(audio_part)
+                            part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
+                            if part_tensor is not None and part_tensor.numel() > 0:
+                                if part[-1].isalnum() or part[-1] == '—':
+                                    part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                self.audio_segments.append(part_tensor)
+                                if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
+                                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                    break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
+                                    self.audio_segments.append(break_tensor.clone())
                             else:
-                                error = f"audio_part not valid"
+                                error = f"part_tensor not valid"
                                 print(error)
                                 return False
                         else:
+                            error = f"audio_part not valid"
+                            print(error)
                             return False
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)

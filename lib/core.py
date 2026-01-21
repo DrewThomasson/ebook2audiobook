@@ -542,7 +542,7 @@ def convert2epub(session_id:str)-> bool:
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
-                text = re.sub(r'\n{2,}', '.[[pause]]', text)
+                text = re.sub(r'\n{2,}', f".{TTS_SML['pause']['tag']}", text)
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
@@ -1303,7 +1303,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                     part = part.strip()
                     if not part:
                         continue
-                    if default_backend_sml_pattern.fullmatch(part):
+                    if SML_TAG_PATTERN.fullmatch(part):
                         result.append(part)
                         continue
                     tokens = segment_ideogramms(part)
@@ -1717,27 +1717,20 @@ def foreign2latin(text:str, base_lang:str)->str:
         out = out.replace(k, v)
     return out
 
-def filter_sml(text:str)->str:
+def normalize_sml_tags(text: str) -> str:
 
-    def check_sml(m: re.Match[str]) -> str:
-        if m.group("tag1"):
-            tag = m.group("tag1")
-            close = bool(m.group("close1"))
-            value = m.group("value1")
-        elif m.group("tag2"):
-            tag = m.group("tag2")
-            close = bool(m.group("close2"))
-            value = m.group("value2")
-        else:
-            return m.group(0)
-        assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
-        if close:
-            return f" ‡/{tag}‡ "
-        if value:
-            return f" ‡{tag}:{value}‡ "
-        return f" ‡{tag}‡ "
+	def repl(m: re.Match[str]) -> str:
+		tag = m.group("tag")
+		close = m.group("close")
+		value = m.group("value")
+		assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
+		if close:
+			return f"[[/{tag}]]"
+		if value is not None:
+			return f"[[{tag}:{value.strip()}]]"
+		return f"[[{tag}]]"
 
-    return SML_TAG_PATTERN.sub(check_sml, text)
+	return SML_TAG_PATTERN.sub(repl, text)
     
 def sml_token(tag:str, value:str | None = None, close:bool=False)->str:
     if close:
@@ -1772,8 +1765,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
-    # Prepare SML tags
-    text = filter_sml(text)
+    # Normalize SML tags
+    text = normalize_sml_tags(text)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
