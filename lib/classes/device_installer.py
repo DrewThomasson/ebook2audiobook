@@ -22,7 +22,7 @@ class DeviceInstaller():
     def check_device_info(self, mode:str)->str:
         os_env = None
         if mode == NATIVE:
-            name, tag, msg = self.check_hardware()
+            name, tag, msg = self.check_hardware
             arch = self.check_arch()
             pyvenv = list(sys.version_info[:2])
             os_env = 'linux' if name == 'jetson' else self.check_platform()
