@@ -23,13 +23,13 @@ class DeviceInstaller():
         os_env = None
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
-            arch = self.check_arch()
+            arch = self.check_arch
             pyvenv = list(sys.version_info[:2])
-            os_env = 'linux' if name == 'jetson' else self.check_platform()
+            os_env = 'linux' if name == 'jetson' else self.check_platform
         else:
             if mode == BUILD_DOCKER:
-                name, tag, msg = self.check_hardware()
-                arch = self.check_arch()
+                name, tag, msg = self.check_hardware
+                arch = self.check_arch
                 pyvenv = list(sys.version_info[:2])
                 os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
                 pyvenv = [3, 10] if tag in ['jetson60', 'jetson61'] else pyvenv
