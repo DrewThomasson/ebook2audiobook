@@ -1732,19 +1732,19 @@ def filter_sml(text:str)->str:
             return m.group(0)
         assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
         if close:
-            return f" ‡‡/{tag}‡‡ "
+            return f" ‡/{tag}‡ "
         if value:
-            return f" ‡‡{tag}:{value}‡‡ "
-        return f" ‡‡{tag}‡‡ "
+            return f" ‡{tag}:{value}‡ "
+        return f" ‡{tag}‡ "
 
     return SML_TAG_PATTERN.sub(check_sml, text)
     
 def sml_token(tag:str, value:str | None = None, close:bool=False)->str:
     if close:
-        return f"‡‡/{tag}‡‡"
+        return f"‡/{tag}‡"
     if value is not None:
-        return f"‡‡{tag}:{value}‡‡"
-    return f"‡‡{tag}‡‡"
+        return f"‡{tag}:{value}‡"
+    return f"‡{tag}‡"
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
