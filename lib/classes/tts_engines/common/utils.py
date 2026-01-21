@@ -453,9 +453,7 @@ class TTSUtils:
             error = 'This SML is not recognized'
             print(error)
             return False
-        self.audio_segments.append(
-            torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone()
-        )
+        self.audio_segments.append(torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone())
         return True
 
     def _format_timestamp(self, seconds: float) -> str:

@@ -21,24 +21,25 @@ TTS_VOICE_CONVERSION = {
 }
 
 TTS_SML = {
-	"break": {"static": "[[break]]", "paired": False},
-	"pause": {"static": "[[pause]]", "paired": False},
+	"break": {"static": "[break]", "paired": False},
+	"pause": {"static": "[pause]", "paired": False},
 	"voice": {"paired": True},
 }
 
 sml_tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
 SML_TAG_PATTERN = re.compile(
 	rf'''
-	\[\[
+	\[
 		\s*
 		(?P<close>/)?
 		(?P<tag>{sml_tag_keys})
-		(?:\s*:\s*(?P<value>[^\]]+?))?
+		(?:\s*:\s*(?P<value>[^\]]+))?
 		\s*
-	\]\]
+	\]
 	''',
 	re.VERBOSE
 )
+
 
 default_tts_engine = TTS_ENGINES['XTTSv2']
 default_fine_tuned = 'internal'

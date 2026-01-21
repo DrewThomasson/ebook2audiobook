@@ -140,9 +140,11 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
             DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
     
-    * MPS is not exposed in docker so CPU must be used.
-
-Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
+SML tags available:
+        [break]` — silence (random range **0.3–0.6 sec.**)
+        [pause]` — silence (random range **1.0–1.6 sec.**)
+        [pause:N]` — fixed pause (**N sec.**)
+        [voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
         ''',
         formatter_class=argparse.RawTextHelpFormatter
     )

@@ -1725,10 +1725,10 @@ def normalize_sml_tags(text: str) -> str:
 		value = m.group("value")
 		assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
 		if close:
-			return f"[[/{tag}]]"
+			return f"[/{tag}]"
 		if value is not None:
-			return f"[[{tag}:{value.strip()}]]"
-		return f"[[{tag}]]"
+			return f"[{tag}:{value.strip()}]"
+		return f"[{tag}]"
 
 	return SML_TAG_PATTERN.sub(repl, text)
     
