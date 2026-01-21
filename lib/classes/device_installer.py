@@ -20,18 +20,27 @@ class DeviceInstaller():
         return self.detect_device()
 
     def check_device_info(self, mode:str)->str:
-        name, tag, msg = self.check_hardware
-        arch = self.check_arch
-        pyvenv = sys.version_info[:2]
+        name, tag, msg = self.check_hardware()
+        arch = self.check_arch()
+        pyvenv = list(sys.version_info[:2])
+        os_env = None
         if mode == NATIVE:
-            os_env = 'linux' if name == 'jetson' else self.check_platform
+            os_env = 'linux' if name == 'jetson' else self.check_platform()
         elif mode == BUILD_DOCKER:
             os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
-            pyvenv = [3,10] if tag in ['jetson60', 'jetson61'] else pyvenv
+            pyvenv = [3, 10] if tag in ['jetson60', 'jetson61'] else pyvenv
+            device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg}
+            with open('.device_info.json', 'w', encoding='utf-8') as f:
+                json.dump(device_info, f)
+            return json.dumps(device_info)
         elif mode == FULL_DOCKER:
-            
+            try:
+                with open('.device_info.json', 'r', encoding='utf-8') as f:
+                    return json.dumps(json.load(f))
+            except FileNotFoundError:
+                return ''
         if all([name, tag, os_env, arch, pyvenv]):
-            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
+            device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg}
             return json.dumps(device_info)
         return ''
         
