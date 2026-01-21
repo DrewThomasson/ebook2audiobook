@@ -146,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - Process format can be changed in lib/conf.py
 
 ## SML tags available
-- `[[break]]` — silence (random range **0.3–0.6 s**)
+- `[[break]]` — silence (random range **0.3–0.6 sec.**)
 - `[[pause]]` — silence (random range **1.0–1.6 sec.**)
 - `[[pause:N]]` — fixed pause (**N sec.**)
 - `[[voice:/path/to/voice/file]]...[[/voice]]` — switch voice from default or selected voice from GUI/CLI
@@ -474,7 +474,7 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
 a copy of the original conf.py so on each ebook2audiobook update you will backup your modified conf.py and put
 back the original one. You must plan the same process for models.py. If you wish to make your own custom model
-as an official ebook2audiobook fine tuned model so please contact us and we'll ad it to the models.py list.
+as an official ebook2audiobook fine tuned model so please contact us and we'll add it to the presets list.
 
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
@@ -496,7 +496,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 
 ## What we need help with! 🙌 
-## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
+## [Roadmap and Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
 - Any help from people speaking any of the supported languages to help us improve the models
   
 <!--

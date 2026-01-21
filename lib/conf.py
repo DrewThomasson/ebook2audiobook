@@ -65,6 +65,7 @@ max_upload_size = '6GB'
 
 NATIVE = 'native'
 FULL_DOCKER = 'full_docker'
+BUILD_DOCKER = 'build_docker'
 
 debug_mode = False
 
