@@ -966,10 +966,10 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             i = 0
             while i < len(text_list):
                 current = text_list[i]
-                if current in ('‡break‡', '‡pause‡'):
+                if current in {v["static"] for v in TTS_SML.values() if "static" in v}:
                     if clean_list:
                         prev = clean_list[-1]
-                        if prev in ('‡break‡', '‡pause‡'):
+                        if prev in {v["static"] for v in TTS_SML.values() if "static" in v}:
                             i += 1
                             continue
                     clean_list.append(current)
@@ -1732,25 +1732,25 @@ def normalize_sml_tags(text:str)->str:
     return SML_TAG_PATTERN.sub(replace, text)
 
 def escape_sml(text:str)->tuple[str, list[str]]:
-    sml_blocks: list[str] = []
+	sml_blocks: list[str] = []
 
-    def replace(m: re.Match[str])->str:
-        sml_blocks.append(m.group(0))
-        return f"\x00SML{len(sml_blocks)-1}\x00"
+	def replace(m: re.Match[str]) -> str:
+		sml_blocks.append(m.group(0))
+		return chr(sml_cancel_tag + len(sml_blocks) - 1)
 
-    return SML_TAG_PATTERN.sub(replace, text), sml_blocks
+	return SML_TAG_PATTERN.sub(replace, text), sml_blocks
 
 def restore_sml(text:str, sml_blocks:list[str])->str:
-    for i, block in enumerate(sml_blocks):
-        text = text.replace(f"\x00SML{i}\x00", block)
-    return text
+	for i, block in enumerate(sml_blocks):
+		text = text.replace(chr(sml_cancel_tag + i), block)
+	return text
 
 def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
     if close:
-        return f"‡/{tag}‡"
+        return f"[/{tag}]"
     if value is not None:
-        return f"‡{tag}:{value}‡"
-    return f"‡{tag}‡"
+        return f"[{tag}:{value}]"
+    return f"[{tag}]"
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
@@ -1785,7 +1785,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a [pause] 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {sml_token('pause')} ", text)
     # Replace single newlines ("\n" or "\r") with spaces
