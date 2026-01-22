@@ -1717,22 +1717,35 @@ def foreign2latin(text:str, base_lang:str)->str:
         out = out.replace(k, v)
     return out
 
-def normalize_sml_tags(text: str) -> str:
+def normalize_sml_tags(text:str)->str:
 
-	def repl(m: re.Match[str]) -> str:
+	def replace(m: re.Match[str])->str:
 		tag = m.group("tag")
 		close = m.group("close")
 		value = m.group("value")
-		assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
 		if close:
 			return f"[/{tag}]"
 		if value is not None:
 			return f"[{tag}:{value.strip()}]"
 		return f"[{tag}]"
 
-	return SML_TAG_PATTERN.sub(repl, text)
-    
-def sml_token(tag:str, value:str | None = None, close:bool=False)->str:
+	return SML_TAG_PATTERN.sub(replace, text)
+
+def escape_sml(text:str)->tuple[str, list[str]]:
+	sml_blocks: list[str] = []
+
+	def replace(m: re.Match[str])->str:
+		sml_blocks.append(m.group(0))
+		return f"\x00SML{len(sml_blocks)-1}\x00"
+
+	return SML_TAG_PATTERN.sub(replace, text), sml_blocks
+
+def restore_sml(text:str, sml_blocks:list[str])->str:
+	for i, block in enumerate(sml_blocks):
+		text = text.replace(f"\x00SML{i}\x00", block)
+	return text
+
+def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
     if close:
         return f"‡/{tag}‡"
     if value is not None:
@@ -1741,7 +1754,7 @@ def sml_token(tag:str, value:str | None = None, close:bool=False)->str:
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
-    def repl_abbreviations(match:re.Match)->str:
+    def replace(match:re.Match)->str:
         token = match.group(1)
         for k, expansion in mapping.items():
             if token.lower() == k.lower():
@@ -1760,13 +1773,15 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
             flags=re.IGNORECASE
         )
-        text = pattern.sub(repl_abbreviations, text)
+        text = pattern.sub(replace, text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc…
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Normalize SML tags
     text = normalize_sml_tags(text)
+	# Escape recognized SML so nothing below can touch it
+	text, sml_blocks = escape_sml(text)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
@@ -1804,6 +1819,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
     text = text.translate(specialchars_table)
     text = ' '.join(text.split())
+	# Restore SML tags
+	text = restore_sml(text, sml_blocks)
     return text
 
 def convert_chapters2audio(session_id:str)->bool:
