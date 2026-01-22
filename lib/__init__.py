@@ -21,7 +21,7 @@ from .conf_lang import (
 )
 
 from .conf_models import (
-    TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, SML_TAG_PATTERN, default_fine_tuned, default_tts_engine, 
+    TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, SML_TAG_PATTERN, sml_cancel_tag, default_fine_tuned, default_tts_engine, 
     default_engine_settings, default_vc_model, default_voice_detection_model,
     loaded_tts, xtts_builtin_speakers_list,
     max_custom_model, max_custom_voices, voices_dir
@@ -50,7 +50,7 @@ __all__ = [
     "specialchars_mapping", "chars_remove", "year_to_decades_languages",
     
     # from conf_models
-    "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "SML_TAG_PATTERN", "default_fine_tuned", "default_tts_engine",
+    "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "SML_TAG_PATTERN", "sml_cancel_tag", "default_fine_tuned", "default_tts_engine",
     "default_engine_settings", "default_vc_model", "default_voice_detection_model",
     "loaded_tts", "xtts_builtin_speakers_list", "max_custom_model",
     "max_custom_voices", "voices_dir"
