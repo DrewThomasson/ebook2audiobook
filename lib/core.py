@@ -542,7 +542,7 @@ def convert2epub(session_id:str)-> bool:
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
-                text = re.sub(r'\n{2,}', f".{TTS_SML['pause']['tag']}", text)
+                text = re.sub(r'\n{2,}', f".{TTS_SML['pause']['static']}", text)
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
@@ -1719,31 +1719,31 @@ def foreign2latin(text:str, base_lang:str)->str:
 
 def normalize_sml_tags(text:str)->str:
 
-	def replace(m: re.Match[str])->str:
-		tag = m.group("tag")
-		close = m.group("close")
-		value = m.group("value")
-		if close:
-			return f"[/{tag}]"
-		if value is not None:
-			return f"[{tag}:{value.strip()}]"
-		return f"[{tag}]"
+    def replace(m: re.Match[str])->str:
+        tag = m.group("tag")
+        close = m.group("close")
+        value = m.group("value")
+        if close:
+            return f"[/{tag}]"
+        if value is not None:
+            return f"[{tag}:{value.strip()}]"
+        return f"[{tag}]"
 
-	return SML_TAG_PATTERN.sub(replace, text)
+    return SML_TAG_PATTERN.sub(replace, text)
 
 def escape_sml(text:str)->tuple[str, list[str]]:
-	sml_blocks: list[str] = []
+    sml_blocks: list[str] = []
 
-	def replace(m: re.Match[str])->str:
-		sml_blocks.append(m.group(0))
-		return f"\x00SML{len(sml_blocks)-1}\x00"
+    def replace(m: re.Match[str])->str:
+        sml_blocks.append(m.group(0))
+        return f"\x00SML{len(sml_blocks)-1}\x00"
 
-	return SML_TAG_PATTERN.sub(replace, text), sml_blocks
+    return SML_TAG_PATTERN.sub(replace, text), sml_blocks
 
 def restore_sml(text:str, sml_blocks:list[str])->str:
-	for i, block in enumerate(sml_blocks):
-		text = text.replace(f"\x00SML{i}\x00", block)
-	return text
+    for i, block in enumerate(sml_blocks):
+        text = text.replace(f"\x00SML{i}\x00", block)
+    return text
 
 def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
     if close:
@@ -1780,8 +1780,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Normalize SML tags
     text = normalize_sml_tags(text)
-	# Escape recognized SML so nothing below can touch it
-	text, sml_blocks = escape_sml(text)
+    # Escape recognized SML so nothing below can touch it
+    text, sml_blocks = escape_sml(text)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
@@ -1819,8 +1819,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
     text = text.translate(specialchars_table)
     text = ' '.join(text.split())
-	# Restore SML tags
-	text = restore_sml(text, sml_blocks)
+    # Restore SML tags
+    text = restore_sml(text, sml_blocks)
     return text
 
 def convert_chapters2audio(session_id:str)->bool:
