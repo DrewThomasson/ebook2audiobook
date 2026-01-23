@@ -9,7 +9,7 @@ set "PS_EXE=pwsh"
 where.exe /Q pwsh >nul 2>&1 || set "PS_EXE=powershell"
 
 :: One canonical set of flags for every PowerShell call in this script
-set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass"
+set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Scope Process"
 
 :: Detect Constrained Language Mode (corporate lockdown)
 "%PS_EXE%" %PS_ARGS% -Command "if ($ExecutionContext.SessionState.LanguageMode -ne 'FullLanguage') { exit 99 }"
@@ -239,6 +239,21 @@ if errorlevel 1 (
 	echo Scoop is not installed.
 	set "OK_SCOOP=1"
 	goto :install_programs
+) else (
+	if "%~1"=="--after-scoop" (
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
+		if "%OK_PROGRAMS%"=="0" (
+			echo %ESC%[32m=============== Scoop is installed! ===============%ESC%[0m
+			set "OK_SCOOP=0"
+		)
+		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo scoop>>"%INSTALLED_LOG%"
+		)
+	)
 )
 if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	goto :check_required_programs
@@ -269,21 +284,9 @@ exit /b
 :install_programs
 if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
-	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iwr -useb https://get.scoop.sh | iex; scoop --version; scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions"
-	if not errorlevel 1 (
-		if "%OK_PROGRAMS%"=="0" (
-			echo %ESC%[32m=============== Scoop is installed! ===============%ESC%[0m
-			set "OK_SCOOP=0"
-		)
-		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-		if errorlevel 1 (
-			echo scoop>>"%INSTALLED_LOG%"
-		)
-		start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0"
-	) else (
-		echo %ESC%[31m=============== Scoop installation failed.%ESC%[0m
-		goto :failed
-	)
+	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
+	echo %ESC%[33m=============== Scoop installed. Restarting terminal... ===============%ESC%[0m
+	start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0 " --after-scoop
 	exit
 )
 if not "%OK_CONDA%"=="0" (
@@ -653,9 +656,7 @@ if defined arguments.help (
 				goto :failed
 			)
 			if "%DEVICE_TAG%"=="" (
-				for /f "usebackq delims=" %%A in (`
-					"%PS_EXE%" %PS_ARGS% -Command "(ConvertFrom-Json '%device_info%').tag"
-				) do (
+				for /f "usebackq delims=" %%A in (`powershell -NoLogo -Command "(ConvertFrom-Json '%device_info%').tag"`) do (
 					set "TAG=%%A"
 				)
 			) else (
