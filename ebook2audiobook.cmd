@@ -56,7 +56,7 @@ set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=cmake rustup python calibre-normal ffmpeg mediainfo nodejs espeak-ng sox tesseract"
+set "HOST_PROGRAMS=cmake rustup python calibre ffmpeg mediainfo nodejs espeak-ng sox tesseract"
 set "DOCKER_PROGRAMS=ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
@@ -240,19 +240,18 @@ if errorlevel 1 (
 	set "OK_SCOOP=1"
 	goto :install_programs
 ) else (
-	if "%~1"=="--after-scoop" (
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git"
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
-		if "%OK_PROGRAMS%"=="0" (
-			echo %ESC%[32m=============== Scoop is installed! ===============%ESC%[0m
-			set "OK_SCOOP=0"
-		)
+	if exist "%SCRIPT_DIR%\.after-scoop" (
+		call "%PS_EXE%" %PS_ARGS% scoop install git || goto :failed
+		call "%PS_EXE%" %PS_ARGS% scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git || goto :failed
+		call "%PS_EXE%" %PS_ARGS% scoop bucket add extras || goto :failed
+		call "%PS_EXE%" %PS_ARGS% scoop bucket add versions || goto :failed
+		echo %ESC%[32m=============== Scoop components installed! ===============%ESC%[0m
+		set "OK_SCOOP=0"
 		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
 		if errorlevel 1 (
 			echo scoop>>"%INSTALLED_LOG%"
 		)
+		del "%SCRIPT_DIR%\.after-scoop" >nul 2>&1
 	)
 )
 if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
@@ -267,7 +266,6 @@ set "missing_prog_array="
 for %%p in (%HOST_PROGRAMS%) do (
 	set "prog=%%p"
 	if "%%p"=="nodejs" set "prog=node"
-	if "%%p"=="calibre-normal" set "prog=calibre"
 	where.exe /Q !prog!
 	if errorlevel 1 (
 		echo %%p is not installed.
@@ -285,8 +283,9 @@ exit /b
 if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
 	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
-	echo %ESC%[33m=============== Scoop installed. Restarting terminal... ===============%ESC%[0m
-	start "" cmd /k "cd /d "%SCRIPT_DIR%" & call "%~f0" --after-scoop"
+	echo %ESC%[33m=============== Scoop installed. Validate PATH by Restarting the terminal and install its components... ===============%ESC%[0m
+	type nul > "%SCRIPT_DIR%\.after-scoop"
+	start "" cmd /k "cd /d "%SCRIPT_DIR%" & call "%~f0""
 	exit
 )
 if not "%OK_CONDA%"=="0" (
@@ -331,8 +330,12 @@ if not "%OK_PROGRAMS%"=="0" (
 				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
 				echo Detected system language: !OS_LANG! → downloading OCR language: %ISO3_LANG%
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
+				if not exist "!tessdata!" (
+					mkdir "!tessdata!"
+				)
 				if not exist "!tessdata!\%ISO3_LANG%.traineddata" (
-					call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
+					call "%PS_EXE%" %PS_ARGS% -Command ^
+						"Invoke-WebRequest -Uri https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
 				)
 				if exist "!tessdata!\%ISO3_LANG%.traineddata" (
 					echo Tesseract OCR language %ISO3_LANG% installed in !tessdata!
@@ -345,7 +348,7 @@ if not "%OK_PROGRAMS%"=="0" (
 			set "PY_FOUND="
 			where.exe /Q python  && set PY_FOUND=1
 			where.exe /Q python3 && set PY_FOUND=1
-			where.exe /Q py      && set PY_FOUND=1
+			where.exe /Q py	  && set PY_FOUND=1
 			if not defined PY_FOUND (
 				echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
 				goto :failed
