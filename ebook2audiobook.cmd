@@ -269,13 +269,15 @@ exit /b
 :install_programs
 if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
-	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iwr -useb https://get.scoop.sh | iex"
-	call "%PS_EXE%" %PS_ARGS% -Command "scoop --version" >nul 2>&1
+	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
+		"Set-ExecutionPolicy Bypass -Scope Process -Force; ^
+		 iwr -useb https://get.scoop.sh | iex; ^
+		 scoop --version; ^
+		 scoop install git; ^
+		 scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; ^
+		 scoop bucket add extras; ^
+		 scoop bucket add versions"
 	if not errorlevel 1 (
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git"
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
 		if "%OK_PROGRAMS%"=="0" (
 			echo %ESC%[32m=============== Scoop is installed! ===============%ESC%[0m
 			set "OK_SCOOP=0"
