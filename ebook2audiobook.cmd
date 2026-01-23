@@ -9,7 +9,7 @@ set "PS_EXE=pwsh"
 where.exe /Q pwsh >nul 2>&1 || set "PS_EXE=powershell"
 
 :: One canonical set of flags for every PowerShell call in this script
-set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Scope Process"
+set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass"
 
 :: Detect Constrained Language Mode (corporate lockdown)
 "%PS_EXE%" %PS_ARGS% -Command "if ($ExecutionContext.SessionState.LanguageMode -ne 'FullLanguage') { exit 99 }"
@@ -286,7 +286,7 @@ if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
 	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
 	echo %ESC%[33m=============== Scoop installed. Restarting terminal... ===============%ESC%[0m
-	start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0 " --after-scoop
+	start "" cmd /k "cd /d "%SCRIPT_DIR%" & call "%~f0" --after-scoop"
 	exit
 )
 if not "%OK_CONDA%"=="0" (
