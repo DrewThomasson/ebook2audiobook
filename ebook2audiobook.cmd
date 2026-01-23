@@ -269,8 +269,7 @@ exit /b
 :install_programs
 if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
-	call "%PS_EXE%" %PS_ARGS% -Command "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force"
-	call "%PS_EXE%" %PS_ARGS% -Command "iwr -useb get.scoop.sh | iex"
+	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iwr -useb https://get.scoop.sh | iex"
 	call "%PS_EXE%" %PS_ARGS% -Command "scoop --version" >nul 2>&1
 	if not errorlevel 1 (
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git"
@@ -659,7 +658,9 @@ if defined arguments.help (
 				goto :failed
 			)
 			if "%DEVICE_TAG%"=="" (
-				for /f "usebackq delims=" %%A in (`powershell -NoLogo -Command "(ConvertFrom-Json '%device_info%').tag"`) do (
+				for /f "usebackq delims=" %%A in (`
+					"%PS_EXE%" %PS_ARGS% -Command "(ConvertFrom-Json '%device_info%').tag"
+				) do (
 					set "TAG=%%A"
 				)
 			) else (
