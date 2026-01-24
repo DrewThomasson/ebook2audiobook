@@ -1714,7 +1714,7 @@ def foreign2latin(text:str, base_lang:str)->str:
         out = out.replace(k, v)
     return out
 
-def normalize_sml_tags(text:str)->tuple(bool, str):
+def normalize_sml_tags(text:str)->tuple[bool, str]:
     out = []
     stack = []
     last = 0
