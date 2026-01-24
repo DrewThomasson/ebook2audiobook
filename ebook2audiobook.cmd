@@ -330,20 +330,17 @@ if not "%OK_PROGRAMS%"=="0" (
 		if "%%p"=="tesseract" (
 			where.exe /Q !prog!
 			if not errorlevel 1 (
-				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
-				echo Detected system language: !OS_LANG! → downloading OCR language: %ISO3_LANG%
+				for /f %%i in ('call :get_iso3_lang "!OS_LANG!"') do set "ISO3_LANG=%%i"
+				echo Detected system language: !OS_LANG! → downloading OCR language: !ISO3_LANG!
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
-				if not exist "!tessdata!" (
-					mkdir "!tessdata!"
+				if not exist "!tessdata!" mkdir "!tessdata!"
+				if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
+					call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri 'https://github.com/tesseract-ocr/tessdata_best/raw/main/!ISO3_LANG!.traineddata' -OutFile '!tessdata!\!ISO3_LANG!.traineddata' -ErrorAction Stop" || goto :failed
 				)
-				if not exist "!tessdata!\%ISO3_LANG%.traineddata" (
-					call "%PS_EXE%" %PS_ARGS% -Command ^
-						"Invoke-WebRequest -Uri https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
-				)
-				if exist "!tessdata!\%ISO3_LANG%.traineddata" (
-					echo Tesseract OCR language %ISO3_LANG% installed in !tessdata!
+				if exist "!tessdata!\!ISO3_LANG!.traineddata" (
+					echo Tesseract OCR language !ISO3_LANG! installed in !tessdata!
 				) else (
-					echo Failed to install OCR language %ISO3_LANG%
+					echo Failed to install OCR language !ISO3_LANG!
 				)
 			)
 		)
