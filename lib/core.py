@@ -1718,8 +1718,8 @@ def normalize_sml_tags(text:str)->str|bool:
     for m in SML_TAG_PATTERN.finditer(text):
         start, end = m.span()
         out.append(text[last:start])
-        tag = m.group("tag_open") or m.group("tag_close")
-        close = m.group("tag_close") is not None
+        tag = m.group("tag")
+        close = bool(m.group("close"))
         value = m.group("value")
         info = TTS_SML.get(tag)
         if not info:
