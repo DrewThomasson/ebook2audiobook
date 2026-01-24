@@ -91,7 +91,7 @@ class VoiceExtractor:
     def _demucs_voice(self)->tuple[bool, str]:
         error = '_demucs_voice() error'
         try:
-            msg = 'Denoising'
+            msg = 'Extracting'
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(0, desc=msg)
@@ -104,7 +104,7 @@ class VoiceExtractor:
             ]
             proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(self.wav_file), msg=msg)
             if proc:
-                msg = 'Voice exctracted!'
+                msg = 'Extraction complete!'
                 return True, msg
             else:
                 error = f'_demucs_voice() SubprocessPipe Error.'

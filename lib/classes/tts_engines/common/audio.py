@@ -55,87 +55,74 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
     error = "audio_data must be a PyTorch tensor or a list of numerical values."
     raise TypeError(error)
     return torch.tensor([], dtype=torch.float32)
-
-def get_audio_duration(filepath:str)->float:
-    try:
-        audio_duration = None
-        general_duration = None
-        cmd = [
-            shutil.which('mediainfo'),
-            '--Output=JSON',
-            filepath
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        data = json.loads(result.stdout)
-        for track in data.get("media", {}).get("track", []):
-            track_type = track.get("@type")
-            duration = track.get("Duration")
-            if not duration:
+    
+def _extract_mediainfo_durations(data:dict)->dict[str, float]:
+    durations: dict[str, float] = {}
+    media_list = data.get("media", [])
+    if isinstance(media_list, dict):
+        media_list = [media_list]
+    for media in media_list:
+        ref = media.get("@ref")
+        if not ref:
+            continue
+        duration = None
+        for track in media.get("track", []):
+            raw = track.get("Duration")
+            if not raw:
                 continue
             try:
-                duration = float(duration)
+                duration = float(raw)
+                break
             except (TypeError, ValueError):
                 continue
-            if track_type == "Audio":
-                audio_duration = duration
-                break
-            elif track_type == "General":
-                general_duration = duration
-        if audio_duration is not None:
-            return audio_duration
-        if general_duration is not None:
-            return general_duration
+        if duration is not None:
+            durations[ref] = duration
+    return durations
+    
+def get_audio_duration(filepath: str) -> float:
+    mediainfo = shutil.which("mediainfo")
+    if not mediainfo:
         return 0.0
+    cmd = [mediainfo, "--Output=JSON", filepath]
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        data = json.loads(result.stdout)
+        durations = _extract_mediainfo_durations(data)
+        print(f'---------------{durations}-----------------')
+        return durations.get(filepath, 0.0)
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return 0.0
     except Exception as e:
-        error = f"get_audio_duration() Error: Failed to process {filepath}: {e}"
-        print(error)
+        print(f"get_audio_duration() Error: Failed to process {filepath}: {e}")
         return 0.0
 
-def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
-    ref_map = {}
+def get_audiolist_duration(filepaths: list[str]) -> dict[str, float]:
+    durations = {path: 0.0 for path in filepaths}
     mediainfo = shutil.which("mediainfo")
-    cmd = [
-        mediainfo,
-        "--Output=JSON",
-    ]
-    cmd.extend(filepaths)
-    durations = {path:0.0 for path in filepaths}
+    if not mediainfo:
+        return durations
+    cmd = [mediainfo, "--Output=JSON", *filepaths]
     try:
         out = subprocess.check_output(cmd, text=True)
         data = json.loads(out)
-        for track in data.get("media", {}).get("track", []):
-            track_type = track.get("@type")
-            duration = track.get("Duration")
-            if not duration:
-                continue
-            try:
-                duration = float(duration)
-            except (TypeError, ValueError):
-                continue
-            if track_type == "Audio":
-                audio_duration = duration
-                break
-            elif track_type == "General":
-                general_duration = duration
-        if audio_duration is not None:
-            ref_map[ref] = audio_duration
-        if general_duration is not None:
-            ref_map[ref] = general_duration
-        else:
-            ref_map[ref] = 0.0
+        extracted = _extract_mediainfo_durations(data)
         for path in filepaths:
-            base = os.path.basename(path)
-            if path in ref_map:
-                durations[path] = ref_map[path]
-            elif base in ref_map:
-                durations[path] = ref_map[base]
+            if path in extracted:
+                durations[path] = extracted[path]
+            else:
+                base = os.path.basename(path)
+                if base in extracted:
+                    durations[path] = extracted[base]
     except Exception:
         pass
+    print(f'---------------{durations}-----------------')
     return durations
-
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
     filter_complex = (
