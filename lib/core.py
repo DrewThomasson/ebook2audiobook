@@ -978,8 +978,11 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 print(error)
                 return Non
             # clean SML tags badly coded
-            text = normalize_sml_tags(text)
-            if text is False:
+            bool, text = normalize_sml_tags(text)
+            if bool is False:
+                print(text)
+                if session['is_gui_process']:
+                    show_alert({"type": "warning", "msg": text})
                 return None
             # remove any [break] between words or cutting words
             break_token = re.escape(sml_token('break'))
@@ -1711,7 +1714,7 @@ def foreign2latin(text:str, base_lang:str)->str:
         out = out.replace(k, v)
     return out
 
-def normalize_sml_tags(text:str)->str|bool:
+def normalize_sml_tags(text:str)->tuple(bool, str):
     out = []
     stack = []
     last = 0
@@ -1730,8 +1733,7 @@ def normalize_sml_tags(text:str)->str|bool:
             if close:
                 if not stack or stack[-1] != tag:
                     error = f'normalize_sml_tags() error: unmatched closing tag [/{tag}]'
-                    print(error)
-                    return False
+                    return False, error
                 stack.pop()
                 out.append(f"[/{tag}]")
             else:
@@ -1740,21 +1742,18 @@ def normalize_sml_tags(text:str)->str|bool:
                     out.append(f"[{tag}:{value.strip()}]")
                 else:
                     error = f'normalize_sml_tags() error: paired tag [{tag}] requires a value'
-                    print(error)
-                    return False
+                    return False, error
         else:
             if close:
                 error = f'normalize_sml_tags() error: non-paired tag [/{tag}] is invalid'
-                print(error)
-                return False
+                return False, error
             out.append(info['static'])
         last = end
     out.append(text[last:])
     if stack:
         error = f"normalize_sml_tags() error: unclosed tag(s): {', '.join(stack)}"
-        print(error)
-        return False
-    return ''.join(out)
+        return False, error
+    return True, ''.join(out)
 
 def escape_sml(text:str)->tuple[str, list[str]]:
     sml_blocks:list[str] = []
