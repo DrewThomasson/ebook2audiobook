@@ -1318,10 +1318,8 @@ def get_sentences(text:str, session_id:str)->list|None:
             for s in join_ideogramms(result):
                 if not is_latin_only(s):
                     joined.append(s)
-            joined = [restore_sml(s, sml_blocks) for s in joined]
             return joined
         else:
-            final_list = [restore_sml(s, sml_blocks) for s in final_list]
             return final_list
     except Exception as e:
         print(f'get_sentences() error: {e}')
@@ -1783,8 +1781,6 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Normalize SML tags
     text = normalize_sml_tags(text)
-    # Escape recognized SML so nothing below can touch it
-    text, sml_blocks = escape_sml(text)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
@@ -1822,8 +1818,6 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
     text = text.translate(specialchars_table)
     text = ' '.join(text.split())
-    # Restore SML tags
-    text = restore_sml(text, sml_blocks)
     return text
 
 def convert_chapters2audio(session_id:str)->bool:
