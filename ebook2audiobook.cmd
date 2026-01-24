@@ -1,4 +1,5 @@
 @echo off
+
 setlocal EnableExtensions EnableDelayedExpansion
 
 :: Force UTF-8 for CMD
@@ -207,30 +208,29 @@ exit /b
 :::::: END OF DESKTOP APP
 
 :get_iso3_lang
-set "arg=%~1"
-if /i "%arg%"=="en"  echo eng& goto :eof
-if /i "%arg%"=="fr"  echo fra& goto :eof
-if /i "%arg%"=="de"  echo deu& goto :eof
-if /i "%arg%"=="it"  echo ita& goto :eof
-if /i "%arg%"=="es"  echo spa& goto :eof
-if /i "%arg%"=="pt"  echo por& goto :eof
-if /i "%arg%"=="ar"  echo ara& goto :eof
-if /i "%arg%"=="tr"  echo tur& goto :eof
-if /i "%arg%"=="ru"  echo rus& goto :eof
-if /i "%arg%"=="bn"  echo ben& goto :eof
-if /i "%arg%"=="zh"  echo chi_sim& goto :eof
-if /i "%arg%"=="fa"  echo fas& goto :eof
-if /i "%arg%"=="hi"  echo hin& goto :eof
-if /i "%arg%"=="hu"  echo hun& goto :eof
-if /i "%arg%"=="id"  echo ind& goto :eof
-if /i "%arg%"=="jv"  echo jav& goto :eof
-if /i "%arg%"=="ja"  echo jpn& goto :eof
-if /i "%arg%"=="ko"  echo kor& goto :eof
-if /i "%arg%"=="pl"  echo pol& goto :eof
-if /i "%arg%"=="ta"  echo tam& goto :eof
-if /i "%arg%"=="te"  echo tel& goto :eof
-if /i "%arg%"=="yo"  echo yor& goto :eof
-echo eng
+set "ISO3_LANG=eng"
+if /i "%~1"=="en" set "ISO3_LANG=eng"
+if /i "%~1"=="fr" set "ISO3_LANG=fra"
+if /i "%~1"=="de" set "ISO3_LANG=deu"
+if /i "%~1"=="it" set "ISO3_LANG=ita"
+if /i "%~1"=="es" set "ISO3_LANG=spa"
+if /i "%~1"=="pt" set "ISO3_LANG=por"
+if /i "%~1"=="ar" set "ISO3_LANG=ara"
+if /i "%~1"=="tr" set "ISO3_LANG=tur"
+if /i "%~1"=="ru" set "ISO3_LANG=rus"
+if /i "%~1"=="bn" set "ISO3_LANG=ben"
+if /i "%~1"=="zh" set "ISO3_LANG=chi_sim"
+if /i "%~1"=="fa" set "ISO3_LANG=fas"
+if /i "%~1"=="hi" set "ISO3_LANG=hin"
+if /i "%~1"=="hu" set "ISO3_LANG=hun"
+if /i "%~1"=="id" set "ISO3_LANG=ind"
+if /i "%~1"=="jv" set "ISO3_LANG=jav"
+if /i "%~1"=="ja" set "ISO3_LANG=jpn"
+if /i "%~1"=="ko" set "ISO3_LANG=kor"
+if /i "%~1"=="pl" set "ISO3_LANG=pol"
+if /i "%~1"=="ta" set "ISO3_LANG=tam"
+if /i "%~1"=="te" set "ISO3_LANG=tel"
+if /i "%~1"=="yo" set "ISO3_LANG=yor"
 exit /b
 
 :check_scoop
@@ -330,7 +330,7 @@ if not "%OK_PROGRAMS%"=="0" (
 		if "%%p"=="tesseract" (
 			where.exe /Q !prog!
 			if not errorlevel 1 (
-				for /f %%i in ('call :get_iso3_lang "!OS_LANG!"') do set "ISO3_LANG=%%i"
+				call :get_iso3_lang "!OS_LANG!"
 				echo Detected system language: !OS_LANG! → downloading OCR language: !ISO3_LANG!
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 				if not exist "!tessdata!" mkdir "!tessdata!"
