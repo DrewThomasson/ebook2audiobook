@@ -58,6 +58,8 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
 
 def get_audio_duration(filepath:str)->float:
     try:
+        audio_duration = None
+        general_duration = None
         cmd = [
             shutil.which('mediainfo'),
             '--Output=JSON',
@@ -65,8 +67,7 @@ def get_audio_duration(filepath:str)->float:
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         data = json.loads(result.stdout)
-        audio_duration = None
-        general_duration = None
+        print(f'----------------------{data}-------------')
         for track in data.get('media', {}).get('track', []):
             track_type = track.get('@type')
             if track_type == 'Audio' and 'Duration' in track:
@@ -87,6 +88,7 @@ def get_audio_duration(filepath:str)->float:
         return 0
 
 def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
+    ref_map = {}
     mediainfo = shutil.which("mediainfo")
     cmd = [
         mediainfo,
@@ -97,7 +99,6 @@ def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
     try:
         out = subprocess.check_output(cmd, text=True)
         data = json.loads(out)
-        ref_map = {}
         for item in data:
             media = item.get("media", {})
             ref = media.get("@ref")

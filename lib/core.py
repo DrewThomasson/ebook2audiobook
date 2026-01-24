@@ -31,7 +31,6 @@ from num2words import num2words
 from pathlib import Path
 from PIL import Image
 from pydub import AudioSegment
-from pydub.utils import mediainfo
 from queue import Queue, Empty
 from types import MappingProxyType
 from langdetect import detect
