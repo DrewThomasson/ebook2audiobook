@@ -977,6 +977,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 error = 'No valid text found!'
                 print(error)
                 return None
+            text = normalize_sml_tags(text)
             text, sml_blocks = escape_sml(text)
             if stanza_nlp:
                 msg = 'Converting dates and years to words…'
@@ -1774,8 +1775,6 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
-    # Normalize SML tags
-    text = normalize_sml_tags(text)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)

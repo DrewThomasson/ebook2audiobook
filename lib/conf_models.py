@@ -42,7 +42,6 @@ SML_TAG_PATTERN = re.compile(
 	re.VERBOSE
 )
 
-
 default_tts_engine = TTS_ENGINES['XTTSv2']
 default_fine_tuned = 'internal'
 default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
