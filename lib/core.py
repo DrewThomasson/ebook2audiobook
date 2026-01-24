@@ -976,10 +976,18 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             if not re.search(r"[^\W_]", text):
                 error = 'No valid text found!'
                 print(error)
-                return None
+                return Non
+            # clean SML tags badly coded
             text = normalize_sml_tags(text)
             if text is False:
                 return None
+            # remove any [break] between words or cutting words
+            break_token = re.escape(sml_token('break'))
+            strip_break_spaces_re = re.compile(rf'\s*{break_token}\s*')
+            break_between_alnum_re = re.compile(rf'(?<=[\w]){break_token}(?=[\w])', flags=re.UNICODE)
+            text = strip_break_spaces_re.sub(sml_token('break'), text)
+            text = break_between_alnum_re.sub(' ', text)
+            # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
             if stanza_nlp:
                 msg = 'Converting dates and years to words…'
@@ -1163,6 +1171,8 @@ def get_sentences(text:str, session_id:str)->list|None:
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
 
+        assert not SML_TAG_PATTERN.search(text)
+
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
@@ -1240,7 +1250,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 rest = right
 
         # PASS 4 — merge very short rows
-        merge_list = []
+        final_list = []
         merge_max_chars = int((max_chars / 2) / 3)
         i = 0
         n = len(last_list)
@@ -1250,7 +1260,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 i += 1
                 continue
             if i == 0:
-                merge_list.append(cur)
+                final_list.append(cur)
                 i += 1
                 continue
             cur_len = clean_len(cur)
@@ -1267,32 +1277,17 @@ def get_sentences(text:str, session_id:str)->list|None:
                         j += 1
                         continue
                     break
-                if merge_list:
-                    prev = merge_list[-1]
+                if final_list:
+                    prev = final_list[-1]
                     if clean_len(prev) + cur_len <= max_chars:
-                        merge_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
+                        final_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
                         i = j
                         continue
-                merge_list.append(cur)
+                final_list.append(cur)
                 i = j
                 continue
-            merge_list.append(cur)
+            final_list.append(cur)
             i += 1
-
-        # PASS 5 = remove unwanted breaks
-        break_token = re.escape(sml_token('break'))
-        strip_break_spaces_re = re.compile(
-            rf'\s*{break_token}\s*'
-        )
-        break_between_alnum_re = re.compile(
-            rf'(?<=[\w]){break_token}(?=[\w])',
-            flags=re.UNICODE
-        )
-        final_list = []
-        for s in merge_list:
-            s = strip_break_spaces_re.sub(sml_token('break'), s)
-            s = break_between_alnum_re.sub(' ', s)
-            final_list.append(s)
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
