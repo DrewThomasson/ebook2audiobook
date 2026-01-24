@@ -1066,6 +1066,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 error = 'No sentences found!'
                 print(error)
                 return None
+            sentences = [restore_sml(s, sml_blocks) for s in sentences]
             return sentences
         return None
     except Exception as e:
