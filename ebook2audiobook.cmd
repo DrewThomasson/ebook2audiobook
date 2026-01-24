@@ -241,10 +241,8 @@ if errorlevel 1 (
 	goto :install_programs
 ) else (
 	if exist "%SCRIPT_DIR%\.after-scoop" (
-		call "%PS_EXE%" %PS_ARGS% scoop install git || goto :failed
-		call "%PS_EXE%" %PS_ARGS% scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git || goto :failed
-		call "%PS_EXE%" %PS_ARGS% scoop bucket add extras || goto :failed
-		call "%PS_EXE%" %PS_ARGS% scoop bucket add versions || goto :failed
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
+		call git config --global credential.helper
 		echo %ESC%[32m=============== Scoop components installed! ===============%ESC%[0m
 		set "OK_SCOOP=0"
 		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
@@ -282,12 +280,17 @@ exit /b
 :install_programs
 if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
-	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
-	echo %ESC%[33m=============== Scoop installed. Validate PATH by Restarting the terminal and install its components... ===============%ESC%[0m
+	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
+		"Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
+	echo %ESC%[33m=============== Scoop installed. Restarting terminal with refreshed PATH... ===============%ESC%[0m
 	type nul > "%SCRIPT_DIR%\.after-scoop"
+	rem Refresh PATH in current process
+	call "%PS_EXE%" -NoLogo -NoProfile -Command ^
+		"$env:PATH = [Environment]::GetEnvironmentVariable('PATH','User') + ';' + [Environment]::GetEnvironmentVariable('PATH','Machine')"
 	start "" cmd /k "cd /d "%SCRIPT_DIR%" & call "%~f0""
 	exit
 )
+
 if not "%OK_CONDA%"=="0" (
 	echo Installing Miniforge...
 	call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"

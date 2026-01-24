@@ -1163,6 +1163,7 @@ def get_sentences(text:str, session_id:str)->list|None:
             return None
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
+        text, sml_blocks = escape_sml(text)
 
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
@@ -1317,8 +1318,10 @@ def get_sentences(text:str, session_id:str)->list|None:
             for s in join_ideogramms(result):
                 if not is_latin_only(s):
                     joined.append(s)
+            joined = [restore_sml(s, sml_blocks) for s in joined]
             return joined
         else:
+            final_list = [restore_sml(s, sml_blocks) for s in final_list]
             return final_list
     except Exception as e:
         print(f'get_sentences() error: {e}')
