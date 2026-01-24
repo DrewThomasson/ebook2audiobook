@@ -74,8 +74,8 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        if not self._convert_sml(part):
-                            error = f'_convert_sml failed: {part}'
+                        bool, error = self._convert_sml(part)
+                        if bool is False: 
                             print(error)
                             return False
                         continue

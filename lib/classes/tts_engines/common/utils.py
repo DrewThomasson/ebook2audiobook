@@ -53,7 +53,7 @@ class TTSUtils:
                 "self._load_xtts_builtin_list() failed"
             ) from error
 
-    def _apply_gpu_policy(self, enough_vram: bool, seed: int) -> torch.dtype:
+    def _apply_gpu_policy(self, enough_vram:bool, seed:int)->torch.dtype:
         using_gpu = self.session['device'] != devices['CPU']['proc']
         device = self.session['device']
         torch.manual_seed(seed)
@@ -406,8 +406,8 @@ class TTSUtils:
                     return False
         return True
         
-    def _split_sentence_on_sml(self, sentence: str) -> list[str]:
-        parts: list[str] = []
+    def _split_sentence_on_sml(self, sentence:str)->list[str]:
+        parts:list[str] = []
         last = 0
         for m in SML_TAG_PATTERN.finditer(sentence):
             start, end = m.span()
@@ -423,11 +423,11 @@ class TTSUtils:
                 parts.append(tail)
         return parts
 
-    def _convert_sml(self, sml: str) -> bool:
+    def _convert_sml(self, sml:str)->tuple[bool, str]:
         m = SML_TAG_PATTERN.fullmatch(sml)
         if not m:
             error = '_convert_sml SML_TAG_PATTERN error: m is empty'
-            return False
+            return False, error
         tag = m.group("tag")
         close = bool(m.group("close"))
         value = m.group("value")
@@ -440,28 +440,26 @@ class TTSUtils:
             )
         elif tag == "voice":
             if close:
-                return self._set_voice()
+                return True, self._set_voice()
             assert value is not None, "voice tag requires a value"
             voice_path = os.path.abspath(value)
             if not os.path.exists(voice_path):
                 error = f'_convert_sml() error: voice {voice_path} does not exist!'
-                print(error)
-                return False
+                return False, error
             self.params["voice_path"] = voice_path
-            return self._set_voice()
+            return True, self._set_voice()
         else:
             error = 'This SML is not recognized'
-            print(error)
-            return False
+            return False, error
         self.audio_segments.append(torch.zeros(1, int(self.params["samplerate"] * silence_time)).clone())
-        return True
+        return True, ''
 
-    def _format_timestamp(self, seconds: float) -> str:
+    def _format_timestamp(self, seconds:float)->str:
         m, s = divmod(seconds, 60)
         h, m = divmod(m, 60)
         return f"{int(h):02}:{int(m):02}:{s:06.3f}"
 
-    def _build_vtt_file(self, all_sentences: list, audio_dir: str, vtt_path: str) -> bool:
+    def _build_vtt_file(self, all_sentences:list, audio_dir:str, vtt_path:str)->bool:
         try:
             msg = 'VTT file creation started...'
             print(msg)
