@@ -741,12 +741,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 toc = epubBook.toc
                 toc_list = [
                         nt for item in toc if hasattr(item, 'title')
-                        if (nt := normalize_text(
-                            str(item.title),
-                            session['language'],
-                            session['language_iso1'],
-                            session['tts_engine']
-                    )) is not None
+                        if (nt := normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine'])) is not None
                 ]
             except Exception as toc_error:
                 error = f'Error extracting Table of Content: {toc_error}'
@@ -982,6 +977,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 error = 'No valid text found!'
                 print(error)
                 return None
+            text, sml_blocks = escape_sml(text)
             if stanza_nlp:
                 msg = 'Converting dates and years to words…'
                 print(msg)
