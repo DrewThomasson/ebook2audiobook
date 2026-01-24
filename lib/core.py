@@ -1163,7 +1163,6 @@ def get_sentences(text:str, session_id:str)->list|None:
             return None
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-        text, sml_blocks = escape_sml(text)
 
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
@@ -1737,13 +1736,13 @@ def escape_sml(text:str)->tuple[str, list[str]]:
 
 	def replace(m: re.Match[str]) -> str:
 		sml_blocks.append(m.group(0))
-		return chr(sml_cancel_tag + len(sml_blocks) - 1)
+		return chr(sml_escape_tag + len(sml_blocks) - 1)
 
 	return SML_TAG_PATTERN.sub(replace, text), sml_blocks
 
 def restore_sml(text:str, sml_blocks:list[str])->str:
 	for i, block in enumerate(sml_blocks):
-		text = text.replace(chr(sml_cancel_tag + i), block)
+		text = text.replace(chr(sml_escape_tag + i), block)
 	return text
 
 def sml_token(tag:str, value:str|None=None, close:bool=False)->str:

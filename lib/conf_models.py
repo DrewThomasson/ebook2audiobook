@@ -26,7 +26,7 @@ TTS_SML = {
 	"voice": {"paired": True},
 }
 
-sml_cancel_tag = 0xE000
+sml_escape_tag = 0xE000
 sml_tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
 
 SML_TAG_PATTERN = re.compile(
