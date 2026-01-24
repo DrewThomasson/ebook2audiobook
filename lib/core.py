@@ -978,6 +978,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 print(error)
                 return None
             text = normalize_sml_tags(text)
+            if text is False:
+                return None
             text, sml_blocks = escape_sml(text)
             if stanza_nlp:
                 msg = 'Converting dates and years to words…'
@@ -1074,14 +1076,14 @@ def get_sentences(text:str, session_id:str)->list|None:
                 result.append(tail)
         return result
 
-    def strip_sml(s:str)->str:
-        return SML_TAG_PATTERN.sub('', s)
+    def strip_escaped_sml(s:str)->str:
+        return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
     def clean_len(s:str)->int:
-        return len(strip_sml(s))
+        return len(strip_escaped_sml(s))
 
     def is_latin_only(s:str)->bool:
-        s = strip_sml(s)
+        s = strip_escaped_sml(s)
         s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
         has_latin = bool(re.search(r'[A-Za-z]', s))
         has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
@@ -1090,7 +1092,7 @@ def get_sentences(text:str, session_id:str)->list|None:
     def split_at_space_limit(s:str)->list[str]:
         out = []
         rest = s.strip()
-        while rest and len(strip_sml(rest)) > max_chars:
+        while rest and len(strip_escaped_sml(rest)) > max_chars:
             cut = rest[:max_chars + 1]
             idx = cut.rfind(' ')
             if idx == -1:
@@ -1186,7 +1188,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 continue
             if i + 1 < n:
                 next_s = hard_list[i + 1].strip()
-                next_clean = strip_sml(next_s)
+                next_clean = strip_escaped_sml(next_s)
                 if next_clean and sum(c.isalnum() for c in next_clean) < 3:
                     s = f"{s} {next_s}"
                     i += 2
@@ -1194,14 +1196,14 @@ def get_sentences(text:str, session_id:str)->list|None:
                     i += 1
             else:
                 i += 1
-            if len(strip_sml(s)) <= max_chars:
+            if len(strip_escaped_sml(s)) <= max_chars:
                 soft_list.append(s)
                 continue
             parts = split_inclusive(s, soft_pattern)
             if parts:
                 valid = False
                 for p in parts:
-                    if len(strip_sml(p.strip())) <= max_chars:
+                    if len(strip_escaped_sml(p.strip())) <= max_chars:
                         valid = True
                         break
                 if valid:
@@ -1219,7 +1221,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 continue
             rest = s
             while rest:
-                current_len = len(strip_sml(rest))   # ← rename variable
+                current_len = len(strip_escaped_sml(rest))   # ← rename variable
                 if current_len <= max_chars:
                     last_list.append(rest.strip())
                     break
@@ -1714,33 +1716,64 @@ def foreign2latin(text:str, base_lang:str)->str:
         out = out.replace(k, v)
     return out
 
-def normalize_sml_tags(text:str)->str:
-
-    def replace(m: re.Match[str])->str:
-        tag = m.group("tag")
-        close = m.group("close")
+def normalize_sml_tags(text:str)->str|bool:
+    out = []
+    stack = []
+    last = 0
+    for m in SML_TAG_PATTERN.finditer(text):
+        start, end = m.span()
+        out.append(text[last:start])
+        tag = m.group("tag_open") or m.group("tag_close")
+        close = m.group("tag_close") is not None
         value = m.group("value")
-        if close:
-            return f"[/{tag}]"
-        if value is not None:
-            return f"[{tag}:{value.strip()}]"
-        return f"[{tag}]"
-
-    return SML_TAG_PATTERN.sub(replace, text)
+        info = TTS_SML.get(tag)
+        if not info:
+            out.append(m.group(0))
+            last = end
+            continue
+        if info.get("paired"):
+            if close:
+                if not stack or stack[-1] != tag:
+                    error = f'normalize_sml_tags() error: unmatched closing tag [/{tag}]'
+                    print(error)
+                    return False
+                stack.pop()
+                out.append(f"[/{tag}]")
+            else:
+                stack.append(tag)
+                if value is not None:
+                    out.append(f"[{tag}:{value.strip()}]")
+                else:
+                    error = f'normalize_sml_tags() error: paired tag [{tag}] requires a value'
+                    print(error)
+                    return False
+        else:
+            if close:
+                error = f'normalize_sml_tags() error: non-paired tag [/{tag}] is invalid'
+                print(error)
+                return False
+            out.append(info["static"])
+        last = end
+    out.append(text[last:])
+    if stack:
+        error = f'normalize_sml_tags() error: unclosed tag(s): {', '.join(stack)}'
+        print(error)
+        return False
+    return ''.join(out)
 
 def escape_sml(text:str)->tuple[str, list[str]]:
-	sml_blocks: list[str] = []
+    sml_blocks:list[str] = []
 
-	def replace(m: re.Match[str]) -> str:
-		sml_blocks.append(m.group(0))
-		return chr(sml_escape_tag + len(sml_blocks) - 1)
+    def replace(m:re.Match[str])->str:
+        sml_blocks.append(m.group(0))
+        return chr(sml_escape_tag + len(sml_blocks) - 1)
 
-	return SML_TAG_PATTERN.sub(replace, text), sml_blocks
+    return SML_TAG_PATTERN.sub(replace, text), sml_blocks
 
 def restore_sml(text:str, sml_blocks:list[str])->str:
-	for i, block in enumerate(sml_blocks):
-		text = text.replace(chr(sml_escape_tag + i), block)
-	return text
+    for i, block in enumerate(sml_blocks):
+        text = text.replace(chr(sml_escape_tag + i), block)
+    return text
 
 def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
     if close:

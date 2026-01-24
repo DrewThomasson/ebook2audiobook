@@ -34,12 +34,13 @@ SML_TAG_PATTERN = re.compile(
 	\[
 		\s*
 		(?P<close>/)?
+		\s*
 		(?P<tag>{sml_tag_keys})
-		(?:\s*:\s*(?P<value>[^\]]+))?
+		(?:\s*:\s*(?P<value>.*?))?
 		\s*
 	\]
 	''',
-	re.VERBOSE
+	re.VERBOSE | re.DOTALL
 )
 
 default_tts_engine = TTS_ENGINES['XTTSv2']
