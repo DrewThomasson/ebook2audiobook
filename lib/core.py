@@ -961,10 +961,10 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             i = 0
             while i < len(text_list):
                 current = text_list[i]
-                if current in {v["static"] for v in TTS_SML.values() if "static" in v}:
+                if current in {v['static'] for v in TTS_SML.values() if "static" in v}:
                     if clean_list:
                         prev = clean_list[-1]
-                        if prev in {v["static"] for v in TTS_SML.values() if "static" in v}:
+                        if prev in {v['static'] for v in TTS_SML.values() if "static" in v}:
                             i += 1
                             continue
                     clean_list.append(current)
@@ -1747,11 +1747,11 @@ def normalize_sml_tags(text:str)->str|bool:
                 error = f'normalize_sml_tags() error: non-paired tag [/{tag}] is invalid'
                 print(error)
                 return False
-            out.append(info["static"])
+            out.append(info['static'])
         last = end
     out.append(text[last:])
     if stack:
-        error = f'normalize_sml_tags() error: unclosed tag(s): {', '.join(stack)}'
+        error = f"normalize_sml_tags() error: unclosed tag(s): {', '.join(stack)}"
         print(error)
         return False
     return ''.join(out)
