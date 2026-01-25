@@ -1,4 +1,4 @@
-import os, subprocess, multiprocessing, re, sys, gradio as gr
+import os, pty, subprocess, multiprocessing, re, sys, gradio as gr
 
 from collections.abc import Callable
 
@@ -51,10 +51,7 @@ class SubprocessPipe:
                 )
 
             elif is_demucs and self.progress_bar:
-                import pty, os
-
                 master_fd, slave_fd = pty.openpty()
-
                 self.process = subprocess.Popen(
                     self.cmd,
                     stdin=slave_fd,
