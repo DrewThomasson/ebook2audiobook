@@ -44,6 +44,7 @@ dependencies = [
 	"PyOpenGL",
 	"phonemizer-fork",
 	"pydub",
+	"DiffQ",
 	"demucs",
 	"unidecode",
 	"langdetect",

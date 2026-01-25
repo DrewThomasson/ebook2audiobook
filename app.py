@@ -8,12 +8,12 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 
 def init_multiprocessing():
-    if sys.platform.startswith("darwin"):
+    if sys.platform == systems['MACOS']:
         try:
             multiprocessing.set_start_method("spawn")
         except RuntimeError:
             pass
-    elif sys.platform.startswith("linux"):
+    elif sys.platform == systems['LINUX']:
         try:
             multiprocessing.set_start_method("fork")
         except RuntimeError:

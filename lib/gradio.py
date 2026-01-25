@@ -1725,7 +1725,6 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] == 'converting':
                         session['status'] = 'ready'
                     session['is_gui_process'] = is_gui_process
-                    session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])

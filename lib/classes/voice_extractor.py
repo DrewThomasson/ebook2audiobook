@@ -91,10 +91,15 @@ class VoiceExtractor:
     def _demucs_voice(self)->tuple[bool, str]:
         error = '_demucs_voice() error'
         try:
+            tqdm_re = re.compile(rb"(\d{1,3})%\|")
+            system = self.session['system']
+            last_percent = 0.0
             msg = 'Extracting'
             print(msg)
             cmd = [
                 "demucs",
+                "-n", "mdx_q",
+                "--shifts", "0", "--segment", "4",
                 "--verbose",
                 "--two-stems=vocals",
                 "--out", self.output_dir,
@@ -111,6 +116,69 @@ class VoiceExtractor:
                 return True, msg
             else:
                 error = f'_demucs_voice() SubprocessPipe Error.'
+
+
+
+W
+            if self.is_gui_process:
+                self.progress_bar(0.0, desc=msg)
+            if system in ("Linux", "Darwin"):
+                master_fd, slave_fd = pty.openpty()
+                proc = subprocess.Popen(
+                    cmd,
+                    stdin=slave_fd,
+                    stdout=slave_fd,
+                    stderr=slave_fd,
+                    close_fds=True
+                )
+                os.close(slave_fd)
+                while True:
+                    r, _, _ = select.select([master_fd], [], [], 0.1)
+                    if master_fd in r:
+                        try:
+                            data = os.read(master_fd, 1024)
+                            if not data:
+                                break
+                            # optional: print raw tqdm output to terminal
+                            sys.stdout.buffer.write(data)
+                            sys.stdout.buffer.flush()
+                            match = tqdm_re.search(data)
+                            if match:
+                                percent = min(float(match.group(1)), 100.0)
+                                if percent - last_percent >= 0.5:
+                                    progress(percent / 100.0, desc="Demucs running")
+                                    last_percent = percent
+                        except OSError:
+                            break
+                proc.wait()
+            elif system == "Windows":
+                try:
+                    import winpty
+                except ImportError:
+                    return "Install pywinpty: pip install pywinpty"
+                proc = winpty.PTYProcess.spawn(cmd)
+                while proc.isalive():
+                    try:
+                        data = proc.read(1024)
+                        if data:
+                            print(data, end="", flush=True)
+                            match = re.search(r"(\d{1,3})%\|", data)
+                            if match:
+                                percent = min(float(match.group(1)), 100.0)
+                                if percent - last_percent >= 0.5:
+                                    progress(percent / 100.0, desc="Demucs running")
+                                    last_percent = percent
+                    except EOFError:
+                        break
+                proc.close()
+            progress(1.0, desc="Completed")
+            return "Done"
+            
+            
+            
+            
+            
+            
         except subprocess.CalledProcessError as e:
             error = (
                 f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'

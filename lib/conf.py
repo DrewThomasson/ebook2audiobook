@@ -1,4 +1,4 @@
-import os, platform, tempfile, sys
+import os, tempfile, sys
 
 # ---------------------------------------------------------------------
 # Global configuration
@@ -54,7 +54,7 @@ os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
-if platform.system() == 'Windows':
+if sys.platform == 'win32':
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
 
 # ---------------------------------------------------------------------
@@ -72,6 +72,12 @@ debug_mode = False
 # ---------------------------------------------------------------------
 # Hardware mappings
 # ---------------------------------------------------------------------
+
+systems = {
+    "LINUX": "linux",
+    "MACOS": "darwin",
+    "WINDOWS": "win32"
+}
 
 devices = {
     "CPU": {"proc": "cpu", "found": True},

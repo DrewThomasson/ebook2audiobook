@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
-import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
+import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
 
@@ -134,7 +134,7 @@ class SessionContext:
             "model_cache": None,
             "model_zs_cache": None,
             "stanza_cache": None,
-            "system": None,
+            "system": sys.platform,
             "client": None,
             "language": default_language_code,
             "language_iso1": None,
