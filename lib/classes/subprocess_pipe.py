@@ -40,7 +40,7 @@ class SubprocessPipe:
         try:
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
             is_demucs = "dmucs" in os.path.basename(self.cmd[0])
-            if is_ffmpeg or is_demucs:
+            if is_ffmpeg:
                 self.process = subprocess.Popen(
                     self.cmd,
                     stdout=subprocess.DEVNULL,
@@ -50,13 +50,22 @@ class SubprocessPipe:
                 )
             else:
                 if self.progress_bar:
-                    self.process = subprocess.Popen(
-                        self.cmd,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        text=False,
-                        bufsize=0
-                    )
+                    if is_demucs:
+                        self.process = subprocess.Popen(
+                            self.cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL,
+                            text=False,
+                            bufsize=0
+                        )
+                    else:
+                        self.process = subprocess.Popen(
+                            self.cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            text=False,
+                            bufsize=0
+                        )
                 else:
                     self.process = subprocess.Popen(
                         self.cmd,
@@ -84,12 +93,8 @@ class SubprocessPipe:
                     tqdm_re = re.compile(rb'(\d{1,3})%\|')
                     last_percent = 0.0
                     buffer = b""
-
                     while True:
-                        if is_demucs:
-                            chunk = self.process.stderr.read(1024)
-                        else:
-                            chunk = self.process.stdout.read(1024)
+                        chunk = self.process.stdout.read(1024)
                         if not chunk:
                             break
                         buffer += chunk
