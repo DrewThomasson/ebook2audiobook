@@ -133,8 +133,10 @@ class VoiceExtractor:
                             match = tqdm_re.search(data)
                             if match:
                                 percent = min(float(match.group(1)), 100.0)
+                                if percent < last_percent:
+                                    last_percent = 0.0
                                 if percent - last_percent >= 0.5:
-                                    self.progress_bar(round(percent/100.0, 2), desc=msg)
+                                    self.progress_bar(round(percent / 100.0, 2), desc=msg)
                                     last_percent = percent
                         except OSError:
                             error = f'_demucs_voice() EOFError'
@@ -163,8 +165,11 @@ class VoiceExtractor:
                             match = re.search(r"(\d{1,3})%\|", data)
                             if match:
                                 percent = min(float(match.group(1)), 100.0)
+                                # detect new tqdm pass (reset)
+                                if percent < last_percent:
+                                    last_percent = 0.0
                                 if percent - last_percent >= 0.5:
-                                    self.progress_bar(round(percent/100.0, 2), desc=msg)
+                                    self.progress_bar(round(percent / 100.0, 2), desc=msg)
                                     last_percent = percent
                     except EOFError:
                         error = f'_demucs_voice() EOFError'
