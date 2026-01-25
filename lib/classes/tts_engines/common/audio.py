@@ -107,6 +107,8 @@ def get_audiolist_duration(filepaths: list[str]) -> dict[str, float]:
         out = subprocess.check_output(cmd, text=True)
         data = json.loads(out)
         extracted = _extract_mediainfo_durations(data)
+        durations = _extract_mediainfo_durations(data)
+        print(f'---------------{extracted}-----------------')
         for path in filepaths:
             if path in extracted:
                 durations[path] = extracted[path]
@@ -116,7 +118,6 @@ def get_audiolist_duration(filepaths: list[str]) -> dict[str, float]:
                     durations[path] = extracted[base]
     except Exception:
         pass
-    print(f'---------------{durations}-----------------')
     return durations
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
