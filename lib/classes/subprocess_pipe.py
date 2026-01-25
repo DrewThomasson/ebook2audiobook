@@ -54,7 +54,7 @@ class SubprocessPipe:
                         self.process = subprocess.Popen(
                             self.cmd,
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.DEVNULL,
+                            stderr=subprocess.PIPE,
                             text=False,
                             bufsize=0
                         )
