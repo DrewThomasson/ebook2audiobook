@@ -108,6 +108,8 @@ class VoiceExtractor:
                 self.wav_file
             ]
             if system in (systems['LINUX'], systems['MACOS']):
+                import pty
+                import select
                 master_fd, slave_fd = pty.openpty()
                 proc = subprocess.Popen(
                     cmd,
@@ -131,16 +133,21 @@ class VoiceExtractor:
                             if match:
                                 percent = min(float(match.group(1)), 100.0)
                                 if percent - last_percent >= 0.5:
-                                    progress(percent / 100.0, desc="Demucs running")
+                                    self.progress_bar((percent/100.0, desc=msg)
                                     last_percent = percent
                         except OSError:
-                            break
+                            error = f'_demucs_voice() EOFError'
+                            return False, error
                 proc.wait()
             elif system == systems['WINDOWS']:
                 try:
                     import winpty
                 except ImportError:
-                    return "Install pywinpty: pip install pywinpty"
+                    try:
+                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'pywinpty'])
+                    except subprocess.CalledProcessError as e:
+                        error = f'Failed to install pywinpty: {e}'
+                        return False, error
                 proc = winpty.PTYProcess.spawn(cmd)
                 while proc.isalive():
                     try:
@@ -151,10 +158,11 @@ class VoiceExtractor:
                             if match:
                                 percent = min(float(match.group(1)), 100.0)
                                 if percent - last_percent >= 0.5:
-                                    progress(percent / 100.0, desc="Demucs running")
+                                    self.progress_bar((percent/100.0, desc=msg)
                                     last_percent = percent
                     except EOFError:
-                        break
+                        error = f'_demucs_voice() EOFError'
+                        return False, error
                 proc.close()
             if proc:
                 msg = 'Extraction complete!'
@@ -163,12 +171,6 @@ class VoiceExtractor:
                 return True, msg
             else:
                 error = f'_demucs_voice() Subprocess Error.'
-            
-            
-            
-            
-            
-            
         except subprocess.CalledProcessError as e:
             error = (
                 f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'
