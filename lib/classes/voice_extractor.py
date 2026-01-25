@@ -71,7 +71,7 @@ class VoiceExtractor:
 
     def _detect_background(self)->tuple[bool,bool,str]:
         try:
-            msg = 'Detecting if any background...'
+            msg = 'Detecting if any background noise or music...'
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
@@ -164,7 +164,6 @@ class VoiceExtractor:
                         error = f'_demucs_voice() EOFError'
                         return False, error
                 proc.close()
-            if proc:
                 msg = 'Extraction complete!'
                 if self.is_gui_process:
                     self.progress_bar(0.0, desc=msg)
