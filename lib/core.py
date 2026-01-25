@@ -2294,6 +2294,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
                             filepaths.append(file_path)
             durations = get_audiolist_duration(filepaths)
             total_duration = sum(durations.values())
+            print(f'---------{total_duration}-----------')
         except Exception as e:
             print(f'assemble_audio_chunks() open file {txt_file} Error: {e}')
             return False
