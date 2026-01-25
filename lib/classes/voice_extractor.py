@@ -97,9 +97,6 @@ class VoiceExtractor:
             last_output = b""
             proc = None
             msg = 'Extracting'
-            print(msg)
-            if self.is_gui_process:
-                self.progress_bar(0.0, desc=msg)
             cmd = [
                 "demucs",
                 "-n", "mdx_q",
