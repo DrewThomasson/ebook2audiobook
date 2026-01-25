@@ -9,7 +9,7 @@ from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 from lib.classes.tts_engines.common.audio import get_audio_duration
 from lib.classes.background_detector import BackgroundDetector
 from lib.classes.subprocess_pipe import SubprocessPipe
-from lib.conf import voice_formats, default_audio_proc_samplerate
+from lib.conf import systems, voice_formats, default_audio_proc_samplerate
 from lib.conf_models import TTS_ENGINES
 
 class VoiceExtractor:
@@ -96,6 +96,8 @@ class VoiceExtractor:
             last_percent = 0.0
             msg = 'Extracting'
             print(msg)
+            if self.is_gui_process:
+                self.progress_bar(0.0, desc=msg)
             cmd = [
                 "demucs",
                 "-n", "mdx_q",
@@ -105,24 +107,7 @@ class VoiceExtractor:
                 "--out", self.output_dir,
                 self.wav_file
             ]
-            proc = SubprocessPipe(
-                cmd, 
-                is_gui_process=self.is_gui_process, 
-                total_duration=get_audio_duration(self.wav_file), 
-                msg=msg,
-            )
-            if proc:
-                msg = 'Extraction complete!'
-                return True, msg
-            else:
-                error = f'_demucs_voice() SubprocessPipe Error.'
-
-
-
-
-            if self.is_gui_process:
-                self.progress_bar(0.0, desc=msg)
-            if system in ("Linux", "Darwin"):
+            if system in (systems['LINUX'], systems['MACOS']):
                 master_fd, slave_fd = pty.openpty()
                 proc = subprocess.Popen(
                     cmd,
@@ -151,7 +136,7 @@ class VoiceExtractor:
                         except OSError:
                             break
                 proc.wait()
-            elif system == "Windows":
+            elif system == systems['WINDOWS']:
                 try:
                     import winpty
                 except ImportError:
@@ -171,8 +156,13 @@ class VoiceExtractor:
                     except EOFError:
                         break
                 proc.close()
-            progress(1.0, desc="Completed")
-            return "Done"
+            if proc:
+                msg = 'Extraction complete!'
+                if self.is_gui_process:
+                    self.progress_bar(0.0, desc=msg)
+                return True, msg
+            else:
+                error = f'_demucs_voice() Subprocess Error.'
             
             
             
