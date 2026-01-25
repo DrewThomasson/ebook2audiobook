@@ -97,8 +97,6 @@ class VoiceExtractor:
         try:
             msg = 'Extracting'
             print(msg)
-            if self.is_gui_process:
-                self.progress_bar(0, desc=msg)
             cmd = [
                 "demucs",
                 "--verbose",
