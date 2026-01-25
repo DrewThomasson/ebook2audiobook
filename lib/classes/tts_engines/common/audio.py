@@ -56,25 +56,32 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
     raise TypeError(error)
     return torch.tensor([], dtype=torch.float32)
     
-def _extract_mediainfo_durations(data:dict)->dict[str, float]:
+def _extract_mediainfo_durations(data:dict|list)->dict[str, float]:
     durations: dict[str, float] = {}
-    media_list = data.get("media", [])
-    if isinstance(media_list, dict):
-        media_list = [media_list]
-    for media in media_list:
-        ref = media.get("@ref")
-        if not ref:
+    if isinstance(data, list):
+        media_blocks = data
+    else:
+        media_blocks = [data]
+    for block in media_blocks:
+        media = block.get("media")
+        if not media:
             continue
-        ref = os.path.realpath(ref)
-        for track in media.get("track", []):
-            raw = track.get("Duration")
-            if not raw:
+        media_list = media if isinstance(media, list) else [media]
+        for m in media_list:
+            ref = m.get("@ref")
+            if not ref:
                 continue
-            try:
-                durations[ref] = float(raw)
-                break
-            except (TypeError, ValueError):
-                continue
+            ref = os.path.realpath(ref)
+
+            for track in m.get("track", []):
+                raw = track.get("Duration")
+                if not raw:
+                    continue
+                try:
+                    durations[ref] = float(raw)
+                    break
+                except (TypeError, ValueError):
+                    continue
     return durations
 
 def get_audio_duration(filepath: str) -> float:
