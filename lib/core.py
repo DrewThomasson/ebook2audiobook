@@ -134,7 +134,7 @@ class SessionContext:
             "model_cache": None,
             "model_zs_cache": None,
             "stanza_cache": None,
-            "system": sys.platform,
+            "system": None,
             "client": None,
             "language": default_language_code,
             "language_iso1": None,
@@ -2516,6 +2516,7 @@ def convert_ebook(args:dict)->tuple:
                 session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
                 cleanup_models_cache()
                 if not session['is_gui_process']:
+                    session['system'] = sys.platform
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                     os.makedirs(session['voice_dir'], exist_ok=True)
