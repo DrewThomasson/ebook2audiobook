@@ -140,9 +140,10 @@ class VoiceExtractor:
                             error = f'_demucs_voice() EOFError'
                             return False, error
                 proc.wait()
-                if proc.returncode != 0:
-                    error = f'_demucs_voice() demucs exited with code {proc.returncode}'
-                    return False, error
+                if proc.returncode == 0:
+                    msg = 'Completed'
+                    return True, msg
+                error = f'_demucs_voice() demucs exited with code {proc.returncode}'
             elif system == systems['WINDOWS']:
                 try:
                     import winpty
@@ -169,7 +170,7 @@ class VoiceExtractor:
                         error = f'_demucs_voice() EOFError'
                         return False, error
                 proc.close()
-                msg = 'Extraction complete!'
+                msg = 'Completed'
                 return True, msg
         except subprocess.CalledProcessError as e:
             error = (
@@ -343,6 +344,8 @@ class VoiceExtractor:
                         if status:
                             result, msg = self._demucs_voice()
                             print(msg)
+                            if self.is_gui_process:
+                                self.progress_bar(int(result), desc=msg)
                         else:
                             self.voice_track = self.wav_file
                         if result:
