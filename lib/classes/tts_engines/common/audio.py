@@ -81,8 +81,6 @@ def _extract_mediainfo_durations(data:dict)->dict[str, float]:
     
 def get_audio_duration(filepath: str) -> float:
     mediainfo = shutil.which("mediainfo")
-    if not mediainfo:
-        return 0.0
     cmd = [mediainfo, "--Output=JSON", filepath]
     try:
         result = subprocess.run(
@@ -93,7 +91,6 @@ def get_audio_duration(filepath: str) -> float:
         )
         data = json.loads(result.stdout)
         durations = _extract_mediainfo_durations(data)
-        print(f'---------------{durations}-----------------')
         return durations.get(filepath, 0.0)
     except subprocess.CalledProcessError as e:
         DependencyError(e)
@@ -105,8 +102,6 @@ def get_audio_duration(filepath: str) -> float:
 def get_audiolist_duration(filepaths: list[str]) -> dict[str, float]:
     durations = {path: 0.0 for path in filepaths}
     mediainfo = shutil.which("mediainfo")
-    if not mediainfo:
-        return durations
     cmd = [mediainfo, "--Output=JSON", *filepaths]
     try:
         out = subprocess.check_output(cmd, text=True)
