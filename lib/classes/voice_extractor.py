@@ -93,7 +93,6 @@ class VoiceExtractor:
         try:
             tqdm_re = re.compile(rb"(\d{1,3})%\|")
             system = self.session['system']
-            print(system)
             last_percent = 0.0
             last_output = b""
             proc = None
