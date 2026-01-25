@@ -133,7 +133,7 @@ class VoiceExtractor:
                             if match:
                                 percent = min(float(match.group(1)), 100.0)
                                 if percent - last_percent >= 0.5:
-                                    self.progress_bar((percent/100.0, desc=msg)
+                                    self.progress_bar(round(percent/100.0, 2), desc=msg)
                                     last_percent = percent
                         except OSError:
                             error = f'_demucs_voice() EOFError'
@@ -158,7 +158,7 @@ class VoiceExtractor:
                             if match:
                                 percent = min(float(match.group(1)), 100.0)
                                 if percent - last_percent >= 0.5:
-                                    self.progress_bar((percent/100.0, desc=msg)
+                                    self.progress_bar(round(percent/100.0, 2), desc=msg)
                                     last_percent = percent
                     except EOFError:
                         error = f'_demucs_voice() EOFError'
