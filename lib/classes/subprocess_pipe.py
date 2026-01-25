@@ -13,7 +13,7 @@ class SubprocessPipe:
         self.on_progress = on_progress
         self.progress_bar = False
         if self.is_gui_process:
-            self.progress_bar = gr.Progress(track_tqdm=False)
+            self.progress_bar = gr.Progress(track_tqdm=True)
         self._run_process()
         
     def _emit_progress(self, percent:float)->None:
