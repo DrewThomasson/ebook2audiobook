@@ -13,7 +13,7 @@ class SubprocessPipe:
         self.on_progress = on_progress
         self.progress_bar = False
         if self.is_gui_process:
-            self.progress_bar = gr.Progress(track_tqdm=True)
+            self.progress_bar = gr.Progress(track_tqdm=False)
         self._run_process()
         
     def _emit_progress(self, percent:float)->None:
@@ -39,8 +39,8 @@ class SubprocessPipe:
     def _run_process(self)->bool:
         try:
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
-            is_demucs = "dmucs" in os.path.basename(self.cmd[0])
-            if is_ffmpeg:
+            is_demucs = "demucs" in os.path.basename(self.cmd[0])
+            if is_ffmpeg or is_demucs:
                 self.process = subprocess.Popen(
                     self.cmd,
                     stdout=subprocess.DEVNULL,
@@ -50,22 +50,13 @@ class SubprocessPipe:
                 )
             else:
                 if self.progress_bar:
-                    if is_demucs:
-                        self.process = subprocess.Popen(
-                            self.cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            text=False,
-                            bufsize=0
-                        )
-                    else:
-                        self.process = subprocess.Popen(
-                            self.cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            text=False,
-                            bufsize=0
-                        )
+                    self.process = subprocess.Popen(
+                        self.cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=False,
+                        bufsize=0
+                    )
                 else:
                     self.process = subprocess.Popen(
                         self.cmd,
@@ -94,7 +85,10 @@ class SubprocessPipe:
                     last_percent = 0.0
                     buffer = b""
                     while True:
-                        chunk = self.process.stdout.read(1024)
+                        if is_demucs:
+                            chunk = self.process.stderr.read(1024)
+                        else:
+                            chunk = self.process.stdout.read(1024)
                         if not chunk:
                             break
                         buffer += chunk
