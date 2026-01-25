@@ -13,7 +13,7 @@ class SubprocessPipe:
         self.on_progress = on_progress
         self.progress_bar = False
         if self.is_gui_process:
-            self.progress_bar = gr.Progress(track_tqdm=True)
+            self.progress_bar = gr.Progress(track_tqdm=False)
         self._run_process()
         
     def _emit_progress(self, percent:float)->None:
@@ -39,7 +39,6 @@ class SubprocessPipe:
     def _run_process(self)->bool:
         try:
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
-            is_demucs = "demucs" in os.path.basename(self.cmd[0])
             if is_ffmpeg:
                 self.process = subprocess.Popen(
                     self.cmd,
@@ -49,7 +48,7 @@ class SubprocessPipe:
                     bufsize=0
                 )
             else:
-                if self.progress_bar and not is_demucs:
+                if self.progress_bar:
                     self.process = subprocess.Popen(
                         self.cmd,
                         stdout=subprocess.PIPE,
