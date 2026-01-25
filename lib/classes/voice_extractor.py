@@ -97,7 +97,7 @@ class VoiceExtractor:
             last_percent = 0.0
             last_output = b""
             proc = None
-            msg = 'Extracting'
+            msg = 'Extracting Voice...'
             cmd = [
                 "demucs",
                 "-n", "mdx_q",
