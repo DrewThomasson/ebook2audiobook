@@ -86,17 +86,17 @@ class SubprocessPipe:
                     buffer = b""
 
                     while True:
-                        chunk = self.process.stdout.read(1024)
+                        if is_demucs:
+                            chunk = self.process.stderr.read(1024)
+                        else:
+                            chunk = self.process.stdout.read(1024)
                         if not chunk:
                             break
-
                         buffer += chunk
-
                         # tqdm updates via \r, keep buffer small
                         if b'\r' in buffer:
                             parts = buffer.split(b'\r')
                             buffer = parts[-1]
-
                             for part in parts[:-1]:
                                 match = tqdm_re.search(part)
                                 if match:
