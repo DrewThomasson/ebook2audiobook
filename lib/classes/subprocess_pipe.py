@@ -40,23 +40,32 @@ class SubprocessPipe:
         try:
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
             is_demucs = "demucs" in os.path.basename(self.cmd[0])
-            if is_ffmpeg or is_demucs:
+            if is_ffmpeg:
                 self.process = subprocess.Popen(
                     self.cmd,
-                    stdout=subprocess.STDERR,
+                    stdout=subprocess.DEVNULL,
                     stderr=subprocess.PIPE,
                     text=False,
                     bufsize=0
                 )
             else:
                 if self.progress_bar:
-                    self.process = subprocess.Popen(
-                        self.cmd,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        text=False,
-                        bufsize=0
-                    )
+                    if is_demcucs:
+                        self.process = subprocess.Popen(
+                            self.cmd,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            text=False,
+                            bufsize=0
+                        )
+                    else:
+                        self.process = subprocess.Popen(
+                            self.cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            text=False,
+                            bufsize=0
+                        )
                 else:
                     self.process = subprocess.Popen(
                         self.cmd,
