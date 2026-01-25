@@ -112,10 +112,6 @@ def get_audiolist_duration(filepaths: list[str]) -> dict[str, float]:
         for path in filepaths:
             if path in extracted:
                 durations[path] = extracted[path]
-            else:
-                base = os.path.basename(path)
-                if base in extracted:
-                    durations[path] = extracted[base]
     except Exception:
         pass
     return durations
