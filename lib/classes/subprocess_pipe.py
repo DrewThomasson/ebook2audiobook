@@ -1,4 +1,4 @@
-import os, pty, subprocess, multiprocessing, re, sys, gradio as gr
+import os, subprocess, multiprocessing, re, sys, gradio as gr
 
 from collections.abc import Callable
 
@@ -13,7 +13,7 @@ class SubprocessPipe:
         self.on_progress = on_progress
         self.progress_bar = False
         if self.is_gui_process:
-            self.progress_bar = gr.Progress(track_tqdm=False)
+            self.progress_bar = gr.Progress(track_tqdm=True)
         self._run_process()
         
     def _emit_progress(self, percent:float)->None:
@@ -36,11 +36,10 @@ class SubprocessPipe:
         if self.progress_bar:
             self.progress_bar(0.0, desc=error)
 
-    def _run_process(self) -> bool:
+    def _run_process(self)->bool:
         try:
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
             is_demucs = "demucs" in os.path.basename(self.cmd[0])
-
             if is_ffmpeg:
                 self.process = subprocess.Popen(
                     self.cmd,
@@ -49,21 +48,8 @@ class SubprocessPipe:
                     text=False,
                     bufsize=0
                 )
-
-            elif is_demucs and self.progress_bar:
-                master_fd, slave_fd = pty.openpty()
-                self.process = subprocess.Popen(
-                    self.cmd,
-                    stdin=slave_fd,
-                    stdout=slave_fd,
-                    stderr=slave_fd,
-                    close_fds=True
-                )
-
-                os.close(slave_fd)
-
             else:
-                if self.progress_bar:
+                if self.progress_bar and not is_demucs:
                     self.process = subprocess.Popen(
                         self.cmd,
                         stdout=subprocess.PIPE,
@@ -78,54 +64,32 @@ class SubprocessPipe:
                         stderr=None,
                         text=False
                     )
-
-            # -------- PROGRESS PARSING --------
-
             if is_ffmpeg:
-                time_pattern = re.compile(rb'out_time_ms=(\d+)')
-                last_percent = 0.0
-
+                time_pattern=re.compile(rb'out_time_ms=(\d+)')
+                last_percent=0.0
                 for raw_line in self.process.stderr:
-                    match = time_pattern.search(raw_line)
+                    line=raw_line.decode(errors='ignore')
+                    match=time_pattern.search(raw_line)
                     if match and self.total_duration > 0:
-                        current_time = int(match.group(1)) / 1_000_000
-                        percent = min((current_time / self.total_duration) * 100, 100)
-                        if abs(percent - last_percent) >= 0.5:
+                        current_time=int(match.group(1))/1_000_000
+                        percent=min((current_time/self.total_duration)*100,100)
+                        if abs(percent-last_percent) >= 0.5:
                             self._emit_progress(percent)
-                            last_percent = percent
+                            last_percent=percent
                     elif b'progress=end' in raw_line:
                         self._emit_progress(100.0)
                         break
-
-            elif is_demucs and self.progress_bar:
-                tqdm_re = re.compile(rb'(\d{1,3})%\|')
-                last_percent = 0.0
-
-                while True:
-                    try:
-                        data = os.read(master_fd, 1024)
-                        if not data:
-                            break
-                        match = tqdm_re.search(data)
-                        if match:
-                            percent = min(float(match.group(1)), 100.0)
-                            if percent - last_percent >= 0.5:
-                                self._emit_progress(percent)
-                                last_percent = percent
-                    except OSError:
-                        break
-
             else:
                 if self.progress_bar:
                     tqdm_re = re.compile(rb'(\d{1,3})%\|')
                     last_percent = 0.0
                     buffer = b""
-
                     while True:
                         chunk = self.process.stdout.read(1024)
                         if not chunk:
                             break
                         buffer += chunk
+                        # tqdm updates via \r, keep buffer small
                         if b'\r' in buffer:
                             parts = buffer.split(b'\r')
                             buffer = parts[-1]
@@ -136,18 +100,15 @@ class SubprocessPipe:
                                     if percent - last_percent >= 0.5:
                                         self._emit_progress(percent)
                                         last_percent = percent
-
             self.process.wait()
-
             if self._stop_requested:
                 return False
-            elif self.process.returncode == 0:
+            elif self.process.returncode==0:
                 self._on_complete()
                 return True
             else:
                 self._on_error(self.process.returncode)
                 return False
-
         except Exception as e:
             self._on_error(e)
             return False
