@@ -39,7 +39,8 @@ class SubprocessPipe:
     def _run_process(self)->bool:
         try:
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
-            if is_ffmpeg:
+            is_demucs = "dmucs" in os.path.basename(self.cmd[0])
+            if is_ffmpeg or is_demucs:
                 self.process = subprocess.Popen(
                     self.cmd,
                     stdout=subprocess.DEVNULL,
