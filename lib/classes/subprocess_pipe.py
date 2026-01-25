@@ -43,7 +43,7 @@ class SubprocessPipe:
             if is_ffmpeg or is_demucs:
                 self.process = subprocess.Popen(
                     self.cmd,
-                    stdout=subprocess.DEVNULL,
+                    stdout=subprocess.STDERR,
                     stderr=subprocess.PIPE,
                     text=False,
                     bufsize=0
@@ -85,10 +85,7 @@ class SubprocessPipe:
                     last_percent = 0.0
                     buffer = b""
                     while True:
-                        if is_demucs:
-                            chunk = self.process.stderr.read(1024)
-                        else:
-                            chunk = self.process.stdout.read(1024)
+                        chunk = self.process.stdout.read(1024)
                         if not chunk:
                             break
                         buffer += chunk
