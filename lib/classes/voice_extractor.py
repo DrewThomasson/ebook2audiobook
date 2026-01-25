@@ -147,14 +147,7 @@ class VoiceExtractor:
                     return True, msg
                 error = f'_demucs_voice() demucs exited with code {proc.returncode}'
             elif system == systems['WINDOWS']:
-                try:
-                    import winpty
-                except ImportError:
-                    try:
-                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'pywinpty'])
-                    except subprocess.CalledProcessError as e:
-                        error = f'Failed to install pywinpty: {e}'
-                        return False, error
+                import winpty
                 proc = winpty.PTYProcess.spawn(cmd)
                 while proc.isalive():
                     try:
