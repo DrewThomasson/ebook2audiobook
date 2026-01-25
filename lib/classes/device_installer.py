@@ -6,6 +6,11 @@ from importlib.metadata import version, PackageNotFoundError
 from lib.conf import *
 
 class DeviceInstaller():
+    
+    def __init__(self):
+        self.system = sys.platform
+        self.python_version = sys.version_info[:2]
+        self.python_version_tuple = sys.version_info
 
     @cached_property
     def check_platform(self)->str:
@@ -55,11 +60,11 @@ class DeviceInstaller():
             return False
 
     def detect_platform_tag(self)->str:
-        if sys.platform.startswith('win'):
+        if self.system == systems['WINDOWS']:
             return 'win'
-        if sys.platform == 'darwin':
+        if self.system == systems['MACOS']:
             return 'macosx_11_0'
-        if sys.platform.startswith('linux'):
+        if self.system == systems['LINUX']:
             return 'manylinux_2_28'
         return 'unknown'
 
@@ -199,7 +204,7 @@ class DeviceInstaller():
 
         def has_amd_gpu_pci():
             # macOS: no ROCm-capable AMD GPUs
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
             if os.name == "posix":
@@ -239,7 +244,7 @@ class DeviceInstaller():
 
         def has_working_rocm():
             # ROCm does not exist on macOS or Windows (runtime)
-            if sys.platform != "linux":
+            if self.system != systems['LINUX']:
                 return False
             # /dev/kfd is required but not sufficient
             if not os.path.exists("/dev/kfd"):
@@ -260,7 +265,7 @@ class DeviceInstaller():
 
         def has_nvidia_gpu_pci():
             # macOS: NVIDIA GPUs are unsupported → always False
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
             if os.name == "posix":
@@ -310,7 +315,7 @@ class DeviceInstaller():
                 return False
 
         def has_working_cuda():
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             if not has_cmd("nvidia-smi"):
                 return False
@@ -323,7 +328,7 @@ class DeviceInstaller():
 
         def has_intel_gpu_pci():
             # macOS: Intel GPUs exist but XPU runtime is not supported
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
             if os.name == "posix":
@@ -363,7 +368,7 @@ class DeviceInstaller():
 
         def has_working_xpu():
             # No XPU on macOS
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
             if os.name == "posix":
@@ -622,7 +627,7 @@ class DeviceInstaller():
             # ============================================================
             # APPLE MPS
             # ============================================================
-            elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
+            elif self.system == systems['MACOS'] and arch in ('arm64', 'aarch64'):
                 devices['MPS']['found'] = True
                 name = 'mps'
                 tag = 'mps'

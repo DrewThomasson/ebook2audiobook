@@ -119,7 +119,7 @@ class VoiceExtractor:
 
 
 
-W
+
             if self.is_gui_process:
                 self.progress_bar(0.0, desc=msg)
             if system in ("Linux", "Darwin"):
