@@ -6,7 +6,7 @@ from .conf import (
     ebooks_dir, interface_component_options, interface_concurrency_limit,
     interface_host, interface_port, interface_shared_tmp_expire,
     max_python_version, min_python_version, models_dir, os,
-    output_formats, platform, prog_version, python_env_dir,
+    output_formats, prog_version, python_env_dir,
     requirements_file, components_dir, tmp_dir, tmp_expire, tts_dir, voice_formats,
     voices_dir, default_output_split, default_output_split_hours
 )
@@ -37,7 +37,7 @@ __all__ = [
     "ebooks_dir", "interface_component_options", "interface_concurrency_limit",
     "interface_host", "interface_port", "interface_shared_tmp_expire",
     "max_python_version", "min_python_version", "models_dir", "os",
-    "output_formats", "platform", "prog_version", "python_env_dir",
+    "output_formats", "prog_version", "python_env_dir",
     "requirements_file", "components_dir", "tmp_dir", "tmp_expire", "tts_dir",
     "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours",
 
