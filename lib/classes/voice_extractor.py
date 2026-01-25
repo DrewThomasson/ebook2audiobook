@@ -93,6 +93,7 @@ class VoiceExtractor:
         try:
             tqdm_re = re.compile(rb"(\d{1,3})%\|")
             system = self.session['system']
+            print(system)
             last_percent = 0.0
             last_output = b""
             proc = None
@@ -170,8 +171,6 @@ class VoiceExtractor:
                 proc.close()
                 msg = 'Extraction complete!'
                 return True, msg
-            else:
-                error = f'_demucs_voice() System not supported.'
         except subprocess.CalledProcessError as e:
             error = (
                 f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'
