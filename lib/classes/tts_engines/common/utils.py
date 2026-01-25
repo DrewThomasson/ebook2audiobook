@@ -487,8 +487,7 @@ class TTSUtils:
                 progress_bar = gr.Progress(track_tqdm=False)
             msg = 'Get duration of each sentence...'
             print(msg)
-            durations = get_audiolist_duration(audio_files)
-            print(f'---------durations: {durations}----------')
+            durations = get_audiolist_duration([str(p) for p in audio_files])
             msg = 'Create VTT blocks...'
             print(msg)
             with tqdm(total=audio_files_length, unit='files') as t:
