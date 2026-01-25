@@ -110,7 +110,6 @@ def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
     cmd = [mediainfo, "--Output=JSON", *filepaths]
     try:
         out = subprocess.check_output(cmd, text=True)
-        print(f'------------out : {out}---------')
         data = json.loads(out)
         extracted = _extract_mediainfo_durations(data)
         for path in durations:
