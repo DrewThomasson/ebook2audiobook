@@ -2193,6 +2193,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     for f in chapter_files[i:i + chunks_size]
                 ]
                 total_duration += sum(get_audiolist_duration(filepaths).values())
+                print(f'--------------------total_duration: {total_duration}')
             exported_files = []
             concat_dir = session['process_dir']
             if session['output_split']:
