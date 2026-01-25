@@ -2193,7 +2193,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     for f in chapter_files[i:i + chunks_size]
                 ]
                 total_duration += sum(get_audiolist_duration(filepaths).values())
-                print(f'--------------------total_duration: {total_duration}')
             exported_files = []
             concat_dir = session['process_dir']
             if session['output_split']:
@@ -2293,11 +2292,8 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
                         )
                         if os.path.exists(file_path):
                             filepaths.append(file_path)
-            chunks_size = 892
-            for i in range(0, len(filepaths), chunks_size):
-                chunk = filepaths[i:i + chunks_size]
-                durations = get_audiolist_duration(chunk)
-                total_duration += sum(durations.values())
+            durations = get_audiolist_duration(filepaths)
+            total_duration = sum(durations.values())
         except Exception as e:
             print(f'assemble_audio_chunks() open file {txt_file} Error: {e}')
             return False
