@@ -497,7 +497,7 @@ class TTSUtils:
             with tqdm(total=audio_files_length, unit='files') as t:
                 for idx, file in enumerate(audio_files):
                     start_time = sentences_total_time
-                    duration = durations_map.get(str(file), 0.0)
+                    duration = durations_map.get(os.path.realpath(file), 0.0)
                     end_time = start_time + duration
                     sentences_total_time = end_time
                     start = self._format_timestamp(start_time)

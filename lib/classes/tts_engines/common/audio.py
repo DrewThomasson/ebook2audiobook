@@ -65,20 +65,18 @@ def _extract_mediainfo_durations(data:dict)->dict[str, float]:
         ref = media.get("@ref")
         if not ref:
             continue
-        duration = None
+        ref = os.path.realpath(ref)
         for track in media.get("track", []):
             raw = track.get("Duration")
             if not raw:
                 continue
             try:
-                duration = float(raw)
+                durations[ref] = float(raw)
                 break
             except (TypeError, ValueError):
                 continue
-        if duration is not None:
-            durations[ref] = duration
     return durations
-    
+
 def get_audio_duration(filepath: str) -> float:
     mediainfo = shutil.which("mediainfo")
     cmd = [mediainfo, "--Output=JSON", filepath]
@@ -99,17 +97,15 @@ def get_audio_duration(filepath: str) -> float:
         print(f"get_audio_duration() Error: Failed to process {filepath}: {e}")
         return 0.0
 
-def get_audiolist_duration(filepaths: list[str]) -> dict[str, float]:
-    durations = {path: 0.0 for path in filepaths}
+def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
+    durations = {os.path.realpath(p): 0.0 for p in filepaths}
     mediainfo = shutil.which("mediainfo")
     cmd = [mediainfo, "--Output=JSON", *filepaths]
     try:
         out = subprocess.check_output(cmd, text=True)
         data = json.loads(out)
         extracted = _extract_mediainfo_durations(data)
-        durations = _extract_mediainfo_durations(data)
-        print(f'---------------{extracted}-----------------')
-        for path in filepaths:
+        for path in durations:
             if path in extracted:
                 durations[path] = extracted[path]
     except Exception:
