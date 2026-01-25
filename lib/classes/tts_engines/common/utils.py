@@ -488,7 +488,6 @@ class TTSUtils:
             msg = 'Get duration of each sentence...'
             print(msg)
             durations = get_audiolist_duration([str(p) for p in audio_files])
-            print(f'---------durations: {durations}----------')
             msg = 'Create VTT blocks...'
             print(msg)
             with tqdm(total=audio_files_length, unit='files') as t:
