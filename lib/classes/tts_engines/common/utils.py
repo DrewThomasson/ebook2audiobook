@@ -485,19 +485,16 @@ class TTSUtils:
             vtt_blocks = []
             if self.session['is_gui_process']:
                 progress_bar = gr.Progress(track_tqdm=False)
-            chunks_size = 892
-            durations_map = {}
             msg = 'Get duration of each sentence...'
             print(msg)
-            for i in range(0, len(audio_files), chunks_size):
-                chunk = audio_files[i:i + chunks_size]
-                durations_map.update(get_audiolist_duration(list(map(str, chunk))))
+            durations = get_audiolist_duration(audio_files)
+            print(f'---------durations: {durations}----------')
             msg = 'Create VTT blocks...'
             print(msg)
             with tqdm(total=audio_files_length, unit='files') as t:
                 for idx, file in enumerate(audio_files):
                     start_time = sentences_total_time
-                    duration = durations_map.get(os.path.realpath(file), 0.0)
+                    duration = durations.get(os.path.realpath(file), 0.0)
                     end_time = start_time + duration
                     sentences_total_time = end_time
                     start = self._format_timestamp(start_time)
