@@ -94,6 +94,8 @@ class VoiceExtractor:
             tqdm_re = re.compile(rb"(\d{1,3})%\|")
             system = self.session['system']
             last_percent = 0.0
+            last_output = b""
+            proc = None
             msg = 'Extracting'
             print(msg)
             if self.is_gui_process:
@@ -126,6 +128,7 @@ class VoiceExtractor:
                             data = os.read(master_fd, 1024)
                             if not data:
                                 break
+                            last_output = data
                             # optional: print raw tqdm output to terminal
                             sys.stdout.buffer.write(data)
                             sys.stdout.buffer.flush()
@@ -139,6 +142,9 @@ class VoiceExtractor:
                             error = f'_demucs_voice() EOFError'
                             return False, error
                 proc.wait()
+                if proc.returncode != 0:
+                    error = f'_demucs_voice() demucs exited with code {proc.returncode}'
+                    return False, error
             elif system == systems['WINDOWS']:
                 try:
                     import winpty
@@ -153,6 +159,7 @@ class VoiceExtractor:
                     try:
                         data = proc.read(1024)
                         if data:
+                            last_output = data
                             print(data, end="", flush=True)
                             match = re.search(r"(\d{1,3})%\|", data)
                             if match:
@@ -169,7 +176,7 @@ class VoiceExtractor:
                     self.progress_bar(0.0, desc=msg)
                 return True, msg
             else:
-                error = f'_demucs_voice() Subprocess Error.'
+                error = f'_demucs_voice() System not supported.'
         except subprocess.CalledProcessError as e:
             error = (
                 f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'
