@@ -169,8 +169,6 @@ class VoiceExtractor:
                         return False, error
                 proc.close()
                 msg = 'Extraction complete!'
-                if self.is_gui_process:
-                    self.progress_bar(0.0, desc=msg)
                 return True, msg
             else:
                 error = f'_demucs_voice() System not supported.'
@@ -346,8 +344,6 @@ class VoiceExtractor:
                         if status:
                             result, msg = self._demucs_voice()
                             print(msg)
-                            if self.is_gui_process:
-                                self.progress_bar(int(result), desc=msg)
                         else:
                             self.voice_track = self.wav_file
                         if result:
