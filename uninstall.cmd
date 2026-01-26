@@ -59,7 +59,7 @@ if exist "%INSTALLED_LOG%" (
 			)
 			if /i "!ITEM!"=="scoop" (
 				set "SCOOP_PRESENT=1"
-				echo Scoop presence detected  will remove at end...
+				echo Scoop presence detected - will remove at end...
 			)
 			echo Uninstalling package using Scoop: !ITEM!
 			call scoop uninstall -y !ITEM! >nul 2>&1

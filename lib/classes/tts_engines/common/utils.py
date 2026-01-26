@@ -440,7 +440,7 @@ class TTSUtils:
             )
         elif tag == 'voice':
             if close:
-                return True, self._set_voice()
+                return self._set_voice(), ''
             assert value is not None, 'voice tag requires a value'
             voice_path = os.path.abspath(value)
             if not os.path.exists(voice_path):

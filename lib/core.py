@@ -976,7 +976,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             if not re.search(r"[^\W_]", text):
                 error = 'No valid text found!'
                 print(error)
-                return Non
+                return None
             # clean SML tags badly coded
             bool, text = normalize_sml_tags(text)
             if bool is False:

@@ -96,7 +96,7 @@ def get_audio_duration(filepath: str) -> float:
         )
         data = json.loads(result.stdout)
         durations = _extract_mediainfo_durations(data)
-        return durations.get(filepath, 0.0)
+        return durations.get(os.path.realpath(filepath), 0.0)
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return 0.0
