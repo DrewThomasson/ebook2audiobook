@@ -650,6 +650,9 @@ class DeviceInstaller():
         try:
             import importlib
             from tqdm import tqdm        
+            from packaging.specifiers import SpecifierSet
+            from packaging.version import Version, InvalidVersion
+            from packaging.markers import Marker
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
                 packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)]
@@ -662,7 +665,6 @@ class DeviceInstaller():
                     pkg_part, marker_part = package.split(';', 1)
                     marker_part = marker_part.strip()
                     try:
-                        from packaging.markers import Marker
                         marker = Marker(marker_part)
                         if not marker.evaluate():
                             continue
@@ -679,7 +681,7 @@ class DeviceInstaller():
                             if pkg_name == 'demucs':
                                 installed_version = version(pkg_name)
                                 version_base = Version(installed_version).base_version
-                                if version_base < Version('4.1.0'):
+                                if Version(version_base) < Version('4.1.0'):
                                     msg = f'{pkg_name} (git package) is missing.'
                                     print(msg)
                                     missing_packages.append(package)
@@ -706,8 +708,6 @@ class DeviceInstaller():
                 else:
                     spec_str = clean_pkg[len(pkg_name):].strip()
                     if spec_str:
-                        from packaging.specifiers import SpecifierSet
-                        from packaging.version import Version, InvalidVersion
                         spec = SpecifierSet(spec_str)
                         norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
                         short_version = norm_match.group(1) if norm_match else installed_version
