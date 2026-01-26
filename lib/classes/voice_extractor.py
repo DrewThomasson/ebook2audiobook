@@ -115,26 +115,19 @@ class VoiceExtractor:
             if wav.dim() == 2:
                 wav = wav.unsqueeze(0)
             wav = wav.to(device)
-            self.progress_bar(0.05, desc=msg)
             result = apply_model(
                 model,
                 wav,
                 device=device,
                 split=True,
-                overlap=0.25,
                 progress=True
             )
-            self.progress_bar(0.9, desc=msg)
             sources = result[0] if isinstance(result, (tuple, list)) else result
             vocals_idx = model.sources.index("vocals")
             vocals = sources[0, vocals_idx]
-            out_dir = Path(self.output_dir) / Path(self.wav_file).stem
-            out_dir.mkdir(parents=True, exist_ok=True)
-            self.voice_track = out_dir / "vocals.wav"
             audio_np = vocals.detach().cpu().numpy()
             audio_np = audio_np.T
             audio_np = (audio_np * 32767.0).clip(-32768, 32767).astype("int16")
-            from pydub import AudioSegment
             audio_segment = AudioSegment(
                 audio_np.tobytes(),
                 frame_rate=model.samplerate,
@@ -142,7 +135,6 @@ class VoiceExtractor:
                 channels=audio_np.shape[1] if audio_np.ndim > 1 else 1
             )
             audio_segment.export(self.voice_track, format="wav")
-            self.progress_bar(1.0, desc='Completed')
             msg = 'Completed'
             return True, msg
         except Exception as e:
