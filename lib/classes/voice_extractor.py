@@ -132,9 +132,9 @@ class VoiceExtractor:
             vocals = sources[0, vocals_idx]
             out_dir = Path(self.output_dir) / Path(self.wav_file).stem
             out_dir.mkdir(parents=True, exist_ok=True)
-            out_file = out_dir / "vocals.wav"
+            self.voice_track = out_dir / "vocals.wav"
             torchaudio.save(
-                str(out_file),
+                str(self.voice_track),
                 vocals.cpu(),
                 model.samplerate
             )
