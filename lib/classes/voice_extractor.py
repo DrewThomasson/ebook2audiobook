@@ -99,7 +99,7 @@ class VoiceExtractor:
             last_percent = 0.0
             msg = 'Extracting Voice...'
             self.progress_bar(0.0, desc=msg)
-            device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
+            device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
             model = get_model(name="htdemucs")
             model.to(device)
             model.eval()
