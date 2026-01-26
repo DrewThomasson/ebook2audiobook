@@ -146,10 +146,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - Process format can be changed in lib/conf.py
 
 ## SML tags available
-- `[[break]]` — silence (random range **0.3–0.6 sec.**)
-- `[[pause]]` — silence (random range **1.0–1.6 sec.**)
-- `[[pause:N]]` — fixed pause (**N sec.**)
-- `[[voice:/path/to/voice/file]]...[[/voice]]` — switch voice from default or selected voice from GUI/CLI
+- `[break]` — silence (random range **0.3–0.6 sec.**)
+- `[pause]` — silence (random range **1.0–1.6 sec.**)
+- `[pause:N]` — fixed pause (**N sec.**)
+- `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
@@ -389,12 +389,15 @@ Podman Compose (i.e. cuda 12.8:
 
     * MPS is not exposed in docker so CPU must be used.
 
-Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[[pause]]".
-
+SML tags available:
+        [break]` — silence (random range **0.3–0.6 sec.**)
+        [pause]` — silence (random range **1.0–1.6 sec.**)
+        [pause:N]` — fixed pause (**N sec.**)
+        [voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
 ```
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
-TIP: if it needs some more pause, add '[[pause:3]]' for 3 sec. etc.
+TIP: if it needs some more pause, add '[pause:3]' for 3 sec. etc.
 
 ### Docker
 1. **Clone the Repository**:

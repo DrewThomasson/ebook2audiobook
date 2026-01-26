@@ -1,4 +1,5 @@
 @echo off
+
 setlocal EnableExtensions EnableDelayedExpansion
 
 :: Force UTF-8 for CMD
@@ -56,7 +57,7 @@ set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=cmake rustup python calibre-normal ffmpeg mediainfo nodejs espeak-ng sox tesseract"
+set "HOST_PROGRAMS=cmake rustup python calibre ffmpeg mediainfo nodejs espeak-ng sox tesseract"
 set "DOCKER_PROGRAMS=ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
@@ -207,30 +208,29 @@ exit /b
 :::::: END OF DESKTOP APP
 
 :get_iso3_lang
-set "arg=%~1"
-if /i "%arg%"=="en"  echo eng& goto :eof
-if /i "%arg%"=="fr"  echo fra& goto :eof
-if /i "%arg%"=="de"  echo deu& goto :eof
-if /i "%arg%"=="it"  echo ita& goto :eof
-if /i "%arg%"=="es"  echo spa& goto :eof
-if /i "%arg%"=="pt"  echo por& goto :eof
-if /i "%arg%"=="ar"  echo ara& goto :eof
-if /i "%arg%"=="tr"  echo tur& goto :eof
-if /i "%arg%"=="ru"  echo rus& goto :eof
-if /i "%arg%"=="bn"  echo ben& goto :eof
-if /i "%arg%"=="zh"  echo chi_sim& goto :eof
-if /i "%arg%"=="fa"  echo fas& goto :eof
-if /i "%arg%"=="hi"  echo hin& goto :eof
-if /i "%arg%"=="hu"  echo hun& goto :eof
-if /i "%arg%"=="id"  echo ind& goto :eof
-if /i "%arg%"=="jv"  echo jav& goto :eof
-if /i "%arg%"=="ja"  echo jpn& goto :eof
-if /i "%arg%"=="ko"  echo kor& goto :eof
-if /i "%arg%"=="pl"  echo pol& goto :eof
-if /i "%arg%"=="ta"  echo tam& goto :eof
-if /i "%arg%"=="te"  echo tel& goto :eof
-if /i "%arg%"=="yo"  echo yor& goto :eof
-echo eng
+set "ISO3_LANG=eng"
+if /i "%~1"=="en" set "ISO3_LANG=eng"
+if /i "%~1"=="fr" set "ISO3_LANG=fra"
+if /i "%~1"=="de" set "ISO3_LANG=deu"
+if /i "%~1"=="it" set "ISO3_LANG=ita"
+if /i "%~1"=="es" set "ISO3_LANG=spa"
+if /i "%~1"=="pt" set "ISO3_LANG=por"
+if /i "%~1"=="ar" set "ISO3_LANG=ara"
+if /i "%~1"=="tr" set "ISO3_LANG=tur"
+if /i "%~1"=="ru" set "ISO3_LANG=rus"
+if /i "%~1"=="bn" set "ISO3_LANG=ben"
+if /i "%~1"=="zh" set "ISO3_LANG=chi_sim"
+if /i "%~1"=="fa" set "ISO3_LANG=fas"
+if /i "%~1"=="hi" set "ISO3_LANG=hin"
+if /i "%~1"=="hu" set "ISO3_LANG=hun"
+if /i "%~1"=="id" set "ISO3_LANG=ind"
+if /i "%~1"=="jv" set "ISO3_LANG=jav"
+if /i "%~1"=="ja" set "ISO3_LANG=jpn"
+if /i "%~1"=="ko" set "ISO3_LANG=kor"
+if /i "%~1"=="pl" set "ISO3_LANG=pol"
+if /i "%~1"=="ta" set "ISO3_LANG=tam"
+if /i "%~1"=="te" set "ISO3_LANG=tel"
+if /i "%~1"=="yo" set "ISO3_LANG=yor"
 exit /b
 
 :check_scoop
@@ -239,6 +239,18 @@ if errorlevel 1 (
 	echo Scoop is not installed.
 	set "OK_SCOOP=1"
 	goto :install_programs
+) else (
+	if exist "%SCRIPT_DIR%\.after-scoop" (
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
+		call git config --global credential.helper
+		echo %ESC%[32m=============== Scoop components installed! ===============%ESC%[0m
+		set "OK_SCOOP=0"
+		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo scoop>>"%INSTALLED_LOG%"
+		)
+		del "%SCRIPT_DIR%\.after-scoop" >nul 2>&1
+	)
 )
 if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	goto :check_required_programs
@@ -252,7 +264,6 @@ set "missing_prog_array="
 for %%p in (%HOST_PROGRAMS%) do (
 	set "prog=%%p"
 	if "%%p"=="nodejs" set "prog=node"
-	if "%%p"=="calibre-normal" set "prog=calibre"
 	where.exe /Q !prog!
 	if errorlevel 1 (
 		echo %%p is not installed.
@@ -269,29 +280,17 @@ exit /b
 :install_programs
 if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
-	call "%PS_EXE%" %PS_ARGS% -Command "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force"
-	call "%PS_EXE%" %PS_ARGS% -Command "iwr -useb get.scoop.sh | iex"
-	call "%PS_EXE%" %PS_ARGS% -Command "scoop --version" >nul 2>&1
-	if not errorlevel 1 (
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git"
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
-		if "%OK_PROGRAMS%"=="0" (
-			echo %ESC%[32m=============== Scoop is installed! ===============%ESC%[0m
-			set "OK_SCOOP=0"
-		)
-		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-		if errorlevel 1 (
-			echo scoop>>"%INSTALLED_LOG%"
-		)
-		start "" cmd /k cd /d "%SCRIPT_DIR%" ^& call "%~f0"
-	) else (
-		echo %ESC%[31m=============== Scoop installation failed.%ESC%[0m
-		goto :failed
-	)
+	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
+		"Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
+	echo %ESC%[33m=============== Scoop installed. Restarting terminal with refreshed PATH... ===============%ESC%[0m
+	type nul > "%SCRIPT_DIR%\.after-scoop"
+	rem Refresh PATH in current process
+	call "%PS_EXE%" -NoLogo -NoProfile -Command ^
+		"$env:PATH = [Environment]::GetEnvironmentVariable('PATH','User') + ';' + [Environment]::GetEnvironmentVariable('PATH','Machine')"
+	start "" cmd /k "cd /d "%SCRIPT_DIR%" & call "%~f0""
 	exit
 )
+
 if not "%OK_CONDA%"=="0" (
 	echo Installing Miniforge...
 	call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"
@@ -331,16 +330,17 @@ if not "%OK_PROGRAMS%"=="0" (
 		if "%%p"=="tesseract" (
 			where.exe /Q !prog!
 			if not errorlevel 1 (
-				for /f %%i in ('call :get_iso3_lang %OS_LANG%') do set "ISO3_LANG=%%i"
-				echo Detected system language: !OS_LANG! → downloading OCR language: %ISO3_LANG%
+				call :get_iso3_lang "!OS_LANG!"
+				echo Detected system language: !OS_LANG! → downloading OCR language: !ISO3_LANG!
 				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
-				if not exist "!tessdata!\%ISO3_LANG%.traineddata" (
-					call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/%ISO3_LANG%.traineddata -OutFile '!tessdata!\%ISO3_LANG%.traineddata'"
+				if not exist "!tessdata!" mkdir "!tessdata!"
+				if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
+					call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri 'https://github.com/tesseract-ocr/tessdata_best/raw/main/!ISO3_LANG!.traineddata' -OutFile '!tessdata!\!ISO3_LANG!.traineddata' -ErrorAction Stop" || goto :failed
 				)
-				if exist "!tessdata!\%ISO3_LANG%.traineddata" (
-					echo Tesseract OCR language %ISO3_LANG% installed in !tessdata!
+				if exist "!tessdata!\!ISO3_LANG!.traineddata" (
+					echo Tesseract OCR language !ISO3_LANG! installed in !tessdata!
 				) else (
-					echo Failed to install OCR language %ISO3_LANG%
+					echo Failed to install OCR language !ISO3_LANG!
 				)
 			)
 		)
@@ -348,7 +348,7 @@ if not "%OK_PROGRAMS%"=="0" (
 			set "PY_FOUND="
 			where.exe /Q python  && set PY_FOUND=1
 			where.exe /Q python3 && set PY_FOUND=1
-			where.exe /Q py      && set PY_FOUND=1
+			where.exe /Q py	  && set PY_FOUND=1
 			if not defined PY_FOUND (
 				echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
 				goto :failed

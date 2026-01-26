@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
-import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
+import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
 
@@ -542,7 +542,7 @@ def convert2epub(session_id:str)-> bool:
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
-                text = re.sub(r'\n{2,}', '.[[pause]]', text)
+                text = re.sub(r'\n{2,}', f".{TTS_SML['pause']['static']}", text)
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
@@ -741,12 +741,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 toc = epubBook.toc
                 toc_list = [
                         nt for item in toc if hasattr(item, 'title')
-                        if (nt := normalize_text(
-                            str(item.title),
-                            session['language'],
-                            session['language_iso1'],
-                            session['tts_engine']
-                    )) is not None
+                        if (nt := normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine'])) is not None
                 ]
             except Exception as toc_error:
                 error = f'Error extracting Table of Content: {toc_error}'
@@ -966,10 +961,10 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             i = 0
             while i < len(text_list):
                 current = text_list[i]
-                if current in ('‡break‡', '‡pause‡'):
+                if current in {v['static'] for v in TTS_SML.values() if "static" in v}:
                     if clean_list:
                         prev = clean_list[-1]
-                        if prev in ('‡break‡', '‡pause‡'):
+                        if prev in {v['static'] for v in TTS_SML.values() if "static" in v}:
                             i += 1
                             continue
                     clean_list.append(current)
@@ -981,7 +976,22 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             if not re.search(r"[^\W_]", text):
                 error = 'No valid text found!'
                 print(error)
+                return Non
+            # clean SML tags badly coded
+            bool, text = normalize_sml_tags(text)
+            if bool is False:
+                print(text)
+                if session['is_gui_process']:
+                    show_alert({"type": "warning", "msg": text})
                 return None
+            # remove any [break] between words or cutting words
+            break_token = re.escape(sml_token('break'))
+            strip_break_spaces_re = re.compile(rf'\s*{break_token}\s*')
+            break_between_alnum_re = re.compile(rf'(?<=[\w]){break_token}(?=[\w])', flags=re.UNICODE)
+            text = strip_break_spaces_re.sub(sml_token('break'), text)
+            text = break_between_alnum_re.sub(' ', text)
+            # escape all SML tags to not be touched by any text treatment
+            text, sml_blocks = escape_sml(text)
             if stanza_nlp:
                 msg = 'Converting dates and years to words…'
                 print(msg)
@@ -1056,6 +1066,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 error = 'No sentences found!'
                 print(error)
                 return None
+            sentences = [restore_sml(s, sml_blocks) for s in sentences]
             return sentences
         return None
     except Exception as e:
@@ -1077,14 +1088,14 @@ def get_sentences(text:str, session_id:str)->list|None:
                 result.append(tail)
         return result
 
-    def strip_sml(s:str)->str:
-        return SML_TAG_PATTERN.sub('', s)
+    def strip_escaped_sml(s:str)->str:
+        return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
     def clean_len(s:str)->int:
-        return len(strip_sml(s))
+        return len(strip_escaped_sml(s))
 
     def is_latin_only(s:str)->bool:
-        s = strip_sml(s)
+        s = strip_escaped_sml(s)
         s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
         has_latin = bool(re.search(r'[A-Za-z]', s))
         has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
@@ -1093,7 +1104,7 @@ def get_sentences(text:str, session_id:str)->list|None:
     def split_at_space_limit(s:str)->list[str]:
         out = []
         rest = s.strip()
-        while rest and len(strip_sml(rest)) > max_chars:
+        while rest and len(strip_escaped_sml(rest)) > max_chars:
             cut = rest[:max_chars + 1]
             idx = cut.rfind(' ')
             if idx == -1:
@@ -1164,6 +1175,8 @@ def get_sentences(text:str, session_id:str)->list|None:
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
 
+        assert not SML_TAG_PATTERN.search(text)
+
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
@@ -1189,7 +1202,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 continue
             if i + 1 < n:
                 next_s = hard_list[i + 1].strip()
-                next_clean = strip_sml(next_s)
+                next_clean = strip_escaped_sml(next_s)
                 if next_clean and sum(c.isalnum() for c in next_clean) < 3:
                     s = f"{s} {next_s}"
                     i += 2
@@ -1197,14 +1210,14 @@ def get_sentences(text:str, session_id:str)->list|None:
                     i += 1
             else:
                 i += 1
-            if len(strip_sml(s)) <= max_chars:
+            if len(strip_escaped_sml(s)) <= max_chars:
                 soft_list.append(s)
                 continue
             parts = split_inclusive(s, soft_pattern)
             if parts:
                 valid = False
                 for p in parts:
-                    if len(strip_sml(p.strip())) <= max_chars:
+                    if len(strip_escaped_sml(p.strip())) <= max_chars:
                         valid = True
                         break
                 if valid:
@@ -1222,7 +1235,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 continue
             rest = s
             while rest:
-                current_len = len(strip_sml(rest))   # ← rename variable
+                current_len = len(strip_escaped_sml(rest))   # ← rename variable
                 if current_len <= max_chars:
                     last_list.append(rest.strip())
                     break
@@ -1241,7 +1254,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 rest = right
 
         # PASS 4 — merge very short rows
-        merge_list = []
+        final_list = []
         merge_max_chars = int((max_chars / 2) / 3)
         i = 0
         n = len(last_list)
@@ -1251,7 +1264,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 i += 1
                 continue
             if i == 0:
-                merge_list.append(cur)
+                final_list.append(cur)
                 i += 1
                 continue
             cur_len = clean_len(cur)
@@ -1268,42 +1281,27 @@ def get_sentences(text:str, session_id:str)->list|None:
                         j += 1
                         continue
                     break
-                if merge_list:
-                    prev = merge_list[-1]
+                if final_list:
+                    prev = final_list[-1]
                     if clean_len(prev) + cur_len <= max_chars:
-                        merge_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
+                        final_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
                         i = j
                         continue
-                merge_list.append(cur)
+                final_list.append(cur)
                 i = j
                 continue
-            merge_list.append(cur)
+            final_list.append(cur)
             i += 1
-
-        # PASS 5 = remove unwanted breaks
-        break_token = re.escape(sml_token('break'))
-        strip_break_spaces_re = re.compile(
-            rf'\s*{break_token}\s*'
-        )
-        break_between_alnum_re = re.compile(
-            rf'(?<=[\w]){break_token}(?=[\w])',
-            flags=re.UNICODE
-        )
-        final_list = []
-        for s in merge_list:
-            s = strip_break_spaces_re.sub(sml_token('break'), s)
-            s = break_between_alnum_re.sub(' ', s)
-            final_list.append(s)
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = re.split(default_backend_sml_pattern, s)
+                parts = self._split_sentence_on_sml(s)
                 for part in parts:
                     part = part.strip()
                     if not part:
                         continue
-                    if default_backend_sml_pattern.fullmatch(part):
+                    if SML_TAG_PATTERN.fullmatch(part):
                         result.append(part)
                         continue
                     tokens = segment_ideogramms(part)
@@ -1717,38 +1715,71 @@ def foreign2latin(text:str, base_lang:str)->str:
         out = out.replace(k, v)
     return out
 
-def filter_sml(text:str)->str:
-
-    def check_sml(m: re.Match[str]) -> str:
-        if m.group("tag1"):
-            tag = m.group("tag1")
-            close = bool(m.group("close1"))
-            value = m.group("value1")
-        elif m.group("tag2"):
-            tag = m.group("tag2")
-            close = bool(m.group("close2"))
-            value = m.group("value2")
+def normalize_sml_tags(text:str)->tuple[bool, str]:
+    out = []
+    stack = []
+    last = 0
+    for m in SML_TAG_PATTERN.finditer(text):
+        start, end = m.span()
+        out.append(text[last:start])
+        tag = m.group("tag")
+        close = bool(m.group("close"))
+        value = m.group("value")
+        info = TTS_SML.get(tag)
+        if not info:
+            out.append(m.group(0))
+            last = end
+            continue
+        if info.get("paired"):
+            if close:
+                if not stack or stack[-1] != tag:
+                    error = f'normalize_sml_tags() error: unmatched closing tag [/{tag}]'
+                    return False, error
+                stack.pop()
+                out.append(f"[/{tag}]")
+            else:
+                stack.append(tag)
+                if value is not None:
+                    out.append(f"[{tag}:{value.strip()}]")
+                else:
+                    error = f'normalize_sml_tags() error: paired tag [{tag}] requires a value'
+                    return False, error
         else:
-            return m.group(0)
-        assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
-        if close:
-            return f" ‡‡/{tag}‡‡ "
-        if value:
-            return f" ‡‡{tag}:{value}‡‡ "
-        return f" ‡‡{tag}‡‡ "
+            if close:
+                error = f'normalize_sml_tags() error: non-paired tag [/{tag}] is invalid'
+                return False, error
+            out.append(info['static'])
+        last = end
+    out.append(text[last:])
+    if stack:
+        error = f"normalize_sml_tags() error: unclosed tag(s): {', '.join(stack)}"
+        return False, error
+    return True, ''.join(out)
 
-    return SML_TAG_PATTERN.sub(check_sml, text)
-    
-def sml_token(tag:str, value:str | None = None, close:bool=False)->str:
+def escape_sml(text:str)->tuple[str, list[str]]:
+    sml_blocks:list[str] = []
+
+    def replace(m:re.Match[str])->str:
+        sml_blocks.append(m.group(0))
+        return chr(sml_escape_tag + len(sml_blocks) - 1)
+
+    return SML_TAG_PATTERN.sub(replace, text), sml_blocks
+
+def restore_sml(text:str, sml_blocks:list[str])->str:
+    for i, block in enumerate(sml_blocks):
+        text = text.replace(chr(sml_escape_tag + i), block)
+    return text
+
+def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
     if close:
-        return f"‡‡/{tag}‡‡"
+        return f"[/{tag}]"
     if value is not None:
-        return f"‡‡{tag}:{value}‡‡"
-    return f"‡‡{tag}‡‡"
+        return f"[{tag}:{value}]"
+    return f"[{tag}]"
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
-    def repl_abbreviations(match:re.Match)->str:
+    def replace(match:re.Match)->str:
         token = match.group(1)
         for k, expansion in mapping.items():
             if token.lower() == k.lower():
@@ -1767,17 +1798,15 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
             flags=re.IGNORECASE
         )
-        text = pattern.sub(repl_abbreviations, text)
+        text = pattern.sub(replace, text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc…
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
-    # Prepare SML tags
-    text = filter_sml(text)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a [pause] 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {sml_token('pause')} ", text)
     # Replace single newlines ("\n" or "\r") with spaces
@@ -2244,7 +2273,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
-    def on_progress(p: float)->None:
+    def on_progress(p:float)->None:
         progress_bar(p / 100.0, desc='Assemble')
 
     try:
@@ -2263,11 +2292,8 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
                         )
                         if os.path.exists(file_path):
                             filepaths.append(file_path)
-            chunks_size = 892
-            for i in range(0, len(filepaths), chunks_size):
-                chunk = filepaths[i:i + chunks_size]
-                durations = get_audiolist_duration(chunk)
-                total_duration += sum(durations.values())
+            durations = get_audiolist_duration(filepaths)
+            total_duration = sum(durations.values())
         except Exception as e:
             print(f'assemble_audio_chunks() open file {txt_file} Error: {e}')
             return False
@@ -2490,6 +2516,7 @@ def convert_ebook(args:dict)->tuple:
                 session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
                 cleanup_models_cache()
                 if not session['is_gui_process']:
+                    session['system'] = sys.platform
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                     os.makedirs(session['voice_dir'], exist_ok=True)

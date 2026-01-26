@@ -1,15 +1,19 @@
-import os, subprocess, shutil, json, numpy as np, regex as re, scipy.fftpack, soundfile as sf, gradio as gr
+import os, sys, subprocess, shutil, json, torchaudio, numpy as np, regex as re, scipy.fftpack, soundfile as sf, gradio as gr
 
 from typing import Any
 from io import BytesIO
 from pydub import AudioSegment, silence
 from pydub.silence import detect_nonsilent
-
+from demucs.pretrained import get_model
+from demucs.apply import apply_model
+from demucs.audio import AudioFile
+from pathlib import Path
+            
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 from lib.classes.tts_engines.common.audio import get_audio_duration
 from lib.classes.background_detector import BackgroundDetector
 from lib.classes.subprocess_pipe import SubprocessPipe
-from lib.conf import voice_formats, default_audio_proc_samplerate
+from lib.conf import systems, devices, voice_formats, default_audio_proc_samplerate
 from lib.conf_models import TTS_ENGINES
 
 class VoiceExtractor:
@@ -30,6 +34,7 @@ class VoiceExtractor:
             self.progress_bar=gr.Progress(track_tqdm=False)
         models = load_engine_presets(session['tts_engine'])
         self.samplerate = models[session['fine_tuned']]['samplerate']
+        os.makedirs(self.demucs_dir, exist_ok=True)
 
     def _validate_format(self)->tuple[bool,str]:
         file_extension = os.path.splitext(self.voice_file)[1].lower()
@@ -71,7 +76,7 @@ class VoiceExtractor:
 
     def _detect_background(self)->tuple[bool,bool,str]:
         try:
-            msg = 'Detecting if any background...'
+            msg = 'Detecting if any background noise or music...'
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
@@ -89,36 +94,72 @@ class VoiceExtractor:
             return False, False, error
 
     def _demucs_voice(self)->tuple[bool, str]:
+
+        def demucs_callback(d: dict):
+            nonlocal last_percent
+            offset = d.get("segment_offset")
+            if offset is not None:
+                progress_state["current"] = max(progress_state["current"], offset)
+                percent = min(progress_state["current"] / total_length, 1.0)
+                if percent - last_percent >= 0.01:
+                    last_percent = percent
+                    print(f"\r[Demucs] {percent*100:.2f}%", end="", flush=True)
+                    self.progress_bar(percent, desc=msg)
+
         error = '_demucs_voice() error'
         try:
-            msg = 'Denoising'
-            print(msg)
-            if self.is_gui_process:
-                self.progress_bar(0, desc=msg)
-            cmd = [
-                "demucs",
-                "--verbose",
-                "--two-stems=vocals",
-                "--out", self.output_dir,
-                self.wav_file
-            ]
-            proc = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(self.wav_file), msg=msg)
-            if proc:
-                msg = 'Voice exctracted!'
-                return True, msg
-            else:
-                error = f'_demucs_voice() SubprocessPipe Error.'
-        except subprocess.CalledProcessError as e:
-            error = (
-                f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'
-                f'stdout: {e.output}\n\n'
-                f'stderr: {e.stderr}'
+            system = self.session['system']
+            last_percent = 0.0
+            msg = 'Extracting Voice...'
+            self.progress_bar(0.0, desc=msg)
+            device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
+            model = get_model(name="htdemucs")
+            model.to(device)
+            model.eval()
+            audio_result = AudioFile(self.wav_file).read(
+                streams=0,
+                samplerate=model.samplerate,
+                channels=model.audio_channels
             )
-        except FileNotFoundError:
-            error = f'_demucs_voice() error: The "demucs" command was not found'
+            if isinstance(audio_result, (tuple, list)):
+                wav = audio_result[0]
+            else:
+                wav = audio_result
+            if wav.dim() == 2:
+                wav = wav.unsqueeze(0)
+            wav = wav.to(device)
+            total_length = wav.shape[-1]
+            progress_state = {"current": 0}
+            result = apply_model(
+                model,
+                wav,
+                device=device,
+                split=True,
+                progress=False,
+                callback=demucs_callback,
+                callback_arg={}
+            )
+            self.progress_bar(1.0, desc=msg)
+            print("\r[Demucs] 100.00%")
+            sources = result[0] if isinstance(result, (tuple, list)) else result
+            vocals_idx = model.sources.index("vocals")
+            vocals = sources[0, vocals_idx]
+            audio_np = vocals.detach().cpu().numpy()
+            audio_np = audio_np.T
+            audio_np = (audio_np * 32767.0).clip(-32768, 32767).astype("int16")
+            audio_segment = AudioSegment(
+                audio_np.tobytes(),
+                frame_rate=model.samplerate,
+                sample_width=2,
+                channels=audio_np.shape[1] if audio_np.ndim > 1 else 1
+            )
+            audio_segment.export(self.voice_track, format="wav")
+            msg = 'Completed'
+            return True, msg
         except Exception as e:
             error = f'_demucs_voice() error: {str(e)}'
         return False, error
+
 
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
         msg = "Removing empty audio..."

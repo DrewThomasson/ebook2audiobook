@@ -6,6 +6,11 @@ from importlib.metadata import version, PackageNotFoundError
 from lib.conf import *
 
 class DeviceInstaller():
+    
+    def __init__(self):
+        self.system = sys.platform
+        self.python_version = sys.version_info[:2]
+        self.python_version_tuple = sys.version_info
 
     @cached_property
     def check_platform(self)->str:
@@ -20,25 +25,29 @@ class DeviceInstaller():
         return self.detect_device()
 
     def check_device_info(self, mode:str)->str:
-        name, tag, msg = self.check_hardware()
-        arch = self.check_arch()
-        pyvenv = list(sys.version_info[:2])
         os_env = None
         if mode == NATIVE:
-            os_env = 'linux' if name == 'jetson' else self.check_platform()
-        elif mode == BUILD_DOCKER:
-            os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
-            pyvenv = [3, 10] if tag in ['jetson60', 'jetson61'] else pyvenv
-            device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg}
-            with open('.device_info.json', 'w', encoding='utf-8') as f:
-                json.dump(device_info, f)
-            return json.dumps(device_info)
-        elif mode == FULL_DOCKER:
-            try:
-                with open('.device_info.json', 'r', encoding='utf-8') as f:
-                    return json.dumps(json.load(f))
-            except FileNotFoundError:
-                return ''
+            name, tag, msg = self.check_hardware
+            arch = self.check_arch
+            pyvenv = list(sys.version_info[:2])
+            os_env = 'linux' if name == 'jetson' else self.check_platform
+        else:
+            if mode == BUILD_DOCKER:
+                name, tag, msg = self.check_hardware
+                arch = self.check_arch
+                pyvenv = list(sys.version_info[:2])
+                os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
+                pyvenv = [3, 10] if tag in ['jetson60', 'jetson61'] else pyvenv
+                device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg}
+                with open('.device_info.json', 'w', encoding='utf-8') as f:
+                    json.dump(device_info, f)
+                return json.dumps(device_info)
+            elif mode == FULL_DOCKER:
+                try:
+                    with open('.device_info.json', 'r', encoding='utf-8') as f:
+                        return json.dumps(json.load(f))
+                except FileNotFoundError:
+                    return ''
         if all([name, tag, os_env, arch, pyvenv]):
             device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg}
             return json.dumps(device_info)
@@ -51,11 +60,11 @@ class DeviceInstaller():
             return False
 
     def detect_platform_tag(self)->str:
-        if sys.platform.startswith('win'):
+        if self.system == systems['WINDOWS']:
             return 'win'
-        if sys.platform == 'darwin':
+        if self.system == systems['MACOS']:
             return 'macosx_11_0'
-        if sys.platform.startswith('linux'):
+        if self.system == systems['LINUX']:
             return 'manylinux_2_28'
         return 'unknown'
 
@@ -195,7 +204,7 @@ class DeviceInstaller():
 
         def has_amd_gpu_pci():
             # macOS: no ROCm-capable AMD GPUs
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
             if os.name == "posix":
@@ -235,7 +244,7 @@ class DeviceInstaller():
 
         def has_working_rocm():
             # ROCm does not exist on macOS or Windows (runtime)
-            if sys.platform != "linux":
+            if self.system != systems['LINUX']:
                 return False
             # /dev/kfd is required but not sufficient
             if not os.path.exists("/dev/kfd"):
@@ -256,7 +265,7 @@ class DeviceInstaller():
 
         def has_nvidia_gpu_pci():
             # macOS: NVIDIA GPUs are unsupported → always False
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
             if os.name == "posix":
@@ -306,7 +315,7 @@ class DeviceInstaller():
                 return False
 
         def has_working_cuda():
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             if not has_cmd("nvidia-smi"):
                 return False
@@ -319,7 +328,7 @@ class DeviceInstaller():
 
         def has_intel_gpu_pci():
             # macOS: Intel GPUs exist but XPU runtime is not supported
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
             if os.name == "posix":
@@ -359,7 +368,7 @@ class DeviceInstaller():
 
         def has_working_xpu():
             # No XPU on macOS
-            if sys.platform == "darwin":
+            if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
             if os.name == "posix":
@@ -618,7 +627,7 @@ class DeviceInstaller():
             # ============================================================
             # APPLE MPS
             # ============================================================
-            elif sys.platform == 'darwin' and arch in ('arm64', 'aarch64'):
+            elif self.system == systems['MACOS'] and arch in ('arm64', 'aarch64'):
                 devices['MPS']['found'] = True
                 name = 'mps'
                 tag = 'mps'
@@ -641,6 +650,9 @@ class DeviceInstaller():
         try:
             import importlib
             from tqdm import tqdm        
+            from packaging.specifiers import SpecifierSet
+            from packaging.version import Version, InvalidVersion
+            from packaging.markers import Marker
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
                 packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)]
@@ -653,7 +665,6 @@ class DeviceInstaller():
                     pkg_part, marker_part = package.split(';', 1)
                     marker_part = marker_part.strip()
                     try:
-                        from packaging.markers import Marker
                         marker = Marker(marker_part)
                         if not marker.evaluate():
                             continue
@@ -666,7 +677,20 @@ class DeviceInstaller():
                     pkg_name = pkg_name_match.group(1) if pkg_name_match else None
                     if pkg_name:
                         spec = importlib.util.find_spec(pkg_name)
-                        if spec is None:
+                        if spec is not None:
+                            if pkg_name == 'demucs':
+                                installed_version = version(pkg_name)
+                                version_base = Version(installed_version).base_version
+                                if Version(version_base) < Version('4.1.0'):
+                                    try:
+                                        msg = f'{pkg_name} version does not match the git version. Updating...'
+                                        print(msg)
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--no-deps', package])
+                                    except subprocess.CalledProcessError as e:
+                                        error = f'Failed to install {package}: {e}'
+                                        print(error)
+                                        return False
+                        else:
                             msg = f'{pkg_name} (git package) is missing.'
                             print(msg)
                             missing_packages.append(package)
@@ -689,8 +713,6 @@ class DeviceInstaller():
                 else:
                     spec_str = clean_pkg[len(pkg_name):].strip()
                     if spec_str:
-                        from packaging.specifiers import SpecifierSet
-                        from packaging.version import Version, InvalidVersion
                         spec = SpecifierSet(spec_str)
                         norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
                         short_version = norm_match.group(1) if norm_match else installed_version
