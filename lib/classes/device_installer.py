@@ -653,8 +653,6 @@ class DeviceInstaller():
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
                 packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)]
-            if sys.platform == systems['WINDOWS']:
-                packages.append('pywinpty')
             if sys.version_info >= (3, 11):
                 packages.append("pymupdf-layout")
             missing_packages = []
