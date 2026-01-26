@@ -440,7 +440,9 @@ class TTSUtils:
             )
         elif tag == 'voice':
             if close:
-                return self._set_voice(), ''
+                bool = self._set_voice()
+                if not bool:
+                    return False, '_convert_sml() _set_voice() error'
             assert value is not None, 'voice tag requires a value'
             voice_path = os.path.abspath(value)
             if not os.path.exists(voice_path):
