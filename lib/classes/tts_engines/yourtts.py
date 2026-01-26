@@ -67,7 +67,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
                         bool, error = self._convert_sml(part)
-                        if bool is False: 
+                        if not bool: 
                             print(error)
                             return False
                         continue
