@@ -114,6 +114,8 @@ class VoiceExtractor:
                 wav = audio_result[0]
             else:
                 wav = audio_result
+            if wav.dim() == 2:
+                wav = wav.unsqueeze(0)
             wav = wav.to(device)
             self.progress_bar(0.05, desc=msg)
             result = apply_model(
@@ -127,7 +129,7 @@ class VoiceExtractor:
             self.progress_bar(0.9, desc=msg)
             sources = result[0] if isinstance(result, (tuple, list)) else result
             vocals_idx = model.sources.index("vocals")
-            vocals = sources[vocals_idx]
+            vocals = sources[0, vocals_idx]
             out_dir = Path(self.output_dir) / Path(self.wav_file).stem
             out_dir.mkdir(parents=True, exist_ok=True)
             out_file = out_dir / "vocals.wav"
