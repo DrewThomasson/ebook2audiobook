@@ -2,6 +2,7 @@ packaging
 tqdm
 torchvggish
 num2words @ git+https://github.com/savoirfairelinux/num2words.git
+demucs @ git+https://github.com/adefossez/demucs.git
 regex
 docker
 ebooklib
@@ -25,7 +26,6 @@ mutagen
 PyOpenGL
 phonemizer-fork
 pydub
-demucs
 unidecode
 langdetect
 stanza==1.10.1
