@@ -99,8 +99,7 @@ class VoiceExtractor:
             msg = 'Extracting Voice...'
             cmd = [
                 "demucs",
-                "-n", "mdx_q",
-                "--shifts", "0", "--segment", "4",
+                "-n", "htdemucs",
                 "--verbose",
                 "--two-stems=vocals",
                 "--out", self.output_dir,
