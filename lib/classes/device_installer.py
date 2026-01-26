@@ -685,7 +685,7 @@ class DeviceInstaller():
                                     try:
                                         msg = f'{pkg_name} version does not match the git version. Updating...'
                                         print(msg)
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', package])
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--no-deps', package])
                                     except subprocess.CalledProcessError as e:
                                         error = f'Failed to install {package}: {e}'
                                         print(error)
