@@ -797,7 +797,7 @@ class DeviceInstaller():
                     print(f'---> Hardware detected: {device_info}')
                     torch_version = self.get_package_version('torch')
                     if torch_version:
-                        if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
+                        if device_info['tag'] not in ['unknown', 'unsupported']:
                             m = re.search(r'\+(.+)$', torch_version)
                             current_tag = m.group(1) if m else None
                             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
