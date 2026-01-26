@@ -91,91 +91,49 @@ class VoiceExtractor:
     def _demucs_voice(self)->tuple[bool, str]:
         error = '_demucs_voice() error'
         try:
-            tqdm_re = re.compile(rb"(\d{1,3})%\|")
+            import torch
+            import torchaudio
+            from demucs.pretrained import get_model
+            from demucs.apply import apply_model
+            from demucs.audio import AudioFile
+            from pathlib import Path
             system = self.session['system']
             last_percent = 0.0
-            last_output = b""
-            proc = None
             msg = 'Extracting Voice...'
-            cmd = [
-                "demucs",
-                "-n", "htdemucs",
-                "--verbose",
-                "--two-stems=vocals",
-                "--out", self.output_dir,
-                self.wav_file
-            ]
-            if system in (systems['LINUX'], systems['MACOS']):
-                import pty
-                import select
-                master_fd, slave_fd = pty.openpty()
-                proc = subprocess.Popen(
-                    cmd,
-                    stdin=slave_fd,
-                    stdout=slave_fd,
-                    stderr=slave_fd,
-                    close_fds=True
-                )
-                os.close(slave_fd)
-                while True:
-                    r, _, _ = select.select([master_fd], [], [], 0.1)
-                    if master_fd in r:
-                        try:
-                            data = os.read(master_fd, 1024)
-                            if not data:
-                                break
-                            last_output = data
-                            # optional: print raw tqdm output to terminal
-                            sys.stdout.buffer.write(data)
-                            sys.stdout.buffer.flush()
-                            match = tqdm_re.search(data)
-                            if match:
-                                percent = min(float(match.group(1)), 100.0)
-                                if percent < last_percent:
-                                    last_percent = 0.0
-                                if percent - last_percent >= 0.5:
-                                    self.progress_bar(round(percent / 100.0, 2), desc=msg)
-                                    last_percent = percent
-                        except OSError:
-                            error = f'_demucs_voice() EOFError'
-                            return False, error
-                proc.wait()
-                if proc.returncode == 0:
-                    msg = 'Completed'
-                    return True, msg
-                error = f'_demucs_voice() demucs exited with code {proc.returncode}'
-            elif system == systems['WINDOWS']:
-                import winpty
-                proc = winpty.PTYProcess.spawn(cmd)
-                while proc.isalive():
-                    try:
-                        data = proc.read(1024)
-                        if data:
-                            last_output = data
-                            print(data, end="", flush=True)
-                            match = re.search(r"(\d{1,3})%\|", data)
-                            if match:
-                                percent = min(float(match.group(1)), 100.0)
-                                # detect new tqdm pass (reset)
-                                if percent < last_percent:
-                                    last_percent = 0.0
-                                if percent - last_percent >= 0.5:
-                                    self.progress_bar(round(percent / 100.0, 2), desc=msg)
-                                    last_percent = percent
-                    except EOFError:
-                        error = f'_demucs_voice() EOFError'
-                        return False, error
-                proc.close()
-                msg = 'Completed'
-                return True, msg
-        except subprocess.CalledProcessError as e:
-            error = (
-                f'_demucs_voice() subprocess CalledProcessError error: {e.returncode}\n\n'
-                f'stdout: {e.output}\n\n'
-                f'stderr: {e.stderr}'
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.progress_bar(0.0, desc=msg)
+            model = get_model(name="htdemucs")
+            model.to(device)
+            model.eval()
+            wav = AudioFile(self.wav_file).read(
+                streams=0,
+                samplerate=model.samplerate,
+                channels=model.audio_channels
             )
-        except FileNotFoundError:
-            error = f'_demucs_voice() error: The "demucs" command was not found'
+            wav = wav.to(device)
+            self.progress_bar(0.05, desc=msg)
+            sources = apply_model(
+                model,
+                wav,
+                device=device,
+                split=True,
+                overlap=0.25,
+                progress=True
+            )
+            self.progress_bar(0.9, desc=msg)
+            vocals_idx = model.sources.index("vocals")
+            vocals = sources[vocals_idx]
+            out_dir = Path(self.output_dir) / Path(self.wav_file).stem
+            out_dir.mkdir(parents=True, exist_ok=True)
+            out_file = out_dir / "vocals.wav"
+            torchaudio.save(
+                str(out_file),
+                vocals.cpu(),
+                model.samplerate
+            )
+            self.progress_bar(1.0, desc='Completed')
+            msg = 'Completed'
+            return True, msg
         except Exception as e:
             error = f'_demucs_voice() error: {str(e)}'
         return False, error

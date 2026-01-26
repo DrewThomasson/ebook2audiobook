@@ -29,7 +29,7 @@ demucs
 unidecode
 langdetect
 stanza==1.10.1
-pyannote-audio==3.4.0
+pyannote-audio
 argostranslate==1.10.0
 gradio==5.49.1
 torch<=2.7.1
