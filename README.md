@@ -146,10 +146,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - Process format can be changed in lib/conf.py
 
 ## SML tags available
-- `[[break]]` — silence (random range **0.3–0.6 s**)
-- `[[pause]]` — silence (random range **1.0–1.6 sec.**)
-- `[[pause:N]]` — fixed pause (**N sec.**)
-- `[[voice:/path/to/voice/file]]...[[/voice]]` — switch voice from default or selected voice from GUI/CLI
+- `[break]` — silence (random range **0.3–0.6 sec.**)
+- `[pause]` — silence (random range **1.0–1.6 sec.**)
+- `[pause:N]` — fixed pause (**N sec.**)
+- `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
@@ -389,12 +389,15 @@ Podman Compose (i.e. cuda 12.8:
 
     * MPS is not exposed in docker so CPU must be used.
 
-Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[[pause]]".
-
+SML tags available:
+        [break]` — silence (random range **0.3–0.6 sec.**)
+        [pause]` — silence (random range **1.0–1.6 sec.**)
+        [pause:N]` — fixed pause (**N sec.**)
+        [voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
 ```
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
-TIP: if it needs some more pause, add '[[pause:3]]' for 3 sec. etc.
+TIP: if it needs some more pause, add '[pause:3]' for 3 sec. etc.
 
 ### Docker
 1. **Clone the Repository**:
@@ -474,7 +477,7 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
 a copy of the original conf.py so on each ebook2audiobook update you will backup your modified conf.py and put
 back the original one. You must plan the same process for models.py. If you wish to make your own custom model
-as an official ebook2audiobook fine tuned model so please contact us and we'll ad it to the models.py list.
+as an official ebook2audiobook fine tuned model so please contact us and we'll add it to the presets list.
 
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
@@ -496,7 +499,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 
 ## What we need help with! 🙌 
-## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
+## [Roadmap and Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
 - Any help from people speaking any of the supported languages to help us improve the models
   
 <!--

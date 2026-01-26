@@ -1506,8 +1506,8 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         args = {
+                            "id": session_id,
                             "is_gui_process": session['is_gui_process'],
-                            "session": session_id,
                             "script_mode": script_mode,
                             "chapters_preview": chapters_preview,
                             "device": device,
@@ -1563,7 +1563,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         else:
                                             show_alert({"type": "success", "msg": progress_status})
                                             args['ebook_list'].remove(file)
-                                            reset_session(args['session'])
+                                            reset_session(args['id'])
                                             count_file = len(args['ebook_list'])
                                             if count_file > 0:
                                                 msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
@@ -1589,7 +1589,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         return
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
-                                        reset_session(args['session'])
+                                        reset_session(args['id'])
                                         msg = 'Conversion successful!'
                                         session['status'] = 'ready'
                                         return gr.update(value=msg), gr.update()
@@ -1725,7 +1725,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] == 'converting':
                         session['status'] = 'ready'
                     session['is_gui_process'] = is_gui_process
-                    session['system'] = (f"{platform.system()}-{platform.release()}").lower()
+                    session['system'] = sys.platform
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -1754,7 +1754,7 @@ def build_interface(args:dict)->gr.Blocks:
             async def update_gr_save_session(session_id:str, state:dict)->tuple:
                 try:
                     session = context.get_session(session_id)
-                    if not session or not isinstance(session, Mapping):
+                    if not session or (session and not session.get('id', False)):
                         yield gr.update(), gr.update(), gr.update()
                         return
                     previous_hash = state.get("hash")

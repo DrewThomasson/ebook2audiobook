@@ -54,73 +54,75 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
         try:
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
-                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
+                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
                 language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
-                sentence_parts = default_backend_sml_pattern.split(sentence)
+                sentence_parts = self._split_sentence_on_sml(sentence)
+                not_supported_punc_pattern = re.compile(r'[—]')
+                if not self._set_voice():
+                    return False
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
-                    if not part or not any(c.isalnum() for c in part):
+                    if not part:
                         continue
-                    if default_backend_sml_pattern.fullmatch(part):
-                        if not self._convert_sml(part):
-                            error = f'_convert_sml failed: {part}'
+                    if SML_TAG_PATTERN.fullmatch(part):
+                        bool, error = self._convert_sml(part)
+                        if bool is False: 
                             print(error)
                             return False
+                        continue
+                    if not any(c.isalnum() for c in part):
+                        continue
                     else:
                         trim_audio_buffer = 0.002
                         if part.endswith("'"):
                             part = part[:-1]
                         speaker_argument = {}
-                        not_supported_punc_pattern = re.compile(r'[—]')
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        if self._set_voice():
-                            if self.params['voice_path'] is not None:
-                                speaker_wav = self.params['voice_path']
-                                speaker_argument = {"speaker_wav": speaker_wav}
+                        if self.params['voice_path'] is not None:
+                            speaker_wav = self.params['voice_path']
+                            speaker_argument = {"speaker_wav": speaker_wav}
+                        else:
+                            voice_key = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
+                            speaker_argument = {"speaker": voice_key}                         
+                        with torch.no_grad():
+                            self.engine.to(device)
+                            if device == devices['CPU']['proc']:
+                                audio_part = self.engine.tts(
+                                    text=part,
+                                    language=language,
+                                    **speaker_argument
+                                )
                             else:
-                                voice_key = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
-                                speaker_argument = {"speaker": voice_key}                         
-                            with torch.no_grad():
-                                self.engine.to(device)
-                                if device == devices['CPU']['proc']:
+                                with torch.autocast(
+                                    device_type=device,
+                                    dtype=self.amp_dtype
+                                ):
                                     audio_part = self.engine.tts(
                                         text=part,
                                         language=language,
                                         **speaker_argument
                                     )
-                                else:
-                                    with torch.autocast(
-                                        device_type=device,
-                                        dtype=self.amp_dtype
-                                    ):
-                                        audio_part = self.engine.tts(
-                                            text=part,
-                                            language=language,
-                                            **speaker_argument
-                                        )
-                                self.engine.to(devices['CPU']['proc'])
-                            if is_audio_data_valid(audio_part):
-                                src_tensor = self._tensor_type(audio_part)
-                                part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                                if part_tensor is not None and part_tensor.numel() > 0:
-                                    if part[-1].isalnum() or part[-1] == '—':
-                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                    self.audio_segments.append(part_tensor)
-                                    if not re.search(r'\w$', part, flags=re.UNICODE):
-                                        silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                        break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                        self.audio_segments.append(break_tensor.clone())
-                                    del part_tensor
-                                else:
-                                    error = f"part_tensor not valid"
-                                    print(error)
-                                    return False
+                            self.engine.to(devices['CPU']['proc'])
+                        if is_audio_data_valid(audio_part):
+                            src_tensor = self._tensor_type(audio_part)
+                            part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
+                            if part_tensor is not None and part_tensor.numel() > 0:
+                                if part[-1].isalnum() or part[-1] == '—':
+                                    part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                self.audio_segments.append(part_tensor)
+                                if not re.search(r'\w$', part, flags=re.UNICODE):
+                                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                    break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
+                                    self.audio_segments.append(break_tensor.clone())
+                                del part_tensor
                             else:
-                                error = f"audio_part not valid"
+                                error = f"part_tensor not valid"
                                 print(error)
                                 return False
                         else:
+                            error = f"audio_part not valid"
+                            print(error)
                             return False
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)

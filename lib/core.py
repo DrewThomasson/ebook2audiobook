@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
-import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
+import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
 
@@ -44,7 +44,7 @@ from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
-from lib.classes.tts_engines.common.audio import get_audio_duration
+from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
 
 from lib import *
 
@@ -117,8 +117,8 @@ class SessionContext:
 
     def set_session(self, session_id:str)->Any:
         self.sessions[session_id] = self._recursive_proxy({
-            "script_mode": NATIVE,
             "id": session_id,
+            "script_mode": NATIVE,
             "tab_id": None,
             "is_gui_process": False,
             "free_vram_gb": 0,
@@ -229,13 +229,9 @@ def prepare_dirs(src:str, session_id:str)->bool:
             os.makedirs(session['voice_dir'], exist_ok=True)
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
-            os.makedirs(session['chapters_worker_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
-            os.makedirs(session['sentences_worker_dir'], exist_ok=True)
             session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
             shutil.copy(src, session['ebook'])
-            clear_folder(session['chapters_worker_dir'])
-            clear_folder(session['sentences_worker_dir'])
             return True
     except Exception as e:
         DependencyError(e)
@@ -546,7 +542,7 @@ def convert2epub(session_id:str)-> bool:
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
-                text = re.sub(r'\n{2,}', '.[[pause]]', text)
+                text = re.sub(r'\n{2,}', f".{TTS_SML['pause']['static']}", text)
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
@@ -745,12 +741,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 toc = epubBook.toc
                 toc_list = [
                         nt for item in toc if hasattr(item, 'title')
-                        if (nt := normalize_text(
-                            str(item.title),
-                            session['language'],
-                            session['language_iso1'],
-                            session['tts_engine']
-                    )) is not None
+                        if (nt := normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine'])) is not None
                 ]
             except Exception as toc_error:
                 error = f'Error extracting Table of Content: {toc_error}'
@@ -970,10 +961,10 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             i = 0
             while i < len(text_list):
                 current = text_list[i]
-                if current in ('‡break‡', '‡pause‡'):
+                if current in {v['static'] for v in TTS_SML.values() if "static" in v}:
                     if clean_list:
                         prev = clean_list[-1]
-                        if prev in ('‡break‡', '‡pause‡'):
+                        if prev in {v['static'] for v in TTS_SML.values() if "static" in v}:
                             i += 1
                             continue
                     clean_list.append(current)
@@ -986,6 +977,21 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 error = 'No valid text found!'
                 print(error)
                 return None
+            # clean SML tags badly coded
+            bool, text = normalize_sml_tags(text)
+            if bool is False:
+                print(text)
+                if session['is_gui_process']:
+                    show_alert({"type": "warning", "msg": text})
+                return None
+            # remove any [break] between words or cutting words
+            break_token = re.escape(sml_token('break'))
+            strip_break_spaces_re = re.compile(rf'\s*{break_token}\s*')
+            break_between_alnum_re = re.compile(rf'(?<=[\w]){break_token}(?=[\w])', flags=re.UNICODE)
+            text = strip_break_spaces_re.sub(sml_token('break'), text)
+            text = break_between_alnum_re.sub(' ', text)
+            # escape all SML tags to not be touched by any text treatment
+            text, sml_blocks = escape_sml(text)
             if stanza_nlp:
                 msg = 'Converting dates and years to words…'
                 print(msg)
@@ -1060,6 +1066,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 error = 'No sentences found!'
                 print(error)
                 return None
+            sentences = [restore_sml(s, sml_blocks) for s in sentences]
             return sentences
         return None
     except Exception as e:
@@ -1081,14 +1088,14 @@ def get_sentences(text:str, session_id:str)->list|None:
                 result.append(tail)
         return result
 
-    def strip_sml(s:str)->str:
-        return SML_TAG_PATTERN.sub('', s)
+    def strip_escaped_sml(s:str)->str:
+        return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
     def clean_len(s:str)->int:
-        return len(strip_sml(s))
+        return len(strip_escaped_sml(s))
 
     def is_latin_only(s:str)->bool:
-        s = strip_sml(s)
+        s = strip_escaped_sml(s)
         s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
         has_latin = bool(re.search(r'[A-Za-z]', s))
         has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
@@ -1097,7 +1104,7 @@ def get_sentences(text:str, session_id:str)->list|None:
     def split_at_space_limit(s:str)->list[str]:
         out = []
         rest = s.strip()
-        while rest and len(strip_sml(rest)) > max_chars:
+        while rest and len(strip_escaped_sml(rest)) > max_chars:
             cut = rest[:max_chars + 1]
             idx = cut.rfind(' ')
             if idx == -1:
@@ -1168,6 +1175,8 @@ def get_sentences(text:str, session_id:str)->list|None:
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
 
+        assert not SML_TAG_PATTERN.search(text)
+
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
@@ -1193,7 +1202,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 continue
             if i + 1 < n:
                 next_s = hard_list[i + 1].strip()
-                next_clean = strip_sml(next_s)
+                next_clean = strip_escaped_sml(next_s)
                 if next_clean and sum(c.isalnum() for c in next_clean) < 3:
                     s = f"{s} {next_s}"
                     i += 2
@@ -1201,14 +1210,14 @@ def get_sentences(text:str, session_id:str)->list|None:
                     i += 1
             else:
                 i += 1
-            if len(strip_sml(s)) <= max_chars:
+            if len(strip_escaped_sml(s)) <= max_chars:
                 soft_list.append(s)
                 continue
             parts = split_inclusive(s, soft_pattern)
             if parts:
                 valid = False
                 for p in parts:
-                    if len(strip_sml(p.strip())) <= max_chars:
+                    if len(strip_escaped_sml(p.strip())) <= max_chars:
                         valid = True
                         break
                 if valid:
@@ -1226,7 +1235,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 continue
             rest = s
             while rest:
-                current_len = len(strip_sml(rest))   # ← rename variable
+                current_len = len(strip_escaped_sml(rest))   # ← rename variable
                 if current_len <= max_chars:
                     last_list.append(rest.strip())
                     break
@@ -1245,7 +1254,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 rest = right
 
         # PASS 4 — merge very short rows
-        merge_list = []
+        final_list = []
         merge_max_chars = int((max_chars / 2) / 3)
         i = 0
         n = len(last_list)
@@ -1255,7 +1264,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 i += 1
                 continue
             if i == 0:
-                merge_list.append(cur)
+                final_list.append(cur)
                 i += 1
                 continue
             cur_len = clean_len(cur)
@@ -1272,42 +1281,27 @@ def get_sentences(text:str, session_id:str)->list|None:
                         j += 1
                         continue
                     break
-                if merge_list:
-                    prev = merge_list[-1]
+                if final_list:
+                    prev = final_list[-1]
                     if clean_len(prev) + cur_len <= max_chars:
-                        merge_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
+                        final_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
                         i = j
                         continue
-                merge_list.append(cur)
+                final_list.append(cur)
                 i = j
                 continue
-            merge_list.append(cur)
+            final_list.append(cur)
             i += 1
-
-        # PASS 5 = remove unwanted breaks
-        break_token = re.escape(sml_token('break'))
-        strip_break_spaces_re = re.compile(
-            rf'\s*{break_token}\s*'
-        )
-        break_between_alnum_re = re.compile(
-            rf'(?<=[\w]){break_token}(?=[\w])',
-            flags=re.UNICODE
-        )
-        final_list = []
-        for s in merge_list:
-            s = strip_break_spaces_re.sub(sml_token('break'), s)
-            s = break_between_alnum_re.sub(' ', s)
-            final_list.append(s)
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = re.split(default_backend_sml_pattern, s)
+                parts = self._split_sentence_on_sml(s)
                 for part in parts:
                     part = part.strip()
                     if not part:
                         continue
-                    if default_backend_sml_pattern.fullmatch(part):
+                    if SML_TAG_PATTERN.fullmatch(part):
                         result.append(part)
                         continue
                     tokens = segment_ideogramms(part)
@@ -1721,38 +1715,71 @@ def foreign2latin(text:str, base_lang:str)->str:
         out = out.replace(k, v)
     return out
 
-def filter_sml(text:str)->str:
-
-    def check_sml(m: re.Match[str]) -> str:
-        if m.group("tag1"):
-            tag = m.group("tag1")
-            close = bool(m.group("close1"))
-            value = m.group("value1")
-        elif m.group("tag2"):
-            tag = m.group("tag2")
-            close = bool(m.group("close2"))
-            value = m.group("value2")
+def normalize_sml_tags(text:str)->tuple[bool, str]:
+    out = []
+    stack = []
+    last = 0
+    for m in SML_TAG_PATTERN.finditer(text):
+        start, end = m.span()
+        out.append(text[last:start])
+        tag = m.group("tag")
+        close = bool(m.group("close"))
+        value = m.group("value")
+        info = TTS_SML.get(tag)
+        if not info:
+            out.append(m.group(0))
+            last = end
+            continue
+        if info.get("paired"):
+            if close:
+                if not stack or stack[-1] != tag:
+                    error = f'normalize_sml_tags() error: unmatched closing tag [/{tag}]'
+                    return False, error
+                stack.pop()
+                out.append(f"[/{tag}]")
+            else:
+                stack.append(tag)
+                if value is not None:
+                    out.append(f"[{tag}:{value.strip()}]")
+                else:
+                    error = f'normalize_sml_tags() error: paired tag [{tag}] requires a value'
+                    return False, error
         else:
-            return m.group(0)
-        assert tag in TTS_SML, f"Unknown SML tag: {tag!r}"
-        if close:
-            return f" ‡‡/{tag}‡‡ "
-        if value:
-            return f" ‡‡{tag}:{value}‡‡ "
-        return f" ‡‡{tag}‡‡ "
+            if close:
+                error = f'normalize_sml_tags() error: non-paired tag [/{tag}] is invalid'
+                return False, error
+            out.append(info['static'])
+        last = end
+    out.append(text[last:])
+    if stack:
+        error = f"normalize_sml_tags() error: unclosed tag(s): {', '.join(stack)}"
+        return False, error
+    return True, ''.join(out)
 
-    return SML_TAG_PATTERN.sub(check_sml, text)
-    
-def sml_token(tag:str, value:str | None = None, close:bool=False)->str:
+def escape_sml(text:str)->tuple[str, list[str]]:
+    sml_blocks:list[str] = []
+
+    def replace(m:re.Match[str])->str:
+        sml_blocks.append(m.group(0))
+        return chr(sml_escape_tag + len(sml_blocks) - 1)
+
+    return SML_TAG_PATTERN.sub(replace, text), sml_blocks
+
+def restore_sml(text:str, sml_blocks:list[str])->str:
+    for i, block in enumerate(sml_blocks):
+        text = text.replace(chr(sml_escape_tag + i), block)
+    return text
+
+def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
     if close:
-        return f"‡‡/{tag}‡‡"
+        return f"[/{tag}]"
     if value is not None:
-        return f"‡‡{tag}:{value}‡‡"
-    return f"‡‡{tag}‡‡"
+        return f"[{tag}:{value}]"
+    return f"[{tag}]"
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
-    def repl_abbreviations(match:re.Match)->str:
+    def replace(match:re.Match)->str:
         token = match.group(1)
         for k, expansion in mapping.items():
             if token.lower() == k.lower():
@@ -1771,17 +1798,15 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
             flags=re.IGNORECASE
         )
-        text = pattern.sub(repl_abbreviations, text)
+        text = pattern.sub(replace, text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc…
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
-    # Prepare SML tags
-    text = filter_sml(text)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a [pause] 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {sml_token('pause')} ", text)
     # Replace single newlines ("\n" or "\r") with spaces
@@ -1828,7 +1853,7 @@ def convert_chapters2audio(session_id:str)->bool:
             tts_manager = TTSManager(session)
             resume_chapter = 0
             missing_chapters = []
-            chapter_re = re.compile(r'^chapter_(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
+            chapter_re = re.compile(r'^(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
             existing_chapters = [f for f in os.listdir(session['chapters_dir']) if chapter_re.match(f)]
             existing_numbers = sorted(int(chapter_re.match(f).group(1)) for f in existing_chapters)
             if existing_numbers:
@@ -1870,7 +1895,7 @@ def convert_chapters2audio(session_id:str)->bool:
                     idx_target = 0
                     for c in range(0, total_chapters):
                         chapter_idx = c
-                        chapter_audio_file = f'chapter_{chapter_idx}.{default_audio_proc_format}'
+                        chapter_audio_file = f'{chapter_idx}.{default_audio_proc_format}'
                         sentences = session['chapters'][c]
                         start = idx_target
                         if c in missing_chapters:
@@ -1933,19 +1958,32 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
         session = context.get_session(session_id)
         if session and session.get('id', False):
             chapter_audio_file = os.path.join(session['chapters_dir'], file)
-            sentences_dir = session['sentences_dir']
             start = int(start)
             end = int(end)
-            is_gui_process = session.get('is_gui_process')
-            sentence_files = [f for f in os.listdir(sentences_dir) if f.endswith(f'.{default_audio_proc_format}')]
-            sentences_ordered = sorted(sentence_files, key=lambda x: int(os.path.splitext(x)[0]))
-            selected_files = [os.path.join(sentences_dir, f) for f in sentences_ordered if int(start) <= int(os.path.splitext(f)[0]) <= int(end)]
-            if not selected_files:
-                print('No audio files found in the specified range.')
+            base = session['sentences_dir']
+            ext = f".{default_audio_proc_format}"
+            start_i = int(start)
+            end_i = int(end)
+            exists = os.path.exists
+            join = os.path.join
+            missing = []
+            selected_files = []
+            for i in range(start_i, end_i + 1):
+                path = join(base, f"{i}{ext}")
+                if exists(path):
+                    selected_files.append(path)
+                else:
+                    missing.append(i)
+            if missing:
+                error = f"Missing sentence files: {missing}"
+                print(error)
                 return False
-            worker_dir = session['sentences_worker_dir']
-            os.makedirs(worker_dir, exist_ok=True)
-            concat_list = os.path.join(worker_dir, 'sentences_final.txt')
+            if not selected_files:
+                error = 'No audio files found in the specified range.'
+                print(error)
+                return False
+            concat_dir = session['process_dir']
+            concat_list = os.path.join(concat_dir, 'concat_list_sentences.txt')
             with open(concat_list, 'w') as f:
                 for path in selected_files:
                     if session['cancellation_requested']:
@@ -1953,7 +1991,7 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         print(msg)
                         return False
                     f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunks_worker(concat_list, chapter_audio_file, is_gui_process)
+            result = assemble_audio_chunks(concat_list, chapter_audio_file, session.get('is_gui_process'))
             if not result:
                 error = 'combine_audio_sentences() FFmpeg concat failed.'
                 print(error)
@@ -2147,14 +2185,16 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             if len(chapter_files) == 0:
                 print('No block files exists!')
                 return None
-            durations = []
-            for file in chapter_files:
-                filepath = os.path.join(session['chapters_dir'], file)
-                durations.append(get_audio_duration(filepath))
-            total_duration = sum(durations)
+            chunks_size = 892
+            total_duration = 0.0
+            for i in range(0, len(chapter_files), chunks_size):
+                filepaths = [
+                    os.path.join(session['chapters_dir'], f)
+                    for f in chapter_files[i:i + chunks_size]
+                ]
+                total_duration += sum(get_audiolist_duration(filepaths).values())
             exported_files = []
-            worker_dir = session['chapters_worker_dir']
-            os.makedirs(worker_dir, exist_ok=True)
+            concat_dir = session['process_dir']
             if session['output_split']:
                 part_files = []
                 part_chapter_indices = []
@@ -2181,7 +2221,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                    concat_list = os.path.join(worker_dir, f'part_{part_idx+1:02d}_final.txt')
+                    concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:02d}.txt')
                     with open(concat_list, 'w') as f:
                         for file in part_file_list:
                             if session['cancellation_requested']:
@@ -2190,21 +2230,21 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                 return None
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
-                    combined_chapters_file = Path(session['process_dir']) / (f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}")
-                    result = assemble_audio_chunks_worker(str(concat_list), str(combined_chapters_file), is_gui_process)
+                    merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}"
+                    result = assemble_audio_chunks(str(concat_list), str(merged_audio), is_gui_process)
                     if not result:
-                        error = f'assemble_audio_chunks_worker() Final merge failed for part {part_idx+1}.'
+                        error = f'assemble_audio_chunks() Final merge failed for part {part_idx+1}.'
                         print(error)
                         return None
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
                     final_file = Path(session['audiobooks_dir']) / (f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name'])
-                    if export_audio(str(combined_chapters_file), str(metadata_file), str(final_file)):
+                    if export_audio(str(merged_audio), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
-                concat_list = os.path.join(worker_dir, 'all_chapters.txt')
-                merged_tmp = os.path.join(worker_dir, f'all.{default_audio_proc_format}')
+                concat_list = os.path.join(concat_dir, f'concat_list_chapters_1.txt')
+                merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
                 with open(concat_list, 'w') as f:
                     for file in chapter_files:
                         if session['cancellation_requested']:
@@ -2215,15 +2255,15 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         f.write(f"file '{path}'\n")
                 if is_gui_process:
                     progress_bar = gr.Progress(track_tqdm=False)
-                ok = assemble_audio_chunks_worker(concat_list, merged_tmp, is_gui_process)
+                ok = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
                 if not ok:
-                    print(f'assemble_audio_chunks_worker() Final merge failed for {merged_tmp}.')
+                    print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-                all_chapters = list(zip(chapter_files, chapter_titles))
-                generate_ffmpeg_metadata(all_chapters, metadata_file, default_audio_proc_format)
+                chapters_zip = list(zip(chapter_files, chapter_titles))
+                generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
                 final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-                if export_audio(merged_tmp, metadata_file, final_file):
+                if export_audio(merged_audio, metadata_file, final_file):
                     exported_files.append(final_file)
             return exported_files if exported_files else None
         return None
@@ -2231,13 +2271,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool)->bool:
+def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
-    def on_progress(p: float)->None:
+    def on_progress(p:float)->None:
         progress_bar(p / 100.0, desc='Assemble')
 
     try:
         total_duration = 0.0
+        filepaths = []
         try:
             with open(txt_file, 'r') as f:
                 for line in f:
@@ -2250,9 +2291,11 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
                             .strip('"')
                         )
                         if os.path.exists(file_path):
-                            total_duration += get_audio_duration(file_path)
+                            filepaths.append(file_path)
+            durations = get_audiolist_duration(filepaths)
+            total_duration = sum(durations.values())
         except Exception as e:
-            print(f'assemble_audio_chunks_worker() open file {txt_file} Error: {e}')
+            print(f'assemble_audio_chunks() open file {txt_file} Error: {e}')
             return False
 
         progress_bar = gr.Progress(track_tqdm=False)
@@ -2291,7 +2334,7 @@ def assemble_audio_chunks_worker(txt_file:str, out_file:str, is_gui_process:bool
         DependencyError(e)
         return False
     except Exception as e:
-        error = f'assemble_audio_chunks_worker() Error: Failed to process {txt_file} → {out_file}: {e}'
+        error = f'assemble_audio_chunks() Error: Failed to process {txt_file} → {out_file}: {e}'
         print(error)
         return False
 
@@ -2384,7 +2427,7 @@ def convert_ebook_batch(args:dict)->tuple:
                     if not args['is_gui_process']:
                         sys.exit(1)
                 args['ebook_list'].remove(file) 
-        reset_session(args['session'])
+        reset_session(args['id'])
         return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'
@@ -2395,8 +2438,13 @@ def convert_ebook_batch(args:dict)->tuple:
 def convert_ebook(args:dict)->tuple:
     try:
         if args.get('event') == 'blocks_confirmed':
-            progress_status, passed = finalize_audiobook(args['id'])
-            return progress_status, passed
+            if args.get('id', False):
+                progress_status, passed = finalize_audiobook(args['id'])
+                return progress_status, passed
+            else:
+                error = f"convert_ebook() error: args['id'] is False"
+                print(error)
+                return error, False
         else:
             global context        
             error = None
@@ -2425,16 +2473,19 @@ def convert_ebook(args:dict)->tuple:
                     error = 'The language you provided is not (yet) supported'
                     print(error)
                     return error, False
-                if args['session'] is not None:
-                    session_id = str(args['session'])
+                if args['id'] is not None:
+                    session_id = str(args['id'])
                     session = context.get_session(session_id)
+                    if not session:
+                        session = context.set_session(session_id)
                 else:
                     session_id = str(uuid.uuid4())
                     session = context.set_session(session_id)
                     if not context_tracker.start_session(session_id):
                         error = 'convert_ebook() error: Session initialization failed!'
                         print(error)
-                        return error, False                        
+                        return error, False     
+                session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
                 session['ebook'] = str(args['ebook']) if args.get('ebook') else None
@@ -2444,7 +2495,7 @@ def convert_ebook(args:dict)->tuple:
                 session['language'] = str(args['language'])
                 session['language_iso1'] = str(args['language_iso1'])
                 session['tts_engine'] = str(args['tts_engine']) if args['tts_engine'] is not None else str(get_compatible_tts_engines(args['language'])[0])
-                session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if session['custom_model'] is not None else None
+                session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if args['custom_model'] is not None else None
                 session['fine_tuned'] = str(args['fine_tuned'])
                 session['voice'] = str(args['voice']) if args['voice'] is not None else None
                 session['xtts_temperature'] =  float(args['xtts_temperature'])
@@ -2465,12 +2516,10 @@ def convert_ebook(args:dict)->tuple:
                 session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
                 cleanup_models_cache()
                 if not session['is_gui_process']:
+                    session['system'] = sys.platform
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                     os.makedirs(session['voice_dir'], exist_ok=True)
-                    # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
-                    #[shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
-                    session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
@@ -2516,9 +2565,7 @@ def convert_ebook(args:dict)->tuple:
                         session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                        session['chapters_worker_dir'] = os.path.join(session['chapters_dir'], "workers")
                         session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
-                        session['sentences_worker_dir'] = os.path.join(session['sentences_dir'], 'workers')
                         if prepare_dirs(args['ebook'], session_id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''

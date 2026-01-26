@@ -8,12 +8,12 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 
 def init_multiprocessing():
-    if sys.platform.startswith("darwin"):
+    if sys.platform == systems['MACOS']:
         try:
             multiprocessing.set_start_method("spawn")
         except RuntimeError:
             pass
-    elif sys.platform.startswith("linux"):
+    elif sys.platform == systems['LINUX']:
         try:
             multiprocessing.set_start_method("fork")
         except RuntimeError:
@@ -140,9 +140,11 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
             DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
     
-    * MPS is not exposed in docker so CPU must be used.
-
-Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your text just use "###" or "[pause]".
+SML tags available:
+        [break]` — silence (random range **0.3–0.6 sec.**)
+        [pause]` — silence (random range **1.0–1.6 sec.**)
+        [pause:N]` — fixed pause (**N sec.**)
+        [voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
         ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
@@ -229,27 +231,24 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
             sys.exit(1)
 
         args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
-        args['session'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
         args['share'] =  args['share'] if args['share'] else False
         args['ebook_list'] = None
 
         print(f"v{prog_version} {args['script_mode']} mode")
-        
-        if args['script_mode'] == NATIVE:
-            from lib.classes.device_installer import DeviceInstaller
-            manager = DeviceInstaller()
-            if manager.install_python_packages():
-                device_info_str = manager.check_device_info(args['script_mode'])
-                if manager.install_device_packages(device_info_str) == 1:
-                    error = f'Error: Could not installed device packages!'
-                    print(error)
-                    sys.exit(1)
+        from lib.classes.device_installer import DeviceInstaller
+        manager = DeviceInstaller()
+        if manager.install_python_packages():
+            device_info_str = manager.check_device_info(args['script_mode'])
+            if manager.install_device_packages(device_info_str) == 1:
+                error = f'Error: Could not installed device packages!'
+                print(error)
+                sys.exit(1)
         import lib.core as c
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
-        # Conditions based on the --headless flag
         if args['headless']:
+            args['id'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
             args['chapters_preview'] = False
             args['event'] = ''
@@ -284,7 +283,7 @@ Tip: to add of silence (random duration between 1.0 and 1.8 seconds) into your t
             if args['voice']:
                 if os.path.exists(args['voice']):
                     args['voice'] = os.path.abspath(args['voice'])
-            if args['custom_model']:
+            if args['custom_model'] is not None:
                 if os.path.exists(args['custom_model']):
                     args['custom_model'] = os.path.abspath(args['custom_model'])
             if not os.path.exists(args['audiobooks_dir']):

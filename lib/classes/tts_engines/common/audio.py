@@ -1,4 +1,4 @@
-import torch, subprocess, shutil, json, numpy as np
+import os, torch, subprocess, shutil, json, numpy as np
 
 from torch import Tensor
 from typing import Any, Union
@@ -55,29 +55,69 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
     error = "audio_data must be a PyTorch tensor or a list of numerical values."
     raise TypeError(error)
     return torch.tensor([], dtype=torch.float32)
+    
+def _extract_mediainfo_durations(data:dict|list)->dict[str, float]:
+    durations: dict[str, float] = {}
+    if isinstance(data, list):
+        media_blocks = data
+    else:
+        media_blocks = [data]
+    for block in media_blocks:
+        media = block.get("media")
+        if not media:
+            continue
+        media_list = media if isinstance(media, list) else [media]
+        for m in media_list:
+            ref = m.get("@ref")
+            if not ref:
+                continue
+            ref = os.path.realpath(ref)
 
-def get_audio_duration(filepath:str)->float:
+            for track in m.get("track", []):
+                raw = track.get("Duration")
+                if not raw:
+                    continue
+                try:
+                    durations[ref] = float(raw)
+                    break
+                except (TypeError, ValueError):
+                    continue
+    return durations
+
+def get_audio_duration(filepath: str) -> float:
+    mediainfo = shutil.which("mediainfo")
+    cmd = [mediainfo, "--Output=JSON", filepath]
     try:
-        ffprobe_cmd = [
-            shutil.which('ffprobe'),
-            '-v', 'error',
-            '-show_entries', 'format=duration',
-            '-of', 'json',
-            filepath
-        ]
-        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-        try:
-            return float(json.loads(result.stdout)['format']['duration'])
-        except Exception:
-            return 0
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        data = json.loads(result.stdout)
+        durations = _extract_mediainfo_durations(data)
+        return durations.get(os.path.realpath(filepath), 0.0)
     except subprocess.CalledProcessError as e:
-        error = f'get_audio_duration() Error: Failed to process: {e}'
-        print(error)
-        return 0
+        DependencyError(e)
+        return 0.0
     except Exception as e:
-        error = f'get_audio_duration() Error: Failed to process: {e}'
-        print(error)
-        return 0
+        print(f"get_audio_duration() Error: Failed to process {filepath}: {e}")
+        return 0.0
+
+def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
+    durations = {os.path.realpath(p): 0.0 for p in filepaths}
+    mediainfo = shutil.which("mediainfo")
+    cmd = [mediainfo, "--Output=JSON", *filepaths]
+    try:
+        out = subprocess.check_output(cmd, text=True)
+        data = json.loads(out)
+        extracted = _extract_mediainfo_durations(data)
+        for path in durations:
+            if path in extracted:
+                durations[path] = extracted[path]
+    except Exception:
+        pass
+    return durations
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
     filter_complex = (

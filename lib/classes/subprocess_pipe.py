@@ -83,19 +83,15 @@ class SubprocessPipe:
                     tqdm_re = re.compile(rb'(\d{1,3})%\|')
                     last_percent = 0.0
                     buffer = b""
-
                     while True:
                         chunk = self.process.stdout.read(1024)
                         if not chunk:
                             break
-
                         buffer += chunk
-
                         # tqdm updates via \r, keep buffer small
                         if b'\r' in buffer:
                             parts = buffer.split(b'\r')
                             buffer = parts[-1]
-
                             for part in parts[:-1]:
                                 match = tqdm_re.search(part)
                                 if match:
