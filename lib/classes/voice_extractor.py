@@ -160,6 +160,7 @@ class VoiceExtractor:
 			error = f'_demucs_voice() error: {str(e)}'
 		return False, error
 
+
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
         msg = "Removing empty audio..."
         print(msg)
