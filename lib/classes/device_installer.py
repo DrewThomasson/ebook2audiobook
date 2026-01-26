@@ -675,7 +675,15 @@ class DeviceInstaller():
                     pkg_name = pkg_name_match.group(1) if pkg_name_match else None
                     if pkg_name:
                         spec = importlib.util.find_spec(pkg_name)
-                        if spec is None:
+                        if spec is not None:
+                            if pkg_name == 'demucs':
+                                installed_version = version(pkg_name)
+                                version_base = Version(installed_version).base_version
+                                if version_base < Version('4.1.0'):
+                                    msg = f'{pkg_name} (git package) is missing.'
+                                    print(msg)
+                                    missing_packages.append(package)
+                        else:
                             msg = f'{pkg_name} (git package) is missing.'
                             print(msg)
                             missing_packages.append(package)
