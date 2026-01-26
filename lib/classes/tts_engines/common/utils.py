@@ -39,7 +39,7 @@ class TTSUtils:
             if len(xtts_builtin_speakers_list) > 0:
                 return xtts_builtin_speakers_list
             speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTSv2']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
-            loaded = torch.load(speakers_path, weights_only=False)
+            loaded = torch.load(speakers_path, weights_only=True)
             if not isinstance(loaded, dict):
                 raise TypeError(
                     f'Invalid XTTS speakers format: {type(loaded)}'
