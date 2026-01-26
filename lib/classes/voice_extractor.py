@@ -112,7 +112,7 @@ class VoiceExtractor:
             )
             wav = wav.to(device)
             self.progress_bar(0.05, desc=msg)
-            sources = apply_model(
+            result = apply_model(
                 model,
                 wav,
                 device=device,
@@ -121,6 +121,7 @@ class VoiceExtractor:
                 progress=True
             )
             self.progress_bar(0.9, desc=msg)
+            sources = result[0] if isinstance(result, (tuple, list)) else result
             vocals_idx = model.sources.index("vocals")
             vocals = sources[vocals_idx]
             out_dir = Path(self.output_dir) / Path(self.wav_file).stem
