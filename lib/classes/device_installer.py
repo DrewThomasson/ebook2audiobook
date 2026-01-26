@@ -682,9 +682,14 @@ class DeviceInstaller():
                                 installed_version = version(pkg_name)
                                 version_base = Version(installed_version).base_version
                                 if Version(version_base) < Version('4.1.0'):
-                                    msg = f'{pkg_name} (git package) is missing.'
-                                    print(msg)
-                                    missing_packages.append(package)
+                                    try:
+                                        msg = f'{pkg_name} version does not match the git version. Updating...'
+                                        print(msg)
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', package])
+                                    except subprocess.CalledProcessError as e:
+                                        error = f'Failed to install {package}: {e}'
+                                        print(error)
+                                        return False
                         else:
                             msg = f'{pkg_name} (git package) is missing.'
                             print(msg)
@@ -797,11 +802,10 @@ class DeviceInstaller():
                     print(f'---> Hardware detected: {device_info}')
                     torch_version = self.get_package_version('torch')
                     if torch_version:
-                        if device_info['tag'] not in ['unknown', 'unsupported']:
+                        if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
                             m = re.search(r'\+(.+)$', torch_version)
                             current_tag = m.group(1) if m else None
                             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
-                            print(f"{non_standard_tag} - {current_tag} - {device_info['tag']}")
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
                                     from packaging.version import Version
