@@ -978,8 +978,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 print(error)
                 return None
             # clean SML tags badly coded
-            bool, text = normalize_sml_tags(text)
-            if bool is False:
+            res, text = normalize_sml_tags(text)
+            if res is False:
                 print(text)
                 if session['is_gui_process']:
                     show_alert({"type": "warning", "msg": text})
