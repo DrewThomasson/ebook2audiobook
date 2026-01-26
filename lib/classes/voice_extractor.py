@@ -34,6 +34,7 @@ class VoiceExtractor:
             self.progress_bar=gr.Progress(track_tqdm=False)
         models = load_engine_presets(session['tts_engine'])
         self.samplerate = models[session['fine_tuned']]['samplerate']
+        os.makedirs(self.demucs_dir, exist_ok=True)
 
     def _validate_format(self)->tuple[bool,str]:
         file_extension = os.path.splitext(self.voice_file)[1].lower()
