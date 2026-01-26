@@ -105,11 +105,15 @@ class VoiceExtractor:
             model = get_model(name="htdemucs")
             model.to(device)
             model.eval()
-            wav, _ = AudioFile(self.wav_file).read(
+            audio_result = AudioFile(self.wav_file).read(
                 streams=0,
                 samplerate=model.samplerate,
                 channels=model.audio_channels
             )
+            if isinstance(audio_result, (tuple, list)):
+                wav = audio_result[0]
+            else:
+                wav = audio_result
             wav = wav.to(device)
             self.progress_bar(0.05, desc=msg)
             result = apply_model(
