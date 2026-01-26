@@ -93,72 +93,72 @@ class VoiceExtractor:
             print(error)
             return False, False, error
 
-    def _demucs_voice(self)->tuple[bool, str]:
+	def _demucs_voice(self)->tuple[bool, str]:
 
-        def demucs_callback(d: dict):
-            nonlocal last_percent
-            offset = d.get("segment_offset")
-            if offset is not None:
-                progress_state["current"] = max(progress_state["current"], offset)
-                percent = min(progress_state["current"] / total_length, 1.0)
-                if percent - last_percent >= 0.01:
-                    last_percent = percent
-                    print(f"[Demucs] {percent:.0%}")
-                    self.progress_bar(percent, desc=msg)
+		def demucs_callback(d: dict):
+			nonlocal last_percent
+			offset = d.get("segment_offset")
+			if offset is not None:
+				progress_state["current"] = max(progress_state["current"], offset)
+				percent = min(progress_state["current"] / total_length, 1.0)
+				if percent - last_percent >= 0.01:
+					last_percent = percent
+					print(f"\r[Demucs] {percent*100:.2f}%", end="", flush=True)
+					self.progress_bar(percent, desc=msg)
 
-        error = '_demucs_voice() error'
-        try:
-            system = self.session['system']
-            last_percent = 0.0
-            msg = 'Extracting Voice...'
-            self.progress_bar(0.0, desc=msg)
-            device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
-            model = get_model(name="htdemucs")
-            model.to(device)
-            model.eval()
-            audio_result = AudioFile(self.wav_file).read(
-                streams=0,
-                samplerate=model.samplerate,
-                channels=model.audio_channels
-            )
-            if isinstance(audio_result, (tuple, list)):
-                wav = audio_result[0]
-            else:
-                wav = audio_result
-            if wav.dim() == 2:
-                wav = wav.unsqueeze(0)
-            wav = wav.to(device)
-            total_length = wav.shape[-1]
-            progress_state = {"current": 0}
-            result = apply_model(
-                model,
-                wav,
-                device=device,
-                split=True,
-                progress=False,
-                callback=demucs_callback,
-                callback_arg={}
-            )
-            self.progress_bar(1.0, desc=msg)
-            print("[Demucs] 100%")
-            sources = result[0] if isinstance(result, (tuple, list)) else result
-            vocals_idx = model.sources.index("vocals")
-            vocals = sources[0, vocals_idx]
-            audio_np = vocals.detach().cpu().numpy()
-            audio_np = audio_np.T
-            audio_np = (audio_np * 32767.0).clip(-32768, 32767).astype("int16")
-            audio_segment = AudioSegment(
-                audio_np.tobytes(),
-                frame_rate=model.samplerate,
-                sample_width=2,
-                channels=audio_np.shape[1] if audio_np.ndim > 1 else 1
-            )
-            audio_segment.export(self.voice_track, format="wav")
-            msg = 'Completed'
-            return True, msg
-        except Exception as e:
-            error = f'_demucs_voice() error: {str(e)}'
-        return False, error
+		error = '_demucs_voice() error'
+		try:
+			system = self.session['system']
+			last_percent = 0.0
+			msg = 'Extracting Voice...'
+			self.progress_bar(0.0, desc=msg)
+			device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
+			model = get_model(name="htdemucs")
+			model.to(device)
+			model.eval()
+			audio_result = AudioFile(self.wav_file).read(
+				streams=0,
+				samplerate=model.samplerate,
+				channels=model.audio_channels
+			)
+			if isinstance(audio_result, (tuple, list)):
+				wav = audio_result[0]
+			else:
+				wav = audio_result
+			if wav.dim() == 2:
+				wav = wav.unsqueeze(0)
+			wav = wav.to(device)
+			total_length = wav.shape[-1]
+			progress_state = {"current": 0}
+			result = apply_model(
+				model,
+				wav,
+				device=device,
+				split=True,
+				progress=False,
+				callback=demucs_callback,
+				callback_arg={}
+			)
+			self.progress_bar(1.0, desc=msg)
+			print("\r[Demucs] 100.00%")
+			sources = result[0] if isinstance(result, (tuple, list)) else result
+			vocals_idx = model.sources.index("vocals")
+			vocals = sources[0, vocals_idx]
+			audio_np = vocals.detach().cpu().numpy()
+			audio_np = audio_np.T
+			audio_np = (audio_np * 32767.0).clip(-32768, 32767).astype("int16")
+			audio_segment = AudioSegment(
+				audio_np.tobytes(),
+				frame_rate=model.samplerate,
+				sample_width=2,
+				channels=audio_np.shape[1] if audio_np.ndim > 1 else 1
+			)
+			audio_segment.export(self.voice_track, format="wav")
+			msg = 'Completed'
+			return True, msg
+		except Exception as e:
+			error = f'_demucs_voice() error: {str(e)}'
+		return False, error
 
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
         msg = "Removing empty audio..."
