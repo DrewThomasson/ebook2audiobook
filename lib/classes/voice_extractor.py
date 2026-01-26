@@ -1,15 +1,19 @@
-import os, sys, subprocess, shutil, json, numpy as np, regex as re, scipy.fftpack, soundfile as sf, gradio as gr
+import os, sys, subprocess, shutil, json, torchaudio, numpy as np, regex as re, scipy.fftpack, soundfile as sf, gradio as gr
 
 from typing import Any
 from io import BytesIO
 from pydub import AudioSegment, silence
 from pydub.silence import detect_nonsilent
-
+from demucs.pretrained import get_model
+from demucs.apply import apply_model
+from demucs.audio import AudioFile
+from pathlib import Path
+            
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 from lib.classes.tts_engines.common.audio import get_audio_duration
 from lib.classes.background_detector import BackgroundDetector
 from lib.classes.subprocess_pipe import SubprocessPipe
-from lib.conf import systems, voice_formats, default_audio_proc_samplerate
+from lib.conf import systems, devices, voice_formats, default_audio_proc_samplerate
 from lib.conf_models import TTS_ENGINES
 
 class VoiceExtractor:
@@ -91,17 +95,11 @@ class VoiceExtractor:
     def _demucs_voice(self)->tuple[bool, str]:
         error = '_demucs_voice() error'
         try:
-            import torch
-            import torchaudio
-            from demucs.pretrained import get_model
-            from demucs.apply import apply_model
-            from demucs.audio import AudioFile
-            from pathlib import Path
             system = self.session['system']
             last_percent = 0.0
             msg = 'Extracting Voice...'
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.progress_bar(0.0, desc=msg)
+            device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device']
             model = get_model(name="htdemucs")
             model.to(device)
             model.eval()
@@ -133,11 +131,17 @@ class VoiceExtractor:
             out_dir = Path(self.output_dir) / Path(self.wav_file).stem
             out_dir.mkdir(parents=True, exist_ok=True)
             self.voice_track = out_dir / "vocals.wav"
-            torchaudio.save(
-                str(self.voice_track),
-                vocals.cpu(),
-                model.samplerate
+            audio_np = vocals.detach().cpu().numpy()
+            audio_np = audio_np.T
+            audio_np = (audio_np * 32767.0).clip(-32768, 32767).astype("int16")
+            from pydub import AudioSegment
+            audio_segment = AudioSegment(
+                audio_np.tobytes(),
+                frame_rate=model.samplerate,
+                sample_width=2,
+                channels=audio_np.shape[1] if audio_np.ndim > 1 else 1
             )
+            audio_segment.export(self.voice_track, format="wav")
             self.progress_bar(1.0, desc='Completed')
             msg = 'Completed'
             return True, msg
