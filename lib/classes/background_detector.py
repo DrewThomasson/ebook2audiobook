@@ -16,9 +16,14 @@ class BackgroundDetector:
 
 	def _get_duration(self) -> float:
 		try:
-			return librosa.get_duration(path=self.wav_file)
+			return float(librosa.get_duration(path=self.wav_file))
 		except Exception:
 			return 0.0
+
+	def _load_waveform(self) -> tuple[torch.Tensor, int]:
+		y, sr = librosa.load(self.wav_file, sr=16000, mono=True)
+		waveform = torch.from_numpy(y).float().unsqueeze(0)
+		return waveform, sr
 
 	def _get_pipeline(self) -> VoiceActivityDetection:
 		key = self.device.type
@@ -42,7 +47,12 @@ class BackgroundDetector:
 
 	def detect(self, vad_ratio_thresh: float = 0.05) -> tuple[bool, dict[str, float | bool]]:
 		pipeline = self._get_pipeline()
-		annotation = pipeline(self.wav_file)
+		waveform, sr = self._load_waveform()
+		file = {
+			"waveform": waveform,
+			"sample_rate": sr
+		}
+		annotation = pipeline(file)
 		speech_time = sum(
 			segment.end - segment.start
 			for segment in annotation.itersegments()
