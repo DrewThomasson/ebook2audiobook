@@ -698,13 +698,18 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=visible),
                             gr.update(visible=visible)
                         )
+                    return (
+                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                        gr.update(visible=visible),
+                        gr.update(visible=visible)
+                    )
                 return (
-                    gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
-                    gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(), gr.update(), gr.update(),
                     gr.update(visible=visible),
                     gr.update(visible=visible)
                 )
-
             def disable_on_custom_upload()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(7)])
                 return outputs
@@ -855,7 +860,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def restore_audiobook_player(audiobook:str|None)->tuple:
                 try:
-                    visible = True if audiobook is not None else False
+                    visible = True if audiobook is not None else 'hidden'
                     return gr.update(visible=visible), gr.update(value=audiobook), gr.update(active=True)
                 except Exception as e:
                     error = f'restore_audiobook_player(): {e}'
@@ -882,7 +887,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['audiobook'] = selected
-                        group_visible = True if len(audiobook_options) > 0 else False
+                        group_visible = True if len(audiobook_options) > 0 else 'hidden'
                         return gr.update(visible=group_visible)
                 except Exception as e:
                     error = f'change_gr_audiobook_list(): {e}'
