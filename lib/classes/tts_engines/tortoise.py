@@ -64,7 +64,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
-                language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
                 if not self._set_voice():
@@ -88,12 +87,12 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                             part = part[:-1]
                         speaker_argument = {}
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        voice_key = Path(self.models[self.session['fine_tuned']]['voice']).stem
+                        self.speaker = Path(self.session['voice']).stem if self.session['voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
                         if self.params['voice_path'] is not None:
                             speaker_wav = self.params['voice_path']
-                            speaker_argument = {"speaker_wav": [speaker_wav], "speaker": voice_key}
+                            speaker_argument = {"speaker_wav": [speaker_wav], "speaker": self.speaker}
                         else:
-                            speaker_argument = {"speaker": voice_key, "preset": "ultra_fast"}                         
+                            speaker_argument = {"speaker": self.speaker, "preset": "ultra_fast"}                         
                         with torch.no_grad():
                             self.engine.to(device)
                             if device == devices['CPU']['proc']:
