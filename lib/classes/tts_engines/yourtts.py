@@ -83,8 +83,8 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             speaker_wav = self.params['voice_path']
                             speaker_argument = {"speaker_wav": speaker_wav}
                         else:
-                            voice_key = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
-                            speaker_argument = {"speaker": voice_key}                         
+                            self.speaker = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
+                            speaker_argument = {"speaker": self.speaker}                         
                         with torch.no_grad():
                             self.engine.to(device)
                             if device == devices['CPU']['proc']:
