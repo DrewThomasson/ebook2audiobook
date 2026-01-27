@@ -689,14 +689,14 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_on_voice_upload(session_id: str) -> tuple:
                 session = context.get_session(session_id)
                 outputs = tuple([gr.update(interactive=False) for _ in range(10)])
-                visible = 'hidden'
                 if session and session.get('id', False):
-                    visible = True if session.get('voice') is not None else 'hidden'
+                    visible = True if session['voice'] is not None else 'hidden'
+                    convert_btn_enabled = True if session['ebook'] is not None else False
                     if session.get('event') == 'confirm_blocks':
                         return outputs
                     return (
                         gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
-                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=convert_btn_enabled),
                         gr.update(visible=visible),
                         gr.update(visible=visible)
                     )
