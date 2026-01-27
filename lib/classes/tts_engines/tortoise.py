@@ -38,8 +38,17 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
-                    model_path = self.models[self.session['fine_tuned']]['repo']
-                    engine = self._load_api(self.tts_key, model_path)
+                    iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
+                    sub_dict = self.models[self.session['fine_tuned']]['sub']
+                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
+                    if sub is not None:
+                        self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
+                        model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
+                        self.tts_key = model_path
+                        engine = self._load_api(self.tts_key, model_path)
+                    else:
+                        msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
+                        print(msg)
             if engine and engine is not None:
                 msg = f'TTS {self.tts_key} Loaded!'
                 return engine
