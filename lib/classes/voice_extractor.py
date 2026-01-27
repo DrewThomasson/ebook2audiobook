@@ -245,15 +245,12 @@ class VoiceExtractor:
             print(error)
             return False, error
 
-    def normalize_audio(self, src_file:str=None, proc_file:str=None, dst_file:str=None)->tuple[bool, str]:
+    def normalize_audio(self, src_file:str, proc_file:str, dst_file:str)->tuple[bool, str]:
         try:
             msg = 'Normalize audio...'
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(0, desc=msg)
-            src_file = src_file or self.voice_track
-            proc_file = proc_file or self.proc_voice_file
-            dst_file = dst_file or self.final_voice_file
             cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', src_file]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
@@ -331,7 +328,7 @@ class VoiceExtractor:
                             if self.is_gui_process:
                                 self.progress_bar(int(result), desc=msg)
                             if result:
-                                result, msg = self.normalize_audio()
+                                result, msg = self.normalize_audio(self.voice_track, self.proc_voice_file, self.final_voice_file)
                                 print(msg)
                                 if self.is_gui_process:
                                     self.progress_bar(int(result), desc=msg)
