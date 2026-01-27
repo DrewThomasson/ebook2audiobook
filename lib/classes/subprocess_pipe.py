@@ -106,7 +106,7 @@ class SubprocessPipe:
                 self._on_complete()
                 return True
             else:
-                self._on_error(self.process.returncode)
+                self._on_error(self.process)
                 return False
         except Exception as e:
             self._on_error(e)
