@@ -66,7 +66,10 @@ class SubprocessPipe:
             if is_ffmpeg:
                 time_pattern=re.compile(rb'out_time_ms=(\d+)')
                 last_percent=0.0
-                for raw_line in self.process.stderr:
+                while True:
+                    raw_line = self.process.stderr.readline()
+                    if not raw_line:
+                        break
                     line=raw_line.decode(errors='ignore')
                     match=time_pattern.search(raw_line)
                     if match and self.total_duration > 0:
