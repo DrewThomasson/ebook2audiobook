@@ -706,6 +706,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return (
                     gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False),
                     gr.update(interactive=False), gr.update(interactive=False), gr.update(visible='hidden'), gr.update(visible='hidden')
+                )
             
             def enable_on_custom_upload(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -718,6 +719,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return (
                         gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
                         gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=convert_btn_enabled), gr.update(visible=custom_del_btn_visible)
+                    )
                 return outputs
 
             def show_gr_modal(type:str, msg:str)->str:
