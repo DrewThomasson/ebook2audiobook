@@ -680,7 +680,8 @@ def build_interface(args:dict)->gr.Blocks:
                 
             def disable_on_voice_upload()->tuple:
                 return (
-                    *([gr.update(interactive=False) for _ in range(8)]),
+                    gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False),
+                    gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False),
                     gr.update(visible=False),
                     gr.update(visible=False)
                 )
@@ -700,8 +701,8 @@ def build_interface(args:dict)->gr.Blocks:
                 return (
                     gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
                     gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
-                    gr.update(interactive=True, visible=visible),
-                    gr.update(interactive=True, visible=visible)
+                    gr.update(visible=visible),
+                    gr.update(visible=visible)
                 )
 
             def disable_on_custom_upload()->tuple:
