@@ -697,17 +697,11 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=visible),
                             gr.update(visible=visible)
                         )
-                    return (
-                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
-                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
-                        gr.update(visible=visible),
-                        gr.update(visible=visible)
-                    )
                 return (
-                    gr.update(), gr.update(), gr.update(), gr.update(),
-                    gr.update(), gr.update(), gr.update(), gr.update(),
-                    gr.update(visible=False),
-                    gr.update(visible=False)
+                    gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                    gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                    gr.update(interactive=True, visible=visible),
+                    gr.update(interactive=True, visible=visible)
                 )
 
             def disable_on_custom_upload()->tuple:
