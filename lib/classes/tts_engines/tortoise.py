@@ -1,7 +1,7 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
-class Tortoise(TTSUtils, TTSRegistry, name='yourtts'):
+class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
 
     def __init__(self, session:DictProxy):
         try:
