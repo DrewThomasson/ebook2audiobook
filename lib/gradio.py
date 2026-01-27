@@ -705,7 +705,7 @@ def build_interface(args:dict)->gr.Blocks:
                     )
                 return (
                     gr.update(), gr.update(), gr.update(), gr.update(),
-                    gr.update(), gr.update(), gr.update(), gr.update(),gr.update()
+                    gr.update(), gr.update(), gr.update(), gr.update(),
                     gr.update(visible=False),
                     gr.update(visible=False)
                 )
