@@ -434,15 +434,20 @@ class TTSUtils:
         assert tag in TTS_SML, f'Unknown SML tag: {tag!r}'
         if tag == 'break':
             silence_time = float(int(np.random.uniform(0.3, 0.6) * 100) / 100)
+            self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone())
+            return True, ''
         elif tag == 'pause':
             silence_time = float(value) if value else float(
                 int(np.random.uniform(1.0, 1.6) * 100) / 100
             )
+            self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone())
+            return True, ''
         elif tag == 'voice':
             if close:
                 res = self._set_voice()
                 if not res:
                     return False, '_convert_sml() _set_voice() error'
+                return True, ''  
             voice_path = os.path.abspath(value)
             if not os.path.exists(voice_path):
                 error = f'_convert_sml() error: voice {voice_path} does not exist!'
@@ -452,8 +457,6 @@ class TTSUtils:
         else:
             error = 'This SML is not recognized'
             return False, error
-        self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone())
-        return True, ''
 
     def _format_timestamp(self, seconds:float)->str:
         m, s = divmod(seconds, 60)
