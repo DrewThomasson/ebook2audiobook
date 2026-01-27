@@ -692,17 +692,20 @@ def build_interface(args:dict)->gr.Blocks:
                     visible = session.get('voice') is not None
                     if session.get('event') == 'confirm_blocks':
                         return (
-                            *([gr.update() for _ in range(8)]),
+                            gr.update(), gr.update(), gr.update(), gr.update(),
+                            gr.update(), gr.update(), gr.update(), gr.update(),
                             gr.update(visible=visible),
                             gr.update(visible=visible)
                         )
                     return (
-                        *([gr.update(interactive=True) for _ in range(8)]),
-                        gr.update(interactive=True, visible=visible),
-                        gr.update(interactive=True, visible=visible)
+                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                        gr.update(visible=visible),
+                        gr.update(visible=visible)
                     )
                 return (
-                    *([gr.update() for _ in range(8)]),
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(), gr.update(), gr.update(),gr.update()
                     gr.update(visible=False),
                     gr.update(visible=False)
                 )
@@ -715,10 +718,10 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['event'] == 'confirm_blocks':
-                        return *([gr.update(interactive=False) for _ in range(7)])
+                        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                     convert_btn_enabled = True if session['ebook'] is not None else False
-                    return *([gr.update(interactive=True) for _ in range(6)]), gr.update(interactive=convert_btn_enabled)
-                return *([gr.update() for _ in range(7)])
+                    return gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=convert_btn_enabled)
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
             def show_gr_modal(type:str, msg:str)->str:
                 return f'''
