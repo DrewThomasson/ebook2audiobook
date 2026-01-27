@@ -448,6 +448,9 @@ class TTSUtils:
                 if not res:
                     return False, '_convert_sml() _set_voice() error'
                 return True, ''
+            if not value:
+                error = '_convert_sml() error: voice tag must specify a voice path value'
+                return False, error
             voice_path = os.path.abspath(value)
             if not os.path.exists(voice_path):
                 error = f'_convert_sml() error: voice {voice_path} does not exist!'

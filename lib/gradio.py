@@ -1367,7 +1367,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 state['type'] = 'warning'
                                 state['msg'] = error
                     show_alert(state)
-                return gr.update(), gr.update()
+                return gr.update(value=None), gr.update()
 
             def change_gr_tts_engine_list(engine:str, session_id:str)->tuple:
                 nonlocal models
