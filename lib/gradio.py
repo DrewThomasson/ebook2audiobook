@@ -1343,7 +1343,8 @@ def build_interface(args:dict)->gr.Blocks:
                             models = load_engine_presets(session['tts_engine'])
                             session['tts_engine'] = tts_engine
                             if analyze_uploaded_file(custom_file, models['internal']['files']):
-                                model = extract_custom_model(custom_file, session_id, models[default_fine_tuned]['files'])
+                                session['custom_model'] = custom_file
+                                model = extract_custom_model(session_id)
                                 if model is not None:
                                     session['custom_model'] = model
                                     session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')

@@ -352,6 +352,7 @@ def extract_custom_model(session_id)->str|None:
         if session['is_gui_process']:
             if os.path.exists(file_src):
                 os.remove(file_src)
+    session['custom_model'] = None
     return None
         
 def hash_proxy_dict(proxy_dict)->str:
