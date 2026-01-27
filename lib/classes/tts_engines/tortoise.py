@@ -88,7 +88,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                             part = part[:-1]
                         speaker_argument = {}
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        voice_key = Path(models[self.session['fine_tuned']]['voice']).stem
+                        voice_key = Path(self.models[self.session['fine_tuned']]['voice']).stem
                         if self.params['voice_path'] is not None:
                             speaker_wav = self.params['voice_path']
                             speaker_argument = {"speaker_wav": [speaker_wav], "speaker": voice_key}
