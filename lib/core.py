@@ -301,7 +301,8 @@ def extract_custom_model(session_id)->str|None:
         model_path = None
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
         model_name = get_sanitized(model_name)
-        progress_bar = gr.Progress(track_tqdm=False)
+        if session['is_gui_process']:
+            progress_bar = gr.Progress(track_tqdm=False)
         try:
             with zipfile.ZipFile(file_src, 'r') as zip_ref:
                 files = zip_ref.namelist()
@@ -318,8 +319,9 @@ def extract_custom_model(session_id)->str|None:
                             out_path = os.path.join(model_path, base_f)
                             with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
                                 shutil.copyfileobj(src, dst)
-                        progress_bar((t.n + 1) / files_length, desc=msg)
                         t.update(1)
+                        if session['is_gui_process']:
+                            progress_bar((t.n + 1) / files_length, desc=msg)
             if model_path is not None:
                 msg = f'Normalizing ref.wav…'
                 print(msg)
@@ -339,7 +341,7 @@ def extract_custom_model(session_id)->str|None:
                     error = f'extract_custom_model() VoiceExtractor.extract_voice() error! {msg}'
                     print(error)
             else:
-                error = f'An error occurred when unzip {file_src}'
+                error = f'An error occurred     when unzip {file_src}'
                 print(error)
         except asyncio.exceptions.CancelledError as e:
             DependencyError(e)
@@ -352,7 +354,7 @@ def extract_custom_model(session_id)->str|None:
         if session['is_gui_process']:
             if os.path.exists(file_src):
                 os.remove(file_src)
-    session['custom_model'] = None
+        session['custom_model'] = None
     return None
         
 def hash_proxy_dict(proxy_dict)->str:
@@ -2284,7 +2286,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
     def on_progress(p:float)->None:
-        progress_bar(p / 100.0, desc='Assemble')
+        if is gui_process:
+            progress_bar(p / 100.0, desc='Assemble')
 
     try:
         total_duration = 0.0
@@ -2308,7 +2311,8 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             print(f'assemble_audio_chunks() open file {txt_file} Error: {e}')
             return False
 
-        progress_bar = gr.Progress(track_tqdm=False)
+        if is_gui_process:
+            progress_bar = gr.Progress(track_tqdm=False)
 
         cmd = [
             shutil.which('ffmpeg'),
