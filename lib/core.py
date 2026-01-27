@@ -339,7 +339,7 @@ def extract_custom_model(session_id)->str|None:
                     error = f'extract_custom_model() VoiceExtractor.extract_voice() error! {msg}'
                     print(error)
             else:
-                error = f'An error occurredwhen unzip {file_src}'
+                error = f'An error occurred when unzip {file_src}'
                 print(error)
         except asyncio.exceptions.CancelledError as e:
             DependencyError(e)
