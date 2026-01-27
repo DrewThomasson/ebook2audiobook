@@ -715,12 +715,10 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['event'] == 'confirm_blocks':
-                        outputs = tuple([gr.update() for _ in range(7)])
-                        return outputs
-                    outputs = tuple([gr.update(interactive=True) for _ in range(7)])
-                    return outputs
-                outputs = tuple([gr.update() for _ in range(7)])
-                return outputs
+                        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                    convert_btn_enabled = True if session['ebook'] is not None else False
+                    return gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=convert_btn_enabled)
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
             def show_gr_modal(type:str, msg:str)->str:
                 return f'''
