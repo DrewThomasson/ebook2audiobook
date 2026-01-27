@@ -96,8 +96,8 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        bool, error = self._convert_sml(part)
-                        if bool is False: 
+                        res, error = self._convert_sml(part)
+                        if not res: 
                             print(error)
                             return False
                         continue

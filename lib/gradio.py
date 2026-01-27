@@ -680,33 +680,36 @@ def build_interface(args:dict)->gr.Blocks:
                 
             def disable_on_voice_upload()->tuple:
                 return (
-                    *([gr.update(interactive=False) for _ in range(8)]),
-                    gr.update(visible=False),
-                    gr.update(visible=False)
+                    gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False),
+                    gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False),
+                    gr.update(),
+                    gr.update()
                 )
             
             def enable_on_voice_upload(session_id: str) -> tuple:
                 session = context.get_session(session_id)
-                visible = False
+                visible = 'hidden'
                 if session and session.get('id', False):
-                    visible = session.get('voice') is not None
+                    visible = True if session.get('voice') is not None else 'hidden'
                     if session.get('event') == 'confirm_blocks':
                         return (
-                            *([gr.update() for _ in range(8)]),
+                            gr.update(), gr.update(), gr.update(), gr.update(),
+                            gr.update(), gr.update(), gr.update(), gr.update(),
                             gr.update(visible=visible),
                             gr.update(visible=visible)
                         )
                     return (
-                        *([gr.update(interactive=True) for _ in range(8)]),
+                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                        gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
                         gr.update(visible=visible),
                         gr.update(visible=visible)
                     )
                 return (
-                    *([gr.update() for _ in range(8)]),
-                    gr.update(visible=False),
-                    gr.update(visible=False)
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(visible=visible),
+                    gr.update(visible=visible)
                 )
-
             def disable_on_custom_upload()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(7)])
                 return outputs
@@ -715,12 +718,10 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['event'] == 'confirm_blocks':
-                        outputs = tuple([gr.update() for _ in range(7)])
-                        return outputs
-                    outputs = tuple([gr.update(interactive=True) for _ in range(7)])
-                    return outputs
-                outputs = tuple([gr.update() for _ in range(7)])
-                return outputs
+                        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                    convert_btn_enabled = True if session['ebook'] is not None else False
+                    return gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=convert_btn_enabled)
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
             def show_gr_modal(type:str, msg:str)->str:
                 return f'''
@@ -859,7 +860,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def restore_audiobook_player(audiobook:str|None)->tuple:
                 try:
-                    visible = True if audiobook is not None else False
+                    visible = True if audiobook is not None else 'hidden'
                     return gr.update(visible=visible), gr.update(value=audiobook), gr.update(active=True)
                 except Exception as e:
                     error = f'restore_audiobook_player(): {e}'
@@ -886,7 +887,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['audiobook'] = selected
-                        group_visible = True if len(audiobook_options) > 0 else False
+                        group_visible = True if len(audiobook_options) > 0 else 'hidden'
                         return gr.update(visible=group_visible)
                 except Exception as e:
                     error = f'change_gr_audiobook_list(): {e}'
@@ -1367,7 +1368,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 state['type'] = 'warning'
                                 state['msg'] = error
                     show_alert(state)
-                return gr.update(), gr.update()
+                return gr.update(value=None), gr.update()
 
             def change_gr_tts_engine_list(engine:str, session_id:str)->tuple:
                 nonlocal models

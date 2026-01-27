@@ -978,8 +978,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 print(error)
                 return None
             # clean SML tags badly coded
-            bool, text = normalize_sml_tags(text)
-            if bool is False:
+            res, text = normalize_sml_tags(text)
+            if res is False:
                 print(text)
                 if session['is_gui_process']:
                     show_alert({"type": "warning", "msg": text})
@@ -2527,7 +2527,7 @@ def convert_ebook(args:dict)->tuple:
                         custom_src_name = custom_src_path.stem
                         if not os.path.exists(os.path.join(session['custom_model_dir'], custom_src_name)):
                             try:
-                                if analyze_uploaded_file(session['custom_model'], default_engine_settings[session['tts_engine']]['internal']['files']):
+                                if analyze_uploaded_file(session['custom_model'], default_engine_settings[session['tts_engine']]['files']):
                                     model = extract_custom_model(session['custom_model'], session_id, default_engine_settings[session['tts_engine']]['files'])
                                     if model is not None:
                                         session['custom_model'] = model
