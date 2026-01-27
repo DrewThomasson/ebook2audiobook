@@ -698,8 +698,8 @@ def build_interface(args:dict)->gr.Blocks:
                         )
                     return (
                         *([gr.update(interactive=True) for _ in range(8)]),
-                        gr.update(gr.update(interactive=True, visible=visible),
-                        gr.update(gr.update(interactive=True, visible=visible)
+                        gr.update(interactive=True, visible=visible),
+                        gr.update(interactive=True, visible=visible)
                     )
                 return (
                     *([gr.update() for _ in range(8)]),
