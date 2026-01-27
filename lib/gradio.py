@@ -705,7 +705,7 @@ def build_interface(args:dict)->gr.Blocks:
             def disable_on_custom_upload()->tuple:
                 return (
                     gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False),
-                    gr.update(interactive=False), gr.update(interactive=False), gr.update(visible='hidden'), gr.update(visible='hidden')
+                    gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(visible='hidden')
                 )
             
             def enable_on_custom_upload(session_id:str)->tuple:
