@@ -758,6 +758,8 @@ class DeviceInstaller():
                                     print(error)
                                     missing_packages.append(package)
             if missing_packages:
+                clean_pkg = re.sub(r'\[.*?\]', '', package)
+                pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
                 msg = '\nInstalling missing or upgrade packages...\n'
                 print(msg)
                 subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
@@ -765,7 +767,10 @@ class DeviceInstaller():
                 with tqdm(total = len(packages), desc = 'Installation 0.00%', bar_format = '{desc}: {n_fmt}/{total_fmt} ', unit = 'step') as t:
                     for package in tqdm(missing_packages, desc = 'Installing', unit = 'pkg'):
                         try:
-                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', package])
+                            no_deps = ''
+                            if pkg_name == 'demucs':
+                                no_deps = '--no-deps'
+                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', no_deps, package])
                             t.update(1)
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install {package}: {e}'
