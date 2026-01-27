@@ -5,11 +5,12 @@ loaded_tts = {}
 xtts_builtin_speakers_list = {}
 
 TTS_ENGINES = {
-    "XTTSv2": "xtts", 
-    "BARK": "bark", 
-    "VITS": "vits", 
-    "FAIRSEQ": "fairseq", 
-    "TACOTRON2": "tacotron", 
+    "XTTSv2": "xtts",
+    "BARK": "bark",
+    "TORTOISE": "tortoise",
+    "VITS": "vits",
+    "FAIRSEQ": "fairseq",
+    "TACOTRON2": "tacotron",
     "YOURTTS": "yourtts"
 }
 
@@ -148,10 +149,17 @@ default_engine_settings = {
         },
         "rating": {"VRAM": 6, "CPU": 1, "RAM": 6, "Realism": 5}
     },
+    TTS_ENGINES['TORTOISE']: {
+        "languages": {"eng": "en"},
+        "samplerate": 24000,
+        "files": ['config.json', 'model_file.pth', 'language_ids.json'],
+        "voices": {},
+        "rating": {"VRAM": 3, "CPU": 2, "RAM": 4, "Realism": 4}
+    },
     TTS_ENGINES['VITS']: {
         "languages": {"ben": "bn", "bul": "bg", "cat": "ca", "ces": "cs", "dan": "da", "deu": "de", "ell": "el", "eng": "en", "est": "et", "ewe": "ewe", "fas": "fa", "fin": "fi", "fra": "fr", "gle": "ga", "hau": "hau", "hrv": "hr", "hun": "hu", "ita": "it", "lav": "lv", "lin": "lin", "lit": "lt", "mlt": "mt", "nld": "nl", "pol": "pl", "por": "pt", "rom": "ro", "slk": "sk", "sln": "sl", "spa": "es", "swe": "sv", "tw_akuapem": "tw_akuapem", "tw_asante": "tw_asante", "ukr": "uk", "yor": "yor"},
         "samplerate": 22050,
-        "files": ['config.json', 'model_file.pth', 'language_ids.json'],
+        "files": ['autoregressive.pth ', 'diffusion_decoder.pth', 'vocoder.pth', 'clvp2.pth'],
         "voices": {},
         "rating": {"VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
     },
