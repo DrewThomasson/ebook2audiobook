@@ -293,12 +293,15 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         print(error)
         return False
 
-def extract_custom_model(file_src:str, session_id, required_files:list)->str|None:
+def extract_custom_model(session_id)->str|None:
     session = context.get_session(session_id)
     if session and session.get('id', False):
+        file_src = session['custom_model']
+        required_files = default_engine_settings[session['tts_engine']]['files']
         model_path = None
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
         model_name = get_sanitized(model_name)
+        progress_bar = gr.Progress(track_tqdm=False)
         try:
             with zipfile.ZipFile(file_src, 'r') as zip_ref:
                 files = zip_ref.namelist()
@@ -307,6 +310,7 @@ def extract_custom_model(file_src:str, session_id, required_files:list)->str|Non
                 model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
                 os.makedirs(model_path, exist_ok=True)
                 required_files_lc = set(x.lower() for x in required_files)
+                msg = f'Extracting files to {model_path}...'
                 with tqdm(total=files_length, unit='files') as t:
                     for f in files:
                         base_f = os.path.basename(f).lower()
@@ -314,9 +318,10 @@ def extract_custom_model(file_src:str, session_id, required_files:list)->str|Non
                             out_path = os.path.join(model_path, base_f)
                             with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
                                 shutil.copyfileobj(src, dst)
+                        progress_bar((t.n + 1) / files_length, desc=msg)
                         t.update(1)
             if model_path is not None:
-                msg = f'Extracted files to {model_path}. Normalizing ref.wav…'
+                msg = f'Normalizing ref.wav…'
                 print(msg)
                 voice_ref = os.path.join(model_path, 'ref.wav')
                 voice_name = model_name
@@ -2532,7 +2537,7 @@ def convert_ebook(args:dict)->tuple:
                         if not os.path.exists(os.path.join(session['custom_model_dir'], custom_src_name)):
                             try:
                                 if analyze_uploaded_file(session['custom_model'], default_engine_settings[session['tts_engine']]['files']):
-                                    model = extract_custom_model(session['custom_model'], session_id, default_engine_settings[session['tts_engine']]['files'])
+                                    model = extract_custom_model(session_id)
                                     if model is not None:
                                         session['custom_model'] = model
                                     else:
