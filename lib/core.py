@@ -319,19 +319,23 @@ def extract_custom_model(file_src:str, session_id, required_files:list)->str|Non
                 msg = f'Extracted files to {model_path}. Normalizing ref.wav…'
                 print(msg)
                 voice_ref = os.path.join(model_path, 'ref.wav')
-                voice_output = os.path.join(model_path, f'{model_name}.wav')
-                extractor = VoiceExtractor(session, voice_ref, voice_output)
-                success, error = extractor.normalize_audio(voice_ref, voice_output, voice_output)
-                if success:
+                voice_name = model_name
+                final_voice_file = os.path.join(model_path, f'{voice_name}.wav')
+                extractor = VoiceExtractor(session, voice_ref, voice_name)
+                status, msg = extractor.extract_voice()
+                if status:
+                    session['voice'] = final_voice_file
                     if os.path.exists(file_src):
                         os.remove(file_src)
                     if os.path.exists(voice_ref):
                         os.remove(voice_ref)
                     return model_path
-                error = f'normalize_audio {voice_ref} error: {error}'
-                print(error)
+                else:
+                    error = f'extract_custom_model() VoiceExtractor.extract_voice() error! {msg}'
+                    print(error)
             else:
                 error = f'An error occured when unzip {file_src}'
+                print(error)
         except asyncio.exceptions.CancelledError as e:
             DependencyError(e)
             error = f'extract_custom_model asyncio.exceptions.CancelledError: {e}'
