@@ -123,7 +123,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - CUDA, ROCm, JETSON
 - MPS (Apple Silicon CPU)
 
-*<i> Modern TTS engines are very slow on CPU, so use low quality level TTS like YourTTS, Tacotron2 etc..</i>
+*<i> Modern TTS engines are very slow on CPU, so use lower quality TTS like YourTTS, Tacotron2 etc..</i>
 
 ## Supported Languages
 | **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
