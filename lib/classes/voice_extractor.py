@@ -18,7 +18,7 @@ from lib.conf_models import TTS_ENGINES
 
 class VoiceExtractor:
 
-    def __init__(self, session:Any, voice_file:str, voice_name:str):
+    def __init__(self, session:Any, voice_file:str, voice_name:str, final_voice_file:str|None=None)->None:
         self.wav_file = None
         self.session = session
         self.voice_file = voice_file
@@ -27,7 +27,7 @@ class VoiceExtractor:
         self.demucs_dir = os.path.join(self.output_dir,'htdemucs', voice_name)
         self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
         self.proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
-        self.final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
+        self.final_voice_file = final_voice_file if final_voice_file is not None else os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
         self.silence_threshold = -60
         self.is_gui_process = session['is_gui_process']
         if self.is_gui_process:

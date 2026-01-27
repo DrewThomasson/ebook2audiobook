@@ -1033,14 +1033,8 @@ def build_interface(args:dict)->gr.Blocks:
                             speaker_path = os.path.abspath(selected)
                             speaker = re.sub(r'\.wav$|\.npz|\.pth$', '', os.path.basename(selected))
                             builtin_root = os.path.join(voices_dir, session['language'])
-                            is_in_builtin = os.path.commonpath([
-                                speaker_path,
-                                os.path.abspath(builtin_root)
-                            ]) == os.path.abspath(builtin_root)
-                            is_in_models = os.path.commonpath([
-                                speaker_path,
-                                os.path.abspath(session['custom_model_dir'])
-                            ]) == os.path.abspath(session['custom_model_dir'])
+                            is_in_builtin = os.path.commonpath([speaker_path, os.path.abspath(builtin_root)]) == os.path.abspath(builtin_root)
+                            is_in_models = os.path.commonpath([speaker_path, os.path.abspath(session['custom_model_dir'])]) == os.path.abspath(session['custom_model_dir'])
                             # Check if voice is built-in
                             is_builtin = any(
                                 speaker in settings.get('voices', {})

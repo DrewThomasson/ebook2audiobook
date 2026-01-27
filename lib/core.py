@@ -321,7 +321,7 @@ def extract_custom_model(file_src:str, session_id, required_files:list)->str|Non
                 voice_ref = os.path.join(model_path, 'ref.wav')
                 voice_name = model_name
                 final_voice_file = os.path.join(model_path, f'{voice_name}.wav')
-                extractor = VoiceExtractor(session, voice_ref, voice_name)
+                extractor = VoiceExtractor(session, voice_ref, voice_name, final_voice_file)
                 status, msg = extractor.extract_voice()
                 if status:
                     session['voice'] = final_voice_file
