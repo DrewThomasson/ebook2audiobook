@@ -142,7 +142,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 print(error)
                 return False
         except Exception as e:
-            error = f'YourTTS.convert(): {e}'
+            error = f'Tortoise.convert(): {e}'
             raise ValueError(e)
             return False
 
