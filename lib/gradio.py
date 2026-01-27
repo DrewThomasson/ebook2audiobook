@@ -715,7 +715,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['event'] == 'confirm_blocks':
                         return outputs
                     convert_btn_enabled = True if session['ebook'] is not None else False
-                    custom_del_btn_visible = True if session['custom_model'] is not None else False
+                    custom_del_btn_visible = True if session['custom_model'] is not None else 'hidden'
                     return (
                         gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
                         gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=convert_btn_enabled), gr.update(visible=custom_del_btn_visible)
