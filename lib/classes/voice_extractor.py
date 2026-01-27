@@ -104,14 +104,16 @@ class VoiceExtractor:
                 if percent - last_percent >= 0.01:
                     last_percent = percent
                     print(f"\r[Demucs] {percent*100:.2f}%", end="", flush=True)
-                    self.progress_bar(percent, desc=msg)
+                    if self.is_gui_process:
+                        self.progress_bar(percent, desc=msg)
 
         error = '_demucs_voice() error'
         try:
             system = self.session['system']
             last_percent = 0.0
             msg = 'Extracting Voice...'
-            self.progress_bar(0.0, desc=msg)
+            if self.is_gui_process:
+                self.progress_bar(0.0, desc=msg)
             device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
             model = get_model(name="htdemucs")
             model.to(device)
@@ -139,7 +141,8 @@ class VoiceExtractor:
                 callback=demucs_callback,
                 callback_arg={}
             )
-            self.progress_bar(1.0, desc=msg)
+            if self.is_gui_process:
+                self.progress_bar(1.0, desc=msg)
             print("\r[Demucs] 100.00%")
             sources = result[0] if isinstance(result, (tuple, list)) else result
             vocals_idx = model.sources.index("vocals")
