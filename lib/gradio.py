@@ -688,9 +688,9 @@ def build_interface(args:dict)->gr.Blocks:
             
             def enable_on_voice_upload(session_id: str) -> tuple:
                 session = context.get_session(session_id)
-                visible = False
+                visible = 'hidden'
                 if session and session.get('id', False):
-                    visible = session.get('voice') is not None
+                    visible = True if session.get('voice') is not None else 'hidden'
                     if session.get('event') == 'confirm_blocks':
                         return (
                             gr.update(), gr.update(), gr.update(), gr.update(),
@@ -701,8 +701,8 @@ def build_interface(args:dict)->gr.Blocks:
                 return (
                     gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
                     gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
-                    gr.update(),
-                    gr.update()
+                    gr.update(visible=visible),
+                    gr.update(visible=visible)
                 )
 
             def disable_on_custom_upload()->tuple:
