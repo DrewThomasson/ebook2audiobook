@@ -103,14 +103,16 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## Features
 - 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`
-- 🔍 **OCR scanning** for e-books with pages scanned as images
+- 🔍 **OCR scanning** for files with text pages as images
 - 🔊 **High-quality text-to-speech** from near realtime to near real voice
 - 🗣️ **Optional voice cloning** using your own voice file
-- 🧩 **Optional custom model** using your own trained model (XTTSv2 only, other on request)
 - 🌐 **Supports 1158 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Low-resource friendly** — runs on **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
-- 🧠 **SML tags supported** — fine-grained control of breaks, pauses, voice switching and more ([see available SML tags below](#sml-tags-available))
+- 🧠 **SML tags supported** — fine-grained control of breaks, pauses, voice switching and more ([see below](#sml-tags-available))
+- 🧩 **Optional custom model** using your own trained model (XTTSv2 only, other on request)
+- 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
+     <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to the official preset list)</i>
 
 
 ##  Hardware Requirements
@@ -121,7 +123,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - CUDA, ROCm, JETSON
 - MPS (Apple Silicon CPU)
 
-*<i> Modern TTS engines are very slow on CPU. on CPU Always use low level TTS like YourTTS, Tacotron2 etc..</i>
+*<i> Modern TTS engines are very slow on CPU, so use lower quality TTS like YourTTS, Tacotron2 etc..</i>
 
 ## Supported Languages
 | **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
