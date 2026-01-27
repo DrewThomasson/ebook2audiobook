@@ -106,13 +106,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **OCR scanning** for e-books with pages scanned as images
 - 🔊 **High-quality text-to-speech** from near realtime to near real voice
 - 🗣️ **Optional voice cloning** using your own voice file
-- 🧩 **Optional custom model** using your own trained model (XTTSv2 only, other on request)
-- 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
-     <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to become an official E2A preset)</i>
 - 🌐 **Supports 1158 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Low-resource friendly** — runs on **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **SML tags supported** — fine-grained control of breaks, pauses, voice switching and more ([see available SML tags below](#sml-tags-available))
+- 🧩 **Optional custom model** using your own trained model (XTTSv2 only, other on request)
+- 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
+     <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to become an official E2A preset)</i>
 
 
 ##  Hardware Requirements
