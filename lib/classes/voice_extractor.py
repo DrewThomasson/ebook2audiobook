@@ -251,7 +251,7 @@ class VoiceExtractor:
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(0, desc=msg)
-            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', src_file]
+            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-progress', 'pipe:2', '-i', src_file]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
                 'afftdn=nf=-70,'
