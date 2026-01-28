@@ -792,7 +792,7 @@ class DeviceInstaller():
                             print(error)
                             return False
                 check_numpy_version = self.check_numpy()
-                if not check_nmpy_version:
+                if not check_numpy_version:
                     return False
                 msg = '\nAll required packages are installed.'
                 print(msg)
