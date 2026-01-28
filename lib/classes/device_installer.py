@@ -791,12 +791,33 @@ class DeviceInstaller():
                             error = f'Failed to install {package}: {e}'
                             print(error)
                             return False
+                check_numpy_version = self.check_numpy()
+                if not check_nmpy_version:
+                    return False
                 msg = '\nAll required packages are installed.'
                 print(msg)
-            check = self.check_dictionary()
-            return check
+                check_unidic = self.check_dictionary()
+                return check
         except Exception as e:
             error = f'install_python_packages() error: {e}'
+            print(error)
+            return False
+          
+    def check_numpy(self)->bool:
+        try:
+            numpy_version = self.get_package_version('numpy')
+            torch_version = self.get_package_version('torch')
+            numpy_version_base = self.version_tuple(numpy_version)
+            torch_version_base = self.version_tuple(torch_version)
+            if torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force', 'numpy<2'])
+            return True
+        except subprocess.CalledProcessError as e:
+            error = f'Failed to install numpy package: {e}'
+            print(error)
+            return False
+        except Exception as e:
+            error = f'Error while installing numpy package: {e}'
             print(error)
             return False
           
@@ -827,8 +848,6 @@ class DeviceInstaller():
                             m = re.search(r'\+(.+)$', torch_version)
                             current_tag = m.group(1) if m else None
                             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
-                            numpy_version = self.get_package_version('numpy')
-                            numpy_version_base = self.version_tuple(numpy_version)
                             torch_version_base = torch_matrix[device_info['tag']]['base']
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
@@ -855,8 +874,9 @@ class DeviceInstaller():
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
                                     else:
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', f'torch=={torch_version_base}', f'torchaudio=={torch_version_base}', '--force-reinstall', '--index-url', f'https://download.pytorch.org/whl/{tag}'])
-                                    if self.version_tuple(torch_version_base) <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force', 'numpy<2'])
+                                    check_numpy_version = self.check_numpy()
+                                    if not check_numpy_version:
+                                        return 1
                                 except subprocess.CalledProcessError as e:
                                     error = f'Failed to install torch package: {e}'
                                     print(error)
