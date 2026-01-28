@@ -297,13 +297,13 @@ if not "%OK_CONDA%"=="0" (
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where.exe /Q conda
 	if not errorlevel 1 (
-		echo %ESC%[32m=============== Miniforge3 is installed! ===============%ESC%[0m
+		echo %ESC%[32m=============== Miniforge3 OK! ===============%ESC%[0m
 		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
 		if errorlevel 1 (
 			echo Miniforge3>>"%INSTALLED_LOG%"
 		)
 	) else (
-		echo %ESC%[31m=============== Miniforge3 installation failed.%ESC%[0m
+		echo %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
 		goto :failed
 	)
 	if not exist "%USERPROFILE%\.condarc" (
@@ -350,15 +350,12 @@ if not "%OK_PROGRAMS%"=="0" (
 			where.exe /Q python3 && set PY_FOUND=1
 			where.exe /Q py	  && set PY_FOUND=1
 			if not defined PY_FOUND (
-				echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
+				echo %ESC%[31m=============== %%p failed.%ESC%[0m
 				goto :failed
 			)
 		)
 		if "%%p"=="nodejs" (
 			set "prog=node"
-		)
-		if "%%p"=="calibre-normal" (
-			set "prog=calibre"
 		)
 		if "%%p"=="rustup" (
 			if exist "%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
@@ -367,13 +364,13 @@ if not "%OK_PROGRAMS%"=="0" (
 		)
 		where.exe /Q !prog!
 		if not errorlevel 1 (
-			echo %ESC%[32m=============== %%p is installed! ===============%ESC%[0m
+			echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
 			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
 			if errorlevel 1 (
 				echo %%p>>"%INSTALLED_LOG%"
 			)
 		) else (
-			echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
+			echo %ESC%[31m=============== %%p failed.%ESC%[0m
 			goto :failed
 		)
 	)
@@ -510,7 +507,7 @@ set "dst_pyfile=%site_packages_path%\sitecustomize.py"
 if not exist "%dst_pyfile%" (
 	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
 	if errorlevel 1 (
-		echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
+		echo %ESC%[31m=============== sitecustomize.py hook error: copy failed.%ESC%[0m
 		exit /b 1
 	)
 	exit /b 0
@@ -645,7 +642,7 @@ if defined arguments.help (
 			call %PYTHON_SCOOP% --version >null 2>&1 || call scoop install %PYTHON_SCOOP% 2>null
 			where.exe /Q %PYTHON_SCOOP%
 			if errorlevel 1 (
-				echo %ESC%[31m=============== %PYTHON_SCOOP% installation failed.%ESC%[0m
+				echo %ESC%[31m=============== %PYTHON_SCOOP% failed.%ESC%[0m
 				goto :failed
 			)
 			call :check_docker

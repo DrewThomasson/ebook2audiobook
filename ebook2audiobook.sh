@@ -465,9 +465,8 @@ EOF
 	fi
 	for program in "${programs_missing[@]}"; do
 		if [[ "$program" == "calibre" ]]; then		
-			# TODO: check if the right ebook-convert is installed
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m=============== Calibre is installed! ===============\e[0m"
+				echo -e "\e[32m=============== Calibre OK! ===============\e[0m"
 			else
 				# avoid conflict with calibre builtin lxml
 				python3 -m pip uninstall lxml -y 2>/dev/null
@@ -483,23 +482,23 @@ EOF
 				fi
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
 				if command -v $program >/dev/null 2>&1; then
-					echo -e "\e[32m=============== $program is installed! ===============\e[0m"
+					echo -e "\e[32m=============== $program OK! ===============\e[0m"
 				else
-					echo -e "\e[31m=============== $program installation failed.\e[0m"
+					echo -e "\e[31m=============== $program failed.\e[0m"
 				fi
 			fi	
 		elif [[ "$program" == "rust" || "$program" == "rustc" ]]; then
 			curl --proto '=https' --tlsv1.2 -sSf $RUST_INSTALLER_URL | sh -s -- -y
 			source $HOME/.cargo/env
 			if command -v $program &>/dev/null; then
-				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
+				echo -e "\e[32m=============== $program OK! ===============\e[0m"
 			else
-				echo -e "\e[31m=============== $program installation failed.\e[0m"
+				echo -e "\e[31m=============== $program failed.\e[0m"
 			fi
 		elif [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
+				echo -e "\e[32m=============== $program OK! ===============\e[0m"
 				ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $ISO3_LANG"
 				langpack=""
@@ -528,14 +527,14 @@ EOF
 					fi
 				fi
 			else
-				echo -e "\e[31m=============== $program installation failed.\e[0m"
+				echo -e "\e[31m=============== $program failed.\e[0m"
 			fi
 		else
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m=============== $program is installed! ===============\e[0m"
+				echo -e "\e[32m=============== $program OK! ===============\e[0m"
 			else
-				echo -e "\e[31m=============== $program installation failed.\e[0m"
+				echo -e "\e[31m=============== $program failed.\e[0m"
 			fi
 		fi
 	done
@@ -585,12 +584,12 @@ function check_conda {
 				[[ -f "$config_path" ]] || touch "$config_path"
 				grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
 				source "$config_path"
-				echo -e "\e[32m=============== Miniforge3 is installed! ===============\e[0m"
+				echo -e "\e[32m=============== Miniforge3 OK! ===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 						echo "Miniforge3" >> "$INSTALLED_LOG"
 					fi
 			else
-				echo -e "\e[31m=============== Miniforge3 installation failed.\e[0m"
+				echo -e "\e[31m=============== Miniforge3 failed.\e[0m"
 				return 1
 			fi
 		else
@@ -704,7 +703,7 @@ function check_sitecustomized {
 		if cp -p "$src_pyfile" "$dst_pyfile"; then
 			echo "Installed sitecustomize.py hook in $dst_pyfile"
 		else
-			echo -e "\e[31m=============== sitecustomize.py hook installation error: copy failed.\e[0m" >&2
+			echo -e "\e[31m=============== sitecustomize.py hook error: copy failed.\e[0m" >&2
 			exit 1
 		fi
 	fi
