@@ -819,14 +819,14 @@ class DeviceInstaller():
                     print(f'---> Hardware detected: {device_info}')
                     torch_version = self.get_package_version('torch')
                     if torch_version:
-                        from packaging.version import Version
-                        m = re.search(r'\+(.+)$', torch_version)
-                        current_tag = m.group(1) if m else None
-                        non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
-                        numpy_version = self.get_package_version('numpy')
-                        numpy_version_base = Version(numpy_version).base_version
-                        torch_version_base = torch_matrix[device_info['tag']]['base']
                         if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
+                            from packaging.version import Version
+                            m = re.search(r'\+(.+)$', torch_version)
+                            current_tag = m.group(1) if m else None
+                            non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
+                            numpy_version = self.get_package_version('numpy')
+                            numpy_version_base = Version(numpy_version).base_version
+                            torch_version_base = torch_matrix[device_info['tag']]['base']
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
                                     print(f"Installing the right library packages for {device_info['name']}...")
