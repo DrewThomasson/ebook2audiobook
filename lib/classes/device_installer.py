@@ -809,53 +809,56 @@ class DeviceInstaller():
                     print(f'---> Hardware detected: {device_info}')
                     torch_version = self.get_package_version('torch')
                     if torch_version:
-                        if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
-                            m = re.search(r'\+(.+)$', torch_version)
-                            current_tag = m.group(1) if m else None
-                            non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
-                            if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
-                                try:
-                                    from packaging.version import Version
-                                    numpy_version = self.get_package_version('numpy')
-                                    print(f"Installing the right library packages for {device_info['name']}...")
-                                    os_env = device_info['os']
-                                    arch = device_info['arch']
-                                    tag = device_info['tag']
-                                    url = torch_matrix[device_info['tag']]['url']
-                                    toolkit_version = "".join(c for c in tag if c.isdigit())
-                                    numpy_version_base = Version(numpy_version).base_version
-                                    torch_version_base = torch_matrix[device_info['tag']]['base']
-                                    if device_info['name'] == devices['JETSON']['proc']:
-                                        py_major, py_minor = device_info['pyvenv']
-                                        tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
-                                        torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                        torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-binary=scikit-learn', 'scikit-learn'])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-cache-dir', '--no-binary=scipy', 'scipy'])
-                                    elif device_info['name'] == devices['MPS']['proc']:
-                                        torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
-                                        torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
-                                        torch_pkg = f'{url}/cpu/torch-{torch_version_base}-{torch_tag_py}-{os_env}_{arch}.whl'
-                                        torchaudio_pkg = f'{url}/cpu/torchaudio-{torch_version_base}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
-                                    else:
-                                        #tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
-                                        #torch_pkg = f'{url}/{tag}/torch-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl'
-                                        #torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl'
-                                        #subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', f'torch=={torch_version_base}', f'torchaudio=={torch_version_base}', '--force-reinstall', '--index-url', f'https://download.pytorch.org/whl/{tag}'])
-                                    if Version(torch_version_base) <= Version('2.2.2') and Version(numpy_version_base) >= Version('2.0.0'):
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'numpy<2'])
-                                except subprocess.CalledProcessError as e:
-                                    error = f'Failed to install torch package: {e}'
-                                    print(error)
-                                    return 1
-                                except Exception as e:
-                                    error = f'Error while installing torch package: {e}'
-                                    print(error)
-                                    return 1
+                        from packaging.version import Version
+                        m = re.search(r'\+(.+)$', torch_version)
+                        current_tag = m.group(1) if m else None
+                        non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
+                        numpy_version = self.get_package_version('numpy')
+                        numpy_version_base = Version(numpy_version).base_version
+                        torch_version_base = torch_matrix[device_info['tag']]['base']
+                        if device_info['tag'] == devices['CPU']['proc']:
+                            if sys.platform == systems['MACOS'] and device_info['arch'] == 'x86_64':
+                                if current_tag != '2.2.2':
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'torch==2.2.2', 'torchaudio==2.2.2'])
+                            if Version(torch_version_base) <= Version('2.2.2') and Version(numpy_version_base) >= Version('2.0.0'):
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'numpy<2'])
+                        else:
+                            if device_info['tag'] not in ['unknown', 'unsupported']:
+                                if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
+                                    try:
+                                        print(f"Installing the right library packages for {device_info['name']}...")
+                                        os_env = device_info['os']
+                                        arch = device_info['arch']
+                                        tag = device_info['tag']
+                                        url = torch_matrix[device_info['tag']]['url']
+                                        toolkit_version = "".join(c for c in tag if c.isdigit())
+                                        if device_info['name'] == devices['JETSON']['proc']:
+                                            py_major, py_minor = device_info['pyvenv']
+                                            tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
+                                            torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                            torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg])
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-binary=scikit-learn', 'scikit-learn'])
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-cache-dir', '--no-binary=scipy', 'scipy'])
+                                        elif device_info['name'] == devices['MPS']['proc']:
+                                            torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
+                                            torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
+                                            torch_pkg = f'{url}/cpu/torch-{torch_version_base}-{torch_tag_py}-{os_env}_{arch}.whl'
+                                            torchaudio_pkg = f'{url}/cpu/torchaudio-{torch_version_base}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
+                                        else:
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', f'torch=={torch_version_base}', f'torchaudio=={torch_version_base}', '--force-reinstall', '--index-url', f'https://download.pytorch.org/whl/{tag}'])
+                                        if Version(torch_version_base) <= Version('2.2.2') and Version(numpy_version_base) >= Version('2.0.0'):
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'numpy<2'])
+                                    except subprocess.CalledProcessError as e:
+                                        error = f'Failed to install torch package: {e}'
+                                        print(error)
+                                        return 1
+                                    except Exception as e:
+                                        error = f'Error while installing torch package: {e}'
+                                        print(error)
+                                        return 1
                         return 0
                     else:
                         error = 'install_device_packages() error: torch version not detected'
