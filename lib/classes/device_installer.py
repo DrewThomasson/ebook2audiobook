@@ -666,7 +666,7 @@ class DeviceInstaller():
                 if vcs_match:
                     pkg_name = vcs_match.group(1)
                 else:
-                    pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip(
+                    pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
                 if ';' in package:
                     pkg_part, marker_part = package.split(';', 1)
                     marker_part = marker_part.strip()
