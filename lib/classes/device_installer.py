@@ -719,19 +719,16 @@ class DeviceInstaller():
                         if spec is not None:
                             if pkg_name == 'demucs':
                                 installed_version = version(pkg_name)
-                                try:
-                                    version_base = self.version_tuple(installed_version)
-                                    if self.version_tuple(version_base) < self.version_tuple('4.1.0'):
-                                        try:
-                                            msg = f'{pkg_name} version does not match the git version. Updating...'
-                                            print(msg)
-                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--no-deps', '--force', package])
-                                        except subprocess.CalledProcessError as e:
-                                            error = f'Failed to install {package}: {e}'
-                                            print(error)
-                                            return False
-                                except Exception as e:
-                                    print(e)
+                                version_base = self.version_tuple(installed_version)
+                                if self.version_tuple(version_base) < self.version_tuple('4.1.0'):
+                                    try:
+                                        msg = f'{pkg_name} version does not match the git version. Updating...'
+                                        print(msg)
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--no-deps', '--force', package])
+                                    except subprocess.CalledProcessError as e:
+                                        error = f'Failed to install {package}: {e}'
+                                        print(error)
+                                        return False
                         else:
                             msg = f'{pkg_name} (git package) is missing.'
                             print(msg)
@@ -786,27 +783,7 @@ class DeviceInstaller():
                                     error = f'{pkg_name} (installed {installed_version}) >= restricted {req_match.group(1)}.'
                                     print(error)
                                     missing_packages.append((pkg_name, package))
-            if missing_packages:
-                from tqdm import tqdm 
-                msg = '\nInstalling missing or upgrade packages...\n'
-                print(msg)
-                subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-                with tqdm(total=len(missing_packages), desc='Installing', bar_format='{desc}: {n_fmt}/{total_fmt}', unit='pkg') as t:
-                    for pkg_name, package in missing_packages:
-                        try:
-                            cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force']
-                            if pkg_name == 'demucs':
-                                cmd.append('--no-deps')
-                            cmd.append(package)
-                            subprocess.check_call(cmd)
-                            t.update(1)
-                        except subprocess.CalledProcessError as e:
-                            error = f'Failed to install {package}: {e}'
-                            print(error)
-                            return False
-                msg = '\nAll required packages are installed.'
-                print(msg)
+
             return self.check_dictionary()
         except Exception as e:
             error = f'install_python_packages() error: {e}'
