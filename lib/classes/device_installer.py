@@ -702,7 +702,8 @@ class DeviceInstaller():
                 if vcs_match:
                     pkg_name = vcs_match.group(1)
                 else:
-                    pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
+                    pkg_base = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
+                    pkg_name = pkg_base.rsplit('/', 1)[-1]
                 if ';' in package:
                     pkg_part, marker_part = package.split(';', 1)
                     marker_part = marker_part.strip()
@@ -779,7 +780,11 @@ class DeviceInstaller():
                 with tqdm(total=len(missing_packages), desc='Installing', bar_format='{desc}: {n_fmt}/{total_fmt}', unit='pkg') as t:
                     for pkg_name, package in missing_packages:
                         try:
-                            cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', package]
+                            cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir']
+                            install_target = package
+                            if '/' in package:
+                                install_target = re.split(r'[<>=]', package, maxsplit=1)[0].strip()
+                            cmd.append(install_target)
                             subprocess.check_call(cmd)
                             t.update(1)
                         except subprocess.CalledProcessError as e:

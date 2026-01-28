@@ -1,7 +1,6 @@
 MANIFEST.in
 Makefile
 mypy.ini
-outputs.tar.gz
 requirements.txt
 requirements_minimal.txt
 setup.cfg
