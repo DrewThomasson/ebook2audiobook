@@ -817,7 +817,8 @@ class DeviceInstaller():
                         numpy_version_base = Version(numpy_version).base_version
                         torch_version_base = torch_matrix[device_info['tag']]['base']
                         if device_info['tag'] == devices['CPU']['proc']:
-                            if sys.platform == systems['MACOS'] and device_info['arch'] == 'x86_64':
+                            if device_info['os'] == systems['MACOS'] and device_info['arch'] == 'x86_64':
+                                print(f'------------------{current_tag}')
                                 if current_tag != '2.2.2':
                                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'torch==2.2.2', 'torchaudio==2.2.2'])
                             if Version(torch_version_base) <= Version('2.2.2') and Version(numpy_version_base) >= Version('2.0.0'):
