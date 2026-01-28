@@ -661,6 +661,12 @@ class DeviceInstaller():
             missing_packages = []
             cuda_markers = ('+cu', '+xpu', '+nv', '+git')
             for package in packages:
+                clean_pkg = re.sub(r'\[.*?\]', '', package)
+                vcs_match = re.search(r'([\w\-]+)\s*@?\s*git\+', clean_pkg)
+                if vcs_match:
+                    pkg_name = vcs_match.group(1)
+                else:
+                    pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip(
                 if ';' in package:
                     pkg_part, marker_part = package.split(';', 1)
                     marker_part = marker_part.strip()
@@ -673,8 +679,6 @@ class DeviceInstaller():
                         print(error)
                     package = pkg_part.strip()
                 if 'git+' in package or '://' in package:
-                    pkg_name_match = re.search(r'([\w\-]+)\s*@?\s*git\+', package)
-                    pkg_name = pkg_name_match.group(1) if pkg_name_match else None
                     if pkg_name:
                         spec = importlib.util.find_spec(pkg_name)
                         if spec is not None:
@@ -693,20 +697,18 @@ class DeviceInstaller():
                         else:
                             msg = f'{pkg_name} (git package) is missing.'
                             print(msg)
-                            missing_packages.append(package)
+                            missing_packages.append((pkg_name, package))
                     else:
                         error = f'Unrecognized git package: {package}'
                         print(error)
-                        missing_packages.append(package)
+                        missing_packages.append((pkg_name, package))
                     continue
-                clean_pkg = re.sub(r'\[.*?\]', '', package)
-                pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
                 try:
                     installed_version = version(pkg_name)
                 except PackageNotFoundError:
                     error = f'{pkg_name} is not installed.'
                     print(error)
-                    missing_packages.append(package)
+                    missing_packages.append((pkg_name, package))
                     continue
                 if '+' in installed_version:
                     continue
@@ -731,42 +733,41 @@ class DeviceInstaller():
                                 if imajor != rmajor or iminor != rminor:
                                     error = f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_v}.'
                                     print(error)
-                                    missing_packages.append(package)
+                                    missing_packages.append((pkg_name, package))
                             elif '>=' in spec_str:
                                 if (imajor < rmajor) or (imajor == rmajor and iminor < rminor):
                                     error = f'{pkg_name} (installed {installed_version}) < required {req_v}.'
                                     print(error)
-                                    missing_packages.append(package)
+                                    missing_packages.append((pkg_name, package))
                             elif '<=' in spec_str:
                                 if (imajor > rmajor) or (imajor == rmajor and iminor > rminor):
                                     error = f'{pkg_name} (installed {installed_version}) > allowed {req_v}.'
                                     print(error)
-                                    missing_packages.append(package)
+                                    missing_packages.append((pkg_name, package))
                             elif '>' in spec_str:
                                 if (imajor < rmajor) or (imajor == rmajor and iminor <= rminor):
                                     error = f'{pkg_name} (installed {installed_version}) <= required {req_v}.'
                                     print(error)
-                                    missing_packages.append(package)
+                                    missing_packages.append((pkg_name, package))
                             elif '<' in spec_str:
                                 if (imajor > rmajor) or (imajor == rmajor and iminor >= rminor):
                                     error = f'{pkg_name} (installed {installed_version}) >= restricted {req_v}.'
                                     print(error)
-                                    missing_packages.append(package)
+                                    missing_packages.append((pkg_name, package))
                             else:
                                 if installed_v not in spec:
                                     error = f'{pkg_name} (installed {installed_version}) does not satisfy {spec_str}.'
                                     print(error)
-                                    missing_packages.append(package)
+
+                                    missing_packages.append((pkg_name, package))
             if missing_packages:
                 msg = '\nInstalling missing or upgrade packages...\n'
                 print(msg)
                 subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-                with tqdm(total = len(packages), desc = 'Installation 0.00%', bar_format = '{desc}: {n_fmt}/{total_fmt} ', unit = 'step') as t:
-                    for package in tqdm(missing_packages, desc = 'Installing', unit = 'pkg'):
+                with tqdm(total=len(missing_packages), desc='Installing', bar_format='{desc}: {n_fmt}/{total_fmt}', unit='pkg') as t:
+                    for pkg_name, package in missing_packages:
                         try:
-                            clean_pkg = re.sub(r'\[.*?\]', '', package)
-                            pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
                             cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir']
                             if pkg_name == 'demucs':
                                 cmd.append('--no-deps')
