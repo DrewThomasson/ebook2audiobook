@@ -730,7 +730,7 @@ class DeviceInstaller():
                             imajor, iminor = installed_v.major, installed_v.minor
                             rmajor, rminor = req_v.major, req_v.minor
                             if '==' in spec_str:
-                                print(f'{imajor} - {iminor} == {rmajor} - {rminor}')
+                                print(f'{pkg_name}: {imajor} - {iminor} == {rmajor} - {rminor}')
                                 if imajor != rmajor or iminor != rminor:
                                     error = f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_v}.'
                                     print(error)
