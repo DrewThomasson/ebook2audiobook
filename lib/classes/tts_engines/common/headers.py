@@ -15,6 +15,7 @@ __all__ = [
     "os",
     "torch",
     "torchaudio",
+    "shutil",
     "random",
     "subprocess",
     "uuid",
