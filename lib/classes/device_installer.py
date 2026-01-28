@@ -719,16 +719,19 @@ class DeviceInstaller():
                         if spec is not None:
                             if pkg_name == 'demucs':
                                 installed_version = version(pkg_name)
-                                version_base = self.version_tuple(installed_version)
-                                if self.version_tuple(version_base) < self.version_tuple('4.1.0'):
-                                    try:
-                                        msg = f'{pkg_name} version does not match the git version. Updating...'
-                                        print(msg)
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--no-deps', '--force', package])
-                                    except subprocess.CalledProcessError as e:
-                                        error = f'Failed to install {package}: {e}'
-                                        print(error)
-                                        return False
+                                try:
+                                    version_base = self.version_tuple(installed_version)
+                                    if self.version_tuple(version_base) < self.version_tuple('4.1.0'):
+                                        try:
+                                            msg = f'{pkg_name} version does not match the git version. Updating...'
+                                            print(msg)
+                                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--no-deps', '--force', package])
+                                        except subprocess.CalledProcessError as e:
+                                            error = f'Failed to install {package}: {e}'
+                                            print(error)
+                                            return False
+                                except Exception as e:
+                                    print(e)
                         else:
                             msg = f'{pkg_name} (git package) is missing.'
                             print(msg)
