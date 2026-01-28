@@ -663,8 +663,8 @@ class DeviceInstaller():
                 if system == systems['MACOS'] and arch == 'x86_64':
                     packages = [
                         (
-                            "torch==2.2.2" if p.startswith("torch")
-                            else "torchaudio==2.2.2" if p.startswith("torchaudio")
+                            'torchaudio==2.2.2' if p.startswith('torchaudio==')
+                            else 'torch==2.2.2' if p.startswith('torch==')
                             else p
                         )
                         for p in packages
