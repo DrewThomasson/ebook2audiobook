@@ -809,6 +809,7 @@ class DeviceInstaller():
             torch_version = self.get_package_version('torch')
             numpy_version_base = self.version_tuple(numpy_version)
             torch_version_base = self.version_tuple(torch_version)
+            print(f'{numpy_version_base} - {torch_version_base}')
             if torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force', 'numpy<2'])
             return True
