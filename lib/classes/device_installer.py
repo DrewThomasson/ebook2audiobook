@@ -792,11 +792,11 @@ class DeviceInstaller():
                             error = f'Failed to install {package}: {e}'
                             print(error)
                             return False
+                msg = '\nAll required packages are installed.'
+                print(msg)
             check_numpy_version = self.check_numpy()
             if not check_numpy_version:
                 return False
-            msg = '\nAll required packages are installed.'
-            print(msg)
             check_unidic = self.check_dictionary()
             return check_unidic
         except Exception as e:
