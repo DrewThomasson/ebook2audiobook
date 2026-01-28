@@ -173,7 +173,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             """
                         pth_voice_dir = os.path.join(bark_dir, self.speaker)
                         if not os.path.exists(pth_voice_dir):
-                            makedirs(pth_voice_dir, exist_ok=True)
+                            os.makedirs(pth_voice_dir, exist_ok=True)
                         #pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
                         self.engine.synthesizer.voice_dir = pth_voice_dir
                         speaker_argument = {}
