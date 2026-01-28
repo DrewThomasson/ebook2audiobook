@@ -27,12 +27,18 @@ export PYTHONIOENCODING="utf-8"
 export TTS_CACHE="$SCRIPT_DIR/models"
 export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
 export TMPDIR="$SCRIPT_DIR/tmp"
-export CONDA_HOME="$HOME/Miniforge3"
+export APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
+export DEVICE_TAG="${DEVICE_TAG:-}"
+USER_CONDA="$HOME/Miniforge3"
+LOCAL_CONDA="$SCRIPT_DIR/Miniforge3"
+if [[ -x "$USER_CONDA/bin/conda" ]]; then
+	export CONDA_HOME="$USER_CONDA"
+else
+	export CONDA_HOME="$LOCAL_CONDA"
+fi
 export CONDA_BIN_PATH="$CONDA_HOME/bin"
 export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
 export PATH="$CONDA_BIN_PATH:${PATH-}"
-export APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
-export DEVICE_TAG="${DEVICE_TAG:-}"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
@@ -582,8 +588,8 @@ function check_conda {
 					$CONDA_HOME/bin/conda config --set auto_activate false
 				fi
 				[[ -f "$config_path" ]] || touch "$config_path"
-				grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
-				source "$config_path"
+				[[ "$CONDA_HOME" == "$HOME/Miniforge3" ]] && grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
+				[[ "$CONDA_HOME" == "$HOME/Miniforge3" ]] && source "$config_path"
 				echo -e "\e[32m=============== Miniforge3 OK! ===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 						echo "Miniforge3" >> "$INSTALLED_LOG"
