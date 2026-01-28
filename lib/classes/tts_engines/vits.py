@@ -8,7 +8,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
-            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None

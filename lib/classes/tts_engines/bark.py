@@ -160,6 +160,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             CAPITALIZATION for emphasis of a word
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
+                        self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
                         if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
                             bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
                         else:
@@ -174,7 +175,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
                         self.engine.synthesizer.voice_dir = pth_voice_dir
                         tts_dyn_params = {}
-                        if not os.path.exists(pth_voice_file) or self.speaker not in self.engine.speakers:
+                        if self.speaker not in self.engine.speakers:
                             tts_dyn_params['speaker_wav'] = self.params['current_voice']
                         fine_tuned_params = {
                             key.removeprefix("bark_"): cast_type(self.session[key])
