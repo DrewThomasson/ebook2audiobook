@@ -642,15 +642,14 @@ class DeviceInstaller():
         name, tag, msg = (v.strip() if isinstance(v, str) else v for v in (name, tag, msg))
         return (name, tag, msg)
 
-    def version_tuple(v:str, max_parts:int=4)->tuple:
+    def version_tuple(self, v:str, max_parts:int=4)->tuple:
         m = re.search(r"\d+(?:\.\d+)*", v)
         if not m:
             return (0,) * max_parts
         nums = [int(n) for n in m.group(0).split(".")[:max_parts]]
         return tuple(nums + [0] * (max_parts - len(nums)))
 
-
-    def eval_marker(marker_part):
+    def eval_marker(self, marker_part:str)->tuple|bool:
         env = {
             "python_version": ".".join(map(str, sys.version_info[:2])),
             "sys_platform": sys.platform,
@@ -708,7 +707,7 @@ class DeviceInstaller():
                     pkg_part, marker_part = package.split(';', 1)
                     marker_part = marker_part.strip()
                     try:
-                        if not eval_marker(marker_part):
+                        if not self.eval_marker(marker_part):
                             continue
                     except Exception as e:
                         error = f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}'
@@ -720,8 +719,8 @@ class DeviceInstaller():
                         if spec is not None:
                             if pkg_name == 'demucs':
                                 installed_version = version(pkg_name)
-                                version_base = version_tuple(installed_version)
-                                if version_tuple(version_base) < version_tuple('4.1.0'):
+                                version_base = self.version_tuple(installed_version)
+                                if self.version_tuple(version_base) < self.version_tuple('4.1.0'):
                                     try:
                                         msg = f'{pkg_name} version does not match the git version. Updating...'
                                         print(msg)
@@ -753,10 +752,10 @@ class DeviceInstaller():
                     if spec_str:
                         req_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
                         if req_match:
-                            req_v = version_tuple(req_match.group(1))
+                            req_v = self.version_tuple(req_match.group(1))
                             norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
                             short_version = norm_match.group(1) if norm_match else installed_version
-                            installed_v = version_tuple(short_version)
+                            installed_v = self.version_tuple(short_version)
                             imajor, iminor = installed_v
                             rmajor, rminor = req_v
                             if '==' in spec_str:
@@ -839,7 +838,7 @@ class DeviceInstaller():
                             current_tag = m.group(1) if m else None
                             non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                             numpy_version = self.get_package_version('numpy')
-                            numpy_version_base = version_tuple(numpy_version)
+                            numpy_version_base = self.version_tuple(numpy_version)
                             torch_version_base = torch_matrix[device_info['tag']]['base']
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
@@ -866,7 +865,7 @@ class DeviceInstaller():
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
                                     else:
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', f'torch=={torch_version_base}', f'torchaudio=={torch_version_base}', '--force-reinstall', '--index-url', f'https://download.pytorch.org/whl/{tag}'])
-                                    if version_tuple(torch_version_base) <= version_tuple('2.2.2') and version_tuple(numpy_version_base) >= version_tuple('2.0.0'):
+                                    if self.version_tuple(torch_version_base) <= self.version_tuple('2.2.2') and self.version_tuple(numpy_version_base) >= self.version_tuple('2.0.0'):
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'numpy<2'])
                                 except subprocess.CalledProcessError as e:
                                     error = f'Failed to install torch package: {e}'
