@@ -79,8 +79,8 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             part = part[:-1]
                         speaker_argument = {}
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        if self.params['voice_path'] is not None:
-                            speaker_wav = self.params['voice_path']
+                        if self.params['current_voice'] is not None:
+                            speaker_wav = self.params['current_voice']
                             speaker_argument = {"speaker_wav": speaker_wav}
                         else:
                             self.speaker = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']

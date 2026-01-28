@@ -59,7 +59,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             error = f'load_engine() error: {e}'
             raise ValueError(error)
     """
-    def _check_bark_npz(self, voice_path:str, bark_dir:str, speaker:str)->bool:
+    def _check_bark_npz(self, current_voice:str, bark_dir:str, speaker:str)->bool:
         try:
             if self.session['language'] in default_engine_settings[TTS_ENGINES['BARK']].get('languages', {}):
                 pth_voice_dir = os.path.join(bark_dir, speaker)
@@ -82,7 +82,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     with torch.no_grad():
                         result = self.engine.synthesize(
                             default_text,
-                            speaker_wav=voice_path,
+                            speaker_wav=current_voice,
                             speaker=speaker,
                             voice_dir=pth_voice_dir,
                             **fine_tuned_params
@@ -93,7 +93,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         if device == devices['CPU']['proc']:
                             result = self.engine.synthesize(
                                 default_text,
-                                speaker_wav=voice_path,
+                                speaker_wav=current_voice,
                                 speaker=speaker,
                                 voice_dir=pth_voice_dir,
                                 **fine_tuned_params
@@ -105,7 +105,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             ):
                                 result = self.engine.synthesize(
                                     default_text,
-                                    speaker_wav=voice_path,
+                                    speaker_wav=current_voice,
                                     speaker=speaker,
                                     voice_dir=pth_voice_dir,
                                     **fine_tuned_params
@@ -163,9 +163,9 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
                             bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
                         else:
-                            bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
+                            bark_dir = os.path.join(os.path.dirname(self.params['current_voice']), 'bark')
                             """
-                            if not self._check_bark_npz(self.params['voice_path'], bark_dir, self.speaker):
+                            if not self._check_bark_npz(self.params['current_voice'], bark_dir, self.speaker):
                                 error = 'Could not create pth voice file!'
                                 print(error)
                                 return False
@@ -175,7 +175,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         self.engine.synthesizer.voice_dir = pth_voice_dir
                         tts_dyn_params = {}
                         if not os.path.exists(pth_voice_file) or self.speaker not in self.engine.speakers:
-                            tts_dyn_params['speaker_wav'] = self.params['voice_path']
+                            tts_dyn_params['speaker_wav'] = self.params['current_voice']
                         fine_tuned_params = {
                             key.removeprefix("bark_"): cast_type(self.session[key])
                             for key, cast_type in {
@@ -188,7 +188,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             """
                             result = self.engine.synthesize(
                                 part,
-                                #speaker_wav=self.params['voice_path'],
+                                #speaker_wav=self.params['current_voice'],
                                 speaker=self.speaker,
                                 voice_dir=pth_voice_dir,
                                 **fine_tuned_params

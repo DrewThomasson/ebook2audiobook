@@ -69,7 +69,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 if not self._set_voice():
                     return False
                 self.audio_segments = []
-                print(f'--------------speakers in cache: {self.engine.speakers}----------------')
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -89,8 +88,8 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                         speaker_argument = {}
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         self.speaker = Path(self.session['voice']).stem if self.session['voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
-                        if self.params['voice_path'] is not None:
-                            speaker_wav = self.params['voice_path']
+                        if self.params['current_voice'] not in self.engine.speakers:
+                            speaker_wav = self.params['current_voice']
                             speaker_argument = {"speaker_wav": [speaker_wav], "speaker": self.speaker}
                         else:
                             speaker_argument = {"speaker": self.speaker, "preset": "ultra_fast"}                         
