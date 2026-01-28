@@ -826,7 +826,7 @@ class DeviceInstaller():
                         numpy_version = self.get_package_version('numpy')
                         numpy_version_base = Version(numpy_version).base_version
                         torch_version_base = torch_matrix[device_info['tag']]['base']
-                        if device_info['tag'] not in ['unknown', 'unsupported']:
+                        if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
                             if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
                                 try:
                                     print(f"Installing the right library packages for {device_info['name']}...")
