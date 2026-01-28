@@ -888,12 +888,12 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['audiobook'] = selected
-                        group_visible = True if len(audiobook_options) > 0 else 'hidden'
+                        group_visible = True if session['audiobook'] else False
                         return gr.update(visible=group_visible)
                 except Exception as e:
                     error = f'change_gr_audiobook_list(): {e}'
                     alert_exception(error, session_id)
-                return gr.update(visible=group_visible)
+                return gr.update(visible=False)
 
             def update_gr_audiobook_player(session_id:str)->tuple:
                 try:
