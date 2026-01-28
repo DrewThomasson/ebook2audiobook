@@ -808,7 +808,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(15)])
+                            outputs = tuple([gr.update() for _ in range(16)])
                             return outputs
                         ebook_data = None
                         file_count = session['ebook_mode']
@@ -833,7 +833,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 if not is_valid_gradio_cache(ebook_data):
                                     ebook_data = None
                         session['ebook'] = ebook_data
-                        visible_row_split_hours = True if session['output_split'] else False
+                        visible_gr_row_split_hours = True if session['output_split'] else False
+                        visible_gr_group_custom_model = False if session['tts_engine'] not in [TTS_ENGINES['XTTSv2']] else True if session['fine_tuned'] == 'internal'
                         return (
                             gr.update(value=session['ebook']),
                             gr.update(value=session['ebook_mode']),
@@ -848,13 +849,14 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=session['output_channel']),
                             gr.update(value=bool(session['output_split'])),
                             gr.update(value=session['output_split_hours']),
-                            gr.update(visible=visible_row_split_hours),
-                            update_gr_audiobook_list(session_id)
+                            gr.update(visible=visible_gr_row_split_hours),
+                            update_gr_audiobook_list(session_id),
+                            gr.update(visible=visible_gr_group_custom_model)
                         )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
                     alert_exception(error, session_id)
-                outputs = tuple([gr.update() for _ in range(15)])
+                outputs = tuple([gr.update() for _ in range(16)])
                 return outputs
 
             def restore_audiobook_player(audiobook:str|None)->tuple:
@@ -2157,7 +2159,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[
                     gr_ebook_file, gr_ebook_mode, gr_chapters_preview, gr_device, gr_language, gr_voice_list,
                     gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                    gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list
+                    gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model
                 ]
             ).then(
                 fn=restore_audiobook_player,
