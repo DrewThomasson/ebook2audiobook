@@ -642,7 +642,7 @@ class DeviceInstaller():
         name, tag, msg = (v.strip() if isinstance(v, str) else v for v in (name, tag, msg))
         return (name, tag, msg)
 
-    def version_tuple(self, v:str, max_parts:int=4)->tuple:
+    def version_tuple(self, v:str, max_parts:int=3)->tuple:
         m = re.search(r"\d+(?:\.\d+)*", v)
         if not m:
             return (0,) * max_parts
@@ -749,7 +749,40 @@ class DeviceInstaller():
                     continue
                 else:
                     spec_str = clean_pkg[len(pkg_name):].strip()
-
+                    if spec_str:
+                        req_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
+                        if req_match:
+                            req_v = self.version_tuple(req_match.group(1))
+                            norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
+                            short_version = norm_match.group(1) if norm_match else installed_version
+                            installed_v = self.version_tuple(short_version, 2)
+                            imajor, iminor = installed_v
+                            rmajor, rminor = req_v
+                            if '==' in spec_str:
+                                if imajor != rmajor or iminor != rminor:
+                                    error = f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_match.group(1)}.'
+                                    print(error)
+                                    missing_packages.append((pkg_name, package))
+                            elif '>=' in spec_str:
+                                if (imajor < rmajor) or (imajor == rmajor and iminor < rminor):
+                                    error = f'{pkg_name} (installed {installed_version}) < required {req_match.group(1)}.'
+                                    print(error)
+                                    missing_packages.append((pkg_name, package))
+                            elif '<=' in spec_str:
+                                if (imajor > rmajor) or (imajor == rmajor and iminor > rminor):
+                                    error = f'{pkg_name} (installed {installed_version}) > allowed {req_match.group(1)}.'
+                                    print(error)
+                                    missing_packages.append((pkg_name, package))
+                            elif '>' in spec_str:
+                                if (imajor < rmajor) or (imajor == rmajor and iminor <= rminor):
+                                    error = f'{pkg_name} (installed {installed_version}) <= required {req_match.group(1)}.'
+                                    print(error)
+                                    missing_packages.append((pkg_name, package))
+                            elif '<' in spec_str:
+                                if (imajor > rmajor) or (imajor == rmajor and iminor >= rminor):
+                                    error = f'{pkg_name} (installed {installed_version}) >= restricted {req_match.group(1)}.'
+                                    print(error)
+                                    missing_packages.append((pkg_name, package))
             if missing_packages:
                 from tqdm import tqdm 
                 msg = '\nInstalling missing or upgrade packages...\n'
