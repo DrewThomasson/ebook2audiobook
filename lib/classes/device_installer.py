@@ -679,7 +679,98 @@ class DeviceInstaller():
             print(error)
             return False
         try:
+            system = sys.platform
+            arch = platform.machine().lower()
+            with open(requirements_file, 'r') as f:
+                contents = f.read().replace('\r', '\n')
+                packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)]
+            if sys.version_info >= (3, 11):
+                packages.append("pymupdf-layout")
+                if system == systems['MACOS'] and arch == 'x86_64':
+                    packages = [
+                        (
+                            'torchaudio==2.2.2' if p.startswith('torchaudio==')
+                            else 'torch==2.2.2' if p.startswith('torch==')
+                            else p
+                        )
+                        for p in packages
+                    ]
+            missing_packages = []
+            for package in packages:
+                clean_pkg = re.sub(r'\[.*?\]', '', package)
+                vcs_match = re.search(r'([\w\-]+)\s*@?\s*git\+', clean_pkg)
+                if vcs_match:
+                    pkg_name = vcs_match.group(1)
+                else:
+                    pkg_name = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
+                if ';' in package:
+                    pkg_part, marker_part = package.split(';', 1)
+                    marker_part = marker_part.strip()
+                    try:
+                        if not self.eval_marker(marker_part):
+                            continue
+                    except Exception as e:
+                        error = f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}'
+                        print(error)
+                    package = pkg_part.strip()
+                if 'git+' in package or '://' in package:
+                    if pkg_name:
+                        spec = importlib.util.find_spec(pkg_name)
+                        if spec is not None:
+                            if pkg_name == 'demucs':
+                                installed_version = version(pkg_name)
+                                version_base = self.version_tuple(installed_version)
+                                if self.version_tuple(version_base) < self.version_tuple('4.1.0'):
+                                    try:
+                                        msg = f'{pkg_name} version does not match the git version. Updating...'
+                                        print(msg)
+                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--no-deps', '--force', package])
+                                    except subprocess.CalledProcessError as e:
+                                        error = f'Failed to install {package}: {e}'
+                                        print(error)
+                                        return False
+                        else:
+                            msg = f'{pkg_name} (git package) is missing.'
+                            print(msg)
+                            missing_packages.append((pkg_name, package))
+                    else:
+                        error = f'Unrecognized git package: {package}'
+                        print(error)
+                        missing_packages.append((pkg_name, package))
+                    continue
+                try:
+                    installed_version = version(pkg_name)
+                except PackageNotFoundError:
+                    error = f'{pkg_name} is not installed.'
+                    print(error)
+                    missing_packages.append((pkg_name, package))
+                    continue
+                if '+' in installed_version:
+                    continue
+                else:
+                    spec_str = clean_pkg[len(pkg_name):].strip()
 
+            if missing_packages:
+                from tqdm import tqdm 
+                msg = '\nInstalling missing or upgrade packages...\n'
+                print(msg)
+                subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
+                with tqdm(total=len(missing_packages), desc='Installing', bar_format='{desc}: {n_fmt}/{total_fmt}', unit='pkg') as t:
+                    for pkg_name, package in missing_packages:
+                        try:
+                            cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force']
+                            if pkg_name == 'demucs':
+                                cmd.append('--no-deps')
+                            cmd.append(package)
+                            subprocess.check_call(cmd)
+                            t.update(1)
+                        except subprocess.CalledProcessError as e:
+                            error = f'Failed to install {package}: {e}'
+                            print(error)
+                            return False
+                msg = '\nAll required packages are installed.'
+                print(msg)
             check = self.check_dictionary()
             return check
         except Exception as e:
