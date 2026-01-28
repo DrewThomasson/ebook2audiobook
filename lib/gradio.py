@@ -834,7 +834,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     ebook_data = None
                         session['ebook'] = ebook_data
                         visible_gr_row_split_hours = True if session['output_split'] else False
-                        visible_gr_group_custom_model = False if session['tts_engine'] not in [TTS_ENGINES['XTTSv2']] else True if session['fine_tuned'] == 'internal'
+                        visible_gr_group_custom_model = True if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
                         return (
                             gr.update(value=session['ebook']),
                             gr.update(value=session['ebook_mode']),
