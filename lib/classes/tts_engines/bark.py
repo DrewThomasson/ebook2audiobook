@@ -10,7 +10,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.speakers_path = None
             self.speaker = None
             self.tts_key = self.session['model_cache']
-            self.pth_voice_file = None
+            #self.pth_voice_file = None
             self.resampler_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
@@ -67,7 +67,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 if os.path.exists(pth_voice_file):
                     return True
                 else:
-                    os.makedirs(pth_voice_dir,exist_ok=True)
+                    os.makedirs(pth_voice_dir, exist_ok=True)
                     key = f"{TTS_ENGINES['BARK']}-internal"
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
@@ -172,11 +172,13 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 return False
                             """
                         pth_voice_dir = os.path.join(bark_dir, self.speaker)
-                        pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
+                        if not os.path.exists(pth_voice_dir):
+                            makedirs(pth_voice_dir, exist_ok=True)
+                        #pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
                         self.engine.synthesizer.voice_dir = pth_voice_dir
-                        tts_dyn_params = {}
+                        speaker_argument = {}
                         if self.speaker not in self.engine.speakers:
-                            tts_dyn_params['speaker_wav'] = self.params['current_voice']
+                            speaker_argument['speaker_wav'] = self.params['current_voice']
                         fine_tuned_params = {
                             key.removeprefix("bark_"): cast_type(self.session[key])
                             for key, cast_type in {
@@ -201,8 +203,8 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                     text=part,
                                     speaker=self.speaker,
                                     voice_dir=pth_voice_dir,
-                                    **tts_dyn_params,
-                                    **fine_tuned_params
+                                    **fine_tuned_params,
+                                    **speaker_argument,
                                 )
                             else:
                                 with torch.autocast(
@@ -213,7 +215,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                         text=part,
                                         speaker=self.speaker,
                                         voice_dir=pth_voice_dir,
-                                        **tts_dyn_params,
+                                        **speaker_argument,
                                         **fine_tuned_params
                                     )
                             self.engine.to(devices['CPU']['proc'])
