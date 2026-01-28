@@ -491,7 +491,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_models', elem_classes=['gr-group']):
                                     gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', elem_classes=['gr-markdown'], value='Models')
                                     gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Preset Models', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
-                                    gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
+                                    gr_group_custom_model = gr.Group(visible=False)
                                     with gr_group_custom_model:
                                         gr_custom_model_label = gr.Textbox(label='', elem_id='gr_custom_model_label', elem_classes=['gr-label'], interactive=False)
                                         gr_custom_model_file = gr.File(label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
