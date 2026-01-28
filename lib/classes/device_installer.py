@@ -752,7 +752,7 @@ class DeviceInstaller():
                     if spec_str:
                         req_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
                         if req_match:
-                            req_v = self.version_tuple(req_match.group(1))
+                            req_v = self.version_tuple(req_match.group(1), 2)
                             norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
                             short_version = norm_match.group(1) if norm_match else installed_version
                             installed_v = self.version_tuple(short_version, 2)
