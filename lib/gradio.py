@@ -859,7 +859,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def restore_audiobook_player(audiobook:str|None)->tuple:
                 try:
-                    visible = True if audiobook is not None else 'hidden'
+                    visible = True if audiobook is not None else False
                     return gr.update(visible=visible), gr.update(value=audiobook), gr.update(active=True)
                 except Exception as e:
                     error = f'restore_audiobook_player(): {e}'
