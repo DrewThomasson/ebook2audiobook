@@ -69,6 +69,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 if not self._set_voice():
                     return False
                 self.audio_segments = []
+                print(f'--------------speakers in cache: {self.engine.speakers}----------------')
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
