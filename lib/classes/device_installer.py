@@ -736,7 +736,8 @@ class DeviceInstaller():
                 if '+' in installed_version:
                     continue
                 else:
-                    spec_str = clean_pkg[len(pkg_name):].strip()
+                    pkg_spec_part = re.split(r'[<>=]', clean_pkg, maxsplit=1)
+                    spec_str = clean_pkg[len(pkg_spec_part[0]):].strip() if len(pkg_spec_part) > 1 else ''
                     if spec_str:
                         req_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
                         if req_match:
