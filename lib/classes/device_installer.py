@@ -674,6 +674,11 @@ class DeviceInstaller():
         return False
 
     def install_python_packages(self)->bool:
+        if not os.path.exists(requirements_file):
+            error = f'Warning: File {requirements_file} not found. Skipping package check.'
+            print(error)
+            return False
+        try:
 
             check = self.check_dictionary()
             return check
