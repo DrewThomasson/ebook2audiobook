@@ -64,15 +64,29 @@ set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
-set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
-set "SCOOP_HOME=%USERPROFILE%\scoop"
+set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
+set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
+set "USER_SCOOP=%USERPROFILE%\scoop"
+set "LOCAL_SCOOP=%SCRIPT_DIR%\scoop"
+set "USER_CONDA=%USERPROFILE%\Miniforge3"
+set "LOCAL_CONDA=%SCRIPT_DIR%\Miniforge3"
+if exist "%USER_SCOOP%\apps\scoop\current\bin\scoop.cmd" (
+	set "SCOOP_HOME=%USER_SCOOP%"
+) else (
+	set "SCOOP_HOME=%LOCAL_SCOOP%"
+)
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
-set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
-set "CONDA_HOME=%USERPROFILE%\Miniforge3"
-set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
+if exist "%USER_CONDA%\condabin\conda.bat" (
+	set "CONDA_HOME=%USER_CONDA%"
+) else (
+	set "CONDA_HOME=%LOCAL_CONDA%"
+)
 set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
+set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
+set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
+
 set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%"
@@ -297,13 +311,13 @@ if not "%OK_CONDA%"=="0" (
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where.exe /Q conda
 	if not errorlevel 1 (
-		echo %ESC%[32m=============== Miniforge3 is installed! ===============%ESC%[0m
+		echo %ESC%[32m=============== Miniforge3 OK! ===============%ESC%[0m
 		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
 		if errorlevel 1 (
 			echo Miniforge3>>"%INSTALLED_LOG%"
 		)
 	) else (
-		echo %ESC%[31m=============== Miniforge3 installation failed.%ESC%[0m
+		echo %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
 		goto :failed
 	)
 	if not exist "%USERPROFILE%\.condarc" (
@@ -350,15 +364,12 @@ if not "%OK_PROGRAMS%"=="0" (
 			where.exe /Q python3 && set PY_FOUND=1
 			where.exe /Q py	  && set PY_FOUND=1
 			if not defined PY_FOUND (
-				echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
+				echo %ESC%[31m=============== %%p failed.%ESC%[0m
 				goto :failed
 			)
 		)
 		if "%%p"=="nodejs" (
 			set "prog=node"
-		)
-		if "%%p"=="calibre-normal" (
-			set "prog=calibre"
 		)
 		if "%%p"=="rustup" (
 			if exist "%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
@@ -367,13 +378,13 @@ if not "%OK_PROGRAMS%"=="0" (
 		)
 		where.exe /Q !prog!
 		if not errorlevel 1 (
-			echo %ESC%[32m=============== %%p is installed! ===============%ESC%[0m
+			echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
 			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
 			if errorlevel 1 (
 				echo %%p>>"%INSTALLED_LOG%"
 			)
 		) else (
-			echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
+			echo %ESC%[31m=============== %%p failed.%ESC%[0m
 			goto :failed
 		)
 	)
@@ -510,7 +521,7 @@ set "dst_pyfile=%site_packages_path%\sitecustomize.py"
 if not exist "%dst_pyfile%" (
 	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
 	if errorlevel 1 (
-		echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
+		echo %ESC%[31m=============== sitecustomize.py hook error: copy failed.%ESC%[0m
 		exit /b 1
 	)
 	exit /b 0
@@ -645,7 +656,7 @@ if defined arguments.help (
 			call %PYTHON_SCOOP% --version >null 2>&1 || call scoop install %PYTHON_SCOOP% 2>null
 			where.exe /Q %PYTHON_SCOOP%
 			if errorlevel 1 (
-				echo %ESC%[31m=============== %PYTHON_SCOOP% installation failed.%ESC%[0m
+				echo %ESC%[31m=============== %PYTHON_SCOOP% failed.%ESC%[0m
 				goto :failed
 			)
 			call :check_docker

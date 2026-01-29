@@ -64,10 +64,20 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
         try:
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
-                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
+                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 if not self._set_voice():
                     return False
+                if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
+                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
+                else:
+                    msg = 'Computing speaker latents…'
+                    print(msg)
+                    if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
+                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
+                    else:
+                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)  
+                    self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -86,16 +96,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         if part.endswith("'"):
                             part = part[:-1]
                         part = part.replace('.', ' ;\n')
-                        if self.params['voice_path'] is not None and self.params['voice_path'] in self.params['latent_embedding'].keys():
-                            self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['voice_path']]
-                        else:
-                            msg = 'Computing speaker latents…'
-                            print(msg)
-                            if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
-                            else:
-                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['voice_path']], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)  
-                            self.params['latent_embedding'][self.params['voice_path']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
                         fine_tuned_params = {
                             key.removeprefix("xtts_"): cast_type(self.session[key])
                             for key, cast_type in {

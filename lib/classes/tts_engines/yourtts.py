@@ -54,12 +54,19 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
         try:
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
-                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
+                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
                 if not self._set_voice():
                     return False
+                speaker_argument = {}
+                if self.params['current_voice'] is not None:
+                    speaker_wav = self.params['current_voice']
+                    speaker_argument = {"speaker_wav": speaker_wav}
+                else:
+                    self.speaker = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
+                    speaker_argument = {"speaker": self.speaker}
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -77,14 +84,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         trim_audio_buffer = 0.002
                         if part.endswith("'"):
                             part = part[:-1]
-                        speaker_argument = {}
-                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        if self.params['voice_path'] is not None:
-                            speaker_wav = self.params['voice_path']
-                            speaker_argument = {"speaker_wav": speaker_wav}
-                        else:
-                            self.speaker = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
-                            speaker_argument = {"speaker": self.speaker}                         
+                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()                        
                         with torch.no_grad():
                             self.engine.to(device)
                             if device == devices['CPU']['proc']:
