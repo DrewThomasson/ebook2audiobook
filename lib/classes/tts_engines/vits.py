@@ -68,6 +68,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 if not self._set_voice():
                     return False
+                speaker_argument = []
                 if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
                     if self.session['language'] in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
                         speaker_argument = {"speaker": 'p262'}
@@ -101,7 +102,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 if device == devices['CPU']['proc']:
                                     self.engine.tts_to_file(
                                         text=part,
-                                        file_path=tmp_in_wav
+                                        file_path=tmp_in_wav,
+                                        **speaker_argument
                                     )
                                 else:
                                     with torch.autocast(
@@ -110,7 +112,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     ):
                                         self.engine.tts_to_file(
                                             text=part,
-                                            file_path=tmp_in_wav
+                                            file_path=tmp_in_wav,
+                                            **speaker_argument
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                             if self.params['current_voice'] in self.params['semitones'].keys():
@@ -172,7 +175,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 self.engine.to(device)
                                 if device == devices['CPU']['proc']:
                                     audio_part = self.engine.tts(
-                                        text=part
+                                        text=part,
+                                        **speaker_argument
                                     )
                                 else:
                                     with torch.autocast(
@@ -180,7 +184,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                         dtype=self.amp_dtype
                                     ):
                                         audio_part = self.engine.tts(
-                                            text=part
+                                            text=part,
+                                            **speaker_argument
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
