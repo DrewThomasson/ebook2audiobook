@@ -2204,7 +2204,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     os.path.join(session['chapters_dir'], f)
                     for f in chapter_files[i:i + chunks_size]
                 ]
-                total_duration += sum(get_audiolist_duration(filepaths).values())
+                durations_dict = get_audiolist_duration(filepaths)
+                for path in filepaths:
+                    dur = durations_dict.get(path, 0.0)
+                    durations.append(dur)
+                    total_duration += dur
+            assert len(durations) == len(chapter_files)
             exported_files = []
             concat_dir = session['process_dir']
             if session['output_split']:
