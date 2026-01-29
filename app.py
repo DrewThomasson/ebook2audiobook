@@ -237,7 +237,8 @@ SML tags available:
         print(f"v{prog_version} {args['script_mode']} mode")
         from lib.classes.device_installer import DeviceInstaller
         manager = DeviceInstaller()
-        if manager.install_python_packages():
+        result = manager.install_python_packages()
+        if result == 0:
             device_info_str = manager.check_device_info(args['script_mode'])
             if manager.install_device_packages(device_info_str) == 1:
                 error = f'Error: Could not installed device packages!'

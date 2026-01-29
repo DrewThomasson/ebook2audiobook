@@ -677,7 +677,7 @@ class DeviceInstaller():
         if not os.path.exists(requirements_file):
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
-            return False
+            return 1
         try:
             system = sys.platform
             arch = platform.machine().lower()
@@ -791,18 +791,18 @@ class DeviceInstaller():
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install {package}: {e}'
                             print(error)
-                            return False
+                            return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
             check_numpy_version = self.check_numpy()
             if not check_numpy_version:
-                return False
+                return 1
             check_unidic = self.check_dictionary()
             return check_unidic
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)
-            return False
+            return 1
           
     def check_numpy(self)->bool:
         try:
@@ -816,11 +816,11 @@ class DeviceInstaller():
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
             print(error)
-            return False
+            return 1
         except Exception as e:
             error = f'Error while installing numpy package: {e}'
             print(error)
-            return False
+            return 1
           
     def check_dictionary(self)->bool:
         import unidic
@@ -834,8 +834,8 @@ class DeviceInstaller():
             except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
                 error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting...'
                 raise SystemExit(error)
-                return False
-        return True
+                return 1
+        return 0
           
     def install_device_packages(self, device_info_str:str)->int:
         try:

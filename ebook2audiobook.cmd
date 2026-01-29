@@ -457,38 +457,14 @@ exit /b 0
 
 :install_python_packages
 echo [ebook2audiobook] Installing dependencies...
-python -m pip cache purge >nul 2>&1
-python -m pip install --upgrade pip pip setuptools wheel >nul 2>&1
-python -m pip install --upgrade llvmlite numba --only-binary=:all:
-set count_pkg=0
-for /f "usebackq delims=" %%P in ("%SCRIPT_DIR%\requirements.txt") do (
-	if not "%%P"=="" if not "%%P:~0,1%"=="#" (
-		set /a count_pkg+=1
-		echo [!count_pkg!] Installing %%P
-		python -m pip install --upgrade --no-cache-dir "%%P" || exit /b 1
-	)
-)
-if errorlevel 1 goto :failed
-for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
-	set "torch_ver=%%A"
-)
-python -m unidic download
-if errorlevel 1 goto :failed
-echo [ebook2audiobook] Installation completed.
-exit /b 0
-
-:check_device_info
-set "arg=%~1"
 "%PS_EXE%" %PS_ARGS% -Command ^
 @"
-%PYTHON_SCOOP% - << 'EOF'
+python - << 'EOF'
+import sys
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-result = device.check_device_info(r"%arg%")
-if result:
-	print(result)
-	raise SystemExit(0)
-raise SystemExit(1)
+exit_code = device.install_python_packages()
+sys.exit(exit_code)
 EOF
 "@
 exit /b %errorlevel%
@@ -687,8 +663,8 @@ if defined arguments.help (
 		) else (
 			::call :install_python_packages
 			::if errorlevel 1 goto :failed
-			::call :install_device_packages "%DOCKER_DEVICE_STR%"
-			::if errorlevel 1 goto :failed
+			call :install_device_packages "%DOCKER_DEVICE_STR%"
+			if errorlevel 1 goto :failed
 			call :check_sitecustomized
 			if errorlevel 1 goto :failed
 		)
