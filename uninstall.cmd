@@ -1,116 +1,132 @@
 @echo off
+setlocal EnableExtensions EnableDelayedExpansion
 
-setlocal enabledelayedexpansion
-
-:: ---------------------------------------
+:: ========================================================
 :: CONFIG
-:: ---------------------------------------
+:: ========================================================
 set "APP_NAME=ebook2audiobook"
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+set "REAL_INSTALL_DIR=%SCRIPT_DIR%"
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
 set "MINIFORGE_PATH=%USERPROFILE%\Miniforge3"
-:: ---------------------------------------
+set "SCOOP_PATH=%USERPROFILE%\scoop"
+set "HELPER=%TEMP%\%APP_NAME%_uninstall_helper.cmd"
+:: ========================================================
 
 echo ========================================================
 echo   %APP_NAME%  Uninstaller
 echo ========================================================
-echo Running from: %SCRIPT_DIR%
+echo Install location:
+echo   %REAL_INSTALL_DIR%
+echo.
 
-set "REAL_INSTALL_DIR=%SCRIPT_DIR%"
+pause
 
-echo Press any key to start uninstall (or close this window to cancel).
-pause >nul
-
-cd /d "%REAL_INSTALL_DIR%\.."
-
-:: ---------------------------------------
-:: KILL PROCESSES (INFORM and TERMINATE)
-:: ---------------------------------------
-echo Checking for running program instances...
-
+:: ========================================================
+:: TERMINATE APP PROCESS ONLY
+:: ========================================================
 tasklist | find /i "%APP_NAME%.exe" >nul && (
-	echo %APP_NAME%.exe is running and will be terminated.
+	echo Terminating %APP_NAME%.exe
 	taskkill /IM "%APP_NAME%.exe" /F >nul 2>&1
 )
 
-tasklist | find /i "python.exe" >nul && (
-	echo python.exe is active and will be terminated.
-	taskkill /IM "python.exe" /F >nul 2>&1
-)
-
-:: ---------------------------------------
-:: PROCESS .installed PACKAGES
-:: ---------------------------------------
+:: ========================================================
+:: PROCESS .installed (SCOOP PACKAGES)
+:: ========================================================
 set "REMOVE_MINIFORGE="
 set "SCOOP_PRESENT="
 
 if exist "%INSTALLED_LOG%" (
-	echo Reading .installed packages list...
-
+	echo Processing installed packages...
 	for /f "usebackq delims=" %%A in ("%INSTALLED_LOG%") do (
-		set "ITEM=%%A"
-		if "!ITEM!" NEQ "" (
-			if /i "!ITEM!"=="Miniforge3" (
-				set "REMOVE_MINIFORGE=1"
-				echo Marked Miniforge3 for removal...
-			)
-			if /i "!ITEM!"=="scoop" (
-				set "SCOOP_PRESENT=1"
-				echo Scoop presence detected - will remove at end...
-			)
-			echo Uninstalling package using Scoop: !ITEM!
-			call scoop uninstall -y !ITEM! >nul 2>&1
-		)
+		if /i "%%A"=="Miniforge3" set "REMOVE_MINIFORGE=1"
+		if /i "%%A"=="scoop" set "SCOOP_PRESENT=1"
+		call scoop uninstall -y %%A >nul 2>&1
 	)
 )
 
-:: ---------------------------------------
-:: REMOVE MINIFORGE3
-:: ---------------------------------------
+:: ========================================================
+:: REMOVE MINIFORGE
+:: ========================================================
 if defined REMOVE_MINIFORGE (
 	if exist "%MINIFORGE_PATH%" (
-		echo Removing Miniforge3: %MINIFORGE_PATH%
+		echo Removing Miniforge3...
 		rd /s /q "%MINIFORGE_PATH%" >nul 2>&1
 	)
 )
 
-:: ---------------------------------------
-:: DEFERRED SCOOP UNINSTALL
-:: ---------------------------------------
+:: ========================================================
+:: SAFE PATH CLEANUP (HKCU ONLY)
+:: ========================================================
+call :RemoveFromUserPath "%MINIFORGE_PATH%"
+call :RemoveFromUserPath "%MINIFORGE_PATH%\Scripts"
+call :RemoveFromUserPath "%SCOOP_PATH%\shims"
+
+:: ========================================================
+:: REMOVE SCOOP LAST (DEFERRED)
+:: ========================================================
 if defined SCOOP_PRESENT (
-	echo Removing Scoop and cleanup...
-	start "" cmd /c "ping 127.0.0.1 -n 3 >nul & scoop uninstall -y scoop >nul 2>&1 & rd /s /q %USERPROFILE%\scoop >nul 2>&1"
+	echo Removing Scoop...
+	start "" cmd /c ^
+	"ping 127.0.0.1 -n 3 >nul ^
+	& scoop uninstall -y scoop >nul 2>&1 ^
+	& rd /s /q "%SCOOP_PATH%" >nul 2>&1"
 )
 
-:: ---------------------------------------
-:: REMOVE SHORTCUTS AND REGISTRY
-:: ---------------------------------------
-echo Removing Menu entries and Desktop shortcuts...
-
+:: ========================================================
+:: REMOVE SHORTCUTS + REGISTRY
+:: ========================================================
 if exist "%STARTMENU_DIR%" rd /s /q "%STARTMENU_DIR%" >nul 2>&1
 if exist "%DESKTOP_LNK%" del /q "%DESKTOP_LNK%" >nul 2>&1
-
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
-:: ---------------------------------------
-:: DELETE THE ACTUAL APP FOLDER (DEFERRED, VERBOSE)
-:: ---------------------------------------
-echo Removing application directory:
-echo %REAL_INSTALL_DIR%
+:: ========================================================
+:: FINAL USER MESSAGE (OPTION B)
+:: ========================================================
+echo.
+echo ========================================================
+echo   Uninstallation completed successfully.
+echo   Cleaning up remaining files in background...
+echo   This window will close automatically.
+echo ========================================================
+echo.
+timeout /t 4 >nul
 
-echo ============================
-echo Uninstallation complete.
-echo Press any key to close this window.
-echo ============================
-pause >nul
+:: ========================================================
+:: CREATE SELF-DELETING HELPER
+:: ========================================================
+(
+	echo @echo off
+	echo ping 127.0.0.1 -n 5 ^>nul
+	echo rd /s /q "%REAL_INSTALL_DIR%" ^>nul 2^>^&1
+	echo del /f /q "%%~f0"
+) > "%HELPER%"
 
-start "" cmd /c ^
-"ping 127.0.0.1 -n 3 >nul ^
-& echo. ^
-& echo === Removing files and folders === ^
-& rd /s "%REAL_INSTALL_DIR%""
+:: ========================================================
+:: LAUNCH HELPER AND EXIT
+:: ========================================================
+start "" "%HELPER%"
+exit /b
 
+:: ========================================================
+:: FUNCTIONS
+:: ========================================================
+:RemoveFromUserPath
+set "TARGET=%~1"
+for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v PATH 2^>nul ^| find "PATH"') do set "USERPATH=%%B"
+set "NEWPATH="
+for %%P in (!USERPATH:;=^
+!) do (
+	if /i not "%%P"=="%TARGET%" (
+		if defined NEWPATH (
+			set "NEWPATH=!NEWPATH!;%%P"
+		) else (
+			set "NEWPATH=%%P"
+		)
+	)
+)
+reg add HKCU\Environment /v PATH /t REG_EXPAND_SZ /d "!NEWPATH!" /f >nul
 exit /b
