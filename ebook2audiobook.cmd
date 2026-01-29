@@ -434,8 +434,8 @@ if "%CURRENT_ENV%"=="" (
 		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
 		call conda activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-		call :install_python_packages
-		if errorlevel 1 goto :failed
+		::call :install_python_packages
+		::if errorlevel 1 goto :failed
 		call conda deactivate
 		call conda deactivate
 	)
@@ -685,10 +685,10 @@ if defined arguments.help (
 			call :build_docker_image "%device_info%"
 			if errorlevel 1 goto :failed
 		) else (
-			call :install_python_packages
-			if errorlevel 1 goto :failed
-			call :install_device_packages "%DOCKER_DEVICE_STR%"
-			if errorlevel 1 goto :failed
+			::call :install_python_packages
+			::if errorlevel 1 goto :failed
+			::call :install_device_packages "%DOCKER_DEVICE_STR%"
+			::if errorlevel 1 goto :failed
 			call :check_sitecustomized
 			if errorlevel 1 goto :failed
 		)
