@@ -83,7 +83,7 @@ if defined REMOVE_SCOOP (
 	start "" cmd /c ^
 	"cd /d %%TEMP%% ^
 	& ping 127.0.0.1 -n 3 >nul ^
-	& if exist ""%SCOOP_HOME%\apps\scoop"" scoop uninstall -y scoop >nul 2>&1 ^
+	& if exist ""%SCOOP_HOME%\shims\scoop.cmd"" ""%SCOOP_HOME%\shims\scoop.cmd"" uninstall -y scoop >nul 2>&1 ^
 	& rd /s /q ""%SCOOP_HOME%"" >nul 2>&1"
 )
 
@@ -111,23 +111,23 @@ timeout /t 4 >nul
 :: ========================================================
 (
 	echo @echo off
+	echo setlocal
 	echo set "TARGET=%REAL_INSTALL_DIR%"
 	echo cd /d %%TEMP%%
-	echo ping 127.0.0.1 -n 5 ^>nul
-	echo if exist "%%TARGET%%" ^
-	echo ^( ^
-	echo ^  for /d %%%%D in ("%%TARGET%%\*") do rd /s /q "%%%%D" ^>nul 2^>^&1 ^
-	echo ^  del /f /q "%%TARGET%%\*" ^>nul 2^>^&1 ^
-	echo ^  rd /s /q "%%TARGET%%" ^>nul 2^>^&1 ^
-	echo ^)
+	echo ping 127.0.0.1 -n 6 ^>nul
+	echo if exist "%%TARGET%%" (
+	echo ^  attrib -r -s -h "%%TARGET%%" /s /d ^>nul 2^>^&1
+	echo ^  rd /s /q "%%TARGET%%" ^>nul 2^>^&1
+	echo )
 	echo del /f /q "%%~f0"
 ) > "%HELPER%"
 
 :: ========================================================
 :: LAUNCH HELPER AND EXIT
 :: ========================================================
-start "" "%HELPER%"
-exit /b
+
+start "" /min cmd /c "%HELPER%"
+exit
 
 :: ========================================================
 :: FUNCTIONS
