@@ -68,8 +68,6 @@ set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
 set "USER_SCOOP=%USERPROFILE%\scoop"
 set "LOCAL_SCOOP=%SCRIPT_DIR%\scoop"
-set "USER_CONDA=%USERPROFILE%\Miniforge3"
-set "LOCAL_CONDA=%SCRIPT_DIR%\Miniforge3"
 if exist "%USER_SCOOP%\apps\scoop\current\bin\scoop.cmd" (
 	set "SCOOP_HOME=%USER_SCOOP%"
 ) else (
@@ -77,6 +75,8 @@ if exist "%USER_SCOOP%\apps\scoop\current\bin\scoop.cmd" (
 )
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
+set "USER_CONDA=%USERPROFILE%\Miniforge3"
+set "LOCAL_CONDA=%SCRIPT_DIR%\Miniforge3"
 if exist "%USER_CONDA%\condabin\conda.bat" (
 	set "CONDA_HOME=%USER_CONDA%"
 ) else (
@@ -86,7 +86,6 @@ set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
 set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
-
 set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%"
