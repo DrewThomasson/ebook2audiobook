@@ -12,31 +12,10 @@ set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
 set "HELPER=%TEMP%\%APP_NAME%_uninstall_helper.cmd"
-
-:: ========================================================
-:: SCOOP / CONDA LOCATION DETECTION
-:: ========================================================
-set "USER_SCOOP=%USERPROFILE%\scoop"
-set "LOCAL_SCOOP=%SCRIPT_DIR%\scoop"
-
-if exist "%USER_SCOOP%\apps\scoop\current\bin\scoop.cmd" (
-	set "SCOOP_HOME=%USER_SCOOP%"
-) else (
-	set "SCOOP_HOME=%LOCAL_SCOOP%"
-)
-
+set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
-set "SCOOP_APPS=%SCOOP_HOME%\apps"
-
-set "USER_CONDA=%USERPROFILE%\Miniforge3"
-set "LOCAL_CONDA=%SCRIPT_DIR%\Miniforge3"
-
-if exist "%USER_CONDA%\condabin\conda.bat" (
-	set "CONDA_HOME=%USER_CONDA%"
-) else (
-	set "CONDA_HOME=%LOCAL_CONDA%"
-)
-
+set "SCOOP_APPS=%SCOOP_HOME%\apps"(
+set "CONDA_HOME=%USERPROFILE%\Miniforge3"
 set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
 :: ========================================================

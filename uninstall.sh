@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 
 # =========================================================
+# PRESS KEY TO CONTINUE (BASH + ZSH SAFE)
+# =========================================================
+echo
+echo "========================================"
+echo "  ebook2audiobook – Uninstaller"
+echo "========================================"
+echo
+echo "Press any key to continue or Ctrl+C to abort..."
+read -n 1 -s
+echo
+
+# =========================================================
 # ZSH HANDOFF (macOS)
 # =========================================================
 if [[ "$OSTYPE" == "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
@@ -22,19 +34,7 @@ fi
 APP_NAME="ebook2audiobook"
 SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
-
-# =========================================================
-# DUAL MINIFORGE DETECTION
-# =========================================================
-USER_CONDA="$HOME/Miniforge3"
-LOCAL_CONDA="$SCRIPT_DIR/Miniforge3"
-
-if [[ -x "$USER_CONDA/bin/conda" ]]; then
-	CONDA_HOME="$USER_CONDA"
-else
-	CONDA_HOME="$LOCAL_CONDA"
-fi
-
+CONDA_HOME="$HOME/Miniforge3"
 CONDA_BIN_PATH="$CONDA_HOME/bin"
 
 # =========================================================

@@ -29,13 +29,7 @@ export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
 export TMPDIR="$SCRIPT_DIR/tmp"
 export APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 export DEVICE_TAG="${DEVICE_TAG:-}"
-USER_CONDA="$HOME/Miniforge3"
-LOCAL_CONDA="$SCRIPT_DIR/Miniforge3"
-if [[ -x "$USER_CONDA/bin/conda" ]]; then
-	export CONDA_HOME="$USER_CONDA"
-else
-	export CONDA_HOME="$LOCAL_CONDA"
-fi
+export CONDA_HOME="$HOME/Miniforge3"
 export CONDA_BIN_PATH="$CONDA_HOME/bin"
 export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
 export PATH="$CONDA_BIN_PATH:${PATH-}"
