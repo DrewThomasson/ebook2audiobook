@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # =========================================================
-# ZSH RELAUNCH (macOS)
+# ZSH HANDOFF (macOS)
 # =========================================================
 if [[ "$OSTYPE" == "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
@@ -12,17 +12,16 @@ fi
 # SCRIPT PATH RESOLUTION (BASH + ZSH)
 # =========================================================
 if [[ -n "$BASH_SOURCE" ]]; then
-	script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/$(basename "${BASH_SOURCE[0]}")"
+	script_path="${BASH_SOURCE[0]}"
 elif [[ -n "$ZSH_VERSION" ]]; then
-	script_path="$(cd "$(dirname "${(%):-%x}")" && pwd -P)/$(basename "${(%):-%x}")"
+	script_path="${(%):-%x}"
 else
-	script_path="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
+	script_path="$0"
 fi
 
 APP_NAME="ebook2audiobook"
-SCRIPT_DIR="$(dirname "$script_path")"
+SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
-TEMP_UNINSTALLER="/tmp/${APP_NAME}_uninstaller.sh"
 
 # =========================================================
 # DUAL MINIFORGE DETECTION
@@ -52,16 +51,6 @@ remove_from_path() {
 	export PATH
 }
 
-# =========================================================
-# SELF-RELAUNCH FROM /tmp (FINAL FIX)
-# =========================================================
-if [[ "$script_path" != "$TEMP_UNINSTALLER" ]]; then
-	echo "[INFO] Relaunching uninstaller from /tmp..."
-	cp "$script_path" "$TEMP_UNINSTALLER"
-	chmod +x "$TEMP_UNINSTALLER"
-	exec "$TEMP_UNINSTALLER"
-fi
-
 echo
 echo "========================================"
 echo "  Uninstalling $APP_NAME"
@@ -79,7 +68,7 @@ elif [[ "$OSTYPE" == "linux"* ]]; then
 fi
 
 # =========================================================
-# MINIFORGE REMOVAL (CONTROLLED)
+# MINIFORGE REMOVAL (ONLY IF INSTALLED BY APP)
 # =========================================================
 if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 	if [[ -d "$CONDA_HOME" ]]; then
@@ -90,20 +79,25 @@ if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 fi
 
 # =========================================================
-# REMOVE APPLICATION FILES
+# DELETE APPLICATION CONTENTS (CMD-LIKE LOGIC)
 # =========================================================
-echo "[INFO] Removing application directory: $SCRIPT_DIR"
-rm -rf "$SCRIPT_DIR"
+if [[ -d "$SCRIPT_DIR" ]]; then
+	echo "[INFO] Removing application contents from:"
+	echo "       $SCRIPT_DIR"
+	shopt -s dotglob nullglob
+	rm -rf "$SCRIPT_DIR"/*
+	shopt -u dotglob nullglob
+fi
 
 # =========================================================
-# FINAL CLEANUP
+# FINAL USER MESSAGE (OPTION B)
 # =========================================================
-rm -f "$TEMP_UNINSTALLER" 2>/dev/null || true
-
 echo
-echo "========================================"
-echo "  Uninstall complete."
-echo "========================================"
+echo "================================================"
+echo "  Uninstallation completed successfully."
+echo "  All application files have been removed."
+echo "  You may now close this terminal."
+echo "================================================"
 echo
 
 exit 0
