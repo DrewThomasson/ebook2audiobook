@@ -68,7 +68,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 if not self._set_voice():
                     return False
-                speaker_argument = []
+                speaker_argument = {}
                 if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
                     if self.session['language'] in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
                         speaker_argument = {"speaker": 'p262'}
