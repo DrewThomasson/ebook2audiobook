@@ -633,7 +633,7 @@ function check_conda {
 		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y || return 1
 		source "$CONDA_ENV" || return 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
-		install_python_packages || return 1
+		#install_python_packages || return 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
 	fi
@@ -834,8 +834,8 @@ else
 			fi
 			build_docker_image "$device_info_str" || exit 1
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
-			install_python_packages || exit 1
-			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
+			#install_python_packages || exit 1
+			#install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
 			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
