@@ -131,6 +131,33 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 if not self._set_voice():
                     return False
+                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
+                if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
+                    bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
+                else:
+                    bark_dir = os.path.join(os.path.dirname(self.params['current_voice']), 'bark')
+                    """
+                    if not self._check_bark_npz(self.params['current_voice'], bark_dir, self.speaker):
+                        error = 'Could not create pth voice file!'
+                        print(error)
+                        return False
+                    """
+                pth_voice_dir = os.path.join(bark_dir, self.speaker)
+                if not os.path.exists(pth_voice_dir):
+                    os.makedirs(pth_voice_dir, exist_ok=True)
+                #pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
+                self.engine.synthesizer.voice_dir = pth_voice_dir
+                speaker_argument = {}
+                if self.speaker not in self.engine.speakers:
+                    speaker_argument['speaker_wav'] = self.params['current_voice']
+                fine_tuned_params = {
+                    key.removeprefix("bark_"): cast_type(self.session[key])
+                    for key, cast_type in {
+                        "bark_text_temp": float,
+                        "bark_waveform_temp": float
+                    }.items()
+                    if self.session.get(key) is not None
+                }
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -160,33 +187,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             CAPITALIZATION for emphasis of a word
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
-                        self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
-                        if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
-                            bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
-                        else:
-                            bark_dir = os.path.join(os.path.dirname(self.params['current_voice']), 'bark')
-                            """
-                            if not self._check_bark_npz(self.params['current_voice'], bark_dir, self.speaker):
-                                error = 'Could not create pth voice file!'
-                                print(error)
-                                return False
-                            """
-                        pth_voice_dir = os.path.join(bark_dir, self.speaker)
-                        if not os.path.exists(pth_voice_dir):
-                            os.makedirs(pth_voice_dir, exist_ok=True)
-                        #pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
-                        self.engine.synthesizer.voice_dir = pth_voice_dir
-                        speaker_argument = {}
-                        if self.speaker not in self.engine.speakers:
-                            speaker_argument['speaker_wav'] = self.params['current_voice']
-                        fine_tuned_params = {
-                            key.removeprefix("bark_"): cast_type(self.session[key])
-                            for key, cast_type in {
-                                "bark_text_temp": float,
-                                "bark_waveform_temp": float
-                            }.items()
-                            if self.session.get(key) is not None
-                        }         
                         with torch.no_grad():
                             """
                             result = self.engine.synthesize(

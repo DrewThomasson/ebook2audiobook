@@ -68,6 +68,14 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 not_supported_punc_pattern = re.compile(r'[—]')
                 if not self._set_voice():
                     return False
+                speaker_argument = {}
+                part = re.sub(not_supported_punc_pattern, ' ', part).strip()
+                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
+                if self.speaker not in self.engine.speakers:
+                    speaker_wav = self.params['current_voice']
+                    speaker_argument = {"speaker_wav": [speaker_wav], "speaker": self.speaker}
+                else:
+                    speaker_argument = {"speaker": self.speaker, "preset": "ultra_fast"}
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -84,15 +92,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                     else:
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
-                            part = part[:-1]
-                        speaker_argument = {}
-                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
-                        if self.speaker not in self.engine.speakers:
-                            speaker_wav = self.params['current_voice']
-                            speaker_argument = {"speaker_wav": [speaker_wav], "speaker": self.speaker}
-                        else:
-                            speaker_argument = {"speaker": self.speaker, "preset": "ultra_fast"}                         
+                            part = part[:-1]                        
                         with torch.no_grad():
                             self.engine.to(device)
                             if device == devices['CPU']['proc']:

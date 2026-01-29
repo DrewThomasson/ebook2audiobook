@@ -89,6 +89,8 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     not_supported_punc_pattern = re.compile(r'["—…¡¿]')
                 if not self._set_voice():
                     return False
+                proc_dir = os.path.join(self.session['voice_dir'], 'proc')
+                os.makedirs(proc_dir, exist_ok=True)
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -107,10 +109,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                         if part.endswith("'"):
                             part = part[:-1]
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        speaker_argument = {}
                         if self.params['current_voice'] is not None:
-                            proc_dir = os.path.join(self.session['voice_dir'], 'proc')
-                            os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             with torch.no_grad():
@@ -118,8 +117,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                 if device == devices['CPU']['proc']:
                                     self.engine.tts_to_file(
                                         text=part,
-                                        file_path=tmp_in_wav,
-                                        **speaker_argument
+                                        file_path=tmp_in_wav
                                     )
                                 else:
                                     with torch.autocast(
@@ -128,8 +126,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                     ):
                                         self.engine.tts_to_file(
                                             text=part,
-                                            file_path=tmp_in_wav,
-                                            **speaker_argument
+                                            file_path=tmp_in_wav
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                             if self.params['current_voice'] in self.params['semitones'].keys():
@@ -191,8 +188,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                 self.engine.to(device)
                                 if device == devices['CPU']['proc']:
                                     audio_part = self.engine.tts(
-                                        text=part,
-                                        **speaker_argument
+                                        text=part
                                     )
                                 else:
                                     with torch.autocast(
@@ -200,8 +196,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                         dtype=self.amp_dtype
                                     ):
                                         audio_part = self.engine.tts(
-                                            text=part,
-                                            **speaker_argument
+                                            text=part
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
