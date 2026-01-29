@@ -11,7 +11,7 @@ set "REAL_INSTALL_DIR=%SCRIPT_DIR%"
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
-set "HELPER=%TEMP%\%APP_NAME%_uninstall_helper.cmd"
+set "HELPER=%TEMP%\%APP_NAME%_uninstall_%RANDOM%.cmd"
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"(
@@ -111,14 +111,32 @@ timeout /t 4 >nul
 :: ========================================================
 (
 	echo @echo off
-	echo setlocal
+	echo setlocal EnableExtensions
 	echo set "TARGET=%REAL_INSTALL_DIR%"
 	echo cd /d %%TEMP%%
+	echo.
+	echo rem === wait for parent process to fully exit ===
 	echo ping 127.0.0.1 -n 6 ^>nul
+	echo.
+	echo rem === clear attributes ===
 	echo if exist "%%TARGET%%" (
 	echo ^  attrib -r -s -h "%%TARGET%%" /s /d ^>nul 2^>^&1
-	echo ^  rd /s /q "%%TARGET%%" ^>nul 2^>^&1
 	echo )
+	echo.
+	echo rem === take ownership + full access (hard mode) ===
+	echo if exist "%%TARGET%%" (
+	echo ^  takeown /f "%%TARGET%%" /r /d y ^>nul 2^>^&1
+	echo ^  icacls "%%TARGET%%" /grant *S-1-1-0:F /t ^>nul 2^>^&1
+	echo )
+	echo.
+	echo rem === retry deletion loop ===
+	echo for %%%%I in (1 2 3 4 5) do (
+	echo ^  if not exist "%%TARGET%%" goto done
+	echo ^  rd /s /q "%%TARGET%%" ^>nul 2^>^&1
+	echo ^  ping 127.0.0.1 -n 3 ^>nul
+	echo )
+	echo.
+	echo :done
 	echo del /f /q "%%~f0"
 ) > "%HELPER%"
 
