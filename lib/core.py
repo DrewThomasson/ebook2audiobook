@@ -2199,6 +2199,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 return None
             chunks_size = 892
             total_duration = 0.0
+            durations = []
             for i in range(0, len(chapter_files), chunks_size):
                 filepaths = [
                     os.path.join(session['chapters_dir'], f)
