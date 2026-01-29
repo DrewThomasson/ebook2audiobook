@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # =========================================================
-# ZSH RELAUNCH (macOS)
+# ZSH HANDOFF (macOS)
 # =========================================================
 if [[ "$OSTYPE" == "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
@@ -21,9 +21,7 @@ fi
 
 APP_NAME="ebook2audiobook"
 SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
-SCRIPT_NAME="$(basename "$script_path")"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
-TEMP_UNINSTALLER="/tmp/${APP_NAME}_uninstaller.sh"
 
 # =========================================================
 # DUAL MINIFORGE DETECTION
@@ -38,10 +36,9 @@ else
 fi
 
 CONDA_BIN_PATH="$CONDA_HOME/bin"
-CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
 
 # =========================================================
-# PATH CLEANUP FUNCTION
+# SAFE PATH CLEANUP
 # =========================================================
 remove_from_path() {
 	local target="$1"
@@ -54,16 +51,6 @@ remove_from_path() {
 	export PATH
 }
 
-# =========================================================
-# SELF-RELAUNCH FROM /tmp
-# =========================================================
-if [[ "$SCRIPT_NAME" != "UNINSTALLER"* ]]; then
-	echo "[INFO] Relaunching uninstaller from temp..."
-	cp "$0" "$TEMP_UNINSTALLER"
-	chmod +x "$TEMP_UNINSTALLER"
-	exec "$TEMP_UNINSTALLER"
-fi
-
 echo
 echo "========================================"
 echo "  Uninstalling $APP_NAME"
@@ -74,46 +61,43 @@ echo
 # DESKTOP / MENU CLEANUP
 # =========================================================
 if [[ "$OSTYPE" == "darwin"* ]]; then
-	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
-	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
-	rm -rf "$APP_BUNDLE" 2>/dev/null || true
-	rm -f "$DESKTOP_DIR/$APP_NAME" 2>/dev/null || true
+	rm -rf "$HOME/Applications/$APP_NAME.app" 2>/dev/null || true
 elif [[ "$OSTYPE" == "linux"* ]]; then
-	MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
-	DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-	rm -f "$MENU_ENTRY" "$DESKTOP_DIR/$APP_NAME.desktop" 2>/dev/null || true
+	rm -f "$HOME/.local/share/applications/$APP_NAME.desktop" 2>/dev/null || true
 	update-desktop-database ~/.local/share/applications >/dev/null 2>&1 || true
 fi
 
 # =========================================================
-# MINIFORGE REMOVAL (CONTROLLED)
+# MINIFORGE REMOVAL (ONLY IF INSTALLED BY APP)
 # =========================================================
 if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 	if [[ -d "$CONDA_HOME" ]]; then
 		echo "[INFO] Removing Miniforge3 from: $CONDA_HOME"
 		rm -rf "$CONDA_HOME"
 	fi
-
 	remove_from_path "$CONDA_BIN_PATH"
 fi
 
 # =========================================================
-# REMOVE APPLICATION FILES
+# DELETE APPLICATION CONTENTS (CMD-LIKE LOGIC)
 # =========================================================
 if [[ -d "$SCRIPT_DIR" ]]; then
-	echo "[INFO] Removing application directory: $SCRIPT_DIR"
-	rm -rf "$SCRIPT_DIR"
+	echo "[INFO] Removing application contents from:"
+	echo "       $SCRIPT_DIR"
+	shopt -s dotglob nullglob
+	rm -rf "$SCRIPT_DIR"/*
+	shopt -u dotglob nullglob
 fi
 
 # =========================================================
-# FINAL CLEANUP
+# FINAL USER MESSAGE (OPTION B)
 # =========================================================
-rm -f "$TEMP_UNINSTALLER" 2>/dev/null || true
-
 echo
-echo "========================================"
-echo "  Uninstall complete."
-echo "========================================"
+echo "================================================"
+echo "  Uninstallation completed successfully."
+echo "  All application files have been removed."
+echo "  You may now close this terminal."
+echo "================================================"
 echo
 
 exit 0
