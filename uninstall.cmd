@@ -27,8 +27,6 @@ echo Install location:
 echo   %REAL_INSTALL_DIR%
 echo.
 
-pause
-
 :: ========================================================
 :: TERMINATE APP PROCESS ONLY
 :: ========================================================

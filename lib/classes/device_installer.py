@@ -773,25 +773,22 @@ class DeviceInstaller():
                                     print(error)
                                     missing_packages.append((pkg_name, package))
             if missing_packages:
-                from tqdm import tqdm 
                 msg = '\nInstalling missing or upgrade packages...\n'
                 print(msg)
                 subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-                with tqdm(total=len(missing_packages), desc='Installing', bar_format='{desc}: {n_fmt}/{total_fmt}', unit='pkg') as t:
-                    for pkg_name, package in missing_packages:
-                        try:
-                            cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir']
-                            install_target = package
-                            if '/' in package:
-                                install_target = re.split(r'[<>=]', package, maxsplit=1)[0].strip()
-                            cmd.append(install_target)
-                            subprocess.check_call(cmd)
-                            t.update(1)
-                        except subprocess.CalledProcessError as e:
-                            error = f'Failed to install {package}: {e}'
-                            print(error)
-                            return 1
+                for pkg_name, package in missing_packages:
+                    try:
+                        cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir']
+                        install_target = package
+                        if '/' in package:
+                            install_target = re.split(r'[<>=]', package, maxsplit=1)[0].strip()
+                        cmd.append(install_target)
+                        subprocess.check_call(cmd)
+                    except subprocess.CalledProcessError as e:
+                        error = f'Failed to install {package}: {e}'
+                        print(error)
+                        return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
             check_numpy_version = self.check_numpy()
