@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
 
-# =========================================================
-# OPTIONAL HARDENING (BASH + ZSH SAFE)
-# =========================================================
-set -euo pipefail 2>/dev/null || true
+set -euo pipefail
 
-if [[ -z "${BASH_VERSION:-}" && -z "${ZSH_VERSION:-}" ]]; then
-	echo "This script must be run with bash or zsh"
-	exit 1
+: "${HOME:=$PWD}"
+
+CURRENT_PYVENV=""
+SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
+
+if [[ "${OSTYPE:-}" == darwin* && "$SWITCHED_TO_ZSH" -eq 0 && "$(ps -p $$ -o comm= 2>/dev/null || true)" != "zsh" ]]; then
+	export SWITCHED_TO_ZSH=1
+	exec env zsh "$0" "$@"
 fi
 
 # =========================================================
-# PRESS KEY TO CONTINUE (BASH + ZSH SAFE)
+# HEADER
 # =========================================================
 echo
 echo "========================================"
 echo "  ebook2audiobook – Uninstaller"
 echo "========================================"
 echo
-printf "Press any key to continue or Ctrl+C to abort..."
-IFS= read -r -k 1 _key
-echo
 
 # =========================================================
-# ZSH HANDOFF (macOS)
+# OPTIONAL INTERACTIVE PAUSE (SAFE)
 # =========================================================
-if [[ "$OSTYPE" == "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
-	export SWITCHED_TO_ZSH=1
-	exec env zsh "$0" "$@"
+if [[ -t 0 ]]; then
+	printf "Press Enter to continue or Ctrl+C to abort..."
+	read -r _ || true
+	echo
 fi
 
 # =========================================================
@@ -70,9 +70,9 @@ echo
 # =========================================================
 # DESKTOP / MENU CLEANUP
 # =========================================================
-if [[ "$OSTYPE" == "darwin"* ]]; then
+if [[ "${OSTYPE:-}" == darwin* ]]; then
 	rm -rf "$HOME/Applications/$APP_NAME.app" 2>/dev/null || true
-elif [[ "$OSTYPE" == "linux"* ]]; then
+elif [[ "${OSTYPE:-}" == linux* ]]; then
 	rm -f "$HOME/.local/share/applications/$APP_NAME.desktop" 2>/dev/null || true
 	update-desktop-database ~/.local/share/applications >/dev/null 2>&1 || true
 fi
