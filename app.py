@@ -34,7 +34,7 @@ Wrong launch! ebook2audiobook must run in its own virtual environment!
 NOTE: If you are running a Docker so you are probably using an old version of ebook2audiobook.
 To solve this issue go to download the new version at https://github.com/DrewThomasson/ebook2audiobook
 If the directory python_env does not exist in the ebook2audiobook root directory,
-run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+run your command with "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
 to install it all automatically.
 {install_info}
 ***********'''
@@ -47,7 +47,7 @@ def check_python_version()->bool:
         error = f'''***********
 Wrong launch: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
 In order to install and/or use ebook2audiobook correctly you must delete completly the folder python_env
-and run "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
+and run "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
 {install_info}
 ***********'''
         print(error)
@@ -92,14 +92,14 @@ Windows native mode:
     ebook2audiobook.cmd --headless --ebook '/path/to/file' --language eng
 Linux/Mac natvie mode:
     Gradio/GUI:
-    ./ebook2audiobook.sh
+    ./ebook2audiobook.command
     Headless mode:
-    ./ebook2audiobook.sh --headless --ebook '/path/to/file' --language eng
+    ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 Docker build image:
     Windows:
     ebook2audiobook.cmd --script_mode build_docker
     Linux/Mac
-    ./ebook2audiobook.sh --script_mode build_docker
+    ./ebook2audiobook.command --script_mode build_docker
 Docker run image:
     Gradio/GUI:
         CPU:
