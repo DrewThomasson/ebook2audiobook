@@ -803,10 +803,14 @@ class DeviceInstaller():
                 for pkg_name, package in missing_packages:
                     try:
                         cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir']
-                        install_target = package.replace('-e ', '').strip()
-                        if '/' in install_target:
-                            install_target = re.split(r'[<>=]', install_target, maxsplit=1)[0].strip()
-                        cmd.append(install_target)
+                        if package.startswith('-e '):
+                            path = package[3:].strip()
+                            cmd.extend(['-e', os.path.abspath(path)])
+                        else:
+                            install_target = package
+                            if '/' in install_target:
+                                install_target = re.split(r'[<>=]', install_target, maxsplit=1)[0].strip()
+                            cmd.append(install_target)
                         subprocess.check_call(cmd)
                     except subprocess.CalledProcessError as e:
                         error = f'Failed to install {package}: {e}'
