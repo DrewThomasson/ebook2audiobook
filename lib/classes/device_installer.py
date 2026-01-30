@@ -642,7 +642,7 @@ class DeviceInstaller():
         name, tag, msg = (v.strip() if isinstance(v, str) else v for v in (name, tag, msg))
         return (name, tag, msg)
 
-    def version_pkg(pkg_name:str, local_path:str|None=None)->str|None:
+    def version_pkg(self, pkg_name:str, local_path:str|None=None)->str|None:
         try:
             return version(pkg_name)
         except PackageNotFoundError:
@@ -752,7 +752,7 @@ class DeviceInstaller():
                         print(msg)
                         missing_packages.append((pkg_name, package))
                     continue
-                installed_version = version_pkg(pkg_name, local_path)
+                installed_version = self.version_pkg(pkg_name, local_path)
                 if not installed_version:
                     error = f'{pkg_name} is not installed.'
                     print(error)
