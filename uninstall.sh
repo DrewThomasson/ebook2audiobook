@@ -89,14 +89,12 @@ if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 fi
 
 # =========================================================
-# DELETE APPLICATION CONTENTS
+# DELETE APPLICATION CONTENTS (SHELL-AGNOSTIC)
 # =========================================================
 if [[ -d "$SCRIPT_DIR" ]]; then
 	echo "[INFO] Removing application contents from:"
 	echo "       $SCRIPT_DIR"
-	shopt -s dotglob nullglob
-	rm -rf "$SCRIPT_DIR"/*
-	shopt -u dotglob nullglob
+	rm -rf "$SCRIPT_DIR"
 fi
 
 # =========================================================
