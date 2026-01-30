@@ -7,6 +7,9 @@ set -euo pipefail
 CURRENT_PYVENV=""
 SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
 
+# =========================================================
+# FORCE ZSH ON MACOS (Finder-friendly)
+# =========================================================
 if [[ "${OSTYPE:-}" == darwin* && "$SWITCHED_TO_ZSH" -eq 0 && "$(ps -p $$ -o comm= 2>/dev/null || true)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
 	exec env zsh "$0" "$@"
@@ -22,7 +25,7 @@ echo "========================================"
 echo
 
 # =========================================================
-# OPTIONAL INTERACTIVE PAUSE (SAFE)
+# OPTIONAL INTERACTIVE PAUSE
 # =========================================================
 if [[ -t 0 ]]; then
 	printf "Press Enter to continue or Ctrl+C to abort..."
@@ -44,6 +47,7 @@ fi
 APP_NAME="ebook2audiobook"
 SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
+
 CONDA_HOME="$HOME/Miniforge3"
 CONDA_BIN_PATH="$CONDA_HOME/bin"
 
@@ -72,20 +76,34 @@ echo
 # =========================================================
 if [[ "${OSTYPE:-}" == darwin* ]]; then
 	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
-	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
-	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
+
+	echo "[INFO] Removing macOS application bundle and desktop aliases"
+
+	# Remove app bundle
 	rm -rf "$APP_BUNDLE" 2>/dev/null || true
-	if [[ -n "${DESKTOP_DIR:-}" && -e "$DESKTOP_SHORTCUT" ]]; then
-		rm -f "$DESKTOP_SHORTCUT" 2>/dev/null || true
-	fi
+
+	# Remove Finder aliases / dragged app links from Desktop
+	osascript >/dev/null 2>&1 <<EOF || true
+tell application "Finder"
+	set desktopItems to every item of desktop
+	repeat with i in desktopItems
+		try
+			if (original item of i as text) contains "$APP_NAME.app" then
+				delete i
+			end if
+		end try
+	end repeat
+end tell
+EOF
+
 elif [[ "${OSTYPE:-}" == linux* ]]; then
 	MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
 	DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
 	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
+
 	rm -f "$MENU_ENTRY" 2>/dev/null || true
-	if [[ -n "${DESKTOP_DIR:-}" && -e "$DESKTOP_SHORTCUT" ]]; then
-		rm -f "$DESKTOP_SHORTCUT" 2>/dev/null || true
-	fi
+	rm -f "$DESKTOP_SHORTCUT" 2>/dev/null || true
+
 	if command -v update-desktop-database >/dev/null 2>&1; then
 		update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
 	fi
@@ -103,7 +121,7 @@ if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 fi
 
 # =========================================================
-# DELETE APPLICATION CONTENTS (SHELL-AGNOSTIC)
+# DELETE APPLICATION CONTENTS
 # =========================================================
 if [[ -d "$SCRIPT_DIR" ]]; then
 	echo "[INFO] Removing application contents from:"
@@ -112,7 +130,7 @@ if [[ -d "$SCRIPT_DIR" ]]; then
 fi
 
 # =========================================================
-# FINAL USER MESSAGE
+# FINAL MESSAGE
 # =========================================================
 echo
 echo "================================================"
