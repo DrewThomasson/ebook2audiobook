@@ -71,10 +71,24 @@ echo
 # DESKTOP / MENU CLEANUP
 # =========================================================
 if [[ "${OSTYPE:-}" == darwin* ]]; then
-	rm -rf "$HOME/Applications/$APP_NAME.app" 2>/dev/null || true
+	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
+	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
+	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
+	rm -rf "$APP_BUNDLE" 2>/dev/null || true
+	if [[ -n "${DESKTOP_DIR:-}" && -e "$DESKTOP_SHORTCUT" ]]; then
+		rm -f "$DESKTOP_SHORTCUT" 2>/dev/null || true
+	fi
 elif [[ "${OSTYPE:-}" == linux* ]]; then
-	rm -f "$HOME/.local/share/applications/$APP_NAME.desktop" 2>/dev/null || true
-	update-desktop-database ~/.local/share/applications >/dev/null 2>&1 || true
+	MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
+	DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
+	rm -f "$MENU_ENTRY" 2>/dev/null || true
+	if [[ -n "${DESKTOP_DIR:-}" && -e "$DESKTOP_SHORTCUT" ]]; then
+		rm -f "$DESKTOP_SHORTCUT" 2>/dev/null || true
+	fi
+	if command -v update-desktop-database >/dev/null 2>&1; then
+		update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
+	fi
 fi
 
 # =========================================================
