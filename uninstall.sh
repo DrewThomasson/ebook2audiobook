@@ -12,6 +12,8 @@ echo "Press any key to continue or Ctrl+C to abort..."
 read -n 1 -s
 echo
 
+pause
+
 # =========================================================
 # ZSH HANDOFF (macOS)
 # =========================================================
