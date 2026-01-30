@@ -85,10 +85,9 @@ if [[ "${OSTYPE:-}" == darwin* ]]; then
 	# Remove Finder aliases / dragged app links from Desktop
 	osascript >/dev/null 2>&1 <<EOF || true
 tell application "Finder"
-	set desktopItems to every item of desktop
-	repeat with i in desktopItems
+	repeat with i in (every item of desktop)
 		try
-			if (original item of i as text) contains "$APP_NAME.app" then
+			if (name of i) is "$APP_NAME" or (name of i) is "$APP_NAME.app" then
 				delete i
 			end if
 		end try
