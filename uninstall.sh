@@ -1,1 +1,1 @@
-uninstall.cmd
+uninstall.command
