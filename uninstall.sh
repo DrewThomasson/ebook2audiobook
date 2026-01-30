@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 
 # =========================================================
+# OPTIONAL HARDENING (BASH + ZSH SAFE)
+# =========================================================
+set -euo pipefail 2>/dev/null || true
+
+if [[ -z "${BASH_VERSION:-}" && -z "${ZSH_VERSION:-}" ]]; then
+	echo "This script must be run with bash or zsh"
+	exit 1
+fi
+
+# =========================================================
 # PRESS KEY TO CONTINUE (BASH + ZSH SAFE)
 # =========================================================
 echo
@@ -8,11 +18,9 @@ echo "========================================"
 echo "  ebook2audiobook – Uninstaller"
 echo "========================================"
 echo
-echo "Press any key to continue or Ctrl+C to abort..."
-read -n 1 -s
+printf "Press any key to continue or Ctrl+C to abort..."
+IFS= read -r -k 1 _key
 echo
-
-pause
 
 # =========================================================
 # ZSH HANDOFF (macOS)
@@ -25,9 +33,9 @@ fi
 # =========================================================
 # SCRIPT PATH RESOLUTION (BASH + ZSH)
 # =========================================================
-if [[ -n "$BASH_SOURCE" ]]; then
+if [[ -n "${BASH_SOURCE:-}" ]]; then
 	script_path="${BASH_SOURCE[0]}"
-elif [[ -n "$ZSH_VERSION" ]]; then
+elif [[ -n "${ZSH_VERSION:-}" ]]; then
 	script_path="${(%):-%x}"
 else
 	script_path="$0"
@@ -81,7 +89,7 @@ if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 fi
 
 # =========================================================
-# DELETE APPLICATION CONTENTS (CMD-LIKE LOGIC)
+# DELETE APPLICATION CONTENTS
 # =========================================================
 if [[ -d "$SCRIPT_DIR" ]]; then
 	echo "[INFO] Removing application contents from:"
@@ -92,7 +100,7 @@ if [[ -d "$SCRIPT_DIR" ]]; then
 fi
 
 # =========================================================
-# FINAL USER MESSAGE (OPTION B)
+# FINAL USER MESSAGE
 # =========================================================
 echo
 echo "================================================"
