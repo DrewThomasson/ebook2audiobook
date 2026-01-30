@@ -643,10 +643,11 @@ class DeviceInstaller():
         return (name, tag, msg)
 
     def version_pkg(self, pkg_name:str, local_path:str|None=None)->str|None:
-        try:
-            return version(pkg_name)
-        except PackageNotFoundError:
-            pass
+        if pkg_name:
+            try:
+                return version(pkg_name)
+            except PackageNotFoundError:
+                pass
         if not local_path or not os.path.isdir(local_path):
             return None
         pyproject = os.path.join(local_path, "pyproject.toml")
@@ -661,7 +662,7 @@ class DeviceInstaller():
                 pass
         if os.path.exists(setup_py):
             try:
-                with open(setup_py, "r", encoding="utf-8", errors="ignore") as f:
+                with open(setup_py, "r", encoding = "utf-8", errors = "ignore") as f:
                     m = re.search(r"version\s*=\s*['\"]([^'\"]+)['\"]", f.read())
                     if m:
                         return m.group(1)
