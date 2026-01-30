@@ -1,1 +1,0 @@
-ebook2audiobook.command
