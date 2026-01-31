@@ -11,7 +11,7 @@ _lock = threading.Lock()
 
 
 if TYPE_CHECKING:
-    from torch import Tensor
+    from torch import Tensor, Dtype
     from torch.nn import Module
 
 class TTSUtils:
@@ -52,7 +52,7 @@ class TTSUtils:
             error = f'self._load_xtts_builtin_list() failed: {e}'
             raise RuntimeError(error)
 
-    def _apply_gpu_policy(self, enough_vram:bool, seed:int)->torch.dtype:
+    def _apply_gpu_policy(self, enough_vram:bool, seed:int)->'Dtype':
         import torch
         using_gpu = self.session['device'] != devices['CPU']['proc']
         device = self.session['device']
