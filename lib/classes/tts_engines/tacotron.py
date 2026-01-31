@@ -81,6 +81,8 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
+            import torch
+            import torchaudio
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
