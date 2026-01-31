@@ -67,9 +67,7 @@ if defined REMOVE_CONDA (
 	if exist "%CONDA_HOME%" (
 		echo Removing Miniforge3 from:
 		echo   %CONDA_HOME%
-		start "" cmd /c ^
-		"ping 127.0.0.1 -n 3 >nul ^
-		& rd /s /q ""%CONDA_HOME%"" >nul 2>&1"
+		start "" cmd /c "ping 127.0.0.1 -n 3 >nul & rd /s /q ""%CONDA_HOME%"" >nul 2>&1"
 	)
 )
 
@@ -91,11 +89,7 @@ if defined REMOVE_SCOOP (
 if defined REMOVE_SCOOP (
 	echo Removing Scoop from:
 	echo   %SCOOP_HOME%
-	start "" cmd /c ^
-	"cd /d %%TEMP%% ^
-	& ping 127.0.0.1 -n 3 >nul ^
-	& if exist ""%SCOOP_HOME%\shims\scoop.cmd"" ""%SCOOP_HOME%\shims\scoop.cmd"" uninstall -y scoop >nul 2>&1 ^
-	& rd /s /q ""%SCOOP_HOME%"" >nul 2>&1"
+	start "" cmd /c "cd /d %%TEMP%% & ping 127.0.0.1 -n 3 >nul & if exist ""%SCOOP_HOME%\shims\scoop.cmd"" ""%SCOOP_HOME%\shims\scoop.cmd"" uninstall -y scoop >nul 2>&1 & rd /s /q ""%SCOOP_HOME%"" >nul 2>&1"
 )
 
 :: ========================================================
@@ -125,29 +119,11 @@ timeout /t 4 >nul
 	echo setlocal EnableExtensions
 	echo set "TARGET=%REAL_INSTALL_DIR%"
 	echo cd /d %%TEMP%%
-	echo.
-	echo rem === wait for parent process to fully exit ===
 	echo ping 127.0.0.1 -n 6 ^>nul
-	echo.
-	echo rem === clear attributes ===
-	echo if exist "%%TARGET%%" (
-	echo ^  attrib -r -s -h "%%TARGET%%" /s /d ^>nul 2^>^&1
-	echo )
-	echo.
-	echo rem === take ownership + full access ===
-	echo if exist "%%TARGET%%" (
-	echo ^  takeown /f "%%TARGET%%" /r /d y ^>nul 2^>^&1
-	echo ^  icacls "%%TARGET%%" /grant *S-1-1-0:F /t ^>nul 2^>^&1
-	echo )
-	echo.
-	echo rem === retry deletion loop ===
-	echo for %%%%I in (1 2 3 4 5) do (
-	echo ^  if not exist "%%TARGET%%" goto done
-	echo ^  rd /s /q "%%TARGET%%" ^>nul 2^>^&1
-	echo ^  ping 127.0.0.1 -n 3 ^>nul
-	echo )
-	echo.
-	echo :done
+	echo if exist "%%TARGET%%" attrib -r -s -h "%%TARGET%%" /s /d ^>nul 2^>^&1
+	echo if exist "%%TARGET%%" takeown /f "%%TARGET%%" /r /d y ^>nul 2^>^&1
+	echo if exist "%%TARGET%%" icacls "%%TARGET%%" /grant *S-1-1-0:F /t ^>nul 2^>^&1
+	echo for %%%%I in (1 2 3 4 5) do rd /s /q "%%TARGET%%" ^>nul 2^>^&1
 	echo del /f /q "%%~f0"
 ) > "%HELPER%"
 
