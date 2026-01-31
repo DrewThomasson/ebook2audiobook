@@ -433,9 +433,7 @@ function install_programs {
 		elif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then
 			if ! command -v un-get &>/dev/null; then
 				echo "  → Installing un-get plugin..."
-				curl -L -o /tmp/un-get.plg https://raw.githubusercontent.com/ich777/un-get/master/un-get.plg
-				installplg /tmp/un-get.plg
-				rm -f /tmp/un-get.plg
+				installplg ./ext/app/un-get.plg
 				# Add the two best repos for Unraid 7 (current as of Dec 2025)
 				mkdir -p /boot/config/plugins/un-get
 				cat > /boot/config/plugins/un-get/sources.list <<EOF
@@ -469,7 +467,7 @@ EOF
 				echo -e "\e[32m=============== Calibre OK! ===============\e[0m"
 			else
 				# avoid conflict with calibre builtin lxml
-				python3 -m pip uninstall lxml -y 2>/dev/null
+				python3 -m pip uninstall -y lxml 2>/dev/null || true
 				echo -e "\e[33mInstalling Calibre...\e[0m"
 				if [[ "${OSTYPE-}" == darwin* ]]; then
 					eval "$PACK_MGR --cask calibre"
@@ -491,10 +489,13 @@ EOF
 				fi
 			fi	
 		elif [[ "$program" == "rust" || "$program" == "rustc" ]]; then
-			curl -fL "$RUST_INSTALLER_URL" -o rustup-init.sh
-			sh rustup-init.sh -y
-			rm -f rustup-init.sh
-			source $HOME/.cargo/env
+			RUSTUP_TMP="$(mktemp)"
+			curl -fL "$RUST_INSTALLER_URL" -o "$RUSTUP_TMP" || return 1
+			sh "$RUSTUP_TMP" -y
+			rm -f "$RUSTUP_TMP"
+			if [[ -f "$HOME/.cargo/env" ]]; then
+				source "$HOME/.cargo/env"
+			fi
 			if command -v $program &>/dev/null; then
 				echo -e "\e[32m=============== $program OK! ===============\e[0m"
 			else
