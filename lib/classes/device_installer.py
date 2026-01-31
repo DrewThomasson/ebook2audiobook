@@ -650,42 +650,11 @@ class DeviceInstaller():
                 pass
         if not local_path or not os.path.isdir(local_path):
             return None
-        if not pkg_name:
-            pkg_name = os.path.basename(local_path)
-        pyproject = os.path.join(local_path, "pyproject.toml")
-        setup_py = os.path.join(local_path, "setup.py")
-        if os.path.exists(pyproject):
+        version_file = os.path.join(local_path, "version.txt")
+        if os.path.exists(version_file):
             try:
-                import tomllib
-                with open(pyproject, "rb") as f:
-                    data = tomllib.load(f)
-                return data.get("project", {}).get("version")
-            except Exception:
-                pass
-        if os.path.exists(setup_py):
-            try:
-                with open(setup_py, "r", encoding = "utf-8", errors = "ignore") as f:
-                    m = re.search(r"version\s*=\s*['\"]([^'\"]+)['\"]", f.read())
-                    if m:
-                        return m.group(1)
-            except Exception:
-                pass
-        init_py = os.path.join(local_path, pkg_name, "__init__.py")
-        if os.path.exists(init_py):
-            try:
-                with open(init_py, "r", encoding = "utf-8", errors = "ignore") as f:
-                    m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", f.read())
-                    if m:
-                        return m.group(1)
-            except Exception:
-                pass
-        pkg_file = os.path.join(local_path, pkg_name + ".py")
-        if os.path.exists(pkg_file):
-            try:
-                with open(pkg_file, "r", encoding = "utf-8", errors = "ignore") as f:
-                    m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", f.read())
-                    if m:
-                        return m.group(1)
+                with open(version_file, "r", encoding = "utf-8") as f:
+                    return f.read().strip()
             except Exception:
                 pass
         return None
