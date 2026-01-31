@@ -402,12 +402,12 @@ function install_programs {
 				echo "homebrew" >> "$INSTALLED_LOG"
 			fi
 		fi
-	if ! brew list --versions llvm@15 >/dev/null 2>&1; then
-		echo "Installing llvm@15 (required for numba/llvmlite on macOS)"
-		brew install llvm@15
-		export LLVM_DIR="$(brew --prefix llvm@15)/lib/cmake/llvm"
-		export PATH="$(brew --prefix llvm@15)/bin:$PATH"
-	fi
+		if ! brew list --versions llvm@15 >/dev/null 2>&1; then
+			echo "Installing llvm@15 (required for numba/llvmlite on macOS)"
+			brew install llvm@15
+			export LLVM_DIR="$(brew --prefix llvm@15)/lib/cmake/llvm"
+			export PATH="$(brew --prefix llvm@15)/bin:$PATH"
+		fi
 	else
 		if [[ "$SUDO" == "sudo" ]]; then
 			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
@@ -474,11 +474,14 @@ EOF
 				if [[ "${OSTYPE-}" == darwin* ]]; then
 					eval "$PACK_MGR --cask calibre"
 				else
+					tmp="$(mktemp)"
+					$WGET -nv -O "$tmp" "$CALIBRE_INSTALLER_URL" || return 1
 					if [[ "$SUDO" == "sudo" ]]; then
-						$SUDO -v && $WGET -nv -O- $CALIBRE_INSTALLER_URL | $SUDO sh /dev/stdin
+						$SUDO sh "$tmp"
 					else
-						$WGET -nv -O- $CALIBRE_INSTALLER_URL | sh /dev/stdin
+						sh "$tmp"
 					fi
+					rm -f "$tmp"
 				fi
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
 				if command -v $program >/dev/null 2>&1; then
@@ -488,7 +491,9 @@ EOF
 				fi
 			fi	
 		elif [[ "$program" == "rust" || "$program" == "rustc" ]]; then
-			curl --proto '=https' --tlsv1.2 -sSf $RUST_INSTALLER_URL | sh -s -- -y
+			curl -fL "$RUST_INSTALLER_URL" -o rustup-init.sh
+			sh rustup-init.sh -y
+			rm -f rustup-init.sh
 			source $HOME/.cargo/env
 			if command -v $program &>/dev/null; then
 				echo -e "\e[32m=============== $program OK! ===============\e[0m"

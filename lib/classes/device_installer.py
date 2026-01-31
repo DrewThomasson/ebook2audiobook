@@ -690,7 +690,7 @@ class DeviceInstaller():
         if op == "<": return left < right
         return False
 
-    def install_python_packages(self) -> bool:
+    def install_python_packages(self)->int:
         if not os.path.exists(requirements_file):
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)

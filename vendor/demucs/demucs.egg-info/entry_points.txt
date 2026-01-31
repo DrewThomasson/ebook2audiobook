@@ -1,2 +1,0 @@
-[console_scripts]
-demucs = demucs.separate:main

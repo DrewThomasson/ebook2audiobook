@@ -67,7 +67,7 @@ set "TEMP=%SCRIPT_DIR%\tmp"
 set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
 set "SCOOP_HOME=%USERPROFILE%\scoop"
-set "SCOOP_SHIMS=%SCOOP_HOME%\shims"%USERPROFILE%\scoop
+set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
 set "CONDA_HOME=%USERPROFILE%\Miniforge3"
 set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
@@ -422,8 +422,8 @@ if "%CURRENT_ENV%"=="" (
 		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
 		call conda activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-		::call :install_python_packages
-		::if errorlevel 1 goto :failed
+		call :install_python_packages
+		if errorlevel 1 goto :failed
 		call conda deactivate
 		call conda deactivate
 	)
@@ -649,8 +649,8 @@ if defined arguments.help (
 			call :build_docker_image "%device_info%"
 			if errorlevel 1 goto :failed
 		) else (
-			::call :install_python_packages
-			::if errorlevel 1 goto :failed
+			call :install_python_packages
+			if errorlevel 1 goto :failed
 			call :install_device_packages "%DOCKER_DEVICE_STR%"
 			if errorlevel 1 goto :failed
 			call :check_sitecustomized
