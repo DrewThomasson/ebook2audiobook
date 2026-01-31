@@ -239,7 +239,7 @@ class TTSUtils:
 
     def _load_engine_zs(self)->Any:
         try:
-            msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient...'
+            msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
             self._cleanup_memory()
             engine_zs = loaded_tts.get(self.tts_zs_key, False)
@@ -268,7 +268,7 @@ class TTSUtils:
             if self.session['language'] in default_engine_settings[xtts].get('languages', {}):
                 default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                 if os.path.exists(default_text_file):
-                    msg = f"Converting builtin eng voice to {self.session['language']}..."
+                    msg = f"Converting builtin eng voice to {self.session['language']}…"
                     print(msg)
                     key = f'{xtts}-internal'
                     default_text = Path(default_text_file).read_text(encoding='utf-8')
@@ -495,7 +495,7 @@ class TTSUtils:
         try:
             import gradio as gr
             from tqdm import tqdm
-            msg = 'VTT file creation started...'
+            msg = 'VTT file creation started…'
             print(msg)
             audio_sentences_dir = Path(audio_dir)
             audio_files = sorted(
@@ -519,10 +519,10 @@ class TTSUtils:
             vtt_blocks = []
             if self.session['is_gui_process']:
                 progress_bar = gr.Progress(track_tqdm=False)
-            msg = 'Get duration of each sentence...'
+            msg = 'Get duration of each sentence…'
             print(msg)
             durations = get_audiolist_duration([str(p) for p in audio_files])
-            msg = 'Create VTT blocks...'
+            msg = 'Create VTT blocks…'
             print(msg)
             with tqdm(total=audio_files_length, unit='files') as t:
                 for idx, file in enumerate(audio_files):
@@ -545,7 +545,7 @@ class TTSUtils:
                             desc=f'Writing vtt idx {idx}'
                         )
                     t.update(1)
-            msg = 'Write VTT blocks into file...'
+            msg = 'Write VTT blocks into file…'
             print(msg)
             with open(vtt_path, 'w', encoding='utf-8') as f:
                 f.write('WEBVTT\n\n')
