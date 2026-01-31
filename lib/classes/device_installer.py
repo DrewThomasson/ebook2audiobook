@@ -678,6 +678,15 @@ class DeviceInstaller():
                         return m.group(1)
             except Exception:
                 pass
+        pkg_file = os.path.join(local_path, pkg_name + ".py")
+        if os.path.exists(pkg_file):
+            try:
+                with open(pkg_file, "r", encoding = "utf-8", errors = "ignore") as f:
+                    m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", f.read())
+                    if m:
+                        return m.group(1)
+            except Exception:
+                pass
         return None
 
     def version_tuple(self, v:str, max_parts:int=3)->tuple:
