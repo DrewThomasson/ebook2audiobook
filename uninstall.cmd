@@ -124,7 +124,7 @@ echo Cleaning repository content...
 
 for %%F in ("%REAL_INSTALL_DIR%\*") do (
 	if /i not "%%~nxF"=="%~nx0" (
-		if exist "%%F\" (
+		if exist "%%F\." (
 			echo   [DIR] %%~nxF
 			rd /s /q "%%F" >nul 2>&1
 		) else (
