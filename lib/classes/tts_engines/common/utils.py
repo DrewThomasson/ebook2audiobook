@@ -13,6 +13,7 @@ _lock = threading.Lock()
 if TYPE_CHECKING:
     from torch import Tensor, Dtype
     from torch.nn import Module
+    from torchaudio.transforms import Resample
 
 class TTSUtils:
 
@@ -366,7 +367,7 @@ class TTSUtils:
         else:
             raise TypeError(f'_tensor_type() error: Unsupported type for audio_data: {type(audio_data)}')
             
-    def _get_resampler(self,orig_sr:int,target_sr:int)->torchaudio.transforms.Resample:
+    def _get_resampler(self,orig_sr:int,target_sr:int)->'Resample':
         import torchaudio
         key=(orig_sr,target_sr)
         if key not in self.resampler_cache:
