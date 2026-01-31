@@ -24,7 +24,7 @@ class TTSUtils:
             torch.cuda.ipc_collect()
             torch.cuda.synchronize()
 
-    def _loaded_tts_size_gb(self, loaded_tts:Dict[str, Module])->float:
+    def _loaded_tts_size_gb(self, loaded_tts:Dict[str, 'Module'])->float:
         total_bytes = 0
         for model in loaded_tts.values():
             try:
@@ -354,7 +354,7 @@ class TTSUtils:
             print(error)
             return False
         
-    def _tensor_type(self,audio_data:Any)->torch.Tensor:
+    def _tensor_type(self,audio_data:Any)->'Tensor':
         import torch
         import numpy as np
         if isinstance(audio_data, torch.Tensor):
