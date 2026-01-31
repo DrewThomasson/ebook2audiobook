@@ -757,8 +757,20 @@ class DeviceInstaller():
                         missing_packages.append(raw_pkg)
                     continue
                 if local_path:
-                    if not self.version_pkg(None, local_path):
-                        print(f'{local_path} is not installed.')
+                    pkg_name = os.path.basename(local_path)
+                    vendor_version = self.version_pkg(None, local_path)
+                    if not vendor_version:
+                        print(f'{local_path} has no detectable version.')
+                        missing_packages.append(raw_pkg)
+                        continue
+                    try:
+                        installed_version = version(pkg_name)
+                    except PackageNotFoundError:
+                        print(f'{pkg_name} is not installed.')
+                        missing_packages.append(raw_pkg)
+                        continue
+                    if installed_version != vendor_version:
+                        print(f'{pkg_name} version mismatch: installed {installed_version} != vendor {vendor_version}.')
                         missing_packages.append(raw_pkg)
                     continue
                 installed_version = self.version_pkg(pkg_name, None)
