@@ -77,12 +77,12 @@ echo
 if [[ "${OSTYPE:-}" == darwin* ]]; then
 	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 
-	echo "[INFO] Removing macOS application bundle and desktop aliases"
+	echo "[INFO] Removing macOS application bundle and desktop shortcuts"
 
 	# Remove app bundle
 	rm -rf "$APP_BUNDLE" 2>/dev/null || true
 
-	# Remove Finder aliases / dragged app links from Desktop
+	# Remove Finder desktop shortcuts by DISPLAY NAME (this works)
 	osascript >/dev/null 2>&1 <<EOF || true
 tell application "Finder"
 	repeat with i in (every item of desktop)
