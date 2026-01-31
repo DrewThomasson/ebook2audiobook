@@ -446,29 +446,14 @@ exit /b 0
 :install_python_packages
 echo [ebook2audiobook] Installing dependencies...
 "%PS_EXE%" %PS_ARGS% -Command ^
-@"
-python - << 'EOF'
-import sys
-from lib.classes.device_installer import DeviceInstaller
-device = DeviceInstaller()
-exit_code = device.install_python_packages()
-sys.exit(exit_code)
-EOF
-"@
+"python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
 exit /b %errorlevel%
+
 
 :install_device_packages
 set "arg=%~1"
 "%PS_EXE%" %PS_ARGS% -Command ^
-@"
-python - << 'EOF'
-import sys
-from lib.classes.device_installer import DeviceInstaller
-device = DeviceInstaller()
-exit_code = device.install_device_packages(r"%arg%")
-sys.exit(exit_code)
-EOF
-"@
+"python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(r'%arg%'))\""
 exit /b %errorlevel%
 
 :check_sitecustomized
