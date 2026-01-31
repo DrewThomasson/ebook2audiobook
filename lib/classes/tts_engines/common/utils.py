@@ -164,23 +164,19 @@ class TTSUtils:
         return amp_dtype
 
     def _load_api(self, key:str, model_path:str)->Any:
-        try:
-            with _lock:
-                from TTS.api import TTS as TTSEngine
-                engine = loaded_tts.get(key, False)
-                if not engine:
-                    engine = TTSEngine(model_path)
-                if engine:
-                    vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
-                    self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-                    models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
-                    if self.session['free_vram_gb'] > models_loaded_size_gb:
-                        loaded_tts[key] = engine
-                return engine
-        except Exception as e:
-            error = f'_load_api() error: {e}'
-            print(error)
-            return None
+        with _lock:
+            from TTS.api import TTS as TTSEngine
+            engine = loaded_tts.get(key)
+            if not engine:
+                engine = TTSEngine(model_path)
+            if not engine:
+                raise RuntimeError("TTSEngine returned None")
+            vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
+            self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+            models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
+            if self.session['free_vram_gb'] > models_loaded_size_gb:
+                loaded_tts[key] = engine
+            return engine
 
     def _load_checkpoint(self,**kwargs:Any)->Any:
         try:

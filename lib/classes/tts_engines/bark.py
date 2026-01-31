@@ -28,101 +28,32 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             raise ValueError(error)
 
     def load_engine(self)->Any:
-        try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        print(msg)
+        self._cleanup_memory()
+        engine = loaded_tts.get(self.tts_key)
+        if not engine:
+            if self.session['custom_model'] is not None:
+                error = f"{self.session['tts_engine']} custom model not implemented yet!"
+                raise NotImplementedError(error)
+            try:
+                model_cfg = self.models[self.session['fine_tuned']]
+                model_path = model_cfg['repo']
+            except KeyError as e:
+                error = f"Invalid fine_tuned model '{self.session['fine_tuned']}'"
+                raise KeyError(error) from e
+            try:
+                engine = self._load_api(self.tts_key, model_path)
+            except Exception as e:
+                error = 'load_engine(): _load_api() failed'
+                raise RuntimeError(error) from e
+        if engine:
+            msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
-            self._cleanup_memory()
-            engine = loaded_tts.get(self.tts_key, False)
-            if not engine:     
-                if self.session['custom_model'] is not None:
-                    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                    print(msg)
-                else:
-                    """
-                    hf_repo = self.models[self.session['fine_tuned']]['repo']
-                    hf_sub = self.models[self.session['fine_tuned']]['sub']
-                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.models[self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
-                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.models[self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
-                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.models[self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
-                    checkpoint_dir = os.path.dirname(text_model_path)
-                    engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir)
-                    """
-                    model_path = self.models[self.session['fine_tuned']]['repo']
-                    engine = self._load_api(self.tts_key, model_path)
-            if engine and engine is not None:
-                msg = f'TTS {self.tts_key} Loaded!'
-                return engine
-            else:
-                error = 'load_engine() failed!'
-                raise ValueError(error)
-        except Exception as e:
-            error = f'load_engine() error: {e}'
-            raise ValueError(error)
-    """
-    def _check_bark_npz(self, current_voice:str, bark_dir:str, speaker:str)->bool:
-        try:
-            if self.session['language'] in default_engine_settings[TTS_ENGINES['BARK']].get('languages', {}):
-                pth_voice_dir = os.path.join(bark_dir, speaker)
-                pth_voice_file = os.path.join(pth_voice_dir,f'{speaker}.pth')
-                if os.path.exists(pth_voice_file):
-                    return True
-                else:
-                    os.makedirs(pth_voice_dir, exist_ok=True)
-                    key = f"{TTS_ENGINES['BARK']}-internal"
-                    default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
-                    default_text = Path(default_text_file).read_text(encoding="utf-8")
-                    fine_tuned_params = {
-                        key.removeprefix("bark_"):cast_type(self.session[key])
-                        for key,cast_type in{
-                            "bark_text_temp":float,
-                            "bark_waveform_temp":float
-                        }.items()
-                        if self.session.get(key) is not None
-                    }
-                    with torch.no_grad():
-                        result = self.engine.synthesize(
-                            default_text,
-                            speaker_wav=current_voice,
-                            speaker=speaker,
-                            voice_dir=pth_voice_dir,
-                            **fine_tuned_params
-                        )
-                        
-                    with torch.no_grad():
-                        self.engine.to(device)
-                        if device == devices['CPU']['proc']:
-                            result = self.engine.synthesize(
-                                default_text,
-                                speaker_wav=current_voice,
-                                speaker=speaker,
-                                voice_dir=pth_voice_dir,
-                                **fine_tuned_params
-                            )
-                        else:
-                            with torch.autocast(
-                                device_type=device,
-                                dtype=self.amp_dtype
-                            ):
-                                result = self.engine.synthesize(
-                                    default_text,
-                                    speaker_wav=current_voice,
-                                    speaker=speaker,
-                                    voice_dir=pth_voice_dir,
-                                    **fine_tuned_params
-                                )
-                        self.engine.to(devices['CPU']['proc'])
-                    del result
-                    msg = f"Saved file: {pth_voice_file}"
-                    print(msg)
-                    return True
-            else:
-                return True
-        except Exception as e:
-            error = f'_check_bark_npz() error: {e}'
-            print(error)
-            return False
-    """
- 
+            return engine
+        error = 'load_engine(): engine is None'
+        raise RuntimeError(error)
+
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
             if self.engine:
@@ -136,12 +67,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
                 else:
                     bark_dir = os.path.join(os.path.dirname(self.params['current_voice']), 'bark')
-                    """
-                    if not self._check_bark_npz(self.params['current_voice'], bark_dir, self.speaker):
-                        error = 'Could not create pth voice file!'
-                        print(error)
-                        return False
-                    """
                 pth_voice_dir = os.path.join(bark_dir, self.speaker)
                 if not os.path.exists(pth_voice_dir):
                     os.makedirs(pth_voice_dir, exist_ok=True)
@@ -188,15 +113,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
                         with torch.no_grad():
-                            """
-                            result = self.engine.synthesize(
-                                part,
-                                #speaker_wav=self.params['current_voice'],
-                                speaker=self.speaker,
-                                voice_dir=pth_voice_dir,
-                                **fine_tuned_params
-                            )
-                            """
                             self.engine.to(device)
                             if device == devices['CPU']['proc']:
                                 audio_part = self.engine.tts(

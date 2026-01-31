@@ -33,32 +33,34 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
             self._cleanup_memory()
-            engine = loaded_tts.get(self.tts_key, False)
+            engine = loaded_tts.get(self.tts_key)
             if not engine:
                 if self.session['custom_model'] is not None:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                    print(msg)
-                else:
+                    raise NotImplementedError(msg)
+                try:
                     iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
                     sub_dict = self.models[self.session['fine_tuned']]['sub']
-                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
-                    if sub is not None:
-                        self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
-                        model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
-                        self.tts_key = model_path
-                        engine = self._load_api(self.tts_key, model_path)
-                    else:
+                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+                    if sub is None:
                         msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
-                        print(msg)
-            if engine and engine is not None:
-                msg = f'TTS {self.tts_key} Loaded!'
+                        raise KeyError(msg)
+                    self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
+                    model_path = self.models[self.session['fine_tuned']]['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
+                    self.tts_key = model_path
+                    engine = self._load_api(self.tts_key, model_path)
+                except Exception as e:
+                    error = f"load_engine(): language/sub resolution failed: {e}"
+                    raise RuntimeError(error) from e
+            if engine:
+                msg = f"TTS {self.tts_key} Loaded!"
+                print(msg)
                 return engine
-            else:
-                error = 'load_engine() failed!'
-                raise ValueError(error)
+            error = "load_engine(): engine is None"
+            raise RuntimeError(error)
         except Exception as e:
-            error = f'load_engine() error: {e}'
-            raise ValueError(error)
+            error = f"load_engine() error: {e}"
+            raise RuntimeError(error) from e
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:

@@ -29,28 +29,32 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             raise ValueError(error)
 
     def load_engine(self)->Any:
-        try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        print(msg)
+        self._cleanup_memory()
+        engine = loaded_tts.get(self.tts_key)
+        if not engine:
+            if self.session['custom_model'] is not None:
+                error = f"{self.session['tts_engine']} custom model not implemented yet!"
+                raise NotImplementedError(error)
+            try:
+                model_cfg = self.models[self.session['fine_tuned']]
+                model_path = model_cfg['repo'].replace("[lang]", self.session['language'])
+            except KeyError as e:
+                error = f"Invalid fine_tuned model '{self.session['fine_tuned']}'"
+                raise KeyError(error) from e
+            self.tts_key = model_path
+            try:
+                engine = self._load_api(self.tts_key, model_path)
+            except Exception as e:
+                error = 'load_engine(): _load_api() failed'
+                raise RuntimeError(error) from e
+        if engine:
+            msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
-            self._cleanup_memory()
-            engine = loaded_tts.get(self.tts_key, False)
-            if not engine:
-                if self.session['custom_model'] is not None:
-                    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                    print(msg)
-                else:
-                    model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
-                    self.tts_key = model_path
-                    engine = self._load_api(self.tts_key, model_path)
-            if engine and engine is not None:
-                msg = f'TTS {self.tts_key} Loaded!'
-                return engine
-            else:
-                error = 'load_engine() failed!'
-                raise ValueError(error)
-        except Exception as e:
-            error = f'load_engine() error: {e}'
-            raise ValueError(error)
+            return engine
+        error = 'load_engine(): engine is None'
+        raise RuntimeError(error)
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
