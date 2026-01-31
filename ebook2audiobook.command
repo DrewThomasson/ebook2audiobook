@@ -191,7 +191,7 @@ function open_desktop_app {
 		host=127.0.0.1
 		port=7860
 		url="http://$host:$port/"
-		timeout=30
+		timeout=120
 		start_time=$(date +%s)
 
 		while ! nc -z "$host" "$port" >/dev/null 2>&1; do
