@@ -6,7 +6,9 @@ from multiprocessing.managers import DictProxy
 
 from lib.conf import tts_dir, devices, default_audio_proc_format
 from lib.conf_models import TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, SML_TAG_PATTERN, loaded_tts, default_vc_model, default_engine_settings
+from lib.classes.tts_engines.common.utils import TTSUtils
 from lib.classes.tts_registry import TTSRegistry
+
 __all__ = [
     "os",
     "shutil",
