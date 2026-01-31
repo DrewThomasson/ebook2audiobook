@@ -93,7 +93,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
 - [Supported eBook Formats](#supported-ebook-formats)
-- [Output Formats](#output-formats)
+- [Output Formats](#output-and-process-formats)
 - [Updating to Latest Version](#updating-to-latest-version)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
