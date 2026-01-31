@@ -11,7 +11,8 @@ _lock = threading.Lock()
 
 
 if TYPE_CHECKING:
-    from torch import Tensor, Dtype
+    import torch
+    from torch import Tensor
     from torch.nn import Module
     from torchaudio.transforms import Resample
 
@@ -26,6 +27,7 @@ class TTSUtils:
             torch.cuda.synchronize()
 
     def _loaded_tts_size_gb(self, loaded_tts:Dict[str, 'Module'])->float:
+        from lib.utils.memory import model_size_bytes
         total_bytes = 0
         for model in loaded_tts.values():
             try:
@@ -38,6 +40,7 @@ class TTSUtils:
     def _load_xtts_builtin_list(self)->dict:
         try:
             import torch
+            from huggingface_hub import hf_hub_download
             if len(xtts_builtin_speakers_list) > 0:
                 return xtts_builtin_speakers_list
             speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTSv2']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
@@ -53,7 +56,7 @@ class TTSUtils:
             error = f'self._load_xtts_builtin_list() failed: {e}'
             raise RuntimeError(error)
 
-    def _apply_gpu_policy(self, enough_vram:bool, seed:int)->'Dtype':
+    def _apply_gpu_policy(self, enough_vram:bool, seed:int)->'torch.dtype':
         import torch
         using_gpu = self.session['device'] != devices['CPU']['proc']
         device = self.session['device']
@@ -478,6 +481,7 @@ class TTSUtils:
     def _build_vtt_file(self, all_sentences:list, audio_dir:str, vtt_path:str)->bool:
         try:
             import gradio as gr
+            from tqdm import tqdm
             msg = 'VTT file creation started...'
             print(msg)
             audio_sentences_dir = Path(audio_dir)
