@@ -16,24 +16,6 @@ if [[ "${OSTYPE:-}" == darwin* && "$SWITCHED_TO_ZSH" -eq 0 && "$(ps -p $$ -o com
 fi
 
 # =========================================================
-# HEADER
-# =========================================================
-echo
-echo "========================================"
-echo "  ebook2audiobook – Uninstaller"
-echo "========================================"
-echo
-
-# =========================================================
-# OPTIONAL INTERACTIVE PAUSE
-# =========================================================
-if [[ -t 0 ]]; then
-	printf "Press Enter to continue or Ctrl+C to abort..."
-	read -r _ || true
-	echo
-fi
-
-# =========================================================
 # SCRIPT PATH RESOLUTION (BASH + ZSH)
 # =========================================================
 if [[ -n "${BASH_SOURCE:-}" ]]; then
@@ -46,16 +28,41 @@ fi
 
 APP_NAME="ebook2audiobook"
 SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
+SCRIPT_NAME="$(basename "$script_path")"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 
 CONDA_HOME="$HOME/Miniforge3"
 CONDA_BIN_PATH="$CONDA_HOME/bin"
 
 # =========================================================
+# HEADER
+# =========================================================
+echo
+echo "========================================"
+echo "  $APP_NAME – Uninstaller"
+echo "========================================"
+echo "Install location:"
+echo "  $SCRIPT_DIR"
+echo
+
+# =========================================================
+# USER CONFIRMATION
+# =========================================================
+if [[ -t 0 ]]; then
+	echo "This will uninstall $APP_NAME."
+	echo "Components listed in .installed will be removed."
+	echo
+	printf "Press Enter to continue or Ctrl+C to abort..."
+	read -r _ || true
+	echo
+fi
+
+# =========================================================
 # SAFE PATH CLEANUP
 # =========================================================
 remove_from_path() {
 	local target="$1"
+	echo "Removing from PATH: $target"
 	IFS=':' read -r -a parts <<< "${PATH:-}"
 	PATH=""
 	for p in "${parts[@]}"; do
@@ -65,52 +72,76 @@ remove_from_path() {
 	export PATH
 }
 
-echo
-echo "========================================"
-echo "  Uninstalling $APP_NAME"
-echo "========================================"
-echo
-
 # =========================================================
-# DESKTOP / MENU CLEANUP
+# DESKTOP / MENU CLEANUP (macOS)
 # =========================================================
 if [[ "${OSTYPE:-}" == darwin* ]]; then
 	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 
-	echo "[INFO] Removing macOS application bundle and desktop shortcut"
+	echo "[INFO] Cleaning macOS shortcuts"
 
-	# Remove app bundle
-	rm -rf "$APP_BUNDLE" 2>/dev/null || true
+	if [[ -d "$APP_BUNDLE" ]]; then
+		echo "  [DIR] $APP_BUNDLE"
+		rm -rf "$APP_BUNDLE"
+	fi
 
-	# Resolve Desktop path in a language-safe way
 	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
 
-	# Remove desktop alias / shortcut (real file)
-	rm -f \
+	for f in \
 		"$DESKTOP_DIR/$APP_NAME" \
 		"$DESKTOP_DIR/$APP_NAME.app" \
-		"$DESKTOP_DIR/$APP_NAME.alias" \
-		2>/dev/null || true
+		"$DESKTOP_DIR/$APP_NAME.alias"
+	do
+		if [[ -e "$f" ]]; then
+			echo "  [FILE] $f"
+			rm -f "$f"
+		fi
+	done
 fi
 
 # =========================================================
-# MINIFORGE REMOVAL (ONLY IF INSTALLED BY APP)
+# PROCESS .installed (CONTROLLED REMOVAL)
 # =========================================================
+REMOVE_CONDA=0
+
 if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
-	if [[ -d "$CONDA_HOME" ]]; then
-		echo "[INFO] Removing Miniforge3 from: $CONDA_HOME"
-		rm -rf "$CONDA_HOME"
-	fi
+	REMOVE_CONDA=1
+fi
+
+# =========================================================
+# MINIFORGE REMOVAL
+# =========================================================
+if [[ "$REMOVE_CONDA" -eq 1 && -d "$CONDA_HOME" ]]; then
+	echo "[INFO] Removing Miniforge3:"
+	echo "  [DIR] $CONDA_HOME"
+	rm -rf "$CONDA_HOME"
 	remove_from_path "$CONDA_BIN_PATH"
 fi
 
 # =========================================================
-# DELETE APPLICATION CONTENTS
+# REMOVE CURRENT REPO CONTENT (EXCEPT THIS SCRIPT)
 # =========================================================
-if [[ -d "$SCRIPT_DIR" ]]; then
-	echo "[INFO] Removing application contents from:"
-	echo "       $SCRIPT_DIR"
-	rm -rf "$SCRIPT_DIR"
+echo
+echo "Cleaning repository content..."
+
+shopt -s dotglob nullglob
+for item in "$SCRIPT_DIR"/*; do
+	name="$(basename "$item")"
+	[[ "$name" == "$SCRIPT_NAME" ]] && continue
+
+	if [[ -d "$item" ]]; then
+		echo "  [DIR] $name"
+		rm -rf "$item"
+	elif [[ -f "$item" ]]; then
+		echo "  [FILE] $name"
+		rm -f "$item"
+	fi
+done
+shopt -u dotglob nullglob
+
+if [[ -f "$INSTALLED_LOG" ]]; then
+	echo "  [FILE] .installed"
+	rm -f "$INSTALLED_LOG"
 fi
 
 # =========================================================
@@ -118,10 +149,19 @@ fi
 # =========================================================
 echo
 echo "================================================"
-echo "  Uninstallation completed successfully."
-echo "  All application files have been removed."
-echo "  You may now close this terminal."
+echo "  Uninstallation completed."
+echo
+echo "  The application content has been removed."
+echo "  Please remove the empty repository folder manually:"
+echo
+echo "    $SCRIPT_DIR"
+echo
 echo "================================================"
 echo
+
+if [[ -t 0 ]]; then
+	printf "Press Enter to continue..."
+	read -r _ || true
+fi
 
 exit 0

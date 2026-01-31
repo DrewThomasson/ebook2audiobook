@@ -1,16 +1,6 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-echo.
-echo ========================================================
-echo   This will uninstall %APP_NAME%.
-echo   Components listed in .installed will be removed.
-echo.
-echo   Press a key to continue . . .
-echo ========================================================
-pause >nul
-echo.
-
 :: ========================================================
 :: CONFIG
 :: ========================================================
@@ -32,6 +22,18 @@ echo   %APP_NAME%  Uninstaller
 echo ========================================================
 echo Install location:
 echo   %REAL_INSTALL_DIR%
+echo.
+
+:: ========================================================
+:: USER CONFIRMATION
+:: ========================================================
+echo ========================================================
+echo   This will uninstall %APP_NAME%.
+echo   Components listed in .installed will be removed.
+echo.
+echo   Press a key to continue . . .
+echo ========================================================
+pause >nul
 echo.
 
 :: ========================================================
@@ -72,7 +74,7 @@ if defined REMOVE_CONDA (
 if defined REMOVE_CONDA (
 	if exist "%CONDA_HOME%" (
 		echo Removing Miniforge3:
-		echo   %CONDA_HOME%
+		echo   [DIR] %CONDA_HOME%
 		rd /s /q "%CONDA_HOME%" >nul 2>&1
 	)
 )
@@ -83,7 +85,7 @@ if defined REMOVE_CONDA (
 if defined REMOVE_SCOOP (
 	if exist "%SCOOP_HOME%" (
 		echo Removing Scoop:
-		echo   %SCOOP_HOME%
+		echo   [DIR] %SCOOP_HOME%
 		rd /s /q "%SCOOP_HOME%" >nul 2>&1
 	)
 )
@@ -103,8 +105,16 @@ if defined REMOVE_SCOOP (
 :: ========================================================
 :: REMOVE SHORTCUTS + REGISTRY
 :: ========================================================
-if exist "%STARTMENU_DIR%" rd /s /q "%STARTMENU_DIR%" >nul 2>&1
-if exist "%DESKTOP_LNK%" del /q "%DESKTOP_LNK%" >nul 2>&1
+if exist "%STARTMENU_DIR%" (
+	echo   [DIR] %STARTMENU_DIR%
+	rd /s /q "%STARTMENU_DIR%" >nul 2>&1
+)
+
+if exist "%DESKTOP_LNK%" (
+	echo   [FILE] %DESKTOP_LNK%
+	del /q "%DESKTOP_LNK%" >nul 2>&1
+)
+
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
 :: ========================================================
@@ -114,12 +124,20 @@ echo Cleaning repository content...
 
 for %%F in ("%REAL_INSTALL_DIR%\*") do (
 	if /i not "%%~nxF"=="%~nx0" (
-		rd /s /q "%%F" >nul 2>&1
-		del /f /q "%%F" >nul 2>&1
+		if exist "%%F\" (
+			echo   [DIR] %%~nxF
+			rd /s /q "%%F" >nul 2>&1
+		) else (
+			echo   [FILE] %%~nxF
+			del /f /q "%%F" >nul 2>&1
+		)
 	)
 )
 
-if exist "%INSTALLED_LOG%" del /f /q "%INSTALLED_LOG%" >nul 2>&1
+if exist "%INSTALLED_LOG%" (
+	echo   [FILE] .installed
+	del /f /q "%INSTALLED_LOG%" >nul 2>&1
+)
 
 :: ========================================================
 :: FINAL MESSAGE
@@ -135,7 +153,8 @@ echo     %REAL_INSTALL_DIR%
 echo.
 echo ========================================================
 echo.
-pause
+echo Press a key to continue . . .
+pause >nul
 
 exit /b
 
@@ -143,6 +162,7 @@ exit /b
 :: FUNCTIONS
 :: ========================================================
 :RemoveFromUserPath
+echo Removing from PATH: %~1
 set "TARGET=%~1"
 for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v PATH 2^>nul ^| find "PATH"') do set "USERPATH=%%B"
 set "NEWPATH="
