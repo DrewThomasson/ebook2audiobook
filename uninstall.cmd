@@ -11,9 +11,13 @@ set "REAL_INSTALL_DIR=%SCRIPT_DIR%"
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
-set "MINIFORGE_PATH=%USERPROFILE%\Miniforge3"
-set "SCOOP_PATH=%USERPROFILE%\scoop"
-set "HELPER=%TEMP%\%APP_NAME%_uninstall_helper.cmd"
+set "HELPER=%TEMP%\%APP_NAME%_uninstall_%RANDOM%.cmd"
+set "SCOOP_HOME=%USERPROFILE%\scoop"
+set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
+set "SCOOP_APPS=%SCOOP_HOME%\apps"(
+set "CONDA_HOME=%USERPROFILE%\Miniforge3"
+set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
+set "CONDA_PATH=%CONDA_HOME%\condabin"
 :: ========================================================
 
 echo ========================================================
@@ -22,8 +26,6 @@ echo ========================================================
 echo Install location:
 echo   %REAL_INSTALL_DIR%
 echo.
-
-pause
 
 :: ========================================================
 :: TERMINATE APP PROCESS ONLY
@@ -34,46 +36,53 @@ tasklist | find /i "%APP_NAME%.exe" >nul && (
 )
 
 :: ========================================================
-:: PROCESS .installed (SCOOP PACKAGES)
+:: PROCESS .installed (CONTROLLED REMOVAL)
 :: ========================================================
-set "REMOVE_MINIFORGE="
-set "SCOOP_PRESENT="
+set "REMOVE_CONDA="
+set "REMOVE_SCOOP="
 
 if exist "%INSTALLED_LOG%" (
-	echo Processing installed packages...
+	echo Processing installed components...
 	for /f "usebackq delims=" %%A in ("%INSTALLED_LOG%") do (
-		if /i "%%A"=="Miniforge3" set "REMOVE_MINIFORGE=1"
-		if /i "%%A"=="scoop" set "SCOOP_PRESENT=1"
-		call scoop uninstall -y %%A >nul 2>&1
+		if /i "%%A"=="Miniforge3" set "REMOVE_CONDA=1"
+		if /i "%%A"=="scoop" set "REMOVE_SCOOP=1"
 	)
 )
 
 :: ========================================================
-:: REMOVE MINIFORGE
+:: REMOVE MINIFORGE (DETECTED LOCATION)
 :: ========================================================
-if defined REMOVE_MINIFORGE (
-	if exist "%MINIFORGE_PATH%" (
-		echo Removing Miniforge3...
-		rd /s /q "%MINIFORGE_PATH%" >nul 2>&1
+if defined REMOVE_CONDA (
+	if exist "%CONDA_HOME%" (
+		echo Removing Miniforge3 from:
+		echo   %CONDA_HOME%
+		rd /s /q "%CONDA_HOME%" >nul 2>&1
 	)
 )
 
 :: ========================================================
-:: SAFE PATH CLEANUP (HKCU ONLY)
+:: SAFE PATH CLEANUP (DETECTED PATHS ONLY)
 :: ========================================================
-call :RemoveFromUserPath "%MINIFORGE_PATH%"
-call :RemoveFromUserPath "%MINIFORGE_PATH%\Scripts"
-call :RemoveFromUserPath "%SCOOP_PATH%\shims"
+if defined REMOVE_CONDA (
+	call :RemoveFromUserPath "%CONDA_HOME%"
+	call :RemoveFromUserPath "%CONDA_PATH%"
+)
+
+if defined REMOVE_SCOOP (
+	call :RemoveFromUserPath "%SCOOP_SHIMS%"
+)
 
 :: ========================================================
-:: REMOVE SCOOP LAST (DEFERRED)
+:: REMOVE SCOOP LAST (DETECTED LOCATION)
 :: ========================================================
-if defined SCOOP_PRESENT (
-	echo Removing Scoop...
+if defined REMOVE_SCOOP (
+	echo Removing Scoop from:
+	echo   %SCOOP_HOME%
 	start "" cmd /c ^
-	"ping 127.0.0.1 -n 3 >nul ^
-	& scoop uninstall -y scoop >nul 2>&1 ^
-	& rd /s /q "%SCOOP_PATH%" >nul 2>&1"
+	"cd /d %%TEMP%% ^
+	& ping 127.0.0.1 -n 3 >nul ^
+	& if exist ""%SCOOP_HOME%\shims\scoop.cmd"" ""%SCOOP_HOME%\shims\scoop.cmd"" uninstall -y scoop >nul 2>&1 ^
+	& rd /s /q ""%SCOOP_HOME%"" >nul 2>&1"
 )
 
 :: ========================================================
@@ -100,16 +109,41 @@ timeout /t 4 >nul
 :: ========================================================
 (
 	echo @echo off
-	echo ping 127.0.0.1 -n 5 ^>nul
-	echo rd /s /q "%REAL_INSTALL_DIR%" ^>nul 2^>^&1
+	echo setlocal EnableExtensions
+	echo set "TARGET=%REAL_INSTALL_DIR%"
+	echo cd /d %%TEMP%%
+	echo.
+	echo rem === wait for parent process to fully exit ===
+	echo ping 127.0.0.1 -n 6 ^>nul
+	echo.
+	echo rem === clear attributes ===
+	echo if exist "%%TARGET%%" (
+	echo ^  attrib -r -s -h "%%TARGET%%" /s /d ^>nul 2^>^&1
+	echo )
+	echo.
+	echo rem === take ownership + full access (hard mode) ===
+	echo if exist "%%TARGET%%" (
+	echo ^  takeown /f "%%TARGET%%" /r /d y ^>nul 2^>^&1
+	echo ^  icacls "%%TARGET%%" /grant *S-1-1-0:F /t ^>nul 2^>^&1
+	echo )
+	echo.
+	echo rem === retry deletion loop ===
+	echo for %%%%I in (1 2 3 4 5) do (
+	echo ^  if not exist "%%TARGET%%" goto done
+	echo ^  rd /s /q "%%TARGET%%" ^>nul 2^>^&1
+	echo ^  ping 127.0.0.1 -n 3 ^>nul
+	echo )
+	echo.
+	echo :done
 	echo del /f /q "%%~f0"
 ) > "%HELPER%"
 
 :: ========================================================
 :: LAUNCH HELPER AND EXIT
 :: ========================================================
-start "" "%HELPER%"
-exit /b
+
+start "" /min cmd /c "%HELPER%"
+exit
 
 :: ========================================================
 :: FUNCTIONS

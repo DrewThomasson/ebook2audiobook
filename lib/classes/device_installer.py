@@ -642,6 +642,23 @@ class DeviceInstaller():
         name, tag, msg = (v.strip() if isinstance(v, str) else v for v in (name, tag, msg))
         return (name, tag, msg)
 
+    def version_pkg(self, pkg_name:str, local_path:str|None=None)->str|None:
+        if pkg_name:
+            try:
+                return version(pkg_name)
+            except PackageNotFoundError:
+                pass
+        if not local_path or not os.path.isdir(local_path):
+            return None
+        version_file = os.path.join(local_path, "version.txt")
+        if os.path.exists(version_file):
+            try:
+                with open(version_file, "r", encoding = "utf-8") as f:
+                    return f.read().strip()
+            except Exception:
+                pass
+        return None
+
     def version_tuple(self, v:str, max_parts:int=3)->tuple:
         m = re.search(r"\d+(?:\.\d+)*", v)
         if not m:
@@ -673,11 +690,11 @@ class DeviceInstaller():
         if op == "<": return left < right
         return False
 
-    def install_python_packages(self)->bool:
+    def install_python_packages(self) -> bool:
         if not os.path.exists(requirements_file):
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
-            return False
+            return 1
         try:
             system = sys.platform
             arch = platform.machine().lower()
@@ -687,122 +704,106 @@ class DeviceInstaller():
             if sys.version_info >= (3, 11):
                 packages.append("pymupdf-layout")
                 if system == systems['MACOS'] and arch == 'x86_64':
-                    packages = [
-                        (
-                            'torchaudio==2.2.2' if p.startswith('torchaudio==')
-                            else 'torch==2.2.2' if p.startswith('torch==')
-                            else p
-                        )
-                        for p in packages
-                    ]
+                    packages = [('torchaudio==2.2.2' if p.startswith('torchaudio==') else 'torch==2.2.2' if p.startswith('torch==') else p) for p in packages]
             missing_packages = []
             for package in packages:
-                clean_pkg = re.sub(r'\[.*?\]', '', package)
-                vcs_match = re.search(r'([\w\-]+)\s*@?\s*git\+', clean_pkg)
-                if vcs_match:
-                    pkg_name = vcs_match.group(1)
+                raw_pkg = package.strip()
+                clean_pkg = re.sub(r'\[.*?\]', '', raw_pkg)
+                local_path = None
+                pkg_name = None
+                if os.path.isdir(clean_pkg):
+                    local_path = os.path.abspath(clean_pkg)
                 else:
-                    pkg_base = re.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
-                    pkg_name = pkg_base.rsplit('/', 1)[-1]
-                if ';' in package:
-                    pkg_part, marker_part = package.split(';', 1)
+                    vcs_match = re.search(r'([\w\-]+)\s*@?\s*git\+', clean_pkg)
+                    if vcs_match:
+                        pkg_name = vcs_match.group(1)
+                    else:
+                        pkg_base = re.split(r'[<>=]', clean_pkg, maxsplit = 1)[0].strip()
+                        pkg_name = pkg_base
+                if ';' in raw_pkg:
+                    pkg_part, marker_part = raw_pkg.split(';', 1)
                     marker_part = marker_part.strip()
                     try:
                         if not self.eval_marker(marker_part):
                             continue
                     except Exception as e:
-                        error = f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}'
-                        print(error)
-                    package = pkg_part.strip()
-                if 'git+' in package or '://' in package:
-                    if pkg_name:
-                        spec = importlib.util.find_spec(pkg_name)
-                        if spec is None:
-                            msg = f'{pkg_name} (git package) is missing.'
-                            print(msg)
-                            missing_packages.append((pkg_name, package))
-                    else:
-                        error = f'Unrecognized git package: {package}'
-                        print(error)
-                        missing_packages.append((pkg_name, package))
+                        print(f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}')
+                    raw_pkg = pkg_part.strip()
+                if 'git+' in raw_pkg or '://' in raw_pkg:
+                    spec = importlib.util.find_spec(pkg_name)
+                    if spec is None:
+                        print(f'{pkg_name} (git package) is missing.')
+                        missing_packages.append(raw_pkg)
                     continue
-                try:
-                    installed_version = version(pkg_name)
-                except PackageNotFoundError:
-                    error = f'{pkg_name} is not installed.'
-                    print(error)
-                    missing_packages.append((pkg_name, package))
+                if local_path:
+                    pkg_name = os.path.basename(local_path)
+                    vendor_version = self.version_pkg(None, local_path)
+                    if not vendor_version:
+                        print(f'{local_path} has no detectable version.')
+                        missing_packages.append(raw_pkg)
+                        continue
+                    try:
+                        installed_version = version(pkg_name)
+                    except PackageNotFoundError:
+                        print(f'{pkg_name} is not installed.')
+                        missing_packages.append(raw_pkg)
+                        continue
+                    if installed_version != vendor_version:
+                        print(f'{pkg_name} version mismatch: installed {installed_version} != vendor {vendor_version}.')
+                        missing_packages.append(raw_pkg)
+                    continue
+                installed_version = self.version_pkg(pkg_name, None)
+                if not installed_version:
+                    print(f'{pkg_name} is not installed.')
+                    missing_packages.append(raw_pkg)
                     continue
                 if '+' in installed_version:
                     continue
-                else:
-                    pkg_spec_part = re.split(r'[<>=]', clean_pkg, maxsplit=1)
-                    spec_str = clean_pkg[len(pkg_spec_part[0]):].strip() if len(pkg_spec_part) > 1 else ''
-                    if spec_str:
-                        req_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
-                        if req_match:
-                            req_v = self.version_tuple(req_match.group(1), 2)
-                            norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
-                            short_version = norm_match.group(1) if norm_match else installed_version
-                            installed_v = self.version_tuple(short_version, 2)
-                            imajor, iminor = installed_v
-                            rmajor, rminor = req_v
-                            if '==' in spec_str:
-                                if imajor != rmajor or iminor != rminor:
-                                    error = f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_match.group(1)}.'
-                                    print(error)
-                                    missing_packages.append((pkg_name, package))
-                            elif '>=' in spec_str:
-                                if (imajor < rmajor) or (imajor == rmajor and iminor < rminor):
-                                    error = f'{pkg_name} (installed {installed_version}) < required {req_match.group(1)}.'
-                                    print(error)
-                                    missing_packages.append((pkg_name, package))
-                            elif '<=' in spec_str:
-                                if (imajor > rmajor) or (imajor == rmajor and iminor > rminor):
-                                    error = f'{pkg_name} (installed {installed_version}) > allowed {req_match.group(1)}.'
-                                    print(error)
-                                    missing_packages.append((pkg_name, package))
-                            elif '>' in spec_str:
-                                if (imajor < rmajor) or (imajor == rmajor and iminor <= rminor):
-                                    error = f'{pkg_name} (installed {installed_version}) <= required {req_match.group(1)}.'
-                                    print(error)
-                                    missing_packages.append((pkg_name, package))
-                            elif '<' in spec_str:
-                                if (imajor > rmajor) or (imajor == rmajor and iminor >= rminor):
-                                    error = f'{pkg_name} (installed {installed_version}) >= restricted {req_match.group(1)}.'
-                                    print(error)
-                                    missing_packages.append((pkg_name, package))
+                pkg_spec_part = re.split(r'[<>=]', clean_pkg, maxsplit = 1)
+                spec_str = clean_pkg[len(pkg_spec_part[0]):].strip() if len(pkg_spec_part) > 1 else ''
+                if spec_str:
+                    req_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
+                    if req_match:
+                        req_v = self.version_tuple(req_match.group(1), 2)
+                        norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
+                        short_version = norm_match.group(1) if norm_match else installed_version
+                        installed_v = self.version_tuple(short_version, 2)
+                        imajor, iminor = installed_v
+                        rmajor, rminor = req_v
+                        if '==' in spec_str and (imajor != rmajor or iminor != rminor):
+                            print(f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_match.group(1)}.')
+                            missing_packages.append(raw_pkg)
+                        elif '>=' in spec_str and ((imajor < rmajor) or (imajor == rmajor and iminor < rminor)):
+                            print(f'{pkg_name} (installed {installed_version}) < required {req_match.group(1)}.')
+                            missing_packages.append(raw_pkg)
+                        elif '<=' in spec_str and ((imajor > rmajor) or (imajor == rmajor and iminor > rminor)):
+                            print(f'{pkg_name} (installed {installed_version}) > allowed {req_match.group(1)}.')
+                            missing_packages.append(raw_pkg)
+                        elif '>' in spec_str and ((imajor < rmajor) or (imajor == rmajor and iminor <= rminor)):
+                            print(f'{pkg_name} (installed {installed_version}) <= required {req_match.group(1)}.')
+                            missing_packages.append(raw_pkg)
+                        elif '<' in spec_str and ((imajor > rmajor) or (imajor == rmajor and iminor >= rminor)):
+                            print(f'{pkg_name} (installed {installed_version}) >= restricted {req_match.group(1)}.')
+                            missing_packages.append(raw_pkg)
             if missing_packages:
-                from tqdm import tqdm 
-                msg = '\nInstalling missing or upgrade packages...\n'
-                print(msg)
+                print('\nInstalling missing or upgrade packages...\n')
                 subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-                with tqdm(total=len(missing_packages), desc='Installing', bar_format='{desc}: {n_fmt}/{total_fmt}', unit='pkg') as t:
-                    for pkg_name, package in missing_packages:
-                        try:
-                            cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir']
-                            install_target = package
-                            if '/' in package:
-                                install_target = re.split(r'[<>=]', package, maxsplit=1)[0].strip()
-                            cmd.append(install_target)
-                            subprocess.check_call(cmd)
-                            t.update(1)
-                        except subprocess.CalledProcessError as e:
-                            error = f'Failed to install {package}: {e}'
-                            print(error)
-                            return False
-                msg = '\nAll required packages are installed.'
-                print(msg)
-            check_numpy_version = self.check_numpy()
-            if not check_numpy_version:
-                return False
-            check_unidic = self.check_dictionary()
-            return check_unidic
+                for raw_pkg in missing_packages:
+                    try:
+                        cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir']
+                        cmd.append(raw_pkg)
+                        subprocess.check_call(cmd)
+                    except subprocess.CalledProcessError as e:
+                        print(f'Failed to install {raw_pkg}: {e}')
+                        return 1
+                print('\nAll required packages are installed.')
+            if not self.check_numpy():
+                return 1
+            return self.check_dictionary()
         except Exception as e:
-            error = f'install_python_packages() error: {e}'
-            print(error)
-            return False
+            print(f'install_python_packages() error: {e}')
+            return 1
           
     def check_numpy(self)->bool:
         try:
@@ -816,11 +817,11 @@ class DeviceInstaller():
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
             print(error)
-            return False
+            return 1
         except Exception as e:
             error = f'Error while installing numpy package: {e}'
             print(error)
-            return False
+            return 1
           
     def check_dictionary(self)->bool:
         import unidic
@@ -834,8 +835,8 @@ class DeviceInstaller():
             except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
                 error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting...'
                 raise SystemExit(error)
-                return False
-        return True
+                return 1
+        return 0
           
     def install_device_packages(self, device_info_str:str)->int:
         try:
