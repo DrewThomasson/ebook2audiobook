@@ -1,6 +1,16 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
+echo.
+echo ========================================================
+echo   This will uninstall %APP_NAME%.
+echo   Components listed in .installed will be removed.
+echo.
+echo   Press a key to continue . . .
+echo ========================================================
+pause >nul
+echo.
+
 :: ========================================================
 :: CONFIG
 :: ========================================================
