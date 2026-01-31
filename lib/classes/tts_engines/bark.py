@@ -19,7 +19,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
-            #np.random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
@@ -58,6 +57,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         try:
             import torch
             import torchaudio
+            import numpy as np
             from lib.classes.tts_engines.common.audio import is_audio_data_valid
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
@@ -146,6 +146,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                     part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
                                 if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
+                                    #np.random.seed(seed)
                                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                                     break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
                                     self.audio_segments.append(break_tensor.clone())
