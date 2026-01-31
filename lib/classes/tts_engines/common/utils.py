@@ -26,12 +26,25 @@ class TTSUtils:
             torch.cuda.ipc_collect()
             torch.cuda.synchronize()
 
+    def _model_size_bytes(self, model:Any)->int:
+        total = 0
+        try:
+            for p in model.parameters():
+                total += p.numel() * p.element_size()
+        except Exception:
+            pass
+        try:
+            for b in model.buffers():
+                total += b.numel() * b.element_size()
+        except Exception:
+            pass
+        return total
+
     def _loaded_tts_size_gb(self, loaded_tts:Dict[str, 'Module'])->float:
-        from lib.utils.memory import model_size_bytes
         total_bytes = 0
         for model in loaded_tts.values():
             try:
-                total_bytes += model_size_bytes(model)
+                total_bytes += self.model_size_bytes(model)
             except Exception:
                 pass
         gb = total_bytes / (1024 ** 3)
