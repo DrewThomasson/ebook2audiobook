@@ -86,7 +86,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Help command output](#help-command-output)
   - [Run Remotely](#run-remotely)
   - [Docker](#docker)
-    - [Steps to Run](#steps-to-run)
+    - [Steps to Run](#docker)
     - [Common Docker Issues](#common-docker-issues)
   
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
