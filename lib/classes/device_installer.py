@@ -650,6 +650,8 @@ class DeviceInstaller():
                 pass
         if not local_path or not os.path.isdir(local_path):
             return None
+        if not pkg_name:
+            pkg_name = os.path.basename(local_path)
         pyproject = os.path.join(local_path, "pyproject.toml")
         setup_py = os.path.join(local_path, "setup.py")
         if os.path.exists(pyproject):
@@ -668,8 +670,7 @@ class DeviceInstaller():
                         return m.group(1)
             except Exception:
                 pass
-        pkg_dir = os.path.basename(local_path)
-        init_py = os.path.join(local_path, pkg_dir, "__init__.py")
+        init_py = os.path.join(local_path, pkg_name, "__init__.py")
         if os.path.exists(init_py):
             try:
                 with open(init_py, "r", encoding = "utf-8", errors = "ignore") as f:
