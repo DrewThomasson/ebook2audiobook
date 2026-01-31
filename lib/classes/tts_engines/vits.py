@@ -66,7 +66,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             import torch
             import torchaudio
             import numpy as np
-            from lib.classes.tts_engines.common.audio import is_audio_data_valid
+            from lib.classes.tts_engines.common.audio import is_audio_data_valid, detect_gender
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
