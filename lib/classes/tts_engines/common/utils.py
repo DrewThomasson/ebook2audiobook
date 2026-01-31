@@ -240,13 +240,13 @@ class TTSUtils:
             error = f'_load_engine_zs() error: {e}'
             raise ValueError(error)
 
-    def _check_xtts_builtin_speakers(self, voice_path:str, speaker:str)->str|bool:
-        new_voice_path = ''
-        proc_voice_path = ''
+    def _check_xtts_builtin_speakers(self, current_voice:str, speaker:str)->str|bool:
+        new_current_voice = ''
+        proc_current_voice = ''
         try:
-            voice_parts = Path(voice_path).parts
+            voice_parts = Path(current_voice).parts
             if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
-                return voice_path
+                return current_voice
             xtts = TTS_ENGINES['XTTSv2']
             if self.session['language'] in default_engine_settings[xtts].get('languages', {}):
                 default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
@@ -274,7 +274,7 @@ class TTSUtils:
                         if speaker in default_engine_settings[xtts]['voices'].keys():
                             gpt_cond_latent, speaker_embedding = self.xtts_speakers[default_engine_settings[xtts]['voices'][speaker]].values()
                         else:
-                            gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[voice_path], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)
+                            gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[current_voice], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)
                         fine_tuned_params = {
                             key.removeprefix('xtts_'): cast_type(self.session[key])
                             for key, cast_type in {
@@ -323,17 +323,17 @@ class TTSUtils:
                             if audio_tensor is not None and audio_tensor.numel() > 0:
                                 # CON is a reserved name on windows
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
-                                new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
-                                proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
-                                torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
-                                if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
+                                new_current_voice = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', current_voice)
+                                proc_current_voice = new_current_voice.replace('.wav', '_temp.wav')
+                                torchaudio.save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
+                                if normalize_audio(proc_current_voice, new_current_voice, default_audio_proc_samplerate, self.session['is_gui_process']):
                                     del audio_sentence, sourceTensor, audio_tensor
-                                    Path(proc_voice_path).unlink(missing_ok=True)
+                                    Path(proc_current_voice).unlink(missing_ok=True)
                                     gc.collect()
                                     self.engine = loaded_tts.get(self.tts_key, False)
                                     if not self.engine:
                                         self._load_engine()
-                                    return new_voice_path
+                                    return new_current_voice
                                 else:
                                     error = 'normalize_audio() error:'
                             else:
@@ -344,13 +344,13 @@ class TTSUtils:
                     error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
                 print(error)
             else:
-                return voice_path
+                return current_voice
         except Exception as e:
             error = f'_check_xtts_builtin_speakers() error: {e}'
-            if new_voice_path:
-                Path(new_voice_path).unlink(missing_ok=True)
-            if proc_voice_path:
-                Path(proc_voice_path).unlink(missing_ok=True)
+            if new_current_voice:
+                Path(new_current_voice).unlink(missing_ok=True)
+            if proc_current_voice:
+                Path(proc_current_voice).unlink(missing_ok=True)
             print(error)
             return False
         
@@ -392,15 +392,15 @@ class TTSUtils:
         return tmp_path
 
     def _set_voice(self)->bool:
-        self.params['voice_path'] = (
+        self.params['current_voice'] = (
             self.session['voice'] if self.session['voice'] is not None 
             else self.models[self.session['fine_tuned']]['voice']
         )
-        if self.params['voice_path'] is not None:
-            self.speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['voice_path']))
-            if self.params['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['voice_path']:
-                self.session['voice'] = self.params['voice_path'] = self._check_xtts_builtin_speakers(self.params['voice_path'], self.speaker)
-                if not self.params['voice_path']:
+        if self.params['current_voice'] is not None:
+            self.speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['current_voice']))
+            if self.params['current_voice'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['current_voice']:
+                self.session['voice'] = self.params['current_voice'] = self._check_xtts_builtin_speakers(self.params['current_voice'], self.speaker)
+                if not self.params['current_voice']:
                     msg = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
                     print(msg)
                     return False
@@ -451,11 +451,11 @@ class TTSUtils:
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
                 return False, error
-            voice_path = os.path.abspath(value)
-            if not os.path.exists(voice_path):
-                error = f'_convert_sml() error: voice {voice_path} does not exist!'
+            current_voice = os.path.abspath(value)
+            if not os.path.exists(current_voice):
+                error = f'_convert_sml() error: voice {current_voice} does not exist!'
                 return False, error
-            self.params['voice_path'] = os.path.abspath(voice_path)
+            self.params['current_voice'] = os.path.abspath(current_voice)
             return True, ''
         else:
             error = 'This SML is not recognized'

@@ -8,7 +8,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
-            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
@@ -65,10 +64,17 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
         try:
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
-                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
+                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 if not self._set_voice():
                     return False
+                speaker_argument = {}
+                if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
+                    if self.session['language'] in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
+                        speaker_argument = {"speaker": 'p262'}
+                elif self.session['language'] == 'cat' and 'custom/vits' in self.models['internal']['sub']:
+                    if self.session['language'] in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
+                        speaker_argument = {"speaker": '09901'}
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -86,14 +92,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
                             part = part[:-1]
-                        speaker_argument = {}
-                        if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
-                            if self.session['language'] in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
-                                speaker_argument = {"speaker": 'p262'}
-                        elif self.session['language'] == 'cat' and 'custom/vits' in self.models['internal']['sub']:
-                            if self.session['language'] in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
-                                speaker_argument = {"speaker": '09901'}
-                        if self.params['voice_path'] is not None:
+                        if self.params['current_voice'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
@@ -117,20 +116,20 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                             **speaker_argument
                                         )
                                 self.engine.to(devices['CPU']['proc'])
-                            if self.params['voice_path'] in self.params['semitones'].keys():
-                                semitones = self.params['semitones'][self.params['voice_path']]
+                            if self.params['current_voice'] in self.params['semitones'].keys():
+                                semitones = self.params['semitones'][self.params['current_voice']]
                             else:
-                                voice_path_gender = detect_gender(self.params['voice_path'])
+                                current_voice_gender = detect_gender(self.params['current_voice'])
                                 voice_builtin_gender = detect_gender(tmp_in_wav)
-                                msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
+                                msg = f"Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
                                 print(msg)
-                                if voice_builtin_gender != voice_path_gender:
-                                    semitones = -4 if voice_path_gender == 'male' else 4
+                                if voice_builtin_gender != current_voice_gender:
+                                    semitones = -4 if current_voice_gender == 'male' else 4
                                     msg = f"Adapting builtin voice frequencies from the clone voice…"
                                     print(msg)
                                 else:
                                     semitones = 0
-                                self.params['semitones'][self.params['voice_path']] = semitones
+                                self.params['semitones'][self.params['current_voice']] = semitones
                             if semitones > 0:
                                 try:
                                     cmd = [
@@ -154,7 +153,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             if self.engine_zs:
                                 self.params['samplerate'] = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
                                 source_wav = self._resample_wav(tmp_out_wav, self.params['samplerate'])
-                                target_wav = self._resample_wav(self.params['voice_path'], self.params['samplerate'])
+                                target_wav = self._resample_wav(self.params['current_voice'], self.params['samplerate'])
                                 self.engine_zs.to(device)
                                 audio_part = self.engine_zs.voice_conversion(
                                     source_wav=source_wav,

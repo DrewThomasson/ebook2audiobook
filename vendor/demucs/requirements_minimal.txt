@@ -1,0 +1,10 @@
+# please make sure you have already a pytorch install that is cuda enabled!
+dora-search
+einops
+julius
+lameenc
+openunmix
+pyyaml
+torch
+torchaudio
+tqdm

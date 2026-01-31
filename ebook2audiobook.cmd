@@ -64,15 +64,16 @@ set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
-set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
-set "SCOOP_HOME=%USERPROFILE%\scoop"
-set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
-set "SCOOP_APPS=%SCOOP_HOME%\apps"
 set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
-set "CONDA_HOME=%USERPROFILE%\Miniforge3"
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
+set "SCOOP_HOME=%USERPROFILE%\scoop"
+set "SCOOP_SHIMS=%SCOOP_HOME%\shims"%USERPROFILE%\scoop
+set "SCOOP_APPS=%SCOOP_HOME%\apps"
+set "CONDA_HOME=%USERPROFILE%\Miniforge3"
 set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
+set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
+set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%"
@@ -243,7 +244,7 @@ if errorlevel 1 (
 	if exist "%SCRIPT_DIR%\.after-scoop" (
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
 		call git config --global credential.helper
-		echo %ESC%[32m=============== Scoop components installed! ===============%ESC%[0m
+		echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
 		set "OK_SCOOP=0"
 		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
 		if errorlevel 1 (
@@ -282,7 +283,7 @@ if not "%OK_SCOOP%"=="0" (
 	echo Installing Scoop...
 	call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
 		"Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
-	echo %ESC%[33m=============== Scoop installed. Restarting terminal with refreshed PATH... ===============%ESC%[0m
+	echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
 	type nul > "%SCRIPT_DIR%\.after-scoop"
 	rem Refresh PATH in current process
 	call "%PS_EXE%" -NoLogo -NoProfile -Command ^
@@ -297,13 +298,13 @@ if not "%OK_CONDA%"=="0" (
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where.exe /Q conda
 	if not errorlevel 1 (
-		echo %ESC%[32m=============== Miniforge3 is installed! ===============%ESC%[0m
+		echo %ESC%[32m=============== Miniforge3 OK! ===============%ESC%[0m
 		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
 		if errorlevel 1 (
 			echo Miniforge3>>"%INSTALLED_LOG%"
 		)
 	) else (
-		echo %ESC%[31m=============== Miniforge3 installation failed.%ESC%[0m
+		echo %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
 		goto :failed
 	)
 	if not exist "%USERPROFILE%\.condarc" (
@@ -350,15 +351,12 @@ if not "%OK_PROGRAMS%"=="0" (
 			where.exe /Q python3 && set PY_FOUND=1
 			where.exe /Q py	  && set PY_FOUND=1
 			if not defined PY_FOUND (
-				echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
+				echo %ESC%[31m=============== %%p failed.%ESC%[0m
 				goto :failed
 			)
 		)
 		if "%%p"=="nodejs" (
 			set "prog=node"
-		)
-		if "%%p"=="calibre-normal" (
-			set "prog=calibre"
 		)
 		if "%%p"=="rustup" (
 			if exist "%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
@@ -367,13 +365,13 @@ if not "%OK_PROGRAMS%"=="0" (
 		)
 		where.exe /Q !prog!
 		if not errorlevel 1 (
-			echo %ESC%[32m=============== %%p is installed! ===============%ESC%[0m
+			echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
 			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
 			if errorlevel 1 (
 				echo %%p>>"%INSTALLED_LOG%"
 			)
 		) else (
-			echo %ESC%[31m=============== %%p installation failed.%ESC%[0m
+			echo %ESC%[31m=============== %%p failed.%ESC%[0m
 			goto :failed
 		)
 	)
@@ -424,8 +422,8 @@ if "%CURRENT_ENV%"=="" (
 		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
 		call conda activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-		call :install_python_packages
-		if errorlevel 1 goto :failed
+		::call :install_python_packages
+		::if errorlevel 1 goto :failed
 		call conda deactivate
 		call conda deactivate
 	)
@@ -447,38 +445,14 @@ exit /b 0
 
 :install_python_packages
 echo [ebook2audiobook] Installing dependencies...
-python -m pip cache purge >nul 2>&1
-python -m pip install --upgrade pip pip setuptools wheel >nul 2>&1
-python -m pip install --upgrade llvmlite numba --only-binary=:all:
-set count_pkg=0
-for /f "usebackq delims=" %%P in ("%SCRIPT_DIR%\requirements.txt") do (
-	if not "%%P"=="" if not "%%P:~0,1%"=="#" (
-		set /a count_pkg+=1
-		echo [!count_pkg!] Installing %%P
-		python -m pip install --upgrade --no-cache-dir "%%P" || exit /b 1
-	)
-)
-if errorlevel 1 goto :failed
-for /f "tokens=2 delims=: " %%A in ('pip show torch 2^>nul ^| findstr /b /c:"Version"') do (
-	set "torch_ver=%%A"
-)
-python -m unidic download
-if errorlevel 1 goto :failed
-echo [ebook2audiobook] Installation completed.
-exit /b 0
-
-:check_device_info
-set "arg=%~1"
 "%PS_EXE%" %PS_ARGS% -Command ^
 @"
-%PYTHON_SCOOP% - << 'EOF'
+python - << 'EOF'
+import sys
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
-result = device.check_device_info(r"%arg%")
-if result:
-	print(result)
-	raise SystemExit(0)
-raise SystemExit(1)
+exit_code = device.install_python_packages()
+sys.exit(exit_code)
 EOF
 "@
 exit /b %errorlevel%
@@ -510,7 +484,7 @@ set "dst_pyfile=%site_packages_path%\sitecustomize.py"
 if not exist "%dst_pyfile%" (
 	copy /y "%src_pyfile%" "%dst_pyfile%" >nul
 	if errorlevel 1 (
-		echo %ESC%[31m=============== sitecustomize.py hook installation error: copy failed.%ESC%[0m
+		echo %ESC%[31m=============== sitecustomize.py hook error: copy failed.%ESC%[0m
 		exit /b 1
 	)
 	exit /b 0
@@ -645,7 +619,7 @@ if defined arguments.help (
 			call %PYTHON_SCOOP% --version >null 2>&1 || call scoop install %PYTHON_SCOOP% 2>null
 			where.exe /Q %PYTHON_SCOOP%
 			if errorlevel 1 (
-				echo %ESC%[31m=============== %PYTHON_SCOOP% installation failed.%ESC%[0m
+				echo %ESC%[31m=============== %PYTHON_SCOOP% failed.%ESC%[0m
 				goto :failed
 			)
 			call :check_docker
@@ -675,8 +649,8 @@ if defined arguments.help (
 			call :build_docker_image "%device_info%"
 			if errorlevel 1 goto :failed
 		) else (
-			call :install_python_packages
-			if errorlevel 1 goto :failed
+			::call :install_python_packages
+			::if errorlevel 1 goto :failed
 			call :install_device_packages "%DOCKER_DEVICE_STR%"
 			if errorlevel 1 goto :failed
 			call :check_sitecustomized

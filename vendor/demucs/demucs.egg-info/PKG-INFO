@@ -1,0 +1,54 @@
+Metadata-Version: 2.4
+Name: demucs
+Version: 4.1.0
+Summary: Music source separation in the waveform domain.
+Home-page: https://github.com/facebookresearch/demucs
+Author: Alexandre Défossez
+Author-email: defossez@fb.com
+License: MIT License
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Topic :: Multimedia :: Sound/Audio
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.8.0
+Description-Content-Type: text/markdown
+Requires-Dist: dora-search
+Requires-Dist: einops
+Requires-Dist: julius
+Requires-Dist: lameenc
+Requires-Dist: openunmix
+Requires-Dist: pyyaml
+Requires-Dist: torch
+Requires-Dist: torchaudio
+Requires-Dist: tqdm
+Provides-Extra: dev
+Requires-Dist: dora-search; extra == "dev"
+Requires-Dist: diffq; extra == "dev"
+Requires-Dist: einops; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Requires-Dist: hydra-colorlog; extra == "dev"
+Requires-Dist: hydra-core; extra == "dev"
+Requires-Dist: julius; extra == "dev"
+Requires-Dist: lameenc; extra == "dev"
+Requires-Dist: museval; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+Requires-Dist: openunmix; extra == "dev"
+Requires-Dist: pyyaml; extra == "dev"
+Requires-Dist: submitit; extra == "dev"
+Requires-Dist: torch; extra == "dev"
+Requires-Dist: torchaudio; extra == "dev"
+Requires-Dist: tqdm; extra == "dev"
+Requires-Dist: treetable; extra == "dev"
+Requires-Dist: soundfile; extra == "dev"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+Music source separation in the waveform domain.
