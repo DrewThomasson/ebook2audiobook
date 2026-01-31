@@ -11,12 +11,9 @@ set "REAL_INSTALL_DIR=%SCRIPT_DIR%"
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
-set "HELPER=%TEMP%\%APP_NAME%_uninstall_%RANDOM%.cmd"
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
-set "SCOOP_APPS=%SCOOP_HOME%\apps"
 set "CONDA_HOME=%USERPROFILE%\Miniforge3"
-set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
 :: ========================================================
 
@@ -50,10 +47,9 @@ if exist "%INSTALLED_LOG%" (
 )
 
 :: ========================================================
-:: DETACH FROM CONDA ENV (CRITICAL)
+:: DETACH FROM CONDA (SAFETY)
 :: ========================================================
 if defined REMOVE_CONDA (
-	echo Detaching from Conda environment...
 	set "CONDA_SHLVL="
 	set "CONDA_DEFAULT_ENV="
 	set "CONDA_PREFIX="
@@ -61,18 +57,29 @@ if defined REMOVE_CONDA (
 )
 
 :: ========================================================
-:: REMOVE MINIFORGE (SAFE – CHILD SHELL)
+:: REMOVE MINIFORGE (DIRECT)
 :: ========================================================
 if defined REMOVE_CONDA (
 	if exist "%CONDA_HOME%" (
-		echo Removing Miniforge3 from:
+		echo Removing Miniforge3:
 		echo   %CONDA_HOME%
-		start "" cmd /c "ping 127.0.0.1 -n 3 >nul & rd /s /q ""%CONDA_HOME%"" >nul 2>&1"
+		rd /s /q "%CONDA_HOME%" >nul 2>&1
 	)
 )
 
 :: ========================================================
-:: SAFE PATH CLEANUP (DETECTED PATHS ONLY)
+:: REMOVE SCOOP (DIRECT)
+:: ========================================================
+if defined REMOVE_SCOOP (
+	if exist "%SCOOP_HOME%" (
+		echo Removing Scoop:
+		echo   %SCOOP_HOME%
+		rd /s /q "%SCOOP_HOME%" >nul 2>&1
+	)
+)
+
+:: ========================================================
+:: CLEAN USER PATH (ONLY KNOWN ENTRIES)
 :: ========================================================
 if defined REMOVE_CONDA (
 	call :RemoveFromUserPath "%CONDA_HOME%"
@@ -84,15 +91,6 @@ if defined REMOVE_SCOOP (
 )
 
 :: ========================================================
-:: REMOVE SCOOP LAST (DETECTED LOCATION)
-:: ========================================================
-if defined REMOVE_SCOOP (
-	echo Removing Scoop from:
-	echo   %SCOOP_HOME%
-	start "" cmd /c "cd /d %%TEMP%% & ping 127.0.0.1 -n 3 >nul & if exist ""%SCOOP_HOME%\shims\scoop.cmd"" ""%SCOOP_HOME%\shims\scoop.cmd"" uninstall -y scoop >nul 2>&1 & rd /s /q ""%SCOOP_HOME%"" >nul 2>&1"
-)
-
-:: ========================================================
 :: REMOVE SHORTCUTS + REGISTRY
 :: ========================================================
 if exist "%STARTMENU_DIR%" rd /s /q "%STARTMENU_DIR%" >nul 2>&1
@@ -100,37 +98,35 @@ if exist "%DESKTOP_LNK%" del /q "%DESKTOP_LNK%" >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
 :: ========================================================
-:: FINAL USER MESSAGE
+:: REMOVE CURRENT REPO CONTENT (EXCEPT THIS SCRIPT)
+:: ========================================================
+echo Cleaning repository content...
+
+for %%F in ("%REAL_INSTALL_DIR%\*") do (
+	if /i not "%%~nxF"=="%~nx0" (
+		rd /s /q "%%F" >nul 2>&1
+		del /f /q "%%F" >nul 2>&1
+	)
+)
+
+if exist "%INSTALLED_LOG%" del /f /q "%INSTALLED_LOG%" >nul 2>&1
+
+:: ========================================================
+:: FINAL MESSAGE
 :: ========================================================
 echo.
 echo ========================================================
-echo   Uninstallation completed successfully.
-echo   Cleaning up remaining files in background...
-echo   This window will close automatically.
+echo   Uninstallation completed.
+echo.
+echo   The application content has been removed.
+echo   Please remove the empty repository folder manually:
+echo.
+echo     %REAL_INSTALL_DIR%
+echo.
 echo ========================================================
 echo.
-timeout /t 4 >nul
+pause
 
-:: ========================================================
-:: CREATE SELF-DELETING HELPER
-:: ========================================================
-(
-	echo @echo off
-	echo setlocal EnableExtensions
-	echo set "TARGET=%REAL_INSTALL_DIR%"
-	echo cd /d %%TEMP%%
-	echo ping 127.0.0.1 -n 6 ^>nul
-	echo if exist "%%TARGET%%" attrib -r -s -h "%%TARGET%%" /s /d ^>nul 2^>^&1
-	echo if exist "%%TARGET%%" takeown /f "%%TARGET%%" /r /d y ^>nul 2^>^&1
-	echo if exist "%%TARGET%%" icacls "%%TARGET%%" /grant *S-1-1-0:F /t ^>nul 2^>^&1
-	echo for %%%%I in (1 2 3 4 5) do rd /s /q "%%TARGET%%" ^>nul 2^>^&1
-	echo del /f /q "%%~f0"
-) > "%HELPER%"
-
-:: ========================================================
-:: LAUNCH HELPER AND EXIT
-:: ========================================================
-start "" /min cmd /c "%HELPER%"
 exit /b
 
 :: ========================================================
