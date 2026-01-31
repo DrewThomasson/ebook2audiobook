@@ -14,7 +14,7 @@ set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
 set "HELPER=%TEMP%\%APP_NAME%_uninstall_%RANDOM%.cmd"
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
-set "SCOOP_APPS=%SCOOP_HOME%\apps"(
+set "SCOOP_APPS=%SCOOP_HOME%\apps"
 set "CONDA_HOME=%USERPROFILE%\Miniforge3"
 set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
@@ -50,13 +50,26 @@ if exist "%INSTALLED_LOG%" (
 )
 
 :: ========================================================
-:: REMOVE MINIFORGE (DETECTED LOCATION)
+:: DETACH FROM CONDA ENV (CRITICAL)
+:: ========================================================
+if defined REMOVE_CONDA (
+	echo Detaching from Conda environment...
+	set "CONDA_SHLVL="
+	set "CONDA_DEFAULT_ENV="
+	set "CONDA_PREFIX="
+	set "PATH=%SystemRoot%\System32;%SystemRoot%"
+)
+
+:: ========================================================
+:: REMOVE MINIFORGE (SAFE – CHILD SHELL)
 :: ========================================================
 if defined REMOVE_CONDA (
 	if exist "%CONDA_HOME%" (
 		echo Removing Miniforge3 from:
 		echo   %CONDA_HOME%
-		rd /s /q "%CONDA_HOME%" >nul 2>&1
+		start "" cmd /c ^
+		"ping 127.0.0.1 -n 3 >nul ^
+		& rd /s /q ""%CONDA_HOME%"" >nul 2>&1"
 	)
 )
 
@@ -93,7 +106,7 @@ if exist "%DESKTOP_LNK%" del /q "%DESKTOP_LNK%" >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
 :: ========================================================
-:: FINAL USER MESSAGE (OPTION B)
+:: FINAL USER MESSAGE
 :: ========================================================
 echo.
 echo ========================================================
@@ -121,7 +134,7 @@ timeout /t 4 >nul
 	echo ^  attrib -r -s -h "%%TARGET%%" /s /d ^>nul 2^>^&1
 	echo )
 	echo.
-	echo rem === take ownership + full access (hard mode) ===
+	echo rem === take ownership + full access ===
 	echo if exist "%%TARGET%%" (
 	echo ^  takeown /f "%%TARGET%%" /r /d y ^>nul 2^>^&1
 	echo ^  icacls "%%TARGET%%" /grant *S-1-1-0:F /t ^>nul 2^>^&1
@@ -141,9 +154,8 @@ timeout /t 4 >nul
 :: ========================================================
 :: LAUNCH HELPER AND EXIT
 :: ========================================================
-
 start "" /min cmd /c "%HELPER%"
-exit
+exit /b
 
 :: ========================================================
 :: FUNCTIONS
