@@ -52,7 +52,13 @@ class BackgroundDetector:
 
     def detect(self, vad_ratio_thresh:float=0.05)->tuple[bool, dict[str, float|bool]]:
         pipeline, waveform, sr = self._get_props()
-        if pipeline is not None and waveform and sr:
+        if (
+            pipeline is not None
+            and waveform is not None
+            and waveform.numel() > 0
+            and sr is not None
+            and sr > 0
+        ):
             file = {
                 "waveform": waveform,
                 "sample_rate": sr
