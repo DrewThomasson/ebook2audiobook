@@ -77,35 +77,20 @@ echo
 if [[ "${OSTYPE:-}" == darwin* ]]; then
 	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 
-	echo "[INFO] Removing macOS application bundle and desktop shortcuts"
+	echo "[INFO] Removing macOS application bundle and desktop shortcut"
 
 	# Remove app bundle
 	rm -rf "$APP_BUNDLE" 2>/dev/null || true
 
-	# Remove Finder desktop shortcuts by DISPLAY NAME (this works)
-	osascript >/dev/null 2>&1 <<EOF || true
-tell application "Finder"
-	repeat with i in (every item of desktop)
-		try
-			if (name of i) is "$APP_NAME" or (name of i) is "$APP_NAME.app" then
-				delete i
-			end if
-		end try
-	end repeat
-end tell
-EOF
+	# Resolve Desktop path in a language-safe way
+	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
 
-elif [[ "${OSTYPE:-}" == linux* ]]; then
-	MENU_ENTRY="$HOME/.local/share/applications/$APP_NAME.desktop"
-	DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
-	DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
-
-	rm -f "$MENU_ENTRY" 2>/dev/null || true
-	rm -f "$DESKTOP_SHORTCUT" 2>/dev/null || true
-
-	if command -v update-desktop-database >/dev/null 2>&1; then
-		update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
-	fi
+	# Remove desktop alias / shortcut (real file)
+	rm -f \
+		"$DESKTOP_DIR/$APP_NAME" \
+		"$DESKTOP_DIR/$APP_NAME.app" \
+		"$DESKTOP_DIR/$APP_NAME.alias" \
+		2>/dev/null || true
 fi
 
 # =========================================================
