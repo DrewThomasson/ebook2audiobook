@@ -8,29 +8,29 @@ _pipeline_lock = threading.Lock()
 
 class BackgroundDetector:
 
-	def __init__(self, wav_file: str)->None:
-		self.wav_file = wav_file
-		self.device = None
-		self.total_duration = self._get_duration()
+    def __init__(self, wav_file: str)->None:
+        self.wav_file = wav_file
+        self.device = None
+        self.total_duration = self._get_duration()
 
-	def _get_duration(self)->float:
-		try:
+    def _get_duration(self)->float:
+        try:
             import librosa
-			return float(librosa.get_duration(path=self.wav_file))
-		except Exception:
-			return 0.0
+            return float(librosa.get_duration(path=self.wav_file))
+        except Exception:
+            return 0.0
 
-	def _get_props(self)->tuple:
+    def _get_props(self)->tuple:
         import torch, librosa
         from pyannote.audio import Model
         from pyannote.audio.pipelines import VoiceActivityDetection
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-		key = self.device.type
-		if key in _pipeline_cache:
-			pipeline = _pipeline_cache[key]
-		with _pipeline_lock:
-			if key in _pipeline_cache:
-				pipeline = _pipeline_cache[key]
+        key = self.device.type
+        if key in _pipeline_cache:
+            pipeline = _pipeline_cache[key]
+        with _pipeline_lock:
+            if key in _pipeline_cache:
+                pipeline = _pipeline_cache[key]
             else:
                 model = Model.from_pretrained(
                     default_voice_detection_model,
@@ -50,8 +50,8 @@ class BackgroundDetector:
             return pipeline, waveform, sr
         return None, None, None
 
-	def detect(self, vad_ratio_thresh:float=0.05)->tuple[bool, dict[str, float|bool]]:
-		pipeline, waveform, sr = self._get_props()
+    def detect(self, vad_ratio_thresh:float=0.05)->tuple[bool, dict[str, float|bool]]:
+        pipeline, waveform, sr = self._get_props()
         if pipeline is not None and waveform and sr:
             file = {
                 "waveform": waveform,
