@@ -1,7 +1,5 @@
-packaging
 tqdm
 torchvggish
-num2words @ git+https://github.com/savoirfairelinux/num2words.git
 regex
 docker
 ebooklib
@@ -31,7 +29,8 @@ stanza==1.10.1
 pyannote-audio==3.4.0
 argostranslate<=1.10.0
 gradio==5.49.1
-torch<=2.7.1
-torchaudio<=2.7.1
+torch==2.7.1
+torchaudio==2.7.1
 coqui-tts[languages]==0.27.2
-demucs @ git+https://github.com/adefossez/demucs.git
+ext/py/num2words
+ext/py/demucs

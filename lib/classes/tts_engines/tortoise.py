@@ -19,7 +19,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
-            #np.random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
@@ -28,47 +27,59 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             raise ValueError(error)
 
     def load_engine(self)->Any:
-        try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        print(msg)
+        self._cleanup_memory()
+        engine = loaded_tts.get(self.tts_key)
+        if not engine:
+            if self.session['custom_model'] is not None:
+                error = f"{self.session['tts_engine']} custom model not implemented yet!"
+                raise NotImplementedError(error)
+            try:
+                iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
+                sub_dict = self.models[self.session['fine_tuned']]['sub']
+                sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+                if sub is None:
+                    error = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found"
+                    raise KeyError(error)
+                self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
+                model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
+            except Exception as e:
+                error = 'load_engine(): language/sub resolution failed'
+                raise RuntimeError(error) from e
+            self.tts_key = model_path
+            try:
+                engine = self._load_api(self.tts_key, model_path)
+            except Exception as e:
+                error = 'load_engine(): _load_api() failed'
+                raise RuntimeError(error) from e
+        if engine:
+            msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
-            self._cleanup_memory()
-            engine = loaded_tts.get(self.tts_key, False)
-            if not engine:
-                if self.session['custom_model'] is not None:
-                    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                    print(msg)
-                else:
-                    iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
-                    sub_dict = self.models[self.session['fine_tuned']]['sub']
-                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
-                    if sub is not None:
-                        self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
-                        model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
-                        self.tts_key = model_path
-                        engine = self._load_api(self.tts_key, model_path)
-                    else:
-                        msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
-                        print(msg)
-            if engine and engine is not None:
-                msg = f'TTS {self.tts_key} Loaded!'
-                return engine
-            else:
-                error = 'load_engine() failed!'
-                raise ValueError(error)
-        except Exception as e:
-            error = f'load_engine() error: {e}'
-            raise ValueError(error)
+            return engine
+        error = 'load_engine(): engine is None'
+        raise RuntimeError(error)
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
+            import torch
+            import torchaudio
+            import numpy as np
+            from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
-                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
-                language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
+                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
                 if not self._set_voice():
                     return False
+                speaker_argument = {}
+                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
+                if self.speaker not in self.engine.speakers:
+                    speaker_wav = self.params['current_voice']
+                    speaker_argument = {"speaker_wav": [speaker_wav], "speaker": self.speaker}
+                else:
+                    speaker_argument = {"speaker": self.speaker, "preset": "ultra_fast"}
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -85,15 +96,8 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                     else:
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
-                            part = part[:-1]
-                        speaker_argument = {}
+                            part = part[:-1]    
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        voice_key = Path(self.models[self.session['fine_tuned']]['voice']).stem
-                        if self.params['voice_path'] is not None:
-                            speaker_wav = self.params['voice_path']
-                            speaker_argument = {"speaker_wav": [speaker_wav], "speaker": voice_key}
-                        else:
-                            speaker_argument = {"speaker": voice_key, "preset": "ultra_fast"}                         
                         with torch.no_grad():
                             self.engine.to(device)
                             if device == devices['CPU']['proc']:
@@ -123,6 +127,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                                     part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
                                 if not re.search(r'\w$', part, flags=re.UNICODE):
+                                    #np.random.seed(seed)
                                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                                     break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
                                     self.audio_segments.append(break_tensor.clone())

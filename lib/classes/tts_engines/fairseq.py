@@ -8,7 +8,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
-            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
@@ -20,7 +19,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
-            #np.random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
@@ -30,38 +28,48 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             raise ValueError(error)
 
     def load_engine(self)->Any:
-        try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        print(msg)
+        self._cleanup_memory()
+        engine = loaded_tts.get(self.tts_key)
+        if not engine:
+            if self.session['custom_model'] is not None:
+                error = f"{self.session['tts_engine']} custom model not implemented yet!"
+                raise NotImplementedError(error)
+            try:
+                model_cfg = self.models[self.session['fine_tuned']]
+                model_path = model_cfg['repo'].replace("[lang]", self.session['language'])
+            except KeyError as e:
+                error = f"Invalid fine_tuned model '{self.session['fine_tuned']}'"
+                raise KeyError(error) from e
+            self.tts_key = model_path
+            try:
+                engine = self._load_api(self.tts_key, model_path)
+            except Exception as e:
+                error = 'load_engine(): _load_api() failed'
+                raise RuntimeError(error) from e
+        if engine:
+            msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
-            self._cleanup_memory()
-            engine = loaded_tts.get(self.tts_key, False)
-            if not engine:
-                if self.session['custom_model'] is not None:
-                    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                    print(msg)
-                else:
-                    model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
-                    self.tts_key = model_path
-                    engine = self._load_api(self.tts_key, model_path)
-            if engine and engine is not None:
-                msg = f'TTS {self.tts_key} Loaded!'
-                return engine
-            else:
-                error = 'load_engine() failed!'
-                raise ValueError(error)
-        except Exception as e:
-            error = f'load_engine() error: {e}'
-            raise ValueError(error)
+            return engine
+        error = 'load_engine(): engine is None'
+        raise RuntimeError(error)
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
+            import torch
+            import torchaudio
+            import numpy as np
+            from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
-                device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
+                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r"[.:—]")
                 if not self._set_voice():
                     return False
+                proc_dir = os.path.join(self.session['voice_dir'], 'proc')
+                os.makedirs(proc_dir, exist_ok=True)
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -77,13 +85,10 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         continue
                     else:
                         trim_audio_buffer = 0.002
-                        speaker_argument = {}
                         if part.endswith("'"):
                             part = part[:-1]
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        if self.params['voice_path'] is not None:
-                            proc_dir = os.path.join(self.session['voice_dir'], 'proc')
-                            os.makedirs(proc_dir, exist_ok=True)
+                        if self.params['current_voice'] is not None:
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             with torch.no_grad():
@@ -91,8 +96,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 if device == devices['CPU']['proc']:
                                     self.engine.tts_to_file(
                                         text=part,
-                                        file_path=tmp_in_wav,
-                                        **speaker_argument
+                                        file_path=tmp_in_wav
                                     )
                                 else:
                                     with torch.autocast(
@@ -101,24 +105,23 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                     ):
                                         self.engine.tts_to_file(
                                             text=part,
-                                            file_path=tmp_in_wav,
-                                            **speaker_argument
+                                            file_path=tmp_in_wav
                                         )
                                 self.engine.to(devices['CPU']['proc'])
-                            if self.params['voice_path'] in self.params['semitones'].keys():
-                                semitones = self.params['semitones'][self.params['voice_path']]
+                            if self.params['current_voice'] in self.params['semitones'].keys():
+                                semitones = self.params['semitones'][self.params['current_voice']]
                             else:
-                                voice_path_gender = detect_gender(self.params['voice_path'])
+                                current_voice_gender = detect_gender(self.params['current_voice'])
                                 voice_builtin_gender = detect_gender(tmp_in_wav)
-                                msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
+                                msg = f"Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
                                 print(msg)
-                                if voice_builtin_gender != voice_path_gender:
-                                    semitones = -4 if voice_path_gender == 'male' else 4
+                                if voice_builtin_gender != current_voice_gender:
+                                    semitones = -4 if current_voice_gender == 'male' else 4
                                     msg = f"Adapting builtin voice frequencies from the clone voice…"
                                     print(msg)
                                 else:
                                     semitones = 0
-                                self.params['semitones'][self.params['voice_path']] = semitones
+                                self.params['semitones'][self.params['current_voice']] = semitones
                             if semitones > 0:
                                 try:
                                     cmd = [
@@ -142,7 +145,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                             if self.engine_zs:
                                 self.params['samplerate'] = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
                                 source_wav = self._resample_wav(tmp_out_wav, self.params['samplerate'])
-                                target_wav = self._resample_wav(self.params['voice_path'], self.params['samplerate'])
+                                target_wav = self._resample_wav(self.params['current_voice'], self.params['samplerate'])
                                 self.engine_zs.to(device)
                                 audio_part = self.engine_zs.voice_conversion(
                                     source_wav=source_wav,
@@ -164,8 +167,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 self.engine.to(device)
                                 if device == devices['CPU']['proc']:
                                     audio_part = self.engine.tts(
-                                        text=part,
-                                        **speaker_argument
+                                        text=part
                                     )
                                 else:
                                     with torch.autocast(
@@ -173,8 +175,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                         dtype=self.amp_dtype
                                     ):
                                         audio_part = self.engine.tts(
-                                            text=part,
-                                            **speaker_argument
+                                            text=part
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
@@ -185,6 +186,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                     part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
                                 if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
+                                    #np.random.seed(seed)
                                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                                     break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
                                     self.audio_segments.append(break_tensor.clone())

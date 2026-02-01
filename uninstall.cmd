@@ -1,116 +1,139 @@
 @echo off
+setlocal EnableExtensions EnableDelayedExpansion
 
-setlocal enabledelayedexpansion
-
-:: ---------------------------------------
+:: ========================================================
 :: CONFIG
-:: ---------------------------------------
+:: ========================================================
 set "APP_NAME=ebook2audiobook"
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+set "REAL_INSTALL_DIR=%SCRIPT_DIR%"
+set "SCRIPT_NAME=%~nx0"
+
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
-set "MINIFORGE_PATH=%USERPROFILE%\Miniforge3"
-:: ---------------------------------------
+
+set "CONDA_HOME=%USERPROFILE%\Miniforge3"
+set "CONDA_PATH=%CONDA_HOME%\condabin"
+
+:: heavy dirs (atomic delete, no listing)
+set "SKIP_DIR_1=python_env"
+set "SKIP_DIR_2=Miniforge3"
+:: ========================================================
 
 echo ========================================================
 echo   %APP_NAME%  Uninstaller
 echo ========================================================
-echo Running from: %SCRIPT_DIR%
+echo Install location:
+echo   %REAL_INSTALL_DIR%
+echo.
 
-set "REAL_INSTALL_DIR=%SCRIPT_DIR%"
-
-echo Press any key to start uninstall (or close this window to cancel).
+:: ========================================================
+:: USER CONFIRMATION
+:: ========================================================
+echo ========================================================
+echo   This will uninstall %APP_NAME%.
+echo   Components listed in .installed will be removed.
+echo.
+echo   Press a key to continue . . .
+echo ========================================================
 pause >nul
+echo.
 
-cd /d "%REAL_INSTALL_DIR%\.."
-
-:: ---------------------------------------
-:: KILL PROCESSES (INFORM and TERMINATE)
-:: ---------------------------------------
-echo Checking for running program instances...
-
+:: ========================================================
+:: TERMINATE APP PROCESS ONLY
+:: ========================================================
 tasklist | find /i "%APP_NAME%.exe" >nul && (
-	echo %APP_NAME%.exe is running and will be terminated.
+	echo Terminating %APP_NAME%.exe
 	taskkill /IM "%APP_NAME%.exe" /F >nul 2>&1
 )
 
-tasklist | find /i "python.exe" >nul && (
-	echo python.exe is active and will be terminated.
-	taskkill /IM "python.exe" /F >nul 2>&1
-)
-
-:: ---------------------------------------
-:: PROCESS .installed PACKAGES
-:: ---------------------------------------
-set "REMOVE_MINIFORGE="
-set "SCOOP_PRESENT="
+:: ========================================================
+:: PROCESS .installed (CONTROLLED REMOVAL)
+:: ========================================================
+set "REMOVE_CONDA="
 
 if exist "%INSTALLED_LOG%" (
-	echo Reading .installed packages list...
-
 	for /f "usebackq delims=" %%A in ("%INSTALLED_LOG%") do (
-		set "ITEM=%%A"
-		if "!ITEM!" NEQ "" (
-			if /i "!ITEM!"=="Miniforge3" (
-				set "REMOVE_MINIFORGE=1"
-				echo Marked Miniforge3 for removal...
-			)
-			if /i "!ITEM!"=="scoop" (
-				set "SCOOP_PRESENT=1"
-				echo Scoop presence detected - will remove at end...
-			)
-			echo Uninstalling package using Scoop: !ITEM!
-			call scoop uninstall -y !ITEM! >nul 2>&1
-		)
+		if /i "%%A"=="Miniforge3" set "REMOVE_CONDA=1"
 	)
 )
 
-:: ---------------------------------------
-:: REMOVE MINIFORGE3
-:: ---------------------------------------
-if defined REMOVE_MINIFORGE (
-	if exist "%MINIFORGE_PATH%" (
-		echo Removing Miniforge3: %MINIFORGE_PATH%
-		rd /s /q "%MINIFORGE_PATH%" >nul 2>&1
-	)
+:: ========================================================
+:: DETACH FROM CONDA (SAFETY)
+:: ========================================================
+if defined REMOVE_CONDA (
+	set "CONDA_SHLVL="
+	set "CONDA_DEFAULT_ENV="
+	set "CONDA_PREFIX="
+	set "PATH=%SystemRoot%\System32;%SystemRoot%"
 )
 
-:: ---------------------------------------
-:: DEFERRED SCOOP UNINSTALL
-:: ---------------------------------------
-if defined SCOOP_PRESENT (
-	echo Removing Scoop and cleanup...
-	start "" cmd /c "ping 127.0.0.1 -n 3 >nul & scoop uninstall -y scoop >nul 2>&1 & rd /s /q %USERPROFILE%\scoop >nul 2>&1"
+:: ========================================================
+:: REMOVE MINIFORGE (FAST, ATOMIC)
+:: ========================================================
+if defined REMOVE_CONDA if exist "%CONDA_HOME%" (
+	echo %CONDA_HOME%
+	rd /s /q "%CONDA_HOME%" >nul 2>&1
 )
 
-:: ---------------------------------------
-:: REMOVE SHORTCUTS AND REGISTRY
-:: ---------------------------------------
-echo Removing Menu entries and Desktop shortcuts...
+:: ========================================================
+:: REMOVE SHORTCUTS + REGISTRY
+:: ========================================================
+if exist "%STARTMENU_DIR%" (
+	echo %STARTMENU_DIR%
+	rd /s /q "%STARTMENU_DIR%" >nul 2>&1
+)
 
-if exist "%STARTMENU_DIR%" rd /s /q "%STARTMENU_DIR%" >nul 2>&1
-if exist "%DESKTOP_LNK%" del /q "%DESKTOP_LNK%" >nul 2>&1
+if exist "%DESKTOP_LNK%" (
+	echo %DESKTOP_LNK%
+	del /q "%DESKTOP_LNK%" >nul 2>&1
+)
 
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
-:: ---------------------------------------
-:: DELETE THE ACTUAL APP FOLDER (DEFERRED, VERBOSE)
-:: ---------------------------------------
-echo Removing application directory:
-echo %REAL_INSTALL_DIR%
+:: ========================================================
+:: CLEAN REPOSITORY CONTENT (FIRST LEVEL ONLY)
+:: ========================================================
+echo Cleaning repository content...
 
-echo ============================
-echo Uninstallation complete.
-echo Press any key to close this window.
-echo ============================
+for %%F in ("%REAL_INSTALL_DIR%\*") do (
+	set "NAME=%%~nxF"
+
+	:: skip uninstall script
+	if /i "!NAME!"=="%SCRIPT_NAME%" goto :next_item
+
+	:: print first-level item
+	echo !NAME!
+
+	:: atomic delete
+	rd /s /q "%%F" >nul 2>&1
+	del /f /q "%%F" >nul 2>&1
+
+	:next_item
+)
+
+if exist "%INSTALLED_LOG%" (
+	echo .installed
+	del /f /q "%INSTALLED_LOG%" >nul 2>&1
+)
+
+:: ========================================================
+:: FINAL MESSAGE
+:: ========================================================
+echo.
+echo ========================================================
+echo   Uninstallation completed.
+echo.
+echo   The application content has been removed.
+echo   Please remove the empty repository folder manually:
+echo.
+echo     %REAL_INSTALL_DIR%
+echo.
+echo ========================================================
+echo.
+echo Press a key to continue . . .
 pause >nul
-
-start "" cmd /c ^
-"ping 127.0.0.1 -n 3 >nul ^
-& echo. ^
-& echo === Removing files and folders === ^
-& rd /s "%REAL_INSTALL_DIR%""
 
 exit /b

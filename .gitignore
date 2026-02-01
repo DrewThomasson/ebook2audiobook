@@ -9,3 +9,4 @@ python_env/
 tmp/gradio/
 
 .DS_Store
+*.wixobj

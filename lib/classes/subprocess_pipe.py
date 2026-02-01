@@ -1,4 +1,4 @@
-import os, subprocess, multiprocessing, re, sys, gradio as gr
+import os, subprocess, multiprocessing, sys, gradio as gr
 
 from collections.abc import Callable
 
@@ -38,6 +38,7 @@ class SubprocessPipe:
 
     def _run_process(self)->bool:
         try:
+            import re
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
             if is_ffmpeg:
                 self.process = subprocess.Popen(

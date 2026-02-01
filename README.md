@@ -173,7 +173,7 @@ So you should first remove manually any text you don't want to be converted in a
 
    - **Linux/MacOS**  
      ```bash
-     ./ebook2audiobook.sh  # Run launch script
+     ./ebook2audiobook.command  # Run launch script
      ```
      <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
      
@@ -192,7 +192,7 @@ So you should first remove manually any text you don't want to be converted in a
    
 1. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks. `http://localhost:7860/`
 2. **For Public Link**:
-   `./ebook2audiobook.sh --share` (Linux/MacOS)
+   `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (all OS)
 
@@ -203,7 +203,7 @@ to let the web page reconnect to the new connection socket.**
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
-     ./ebook2audiobook.sh --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
    - **Windows**
      ```bash
@@ -221,7 +221,7 @@ to let the web page reconnect to the new connection socket.**
   (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
      ```bash
-     ./ebook2audiobook.sh --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
+     ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
    - **Windows**
      ```bash
@@ -236,7 +236,7 @@ to let the web page reconnect to the new connection socket.**
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**
      ```bash
-     ./ebook2audiobook.sh --help
+     ./ebook2audiobook.command --help
      ```
    - **Windows**
      ```bash
@@ -340,15 +340,15 @@ Windows:
     ebook2audiobook.cmd --headless --ebook '/path/to/file' --language eng
 Linux/Mac:
     Gradio/GUI:
-    ./ebook2audiobook.sh
+    ./ebook2audiobook.command
     Headless mode:
-    ./ebook2audiobook.sh --headless --ebook '/path/to/file' --language eng
+    ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 
 Docker build image:
     Windows:
     ebook2audiobook.cmd --script_mode build_docker
     Linux/Mac
-    ./ebook2audiobook.sh --script_mode build_docker
+    ./ebook2audiobook.command --script_mode build_docker
 Docker run image:
     Gradio/GUI:
         CPU:
@@ -413,7 +413,7 @@ TIP: if it needs some more pause, add '[pause:3]' for 3 sec. etc.
    ebook2audiobook.cmd --script_mode build_docker
 
    # Linux/MacOS
-   ./ebook2audiobook.sh --script_mode build_docker 
+   ./ebook2audiobook.command --script_mode build_docker 
 ```
 4. **Run the Container:**
 ```bash

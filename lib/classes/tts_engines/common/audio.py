@@ -1,14 +1,17 @@
-import os, torch, subprocess, shutil, json, numpy as np
+import os, subprocess, shutil, json
 
-from torch import Tensor
-from typing import Any, Union
-from scipy.io import wavfile as wav
-from scipy.signal import find_peaks
-
+from typing import Any, Union, TYPE_CHECKING
 from lib.classes.subprocess_pipe import SubprocessPipe
+
+
+if TYPE_CHECKING:
+    from torch import Tensor
 
 def detect_gender(voice_path:str)->str|None:
     try:
+        import numpy as np
+        from scipy.signal import find_peaks
+        from scipy.io import wavfile as wav
         samplerate, signal = wav.read(voice_path)
         # Ensure mono
         if signal.ndim > 1:
@@ -33,27 +36,28 @@ def detect_gender(voice_path:str)->str|None:
         print(error)
         return None
 
-def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_threshold: float = 0.003, buffer_sec: float = 0.005) -> Tensor:
+def trim_audio(audio_data: Union[list[float], 'Tensor'], samplerate: int, silence_threshold: float = 0.003, buffer_sec: float = 0.005)->'Tensor':
+    import torch
     # Ensure audio_data is a PyTorch tensor
     if isinstance(audio_data, list):
         audio_data = torch.tensor(audio_data, dtype=torch.float32)
-    if isinstance(audio_data, Tensor):
+    if isinstance(audio_data, torch.Tensor):
         if audio_data.ndim != 1:
             error = "audio_data must be a 1D tensor (mono audio)."
-            raise ValueError(error)
-            return torch.tensor([], dtype=torch.float32)  # just for static analyzers
+            print(error)
+            return torch.tensor([], dtype=torch.float32)
         if audio_data.device.type != "cpu":
             audio_data = audio_data.cpu()
         # Detect non-silent indices
         non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
         if len(non_silent_indices) == 0:
-            return torch.tensor([], dtype=audio_data.dtype)  # Preserves dtype
+            return torch.tensor([], dtype=audio_data.dtype)
         # Calculate start and end trimming indices with buffer
         start_index = max(non_silent_indices[0].item() - int(buffer_sec * samplerate), 0)
         end_index = min(non_silent_indices[-1].item() + int(buffer_sec * samplerate), audio_data.size(0))
         return audio_data[start_index:end_index]
-    error = "audio_data must be a PyTorch tensor or a list of numerical values."
-    raise TypeError(error)
+    error = 'audio_data must be a PyTorch tensor or a list of numerical values.'
+    print(error)
     return torch.tensor([], dtype=torch.float32)
     
 def _extract_mediainfo_durations(data:dict|list)->dict[str, float]:
@@ -84,8 +88,10 @@ def _extract_mediainfo_durations(data:dict|list)->dict[str, float]:
                     continue
     return durations
 
-def get_audio_duration(filepath: str) -> float:
+def get_audio_duration(filepath:str)->float:
     mediainfo = shutil.which("mediainfo")
+    if not mediainfo:
+        return 0.0
     cmd = [mediainfo, "--Output=JSON", filepath]
     try:
         result = subprocess.run(
@@ -107,8 +113,10 @@ def get_audio_duration(filepath: str) -> float:
 def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
     durations = {os.path.realpath(p): 0.0 for p in filepaths}
     mediainfo = shutil.which("mediainfo")
-    cmd = [mediainfo, "--Output=JSON", *filepaths]
+    if not mediainfo:
+        return durations
     try:
+        cmd = [mediainfo, "--Output=JSON", *filepaths]
         out = subprocess.check_output(cmd, text=True)
         data = json.loads(out)
         extracted = _extract_mediainfo_durations(data)
@@ -120,41 +128,55 @@ def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
     return durations
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
-    filter_complex = (
-        'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
-        'afftdn=nf=-70,'
-        'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
-        'loudnorm=I=-14:TP=-3:LRA=7:linear=true,'
-        'equalizer=f=150:t=q:w=2:g=1,'
-        'equalizer=f=250:t=q:w=2:g=-3,'
-        'equalizer=f=3000:t=q:w=2:g=2,'
-        'equalizer=f=5500:t=q:w=2:g=-4,'
-        'equalizer=f=9000:t=q:w=2:g=-2,'
-        'highpass=f=63[audio]'
-    )
-    cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', input_file]
-    cmd += [
-        '-filter_complex', filter_complex,
-        '-map', '[audio]',
-        '-ar', str(samplerate),
-        '-y', output_file
-    ]
-    proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(str(input_file)), msg='Normalize')
-    if proc_pipe:
-        return True
-    else:
-        error = f"normalize_audio() error: {input_file}: {e}"
-        print(error)
+    try:
+        ffmpeg = shutil.which('ffmpeg')
+        if not ffmpeg:
+            error = 'ffmpeg not found'
+            print(error)
+            return False
+        filter_complex = (
+            'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
+            'afftdn=nf=-70,'
+            'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
+            'loudnorm=I=-14:TP=-3:LRA=7:linear=true,'
+            'equalizer=f=150:t=q:w=2:g=1,'
+            'equalizer=f=250:t=q:w=2:g=-3,'
+            'equalizer=f=3000:t=q:w=2:g=2,'
+            'equalizer=f=5500:t=q:w=2:g=-4,'
+            'equalizer=f=9000:t=q:w=2:g=-2,'
+            'highpass=f=63[audio]'
+        )
+        cmd = [ffmpeg, '-hide_banner', '-nostats', '-i', input_file]
+        cmd += [
+            '-filter_complex', filter_complex,
+            '-map', '[audio]',
+            '-ar', str(samplerate),
+            '-y', output_file
+        ]
+        proc_pipe = SubprocessPipe(
+            cmd,
+            is_gui_process=is_gui_process,
+            total_duration=get_audio_duration(str(input_file)),
+            msg='Normalize'
+        )
+        return bool(proc_pipe)
+    except Exception as e:
+        print(f'normalize_audio() error: {input_file}: {e}')
         return False
 
 def is_audio_data_valid(audio_data:Any)->bool:
     if audio_data is None:
         return False
-    if isinstance(audio_data, torch.Tensor):
-        return audio_data.numel() > 0
+    try:
+        import torch
+        if isinstance(audio_data, torch.Tensor):
+            return audio_data.numel() > 0
+    except ImportError:
+        pass
     if isinstance(audio_data, (list, tuple)):
         return len(audio_data) > 0
     try:
+        import numpy as np
         if isinstance(audio_data, np.ndarray):
             return audio_data.size > 0
     except ImportError:
