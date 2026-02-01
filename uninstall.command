@@ -78,10 +78,10 @@ remove_from_path() {
 if [[ "${OSTYPE:-}" == darwin* ]]; then
 	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 
-	echo "[INFO] Cleaning macOS shortcuts"
+	echo "Cleaning macOS shortcuts"
 
 	if [[ -d "$APP_BUNDLE" ]]; then
-		echo "  [DIR] $APP_BUNDLE"
+		echo "$APP_BUNDLE"
 		rm -rf "$APP_BUNDLE"
 	fi
 
@@ -93,7 +93,7 @@ if [[ "${OSTYPE:-}" == darwin* ]]; then
 		"$DESKTOP_DIR/$APP_NAME.alias"
 	do
 		if [[ -e "$f" ]]; then
-			echo "  [FILE] $f"
+			echo "$f"
 			rm -f "$f"
 		fi
 	done
@@ -112,35 +112,30 @@ fi
 # MINIFORGE REMOVAL
 # =========================================================
 if [[ "$REMOVE_CONDA" -eq 1 && -d "$CONDA_HOME" ]]; then
-	echo "[INFO] Removing Miniforge3:"
-	echo "  [DIR] $CONDA_HOME"
+	echo "Removing Miniforge3:"
+	echo "$CONDA_HOME"
 	rm -rf "$CONDA_HOME"
 	remove_from_path "$CONDA_BIN_PATH"
 fi
 
 # =========================================================
-# REMOVE CURRENT REPO CONTENT (EXCEPT THIS SCRIPT)
+# REMOVE CURRENT REPO CONTENT (RECURSIVE, VERBOSE)
 # =========================================================
 echo
 echo "Cleaning repository content..."
 
-shopt -s dotglob nullglob
-for item in "$SCRIPT_DIR"/*; do
-	name="$(basename "$item")"
-	[[ "$name" == "$SCRIPT_NAME" ]] && continue
-
-	if [[ -d "$item" ]]; then
-		echo "  [DIR] $name"
-		rm -rf "$item"
-	elif [[ -f "$item" ]]; then
-		echo "  [FILE] $name"
-		rm -f "$item"
-	fi
+find "$SCRIPT_DIR" -mindepth 1 -type f ! -name "$SCRIPT_NAME" -print | while IFS= read -r f; do
+	echo "${f#$SCRIPT_DIR/}"
+	rm -f "$f"
 done
-shopt -u dotglob nullglob
+
+find "$SCRIPT_DIR" -mindepth 1 -type d -print | sort -r | while IFS= read -r d; do
+	echo "${d#$SCRIPT_DIR/}"
+	rmdir "$d" 2>/dev/null || true
+done
 
 if [[ -f "$INSTALLED_LOG" ]]; then
-	echo "  [FILE] .installed"
+	echo ".installed"
 	rm -f "$INSTALLED_LOG"
 fi
 
