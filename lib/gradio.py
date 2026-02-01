@@ -1,7 +1,8 @@
 from lib.core import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+import gradio as gr
 
-def build_interface(args:dict)->gr.Blocks:
+def build_interface(args:dict)->tuple[gr.Blocks, gr.Theme, str]:
     try:
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
@@ -2745,7 +2746,7 @@ def build_interface(args:dict)->gr.Blocks:
             msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
             show_alert({"type": "info", "msg": msg})
             os.environ['no_proxy'] = ' ,'.join(all_ips)
-            return app
+            return app, theme, header_css
     except Exception as e:
         error = f'An unexpected error occurred: {e}'
         alert_exception(error, None)
