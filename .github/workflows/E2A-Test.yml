@@ -74,8 +74,8 @@ jobs:
             echo "RUN_CMD=cmd //c ebook2audiobook.cmd" >> $GITHUB_ENV
             echo "IS_WINDOWS=true" >> $GITHUB_ENV
           else
-            echo "Detecting Unix. Using ebook2audiobook.sh"
-            echo "RUN_CMD=./ebook2audiobook.sh" >> $GITHUB_ENV
+            echo "Detecting Unix. Using ebook2audiobook.command"
+            echo "RUN_CMD=./ebook2audiobook.command" >> $GITHUB_ENV
             echo "IS_WINDOWS=false" >> $GITHUB_ENV
           fi
 
@@ -190,14 +190,14 @@ jobs:
           mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK}
           find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK} -mindepth 1 -exec rm -rf {} +
 
-      # This step only runs on non-windows because we don't need to modify the .sh file if we are running .cmd
-      - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
+      # This step only runs on non-windows because we don't need to modify the .command file if we are running .cmd
+      - name: Add set -e at beginning of ebook2audiobook.command (for error passing)
         if: matrix.os != 'windows'
         shell: bash
         run: |
           cd ~/ebook2audiobook
           conda deactivate 2>/dev/null || true
-          sed -i.bak '1s;^;set -e\n;' ebook2audiobook.sh && rm -f ebook2audiobook.sh.bak
+          sed -i.bak '1s;^;set -e\n;' ebook2audiobook.command && rm -f ebook2audiobook.command.bak
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
