@@ -294,7 +294,7 @@ SML tags available:
             if args['ebooks_dir']:
                 args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
                 if not os.path.exists(args['ebooks_dir']):
-                    error = f"Error: The provided --ebooks_dir {args['ebooks_dir'} does not exist."
+                    error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."
                     print(error)
                     sys.exit(1)                   
                 args['ebook_list'] = []
