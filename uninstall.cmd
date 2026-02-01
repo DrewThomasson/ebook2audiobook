@@ -115,20 +115,37 @@ reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audio
 :: ========================================================
 :: REMOVE CURRENT REPO CONTENT (RECURSIVE, VERBOSE)
 :: ========================================================
-echo Cleaning repository content…
+echo Cleaning repository content...
 
-:: --- remove files first ---
+:: --- fast delete heavy directories (no listing) ---
+if exist "%REAL_INSTALL_DIR%\%SKIP_DIR_1%" (
+	echo %REAL_INSTALL_DIR%\%SKIP_DIR_1%
+	rd /s /q "%REAL_INSTALL_DIR%\%SKIP_DIR_1%" >nul 2>&1
+)
+
+:: --- remove files first (skip uninstaller + skipped dirs) ---
 for /r "%REAL_INSTALL_DIR%" %%F in (*) do (
-	if /i not "%%~nxF"=="%SCRIPT_NAME%" (
+	set "P=%%~dpF"
+	set "N=%%~nxF"
+
+	echo !P! | findstr /i "\\%SKIP_DIR_1%\\" >nul && goto :next_file
+
+	if /i not "!N!"=="%SCRIPT_NAME%" (
 		echo %%F
 		del /f /q "%%F" >nul 2>&1
 	)
+
+	:next_file
 )
 
-:: --- then remove directories bottom-up ---
 for /f "delims=" %%D in ('dir "%REAL_INSTALL_DIR%" /ad /b /s ^| sort /r') do (
+	echo %%D | findstr /i "\\%SKIP_DIR_1%$" >nul && goto :next_dir
+	echo %%D | findstr /i "\\%SKIP_DIR_1%\\" >nul && goto :next_dir
+
 	echo %%D
 	rd "%%D" >nul 2>&1
+
+	:next_dir
 )
 
 if exist "%INSTALLED_LOG%" (

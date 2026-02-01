@@ -4,7 +4,6 @@ set -euo pipefail
 
 : "${HOME:=$PWD}"
 
-CURRENT_PYVENV=""
 SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
 
 # =========================================================
@@ -34,6 +33,9 @@ INSTALLED_LOG="$SCRIPT_DIR/.installed"
 CONDA_HOME="$HOME/Miniforge3"
 CONDA_BIN_PATH="$CONDA_HOME/bin"
 
+# heavy directories to skip from verbose traversal
+SKIP_DIRS=("python_env" "Miniforge3")
+
 # =========================================================
 # HEADER
 # =========================================================
@@ -52,7 +54,7 @@ if [[ -t 0 ]]; then
 	echo "This will uninstall $APP_NAME."
 	echo "Components listed in .installed will be removed."
 	echo
-	printf "Press Enter to continue or Ctrl+C to abort…"
+	printf "Press Enter to continue or Ctrl+C to abort..."
 	read -r _ || true
 	echo
 fi
@@ -73,66 +75,54 @@ remove_from_path() {
 }
 
 # =========================================================
-# DESKTOP / MENU CLEANUP (macOS)
-# =========================================================
-if [[ "${OSTYPE:-}" == darwin* ]]; then
-	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
-
-	echo "Cleaning macOS shortcuts"
-
-	if [[ -d "$APP_BUNDLE" ]]; then
-		echo "$APP_BUNDLE"
-		rm -rf "$APP_BUNDLE"
-	fi
-
-	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
-
-	for f in \
-		"$DESKTOP_DIR/$APP_NAME" \
-		"$DESKTOP_DIR/$APP_NAME.app" \
-		"$DESKTOP_DIR/$APP_NAME.alias"
-	do
-		if [[ -e "$f" ]]; then
-			echo "$f"
-			rm -f "$f"
-		fi
-	done
-fi
-
-# =========================================================
 # PROCESS .installed (CONTROLLED REMOVAL)
 # =========================================================
 REMOVE_CONDA=0
-
 if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 	REMOVE_CONDA=1
 fi
 
 # =========================================================
-# MINIFORGE REMOVAL
+# MINIFORGE REMOVAL (FAST, NO LISTING)
 # =========================================================
 if [[ "$REMOVE_CONDA" -eq 1 && -d "$CONDA_HOME" ]]; then
-	echo "Removing Miniforge3:"
 	echo "$CONDA_HOME"
 	rm -rf "$CONDA_HOME"
 	remove_from_path "$CONDA_BIN_PATH"
 fi
 
 # =========================================================
+# FAST DELETE HEAVY REPO DIRS (NO VERBOSE)
+# =========================================================
+for d in "${SKIP_DIRS[@]}"; do
+	if [[ -d "$SCRIPT_DIR/$d" ]]; then
+		echo "$SCRIPT_DIR/$d"
+		rm -rf "$SCRIPT_DIR/$d"
+	fi
+done
+
+# =========================================================
 # REMOVE CURRENT REPO CONTENT (RECURSIVE, VERBOSE)
 # =========================================================
 echo
-echo "Cleaning repository content…"
+echo "Cleaning repository content..."
 
-find "$SCRIPT_DIR" -mindepth 1 -type f ! -name "$SCRIPT_NAME" -print | while IFS= read -r f; do
-	echo "${f#$SCRIPT_DIR/}"
-	rm -f "$f"
-done
+# remove files first
+find "$SCRIPT_DIR" -mindepth 1 -type f \
+	! -name "$SCRIPT_NAME" \
+	$(printf "! -path */%s/* " "${SKIP_DIRS[@]}") \
+	-print | while IFS= read -r f; do
+		echo "${f#$SCRIPT_DIR/}"
+		rm -f "$f"
+	done
 
-find "$SCRIPT_DIR" -mindepth 1 -type d -print | sort -r | while IFS= read -r d; do
-	echo "${d#$SCRIPT_DIR/}"
-	rmdir "$d" 2>/dev/null || true
-done
+# then remove directories bottom-up
+find "$SCRIPT_DIR" -mindepth 1 -type d \
+	$(printf "! -path */%s/* " "${SKIP_DIRS[@]}") \
+	-print | sort -r | while IFS= read -r d; do
+		echo "${d#$SCRIPT_DIR/}"
+		rmdir "$d" 2>/dev/null || true
+	done
 
 if [[ -f "$INSTALLED_LOG" ]]; then
 	echo ".installed"
@@ -155,7 +145,7 @@ echo "================================================"
 echo
 
 if [[ -t 0 ]]; then
-	printf "Press Enter to continue…"
+	printf "Press Enter to continue..."
 	read -r _ || true
 fi
 
