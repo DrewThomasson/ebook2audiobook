@@ -870,12 +870,6 @@ class DeviceInstaller():
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-binary=scikit-learn', 'scikit-learn'])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-cache-dir', '--no-binary=scipy', 'scipy'])
-                                        libgomp_src = Path('/usr/lib/aarch64-linux-gnu/libgomp.so')
-                                        libgomp_dst = Path('./python_env/lib/python3.10/site-packages/scikit_learn.libs/libgomp-947d5fa1.so.1.0.0')
-                                        if libgomp_src.exists():
-                                            if libgomp_dst.exists():
-                                                libgomp_dst.unlink()
-                                            libgomp_dst.symlink_to(libgomp_src)
                                     elif device_info['name'] == devices['MPS']['proc']:
                                         torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
                                         torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
@@ -895,6 +889,14 @@ class DeviceInstaller():
                                     error = f'Error while installing torch package: {e}'
                                     print(error)
                                     return 1
+                        if device_info['name'] == devices['JETSON']['proc']:
+                            if libgomp_src.exists():
+                                libgomp_dst = Path('./python_env/lib/python3.10/site-packages/scikit_learn.libs/libgomp-947d5fa1.so.1.0.0')
+                                if not libgomp_dst.is_symlink():
+                                    libgomp_src = Path('/usr/lib/aarch64-linux-gnu/libgomp.so')
+                                    if libgomp_dst.exists():
+                                        libgomp_dst.unlink()
+                                    libgomp_dst.symlink_to(libgomp_src)
                         return 0
                     else:
                         error = 'install_device_packages() error: torch version not detected'
