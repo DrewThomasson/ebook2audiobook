@@ -330,12 +330,11 @@ SML tags available:
             if passed_args_set.issubset(allowed_arguments):
                 try:
                     from lib.gradio import build_interface
-                    app, them, header_css = build_interface(args)
+                    app = build_interface(args)
                     if app is not None:
                         app.queue(
                             default_concurrency_limit=interface_concurrency_limit
                         ).launch(
-                            theme=theme, css=header_css,
                             debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),
                             show_error=debug_mode, favicon_path='./favicon.ico', 
                             server_name=interface_host, 

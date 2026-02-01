@@ -90,23 +90,25 @@ if exist "%DESKTOP_LNK%" (
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
 :: ========================================================
-:: CLEAN REPOSITORY CONTENT (FIRST LEVEL ONLY)
+:: CLEAN REPOSITORY CONTENT
+:: - echo only first-level items
+:: - delete everything recursively
 :: ========================================================
 echo Cleaning repository content...
 
 for %%F in ("%REAL_INSTALL_DIR%\*") do (
 	set "NAME=%%~nxF"
 
+	:: skip uninstall script itself
 	if /i not "!NAME!"=="%SCRIPT_NAME%" (
 		echo !NAME!
+
+		:: delete directory tree if it is a folder
 		rd /s /q "%%F" >nul 2>&1
+
+		:: delete file if it is a file
 		del /f /q "%%F" >nul 2>&1
 	)
-)
-
-if exist "%INSTALLED_LOG%" (
-	echo .installed
-	del /f /q "%INSTALLED_LOG%" >nul 2>&1
 )
 
 :: ========================================================
