@@ -345,11 +345,11 @@ SML tags available:
                             max_file_size=max_upload_size,
                             footer_links=['settings'],
                             allowed_paths=[
-                                os.path.join(rood_dir, 'voices'),
-                                os.path.join(rood_dir, 'audiobooks'),
-                                os.path.join(rood_dir, 'models'),
-                                os.path.join(rood_dir, 'tmp'),
-                                os.path.join(rood_dir, 'ebooks')
+                                os.path.join(root_dir, 'voices'),
+                                os.path.join(root_dir, 'audiobooks'),
+                                os.path.join(root_dir, 'models'),
+                                os.path.join(root_dir, 'tmp'),
+                                os.path.join(root_dir, 'ebooks')
                             ]
                         )
                 except OSError as e:
