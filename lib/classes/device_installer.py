@@ -889,7 +889,7 @@ class DeviceInstaller():
                                     error = f'Error while installing torch package: {e}'
                                     print(error)
                                     return 1
-                        if device_info['name'] == devices['JETSON']['proc']:
+                        if 'jetpack' in device_info['note'].lower():
                             if libgomp_src.exists():
                                 libgomp_dst = Path('./python_env/lib/python3.10/site-packages/scikit_learn.libs/libgomp-947d5fa1.so.1.0.0')
                                 if not libgomp_dst.is_symlink():
