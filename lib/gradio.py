@@ -454,7 +454,7 @@ def build_interface(args:dict)->gr.Blocks:
             </style>
         '''
         
-        with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(604800, 86400)) as app:
+        with gr.Blocks(title=title, delete_cache=(604800, 86400)) as app:
             with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
                 with gr.Tabs(elem_id='gr_tabs'):
                     gr_tab_main = gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab')
@@ -2745,8 +2745,8 @@ def build_interface(args:dict)->gr.Blocks:
             msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
             show_alert({"type": "info", "msg": msg})
             os.environ['no_proxy'] = ' ,'.join(all_ips)
-            return app
+            return app, theme, header_css
     except Exception as e:
         error = f'An unexpected error occurred: {e}'
         alert_exception(error, None)
-    return None
+    return None, None, None
