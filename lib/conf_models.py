@@ -147,7 +147,7 @@ default_engine_settings = {
             "zh_speaker_6": "Speaker 6", "zh_speaker_7": "Speaker 7", "zh_speaker_8": "Speaker 8",
             "zh_speaker_9": "Speaker 9"
         },
-        "rating": {"VRAM": 6, "CPU": 1, "RAM": 6, "Realism": 5}
+        "rating": {"VRAM": 6, "CPU": 1, "RAM": 6, "Realism": 4}
     },
     TTS_ENGINES['TORTOISE']: {
         "languages": {"eng": "en"},

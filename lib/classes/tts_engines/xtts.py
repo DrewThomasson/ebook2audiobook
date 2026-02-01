@@ -29,6 +29,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
 
     def load_engine(self)->Any:
         try:
+            from huggingface_hub import hf_hub_download
             msg = f'Loading TTS {self.tts_key} model, it takes a while, please be patient…'
             print(msg)
             self._cleanup_memory()
