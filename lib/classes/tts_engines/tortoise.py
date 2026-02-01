@@ -74,7 +74,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 if not self._set_voice():
                     return False
                 speaker_argument = {}
-                part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
                 if self.speaker not in self.engine.speakers:
                     speaker_wav = self.params['current_voice']
@@ -97,7 +96,8 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                     else:
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
-                            part = part[:-1]                        
+                            part = part[:-1]    
+                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         with torch.no_grad():
                             self.engine.to(device)
                             if device == devices['CPU']['proc']:
