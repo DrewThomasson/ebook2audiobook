@@ -16,10 +16,6 @@ set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
 
 set "CONDA_HOME=%USERPROFILE%\Miniforge3"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
-
-:: heavy dirs (atomic delete, no listing)
-set "SKIP_DIR_1=python_env"
-set "SKIP_DIR_2=Miniforge3"
 :: ========================================================
 
 echo ========================================================
@@ -101,17 +97,11 @@ echo Cleaning repository content...
 for %%F in ("%REAL_INSTALL_DIR%\*") do (
 	set "NAME=%%~nxF"
 
-	:: skip uninstall script
-	if /i "!NAME!"=="%SCRIPT_NAME%" goto :next_item
-
-	:: print first-level item
-	echo !NAME!
-
-	:: atomic delete
-	rd /s /q "%%F" >nul 2>&1
-	del /f /q "%%F" >nul 2>&1
-
-	:next_item
+	if /i not "!NAME!"=="%SCRIPT_NAME%" (
+		echo !NAME!
+		rd /s /q "%%F" >nul 2>&1
+		del /f /q "%%F" >nul 2>&1
+	)
 )
 
 if exist "%INSTALLED_LOG%" (
