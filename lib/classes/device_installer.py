@@ -890,10 +890,10 @@ class DeviceInstaller():
                                     print(error)
                                     return 1
                         if 'jetpack' in device_info['note'].lower():
+                            libgomp_src = Path('/usr/lib/aarch64-linux-gnu/libgomp.so')
                             if libgomp_src.exists():
                                 libgomp_dst = Path('./python_env/lib/python3.10/site-packages/scikit_learn.libs/libgomp-947d5fa1.so.1.0.0')
                                 if not libgomp_dst.is_symlink():
-                                    libgomp_src = Path('/usr/lib/aarch64-linux-gnu/libgomp.so')
                                     if libgomp_dst.exists():
                                         libgomp_dst.unlink()
                                     libgomp_dst.symlink_to(libgomp_src)
