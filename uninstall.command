@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+setopt NULL_GLOB 2>/dev/null || true
+
 : "${HOME:=$PWD}"
 
 SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
@@ -79,7 +81,7 @@ remove_from_path() {
 # =========================================================
 if [[ "${OSTYPE:-}" == darwin* ]]; then
 	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
-	DESKTOP_ALIAS="$HOME/Desktop/Ebook2Audiobook"
+	DESKTOP_ALIAS="$HOME/Desktop/ebook2audiobook"
 
 	echo "Cleaning macOS shortcuts"
 
