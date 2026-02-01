@@ -4,6 +4,7 @@ set -euo pipefail
 
 : "${HOME:=$PWD}"
 
+CURRENT_PYVENV=""
 SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
 
 # =========================================================
@@ -32,9 +33,6 @@ INSTALLED_LOG="$SCRIPT_DIR/.installed"
 
 CONDA_HOME="$HOME/Miniforge3"
 CONDA_BIN_PATH="$CONDA_HOME/bin"
-
-# heavy directories (atomic delete, no traversal)
-SKIP_DIRS=("python_env" "Miniforge3")
 
 # =========================================================
 # HEADER
@@ -75,47 +73,74 @@ remove_from_path() {
 }
 
 # =========================================================
+# DESKTOP / MENU CLEANUP (macOS)
+# =========================================================
+if [[ "${OSTYPE:-}" == darwin* ]]; then
+	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
+
+	echo "[INFO] Cleaning macOS shortcuts"
+
+	if [[ -d "$APP_BUNDLE" ]]; then
+		echo "  [DIR] $APP_BUNDLE"
+		rm -rf "$APP_BUNDLE"
+	fi
+
+	DESKTOP_DIR="$(osascript -e 'POSIX path of (path to desktop folder)' 2>/dev/null | sed 's:/$::')"
+
+	for f in \
+		"$DESKTOP_DIR/$APP_NAME" \
+		"$DESKTOP_DIR/$APP_NAME.app" \
+		"$DESKTOP_DIR/$APP_NAME.alias"
+	do
+		if [[ -e "$f" ]]; then
+			echo "  [FILE] $f"
+			rm -f "$f"
+		fi
+	done
+fi
+
+# =========================================================
 # PROCESS .installed (CONTROLLED REMOVAL)
 # =========================================================
 REMOVE_CONDA=0
+
 if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 	REMOVE_CONDA=1
 fi
 
 # =========================================================
-# MINIFORGE REMOVAL (FAST)
+# MINIFORGE REMOVAL
 # =========================================================
 if [[ "$REMOVE_CONDA" -eq 1 && -d "$CONDA_HOME" ]]; then
-	echo "$CONDA_HOME"
+	echo "[INFO] Removing Miniforge3:"
+	echo "  [DIR] $CONDA_HOME"
 	rm -rf "$CONDA_HOME"
 	remove_from_path "$CONDA_BIN_PATH"
 fi
 
 # =========================================================
-# CLEAN REPOSITORY CONTENT (FIRST LEVEL ONLY)
+# REMOVE CURRENT REPO CONTENT (EXCEPT THIS SCRIPT)
 # =========================================================
 echo
 echo "Cleaning repository content..."
 
-for item in "$SCRIPT_DIR"/* "$SCRIPT_DIR"/.*; do
+shopt -s dotglob nullglob
+for item in "$SCRIPT_DIR"/*; do
 	name="$(basename "$item")"
-
-	# skip non-existing globs
-	[[ "$name" == "*" || "$name" == "." || "$name" == ".." ]] && continue
-
-	# skip uninstall script itself
 	[[ "$name" == "$SCRIPT_NAME" ]] && continue
 
-	# print first-level item
-	echo "$name"
-
-	# delete recursively (atomic)
-	rm -rf "$item"
+	if [[ -d "$item" ]]; then
+		echo "  [DIR] $name"
+		rm -rf "$item"
+	elif [[ -f "$item" ]]; then
+		echo "  [FILE] $name"
+		rm -f "$item"
+	fi
 done
+shopt -u dotglob nullglob
 
-# remove .installed if still present
 if [[ -f "$INSTALLED_LOG" ]]; then
-	echo ".installed"
+	echo "  [FILE] .installed"
 	rm -f "$INSTALLED_LOG"
 fi
 
