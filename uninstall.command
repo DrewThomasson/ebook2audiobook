@@ -33,7 +33,7 @@ INSTALLED_LOG="$SCRIPT_DIR/.installed"
 CONDA_HOME="$HOME/Miniforge3"
 CONDA_BIN_PATH="$CONDA_HOME/bin"
 
-# heavy directories to skip from verbose traversal
+# heavy directories (atomic delete, no traversal)
 SKIP_DIRS=("python_env" "Miniforge3")
 
 # =========================================================
@@ -83,7 +83,7 @@ if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 fi
 
 # =========================================================
-# MINIFORGE REMOVAL (FAST, NO LISTING)
+# MINIFORGE REMOVAL (FAST)
 # =========================================================
 if [[ "$REMOVE_CONDA" -eq 1 && -d "$CONDA_HOME" ]]; then
 	echo "$CONDA_HOME"
@@ -92,38 +92,28 @@ if [[ "$REMOVE_CONDA" -eq 1 && -d "$CONDA_HOME" ]]; then
 fi
 
 # =========================================================
-# FAST DELETE HEAVY REPO DIRS (NO VERBOSE)
-# =========================================================
-for d in "${SKIP_DIRS[@]}"; do
-	if [[ -d "$SCRIPT_DIR/$d" ]]; then
-		echo "$SCRIPT_DIR/$d"
-		rm -rf "$SCRIPT_DIR/$d"
-	fi
-done
-
-# =========================================================
-# REMOVE CURRENT REPO CONTENT (RECURSIVE, VERBOSE)
+# CLEAN REPOSITORY CONTENT (FIRST LEVEL ONLY)
 # =========================================================
 echo
 echo "Cleaning repository content..."
 
-# remove files first
-find "$SCRIPT_DIR" -mindepth 1 -type f \
-	! -name "$SCRIPT_NAME" \
-	$(printf "! -path */%s/* " "${SKIP_DIRS[@]}") \
-	-print | while IFS= read -r f; do
-		echo "${f#$SCRIPT_DIR/}"
-		rm -f "$f"
-	done
+for item in "$SCRIPT_DIR"/* "$SCRIPT_DIR"/.*; do
+	name="$(basename "$item")"
 
-# then remove directories bottom-up
-find "$SCRIPT_DIR" -mindepth 1 -type d \
-	$(printf "! -path */%s/* " "${SKIP_DIRS[@]}") \
-	-print | sort -r | while IFS= read -r d; do
-		echo "${d#$SCRIPT_DIR/}"
-		rmdir "$d" 2>/dev/null || true
-	done
+	# skip non-existing globs
+	[[ "$name" == "*" || "$name" == "." || "$name" == ".." ]] && continue
 
+	# skip uninstall script itself
+	[[ "$name" == "$SCRIPT_NAME" ]] && continue
+
+	# print first-level item
+	echo "$name"
+
+	# delete recursively (atomic)
+	rm -rf "$item"
+done
+
+# remove .installed if still present
 if [[ -f "$INSTALLED_LOG" ]]; then
 	echo ".installed"
 	rm -f "$INSTALLED_LOG"
