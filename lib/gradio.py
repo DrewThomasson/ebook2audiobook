@@ -2750,4 +2750,4 @@ def build_interface(args:dict)->tuple[gr.Blocks, gr.Theme, str]:
     except Exception as e:
         error = f'An unexpected error occurred: {e}'
         alert_exception(error, None)
-    return None
+    return None, None, None
