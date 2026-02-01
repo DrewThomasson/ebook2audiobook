@@ -6,6 +6,7 @@ import os, tempfile, sys
 min_python_version = (3,10)
 max_python_version = (3,12)
 
+root_dir = os.path.dirname(os.path.abspath(__file__))
 tmp_dir = os.path.abspath('tmp')
 tempfile.tempdir = tmp_dir
 tmp_expire = 7 # days

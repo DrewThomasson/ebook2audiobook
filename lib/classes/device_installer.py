@@ -846,8 +846,6 @@ class DeviceInstaller():
                 device_info = json.loads(device_info_str)
                 if device_info:
                     print(f'---> Hardware detected: {device_info}')
-                    if device_info['name'] == devices['JETSON']['proc']:
-                        os.environ['SKLEARN_NO_OPENMP'] = '1'
                     torch_version = self.get_package_version('torch')
                     if torch_version:
                         if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
@@ -872,6 +870,12 @@ class DeviceInstaller():
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-binary=scikit-learn', 'scikit-learn'])
                                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-cache-dir', '--no-binary=scipy', 'scipy'])
+                                        libgomp_src = Path('/usr/lib/aarch64-linux-gnu/libgomp.so')
+                                        libgomp_dst = Path('./python_env/lib/python3.10/site-packages/scikit_learn.libs/libgomp-947d5fa1.so.1.0.0')
+                                        if libgomp_src.exists():
+                                            if libgomp_dst.exists():
+                                                libgomp_dst.unlink()
+                                            libgomp_dst.symlink_to(libgomp_src)
                                     elif device_info['name'] == devices['MPS']['proc']:
                                         torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
                                         torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
