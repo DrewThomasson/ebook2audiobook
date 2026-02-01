@@ -2,9 +2,10 @@
 
 set -euo pipefail
 
-setopt NULL_GLOB 2>/dev/null || true
-
 : "${HOME:=$PWD}"
+
+# Zsh safety: allow empty globs (re-run safe)
+setopt NULL_GLOB 2>/dev/null || true
 
 SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
 
@@ -35,8 +36,12 @@ INSTALLED_LOG="$SCRIPT_DIR/.installed"
 CONDA_HOME="$HOME/Miniforge3"
 CONDA_BIN_PATH="$CONDA_HOME/bin"
 
-# heavy directories (atomic delete, no traversal)
+# heavy directories deleted atomically (no traversal)
 SKIP_DIRS=("python_env" "Miniforge3")
+
+# macOS shortcuts (KNOWN, FIXED PATHS)
+APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
+DESKTOP_ALIAS="$HOME/Desktop/ebook2audiobook"
 
 # =========================================================
 # HEADER
@@ -66,7 +71,6 @@ fi
 # =========================================================
 remove_from_path() {
 	local target="$1"
-	echo "Removing from PATH: $target"
 	IFS=':' read -r -a parts <<< "${PATH:-}"
 	PATH=""
 	for p in "${parts[@]}"; do
@@ -77,22 +81,17 @@ remove_from_path() {
 }
 
 # =========================================================
-# DESKTOP / MENU CLEANUP (macOS) – SIMPLE & CORRECT
+# macOS SHORTCUT CLEANUP (NO TESTS, GUARDED)
 # =========================================================
 if [[ "${OSTYPE:-}" == darwin* ]]; then
-	APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
-	DESKTOP_ALIAS="$HOME/Desktop/ebook2audiobook"
-
 	echo "Cleaning macOS shortcuts"
 
-	if [[ -d "$APP_BUNDLE" ]]; then
-		echo "$APP_BUNDLE"
-		rm -rf "$APP_BUNDLE"
+	if [[ -n "$APP_BUNDLE" && "$APP_BUNDLE" != "/" ]]; then
+		rm -rf "$APP_BUNDLE" 2>/dev/null || true
 	fi
 
-	if [[ -e "$DESKTOP_ALIAS" ]]; then
-		echo "$DESKTOP_ALIAS"
-		rm -f "$DESKTOP_ALIAS"
+	if [[ -n "$DESKTOP_ALIAS" && "$DESKTOP_ALIAS" != "/" ]]; then
+		rm -f "$DESKTOP_ALIAS" 2>/dev/null || true
 	fi
 fi
 
@@ -105,13 +104,23 @@ if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 fi
 
 # =========================================================
-# MINIFORGE REMOVAL (FAST)
+# MINIFORGE REMOVAL (FAST, GUARDED)
 # =========================================================
-if [[ "$REMOVE_CONDA" -eq 1 && -d "$CONDA_HOME" ]]; then
+if [[ "$REMOVE_CONDA" -eq 1 && -n "$CONDA_HOME" && "$CONDA_HOME" != "/" ]]; then
 	echo "$CONDA_HOME"
-	rm -rf "$CONDA_HOME"
+	rm -rf "$CONDA_HOME" 2>/dev/null || true
 	remove_from_path "$CONDA_BIN_PATH"
 fi
+
+# =========================================================
+# FAST DELETE HEAVY REPO DIRS (NO LISTING)
+# =========================================================
+for d in "${SKIP_DIRS[@]}"; do
+	path="$SCRIPT_DIR/$d"
+	if [[ -n "$path" && "$path" != "/" ]]; then
+		rm -rf "$path" 2>/dev/null || true
+	fi
+done
 
 # =========================================================
 # CLEAN REPOSITORY CONTENT (FIRST LEVEL ONLY)
@@ -125,12 +134,15 @@ for item in "$SCRIPT_DIR"/* "$SCRIPT_DIR"/.*; do
 	[[ "$name" == "$SCRIPT_NAME" ]] && continue
 
 	echo "$name"
-	rm -rf "$item"
+
+	if [[ -n "$item" && "$item" != "/" ]]; then
+		rm -rf "$item" 2>/dev/null || true
+	fi
 done
 
-if [[ -f "$INSTALLED_LOG" ]]; then
-	echo ".installed"
-	rm -f "$INSTALLED_LOG"
+# remove .installed if still present
+if [[ -n "$INSTALLED_LOG" && "$INSTALLED_LOG" != "/" ]]; then
+	rm -f "$INSTALLED_LOG" 2>/dev/null || true
 fi
 
 # =========================================================
