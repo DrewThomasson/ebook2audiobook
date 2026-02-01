@@ -330,27 +330,17 @@ SML tags available:
             if passed_args_set.issubset(allowed_arguments):
                 try:
                     from lib.gradio import build_interface
-                    app, theme, header_css = build_interface(args)
+                    app = build_interface(args)
                     if app is not None:
                         app.queue(
                             default_concurrency_limit=interface_concurrency_limit
                         ).launch(
-                        	theme=theme,
-                            css=header_css,
                             debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),
                             show_error=debug_mode, favicon_path='./favicon.ico', 
                             server_name=interface_host, 
                             server_port=interface_port, 
                             share= args['share'], 
-                            max_file_size=max_upload_size,
-                            footer_links=['settings'],
-                            allowed_paths=[
-                                os.path.join(root_dir, 'voices'),
-                                os.path.join(root_dir, 'audiobooks'),
-                                os.path.join(root_dir, 'models'),
-                                os.path.join(root_dir, 'tmp'),
-                                os.path.join(root_dir, 'ebooks')
-                            ]
+                            max_file_size=max_upload_size
                         )
                 except OSError as e:
                     error = f'Connection error: {e}'
