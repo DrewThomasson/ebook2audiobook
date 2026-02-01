@@ -1,34 +1,50 @@
-import os, threading, gc, torch, torchaudio, shutil, tempfile, regex as re, soundfile as sf, numpy as np, gradio as gr
-from lib.classes.tts_engines.common.audio import is_audio_data_valid
+import os, threading, gc, shutil, tempfile, regex as re
 
-from typing import Any, Union, Dict
-from huggingface_hub import hf_hub_download
-from safetensors.torch import save_file
-from tqdm import tqdm
+from typing import Any, Union, Dict, TYPE_CHECKING
 from pathlib import Path
-from torch import Tensor
-from torch.nn import Module
 
 from lib.classes.vram_detector import VRAMDetector
-from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration
+from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
 from lib import *
 
 _lock = threading.Lock()
 
+
+if TYPE_CHECKING:
+    import torch
+    from torch import Tensor
+    from torch.nn import Module
+    from torchaudio.transforms import Resample
+
 class TTSUtils:
 
     def _cleanup_memory(self)->None:
+        import torch
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
             torch.cuda.synchronize()
 
-    def _loaded_tts_size_gb(self, loaded_tts:Dict[str, Module])->float:
+    def _model_size_bytes(self, model:Any)->int:
+        total = 0
+        try:
+            for p in model.parameters():
+                total += p.numel() * p.element_size()
+        except Exception:
+            pass
+        try:
+            for b in model.buffers():
+                total += b.numel() * b.element_size()
+        except Exception:
+            pass
+        return total
+
+    def _loaded_tts_size_gb(self, loaded_tts:Dict[str, 'Module'])->float:
         total_bytes = 0
         for model in loaded_tts.values():
             try:
-                total_bytes += model_size_bytes(model)
+                total_bytes += self.model_size_bytes(model)
             except Exception:
                 pass
         gb = total_bytes / (1024 ** 3)
@@ -36,24 +52,25 @@ class TTSUtils:
 
     def _load_xtts_builtin_list(self)->dict:
         try:
+            import torch
+            from huggingface_hub import hf_hub_download
             if len(xtts_builtin_speakers_list) > 0:
                 return xtts_builtin_speakers_list
             speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTSv2']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
             loaded = torch.load(speakers_path, weights_only=False)
             if not isinstance(loaded, dict):
-                raise TypeError(
-                    f'Invalid XTTS speakers format: {type(loaded)}'
-                )
+                error = f'Invalid XTTS speakers format: {type(loaded)}'
+                raise TypeError(error)
             for name, data in loaded.items():
                 if name not in xtts_builtin_speakers_list:
                     xtts_builtin_speakers_list[name] = data
             return xtts_builtin_speakers_list
-        except Exception as error:
-            raise RuntimeError(
-                'self._load_xtts_builtin_list() failed'
-            ) from error
+        except Exception as e:
+            error = f'self._load_xtts_builtin_list() failed: {e}'
+            raise RuntimeError(error)
 
-    def _apply_gpu_policy(self, enough_vram:bool, seed:int)->torch.dtype:
+    def _apply_gpu_policy(self, enough_vram:bool, seed:int)->'torch.dtype':
+        import torch
         using_gpu = self.session['device'] != devices['CPU']['proc']
         device = self.session['device']
         torch.manual_seed(seed)
@@ -164,23 +181,19 @@ class TTSUtils:
         return amp_dtype
 
     def _load_api(self, key:str, model_path:str)->Any:
-        try:
-            with _lock:
-                from TTS.api import TTS as TTSEngine
-                engine = loaded_tts.get(key, False)
-                if not engine:
-                    engine = TTSEngine(model_path)
-                if engine:
-                    vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
-                    self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-                    models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
-                    if self.session['free_vram_gb'] > models_loaded_size_gb:
-                        loaded_tts[key] = engine
-                return engine
-        except Exception as e:
-            error = f'_load_api() error: {e}'
-            print(error)
-            return None
+        with _lock:
+            from TTS.api import TTS as TTSEngine
+            engine = loaded_tts.get(key)
+            if not engine:
+                engine = TTSEngine(model_path)
+            if not engine:
+                raise RuntimeError("TTSEngine returned None")
+            vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
+            self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+            models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
+            if self.session['free_vram_gb'] > models_loaded_size_gb:
+                loaded_tts[key] = engine
+            return engine
 
     def _load_checkpoint(self,**kwargs:Any)->Any:
         try:
@@ -226,7 +239,7 @@ class TTSUtils:
 
     def _load_engine_zs(self)->Any:
         try:
-            msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient...'
+            msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
             self._cleanup_memory()
             engine_zs = loaded_tts.get(self.tts_zs_key, False)
@@ -244,6 +257,10 @@ class TTSUtils:
         new_current_voice = ''
         proc_current_voice = ''
         try:
+            import torch
+            import torchaudio
+            import numpy as np
+            from huggingface_hub import hf_hub_download
             voice_parts = Path(current_voice).parts
             if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
                 return current_voice
@@ -251,7 +268,7 @@ class TTSUtils:
             if self.session['language'] in default_engine_settings[xtts].get('languages', {}):
                 default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                 if os.path.exists(default_text_file):
-                    msg = f"Converting builtin eng voice to {self.session['language']}..."
+                    msg = f"Converting builtin eng voice to {self.session['language']}…"
                     print(msg)
                     key = f'{xtts}-internal'
                     default_text = Path(default_text_file).read_text(encoding='utf-8')
@@ -354,7 +371,9 @@ class TTSUtils:
             print(error)
             return False
         
-    def _tensor_type(self,audio_data:Any)->torch.Tensor:
+    def _tensor_type(self,audio_data:Any)->'Tensor':
+        import torch
+        import numpy as np
         if isinstance(audio_data, torch.Tensor):
             return audio_data
         elif isinstance(audio_data,np.ndarray):
@@ -364,7 +383,8 @@ class TTSUtils:
         else:
             raise TypeError(f'_tensor_type() error: Unsupported type for audio_data: {type(audio_data)}')
             
-    def _get_resampler(self,orig_sr:int,target_sr:int)->torchaudio.transforms.Resample:
+    def _get_resampler(self,orig_sr:int,target_sr:int)->'Resample':
+        import torchaudio
         key=(orig_sr,target_sr)
         if key not in self.resampler_cache:
             self.resampler_cache[key]=torchaudio.transforms.Resample(
@@ -373,6 +393,9 @@ class TTSUtils:
         return self.resampler_cache[key]
 
     def _resample_wav(self,wav_path:str,expected_sr:int)->str:
+        import torchaudio
+        import soundfile as sf
+        import torch
         waveform,orig_sr = torchaudio.load(wav_path)
         if orig_sr==expected_sr and waveform.size(0)==1:
             return wav_path
@@ -424,6 +447,8 @@ class TTSUtils:
         return parts
 
     def _convert_sml(self, sml:str)->tuple[bool, str]:
+        import torch
+        import numpy as np
         m = SML_TAG_PATTERN.fullmatch(sml)
         if not m:
             error = '_convert_sml SML_TAG_PATTERN error: m is empty'
@@ -468,7 +493,9 @@ class TTSUtils:
 
     def _build_vtt_file(self, all_sentences:list, audio_dir:str, vtt_path:str)->bool:
         try:
-            msg = 'VTT file creation started...'
+            import gradio as gr
+            from tqdm import tqdm
+            msg = 'VTT file creation started…'
             print(msg)
             audio_sentences_dir = Path(audio_dir)
             audio_files = sorted(
@@ -492,10 +519,10 @@ class TTSUtils:
             vtt_blocks = []
             if self.session['is_gui_process']:
                 progress_bar = gr.Progress(track_tqdm=False)
-            msg = 'Get duration of each sentence...'
+            msg = 'Get duration of each sentence…'
             print(msg)
             durations = get_audiolist_duration([str(p) for p in audio_files])
-            msg = 'Create VTT blocks...'
+            msg = 'Create VTT blocks…'
             print(msg)
             with tqdm(total=audio_files_length, unit='files') as t:
                 for idx, file in enumerate(audio_files):
@@ -518,7 +545,7 @@ class TTSUtils:
                             desc=f'Writing vtt idx {idx}'
                         )
                     t.update(1)
-            msg = 'Write VTT blocks into file...'
+            msg = 'Write VTT blocks into file…'
             print(msg)
             with open(vtt_path, 'w', encoding='utf-8') as f:
                 f.write('WEBVTT\n\n')

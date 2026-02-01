@@ -19,7 +19,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
-            #np.random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
@@ -33,35 +32,41 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
             self._cleanup_memory()
-            engine = loaded_tts.get(self.tts_key, False)
+            engine = loaded_tts.get(self.tts_key)
             if not engine:
                 if self.session['custom_model'] is not None:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                    print(msg)
-                else:
+                    raise NotImplementedError(msg)
+                try:
                     iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
                     sub_dict = self.models[self.session['fine_tuned']]['sub']
-                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
-                    if sub is not None:
-                        self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
-                        model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
-                        self.tts_key = model_path
-                        engine = self._load_api(self.tts_key, model_path)
-                    else:
+                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+                    if sub is None:
                         msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
-                        print(msg)
-            if engine and engine is not None:
-                msg = f'TTS {self.tts_key} Loaded!'
+                        raise KeyError(msg)
+                    self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
+                    model_path = self.models[self.session['fine_tuned']]['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
+                    self.tts_key = model_path
+                    engine = self._load_api(self.tts_key, model_path)
+                except Exception as e:
+                    error = f"load_engine(): language/sub resolution failed: {e}"
+                    raise RuntimeError(error) from e
+            if engine:
+                msg = f"TTS {self.tts_key} Loaded!"
+                print(msg)
                 return engine
-            else:
-                error = 'load_engine() failed!'
-                raise ValueError(error)
+            error = "load_engine(): engine is None"
+            raise RuntimeError(error)
         except Exception as e:
-            error = f'load_engine() error: {e}'
-            raise ValueError(error)
+            error = f"load_engine() error: {e}"
+            raise RuntimeError(error) from e
 
     def convert(self, sentence_index:int, sentence:str)->bool:
         try:
+            import torch
+            import torchaudio
+            import numpy as np
+            from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
@@ -196,6 +201,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
                                 if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
+                                    #np.random.seed(seed)
                                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                                     break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
                                     self.audio_segments.append(break_tensor.clone())

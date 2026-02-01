@@ -1,17 +1,11 @@
-import os, sys, subprocess, shutil, json, torchaudio, numpy as np, regex as re, scipy.fftpack, soundfile as sf, gradio as gr
+import os, subprocess, shutil, gradio as gr
 
 from typing import Any
-from io import BytesIO
 from pydub import AudioSegment, silence
 from pydub.silence import detect_nonsilent
-from demucs.pretrained import get_model
-from demucs.apply import apply_model
-from demucs.audio import AudioFile
 from pathlib import Path
             
-from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 from lib.classes.tts_engines.common.audio import get_audio_duration
-from lib.classes.background_detector import BackgroundDetector
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.conf import systems, devices, voice_formats, default_audio_proc_samplerate
 from lib.conf_models import TTS_ENGINES
@@ -19,6 +13,7 @@ from lib.conf_models import TTS_ENGINES
 class VoiceExtractor:
 
     def __init__(self, session:Any, voice_file:str, voice_name:str, final_voice_file:str|None=None)->None:
+        from lib.classes.tts_engines.common.preset_loader import load_engine_presets
         self.wav_file = None
         self.session = session
         self.voice_file = voice_file
@@ -76,24 +71,29 @@ class VoiceExtractor:
 
     def _detect_background(self)->tuple[bool,bool,str]:
         try:
+            from lib.classes.background_detector import BackgroundDetector
             msg = 'Detecting if any background noise or music...'
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
             detector = BackgroundDetector(wav_file = self.wav_file)
-            status,report = detector.detect(vad_ratio_thresh = 0.15)
-            print(report)
-            if status:
-                msg = 'Background detected...'
-            else:
-                msg = 'No background detected'
-            return True, status, msg
+            status, report = detector.detect(vad_ratio_thresh = 0.15)
+            if report:
+                print(report)
+                if status:
+                    msg = 'Background detected...'
+                else:
+                    msg = 'No background detected'
+                return True, status, msg
         except Exception as e:
             error = f'_detect_background() error: {e}'
             print(error)
-            return False, False, error
+        return False, False, error
 
     def _demucs_voice(self)->tuple[bool, str]:
+        from demucs.pretrained import get_model
+        from demucs.apply import apply_model
+        from demucs.audio import AudioFile
 
         def demucs_callback(d: dict):
             nonlocal last_percent
@@ -189,6 +189,7 @@ class VoiceExtractor:
     
     def _trim_and_clean(self, silence_threshold:int, min_silence_len:int=200, chunk_size:int=100)->tuple[bool, str]:
         try:
+            import numpy as np
             audio = AudioSegment.from_file(self.voice_track)
             audio = self._remove_silences(
                 audio,

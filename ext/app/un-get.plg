@@ -1,0 +1,213 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+  <!ENTITY name      "un-get">
+  <!ENTITY author    "ich777">
+  <!ENTITY version   "2024.11.22">
+  <!ENTITY gitURL    "https://github.com/&author;/&name;/releases/download">
+  <!ENTITY pluginURL "https://raw.githubusercontent.com/&author;/un-get/master/&name;.plg">
+  <!ENTITY md5       "f44ecb6824db1dd1bccfffcb3e8327e1">
+  <!ENTITY plugin    "/boot/config/plugins/&name;">
+  <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
+]>
+
+<PLUGIN  name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;" min="6.10.3" support="https://github.com/ich777/un-get">
+
+<CHANGES>
+
+###2024.11.22
+- Merge PR from adapowers 'cleanup(): Multiple match resilience'
+
+###2024.11.01
+- Merge PR from cloudiful to fix some packages may be skipped on installation and install wrong package instead
+
+###2024.07.21
+- Change default repo from 15.0 to current for new installations. This is necessary for 7.0.0-beta.1+. If you are on 7.0.0-beta.1+ change your sources list from 15.0 to current
+
+###2024.04.09
+- Fixed bug where some packages won't install properly if multiple are found in repositories
+- Move changelog into separate file
+- Read version from changelog
+
+
+###2024.01.04
+- Make sure that repository conraid points to new URL in sources.list
+
+###2023.11.12
+- Corrections for spelling and grammatical errors in user-visible statements - thank you GitHub user kcpants
+
+###2023.07.19
+- added '--force'/'-f' option to 'upgrade' to force a update from packages. The option 'un-get upgrade --force' will pull all existing packages again but don't install them in case you change from Slackware 15.0 to current or vice versa.
+The new packages will be installed on reboot. ATTENTION: If packages are not found in the new repositories they will be uninstalled immediately after confirming the force upgrade.
+- fixed bug in remove_package routine
+
+###2023.03.26
+- another bugfix for commented line(s) in sources.list
+
+###2023.03.17
+- fixed bug where packages are not installing correctly if line is commented in sources.list
+
+###2023.02.02
+- fixed bug for repositories with .sha256 files
+
+###2022.11.13
+- fixed bug in update routine for commented and empty lines
+
+###2022.11.10
+- fixed bug in install routine if package is found in multiple sources where the correct version is downloaded but installation fails
+- fixed bug in install routine which doesn't always install latest version if package is available in multiple sources
+- fixed bug in upgrade routine which doesn't always install latest version if package is available in multiple source
+
+
+###2022.10.27
+- fixed a few typos
+- fix for search/install routine when package list doesn't follow the Slackware standard
+- minor changes and cleanup to search/install/upgrade routine
+
+###2022.10.12
+- fixed bug in checksum routine where some packages won't install
+
+###2022.10.02
+- fixed bug in update routine where some packages won't update properly
+- added support link - GitHub
+
+###2022.09.26
+- fixed bug where some packages would not download/install properly
+
+###2022.09.25
+- fixed bug where some packages would not install properly
+- fixed bug where some packages are not found properly
+
+###2022.08.27a
+- fixed bug in upgrade routine
+
+###2022.08.27
+- fixed bug where on installation some packages would download the wrong file
+
+###2022.08.26
+- added cleanup function
+
+###2022.08.25b
+- fixed bug in search where some packages where marked as not qualifying for installation
+
+###2022.08.25a
+- remove duplicate entries for packages which are not qualifying for installation
+
+###2022.08.25
+- switched over to GitHub Release for plugin packages
+
+###2022.08.24
+- fixed bug so that un-get pulls always the latest package regardless from which repository
+
+###2022.08.23c
+- changed repo to Slackware 15.0
+- remove old package lists from repositories which are not found in sources.list
+
+###2022.08.23b
+- upgrade function - fixed bug in upgrade package detection
+
+###2022.08.23a
+- upgrade function - fixed upgrade message issue
+- changed icon
+- added check if installedpackages_list exist
+
+###2022.08.23
+- search function - made it more clear if packages are already installed that they not qualify for reinstallation through un-get
+- install function - throw a real error if package is found which is not qualifying for reinstallation through un-get
+- upgrade function - added message when all packages are up-to-date
+
+###2022.08.22
+- Changed name from pkg-get to un-get - because well unRAID needs un-get
+- Changed from Slackware 15 to Current
+- Created sources.list file to support multiple repositories
+- Added Conraid's repository to sources.list by default
+- Changed installation directory to /boot/extra
+- Redone download, installation and remove functions
+- Added 'installed' option, to list installed packages by un-get
+- Added 'changelog' option
+- Changed search to show both installed and non installed packages which are availabel in repositories
+- Added 'upgrade' function
+- Speed up search by a bit
+- Clarified remove message when no packages where found
+- Fixed bug where packages won't be removed after calling 'remove' function
+- Fixed bug where error was displayed if installedpackages_list file where not in place
+
+###2022.08.20
+- Initial release from pkg-get
+
+</CHANGES>
+
+<FILE Run="/bin/bash">
+<INLINE>
+rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2>/dev/null|grep -v '&version;')
+</INLINE>
+</FILE>
+
+<FILE Name="/boot/config/plugins/&name;/&name;-&version;.txz" Run="upgradepkg --install-new">
+<URL>&gitURL;/&version;/&name;-&version;.txz</URL>
+<MD5>&md5;</MD5>
+</FILE>
+
+<FILE Name="&emhttp;/README.md">
+<INLINE>
+**un-get**
+
+un-get is a simple command line tool to install/update/remove Slackware packages to unRAID.
+Start by opening a Terminal and type in 'un-get --help'
+</INLINE>
+</FILE>
+
+<FILE Run="/bin/bash">
+<INLINE>
+
+# Create sources list file with the initial repositories
+if [ ! -f /boot/config/plugins/un-get/sources.list ]; then
+  if [ ! -d /boot/config/plugins/un-get ]; then
+    mkdir -p /boot/config/plugins/un-get
+  fi
+  echo "https://mirrors.slackware.com/slackware/slackware64-current/slackware64/ current
+https://slackers.it/repository/slackware64-current/ conraid" &gt; /boot/config/plugins/un-get/sources.list
+fi
+
+# Check conraid repo URL and change it if it still points to the old URL
+sed -i 's/https:\/\/slack\.conraid\.net\/repository\/slackware64-current\/ conraid/https:\/\/slackers\.it\/repository\/slackware64-current\/ conraid/' /boot/config/plugins/un-get/sources.list
+
+
+# Create packages file
+if [ ! -f /boot/config/plugins/un-get/installedpackages_list ]; then
+  touch /boot/config/plugins/un-get/installedpackages_list
+fi
+
+# Create symlink so that un-get is available system wide
+if [ ! -L /usr/bin/un-get ]; then
+  ln -s /usr/local/emhttp/plugins/un-get/un-get /usr/bin/un-get
+fi
+
+</INLINE>
+</FILE>
+
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+
+echo "----------------------------------------"
+echo "----------Uninstalling un-get-----------"
+echo "----------------------------------------"
+# Remove plugin related files
+removepkg &name;-&version;
+while read package; do
+  echo "Removing package: $package, please wait!"
+  removepkg $package 2&gt;/dev/null
+  rm -f /boot/extra/$package 2&gt;/dev/null
+done &lt; "/boot/config/plugins/un-get/installedpackages_list"
+rm -rf /usr/local/emhttp/plugins/&name;
+rm -rf &plugin;
+rm -f /usr/bin/un-get 2&gt;/dev/null
+rm -rf /tmp/un-get 2&gt;/dev/null
+echo
+echo "----------------------------------------"
+echo "---Uninstallation of un-get complete!---"
+echo "----------------------------------------"
+echo
+
+</INLINE>
+</FILE>
+</PLUGIN>

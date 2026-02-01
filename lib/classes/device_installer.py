@@ -690,7 +690,7 @@ class DeviceInstaller():
         if op == "<": return left < right
         return False
 
-    def install_python_packages(self) -> bool:
+    def install_python_packages(self)->int:
         if not os.path.exists(requirements_file):
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
@@ -718,7 +718,7 @@ class DeviceInstaller():
                     if vcs_match:
                         pkg_name = vcs_match.group(1)
                     else:
-                        pkg_base = re.split(r'[<>=]', clean_pkg, maxsplit = 1)[0].strip()
+                        pkg_base = re.split(r'[<>=!]', clean_pkg, maxsplit=1)[0].strip()
                         pkg_name = pkg_base
                 if ';' in raw_pkg:
                     pkg_part, marker_part = raw_pkg.split(';', 1)
@@ -758,32 +758,34 @@ class DeviceInstaller():
                     missing_packages.append(raw_pkg)
                     continue
                 if '+' in installed_version:
-                    continue
-                pkg_spec_part = re.split(r'[<>=]', clean_pkg, maxsplit = 1)
-                spec_str = clean_pkg[len(pkg_spec_part[0]):].strip() if len(pkg_spec_part) > 1 else ''
+                    installed_version = installed_version.split('+', 1)[0]
+                pkg_spec_part = re.split(r'[<>=!]', clean_pkg, maxsplit=1)
+                spec_str = clean_pkg[len(pkg_spec_part[0]):].strip()
                 if spec_str:
-                    req_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
+                    req_match = re.search(r'(==|!=|>=|<=|>|<)\s*(\d+\.\d+(?:\.\d+)?)', spec_str)
                     if req_match:
-                        req_v = self.version_tuple(req_match.group(1), 2)
+                        op, req_ver = req_match.groups()
+                        req_v = self.version_tuple(req_ver, 3)
                         norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
                         short_version = norm_match.group(1) if norm_match else installed_version
-                        installed_v = self.version_tuple(short_version, 2)
-                        imajor, iminor = installed_v
-                        rmajor, rminor = req_v
-                        if '==' in spec_str and (imajor != rmajor or iminor != rminor):
-                            print(f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_match.group(1)}.')
+                        installed_v = self.version_tuple(short_version, 3)
+                        if op == '==' and installed_v != req_v:
+                            print(f'{pkg_name} (installed {installed_version}) != required {req_ver}.')
                             missing_packages.append(raw_pkg)
-                        elif '>=' in spec_str and ((imajor < rmajor) or (imajor == rmajor and iminor < rminor)):
-                            print(f'{pkg_name} (installed {installed_version}) < required {req_match.group(1)}.')
+                        elif op == '>=' and installed_v < req_v:
+                            print(f'{pkg_name} (installed {installed_version}) < required {req_ver}.')
                             missing_packages.append(raw_pkg)
-                        elif '<=' in spec_str and ((imajor > rmajor) or (imajor == rmajor and iminor > rminor)):
-                            print(f'{pkg_name} (installed {installed_version}) > allowed {req_match.group(1)}.')
+                        elif op == '<=' and installed_v > req_v:
+                            print(f'{pkg_name} (installed {installed_version}) > allowed {req_ver}.')
                             missing_packages.append(raw_pkg)
-                        elif '>' in spec_str and ((imajor < rmajor) or (imajor == rmajor and iminor <= rminor)):
-                            print(f'{pkg_name} (installed {installed_version}) <= required {req_match.group(1)}.')
+                        elif op == '>' and installed_v <= req_v:
+                            print(f'{pkg_name} (installed {installed_version}) <= required {req_ver}.')
                             missing_packages.append(raw_pkg)
-                        elif '<' in spec_str and ((imajor > rmajor) or (imajor == rmajor and iminor >= rminor)):
-                            print(f'{pkg_name} (installed {installed_version}) >= restricted {req_match.group(1)}.')
+                        elif op == '<' and installed_v >= req_v:
+                            print(f'{pkg_name} (installed {installed_version}) >= restricted {req_ver}.')
+                            missing_packages.append(raw_pkg)
+                        elif op == '!=' and installed_v == req_v:
+                            print(f'{pkg_name} (installed {installed_version}) == excluded {req_ver}.')
                             missing_packages.append(raw_pkg)
             if missing_packages:
                 print('\nInstalling missing or upgrade packages...\n')

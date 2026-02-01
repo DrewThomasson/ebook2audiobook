@@ -32,5 +32,5 @@ gradio==5.49.1
 torch==2.7.1
 torchaudio==2.7.1
 coqui-tts[languages]==0.27.2
-vendor/num2words
-vendor/demucs
+ext/py/num2words
+ext/py/demucs

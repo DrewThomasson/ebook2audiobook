@@ -8,16 +8,18 @@ set "APP_NAME=ebook2audiobook"
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "REAL_INSTALL_DIR=%SCRIPT_DIR%"
+set "SCRIPT_NAME=%~nx0"
+
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
-set "HELPER=%TEMP%\%APP_NAME%_uninstall_%RANDOM%.cmd"
-set "SCOOP_HOME=%USERPROFILE%\scoop"
-set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
-set "SCOOP_APPS=%SCOOP_HOME%\apps"(
+
 set "CONDA_HOME=%USERPROFILE%\Miniforge3"
-set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
+
+:: heavy dirs (atomic delete, no listing)
+set "SKIP_DIR_1=python_env"
+set "SKIP_DIR_2=Miniforge3"
 :: ========================================================
 
 echo ========================================================
@@ -25,6 +27,18 @@ echo   %APP_NAME%  Uninstaller
 echo ========================================================
 echo Install location:
 echo   %REAL_INSTALL_DIR%
+echo.
+
+:: ========================================================
+:: USER CONFIRMATION
+:: ========================================================
+echo ========================================================
+echo   This will uninstall %APP_NAME%.
+echo   Components listed in .installed will be removed.
+echo.
+echo   Press a key to continue . . .
+echo ========================================================
+pause >nul
 echo.
 
 :: ========================================================
@@ -39,128 +53,87 @@ tasklist | find /i "%APP_NAME%.exe" >nul && (
 :: PROCESS .installed (CONTROLLED REMOVAL)
 :: ========================================================
 set "REMOVE_CONDA="
-set "REMOVE_SCOOP="
 
 if exist "%INSTALLED_LOG%" (
-	echo Processing installed components...
 	for /f "usebackq delims=" %%A in ("%INSTALLED_LOG%") do (
 		if /i "%%A"=="Miniforge3" set "REMOVE_CONDA=1"
-		if /i "%%A"=="scoop" set "REMOVE_SCOOP=1"
 	)
 )
 
 :: ========================================================
-:: REMOVE MINIFORGE (DETECTED LOCATION)
+:: DETACH FROM CONDA (SAFETY)
 :: ========================================================
 if defined REMOVE_CONDA (
-	if exist "%CONDA_HOME%" (
-		echo Removing Miniforge3 from:
-		echo   %CONDA_HOME%
-		rd /s /q "%CONDA_HOME%" >nul 2>&1
-	)
+	set "CONDA_SHLVL="
+	set "CONDA_DEFAULT_ENV="
+	set "CONDA_PREFIX="
+	set "PATH=%SystemRoot%\System32;%SystemRoot%"
 )
 
 :: ========================================================
-:: SAFE PATH CLEANUP (DETECTED PATHS ONLY)
+:: REMOVE MINIFORGE (FAST, ATOMIC)
 :: ========================================================
-if defined REMOVE_CONDA (
-	call :RemoveFromUserPath "%CONDA_HOME%"
-	call :RemoveFromUserPath "%CONDA_PATH%"
-)
-
-if defined REMOVE_SCOOP (
-	call :RemoveFromUserPath "%SCOOP_SHIMS%"
-)
-
-:: ========================================================
-:: REMOVE SCOOP LAST (DETECTED LOCATION)
-:: ========================================================
-if defined REMOVE_SCOOP (
-	echo Removing Scoop from:
-	echo   %SCOOP_HOME%
-	start "" cmd /c ^
-	"cd /d %%TEMP%% ^
-	& ping 127.0.0.1 -n 3 >nul ^
-	& if exist ""%SCOOP_HOME%\shims\scoop.cmd"" ""%SCOOP_HOME%\shims\scoop.cmd"" uninstall -y scoop >nul 2>&1 ^
-	& rd /s /q ""%SCOOP_HOME%"" >nul 2>&1"
+if defined REMOVE_CONDA if exist "%CONDA_HOME%" (
+	echo %CONDA_HOME%
+	rd /s /q "%CONDA_HOME%" >nul 2>&1
 )
 
 :: ========================================================
 :: REMOVE SHORTCUTS + REGISTRY
 :: ========================================================
-if exist "%STARTMENU_DIR%" rd /s /q "%STARTMENU_DIR%" >nul 2>&1
-if exist "%DESKTOP_LNK%" del /q "%DESKTOP_LNK%" >nul 2>&1
+if exist "%STARTMENU_DIR%" (
+	echo %STARTMENU_DIR%
+	rd /s /q "%STARTMENU_DIR%" >nul 2>&1
+)
+
+if exist "%DESKTOP_LNK%" (
+	echo %DESKTOP_LNK%
+	del /q "%DESKTOP_LNK%" >nul 2>&1
+)
+
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
 :: ========================================================
-:: FINAL USER MESSAGE (OPTION B)
+:: CLEAN REPOSITORY CONTENT (FIRST LEVEL ONLY)
 :: ========================================================
-echo.
-echo ========================================================
-echo   Uninstallation completed successfully.
-echo   Cleaning up remaining files in background...
-echo   This window will close automatically.
-echo ========================================================
-echo.
-timeout /t 4 >nul
+echo Cleaning repository content...
 
-:: ========================================================
-:: CREATE SELF-DELETING HELPER
-:: ========================================================
-(
-	echo @echo off
-	echo setlocal EnableExtensions
-	echo set "TARGET=%REAL_INSTALL_DIR%"
-	echo cd /d %%TEMP%%
-	echo.
-	echo rem === wait for parent process to fully exit ===
-	echo ping 127.0.0.1 -n 6 ^>nul
-	echo.
-	echo rem === clear attributes ===
-	echo if exist "%%TARGET%%" (
-	echo ^  attrib -r -s -h "%%TARGET%%" /s /d ^>nul 2^>^&1
-	echo )
-	echo.
-	echo rem === take ownership + full access (hard mode) ===
-	echo if exist "%%TARGET%%" (
-	echo ^  takeown /f "%%TARGET%%" /r /d y ^>nul 2^>^&1
-	echo ^  icacls "%%TARGET%%" /grant *S-1-1-0:F /t ^>nul 2^>^&1
-	echo )
-	echo.
-	echo rem === retry deletion loop ===
-	echo for %%%%I in (1 2 3 4 5) do (
-	echo ^  if not exist "%%TARGET%%" goto done
-	echo ^  rd /s /q "%%TARGET%%" ^>nul 2^>^&1
-	echo ^  ping 127.0.0.1 -n 3 ^>nul
-	echo )
-	echo.
-	echo :done
-	echo del /f /q "%%~f0"
-) > "%HELPER%"
+for %%F in ("%REAL_INSTALL_DIR%\*") do (
+	set "NAME=%%~nxF"
 
-:: ========================================================
-:: LAUNCH HELPER AND EXIT
-:: ========================================================
+	:: skip uninstall script
+	if /i "!NAME!"=="%SCRIPT_NAME%" goto :next_item
 
-start "" /min cmd /c "%HELPER%"
-exit
+	:: print first-level item
+	echo !NAME!
 
-:: ========================================================
-:: FUNCTIONS
-:: ========================================================
-:RemoveFromUserPath
-set "TARGET=%~1"
-for /f "tokens=2,*" %%A in ('reg query HKCU\Environment /v PATH 2^>nul ^| find "PATH"') do set "USERPATH=%%B"
-set "NEWPATH="
-for %%P in (!USERPATH:;=^
-!) do (
-	if /i not "%%P"=="%TARGET%" (
-		if defined NEWPATH (
-			set "NEWPATH=!NEWPATH!;%%P"
-		) else (
-			set "NEWPATH=%%P"
-		)
-	)
+	:: atomic delete
+	rd /s /q "%%F" >nul 2>&1
+	del /f /q "%%F" >nul 2>&1
+
+	:next_item
 )
-reg add HKCU\Environment /v PATH /t REG_EXPAND_SZ /d "!NEWPATH!" /f >nul
+
+if exist "%INSTALLED_LOG%" (
+	echo .installed
+	del /f /q "%INSTALLED_LOG%" >nul 2>&1
+)
+
+:: ========================================================
+:: FINAL MESSAGE
+:: ========================================================
+echo.
+echo ========================================================
+echo   Uninstallation completed.
+echo.
+echo   The application content has been removed.
+echo   Please remove the empty repository folder manually:
+echo.
+echo     %REAL_INSTALL_DIR%
+echo.
+echo ========================================================
+echo.
+echo Press a key to continue . . .
+pause >nul
+
 exit /b
