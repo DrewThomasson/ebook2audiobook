@@ -846,6 +846,8 @@ class DeviceInstaller():
                 device_info = json.loads(device_info_str)
                 if device_info:
                     print(f'---> Hardware detected: {device_info}')
+                    if device_info['name'] == devices['JETSON']['proc']:
+                        os.environ['SKLEARN_NO_OPENMP'] = '1'
                     torch_version = self.get_package_version('torch')
                     if torch_version:
                         if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
