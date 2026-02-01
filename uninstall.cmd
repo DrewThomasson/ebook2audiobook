@@ -8,6 +8,7 @@ set "APP_NAME=ebook2audiobook"
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "REAL_INSTALL_DIR=%SCRIPT_DIR%"
+set "SCRIPT_NAME=%~nx0"
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
@@ -51,7 +52,7 @@ set "REMOVE_CONDA="
 set "REMOVE_SCOOP="
 
 if exist "%INSTALLED_LOG%" (
-	echo Processing installed components...
+	echo Processing installed components…
 	for /f "usebackq delims=" %%A in ("%INSTALLED_LOG%") do (
 		if /i "%%A"=="Miniforge3" set "REMOVE_CONDA=1"
 		if /i "%%A"=="scoop" set "REMOVE_SCOOP=1"
@@ -71,23 +72,17 @@ if defined REMOVE_CONDA (
 :: ========================================================
 :: REMOVE MINIFORGE (DIRECT)
 :: ========================================================
-if defined REMOVE_CONDA (
-	if exist "%CONDA_HOME%" (
-		echo Removing Miniforge3:
-		echo   [DIR] %CONDA_HOME%
-		rd /s /q "%CONDA_HOME%" >nul 2>&1
-	)
+if defined REMOVE_CONDA if exist "%CONDA_HOME%" (
+	echo %CONDA_HOME%
+	rd /s /q "%CONDA_HOME%" >nul 2>&1
 )
 
 :: ========================================================
 :: REMOVE SCOOP (DIRECT)
 :: ========================================================
-if defined REMOVE_SCOOP (
-	if exist "%SCOOP_HOME%" (
-		echo Removing Scoop:
-		echo   [DIR] %SCOOP_HOME%
-		rd /s /q "%SCOOP_HOME%" >nul 2>&1
-	)
+if defined REMOVE_SCOOP if exist "%SCOOP_HOME%" (
+	echo %SCOOP_HOME%
+	rd /s /q "%SCOOP_HOME%" >nul 2>&1
 )
 
 :: ========================================================
@@ -106,36 +101,38 @@ if defined REMOVE_SCOOP (
 :: REMOVE SHORTCUTS + REGISTRY
 :: ========================================================
 if exist "%STARTMENU_DIR%" (
-	echo   [DIR] %STARTMENU_DIR%
+	echo %STARTMENU_DIR%
 	rd /s /q "%STARTMENU_DIR%" >nul 2>&1
 )
 
 if exist "%DESKTOP_LNK%" (
-	echo   [FILE] %DESKTOP_LNK%
+	echo %DESKTOP_LNK%
 	del /q "%DESKTOP_LNK%" >nul 2>&1
 )
 
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
 :: ========================================================
-:: REMOVE CURRENT REPO CONTENT (EXCEPT THIS SCRIPT)
+:: REMOVE CURRENT REPO CONTENT (RECURSIVE, VERBOSE)
 :: ========================================================
-echo Cleaning repository content...
+echo Cleaning repository content…
 
-for %%F in ("%REAL_INSTALL_DIR%\*") do (
-	if /i not "%%~nxF"=="%~nx0" (
-		if exist "%%F\." (
-			echo   [DIR] %%~nxF
-			rd /s /q "%%F" >nul 2>&1
-		) else (
-			echo   [FILE] %%~nxF
-			del /f /q "%%F" >nul 2>&1
-		)
+:: --- remove files first ---
+for /r "%REAL_INSTALL_DIR%" %%F in (*) do (
+	if /i not "%%~nxF"=="%SCRIPT_NAME%" (
+		echo %%F
+		del /f /q "%%F" >nul 2>&1
 	)
 )
 
+:: --- then remove directories bottom-up ---
+for /f "delims=" %%D in ('dir "%REAL_INSTALL_DIR%" /ad /b /s ^| sort /r') do (
+	echo %%D
+	rd "%%D" >nul 2>&1
+)
+
 if exist "%INSTALLED_LOG%" (
-	echo   [FILE] .installed
+	echo %INSTALLED_LOG%
 	del /f /q "%INSTALLED_LOG%" >nul 2>&1
 )
 

@@ -52,7 +52,7 @@ if [[ -t 0 ]]; then
 	echo "This will uninstall $APP_NAME."
 	echo "Components listed in .installed will be removed."
 	echo
-	printf "Press Enter to continue or Ctrl+C to abort..."
+	printf "Press Enter to continue or Ctrl+C to abort…"
 	read -r _ || true
 	echo
 fi
@@ -122,7 +122,7 @@ fi
 # REMOVE CURRENT REPO CONTENT (RECURSIVE, VERBOSE)
 # =========================================================
 echo
-echo "Cleaning repository content..."
+echo "Cleaning repository content…"
 
 find "$SCRIPT_DIR" -mindepth 1 -type f ! -name "$SCRIPT_NAME" -print | while IFS= read -r f; do
 	echo "${f#$SCRIPT_DIR/}"
@@ -155,7 +155,7 @@ echo "================================================"
 echo
 
 if [[ -t 0 ]]; then
-	printf "Press Enter to continue..."
+	printf "Press Enter to continue…"
 	read -r _ || true
 fi
 
