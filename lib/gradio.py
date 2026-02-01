@@ -1,8 +1,7 @@
 from lib.core import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
-import gradio as gr
 
-def build_interface(args:dict)->tuple[gr.Blocks, gr.Theme, str]:
+def build_interface(args:dict)->gr.Blocks:
     try:
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
@@ -478,7 +477,7 @@ def build_interface(args:dict)->tuple[gr.Blocks, gr.Theme, str]:
                                     gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                     gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                     with gr_row_voice_player:
-                                        gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
+                                        gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), container=False, visible='hidden', show_label=False, buttons['share'], scale=0, min_width=60)
                                         gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                         gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                         gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
@@ -627,7 +626,7 @@ def build_interface(args:dict)->tuple[gr.Blocks, gr.Theme, str]:
                     gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
                     gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
                     gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, lines=3, max_lines=3)
-                    gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
+                    gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), container=True, visible=True)
                     gr_row_audiobook_list = gr.Row(elem_id='gr_row_audiobook_list', visible=True)
                     with gr_row_audiobook_list:
                         gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
@@ -654,8 +653,8 @@ def build_interface(args:dict)->tuple[gr.Blocks, gr.Theme, str]:
                     gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
                     gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
 
-            gr_modal = gr.HTML(visible=False)
-            gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
+            gr_modal = gr.HTML(visible=False, padding=True)
+            gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'], padding=True)
             gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
             gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
             gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
@@ -2746,8 +2745,8 @@ def build_interface(args:dict)->tuple[gr.Blocks, gr.Theme, str]:
             msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
             show_alert({"type": "info", "msg": msg})
             os.environ['no_proxy'] = ' ,'.join(all_ips)
-            return app, theme, header_css
+            return app
     except Exception as e:
         error = f'An unexpected error occurred: {e}'
         alert_exception(error, None)
-    return None, None, None
+    return None

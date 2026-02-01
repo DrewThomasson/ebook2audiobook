@@ -343,6 +343,7 @@ SML tags available:
                             server_port=interface_port, 
                             share= args['share'], 
                             max_file_size=max_upload_size,
+                            footer_links=['settings'],
                             allowed_paths=[
                                 os.path.join(rood_dir, 'voices'),
                                 os.path.join(rood_dir, 'audiobooks'),
