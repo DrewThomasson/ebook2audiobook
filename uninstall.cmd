@@ -92,23 +92,26 @@ reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audio
 :: ========================================================
 :: CLEAN REPOSITORY CONTENT
 :: - echo only first-level items
-:: - delete everything recursively
+:: - delete recursively
+:: - continue even if some items are already gone
 :: ========================================================
 echo Cleaning repository content...
 
-for %%F in ("%REAL_INSTALL_DIR%\*") do (
-	set "NAME=%%~nxF"
+for /f "usebackq delims=" %%N in (`dir /b /a "%REAL_INSTALL_DIR%" 2^>nul`) do (
+	if /i not "%%N"=="%SCRIPT_NAME%" (
+		echo %%N
 
-	:: skip uninstall script itself
-	if /i not "!NAME!"=="%SCRIPT_NAME%" (
-		echo !NAME!
-
-		:: delete directory tree if it is a folder
-		rd /s /q "%%F" >nul 2>&1
-
-		:: delete file if it is a file
-		del /f /q "%%F" >nul 2>&1
+		if exist "%REAL_INSTALL_DIR%\%%N\." (
+			rd /s /q "%REAL_INSTALL_DIR%\%%N" >nul 2>&1
+		) else (
+			del /f /q "%REAL_INSTALL_DIR%\%%N" >nul 2>&1
+		)
 	)
+)
+
+if exist "%INSTALLED_LOG%" (
+	echo .installed
+	del /f /q "%INSTALLED_LOG%" >nul 2>&1
 )
 
 :: ========================================================
