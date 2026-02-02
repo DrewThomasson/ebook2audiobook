@@ -1100,7 +1100,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 result.append(tail)
         return result
 
-    def _split_sentence_on_sml(sentence:str)->list[str]:
+    def split_sentence_on_sml(sentence:str)->list[str]:
         parts:list[str] = []
         last = 0
         for m in SML_TAG_PATTERN.finditer(sentence):
