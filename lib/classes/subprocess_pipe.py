@@ -1,3 +1,6 @@
+import os, subprocess, multiprocessing, sys, gradio as gr
+from collections.abc import Callable
+
 class SubprocessPipe:
 
     def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing', on_progress:Callable[[float], None]|None=None)->None:
