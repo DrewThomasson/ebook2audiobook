@@ -41,6 +41,7 @@ class SubprocessPipe:
             import re
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
             if is_ffmpeg:
+                print(f'is_ffmpeg: {is_ffmpeg}')
                 self.process = subprocess.Popen(
                     self.cmd,
                     stdout=subprocess.DEVNULL,
