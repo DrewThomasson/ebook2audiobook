@@ -22,6 +22,7 @@ class SubprocessPipe:
         if self.on_progress is not None:
             self.on_progress(percent)
         elif self.progress_bar:
+            print(f'percent: ---------{percent}----------')
             self.progress_bar(percent / 100.0, desc=self.msg)
 
     def _on_complete(self)->None:
@@ -69,7 +70,6 @@ class SubprocessPipe:
                 last_percent=0.0
                 while True:
                     raw_line = self.process.stderr.readline()
-                    print(raw_line)
                     if not raw_line:
                         break
                     line=raw_line.decode(errors='ignore')
