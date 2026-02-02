@@ -1341,10 +1341,11 @@ def get_sentences(text:str, session_id:str)->list|None:
             for s in join_ideogramms(result):
                 if not is_latin_only(s):
                     ideogram_list.append(s)
-            ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
+            if ideogram_list:
+                ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
             return ideogram_list
-
-        final_list = [restore_sml(s, sml_blocks) for s in final_list]
+        if final_list:
+            final_list = [restore_sml(s, sml_blocks) for s in final_list]
         return final_list
     except Exception as e:
         print(f'get_sentences() error: {e}')
