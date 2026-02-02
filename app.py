@@ -4,23 +4,23 @@ from lib.conf import *
 from lib.conf_lang import default_language_code
 from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 
-warnings.filterwarnings("ignore", category=SyntaxWarning)
-warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
+warnings.filterwarnings('ignore', category=SyntaxWarning)
+warnings.filterwarnings('ignore', category=UserWarning, module='jieba._compat')
 
 def init_multiprocessing():
     if sys.platform == systems['MACOS']:
         try:
-            multiprocessing.set_start_method("spawn")
+            multiprocessing.set_start_method('spawn')
         except RuntimeError:
             pass
     elif sys.platform == systems['LINUX']:
         try:
-            multiprocessing.set_start_method("fork")
+            multiprocessing.set_start_method('fork')
         except RuntimeError:
             pass
     else:
         try:
-            multiprocessing.set_start_method("spawn")
+            multiprocessing.set_start_method('spawn')
         except RuntimeError:
             pass
 
@@ -294,7 +294,7 @@ SML tags available:
             if args['ebooks_dir']:
                 args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
                 if not os.path.exists(args['ebooks_dir']):
-                    error = f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.'
+                    error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."
                     print(error)
                     sys.exit(1)                   
                 args['ebook_list'] = []
@@ -310,7 +310,7 @@ SML tags available:
             elif args['ebook']:
                 args['ebook'] = os.path.abspath(args['ebook'])
                 if not os.path.exists(args['ebook']):
-                    error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
+                    error = f"Error: The provided --ebook {args['ebook']} does not exist."
                     print(error)
                     sys.exit(1) 
                 progress_status, passed = c.convert_ebook(args)

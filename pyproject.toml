@@ -50,7 +50,8 @@ dependencies = [
 	"gradio==5.49.1",
 	"torch==2.7.1",
 	"torchaudio==2.7.1",
-	"coqui-tts[languages]==0.27.2"
+	"transformers==4.57.6",
+	"coqui-tts[languages]==0.27.5"
 ]
 readme = "README.md"
 requires-python = ">3.9,<3.13"
