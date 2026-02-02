@@ -905,7 +905,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             if not body or not body.get_text(strip=True):
                 msg = 'No body found. Skip to next doc…'
                 print(msg)
-                return []
+                return ''
             # Skip known non-chapter types
             epub_type = body.get('epub:type', '').lower()
             if not epub_type:
@@ -920,7 +920,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             if any(part in epub_type for part in excluded):
                 msg = 'No body part. Skip to next doc…'
                 print(msg)
-                return []
+                return ''
             # remove scripts/styles
             for tag in soup(['script', 'style']):
                 tag.decompose()
@@ -2694,7 +2694,6 @@ def convert_ebook(args:dict)->tuple:
                                                         if session['chapters_preview']:
                                                            return 'confirm_blocks', True
                                                         else:
-                                                            print(session['chapters'])
                                                             progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
                                                     else:
