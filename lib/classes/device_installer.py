@@ -889,7 +889,7 @@ class DeviceInstaller():
                                     error = f'Error while installing torch package: {e}'
                                     print(error)
                                     return 1
-                        if device_info['os'] == 'linux and 'jetpack' in device_info.get('note', '').lower():
+                        if device_info['os'] == 'linux' and 'jetpack' in device_info['note'].lower():
                             libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
                             if os.path.exists(libgomp_src):
                                 libs_dir = os.path.join(
