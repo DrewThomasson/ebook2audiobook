@@ -31,7 +31,8 @@ argostranslate==1.10.0
 gradio==5.49.1
 torch<=2.7.1
 torchaudio<=2.7.1
-transformers>=4.57.6
+transformers==4.57.6
 coqui-tts[languages]==0.27.5
 ext/py/num2words
+
 ext/py/demucs
