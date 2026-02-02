@@ -907,6 +907,8 @@ class DeviceInstaller():
                                             os.unlink(libgomp_dst)
                                         else:
                                             os.unlink(libgomp_dst)
+                                        msg = 'Create symlink to use OS libgomp.'
+                                        print(msg)
                                         os.symlink(libgomp_src, libgomp_dst)
                         return 0
                     else:
