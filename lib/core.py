@@ -801,11 +801,11 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
             for doc_idx, doc in enumerate(all_docs):
-                sentences_list = filter_chapter(doc_idx, doc, session_id, stanza_nlp, is_num2words_compat)
-                if sentences_list is None:
+                text = filter_chapter(doc_idx, doc, session_id, stanza_nlp, is_num2words_compat)
+                if text is None:
                     break
-                elif len(sentences_list) > 0:
-                    chapters.append(sentences_list)
+                else:
+                    chapters.append(text)
             if len(chapters) == 0:
                 error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
@@ -1071,15 +1071,8 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             msg = 'Normalize text…'
             print(msg)
             text = normalize_text(text, lang, lang_iso1, tts_engine)
-            msg = f'Get sentences…'
-            print(msg)
-            sentences = get_sentences(text, session_id)
-            if sentences and len(sentences) == 0:
-                error = 'No sentences found!'
-                print(error)
-                return None
-            sentences = [restore_sml(s, sml_blocks) for s in sentences]
-            return sentences
+            text = restore_sml(text, sml_blocks)
+            return text
         return None
     except Exception as e:
         error = f'filter_chapter() error: {e}'
@@ -2698,10 +2691,10 @@ def convert_ebook(args:dict)->tuple:
                                                     if not session['chapters']:
                                                         session['chapters'] = get_chapters(session_id, epubBook)
                                                     if session['chapters']:
-                                                        #if session['chapters_preview']:
-                                                        #   return 'confirm_blocks', True
-                                                        #else:
-                                                        progress_status, passed = finalize_audiobook(session_id)
+                                                        if session['chapters_preview']:
+                                                           return 'confirm_blocks', True
+                                                        else:
+                                                            progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
                                                     else:
                                                         error = f"get_chapters() failed! {session['chapters']}"
@@ -2731,6 +2724,17 @@ def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['chapters']:
+            chapters = []
+            msg = f'Get sentences…'
+            print(msg)
+            for text in session['chapters']:
+                sentences_list = get_sentences(text, session_id)
+                if sentences_list and len(sentences_list) == 0:
+                    error = 'No sentences found!'
+                    print(error)
+                    return error, False
+                chapters.append(sentences_list)
+            session['chapters'] = chapters
             saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
             save_json_chapters(session_id, saved_json_chapters)
             if convert_chapters2audio(session_id):
