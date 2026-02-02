@@ -889,6 +889,27 @@ class DeviceInstaller():
                                     error = f'Error while installing torch package: {e}'
                                     print(error)
                                     return 1
+                        if device_info['os'] == 'linux' and ('jetpack' in device_info['note'].lower() or device_info['name'] == devices['JETSON']['proc']):
+                            libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
+                            if os.path.exists(libgomp_src):
+                                libs_dir = os.path.join(
+                                    'python_env',
+                                    'lib',
+                                    f'python{sys.version_info.major}.{sys.version_info.minor}',
+                                    'site-packages',
+                                    'scikit_learn.libs'
+                                )
+                                if os.path.isdir(libs_dir):
+                                    for libgomp_dst in glob.glob(os.path.join(libs_dir, 'libgomp*')):
+                                        if os.path.islink(libgomp_dst):
+                                            if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
+                                                continue
+                                            os.unlink(libgomp_dst)
+                                        else:
+                                            os.unlink(libgomp_dst)
+                                        msg = 'Create symlink to use OS libgomp.'
+                                        print(msg)
+                                        os.symlink(libgomp_src, libgomp_dst)
                         return 0
                     else:
                         error = 'install_device_packages() error: torch version not detected'

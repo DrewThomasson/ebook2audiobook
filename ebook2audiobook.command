@@ -613,7 +613,6 @@ function check_conda {
 				# needed gfortran to compile pip scipy pkg
 				sudo apt-get install gfortran
 				PYTHON_VERSION="3.10"
-				export SKLEARN_NO_OPENMP=1
 			fi
 		else
 			compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"

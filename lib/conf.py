@@ -6,6 +6,7 @@ import os, tempfile, sys
 min_python_version = (3,10)
 max_python_version = (3,12)
 
+root_dir = os.path.dirname(os.path.abspath(__file__))
 tmp_dir = os.path.abspath('tmp')
 tempfile.tempdir = tmp_dir
 tmp_expire = 7 # days
@@ -43,8 +44,6 @@ os.environ['MPLCONFIGDIR'] = f'{models_dir}/matplotlib'
 os.environ['TESSDATA_PREFIX'] = f'{models_dir}/tessdata'
 os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
-os.environ['MallocStackLogging'] = '0'
-os.environ['MallocStackLoggingNoCompact'] = '0'
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 os.environ['PYTORCH_NO_CUDA_MEMORY_CACHING'] = '1'

@@ -7,7 +7,7 @@ from .conf import (
     interface_host, interface_port, interface_shared_tmp_expire,
     max_python_version, min_python_version, models_dir, os,
     output_formats, prog_version, python_env_dir,
-    requirements_file, components_dir, tmp_dir, tmp_expire, tts_dir, voice_formats,
+    requirements_file, components_dir, root_dir, tmp_dir, tmp_expire, tts_dir, voice_formats,
     voices_dir, default_output_split, default_output_split_hours
 )
 
@@ -38,7 +38,7 @@ __all__ = [
     "interface_host", "interface_port", "interface_shared_tmp_expire",
     "max_python_version", "min_python_version", "models_dir", "os",
     "output_formats", "prog_version", "python_env_dir",
-    "requirements_file", "components_dir", "tmp_dir", "tmp_expire", "tts_dir",
+    "requirements_file", "components_dir", "root_dir", "tmp_dir", "tmp_expire", "tts_dir",
     "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours",
 
     # from conf_lang

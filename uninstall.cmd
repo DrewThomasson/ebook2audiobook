@@ -16,10 +16,6 @@ set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
 
 set "CONDA_HOME=%USERPROFILE%\Miniforge3"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
-
-:: heavy dirs (atomic delete, no listing)
-set "SKIP_DIR_1=python_env"
-set "SKIP_DIR_2=Miniforge3"
 :: ========================================================
 
 echo ========================================================
@@ -94,24 +90,23 @@ if exist "%DESKTOP_LNK%" (
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
 :: ========================================================
-:: CLEAN REPOSITORY CONTENT (FIRST LEVEL ONLY)
+:: CLEAN REPOSITORY CONTENT
+:: - echo only first-level items
+:: - delete recursively
+:: - continue even if some items are already gone
 :: ========================================================
 echo Cleaning repository content...
 
-for %%F in ("%REAL_INSTALL_DIR%\*") do (
-	set "NAME=%%~nxF"
+for /f "usebackq delims=" %%N in (`dir /b /a "%REAL_INSTALL_DIR%" 2^>nul`) do (
+	if /i not "%%N"=="%SCRIPT_NAME%" (
+		echo %%N
 
-	:: skip uninstall script
-	if /i "!NAME!"=="%SCRIPT_NAME%" goto :next_item
-
-	:: print first-level item
-	echo !NAME!
-
-	:: atomic delete
-	rd /s /q "%%F" >nul 2>&1
-	del /f /q "%%F" >nul 2>&1
-
-	:next_item
+		if exist "%REAL_INSTALL_DIR%\%%N\." (
+			rd /s /q "%REAL_INSTALL_DIR%\%%N" >nul 2>&1
+		) else (
+			del /f /q "%REAL_INSTALL_DIR%\%%N" >nul 2>&1
+		)
+	)
 )
 
 if exist "%INSTALLED_LOG%" (

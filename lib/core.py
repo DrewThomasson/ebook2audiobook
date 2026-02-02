@@ -10,7 +10,7 @@ import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
 
-from typing import Any, TypeAlias, Generator, Callable, Iterable, Dict
+from typing import Any, TypeAlias, Generator, Callable, Iterable, Dict, Tuple
 from PIL import Image, ImageSequence
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -1100,6 +1100,23 @@ def get_sentences(text:str, session_id:str)->list|None:
                 result.append(tail)
         return result
 
+    def split_sentence_on_sml(sentence:str)->list[str]:
+        parts:list[str] = []
+        last = 0
+        for m in SML_TAG_PATTERN.finditer(sentence):
+            start, end = m.span()
+            if start > last:
+                text = sentence[last:start]
+                if text:
+                    parts.append(text)
+            parts.append(m.group(0))
+            last = end
+        if last < len(sentence):
+            tail = sentence[last:]
+            if tail:
+                parts.append(tail)
+        return parts
+
     def strip_escaped_sml(s:str)->str:
         return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
@@ -1308,7 +1325,7 @@ def get_sentences(text:str, session_id:str)->list|None:
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = self._split_sentence_on_sml(s)
+                parts = split_sentence_on_sml(s)
                 for part in parts:
                     part = part.strip()
                     if not part:
@@ -2134,9 +2151,10 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cmd += ['-ac', '1']
             if input_codec == target_codec and input_rate == target_rate:
                 cmd = [
-                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-i', ffmpeg_combined_audio,
-                    '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio,
+                    '-threads', '0', '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
                     '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
+                    '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
             else:
