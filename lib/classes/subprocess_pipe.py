@@ -19,11 +19,8 @@ class SubprocessPipe:
     def _emit_progress(self, percent:float)->None:
         if self.on_progress is not None:
             self.on_progress(percent)
-            sys.stdout.write(f"\r{self.msg} - {percent:.1f}%")
-            sys.stdout.flush()
         elif self.progress_bar:
             self.progress_bar(percent / 100.0, desc=self.msg)
-            print(f"\r{self.msg} - {percent:.1f}%")
 
     def _on_complete(self)->None:
         msg = f"\n{self.msg} completed!"
