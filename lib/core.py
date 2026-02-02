@@ -1100,6 +1100,23 @@ def get_sentences(text:str, session_id:str)->list|None:
                 result.append(tail)
         return result
 
+    def _split_sentence_on_sml(sentence:str)->list[str]:
+        parts:list[str] = []
+        last = 0
+        for m in SML_TAG_PATTERN.finditer(sentence):
+            start, end = m.span()
+            if start > last:
+                text = sentence[last:start]
+                if text:
+                    parts.append(text)
+            parts.append(m.group(0))
+            last = end
+        if last < len(sentence):
+            tail = sentence[last:]
+            if tail:
+                parts.append(tail)
+        return parts
+
     def strip_escaped_sml(s:str)->str:
         return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
@@ -1308,7 +1325,7 @@ def get_sentences(text:str, session_id:str)->list|None:
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = self._split_sentence_on_sml(s)
+                parts = split_sentence_on_sml(s)
                 for part in parts:
                     part = part.strip()
                     if not part:
