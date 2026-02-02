@@ -102,7 +102,7 @@ class SubprocessPipe:
                                 if match:
                                     percent = min(float(match.group(1)), 100.0)
                                     if percent - last_percent >= 0.5:
-                                        self._emit_progress(percent)
+                                        yield self._emit_progress(percent)
                                         last_percent = percent
             self.process.wait()
             if self._stop_requested:
