@@ -41,7 +41,6 @@ class SubprocessPipe:
             import re
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
             if is_ffmpeg:
-                print(f'is_ffmpeg: {is_ffmpeg}')
                 self.process = subprocess.Popen(
                     self.cmd,
                     stdout=subprocess.DEVNULL,
@@ -70,6 +69,7 @@ class SubprocessPipe:
                 last_percent=0.0
                 while True:
                     raw_line = self.process.stderr.readline()
+                    print(raw_line)
                     if not raw_line:
                         break
                     line=raw_line.decode(errors='ignore')
