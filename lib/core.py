@@ -2112,9 +2112,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             codec_info = probe.stdout.strip().splitlines()
             input_codec = codec_info[0] if len(codec_info) > 0 else None
             input_rate = codec_info[1] if len(codec_info) > 1 else None
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
+            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
             target_codec, target_rate = None, None
-            cmd = []
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
                 target_rate = '44100'
@@ -2151,10 +2150,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             else:
                 cmd += ['-ac', '1']
             if input_codec == target_codec and input_rate == target_rate:
-                cmd += [
-                    '-filter_threads', '0',
-                    '-threads', '0',
-                    '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
+                cmd = [
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio,
+                    '-threads', '0', '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
                     '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
                     '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
