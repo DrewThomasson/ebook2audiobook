@@ -1194,6 +1194,7 @@ def get_sentences(text:str, session_id:str)->list|None:
         session = context.get_session(session_id)
         if not session:
             return None
+        print(f'text: {text}')
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
 
