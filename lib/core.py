@@ -1194,9 +1194,12 @@ def get_sentences(text:str, session_id:str)->list|None:
         session = context.get_session(session_id)
         if not session:
             return None
-        print(f'text: {text}')
+
         lang, tts_engine = session['language'], session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
+
+        # escape all SML tags to not be touched by any text treatment
+        text, sml_blocks = escape_sml(text)
 
         assert not SML_TAG_PATTERN.search(text)
 
@@ -1339,7 +1342,9 @@ def get_sentences(text:str, session_id:str)->list|None:
                 if not is_latin_only(s):
                     ideogram_list.append(s)
             print(f'ideogram_list: {ideogram_list}')
+            ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
             return ideogram_list
+        final_list = [restore_sml(s, sml_blocks) for s in final_list]
         return final_list
     except Exception as e:
         print(f'get_sentences() error: {e}')
