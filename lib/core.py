@@ -190,6 +190,7 @@ class SessionContext:
                 "Source": None,
                 "Modified": None,
             },
+            "blocks": [],
             "chapters": [],
             "cover": None,
             "duration": 0,
@@ -729,7 +730,7 @@ def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
         DependencyError(e)
         return False
 
-def get_chapters(session_id:str, epubBook:EpubBook)->list:
+def get_blocks(session_id:str, epubBook:EpubBook)->list:
     try:
         msg = r'''
 *******************************************************************************
@@ -770,7 +771,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 print(error)
                 return []
             title = get_ebook_title(epubBook, all_docs)
-            chapters = []
+            bloks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
                 try:
@@ -801,23 +802,23 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
             for doc_idx, doc in enumerate(all_docs):
-                text = filter_chapter(doc_idx, doc, session_id, stanza_nlp, is_num2words_compat)
+                text = filter_blocks(doc_idx, doc, session_id, stanza_nlp, is_num2words_compat)
                 if text is None:
                     break
                 elif text:
-                    chapters.append(text)
-            if len(chapters) == 0:
-                error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
+                    bloks.append(text)
+            if len(bloks) == 0:
+                error = 'No bloks found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
                 return []
-            return chapters
+            return bloks
         return []
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
         return []
 
-def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->str|None:
+def filter_blocks(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -873,7 +874,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
                 if current_child_had_data:
                     prev_child_had_data = True
         except Exception as e:
-            error = f'filter_chapter() _tuple_row() error: {e}'
+            error = f'filter_blocks() _tuple_row() error: {e}'
             DependencyError(error)
             return None
 
@@ -1075,7 +1076,7 @@ def filter_chapter(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, i
             return text
         return None
     except Exception as e:
-        error = f'filter_chapter() error: {e}'
+        error = f'filter_blocks() error: {e}'
         DependencyError(error)
         return None
 
@@ -2656,13 +2657,14 @@ def convert_ebook(args:dict)->tuple:
                                 checksum_path = os.path.join(session['process_dir'], 'checksum')
                                 checksum, error = compare_checksums(session['ebook'], checksum_path)
                                 if error is None:
-                                    saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+                                    json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
                                     if not checksum:
+                                        session['blocks'] = []
                                         session['chapters'] = []
                                         if not convert2epub(session_id):
                                             error = 'convert2epub() failed!'
                                     else:
-                                        session['chapters'] = load_json_chapters(saved_json_chapters)
+                                        session['chapters'] = load_json_chapters(json_chapters)
                                     if error is None:
                                         epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                         if epubBook:
@@ -2695,16 +2697,16 @@ def convert_ebook(args:dict)->tuple:
                                             if is_lang_in_tts_engine:
                                                 session['cover'] = get_cover(epubBook, session_id)
                                                 if session['cover']:
-                                                    if not session['chapters']:
-                                                        session['chapters'] = get_chapters(session_id, epubBook)
-                                                    if session['chapters']:
+                                                    if not session['blocks']:
+                                                        session['blocks'] = get_blocks(session_id, epubBook)
+                                                    if session['blocks']:
                                                         if session['chapters_preview']:
                                                            return 'confirm_blocks', True
                                                         else:
                                                             progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
                                                     else:
-                                                        error = f"get_chapters() failed! {session['chapters']}"
+                                                        error = f"get_blocks() failed! {session['chapters']}"
                                                 else:
                                                     error = 'get_cover() failed!'
                                             else:
@@ -2730,7 +2732,7 @@ def convert_ebook(args:dict)->tuple:
 def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
-        if session['chapters']:
+        if session['blocks']:
             chapters = []
             msg = f'Get sentences…'
             print(msg)
@@ -2744,8 +2746,8 @@ def finalize_audiobook(session_id:str)->tuple:
                     if sentences_list:
                         chapters.append(sentences_list)
             session['chapters'] = chapters
-            saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-            save_json_chapters(session_id, saved_json_chapters)
+            json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+            save_json_chapters(session_id, json_chapters)
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
