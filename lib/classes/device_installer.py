@@ -858,6 +858,8 @@ class DeviceInstaller():
                         non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                     torch_version_base = torch_matrix[tag]['base']
                     installed_base = torch_version.split('+',1)[0] if torch_version else None
+                    if device_info['os'] == systems['MACOS'] and device_info['arch'] == 'x86_64':
+                        torch_version_base = installed_base = '2.2.2'
                     if not torch_version or (tag == devices['CPU']['proc'] and installed_base != torch_version_base) or (tag != devices['CPU']['proc'] and ((non_standard_tag is None and current_tag != tag) or (non_standard_tag is not None and non_standard_tag != tag))):
                         try:
                             msg = f"Installing the right library packages for {device_info['name']}…"
