@@ -1338,8 +1338,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 if not is_latin_only(s):
                     joined.append(s)
             return joined
-        else:
-            return final_list
+        return final_list
     except Exception as e:
         print(f'get_sentences() error: {e}')
         return None
@@ -2728,14 +2727,14 @@ def finalize_audiobook(session_id:str)->tuple:
             msg = f'Get sentences…'
             print(msg)
             for text in session['chapters']:
-                print(f'text:------------{text}-----------')
-                sentences_list = get_sentences(text, session_id)
-                if sentences_list is None:
-                    error = 'No sentences found!'
-                    print(error)
-                    return error, False
-                if sentences_list:
-                    chapters.append(sentences_list)
+                if text:
+                    sentences_list = get_sentences(text, session_id)
+                    if sentences_list is None:
+                        error = 'No sentences found!'
+                        print(error)
+                        return error, False
+                    if sentences_list:
+                        chapters.append(sentences_list)
             session['chapters'] = chapters
             saved_json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
             save_json_chapters(session_id, saved_json_chapters)
