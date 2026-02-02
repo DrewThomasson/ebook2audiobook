@@ -31,13 +31,13 @@ class DeviceInstaller():
             name, tag, msg = self.check_hardware
             arch = self.check_arch
             pyvenv = list(sys.version_info[:2])
-            os_env = 'linux' if name == 'jetson' else self.check_platform
+            os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
         else:
             if mode == BUILD_DOCKER:
                 name, tag, msg = self.check_hardware
                 arch = self.check_arch
                 pyvenv = list(sys.version_info[:2])
-                os_env = 'linux' if name == 'jetson' else 'manylinux_2_28'
+                os_env = 'linux' if name == devices['JETSON']['proc'] else 'manylinux_2_28'
                 pyvenv = [3, 10] if tag in ['jetson60', 'jetson61'] else pyvenv
                 device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg}
                 with open('.device_info.json', 'w', encoding='utf-8') as f:
@@ -104,8 +104,8 @@ class DeviceInstaller():
 
                     if isinstance(obj, dict):
                         # New CUDA JSON
-                        if 'cuda' in obj and isinstance(obj['cuda'], dict):
-                            v = obj['cuda'].get('version')
+                        if devices['CUDA']['proc'] in obj and isinstance(obj[devices['CUDA']['proc']], dict):
+                            v = obj[devices['CUDA']['proc']].get('version')
                             if v:
                                 return str(v)
 
@@ -406,7 +406,7 @@ class DeviceInstaller():
             tag_letters = re.match(r"[a-zA-Z]+", forced_tag)
             if tag_letters:
                 tag_letters = tag_letters.group(0).lower()
-                name = 'cuda' if tag_letters == 'cu' else 'rocm' if tag_letters == 'rocm' else 'jetson' if tag_letters == 'jetson' else 'xpu' if tag_letters == 'xpu' else 'mps' if tag_letters == 'mps' else 'cpu'
+                name = devices['CUDA']['proc'] if tag_letters == 'cu' else devices['ROCM']['proc'] if tag_letters == devices['ROCM']['proc'] else devices['JETSON']['proc'] if tag_letters == devices['JETSON']['proc'] else devices['XPU']['proc'] if tag_letters == devices['XPU']['proc'] else devices['MPS']['proc'] if tag_letters == devices['MPS']['proc'] else devices['CPU']['proc']
                 devices[name.upper()]['found'] = True
                 tag = forced_tag
                 msg = f'Hardware forced from DEVICE_TAG={tag}'
@@ -423,13 +423,13 @@ class DeviceInstaller():
                     pass
                 elif os.path.exists('/etc/nv_tegra_release'):
                     devices['JETSON']['found'] = True
-                    name = 'jetson'
+                    name = devices['JETSON']['proc']
                     tag = f'jetson{jp_code}'
                 elif os.path.exists('/proc/device-tree/compatible'):
                     out = try_cmd('cat /proc/device-tree/compatible')
                     if 'tegra' in out:
                         devices['JETSON']['found'] = True
-                        name = 'jetson'
+                        name = devices['JETSON']['proc']
                         tag = f'jetson{jp_code}'
                 else:
                     out = try_cmd('uname -a')
@@ -482,7 +482,7 @@ class DeviceInstaller():
                         parts = version.split(".")
                         major = parts[0]
                         minor = parts[1] if len(parts) > 1 else 0
-                        name = 'rocm'
+                        name = devices['ROCM']['proc']
                         tag = f'rocm{major}{minor}'
                     else:
                         msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
@@ -568,7 +568,7 @@ class DeviceInstaller():
                         parts = version.split(".")
                         major = parts[0]
                         minor = parts[1] if len(parts) > 1 else 0
-                        name = 'cuda'
+                        name = devices['CUDA']['proc']
                         tag = f'cu{major}{minor}'
                     else:
                         msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
@@ -618,8 +618,8 @@ class DeviceInstaller():
                         msg = f'XPU {version} out of supported range {range_display}. Falling back to CPU.'
                     elif cmp == 0:
                         devices['XPU']['found'] = True
-                        name = 'xpu'
-                        tag = 'xpu'
+                        name = devices['XPU']['proc']
+                        tag = devices['XPU']['proc']
                     else:
                         msg = 'Intel GPU detected but Intel oneAPI Base Toolkit not installed.'
                 else:
@@ -630,15 +630,15 @@ class DeviceInstaller():
             # ============================================================
             elif self.system == systems['MACOS'] and arch in ('arm64', 'aarch64'):
                 devices['MPS']['found'] = True
-                name = 'mps'
-                tag = 'mps'
+                name = devices['MPS']['proc']
+                tag = devices['MPS']['proc']
 
             # ============================================================
             # CPU
             # ============================================================
             if tag is None:
-                name = 'cpu'
-                tag = 'cpu'
+                name = devices['CPU']['proc']
+                tag = devices['CPU']['proc']
 
         name, tag, msg = (v.strip() if isinstance(v, str) else v for v in (name, tag, msg))
         return (name, tag, msg)
@@ -697,15 +697,16 @@ class DeviceInstaller():
             print(error)
             return 1
         try:
-            system = sys.platform
-            arch = platform.machine().lower()
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
-                packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)]
-            if sys.version_info >= (3, 11):
-                packages.append("pymupdf-layout")
-                if system == systems['MACOS'] and arch == 'x86_64':
-                    packages = [('torchaudio==2.2.2' if p.startswith('torchaudio==') else 'torch==2.2.2' if p.startswith('torch==') else p) for p in packages]
+                packages = []
+                for line in contents.splitlines():
+                    pkg = line.strip()
+                    if not pkg or not re.search(r'[a-zA-Z0-9]', pkg):
+                        continue
+                    if re.split(r"[<>=!\[]", pkg, 1)[0].lower() in {'torch', 'torchaudio'}:
+                        continue
+                    packages.append(pkg)
             missing_packages = []
             for package in packages:
                 raw_pkg = package.strip()
@@ -789,7 +790,7 @@ class DeviceInstaller():
                             print(f'{pkg_name} (installed {installed_version}) == excluded {req_ver}.')
                             missing_packages.append(raw_pkg)
             if missing_packages:
-                print('\nInstalling missing or upgrade packages...\n')
+                print('\nInstalling missing or upgrade packages…\n')
                 subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
                 for raw_pkg in missing_packages:
@@ -801,8 +802,6 @@ class DeviceInstaller():
                         print(f'Failed to install {raw_pkg}: {e}')
                         return 1
                 print('\nAll required packages are installed.')
-            if not self.check_numpy():
-                return 1
             return self.check_dictionary()
         except Exception as e:
             print(f'install_python_packages() error: {e}')
@@ -832,11 +831,11 @@ class DeviceInstaller():
         dicrc = os.path.join(unidic_path, 'dicrc')
         if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
             try:
-                error = 'UniDic dictionary not found or incomplete. Downloading now...'
+                error = 'UniDic dictionary not found or incomplete. Downloading now…'
                 print(error)
                 subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
             except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
-                error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting...'
+                error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting…'
                 raise SystemExit(error)
                 return 1
         return 0
@@ -847,81 +846,79 @@ class DeviceInstaller():
                 device_info = json.loads(device_info_str)
                 if device_info:
                     print(f'---> Hardware detected: {device_info}')
-                    torch_version = self.get_package_version('torch')
-                    if torch_version:
-                        if device_info['tag'] not in ['cpu', 'unknown', 'unsupported']:
-                            m = re.search(r'\+(.+)$', torch_version)
-                            current_tag = m.group(1) if m else None
-                            non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
-                            torch_version_base = torch_matrix[device_info['tag']]['base']
-                            if ((non_standard_tag is None and current_tag != device_info['tag']) or (non_standard_tag is not None and non_standard_tag != device_info['tag'])):
-                                try:
-                                    print(f"Installing the right library packages for {device_info['name']}...")
-                                    os_env = device_info['os']
-                                    arch = device_info['arch']
-                                    tag = device_info['tag']
-                                    url = torch_matrix[device_info['tag']]['url']
-                                    toolkit_version = "".join(c for c in tag if c.isdigit())
-                                    if device_info['name'] == devices['JETSON']['proc']:
-                                        py_major, py_minor = device_info['pyvenv']
-                                        tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
-                                        torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                        torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-binary=scikit-learn', 'scikit-learn'])
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force', '--no-cache-dir', '--no-binary=scipy', 'scipy'])
-                                    elif device_info['name'] == devices['MPS']['proc']:
-                                        torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
-                                        torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
-                                        torch_pkg = f'{url}/cpu/torch-{torch_version_base}-{torch_tag_py}-{os_env}_{arch}.whl'
-                                        torchaudio_pkg = f'{url}/cpu/torchaudio-{torch_version_base}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg, torchaudio_pkg])
-                                    else:
-                                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', f'torch=={torch_version_base}', f'torchaudio=={torch_version_base}', '--force-reinstall', '--index-url', f'https://download.pytorch.org/whl/{tag}'])
-                                    check_numpy_version = self.check_numpy()
-                                    if not check_numpy_version:
-                                        return 1
-                                except subprocess.CalledProcessError as e:
-                                    error = f'Failed to install torch package: {e}'
-                                    print(error)
-                                    return 1
-                                except Exception as e:
-                                    error = f'Error while installing torch package: {e}'
-                                    print(error)
-                                    return 1
-                        if device_info['os'] == 'linux' and ('jetpack' in device_info['note'].lower() or device_info['name'] == devices['JETSON']['proc']):
-                            libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
-                            if os.path.exists(libgomp_src):
-                                libs_dir = os.path.join(
-                                    'python_env',
-                                    'lib',
-                                    f'python{sys.version_info.major}.{sys.version_info.minor}',
-                                    'site-packages',
-                                    'scikit_learn.libs'
-                                )
-                                if os.path.isdir(libs_dir):
-                                    for libgomp_dst in glob(os.path.join(libs_dir, 'libgomp*')):
-                                        if os.path.islink(libgomp_dst):
-                                            if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
-                                                continue
-                                            os.unlink(libgomp_dst)
-                                        else:
-                                            os.unlink(libgomp_dst)
-                                        msg = 'Create symlink to use OS libgomp.'
-                                        print(msg)
-                                        os.symlink(libgomp_src, libgomp_dst)
+                    tag = device_info.get('tag')
+                    if tag in ['unknown','unsupported']:
                         return 0
-                    else:
-                        error = 'install_device_packages() error: torch version not detected'
-                        print(error)
+                    torch_version = self.get_package_version('torch')
+                    current_tag = None
+                    non_standard_tag = None
+                    if torch_version:
+                        m = re.search(r'\+(.+)$', torch_version)
+                        current_tag = m.group(1) if m else None
+                        non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
+                    torch_version_base = torch_matrix[tag]['base']
+                    installed_base = torch_version.split('+',1)[0] if torch_version else None
+                    if not torch_version or (tag == devices['CPU']['proc'] and installed_base != torch_version_base) or (tag != devices['CPU']['proc'] and ((non_standard_tag is None and current_tag != tag) or (non_standard_tag is not None and non_standard_tag != tag))):
+                        try:
+                            msg = f"Installing the right library packages for {device_info['name']}…"
+                            print(msg)
+                            if tag == devices['CPU']['proc']:
+                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_base}',f'torchaudio=={torch_version_base}'])
+                            else:
+                                os_env = device_info['os']
+                                arch = device_info['arch']
+                                url = torch_matrix[tag]['url']
+                                toolkit_version = "".join(c for c in tag if c.isdigit())
+                                if device_info['name'] == devices['JETSON']['proc']:
+                                    py_major, py_minor = device_info['pyvenv']
+                                    tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
+                                    torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                    torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_base}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torch_pkg])
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torchaudio_pkg])
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--force','--no-binary=scikit-learn','scikit-learn'])
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--force','--no-cache-dir','--no-binary=scipy','scipy'])
+                                elif device_info['name'] == devices['MPS']['proc']:
+                                    torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
+                                    torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
+                                    torch_pkg = f'{url}/cpu/torch-{torch_version_base}-{torch_tag_py}-{os_env}_{arch}.whl'
+                                    torchaudio_pkg = f'{url}/cpu/torchaudio-{torch_version_base}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torch_pkg,torchaudio_pkg])
+                                else:
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--no-cache-dir',f'torch=={torch_version_base}',f'torchaudio=={torch_version_base}','--force-reinstall','--index-url',f'https://download.pytorch.org/whl/{tag}'])
+                        except subprocess.CalledProcessError as e:
+                            error = f'Failed to install torch package: {e}'
+                            print(error)
+                            return 1
+                        except Exception as e:
+                            error = f'Error while installing torch package: {e}'
+                            print(error)
+                            return 1
+                    if device_info['os'] == 'linux' and ('jetpack' in device_info.get('note','').lower() or device_info['name'] == devices['JETSON']['proc']):
+                        libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
+                        if os.path.exists(libgomp_src):
+                            libs_dir = os.path.join('python_env','lib',f'python{sys.version_info.major}.{sys.version_info.minor}','site-packages','scikit_learn.libs')
+                            if os.path.isdir(libs_dir):
+                                for libgomp_dst in glob(os.path.join(libs_dir,'libgomp*')):
+                                    if os.path.islink(libgomp_dst):
+                                        if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
+                                            continue
+                                        os.unlink(libgomp_dst)
+                                    else:
+                                        os.unlink(libgomp_dst)
+                                    msg = 'Create symlink to use OS libgomp.'
+                                    print(msg)
+                                    os.symlink(libgomp_src, libgomp_dst)
+                    if not self.check_numpy():
+                        return 1
+                    return 0
                 else:
                     error = 'install_device_packages() error: device_info_str is empty'
                     print(error)
             else:
                 error = f'install_device_packages() error: json.loads() could not decode device_info_str={device_info_str}'
                 print(error)
-            return 1     
+            return 1
         except Exception as e:
             error = f'install_device_packages() error: {e}'
             print(error)

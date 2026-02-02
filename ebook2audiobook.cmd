@@ -279,7 +279,7 @@ exit /b
 
 :install_programs
 if not "%OK_SCOOP%"=="0" (
-    echo Installing Scoop...
+    echo Installing Scoop…
     call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
         "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
     echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
@@ -292,7 +292,7 @@ if not "%OK_SCOOP%"=="0" (
 )
 
 if not "%OK_CONDA%"=="0" (
-    echo Installing Miniforge...
+    echo Installing Miniforge…
     call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"
     call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
     where.exe /Q conda
@@ -318,7 +318,7 @@ if not "%OK_CONDA%"=="0" (
     exit
 )
 if not "%OK_PROGRAMS%"=="0" (
-    echo Installing missing programs...
+    echo Installing missing programs…
     if "%OK_SCOOP%"=="0" (
         call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
         call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
@@ -412,7 +412,7 @@ for /f "delims=" %%i in ('where.exe python') do (
 )
 if "%CURRENT_ENV%"=="" (
     if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
-        echo Creating ./python_env version %PYTHON_VERSION%...
+        echo Creating ./python_env version %PYTHON_VERSION%…
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda update -n base -c conda-forge conda -y
         call conda update --all -y
@@ -443,7 +443,7 @@ if errorlevel 1 (
 exit /b 0
 
 :install_python_packages
-echo [ebook2audiobook] Installing dependencies...
+echo [ebook2audiobook] Installing dependencies…
 "%PS_EXE%" %PS_ARGS% -Command ^
 "python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
 exit /b %errorlevel%

@@ -390,10 +390,10 @@ function check_required_programs {
 
 function install_programs {
 	if [[ "${OSTYPE-}" == darwin* ]]; then
-		echo -e "\e[33mInstalling required programs...\e[0m"
+		echo -e "\e[33mInstalling required programs…\e[0m"
 		PACK_MGR="brew install"
 		if ! command -v brew &> /dev/null; then
-			echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
+			echo -e "\e[33mHomebrew is not installed. Installing Homebrew…\e[0m"
 			/usr/bin/env bash -c "$(curl -fsSL $BREW_INSTALLER_URL)"
 			echo >> $HOME/.zprofile
 			echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
@@ -432,7 +432,7 @@ function install_programs {
 			PACK_MGR_OPTIONS="-y"
 		elif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then
 			if ! command -v un-get &>/dev/null; then
-				echo "  → Installing un-get plugin..."
+				echo "  → Installing un-get plugin…"
 				installplg ./ext/app/un-get.plg
 				# Add the two best repos for Unraid 7 (current as of Dec 2025)
 				mkdir -p /boot/config/plugins/un-get
@@ -451,7 +451,7 @@ EOF
 		fi
 	fi
 	if [[ -z "$WGET" ]]; then
-		echo -e "\e[33m wget is missing! trying to install it... \e[0m"
+		echo -e "\e[33m wget is missing! trying to install it… \e[0m"
 		result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
 		result_code=$?
 		if [[ $result_code -eq 0 ]]; then
@@ -468,7 +468,7 @@ EOF
 			else
 				# avoid conflict with calibre builtin lxml
 				python3 -m pip uninstall -y lxml 2>/dev/null || true
-				echo -e "\e[33mInstalling Calibre...\e[0m"
+				echo -e "\e[33mInstalling Calibre…\e[0m"
 				if [[ "${OSTYPE-}" == darwin* ]]; then
 					eval "$PACK_MGR --cask calibre"
 				else
@@ -571,7 +571,7 @@ function check_conda {
 		local installer_url
 		local installer_path="/tmp/Miniforge3.sh"
 		local config_path
-		echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
+		echo -e "\e[33mDownloading Miniforge3 installer…\e[0m"
 		if [[ "${OSTYPE-}" == darwin* ]]; then
 			config_path="$HOME/.zshrc"
 			curl -fsSLo "$installer_path" "$MINIFORGE_MACOSX_INSTALLER_URL"
@@ -580,7 +580,7 @@ function check_conda {
 			wget -O "$installer_path" "$MINIFORGE_LINUX_INSTALLER_URL"
 		fi
 		if [[ -f "$installer_path" ]]; then
-			echo -e "\e[33mInstalling Miniforge3...\e[0m"
+			echo -e "\e[33mInstalling Miniforge3…\e[0m"
 			bash "$installer_path" -b -u -p "$CONDA_HOME"
 			rm -f "$installer_path"
 			if [[ -f "$CONDA_HOME/bin/conda" ]]; then
@@ -624,7 +624,7 @@ function check_conda {
 				2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
 			esac
 		fi
-		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
+		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION…\e[0m"
 		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
 		conda update -n base -c conda-forge conda -y
 		conda update --all -y
@@ -649,7 +649,7 @@ function check_docker {
 }
 
 function install_python_packages {
-	echo "[ebook2audiobook] Installing dependencies..."
+	echo "[ebook2audiobook] Installing dependencies…"
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip setuptools wheel >nul 2>&1
 	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
