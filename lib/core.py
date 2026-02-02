@@ -2145,7 +2145,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     target_codec = 'opus'
                     target_rate = '48000'
                     cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
-                cmd += ['-map_metadata', '1'] 
+                cmd += ['-map_metadata', '1']
             if session['output_channel'] == 'stereo':
                 cmd += ['-ac', '2']
             else:
@@ -2155,6 +2155,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio,
                     '-threads', '0', '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
                     '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
+                    '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
             else:
@@ -2163,11 +2164,17 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-filter_complex_threads', '0',
                     '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
                     '-threads', '0',
+                    '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
             is_gui_process = session['is_gui_process']
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export')
-            if proc_pipe:
+            progress = gr.Progress(track_tqdm=False) if is_gui_process else None
+            def on_progress(percent:float)->None:
+                if progress:
+                    progress(percent / 100.0, desc='Export')
+            proc_pipe = SubprocessPipe(cmd, total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export', on_progress=on_progress)
+            success = proc_pipe.run()
+            if success:
                 if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                         if session['cover'] is not None:
