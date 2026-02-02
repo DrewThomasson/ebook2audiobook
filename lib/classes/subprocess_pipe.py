@@ -17,7 +17,6 @@ class SubprocessPipe:
         self._run_process()
         
     def _emit_progress(self, percent:float)->None:
-        print(f'percent: ---------{percent}----------')
         sys.stdout.write(f"\r{self.msg} - {percent:.1f}%")
         sys.stdout.flush()
         if self.on_progress is not None:
