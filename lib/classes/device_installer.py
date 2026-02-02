@@ -889,14 +889,25 @@ class DeviceInstaller():
                                     error = f'Error while installing torch package: {e}'
                                     print(error)
                                     return 1
-                        if 'jetpack' in device_info['note'].lower():
-                            libgomp_src = Path('/usr/lib/aarch64-linux-gnu/libgomp.so')
-                            if libgomp_src.exists():
-                                libgomp_dst = Path('./python_env/lib/python3.10/site-packages/scikit_learn.libs/libgomp-947d5fa1.so.1.0.0')
-                                if not libgomp_dst.is_symlink():
-                                    if libgomp_dst.exists():
-                                        libgomp_dst.unlink()
-                                    libgomp_dst.symlink_to(libgomp_src)
+                        if device_info['os'] == 'linux and 'jetpack' in device_info.get('note', '').lower():
+                            libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
+                            if os.path.exists(libgomp_src):
+                                libs_dir = os.path.join(
+                                    'python_env',
+                                    'lib',
+                                    f'python{sys.version_info.major}.{sys.version_info.minor}',
+                                    'site-packages',
+                                    'scikit_learn.libs'
+                                )
+                                if os.path.isdir(libs_dir):
+                                    for libgomp_dst in glob.glob(os.path.join(libs_dir, 'libgomp*')):
+                                        if os.path.islink(libgomp_dst):
+                                            if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
+                                                continue
+                                            os.unlink(libgomp_dst)
+                                        else:
+                                            os.unlink(libgomp_dst)
+                                        os.symlink(libgomp_src, libgomp_dst)
                         return 0
                     else:
                         error = 'install_device_packages() error: torch version not detected'
