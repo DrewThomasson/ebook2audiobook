@@ -1208,7 +1208,7 @@ def get_sentences(text:str, session_id:str)->list|None:
         if not hard_list:
             hard_list = [text.strip()]
         hard_list = [s.strip() for s in hard_list if s.strip()]
-
+        print(f'hard_list: {hard_list}')
         # PASS 2 — soft punctuation
         soft_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
@@ -1248,7 +1248,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                     soft_list.append(s)
             else:
                 soft_list.append(s)
-
+        print(f'soft_list: {soft_list}')
         # PASS 3 — space split (last resort)
         last_list = []
         for s in soft_list:
@@ -1274,7 +1274,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                     break
                 last_list.append(left)
                 rest = right
-
+        print(f'last_list: {last_list}')
         # PASS 4 — merge very short rows
         final_list = []
         merge_max_chars = int((max_chars / 2) / 3)
@@ -1314,7 +1314,7 @@ def get_sentences(text:str, session_id:str)->list|None:
                 continue
             final_list.append(cur)
             i += 1
-
+        print(f'final_list: {final_list}')
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
@@ -1333,11 +1333,12 @@ def get_sentences(text:str, session_id:str)->list|None:
                         tokens = tokens.strip()
                         if tokens:
                             result.append(tokens)
-            joined = []
+            ideogram_list = []
             for s in join_ideogramms(result):
                 if not is_latin_only(s):
-                    joined.append(s)
-            return joined
+                    ideogram_list.append(s)
+            print(f'ideogram_list: {ideogram_list}')
+            return ideogram_list
         return final_list
     except Exception as e:
         print(f'get_sentences() error: {e}')
@@ -2729,7 +2730,6 @@ def finalize_audiobook(session_id:str)->tuple:
             for text in session['chapters']:
                 if text:
                     sentences_list = get_sentences(text, session_id)
-                    print(f'sentences_list: {sentences_list}')
                     if sentences_list is None:
                         error = 'No sentences found!'
                         print(error)
