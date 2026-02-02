@@ -2728,6 +2728,7 @@ def finalize_audiobook(session_id:str)->tuple:
             msg = f'Get sentences…'
             print(msg)
             for text in session['chapters']:
+                print(f'text:------------{text}-----------')
                 sentences_list = get_sentences(text, session_id)
                 if sentences_list is None:
                     error = 'No sentences found!'
