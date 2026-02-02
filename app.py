@@ -251,6 +251,10 @@ SML tags available:
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         if args['headless']:
+            if args['script_mode'] == FULL_DOCKER:
+                for k, v in args.items():
+                    if isinstance(v, str) and v.startswith('/app/'):
+                        args[k] = v.replace('/app/', './', 1)
             args['id'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
             args['chapters_preview'] = False
