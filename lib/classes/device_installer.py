@@ -901,7 +901,7 @@ class DeviceInstaller():
                                     'scikit_learn.libs'
                                 )
                                 if os.path.isdir(libs_dir):
-                                    for libgomp_dst in glob.glob(os.path.join(libs_dir, 'libgomp*')):
+                                    for libgomp_dst in glob(os.path.join(libs_dir, 'libgomp*')):
                                         if os.path.islink(libgomp_dst):
                                             if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
                                                 continue
