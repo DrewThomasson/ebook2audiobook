@@ -2168,7 +2168,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-y', ffmpeg_final_file
                 ]
             is_gui_process = session['is_gui_process']
-            print(f'is_gui_process: {is_gui_process}')
             proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export')
             if proc_pipe:
                 if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
@@ -2525,7 +2524,7 @@ def convert_ebook(args:dict)->tuple:
                     if not context_tracker.start_session(session_id):
                         error = 'convert_ebook() error: Session initialization failed!'
                         print(error)
-                        return error, False     
+                        return error, False
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
