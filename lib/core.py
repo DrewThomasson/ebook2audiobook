@@ -2155,7 +2155,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio,
                     '-threads', '0', '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
                     '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
-                    '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
             else:
@@ -2164,7 +2163,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-filter_complex_threads', '0',
                     '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
                     '-threads', '0',
-                    '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
             is_gui_process = session['is_gui_process']

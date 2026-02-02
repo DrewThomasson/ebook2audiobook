@@ -21,6 +21,8 @@ class SubprocessPipe:
             self.on_progress(percent)
         elif self.progress_bar:
             self.progress_bar(percent / 100.0, desc=self.msg)
+        sys.stdout.write(f"\r{self.msg} - {percent:.1f}%")
+        sys.stdout.flush()
 
     def _on_complete(self)->None:
         msg = f"\n{self.msg} completed!"
