@@ -2097,6 +2097,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             input_rate = codec_info[1] if len(codec_info) > 1 else None
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
             target_codec, target_rate = None, None
+            cmd = ''
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
                 target_rate = '44100'
