@@ -804,7 +804,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 text = filter_chapter(doc_idx, doc, session_id, stanza_nlp, is_num2words_compat)
                 if text is None:
                     break
-                else:
+                elif text:
                     chapters.append(text)
             if len(chapters) == 0:
                 error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
