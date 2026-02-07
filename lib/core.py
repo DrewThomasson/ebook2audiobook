@@ -2631,12 +2631,12 @@ def convert_ebook(args:dict)->tuple:
                                     session['device'] = devices['CPU']['proc']
                                     msg += f'MPS not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
                             elif session['device'] == devices['ROCM']['proc']:
-                                session['device'] = session['device'] if devices['ROCM']['found'] else devices['CPU']['proc']
-                                if session['device'] == devices['CPU']['proc']:
+                                if not devices['ROCM']['found']:
+                                    session['device'] = devices['CPU']['proc']
                                     msg += f'ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
                             elif session['device'] == devices['XPU']['proc']:
-                                session['device'] = session['device'] if devices['XPU']['found'] else devices['CPU']['proc']
-                                if session['device'] == devices['CPU']['proc']:
+                                if not devices['XPU']['found']:
+                                    session['device'] = devices['CPU']['proc']
                                     msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
                             if session['tts_engine'] == TTS_ENGINES['BARK']:
                                 if session['free_vram_gb'] < 12.0:
