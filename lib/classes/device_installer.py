@@ -442,41 +442,78 @@ class DeviceInstaller():
             elif has_working_rocm() and has_amd_gpu_pci():
                 version = ''
                 msg = ''
-                if os.name == 'posix':
-                    for p in (
-                        '/opt/rocm/.info/version',
-                        '/opt/rocm/version',
-                    ):
-                        if os.path.exists(p):
-                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                v = f.read()
-                                version = lib_version_parse(v)
+                def _normalize_version(v:str)->str:
+                    import re
+                    m = re.search(r'\d+\.\d+(?:\.\d+)?', v or '')
+                    return m.group(0) if m else ''
+                if not version and has_cmd("hipcc"):
+                    out = try_cmd("hipcc --version")
+                    if out:
+                        import re
+                        m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
+                        if m:
+                            version = _normalize_version(m.group(1))
+                if not version:
+                    try:
+                        import torch
+                        if getattr(torch.version, "hip", None):
+                            version = _normalize_version(torch.version.hip)
+                    except Exception:
+                        pass
+                if not version and os.name == 'posix':
+                    import glob
+                    for p in sorted(glob.glob('/opt/rocm-*'), reverse=True):
+                        base = os.path.basename(p).replace('rocm-', '')
+                        v = _normalize_version(base)
+                        if v:
+                            version = v
                             break
-                elif os.name == 'nt':
-                    for env in ('ROCM_PATH', 'HIP_PATH'):
-                        base = os.environ.get(env)
-                        if base:
-                            for p in (
-                                os.path.join(base, 'version'),
-                                os.path.join(base, '.info', 'version'),
-                            ):
-                                if os.path.exists(p):
+                if not version:
+                    if os.name == 'posix':
+                        for p in (
+                            '/opt/rocm/.info/version',
+                            '/opt/rocm/version',
+                        ):
+                            if os.path.exists(p):
+                                try:
                                     with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                                         v = f.read()
-                                        version = lib_version_parse(v)
+                                        version = _normalize_version(lib_version_parse(v))
                                     break
-                        if version:
-                            break
+                                except Exception:
+                                    pass
+                    elif os.name == 'nt':
+                        for env in ('ROCM_PATH', 'HIP_PATH'):
+                            base = os.environ.get(env)
+                            if base:
+                                for p in (
+                                    os.path.join(base, 'version'),
+                                    os.path.join(base, '.info', 'version'),
+                                ):
+                                    if os.path.exists(p):
+                                        try:
+                                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                                v = f.read()
+                                                version = _normalize_version(lib_version_parse(v))
+                                            break
+                                        except Exception:
+                                            pass
+                            if version:
+                                break
                 if version:
                     cmp = toolkit_version_compare(version, rocm_version_range)
                     min_version = rocm_version_range["min"]
                     max_version = rocm_version_range["max"]
+
                     min_version_str = ".".join(map(str, min_version)) if isinstance(min_version, (tuple, list)) else str(min_version)
                     max_version_str = ".".join(map(str, max_version)) if isinstance(max_version, (tuple, list)) else str(max_version)
+
                     if cmp == -1:
                         msg = f'ROCm {version} < min {min_version_str}. Please upgrade.'
+
                     elif cmp == 1:
                         msg = f'ROCm {version} > max {max_version_str}. Falling back to CPU.'
+
                     elif cmp == 0:
                         devices['ROCM']['found'] = True
                         parts = version.split(".")
@@ -484,8 +521,10 @@ class DeviceInstaller():
                         minor = parts[1] if len(parts) > 1 else 0
                         name = devices['ROCM']['proc']
                         tag = f'rocm{major}{minor}'
+
                     else:
                         msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
+
                 else:
                     msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
 
