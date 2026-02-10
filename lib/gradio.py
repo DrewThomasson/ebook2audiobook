@@ -666,7 +666,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_panel = gr.Column(visible='hidden')
             gr_blocks_prev = gr.Button('◀', visible='hidden')
             gr_blocks_next = gr.Button('▶', visible='hidden')
-            gr_blocks_cancel = gr.Button('✖', variant='secondary', elem_classes=['button-red'], visible='hidden')
+            gr_blocks_cancel = gr.Button('✖', elem_classes=['button-red'], visible='hidden')
             gr_blocks_continue = gr.Button('✔', variant='primary', visible='hidden')
 
             gr_modal = gr.HTML(visible=False)
