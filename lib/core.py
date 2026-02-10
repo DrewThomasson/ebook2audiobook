@@ -1883,6 +1883,7 @@ def convert_chapters2audio(session_id:str)->bool:
             tts_manager = TTSManager(session)
             resume_chapter = 0
             missing_chapters = []
+            final_sentences = []
             chapter_re = re.compile(r'^(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
             existing_chapters = [f for f in os.listdir(session['chapters_dir']) if chapter_re.match(f)]
             existing_numbers = sorted(int(chapter_re.match(f).group(1)) for f in existing_chapters)
@@ -1920,7 +1921,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 progress_bar = gr.Progress(track_tqdm=False)
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
-                final_sentences = []
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     idx_target = 0
                     for c in range(0, total_chapters):
