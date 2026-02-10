@@ -1692,7 +1692,7 @@ def build_interface(args:dict)->gr.Blocks:
                         restore_session_from_data(data, session)
                         session['status'] = None
                     if not context_tracker.start_session(session['id']):
-                        error = 'Your session is already active.<br>If it's not the case please close your browser and relaunch it.'
+                        error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                         return gr.update(), gr.update(), gr.update(value=''), update_gr_glassmask(str=error)
                     else:
                         active_sessions.add(req.session_hash)
