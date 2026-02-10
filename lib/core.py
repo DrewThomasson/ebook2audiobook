@@ -2360,7 +2360,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
         )
         '''
         proc_pipe = subprocess.Popen(
-            self.cmd,
+            cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             text=False,
