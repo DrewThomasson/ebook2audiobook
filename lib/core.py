@@ -2164,7 +2164,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 ]
             is_gui_process = session['is_gui_process']
             proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export')
-            if proc_pipe:
+            if proc_pipe.result:
                 if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                         if session['cover'] is not None:
@@ -2350,7 +2350,6 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             '-progress', 'pipe:2',
             '-y', out_file
         ]
-        '''
         proc_pipe = SubprocessPipe(
             cmd=cmd,
             is_gui_process=is_gui_process,
@@ -2358,21 +2357,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             msg='Assemble',
             on_progress=on_progress
         )
-        '''
-        proc_pipe = subprocess.Popen(
-            cmd,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            text=False,
-            bufsize=0
-        )
-        proc_pipe.wait()
-        if proc_pipe.returncode==0:
-            return True
-        else:
-            return False
-        '''
-        if proc_pipe and os.path.exists(out_file):
+        if proc_pipe.result and os.path.exists(out_file):
             msg = f'Completed → {out_file}'
             print(msg)
             return True
@@ -2380,7 +2365,6 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             error = f'Failed (proc_pipe) → {out_file}'
             print(error)
             return False
-        '''
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return False

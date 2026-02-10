@@ -15,7 +15,7 @@ class SubprocessPipe:
         self.progress_bar = False
         if self.is_gui_process:
             self.progress_bar = gr.Progress(track_tqdm=False)
-        self._run_process()
+        self.result = self._run_process()
         
     def _emit_progress(self, percent:float)->None:
         if self.on_progress is not None:
