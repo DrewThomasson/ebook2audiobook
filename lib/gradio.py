@@ -1661,10 +1661,10 @@ def build_interface(args:dict)->gr.Blocks:
                     index += 2
                 return keep_map, text_map
 
-            def prev_page(page):
+            def prev_page(page:int)->int:
                 return max(page - 1, 0)
 
-            def next_page(page, blocks):
+            def next_page(page:int, blocks:list[str])->int:
                 max_page = (len(blocks) - 1) // page_size
                 return min(page + 1, max_page)
 
@@ -1686,7 +1686,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gr.update(visible='hidden'), gr.update(visible='hidden'), gr.update(visible='hidden'),
                 )
 
-            def continue_blocks(blocks:list[str], keep_map:bool, text_map:str)->list[str]:
+            def continue_blocks(blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->list[str]:
                 result = []
                 for i, block in enumerate(blocks):
                     if keep_map.get(i, True):
