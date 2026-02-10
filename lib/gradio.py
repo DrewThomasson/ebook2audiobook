@@ -1627,7 +1627,10 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                             txt = gr.Textbox(
                                 value=text_map.get(i, blocks[i]),
-                                lines=6
+                                lines=18,
+                                max_lines=18,
+                                show_label=False,
+                                container=False
                             )
                             # ⭐ Attach change listeners
                             keep.change(
