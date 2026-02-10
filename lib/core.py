@@ -2347,8 +2347,10 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             '-c:a', default_audio_proc_format,
             '-map_metadata', '-1',
             '-threads', '0',
+            '-progress', 'pipe:2',
             '-y', out_file
         ]
+        '''
         proc_pipe = SubprocessPipe(
             cmd=cmd,
             is_gui_process=is_gui_process,
@@ -2356,6 +2358,20 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             msg='Assemble',
             on_progress=on_progress
         )
+        '''
+        proc_pipe = subprocess.Popen(
+            self.cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=False,
+            bufsize=0
+        )
+        proc_pipe.wait()
+        if proc_pipe.returncode==0:
+            return True
+        else:
+            return False
+        '''
         if proc_pipe and os.path.exists(out_file):
             msg = f'Completed → {out_file}'
             print(msg)
@@ -2364,6 +2380,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             error = f'Failed (proc_pipe) → {out_file}'
             print(error)
             return False
+        '''
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return False
