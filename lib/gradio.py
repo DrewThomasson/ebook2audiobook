@@ -1662,9 +1662,9 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session['status'] == confirm_blocks:
                     return (
                         session['blocks'], 0, {}, {}, gr.update(visible=True), gr.update(visible=True),
-                        gr.update(visible=True), gr.update(visible=len(session['blocks']) > page_size), gr.update(visible=True),
+                        gr.update(visible=len(session['blocks']) > page_size), gr.update(visible=True), gr.update(visible=True)
                     )
-                return tuple(gr.update(visible=False) for _ in range(5))
+                return tuple(gr.update(visible=False) for _ in range(9))
 
             def cancel_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
