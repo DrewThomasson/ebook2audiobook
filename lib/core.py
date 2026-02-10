@@ -2306,8 +2306,11 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
+    if is_gui_process:
+        progress_bar = gr.Progress(track_tqdm=False)
+
     def on_progress(p:float)->None:
-        if is_gui_process:
+        if progress_bar:
             progress_bar(p / 100.0, desc='Assemble')
 
     try:
@@ -2332,15 +2335,11 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             print(f'assemble_audio_chunks() open file {txt_file} Error: {e}')
             return False
 
-        if is_gui_process:
-            progress_bar = gr.Progress(track_tqdm=False)
-
         ffmpeg = shutil.which('ffmpeg')
         cmd = [
             ffmpeg,
             '-hide_banner',
             '-nostats',
-            '-hwaccel', 'auto',
             '-safe', '0',
             '-f', 'concat',
             '-i', txt_file,
