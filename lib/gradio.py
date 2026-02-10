@@ -1564,7 +1564,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     if progress_status == confirm_blocks:
                                         session['event'] = progress_status
-                                        msg = 'Select the blocks to convert:'
+                                        msg = 'Select the blocks to convert'
+                                        print(msg)
                                         return gr.update(value=msg)
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
@@ -1801,7 +1802,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session_id:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['event'] is not None:
+                        if session['event'] != confirm_blocks:
                             session['event'] = None
 
             gr_ebook_file.change(
