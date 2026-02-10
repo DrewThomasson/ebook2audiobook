@@ -1615,7 +1615,7 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)              
                 return gr.update()
 
-            @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text])
+            @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text, gr_blocks_open])
             def render_blocks(blocks:list[str], page:int, keep_map:bool, text_map:str):
                 start = page * page_size
                 end = min(start + page_size, len(blocks))
@@ -1623,11 +1623,11 @@ def build_interface(args:dict)->gr.Blocks:
                     for i in range(start, end):
                         with gr.Accordion(f'Block {i}', open=gr_blocks_open.get(i, False)) as acc:
                             acc.expand(
-                                lambda idx=i, m=gr_blocks_open: {**m, idx: True},
+                                lambda idx=i, m=open_map: {**m, idx: True},
                                 outputs=gr_blocks_open
                             )
                             acc.collapse(
-                                lambda idx=i, m=gr_blocks_open: {**m, idx: False},
+                                lambda idx=i, m=open_map: {**m, idx: False},
                                 outputs=gr_blocks_open
                             )
                             keep = gr.Checkbox(
