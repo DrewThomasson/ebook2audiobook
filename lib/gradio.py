@@ -1563,7 +1563,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         error = 'Conversion failed.'
                                 else:
                                     if progress_status == confirm_blocks:
-                                        session['event'] = progress_status
+                                        session['status'] = progress_status
                                         msg = 'Select the blocks to convert'
                                         print(msg)
                                         return gr.update(value=msg)
@@ -1659,7 +1659,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def edit_confirm_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
-                if session and session['event'] == confirm_blocks:
+                if session and session['status'] == confirm_blocks:
                     return (
                         session['blocks'], 0, {}, {}, gr.update(visible=True), gr.update(visible=True),
                         gr.update(visible=True), gr.update(visible=len(session['blocks']) > page_size), gr.update(visible=True),
@@ -1802,8 +1802,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session_id:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['event'] != confirm_blocks:
-                            session['event'] = None
+                        session['event'] = None
 
             gr_ebook_file.change(
                 fn=change_convert_btn,
