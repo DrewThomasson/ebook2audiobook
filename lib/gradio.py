@@ -1614,46 +1614,47 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update()
 
             @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text])
-            def render_blocks(blocks:list[str], page:int, keep_map: dict[int, bool], text_map:dict[int, str])->list[gr.Component]:
+            def render_blocks(blocks:list[str], page:int, keep_map:bool, text_map:str):
                 start = page * page_size
                 end = min(start + page_size, len(blocks))
-                outputs: list[gr.Component] = []
                 with gr.Column():
-                    gr.Markdown(f'### Blocks {start+1}–{end} / {len(blocks)}')
                     for i in range(start, end):
-                        with gr.Accordion(f'Block {i+1}', open=False):
+                        with gr.Accordion(f"Block {i+1}", open=False):
                             keep = gr.Checkbox(
                                 value=keep_map.get(i, True),
-                                label='Keep block'
+                                label="Keep block"
                             )
                             txt = gr.Textbox(
                                 value=text_map.get(i, blocks[i]),
-                                lines=6,
-                                interactive=True
+                                lines=6
                             )
-                            outputs.extend([keep, txt])
-                return outputs
+                            # ⭐ Attach change listeners
+                            keep.change(
+                                lambda v, idx=i, km=keep_map: {**km, idx: v},
+                                inputs=keep,
+                                outputs=gr_blocks_keep
+                            )
+                            txt.change(
+                                lambda v, idx=i, tm=text_map: {**tm, idx: v},
+                                inputs=txt,
+                                outputs=gr_blocks_text
+                            )
 
             def save_page_state(blocks:list[str], page:int, keep_map:bool, text_map:str, *values):
                 start = page * page_size
                 index = 0
-                for i in range(start, min(start + PAGE_SIZE, len(blocks))):
+                for i in range(start, min(start + page_size, len(blocks))):
                     keep_map[i] = values[index]
                     text_map[i] = values[index + 1]
                     index += 2
                 return keep_map, text_map
 
-            def prev_page(blocks:list[str], page:int, keep_map:bool, text_map:str, *values):
-                keep_map, text_map = save_page_state(
-                    blocks, page, keep_map, text_map, *values
-                )
-                return max(page - 1, 0), keep_map, text_map
+            def prev_page(page):
+                return max(page - 1, 0)
 
-            def next_page(blocks:list[str], page:int, keep_map:bool, text_map:str, *values):
-                keep_map, text_map = save_page_state(
-                    blocks, page, keep_map, text_map, *values
-                )
-                return page + 1, keep_map, text_map
+            def next_page(page, blocks):
+                max_page = (len(blocks) - 1) // PAGE_SIZE
+                return min(page + 1, max_page)
 
             def edit_confirm_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -2197,19 +2198,13 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_prev.click(
                 fn=prev_page,
-                inputs=[
-                    gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text,
-                    *render_blocks.outputs
-                ],
-                outputs=[gr_blocks_page, gr_blocks_keep, gr_blocks_text]
+                inputs=[gr_blocks_page],
+                outputs=[gr_blocks_page]
             )
             gr_blocks_next.click(
                 fn=next_page,
-                inputs=[
-                    gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text,
-                    *render_blocks.outputs
-                ],
-                outputs=[gr_blocks_page, gr_blocks_keep, gr_blocks_text]
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[gr_blocks_page]
             )
             gr_blocks_cancel.click(
                 fn=cancel_blocks,
