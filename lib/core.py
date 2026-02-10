@@ -2269,7 +2269,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
                     merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}"
-                    result = assemble_audio_chunks(str(concat_list), str(merged_audio), is_gui_process)
+                    result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
                     if not result:
                         error = f'assemble_audio_chunks() Final merge failed for part {part_idx+1}.'
                         print(error)
@@ -2293,8 +2293,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         f.write(f"file '{path}'\n")
                 if is_gui_process:
                     progress_bar = gr.Progress(track_tqdm=False)
-                ok = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
-                if not ok:
+                result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
+                if not result:
                     print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
@@ -2340,19 +2340,20 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=False)
 
+        ffmpeg = shutil.which('ffmpeg')
         cmd = [
-            shutil.which('ffmpeg'),
+            ffmpeg,
             '-hide_banner',
             '-nostats',
             '-hwaccel', 'auto',
-            '-y', '-safe', '0',
+            '-safe', '0',
             '-f', 'concat',
             '-i', txt_file,
             '-c:a', default_audio_proc_format,
             '-map_metadata', '-1',
             '-threads', '0',
             '-progress', 'pipe:2',
-            '-nostats',
+            '-y',
             out_file,
         ]
         proc_pipe = SubprocessPipe(
