@@ -1987,7 +1987,6 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
-            chapter_audio_file = os.path.join(session['chapters_dir'], file)
             base = session['sentences_dir']
             ext = f".{default_audio_proc_format}"
             exists = os.path.exists
@@ -2017,12 +2016,12 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         print(msg)
                         return False
                     f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunks(concat_list, chapter_audio_file, session.get('is_gui_process'))
+            result = assemble_audio_chunks(concat_list, file, session.get('is_gui_process'))
             if not result:
                 error = 'combine_audio_sentences() FFmpeg concat failed.'
                 print(error)
                 return False
-            msg = f'********* Combined block audio file saved in {chapter_audio_file}'
+            msg = f'********* Combined block audio file saved in {file}'
             print(msg)
             return True
     except Exception as e:
