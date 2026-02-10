@@ -2347,7 +2347,6 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             '-c:a', default_audio_proc_format,
             '-map_metadata', '-1',
             '-threads', '0',
-            '-progress', 'pipe:2',
             '-y', out_file
         ]
         proc_pipe = SubprocessPipe(
