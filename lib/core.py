@@ -1988,17 +1988,13 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
         session = context.get_session(session_id)
         if session and session.get('id', False):
             chapter_audio_file = os.path.join(session['chapters_dir'], file)
-            start = int(start)
-            end = int(end)
             base = session['sentences_dir']
             ext = f".{default_audio_proc_format}"
-            start_i = int(start)
-            end_i = int(end)
             exists = os.path.exists
             join = os.path.join
             missing = []
             selected_files = []
-            for i in range(start_i, end_i + 1):
+            for i in range(start, end + 1):
                 path = join(base, f"{i}{ext}")
                 if exists(path):
                     selected_files.append(path)
@@ -2353,8 +2349,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             '-map_metadata', '-1',
             '-threads', '0',
             '-progress', 'pipe:2',
-            '-y',
-            out_file,
+            '-y', out_file
         ]
         proc_pipe = SubprocessPipe(
             cmd=cmd,
