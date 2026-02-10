@@ -1880,6 +1880,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 msg = 'Cancel requested'
                 print(msg)
                 return False
+            print(session['chapters'])
             tts_manager = TTSManager(session)
             resume_chapter = 0
             missing_chapters = []
