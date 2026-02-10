@@ -1616,7 +1616,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update()
 
             @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text, gr_blocks_open])
-            def render_blocks(blocks:list[str], page:int, keep_map:bool, text_map:str):
+            def render_blocks(blocks:list[str], page:int, keep_map:dict[int,bool], text_map:dict[int,str], open_map:dict[int,bool])->None:
                 start = page * page_size
                 end = min(start + page_size, len(blocks))
                 with gr.Column():
