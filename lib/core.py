@@ -2652,14 +2652,16 @@ def convert_ebook(args:dict)->tuple:
                                 checksum_path = os.path.join(session['process_dir'], 'checksum')
                                 checksum, error = compare_checksums(session['ebook'], checksum_path)
                                 if error is None:
-                                    json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
                                     if not checksum:
                                         session['blocks'] = []
                                         session['chapters'] = []
-                                        if not convert2epub(session_id):
+                                        result_epub = convert2epub(session_id)
+                                        if not result_epub:
                                             error = 'convert2epub() failed!'
                                     else:
-                                        session['chapters'] = load_json_chapters(json_chapters)
+                                        json_chapters_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+                                        if os.path.exists(json_chapters_file):
+                                            session['chapters'] = load_json_chapters(json_chapters_file)
                                     if error is None:
                                         epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                         if epubBook:
