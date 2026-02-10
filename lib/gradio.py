@@ -651,6 +651,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_page = gr.State(0)
             gr_blocks_keep = gr.State({})
             gr_blocks_text = gr.State({})
+            gr_blocks_open = gr.State({})
             gr_blocks_panel = gr.Column(visible='hidden')
             gr_blocks_prev = gr.Button("◀ Previous", visible='hidden')
             gr_blocks_next = gr.Button("Next ▶", visible='hidden')
@@ -1620,7 +1621,15 @@ def build_interface(args:dict)->gr.Blocks:
                 end = min(start + page_size, len(blocks))
                 with gr.Column():
                     for i in range(start, end):
-                        with gr.Accordion(f"Block {i}", open=False):
+                        with gr.Accordion(f'Block {i}', open=gr_blocks_open.get(i, False)) as acc:
+                            acc.expand(
+                                lambda idx=i, m=gr_blocks_open: {**m, idx: True},
+                                outputs=gr_blocks_open
+                            )
+                            acc.collapse(
+                                lambda idx=i, m=gr_blocks_open: {**m, idx: False},
+                                outputs=gr_blocks_open
+                            )
                             keep = gr.Checkbox(
                                 value=keep_map.get(i, True),
                                 label="Keep block"
@@ -1632,7 +1641,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 show_label=False,
                                 container=False
                             )
-                            # ⭐ Attach change listeners
                             keep.change(
                                 lambda v, idx=i, km=keep_map: {**km, idx: v},
                                 inputs=keep,
