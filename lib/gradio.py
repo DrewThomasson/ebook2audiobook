@@ -1654,7 +1654,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return max(page - 1, 0)
 
             def next_page(page, blocks):
-                max_page = (len(blocks) - 1) // PAGE_SIZE
+                max_page = (len(blocks) - 1) // page_size
                 return min(page + 1, max_page)
 
             def edit_confirm_blocks(session_id:str)->tuple:
