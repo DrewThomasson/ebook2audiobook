@@ -312,7 +312,7 @@ jobs:
 
       - name: Upload audiobooks folder artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: audiobooks-${{ matrix.os }}
           path: ~/ebook2audiobook/audiobooks

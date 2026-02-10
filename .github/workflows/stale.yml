@@ -11,7 +11,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Close Stale Issues
-        uses: actions/stale@v9.1.0
+        uses: actions/stale@v10.1.1
         with:
           # Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.
           #repo-token: # optional, default is ${{ github.token }}
