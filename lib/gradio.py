@@ -865,7 +865,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['event'] == 'confirm_blocks':
-                        outputs = tuple([gr.update() for _ in range(9)])
+                        outputs = tuple([gr.update() for _ in range(8)])
                         return outputs
                     else:
                         return (
