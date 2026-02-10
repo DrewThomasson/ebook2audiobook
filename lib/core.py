@@ -1925,7 +1925,6 @@ def convert_chapters2audio(session_id:str)->bool:
                     idx_target = 0
                     for c in range(0, total_chapters):
                         chapter_idx = c
-                        chapter_audio_file = f'{chapter_idx}.{default_audio_proc_format}'
                         sentences = session['chapters'][c]
                         start = idx_target
                         if c in missing_chapters:
@@ -1971,6 +1970,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         if chapter_idx in missing_chapters or idx_target >= resume_sentence:
                             msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
                             print(msg)
+                            chapter_audio_file = os.path.join(session['chapters_dir'], f'{chapter_idx}.{default_audio_proc_format}')
                             combine_result = combine_audio_sentences(session_id, chapter_audio_file, int(start), int(end))
                             if not combine_result:
                                 msg = 'combine_audio_sentences() failed!'
