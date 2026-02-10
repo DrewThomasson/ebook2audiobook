@@ -2355,7 +2355,6 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             '-nostats',
             out_file,
         ]
-        print(cmd)
         proc_pipe = SubprocessPipe(
             cmd=cmd,
             is_gui_process=is_gui_process,
@@ -2363,7 +2362,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             msg='Assemble',
             on_progress=on_progress
         )
-        if proc_pipe:
+        if proc_pipe and os.path.exists(out_file):
             msg = f'Completed → {out_file}'
             print(msg)
             return True
