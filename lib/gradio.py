@@ -645,14 +645,6 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
             )
 
-            with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes=['gr-group-main']) as gr_group_blocks:
-                gr.Markdown('### Confirm Blocks')
-                with gr.Group() as gr_group_blocks_content:
-                    pass
-                with gr.Row():
-                    gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
-                    gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
-
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
             gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
@@ -733,7 +725,7 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
 
             def show_confirm_buttons(mode:str)->str:
-                if mode in ['confirm_deletion', 'confirm_blocks']:
+                if mode in ['confirm_deletion']:
                     button_yes = f'#gr_{mode}_yes_btn'
                     button_no = f'#gr_{mode}_no_btn'
                     return f'''
@@ -1148,15 +1140,6 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)
                 return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
 
-            def confirm_blocks(choice:str, session_id:str)->dict:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    if choice == 'yes':           
-                        session['event'] = 'blocks_confirmed'
-                    else:
-                        session['status'] = 'ready'
-                return gr.update(value='', visible=False)
-
             def update_gr_voice_list(session_id:str)->dict:
                 try:
                     nonlocal voice_options
@@ -1564,11 +1547,11 @@ def build_interface(args:dict)->gr.Blocks:
                                             count_file = len(args['ebook_list'])
                                             if count_file > 0:
                                                 msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
-                                                yield gr.update(value=msg), gr.update()
+                                                yield gr.update(value=msg)
                                             else:
                                                 msg = 'Conversion successful!'
                                                 session['status'] = 'ready'
-                                                return gr.update(value=msg), gr.update()
+                                                return gr.update(value=msg)
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                                 progress_status, passed = convert_ebook(args)
@@ -1582,14 +1565,14 @@ def build_interface(args:dict)->gr.Blocks:
                                         session['event'] = progress_status
                                         msg = 'Select the blocks to convert:'
                                         print(msg)
-                                        yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
+                                        yield gr.update(value='')
                                         return
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
                                         reset_session(args['id'])
                                         msg = 'Conversion successful!'
                                         session['status'] = 'ready'
-                                        return gr.update(value=msg), gr.update()
+                                        return gr.update(value=msg)
                         if error is not None:
                             show_alert({"type": "warning", "msg": error})
                         session['status'] = 'ready'
@@ -1597,7 +1580,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'submit_convert_btn(): {e}'
                     alert_exception(error, session_id)
                     session['status'] = 'ready'
-                return gr.update(), gr.update()
+                return gr.update()
             
             def submit_confirmed_blocks(session_id:str)->tuple:
                 try:
@@ -2185,36 +2168,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=confirm_deletion,
                 inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
                 outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
-            )
-            gr_confirm_blocks_yes_btn.click(
-                fn=lambda session: confirm_blocks("yes", session),
-                inputs=[gr_session],
-                outputs=[gr_modal]
-            ).then(
-                fn=submit_confirmed_blocks,
-                inputs=[gr_session],
-                outputs=[gr_progress, gr_modal]
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
-            ).then(
-                fn=refresh_interface,
-                inputs=[gr_session],
-                outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
-            )
-            gr_confirm_blocks_no_btn.click(
-                fn=lambda session: confirm_blocks("no", session),
-                inputs=[gr_session],
-                outputs=[gr_modal]
-            ).then(
-                fn=change_convert_btn,
-                inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
-                outputs=[gr_convert_btn]
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
             )
             ############
             app.load(
