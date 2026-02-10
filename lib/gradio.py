@@ -2227,7 +2227,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=finalize_audiobook,
                 inputs=[gr_session],
-                outputs[gr_progress]
+                outputs=[gr_progress]
             )
             ############
             app.load(
