@@ -655,8 +655,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_panel = gr.Column(visible='hidden')
             gr_blocks_prev = gr.Button('◀', visible='hidden')
             gr_blocks_next = gr.Button('▶', visible='hidden')
-            gr_blocks_cancel = gr.Button('', variant='secondary', elem_classes=['hide-elem'], visible='hidden')
-            gr_blocks_continue = gr.Button('', variant='primary', elem_classes=['hide-elem'], visible='hidden')
+            gr_blocks_cancel = gr.Button('', variant='secondary', elem_classes=['button-red'], visible='hidden')
+            gr_blocks_continue = gr.Button('', variant='primary', elem_classes=['button-green'], visible='hidden')
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
