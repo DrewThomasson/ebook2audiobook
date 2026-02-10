@@ -1880,7 +1880,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 msg = 'Cancel requested'
                 print(msg)
                 return False
-            print(session['chapters'])
             tts_manager = TTSManager(session)
             resume_chapter = 0
             missing_chapters = []
@@ -1970,10 +1969,10 @@ def convert_chapters2audio(session_id:str)->bool:
                         msg = f'End of Block {chapter_idx}'
                         print(msg)
                         if chapter_idx in missing_chapters or idx_target >= resume_sentence:
-                            if combine_audio_sentences(session_id, chapter_audio_file, int(start), int(end)):
-                                msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
-                                print(msg)
-                            else:
+                            msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
+                            print(msg)
+                            combine_result = combine_audio_sentences(session_id, chapter_audio_file, int(start), int(end))
+                            if not combine_result:
                                 msg = 'combine_audio_sentences() failed!'
                                 print(msg)
                                 return False
@@ -2356,6 +2355,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             '-nostats',
             out_file,
         ]
+        print(cmd)
         proc_pipe = SubprocessPipe(
             cmd=cmd,
             is_gui_process=is_gui_process,
