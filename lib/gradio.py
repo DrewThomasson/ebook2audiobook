@@ -651,11 +651,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_page = gr.State(0)
             gr_blocks_keep = gr.State({})
             gr_blocks_text = gr.State({})
-            gr_blocks_panel = gr.Column(visible=False)
-            gr_blocks_prev = gr.Button("◀ Previous", visible=False)
-            gr_blocks_next = gr.Button("Next ▶", visible=False)
-            gr_blocks_cancel = gr.Button("Cancel", variant="secondary", visible=False)
-            gr_blocks_continue = gr.Button("Continue", variant="primary", visible=False)
+            gr_blocks_panel = gr.Column(visible='hidden')
+            gr_blocks_prev = gr.Button("◀ Previous", visible='hidden')
+            gr_blocks_next = gr.Button("Next ▶", visible='hidden')
+            gr_blocks_cancel = gr.Button("Cancel", variant="secondary", visible='hidden')
+            gr_blocks_continue = gr.Button("Continue", variant="primary", visible='hidden')
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
@@ -1620,7 +1620,7 @@ def build_interface(args:dict)->gr.Blocks:
                 end = min(start + page_size, len(blocks))
                 with gr.Column():
                     for i in range(start, end):
-                        with gr.Accordion(f"Block {i+1}", open=False):
+                        with gr.Accordion(f"Block {i}", open=False):
                             keep = gr.Checkbox(
                                 value=keep_map.get(i, True),
                                 label="Keep block"
@@ -1657,7 +1657,7 @@ def build_interface(args:dict)->gr.Blocks:
                 max_page = (len(blocks) - 1) // page_size
                 return min(page + 1, max_page)
 
-            def edit_confirm_blocks(session_id:str)->tuple:
+            def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session['status'] == confirm_blocks:
                     return (
@@ -1671,8 +1671,8 @@ def build_interface(args:dict)->gr.Blocks:
                 if session:
                     session["event"] = None
                 return (
-                    [], 0, {}, {}, gr.update(visible=False), gr.update(visible=False),
-                    gr.update(visible=False), gr.update(visible=False), gr.update(visible=False),
+                    [], 0, {}, {}, gr.update(visible='hidden'), gr.update(visible='hidden'),
+                    gr.update(visible='hidden'), gr.update(visible='hidden'), gr.update(visible='hidden'),
                 )
 
             def continue_blocks(blocks:list[str], keep_map:bool, text_map:str)->list[str]:
@@ -2125,7 +2125,7 @@ def build_interface(args:dict)->gr.Blocks:
                 ],
                 outputs=[gr_progress]
             ).then(
-                fn=edit_confirm_blocks,
+                fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=[
                     gr_blocks_data, gr_blocks_page, gr_blocks_keep,
