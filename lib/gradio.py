@@ -364,6 +364,17 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_audiobook_vtt, #gr_playback_time {
                     display: none !important;
                 }
+                #gr_blocks_nav button.nav-btn {
+                    width: 44px !important;
+                    min-width: 44px !important;
+                    max-width: 44px !important;
+                    padding: 0 !important;
+                }
+                #gr_blocks_nav .nav-header {
+                    text-align: center !important;
+                    margin: 0 !important;
+                    padding-top: 6px !important;
+                }
                 ///////////
                 .fade-in {
                     animation: fadeIn 1s ease-in !important;
@@ -1677,21 +1688,21 @@ def build_interface(args:dict)->gr.Blocks:
                 max_page = (len(blocks) - 1) // page_size
                 return min(page + 1, max_page)
 
-        def update_blocks_header(page:int, blocks:list[str])->str:
-            start = page * page_size
-            end = min(start + page_size, len(blocks))
-            if not blocks:
-                return ''
-            return f'Blocks {start}–{end-1}'
+            def update_blocks_header(page:int, blocks:list[str])->str:
+                start = page * page_size
+                end = min(start + page_size, len(blocks))
+                if not blocks:
+                    return ''
+                return f'Blocks {start}–{end-1}'
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session['status'] == confirm_blocks:
                     return (
-                        session['blocks'], 0, {}, {}, gr.update(visible=True), gr.update(visible=True),
+                        update_blocks_header(0, session['blocks']), session['blocks'], 0, {}, {}, gr.update(visible=True), gr.update(visible=True),
                         gr.update(visible=len(session['blocks']) > page_size), gr.update(visible=True), gr.update(visible=True)
                     )
-                return tuple(gr.update(visible=False) for _ in range(9))
+                return tuple(gr.update(visible=False) for _ in range(10))
 
             def cancel_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -2155,7 +2166,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=[
-                    gr_blocks_data, gr_blocks_page, gr_blocks_keep,
+                    gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
                     gr_blocks_text, gr_blocks_panel, gr_blocks_prev,
                     gr_blocks_next, gr_blocks_continue, gr_blocks_cancel
                 ]
@@ -2226,12 +2237,20 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_prev.click(
                 fn=prev_page,
                 inputs=[gr_blocks_page],
-                outputs=[gr_blocks_page, gr_blocks_header]
+                outputs=[gr_blocks_page]
+            ).then(
+                fn=update_blocks_header,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[gr_blocks_header]
             )
             gr_blocks_next.click(
                 fn=next_page,
+                inputs=[gr_blocks_page,gr_blocks_data],
+                outputs=[gr_blocks_page]
+            ).then(
+                fn=update_blocks_header,
                 inputs=[gr_blocks_page, gr_blocks_data],
-                outputs=[gr_blocks_page, gr_blocks_header]
+                outputs=[gr_blocks_header]
             )
             gr_blocks_cancel.click(
                 fn=cancel_blocks,
