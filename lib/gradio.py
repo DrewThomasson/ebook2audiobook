@@ -1696,7 +1696,7 @@ def build_interface(args:dict)->gr.Blocks:
                 end = min(start + page_size, len(blocks))
                 if not blocks:
                     return ''
-                return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)}')
+                return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks) - 1}')
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
