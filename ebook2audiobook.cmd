@@ -142,11 +142,6 @@ endlocal & (
     set "FORWARD_ARGS=%FORWARD_ARGS%"
     for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
 )
-echo.
-echo ==== ARGUMENTS OBJECT ====
-set arguments.
-echo ==========================
-echo.
 if defined arguments.script_mode (
     if /I "%arguments.script_mode%"=="%BUILD_DOCKER%" (
         set "SCRIPT_MODE=%arguments.script_mode%"
