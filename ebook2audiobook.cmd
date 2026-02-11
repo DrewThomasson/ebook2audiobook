@@ -1,6 +1,10 @@
 @echo off
 
-setlocal EnableExtensions EnableDelayedExpansion
+setlocal EnableExtensions DisableDelayedExpansion
+
+set "SAFE_USERPROFILE=%USERPROFILE%"
+set "SAFE_SCRIPT_DIR=%~dp0"
+if "%SAFE_SCRIPT_DIR:~-1%"=="\" set "SAFE_SCRIPT_DIR=%SAFE_SCRIPT_DIR:~0,-1%"
 
 :: Force UTF-8 for CMD
 chcp 65001 >nul
@@ -38,19 +42,17 @@ set "ARGS=%*"
 set "NATIVE=native"
 set "BUILD_DOCKER=build_docker"
 set "SCRIPT_MODE=%NATIVE%"
-set "SCRIPT_DIR=%~dp0"
-if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "APP_NAME=ebook2audiobook"
-set /p APP_VERSION=<"%SCRIPT_DIR%\VERSION.txt"
+set /p APP_VERSION=<"%SAFE_SCRIPT_DIR%\VERSION.txt"
 set "APP_FILE=%APP_NAME%.cmd"
 set "OS_LANG=%LANG%"& if "!OS_LANG!"=="" set "OS_LANG=en"& set "OS_LANG=!OS_LANG:~0,2!"
 set "TEST_HOST=127.0.0.1"
 set "TEST_PORT=7860"
-set "ICON_PATH=%SCRIPT_DIR%\tools\icons\windows\appIcon.ico"
+set "ICON_PATH=%SAFE_SCRIPT_DIR%\tools\icons\windows\appIcon.ico"
 set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
-set "DESKTOP_LNK=%USERPROFILE%\Desktop\%APP_NAME%.lnk"
-set "ARCH=%PROCESSOR_ARCHITECTURE%"
+set "DESKTOP_LNK=%SAFE_USERPROFILE%\Desktop\%APP_NAME%.lnk"
+set "ARCH=%PROCESSOR_ARCHITECTURE%" & if defined PROCESSOR_ARCHITEW6432 set "ARCH=%PROCESSOR_ARCHITEW6432%"
 set "PYTHON_VERSION=3.12"
 set "PYTHON_SCOOP=python%PYTHON_VERSION:.=%"
 set "PYTHON_ENV=python_env"
@@ -62,23 +64,25 @@ set "DOCKER_PROGRAMS=ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr" # tess
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
-set "TMP=%SCRIPT_DIR%\tmp"
-set "TEMP=%SCRIPT_DIR%\tmp"
+set "DOCKER_INSTALLER_ARM64=https://desktop.docker.com/win/main/arm64/Docker%%20Desktop%%20Installer.exe"
+set "DOCKER_INSTALLER_AMD64=https://desktop.docker.com/win/main/amd64/Docker%%20Desktop%%20Installer.exe"
+set "TMP=%SAFE_SCRIPT_DIR%\tmp"
+set "TEMP=%SAFE_SCRIPT_DIR%\tmp"
 set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
-set "SCOOP_HOME=%USERPROFILE%\scoop"
+set "SCOOP_HOME=%SAFE_USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
-set "CONDA_HOME=%USERPROFILE%\Miniforge3"
+set "CONDA_HOME=%SAFE_USERPROFILE%\Miniforge3"
 set "CONDA_ENV=%CONDA_HOME%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
 set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
-set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
+set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%"
-set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
-set "UNINSTALLER=%SCRIPT_DIR%\uninstall.cmd"
-set "BROWSER_HELPER=%SCRIPT_DIR%\.bh.ps1"
+set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
+set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
+set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
 set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 
@@ -94,7 +98,7 @@ for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Se
     set "PATH=%%B;%PATH%"
 )
 
-if "%ARCH%"=="x86" (
+if "%ARCH%"=="X86" (
     echo %ESC%[31m=============== Error: 32-bit architecture is not supported.%ESC%[0m
     goto :failed
 )
@@ -103,7 +107,7 @@ if not exist "%INSTALLED_LOG%" if /I not "%SCRIPT_MODE%"=="BUILD_DOCKER" (
     type nul > "%INSTALLED_LOG%"
 )
 
-cd /d "%SCRIPT_DIR%"
+cd /d "%SAFE_SCRIPT_DIR%"
 
 :: Clear previous associative values
 for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
@@ -177,7 +181,7 @@ goto :check_scoop
 ::::::::::::::: DESKTOP APP
 :make_shortcut
 set "shortcut=%~1"
-"%PS_EXE%" %PS_ARGS% -Command "$s=New-Object -ComObject WScript.Shell; $sc=$s.CreateShortcut('%shortcut%'); $sc.TargetPath='cmd.exe'; $sc.Arguments='/k ""cd /d """"%SCRIPT_DIR%"""" && """"%APP_FILE%""""""'; $sc.WorkingDirectory='%SCRIPT_DIR%'; $sc.IconLocation='%ICON_PATH%'; $sc.Save()"
+"%PS_EXE%" %PS_ARGS% -Command "$s=New-Object -ComObject WScript.Shell; $sc=$s.CreateShortcut('%shortcut%'); $sc.TargetPath='cmd.exe'; $sc.Arguments='/k ""cd /d """"%SAFE_SCRIPT_DIR%"""" && """"%APP_FILE%""""""'; $sc.WorkingDirectory='%SAFE_SCRIPT_DIR%'; $sc.IconLocation='%ICON_PATH%'; $sc.Save()"
 exit /b
 
 :build_gui
@@ -197,7 +201,7 @@ if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
     reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayName" /d "%APP_NAME%" /f >nul 2>&1
     reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayVersion" /d "%APP_VERSION%" /f >nul 2>&1
     reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "Publisher" /d "ebook2audiobook Team" /f >nul 2>&1
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "InstallLocation" /d "%SCRIPT_DIR%" /f >nul 2>&1
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "InstallLocation" /d "%SAFE_SCRIPT_DIR%" /f >nul 2>&1
     reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "UninstallString" /d "\"%UNINSTALLER%\"" /f >nul 2>&1
     reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "DisplayIcon" /d "%ICON_PATH%" /f >nul 2>&1
     reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoModify" /t REG_DWORD /d 1 /f >nul 2>&1
@@ -240,7 +244,7 @@ if errorlevel 1 (
     set "OK_SCOOP=1"
     goto :install_programs
 ) else (
-    if exist "%SCRIPT_DIR%\.after-scoop" (
+    if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
         call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
         call git config --global credential.helper
         echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
@@ -249,7 +253,7 @@ if errorlevel 1 (
         if errorlevel 1 (
             echo scoop>>"%INSTALLED_LOG%"
         )
-        del "%SCRIPT_DIR%\.after-scoop" >nul 2>&1
+        del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
     )
 )
 if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
@@ -261,15 +265,16 @@ exit /b
 
 :check_required_programs
 set "missing_prog_array="
+setlocal EnableDelayedExpansion
 for %%p in (%HOST_PROGRAMS%) do (
     set "prog=%%p"
     if "%%p"=="nodejs" set "prog=node"
     where.exe /Q !prog!
     if errorlevel 1 (
-        echo %%p is not installed.
         set "missing_prog_array=!missing_prog_array! %%p"
     )
 )
+endlocal & set "missing_prog_array=%missing_prog_array%"
 if not "%missing_prog_array%"=="" (
     set "OK_PROGRAMS=1"
     goto :install_programs
@@ -283,28 +288,23 @@ if not "%OK_SCOOP%"=="0" (
     call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
         "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
     echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
-    type nul > "%SCRIPT_DIR%\.after-scoop"
+    type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
     rem Refresh PATH in current process
     call "%PS_EXE%" -NoLogo -NoProfile -Command ^
         "$env:PATH = [Environment]::GetEnvironmentVariable('PATH','User') + ';' + [Environment]::GetEnvironmentVariable('PATH','Machine')"
-    start "" cmd /k "cd /d "%SCRIPT_DIR%" & call "%~f0""
+    start "" cmd /k "cd /d "%SAFE_SCRIPT_DIR%" & call "%~f0""
     exit
 )
 if not "%OK_DOCKER%"=="0" (
 	echo Downloading Docker Desktop…
-	set "TARGET_ARCH=X64"
-	if /I "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "TARGET_ARCH=ARM64"
-	if /I "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "TARGET_ARCH=ARM64"
-	if /I "%TARGET_ARCH%"=="ARM64" (
-		set "DOCKER_URL=https://desktop.docker.com/win/main/arm64/Docker%%20Desktop%%20Installer.exe"
+	if /I "%ARCH%"=="ARM64" (
+		set "DOCKER_URL=%DOCKER_INSTALLER_ARM64%"
 	) else (
-		set "DOCKER_URL=https://desktop.docker.com/win/main/amd64/Docker%%20Desktop%%20Installer.exe"
+		set "DOCKER_URL=%DOCKER_INSTALLER_AMD64%"
 	)
-	echo Detected architecture: %TARGET_ARCH%
-	echo.
 	if not exist "DockerDesktopInstaller.exe" (
 		echo Downloading installer…
-		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest '%DOCKER_URL%' -OutFile 'DockerDesktopInstaller.exe'"
+		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest '%%DOCKER_URL%%' -OutFile 'DockerDesktopInstaller.exe'"
 		if not exist "DockerDesktopInstaller.exe" (
 			echo Failed to download Docker installer.
 			goto :failed
@@ -326,7 +326,7 @@ if not "%OK_DOCKER%"=="0" (
 if not "%OK_CONDA%"=="0" (
     echo Installing Miniforge…
     call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"
-    call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
+	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D="%SAFE_USERPROFILE%\Miniforge3"
     where.exe /Q conda
     if not errorlevel 1 (
         echo %ESC%[32m=============== Miniforge3 OK ===============%ESC%[0m
@@ -338,7 +338,7 @@ if not "%OK_CONDA%"=="0" (
         echo %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
         goto :failed
     )
-    if not exist "%USERPROFILE%\.condarc" (
+    if not exist "%SAFE_USERPROFILE%\.condarc" (
         call conda config --set auto_activate false
     )
     call conda update --all -y
@@ -356,6 +356,7 @@ if not "%OK_PROGRAMS%"=="0" (
         call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
         call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
     )
+	setlocal EnableDelayedExpansion
     for %%p in (%missing_prog_array%) do (
         set "prog=%%p"
         call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
@@ -390,8 +391,8 @@ if not "%OK_PROGRAMS%"=="0" (
             set "prog=node"
         )
         if "%%p"=="rustup" (
-            if exist "%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
-                set "PATH=%USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;%PATH%"
+            if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
+                set "PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;%PATH%"
             )
         )
         where.exe /Q !prog!
@@ -406,6 +407,7 @@ if not "%OK_PROGRAMS%"=="0" (
             goto :failed
         )
     )
+	endlocal
     call "%PS_EXE%" %PS_ARGS% -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
     set "OK_SCOOP=0"
     set "OK_PROGRAMS=0"
@@ -443,16 +445,16 @@ for /f "delims=" %%i in ('where.exe python') do (
     )
 )
 if "%CURRENT_ENV%"=="" (
-    if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
+    if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
         echo Creating ./python_env version %PYTHON_VERSION%…
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda update -n base -c conda-forge conda -y
         call conda update --all -y
         call conda clean --index-cache -y
         call conda clean --packages --tarballs -y
-        call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+        call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
         call conda activate base
-        call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+        call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
         call :install_python_packages
         if errorlevel 1 goto :failed
         call conda deactivate
@@ -489,7 +491,7 @@ set "arg=%~1"
 exit /b %errorlevel%
 
 :check_sitecustomized
-set "src_pyfile=%SCRIPT_DIR%\components\sitecustomize.py"
+set "src_pyfile=%SAFE_SCRIPT_DIR%\components\sitecustomize.py"
 for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths()[\"purelib\"])"') do (
     set "site_packages_path=%%a"
 )
@@ -617,17 +619,19 @@ exit /b
 
 :main
 if defined arguments.help (
+	setlocal EnableDelayedExpansion
     if /I "!arguments.help!"=="true" (
         where.exe /Q conda
         if errorlevel 0 (
-            call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-            call python "%SCRIPT_DIR%\app.py" %FORWARD_ARGS%
+            call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+            call python "%SAFE_SCRIPT_DIR%\app.py" %FORWARD_ARGS%
             call conda deactivate
         ) else (
             echo Ebook2Audiobook must be installed before to run --help.
         )
         goto :eof
     )
+	endlocal
 ) else (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "!DOCKER_DEVICE_STR!"=="" (
@@ -676,11 +680,11 @@ if defined arguments.help (
     ) else (
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda activate base
-        call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+        call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
         call :check_sitecustomized
         if errorlevel 1 goto :failed
         call :build_gui
-        call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+        call python "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
         call conda deactivate >nul && call conda deactivate >nul
     )
 )
