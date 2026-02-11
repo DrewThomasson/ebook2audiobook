@@ -2268,7 +2268,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_blocks_data]
             ).then(
                 fn=finalize_audiobook,
-                inputs=[gr_session],
+                inputs=[gr_session, gr_blocks_data],
                 outputs=[gr_progress]
             ).then(
                 fn=enable_components,

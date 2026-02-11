@@ -2398,6 +2398,13 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(sml_token('pause'), '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
+def delete_proc_audio_files(dir:str)->None:
+	for key in ("chapters_dir", "sentences_dir"):
+		base = Path(dir)
+		for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
+			if file.stem.isdigit():
+				file.unlink()
+
 def clear_folder(folder_path:str)->None:
     for name in os.listdir(folder_path):
         path = os.path.join(folder_path, name)
@@ -2728,12 +2735,15 @@ def convert_ebook(args:dict)->tuple:
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def finalize_audiobook(session_id:str)->tuple:
+def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['blocks']:
-            json_blocks = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-            save_json_blocks(session_id, json_blocks)
+            if blocks and blocks != session['blocks']:
+                delete_proc_audio_files(session['sentences_dir'])
+                delete_proc_audio_files(session['chapters_dir'])
+                json_blocks = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+                save_json_blocks(session_id, json_blocks)
             chapters = []
             msg = f'Get sentences…'
             print(msg)
