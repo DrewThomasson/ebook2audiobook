@@ -1707,12 +1707,9 @@ def build_interface(args:dict)->gr.Blocks:
 
             def cancel_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
-                if session:
-                    session["event"] = None
-                return (
-                    [], 0, {}, {}, gr.update(visible='hidden'), gr.update(visible='hidden'),
-                    gr.update(visible='hidden'), gr.update(visible='hidden'), gr.update(visible='hidden'),
-                )
+                if session and session.get('id', False):
+                    session["status"] = 'ready'
+                return gr.update(visible=False), [], 0, {}, {}
 
             def continue_blocks(blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->list[str]:
                 result = []
@@ -2255,11 +2252,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_cancel.click(
                 fn=cancel_blocks,
                 inputs=[gr_session],
-                outputs=[
-                    gr_blocks_data, gr_blocks_page, gr_blocks_keep,
-                    gr_blocks_text, gr_blocks_panel, gr_blocks_prev,
-                    gr_blocks_next, gr_blocks_continue, gr_blocks_cancel,
-                ]
+                outputs=[gr_blocks_panel, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
