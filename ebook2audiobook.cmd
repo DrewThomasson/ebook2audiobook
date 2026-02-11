@@ -138,10 +138,7 @@ goto parse_args
 
 
 :parse_args_done
-endlocal & (
-    set "FORWARD_ARGS=%FORWARD_ARGS%"
-    for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
-)
+endlocal
 if defined arguments.script_mode (
     if /I "%arguments.script_mode%"=="%BUILD_DOCKER%" (
         set "SCRIPT_MODE=%arguments.script_mode%"
