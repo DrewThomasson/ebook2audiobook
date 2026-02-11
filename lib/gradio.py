@@ -1701,7 +1701,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session['status'] == confirm_blocks:
                     return (
                         gr.update(visible=True), update_blocks_header(0, session['blocks']), session['blocks'], 0, {}, {},
-                        gr.update(visible=False), gr.update(visible=len(session['blocks']) > page_size))
+                        gr.update(visible=False), gr.update(visible=len(session['blocks']) > page_size)
                     )
                 return tuple(gr.update(visible=False) for _ in range(8))
 
