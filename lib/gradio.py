@@ -1668,16 +1668,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 show_label=False,
                                 container=False
                             )
-                            keep.change(
-                                lambda v, idx=i, km=keep_map: {**km, idx: v},
-                                inputs=keep,
-                                outputs=gr_blocks_keep
-                            )
-                            txt.change(
-                                lambda v, idx=i, tm=text_map: {**tm, idx: v},
-                                inputs=txt,
-                                outputs=gr_blocks_text
-                            )
 
             def save_page_state(blocks:list[str], page:int, keep_map:bool, text_map:str, *values):
                 start = page * page_size
