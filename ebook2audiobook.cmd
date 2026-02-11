@@ -64,8 +64,6 @@ set "DOCKER_PROGRAMS=ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr" # tess
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
-set "DOCKER_INSTALLER_ARM64=https://desktop.docker.com/win/main/arm64/Docker%%20Desktop%%20Installer.exe"
-set "DOCKER_INSTALLER_AMD64=https://desktop.docker.com/win/main/amd64/Docker%%20Desktop%%20Installer.exe"
 set "TMP=%SAFE_SCRIPT_DIR%\tmp"
 set "TEMP=%SAFE_SCRIPT_DIR%\tmp"
 set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
@@ -289,43 +287,30 @@ if not "%OK_SCOOP%"=="0" (
         "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
     echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
     type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
-    rem Refresh PATH in current process
     call "%PS_EXE%" -NoLogo -NoProfile -Command ^
         "$env:PATH = [Environment]::GetEnvironmentVariable('PATH','User') + ';' + [Environment]::GetEnvironmentVariable('PATH','Machine')"
-    start "" cmd /k "cd /d "%SAFE_SCRIPT_DIR%" & call "%~f0""
+	start "" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" ^& call ""%~f0"""
     exit
 )
 if not "%OK_DOCKER%"=="0" (
-	echo Downloading Docker Desktop…
-	if /I "%ARCH%"=="ARM64" (
-		set "DOCKER_URL=%DOCKER_INSTALLER_ARM64%"
-	) else (
-		set "DOCKER_URL=%DOCKER_INSTALLER_AMD64%"
-	)
-	if not exist "DockerDesktopInstaller.exe" (
-		echo Downloading installer…
-		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest '%%DOCKER_URL%%' -OutFile 'DockerDesktopInstaller.exe'"
-		if not exist "DockerDesktopInstaller.exe" (
-			echo Failed to download Docker installer.
-			goto :failed
+	echo Installing Docker…
+	call "%PS_EXE%" %PS_ARGS% -Command "scoop install rancher-desktop"
+    where.exe /Q docker
+    if not errorlevel 1 (
+		echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
+		findstr /i /x "docker" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo rancher-desktop>"%INSTALLED_LOG%"
 		)
+		set "OK_DOCKER=0"
+	) else (
+		echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
+		goto :failed
 	)
-	echo Launching Docker installer…
-	call "%PS_EXE%" %PS_ARGS% -Command "Start-Process 'DockerDesktopInstaller.exe' -Verb RunAs"
-	echo.
-	echo ===================================================
-	echo Please install Docker Desktop manually as Administrator.
-	echo After installation:
-	echo    1. Start Docker Desktop
-	echo    2. Wait until Docker is fully started
-	echo    3. Re-run this script
-	echo ===================================================
-	echo.
-	call :quit 0
 )
 if not "%OK_CONDA%"=="0" (
     echo Installing Miniforge…
-    call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"
+	call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D="%SAFE_USERPROFILE%\Miniforge3"
     where.exe /Q conda
     if not errorlevel 1 (
@@ -346,7 +331,7 @@ if not "%OK_CONDA%"=="0" (
     call conda clean --packages --tarballs -y
     del "%CONDA_INSTALLER%"
     set "OK_CONDA=0"
-    start "" cmd /k cd /d "%CD%" ^& call "%~f0"
+	start "" cmd /k "cd /d ""%CD%"" ^& call ""%~f0"""
     exit
 )
 if not "%OK_PROGRAMS%"=="0" (
@@ -414,7 +399,6 @@ if not "%OK_PROGRAMS%"=="0" (
     set "missing_prog_array="
 )
 goto :dispatch
-exit /b
 
 :check_conda
 where.exe /Q conda
