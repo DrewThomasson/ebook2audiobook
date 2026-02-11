@@ -951,8 +951,6 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        session['ebook'] = None
-                        session['ebook_list'] = None
                         if data is None:
                             if session.get("status") == "converting":
                                 session['cancellation_requested'] = True
