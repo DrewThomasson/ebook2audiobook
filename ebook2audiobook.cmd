@@ -140,10 +140,10 @@ goto parse_args
 
 :parse_args_done
 setlocal EnableDelayedExpansion
+echo arguments
 if defined arguments.script_mode (
     if /I "!arguments.script_mode!"=="%BUILD_DOCKER%" (
 		set "SCRIPT_MODE=!arguments.script_mode!"
-		echo !SCRIPT_MODE!
     ) else (
         echo Error: Invalid script mode argument: !arguments.script_mode!
         endlocal & goto :failed
