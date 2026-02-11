@@ -739,8 +739,8 @@ def build_interface(args:dict)->gr.Blocks:
                     button_no = f'#gr_{mode}_no_btn'
                     return f'''
                     <div class="confirm-buttons">
-                        <button class="button-red" style="width:30px; height:30px" onclick="document.querySelector('{button_no}').click()">⨉</button>
-                        <button class="button-green" style="width:30px; height:30px" onclick="document.querySelector('{button_yes}').click()">✔</button>
+                        <button class="button-red" style="width:60px; height:60px" onclick="document.querySelector('{button_no}').click()">⨉</button>
+                        <button class="button-green" style="width:60px; height:60px" onclick="document.querySelector('{button_yes}').click()">✔</button>
                     </div>
                     '''
                 else:
