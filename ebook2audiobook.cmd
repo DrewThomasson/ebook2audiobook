@@ -114,6 +114,7 @@ set "FORWARD_ARGS="
 ::::::::::::::::::::::::::::::: CORE FUNCTIONS
 
 :parse_args
+echo %SCRIPT_MODE%
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
 :: ALWAYS forward args
@@ -254,8 +255,6 @@ if errorlevel 1 (
         del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
     )
 )
-echo %SCRIPT_MODE%
-echo %BUILD_DOCKER%
 if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
     goto :check_required_programs
 ) else (
