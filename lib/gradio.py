@@ -1555,6 +1555,8 @@ def build_interface(args:dict)->gr.Blocks:
                                                 yield gr.update(value=msg)
                                             else:
                                                 msg = 'Conversion successful!'
+                                                session['ebook'] = None
+                                                session['ebook_list'] = None
                                                 session['status'] = 'ready'
                                                 return gr.update(value=msg)
                             else:
@@ -1574,13 +1576,12 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
                                         reset_session(args['id'])
+                                        session['ebook'] = None
                                         session['status'] = 'ready'
                                         msg = 'Conversion successful!'
                                         return gr.update(value=msg)
                         if error is not None:
                             show_alert({"type": "warning", "msg": error})
-                        session['ebook'] = None
-                        session['ebook_list'] = None
                         session['status'] = 'ready'
                 except Exception as e:
                     error = f'submit_convert_btn(): {e}'
