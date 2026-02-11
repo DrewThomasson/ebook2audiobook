@@ -1711,12 +1711,20 @@ def build_interface(args:dict)->gr.Blocks:
                     session["status"] = 'ready'
                 return gr.update(visible=False), [], 0, {}, {}
 
-            def continue_blocks(blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->list[str]:
-                result = []
-                for i, block in enumerate(blocks):
-                    if keep_map.get(i, True):
-                        result.append(text_map.get(i, block))
-                return gr.update(value=result)
+            def continue_blocks(blocks:list[str], *values)->list[str]:
+
+                new_blocks = []
+                index = 0
+
+                for block in blocks:
+                    keep = values[index]
+                    text = values[index + 1]
+                    index += 2
+
+                    if keep:
+                        new_blocks.append(text)
+
+                return new_blocks
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
