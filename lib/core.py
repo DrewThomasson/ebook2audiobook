@@ -2694,7 +2694,7 @@ def convert_ebook(args:dict)->tuple:
                                             if is_lang_in_tts_engine:
                                                 session['cover'] = get_cover(epubBook, session_id)
                                                 if session['cover']:
-                                                    if not session['blocks']:
+                                                    if not checksum:
                                                         session['blocks'] = get_blocks(session_id, epubBook)
                                                     if session['blocks']:
                                                         if session['chapters_preview']:
