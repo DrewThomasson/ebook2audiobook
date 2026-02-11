@@ -1659,14 +1659,16 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                             keep = gr.Checkbox(
                                 value=keep_map.get(i, True),
-                                label="Keep block"
+                                label='Keep block',
+                                interactive=True
                             )
                             txt = gr.Textbox(
                                 value=text_map.get(i, blocks[i]),
                                 lines=18,
                                 max_lines=18,
                                 show_label=False,
-                                container=False
+                                container=False,
+                                interactive=True
                             )
 
             def save_page_state(blocks:list[str], page:int, keep_map:bool, text_map:str, *values):
