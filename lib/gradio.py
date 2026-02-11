@@ -882,7 +882,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     return (
-                        gr.update(interactive=False), gr.update(value=None), gr.update(value=session['device']), update_gr_audiobook_list(session_id), 
+                        gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), update_gr_audiobook_list(session_id), 
                         gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
                     )
                 outputs = tuple([gr.update() for _ in range(8)])
@@ -951,6 +951,8 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
+                        session['ebook'] = None
+                        session['ebook_list'] = None
                         if data is None:
                             if session.get("status") == "converting":
                                 session['cancellation_requested'] = True
