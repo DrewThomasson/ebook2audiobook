@@ -668,13 +668,13 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_text = gr.State({})
             gr_blocks_open = gr.State({})
             gr_blocks_panel = gr.Column(visible='hidden')
-            gr_blocks_nav = gr.Row(visible='hidden', elem_id='gr_blocks_nav')
+            gr_blocks_nav = gr.Row(visible=True, elem_id='gr_blocks_nav')
             with gr_blocks_nav:
-                gr_blocks_prev = gr.Button('◀', visible=True, elem_classes=['nav-btn'], scale=0, min_width=44)
+                gr_blocks_prev = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
                 gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
-                gr_blocks_next = gr.Button('▶', visible=True, elem_classes=['nav-btn'], scale=0, min_width=44)
-            gr_blocks_cancel = gr.Button('✖', variant='stop', visible='hidden')
-            gr_blocks_continue = gr.Button('✔', variant='primary', visible='hidden')
+                gr_blocks_next = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
+            gr_blocks_cancel = gr.Button('✖', variant='stop')
+            gr_blocks_continue = gr.Button('✔', variant='primary')
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
