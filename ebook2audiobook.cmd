@@ -309,7 +309,7 @@ if not "%OK_DOCKER%"=="0" (
 		)
 	)
 )
-if not "%OK_CONDA%"=="0" and not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+if not "%OK_CONDA%"=="0" (
 	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Miniforge…
 		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
