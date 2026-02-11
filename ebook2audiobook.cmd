@@ -291,21 +291,37 @@ if not "%OK_SCOOP%"=="0" (
     exit
 )
 if not "%OK_DOCKER%"=="0" (
-	echo Installing Docker…
-	call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker"
-    where.exe /Q docker
-    if not errorlevel 1 (
-		echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
-		findstr /i /x "docker" "%INSTALLED_LOG%" >nul 2>&1
-		if errorlevel 1 (
-			echo %%p>>"%INSTALLED_LOG%"
-			call dockerd --register-service
-		)
-		set "OK_DOCKER=0"
+	echo Downloading Docker Desktop…
+	set "TARGET_ARCH=X64"
+	if /I "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "TARGET_ARCH=ARM64"
+	if /I "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "TARGET_ARCH=ARM64"
+	if /I "%TARGET_ARCH%"=="ARM64" (
+		set "DOCKER_URL=https://desktop.docker.com/win/main/arm64/Docker%%20Desktop%%20Installer.exe"
 	) else (
-		echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
-		goto :failed
+		set "DOCKER_URL=https://desktop.docker.com/win/main/amd64/Docker%%20Desktop%%20Installer.exe"
 	)
+	echo Detected architecture: %TARGET_ARCH%
+	echo.
+	if not exist "DockerDesktopInstaller.exe" (
+		echo Downloading installer…
+		"%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest '%DOCKER_URL%' -OutFile 'DockerDesktopInstaller.exe'"
+		if not exist "DockerDesktopInstaller.exe" (
+			echo Failed to download Docker installer.
+			goto :failed
+		)
+	)
+	echo Launching Docker installer…
+	"%PS_EXE%" %PS_ARGS% -Command "Start-Process 'DockerDesktopInstaller.exe' -Verb RunAs"
+	echo.
+	echo ===================================================
+	echo Please install Docker Desktop manually as Administrator.
+	echo After installation:
+	echo    1. Start Docker Desktop
+	echo    2. Wait until Docker is fully started
+	echo    3. Re-run this script
+	echo ===================================================
+	echo.
+	call :quit 0
 )
 if not "%OK_CONDA%"=="0" (
     echo Installing Miniforge…
@@ -677,6 +693,11 @@ where.exe /Q conda && (
     call conda deactivate >nul
 )
 exit /b 1
+
+:quit
+set "CODE=%~1"
+endlocal
+exit /b %CODE%
 
 endlocal
 pause
