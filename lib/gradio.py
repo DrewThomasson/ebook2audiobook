@@ -432,22 +432,15 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
-                .button-red button {
-                    background-color: #dc3545 !important;
-                    color: white !important;
+                .button-green { background-color: #28a745 !important; color: white !important; }
+                .button-green:hover { background-color: #34d058 !important; }
+                .button-green:active, .button-red:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
                 }
-                .button-red button:hover {
-                    background-color: #ff6f71 !important;
-                }
-                .button-green button {
-                    background-color: #28a745 !important;
-                    color: white !important;
-                }
-                .button-green button:hover {
-                    background-color: #34d058 !important;
-                }
-                .button-green button:active,
-                .button-red button:active {
+                .button-red button  { background-color: #dc3545 !important; color: white !important; }
+                .button-red:hover button  { background-color: #ff6f71 !important; }
+                .button-green:active, .button-red:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
