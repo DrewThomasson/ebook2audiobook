@@ -437,6 +437,7 @@ exit /b 0
 :check_docker
 where.exe /Q docker
 if errorlevel 1 (
+	echo AAAAAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHH
     echo %ESC%[31m=============== Docker is not installed or not running. Please install or run Docker manually.%ESC%[0m
     exit /b 1
 )
