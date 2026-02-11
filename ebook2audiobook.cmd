@@ -139,35 +139,40 @@ shift
 goto parse_args
 
 :parse_args_done
+setlocal EnableDelayedExpansion
 if defined arguments.script_mode (
-    if /I "%arguments.script_mode%"=="%BUILD_DOCKER%" (
-		set "SCRIPT_MODE=%arguments.script_mode%"
-		echo %SCRIPT_MODE%
+    if /I "!arguments.script_mode!"=="%BUILD_DOCKER%" (
+		set "SCRIPT_MODE=!arguments.script_mode!"
+		echo !SCRIPT_MODE!
     ) else (
-        echo Error: Invalid script mode argument: %arguments.script_mode%
-        goto :failed
+        echo Error: Invalid script mode argument: !arguments.script_mode!
+        endlocal & goto :failed
     )
 )
 if defined arguments.docker_device (
-    set "DOCKER_DEVICE_STR=%arguments.docker_device%"
-    if /i "%arguments.docker_device%"=="true" (
+    set "DOCKER_DEVICE_STR=!arguments.docker_device!"
+    if /i "!arguments.docker_device!"=="true" (
         echo Error: --docker_device has no value!
-        goto :failed
+        endlocal & goto :failed
     )
 )
 if defined arguments.script_mode (
-    if /I "%arguments.script_mode%"=="true" (
+    if /I "!arguments.script_mode!"=="true" (
         echo Error: --script_mode requires a value
-        goto :failed
+        endlocal & goto :failed
     )
     for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
         set "argname=%%A"
-        call set "argname=%%argname:arguments.=%%"
-        if /I not "%argname%"=="script_mode" if /I not "%argname%"=="docker_device" (
-            echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
-            goto :failed
+        set "argname=!argname:arguments.=!"
+        if /I not "!argname!"=="script_mode" if /I not "!argname!"=="docker_device" (
+            echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --!argname!
+            endlocal & goto :failed
         )
     )
+)
+endlocal & (
+    if defined arguments.script_mode set "SCRIPT_MODE=%arguments.script_mode%"
+    if defined arguments.docker_device set "DOCKER_DEVICE_STR=%arguments.docker_device%"
 )
 goto :check_scoop
 
