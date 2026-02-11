@@ -254,6 +254,8 @@ if errorlevel 1 (
         del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
     )
 )
+echo %SCRIPT_MODE%
+echo %BUILD_DOCKER%
 if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
     goto :check_required_programs
 ) else (
