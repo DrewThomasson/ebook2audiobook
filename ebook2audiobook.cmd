@@ -165,10 +165,12 @@ if defined arguments.script_mode (
     for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
         set "argname=%%A"
         call set "argname=%%argname:arguments.=%%"
-        if /I not "%argname%"=="script_mode" if /I not "%argname%"=="docker_device" (
+        if /I "%argname%"=="script_mode" goto :continue_arg_check
+        if /I not "%argname%"=="docker_device" (
             echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
             goto :failed
         )
+        :continue_arg_check
     )
 )
 goto :check_scoop
