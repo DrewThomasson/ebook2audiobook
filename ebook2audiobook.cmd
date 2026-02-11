@@ -166,10 +166,12 @@ if defined arguments.script_mode (
 		set "argname=%%A"
 		call set "argname=%%argname:arguments.=%%"
 
-		if /I not "%argname%"=="script_mode" (
-			if /I not "%argname%"=="docker_device" (
-				echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
-				goto :failed
+		if not "%argname%"=="" (
+			if /I not "%argname%"=="script_mode" (
+				if /I not "%argname%"=="docker_device" (
+					echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
+					goto :failed
+				)
 			)
 		)
 	)
