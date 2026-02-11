@@ -292,7 +292,7 @@ if not "%OK_SCOOP%"=="0" (
 )
 if not "%OK_DOCKER%"=="0" (
 	echo Installing Docker…
-	call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
+	call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker"
     where.exe /Q docker
     if not errorlevel 1 (
 		echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
@@ -303,6 +303,7 @@ if not "%OK_DOCKER%"=="0" (
 		set "OK_DOCKER=0"
 	) else (
 		echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
+		goto :failed
 	)
 )
 if not "%OK_CONDA%"=="0" (
