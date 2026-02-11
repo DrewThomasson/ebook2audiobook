@@ -749,7 +749,7 @@ function build_docker_image {
 				return 1
 			fi
 		fi
-		echo "podman-compose"
+		echo "--> Using podman-compose"
 		export PODMAN_BUILD_ARGS=(
 			--format docker
 			--no-cache
@@ -770,7 +770,7 @@ function build_docker_image {
 			echo "ERROR: docker compose found no services or yml file is not valid."
 			return 1
 		fi
-		echo "docker compose"
+		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
 			-f docker-compose.yml \
 			build \
@@ -785,7 +785,7 @@ function build_docker_image {
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
 	else
-		echo "docker build"
+		echo "--> Using docker build"
 		docker build \
 			--no-cache \
 			--progress plain \
