@@ -667,7 +667,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_keep = gr.State({})
             gr_blocks_text = gr.State({})
             gr_blocks_open = gr.State({})
-            gr_blocks_panel = gr.Column(visible='hidden')
+            gr_blocks_panel = gr.Column(visible=False)
             with gr_blocks_panel:
                 gr_blocks_nav = gr.Row(elem_id='gr_blocks_nav')
                 with gr_blocks_nav:
