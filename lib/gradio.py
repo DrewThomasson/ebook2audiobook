@@ -365,15 +365,21 @@ def build_interface(args:dict)->gr.Blocks:
                     display: none !important;
                 }
                 #gr_blocks_nav button.nav-btn {
-                    width: 44px !important;
-                    min-width: 44px !important;
-                    max-width: 44px !important;
-                    padding: 0 !important;
+                    width:44px !important;
+                    min-width:44px !important;
+                    max-width:44px !important;
+                    padding:0 !important;
                 }
                 #gr_blocks_nav .nav-header {
-                    text-align: center;
-                    margin: auto;
-                    padding: 0;
+                    overflow:hidden !important;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                }
+                #gr_blocks_nav .nav-header p {
+                    margin:0 !important;
+                    white-space:nowrap !important;
+                    overflow:hidden !important;
                 }
                 ///////////
                 .fade-in {
