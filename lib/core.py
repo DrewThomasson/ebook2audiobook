@@ -536,8 +536,8 @@ def convert2epub(session_id:str)-> bool:
         try:
             title = False
             author = False
-            util_app = shutil.which('ebook-convert')
-            if not util_app:
+            calibre_cli = shutil.which('ebook-convert')
+            if not calibre_cli:
                 error = 'ebook-convert utility is not installed or not found.'
                 print(error)
                 return False
@@ -634,10 +634,10 @@ def convert2epub(session_id:str)-> bool:
                     print(f'OCR completed for {page_count} image page(s).')
                 else:
                     return False
-            msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
+            msg = f"Running command: {calibre_cli} {file_input} {session['epub_path']}"
             print(msg)
             cmd = [
-                    util_app, file_input, session['epub_path'],
+                    calibre_cli, file_input, session['epub_path'],
                     '--input-encoding=utf-8',
                     '--output-profile=generic_eink',
                     '--epub-version=3',
@@ -2600,7 +2600,7 @@ def convert_ebook(args:dict)->tuple:
                         session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                         session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
-                        if prepare_dirs(args['ebook'], session_id):
+                        if prepare_dirs(session['ebook'], session_id):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
                             msg_extra = ''
