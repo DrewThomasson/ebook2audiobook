@@ -299,6 +299,7 @@ if not "%OK_DOCKER%"=="0" (
 		findstr /i /x "docker" "%INSTALLED_LOG%" >nul 2>&1
 		if errorlevel 1 (
 			echo %%p>>"%INSTALLED_LOG%"
+			call docker --register-service
 		)
 		set "OK_DOCKER=0"
 	) else (
