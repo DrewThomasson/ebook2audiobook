@@ -290,14 +290,28 @@ if not "%OK_SCOOP%"=="0" (
     start "" cmd /k "cd /d "%SCRIPT_DIR%" & call "%~f0""
     exit
 )
-
+if not "%OK_DOCKER%"=="0" (
+	echo Installing Docker…
+	call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
+    where.exe /Q docker
+    if not errorlevel 1 (
+		echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
+		findstr /i /x "docker" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo %%p>>"%INSTALLED_LOG%"
+		)
+		set "OK_DOCKER=0"
+	) else (
+		echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
+	)
+)
 if not "%OK_CONDA%"=="0" (
     echo Installing Miniforge…
     call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile '%CONDA_INSTALLER%'"
     call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
     where.exe /Q conda
     if not errorlevel 1 (
-        echo %ESC%[32m=============== Miniforge3 OK! ===============%ESC%[0m
+        echo %ESC%[32m=============== Miniforge3 OK ===============%ESC%[0m
         findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
         if errorlevel 1 (
             echo Miniforge3>>"%INSTALLED_LOG%"
@@ -437,9 +451,9 @@ exit /b 0
 :check_docker
 where.exe /Q docker
 if errorlevel 1 (
-	echo AAAAAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHH
-    echo %ESC%[31m=============== Docker is not installed or not running. Please install or run Docker manually.%ESC%[0m
-    exit /b 1
+	echo Docker is not installed.
+	set "OK_DOCKER=1"
+	goto :install_programs
 )
 exit /b 0
 
@@ -573,8 +587,6 @@ if "%OK_SCOOP%"=="0" (
         if "%OK_CONDA%"=="0" (
             if "%OK_DOCKER%"=="0" (
                 goto :main
-            ) else (
-                goto :failed
             )
         )
     )
