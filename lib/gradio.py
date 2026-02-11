@@ -360,7 +360,7 @@ def build_interface(args:dict)->gr.Blocks:
                     width: 60px !important;
                     height: 60px !important;
                 }
-                #gr_state_update, #gr_restore_session, #gr_save_session,
+                #gr_session_update, #gr_restore_session, #gr_save_session,
                 #gr_audiobook_vtt, #gr_playback_time {
                     display: none !important;
                 }
@@ -665,10 +665,9 @@ def build_interface(args:dict)->gr.Blocks:
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
             gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-            gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
-            gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
-
-            gr_state_update = gr.State(value={'hash': None})
+            gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='✖', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
+            gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='✔', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
+            gr_session_update = gr.State(value={'hash': None})
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
 
@@ -2117,8 +2116,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_timer = gr.Timer(9, active=False)
             gr_timer.tick(
                 fn=update_gr_save_session,
-                inputs=[gr_session, gr_state_update],
-                outputs=[gr_save_session, gr_state_update, gr_audiobook_list]
+                inputs=[gr_session, gr_session_update],
+                outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
             ).then(
                 fn=clear_event,
                 inputs=[gr_session],
@@ -2178,8 +2177,8 @@ def build_interface(args:dict)->gr.Blocks:
             )       
             gr_restore_session.change(
                 fn=change_gr_restore_session,
-                inputs=[gr_restore_session, gr_state_update],
-                outputs=[gr_save_session, gr_state_update, gr_session, gr_glassmask]
+                inputs=[gr_restore_session, gr_session_update],
+                outputs=[gr_save_session, gr_session_update, gr_session, gr_glassmask]
             ).then(
                 fn=restore_interface,
                 inputs=[gr_session],
