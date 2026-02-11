@@ -461,7 +461,7 @@ where.exe /Q docker
 if errorlevel 1 (
 	echo Docker is not installed.
 	set "OK_DOCKER=1"
-	goto :install_programs
+	exit /b 1
 )
 exit /b 0
 
@@ -631,7 +631,7 @@ if defined arguments.help (
                 goto :failed
             )
             call :check_docker
-            if errorlevel 1 goto :failed
+            if errorlevel 1	goto :install_programs
             set "device_info="
 			for /f "usebackq delims=" %%A in (`
 				cmd /c ""%~f0" :check_device_info "%SCRIPT_MODE%"" 
