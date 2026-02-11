@@ -609,9 +609,11 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1 goto :failed
             set "device_info="
-            for /f "usebackq delims=" %%A in (`call :check_device_info "%SCRIPT_MODE%"`) do (
-                set "device_info=%%A"
-            )
+			for /f "usebackq delims=" %%A in (`
+				cmd /c ""%~f0" :check_device_info "%SCRIPT_MODE%"" 
+			`) do (
+				set "device_info=%%A"
+			)
             if not defined device_info (
                 echo Device info check failed
                 goto :failed
