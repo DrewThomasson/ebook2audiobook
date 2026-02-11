@@ -438,7 +438,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
-                .button-red  { background-color: #dc3545 !important; color: white !important; }
+                .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
                 .button-green:active, .button-red:active {
                     background: var(--body-text-color) !important;
@@ -739,8 +739,8 @@ def build_interface(args:dict)->gr.Blocks:
                     button_no = f'#gr_{mode}_no_btn'
                     return f'''
                     <div class="confirm-buttons">
-                        <button class="button-red" onclick="document.querySelector('{button_no}').click()">⨉</button>
-                        <button class="button-green" onclick="document.querySelector('{button_yes}').click()">✔</button>
+                        <button class="button-red" style="width:30px; height:30px" onclick="document.querySelector('{button_no}').click()">⨉</button>
+                        <button class="button-green" style="width:30px; height:30px" onclick="document.querySelector('{button_yes}').click()">✔</button>
                     </div>
                     '''
                 else:
