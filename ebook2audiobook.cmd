@@ -485,7 +485,7 @@ for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths(
 )
 if "%site_packages_path%"=="" (
     echo [WARN] Could not detect Python site-packages
-    exit /b 0
+    exit /b 1
 )
 set "dst_pyfile=%site_packages_path%\sitecustomize.py"
 if not exist "%dst_pyfile%" (
