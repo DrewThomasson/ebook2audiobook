@@ -292,7 +292,7 @@ if not "%OK_SCOOP%"=="0" (
     exit
 )
 if not "%OK_DOCKER%"=="0" (
-	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" 
+	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Docker…
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install rancher-desktop"
 		where.exe /Q docker
