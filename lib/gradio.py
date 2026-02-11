@@ -1716,7 +1716,7 @@ def build_interface(args:dict)->gr.Blocks:
                 for i, block in enumerate(blocks):
                     if keep_map.get(i, True):
                         result.append(text_map.get(i, block))
-                return result
+                return gr.update(value=result)
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
