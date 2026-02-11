@@ -2739,6 +2739,8 @@ def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['blocks']:
+            print(blocks)
+            print(session['blocks'])
             if blocks and blocks != session['blocks']:
                 delete_proc_audio_files(session['sentences_dir'])
                 delete_proc_audio_files(session['chapters_dir'])
