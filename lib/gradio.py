@@ -364,17 +364,6 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_audiobook_vtt, #gr_playback_time {
                     display: none !important;
                 }
-                #gr_blocks_nav button.nav-btn {
-                    width: 44px !important;
-                    min-width: 44px !important;
-                    max-width: 44px !important;
-                    padding: 0 !important;
-                }
-                #gr_blocks_nav .nav-header {
-                    text-align: center !important;
-                    margin: 0 !important;
-                    padding-top: 6px !important;
-                }
                 ///////////
                 .fade-in {
                     animation: fadeIn 1s ease-in !important;
@@ -668,11 +657,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_text = gr.State({})
             gr_blocks_open = gr.State({})
             gr_blocks_panel = gr.Column(visible='hidden')
-            #gr_blocks_nav = gr.Row(visible='hidden', elem_id='gr_blocks_nav')
-            #with gr_blocks_nav:
-            gr_blocks_prev = gr.Button('◀', visible=True, elem_classes=['nav-btn'], scale=0, min_width=44)
-            gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
-            gr_blocks_next = gr.Button('▶', visible=True, elem_classes=['nav-btn'], scale=0, min_width=44)
+            gr_blocks_nav = gr.Row(visible='hidden', elem_id='gr_blocks_nav')
+            with gr_blocks_nav:
+                gr_blocks_prev = gr.Button('◀', visible=True, elem_classes=['nav-btn'], scale=0, min_width=44)
+                gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
+                gr_blocks_next = gr.Button('▶', visible=True, elem_classes=['nav-btn'], scale=0, min_width=44)
             gr_blocks_cancel = gr.Button('✖', variant='stop', visible='hidden')
             gr_blocks_continue = gr.Button('✔', variant='primary', visible='hidden')
 
