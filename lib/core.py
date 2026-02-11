@@ -505,25 +505,25 @@ def ocr2xhtml(img: Image.Image, lang: str)->str:
         print(error)
         return False
 
-def load_json_chapters(filepath:str)->list:
+def load_json_blocks(filepath:str)->list:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        print(f"load_json_chapters() error: {e}")
+        print(f"load_json_blocks() error: {e}")
         return []
 
-def save_json_chapters(session_id:str, filepath:str)->bool:
+def save_json_blocks(session_id:str, filepath:str)->bool:
     try:
         session = context.get_session(session_id)
         if not session:
-            print(f"save_json_chapters error: session not found ({session_id})")
+            print(f"save_json_blocks error: session not found ({session_id})")
             return False
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(session['chapters'], f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
-        print(f"save_json_chapters() error: {e}")
+        print(f"save_json_blocks() error: {e}")
         return False
 
 def convert2epub(session_id:str)-> bool:
@@ -2659,9 +2659,11 @@ def convert_ebook(args:dict)->tuple:
                                         if not result_epub:
                                             error = 'convert2epub() failed!'
                                     else:
-                                        json_chapters_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                                        if os.path.exists(json_chapters_file):
-                                            session['chapters'] = load_json_chapters(json_chapters_file)
+                                        json_blocks_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+                                        if os.path.exists(json_blocks_file):
+                                            session['blocks'] = load_json_blocks(json_blocks_file)
+                                        else:
+                                            checksum = False
                                     if error is None:
                                         epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                         if epubBook:
@@ -2730,6 +2732,8 @@ def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['blocks']:
+            json_blocks = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+            save_json_blocks(session_id, json_blocks)
             chapters = []
             msg = f'Get sentences…'
             print(msg)
@@ -2743,8 +2747,6 @@ def finalize_audiobook(session_id:str)->tuple:
                     if sentences_list:
                         chapters.append(sentences_list)
             session['chapters'] = chapters
-            json_chapters = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-            save_json_chapters(session_id, json_chapters)
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
