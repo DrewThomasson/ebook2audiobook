@@ -438,8 +438,8 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
-                .button-red button  { background-color: #dc3545 !important; color: white !important; }
-                .button-red:hover button  { background-color: #ff6f71 !important; }
+                .button-red  { background-color: #dc3545 !important; color: white !important; }
+                .button-red:hover  { background-color: #ff6f71 !important; }
                 .button-green:active, .button-red:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
