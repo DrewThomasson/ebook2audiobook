@@ -375,11 +375,11 @@ if not "%OK_PROGRAMS%"=="0" (
         if "%%p"=="nodejs" (
             set "prog=node"
         )
-        if "%%p"=="rustup" (
-            if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
-                set "PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;%PATH%"
-            )
-        )
+		if "%%p"=="rustup" (
+			if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
+				set "PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;!PATH!"
+			)
+		)
         where.exe /Q !prog!
         if not errorlevel 1 (
             echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
