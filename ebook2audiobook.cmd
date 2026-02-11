@@ -45,7 +45,7 @@ set "SCRIPT_MODE=%NATIVE%"
 set "APP_NAME=ebook2audiobook"
 set /p APP_VERSION=<"%SAFE_SCRIPT_DIR%\VERSION.txt"
 set "APP_FILE=%APP_NAME%.cmd"
-set "OS_LANG=%LANG%"& if "!OS_LANG!"=="" set "OS_LANG=en"& set "OS_LANG=!OS_LANG:~0,2!"
+set "OS_LANG=%LANG%" & if "%OS_LANG%"=="" set "OS_LANG=en" & call set "OS_LANG=%%OS_LANG:~0,2%%"
 set "TEST_HOST=127.0.0.1"
 set "TEST_PORT=7860"
 set "ICON_PATH=%SAFE_SCRIPT_DIR%\tools\icons\windows\appIcon.ico"
@@ -606,8 +606,8 @@ echo OK_DOCKER: %OK_DOCKER%
 goto :install_programs
 
 :main
+setlocal EnableDelayedExpansion
 if defined arguments.help (
-	setlocal EnableDelayedExpansion
     if /I "!arguments.help!"=="true" (
         where.exe /Q conda
         if errorlevel 0 (
@@ -619,7 +619,6 @@ if defined arguments.help (
         )
         goto :eof
     )
-	endlocal
 ) else (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "!DOCKER_DEVICE_STR!"=="" (
@@ -676,6 +675,7 @@ if defined arguments.help (
         call conda deactivate >nul && call conda deactivate >nul
     )
 )
+endlocal
 exit /b 0
 
 :failed
