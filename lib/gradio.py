@@ -1700,10 +1700,10 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session['status'] == confirm_blocks:
                     return (
-                        update_blocks_header(0, session['blocks']), session['blocks'], 0, {}, {}, gr.update(visible=True), gr.update(visible=True),
-                        gr.update(visible=len(session['blocks']) > page_size), gr.update(visible=True), gr.update(visible=True)
+                        gr.update(visible=True), update_blocks_header(0, session['blocks']), session['blocks'], 0, {}, {},
+                        gr.update(visible=False), gr.update(visible=len(session['blocks']) > page_size))
                     )
-                return tuple(gr.update(visible=False) for _ in range(10))
+                return tuple(gr.update(visible=False) for _ in range(8))
 
             def cancel_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -2167,9 +2167,8 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=[
-                    gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
-                    gr_blocks_text, gr_blocks_panel, gr_blocks_prev,
-                    gr_blocks_next, gr_blocks_continue, gr_blocks_cancel
+                    gr_blocks_panel, gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
+                    gr_blocks_text, gr_blocks_prev, gr_blocks_next
                 ]
             ).then(
                 fn=enable_components,
