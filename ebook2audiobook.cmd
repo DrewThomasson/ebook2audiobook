@@ -278,7 +278,6 @@ if not "%missing_prog_array%"=="" (
     goto :install_programs
 )
 goto :dispatch
-exit /b
 
 :install_programs
 if not "%OK_SCOOP%"=="0" (
@@ -293,46 +292,50 @@ if not "%OK_SCOOP%"=="0" (
     exit
 )
 if not "%OK_DOCKER%"=="0" (
-	echo Installing Docker…
-	call "%PS_EXE%" %PS_ARGS% -Command "scoop install rancher-desktop"
-    where.exe /Q docker
-    if not errorlevel 1 (
-		echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
-		findstr /i /x "docker" "%INSTALLED_LOG%" >nul 2>&1
-		if errorlevel 1 (
-			echo rancher-desktop>"%INSTALLED_LOG%"
+	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" 
+		echo Installing Docker…
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install rancher-desktop"
+		where.exe /Q docker
+		if not errorlevel 1 (
+			echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
+			findstr /i /x "docker" "%INSTALLED_LOG%" >nul 2>&1
+			if errorlevel 1 (
+				echo rancher-desktop>"%INSTALLED_LOG%"
+			)
+			set "OK_DOCKER=0"
+		) else (
+			echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
+			goto :failed
 		)
-		set "OK_DOCKER=0"
-	) else (
-		echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
-		goto :failed
 	)
 )
-if not "%OK_CONDA%"=="0" (
-    echo Installing Miniforge…
-	call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
-	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D="%SAFE_USERPROFILE%\Miniforge3"
-    where.exe /Q conda
-    if not errorlevel 1 (
-        echo %ESC%[32m=============== Miniforge3 OK ===============%ESC%[0m
-        findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
-        if errorlevel 1 (
-            echo Miniforge3>>"%INSTALLED_LOG%"
-        )
-    ) else (
-        echo %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
-        goto :failed
-    )
-    if not exist "%SAFE_USERPROFILE%\.condarc" (
-        call conda config --set auto_activate false
-    )
-    call conda update --all -y
-    call conda clean --index-cache -y
-    call conda clean --packages --tarballs -y
-    del "%CONDA_INSTALLER%"
-    set "OK_CONDA=0"
-	start "" cmd /k "cd /d ""%CD%"" ^& call ""%~f0"""
-    exit
+if not "%OK_CONDA%"=="0" and not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+		echo Installing Miniforge…
+		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
+		call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D="%SAFE_USERPROFILE%\Miniforge3"
+		where.exe /Q conda
+		if not errorlevel 1 (
+			echo %ESC%[32m=============== Miniforge3 OK ===============%ESC%[0m
+			findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
+			if errorlevel 1 (
+				echo Miniforge3>>"%INSTALLED_LOG%"
+			)
+		) else (
+			echo %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
+			goto :failed
+		)
+		if not exist "%SAFE_USERPROFILE%\.condarc" (
+			call conda config --set auto_activate false
+		)
+		call conda update --all -y
+		call conda clean --index-cache -y
+		call conda clean --packages --tarballs -y
+		del "%CONDA_INSTALLER%"
+		set "OK_CONDA=0"
+		start "" cmd /k "cd /d ""%CD%"" ^& call ""%~f0"""
+		exit
+	)
 )
 if not "%OK_PROGRAMS%"=="0" (
     echo Installing missing programs…
@@ -450,7 +453,6 @@ if "%CURRENT_ENV%"=="" (
     goto :failed
 )
 goto :check_required_programs
-exit /b 0
 
 :check_docker
 where.exe /Q docker
@@ -602,7 +604,6 @@ echo OK_PROGRAMS: %OK_PROGRAMS%
 echo OK_CONDA: %OK_CONDA%
 echo OK_DOCKER: %OK_DOCKER%
 goto :install_programs
-exit /b
 
 :main
 if defined arguments.help (
