@@ -114,23 +114,21 @@ set "FORWARD_ARGS="
 ::::::::::::::::::::::::::::::: CORE FUNCTIONS
 
 :parse_args
+setlocal EnableDelayedExpansion
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
-:: ALWAYS forward args
 set "FORWARD_ARGS=!FORWARD_ARGS! !arg!"
-:: Flag or key-value argument
 if "!arg:~0,2!"=="--" (
     set "key=!arg:~2!"
-    :: Check for a value (next arg exists AND does not start with --)
     if not "%~2"=="" (
         echo %~2 | findstr "^--" >nul
         if errorlevel 1 (
             set "arguments.!key!=%~2"
-            shift & shift
+            shift
+            shift
             goto parse_args
         )
     )
-    :: Boolean flag
     set "arguments.!key!=true"
     shift
     goto parse_args
@@ -138,41 +136,45 @@ if "!arg:~0,2!"=="--" (
 shift
 goto parse_args
 
+
 :parse_args_done
-setlocal EnableDelayedExpansion
-echo arguments
+endlocal & (
+    set "FORWARD_ARGS=%FORWARD_ARGS%"
+    for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
+)
+echo.
+echo ==== ARGUMENTS OBJECT ====
+set arguments.
+echo ==========================
+echo.
 if defined arguments.script_mode (
-    if /I "!arguments.script_mode!"=="%BUILD_DOCKER%" (
-		set "SCRIPT_MODE=!arguments.script_mode!"
+    if /I "%arguments.script_mode%"=="%BUILD_DOCKER%" (
+        set "SCRIPT_MODE=%arguments.script_mode%"
     ) else (
-        echo Error: Invalid script mode argument: !arguments.script_mode!
-        endlocal & goto :failed
+        echo Error: Invalid script mode argument: %arguments.script_mode%
+        goto :failed
     )
 )
 if defined arguments.docker_device (
-    set "DOCKER_DEVICE_STR=!arguments.docker_device!"
-    if /i "!arguments.docker_device!"=="true" (
+    set "DOCKER_DEVICE_STR=%arguments.docker_device%"
+    if /i "%arguments.docker_device%"=="true" (
         echo Error: --docker_device has no value!
-        endlocal & goto :failed
+        goto :failed
     )
 )
 if defined arguments.script_mode (
-    if /I "!arguments.script_mode!"=="true" (
+    if /I "%arguments.script_mode%"=="true" (
         echo Error: --script_mode requires a value
-        endlocal & goto :failed
+        goto :failed
     )
     for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
         set "argname=%%A"
-        set "argname=!argname:arguments.=!"
-        if /I not "!argname!"=="script_mode" if /I not "!argname!"=="docker_device" (
-            echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --!argname!
-            endlocal & goto :failed
+        call set "argname=%%argname:arguments.=%%"
+        if /I not "%argname%"=="script_mode" if /I not "%argname%"=="docker_device" (
+            echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
+            goto :failed
         )
     )
-)
-endlocal & (
-    if defined arguments.script_mode set "SCRIPT_MODE=%arguments.script_mode%"
-    if defined arguments.docker_device set "DOCKER_DEVICE_STR=%arguments.docker_device%"
 )
 goto :check_scoop
 
