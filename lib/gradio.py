@@ -671,7 +671,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_nav = gr.Row(visible='hidden', elem_id="gr_blocks_nav")
             with gr_blocks_nav:
                 gr_blocks_prev = gr.Button("◀", visible=True, elem_classes=["nav-btn"], scale=0, min_width=44)
-                gr_blocks_header = gr.Markdown("", elem_classes=["nav-header"], scale=1)
+                gr_blocks_header = gr.Markdown("", elem_classes=["nav-header"])
                 gr_blocks_next = gr.Button("▶", visible=True, elem_classes=["nav-btn"], scale=0, min_width=44)
             gr_blocks_cancel = gr.Button('✖', variant='stop', visible='hidden')
             gr_blocks_continue = gr.Button('✔', variant='primary', visible='hidden')
