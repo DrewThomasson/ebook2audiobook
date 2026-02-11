@@ -372,8 +372,8 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 #gr_blocks_nav .nav-header {
                     text-align: center;
-                    margin: 0;
-                    padding-top: 6px;
+                    margin: auto;
+                    padding: 0;
                 }
                 ///////////
                 .fade-in {
