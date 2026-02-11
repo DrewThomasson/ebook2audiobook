@@ -138,7 +138,10 @@ goto parse_args
 
 
 :parse_args_done
-endlocal
+endlocal & (
+    set "FORWARD_ARGS=%FORWARD_ARGS%"
+    for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
+)
 if defined arguments.script_mode (
     if /I "%arguments.script_mode%"=="%BUILD_DOCKER%" (
         set "SCRIPT_MODE=%arguments.script_mode%"
@@ -159,16 +162,17 @@ if defined arguments.script_mode (
         echo Error: --script_mode requires a value
         goto :failed
     )
-    for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
-        set "argname=%%A"
-        call set "argname=%%argname:arguments.=%%"
-        if /I "%argname%"=="script_mode" goto :continue_arg_check
-        if /I not "%argname%"=="docker_device" (
-            echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
-            goto :failed
-        )
-        :continue_arg_check
-    )
+	for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
+		set "argname=%%A"
+		call set "argname=%%argname:arguments.=%%"
+
+		if /I not "%argname%"=="script_mode" (
+			if /I not "%argname%"=="docker_device" (
+				echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
+				goto :failed
+			)
+		)
+	)
 )
 goto :check_scoop
 
