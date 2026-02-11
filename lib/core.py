@@ -520,7 +520,7 @@ def save_json_blocks(session_id:str, filepath:str)->bool:
             print(f"save_json_blocks error: session not found ({session_id})")
             return False
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(session['chapters'], f, ensure_ascii=False, indent=2)
+            json.dump(session['blocks'], f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
         print(f"save_json_blocks() error: {e}")
