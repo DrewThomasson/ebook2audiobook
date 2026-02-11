@@ -1683,11 +1683,13 @@ def build_interface(args:dict)->gr.Blocks:
                 return keep_map, text_map
 
             def prev_page(page:int)->int:
-                return max(page - 1, 0)
+                new_page = max(page - 1, 0)
+                return new_page, gr.update(visible=new_page > 0)
 
             def next_page(page:int, blocks:list[str])->int:
                 max_page = (len(blocks) - 1) // page_size
-                return min(page + 1, max_page)
+                new_page = min(page + 1, max_page)
+                return new_page, gr.update(visible=new_page < max_page)
 
             def update_blocks_header(page:int, blocks:list[str])->str:
                 start = page * page_size
@@ -2234,7 +2236,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_prev.click(
                 fn=prev_page,
                 inputs=[gr_blocks_page],
-                outputs=[gr_blocks_page]
+                outputs=[gr_blocks_page, gr_blocks_prev]
             ).then(
                 fn=update_blocks_header,
                 inputs=[gr_blocks_page, gr_blocks_data],
@@ -2243,7 +2245,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_next.click(
                 fn=next_page,
                 inputs=[gr_blocks_page,gr_blocks_data],
-                outputs=[gr_blocks_page]
+                outputs=[gr_blocks_page, gr_blocks_next]
             ).then(
                 fn=update_blocks_header,
                 inputs=[gr_blocks_page, gr_blocks_data],
