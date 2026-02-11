@@ -304,14 +304,14 @@ if not "%OK_DOCKER%"=="0" (
 	echo.
 	if not exist "DockerDesktopInstaller.exe" (
 		echo Downloading installer…
-		"%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest '%DOCKER_URL%' -OutFile 'DockerDesktopInstaller.exe'"
+		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest '%DOCKER_URL%' -OutFile 'DockerDesktopInstaller.exe'"
 		if not exist "DockerDesktopInstaller.exe" (
 			echo Failed to download Docker installer.
 			goto :failed
 		)
 	)
 	echo Launching Docker installer…
-	"%PS_EXE%" %PS_ARGS% -Command "Start-Process 'DockerDesktopInstaller.exe' -Verb RunAs"
+	call "%PS_EXE%" %PS_ARGS% -Command "Start-Process 'DockerDesktopInstaller.exe' -Verb RunAs"
 	echo.
 	echo ===================================================
 	echo Please install Docker Desktop manually as Administrator.
