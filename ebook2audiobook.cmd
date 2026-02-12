@@ -456,12 +456,17 @@ if errorlevel 1 (
 )
 exit /b 0
 
+:check_device_info
+set "ARG=%~1"
+"%PS_EXE%" %PS_ARGS% -Command ^
+"python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); result = device.check_device_info(r'%ARG%'); print(result) if result else None; sys.exit(0 if result else 1)\""
+exit /b %errorlevel%
+
 :install_python_packages
 echo [ebook2audiobook] Installing dependencies…
 "%PS_EXE%" %PS_ARGS% -Command ^
 "python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
 exit /b %errorlevel%
-
 
 :install_device_packages
 set "arg=%~1"
