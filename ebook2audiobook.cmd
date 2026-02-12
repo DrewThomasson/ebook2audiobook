@@ -635,6 +635,8 @@ if defined arguments.help (
 			) else (
 				for /f "delims=" %%I in ('echo(!device_info_str!^| python -c "import json,sys; print(json.loads(sys.stdin.read())['tag'])"') do set "TAG=%%I"
 			)
+			echo !TAG!
+			pause
 			if "!TAG!"=="" goto :failed
 			docker image inspect "%DOCKER_IMG_NAME%:!TAG!" >nul 2>&1
 			if not errorlevel 1 (
