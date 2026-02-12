@@ -504,7 +504,7 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-"%PS_EXE%" %PS_ARGS% -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running' -ForegroundColor Red; exit 1 }"
+"%PS_EXE%" %PS_ARGS% -command "if (-not(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
 "%PS_EXE%" %PS_ARGS% -command "if (podman-compose version > `$null 2^>^&1) { exit 0 } else { exit 1 }"
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
