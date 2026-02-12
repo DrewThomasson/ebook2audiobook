@@ -629,10 +629,6 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			set "device_info_str="
-			if "!device_info_str!"=="" (
-				echo check_device_info() error: result is empty
-				goto :failed
-			)
         ) else (
             call :install_python_packages
             if errorlevel 1 goto :failed
