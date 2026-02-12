@@ -636,14 +636,6 @@ if defined arguments.help (
 				echo check_device_info() error: result is empty
 				exit /b 1
 			)
-			if defined DEVICE_TAG (
-				set "TAG=!DEVICE_TAG!"
-			) else (
-				for /f "usebackq delims=" %%I in (`python -c "import json,sys; print(json.loads(sys.argv[1])['tag'])" "!device_info_str!"`) do (
-					set "TAG=%%I"
-				)
-			)
-
         ) else (
             call :install_python_packages
             if errorlevel 1 goto :failed
