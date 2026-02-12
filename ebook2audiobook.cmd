@@ -461,6 +461,7 @@ set "ARG=%~1"
 for /f "delims=" %%I in ('
 python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"
 ') do set "device_info_str=%%I"
+echo %device_info_str%
 exit /b
 
 :install_python_packages
