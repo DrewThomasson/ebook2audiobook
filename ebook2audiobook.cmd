@@ -530,12 +530,13 @@ if /i "%TAG:~0,2%"=="cu" (
 )
 set "DEVICE_TAG=%TAG%"
 if /i "%TAG%"=="cpu" (
-    set COMPOSE_PROFILES=cpu
+    set "COMPOSE_PROFILES=cpu"
 ) else if /i "%TAG%"=="mps" (
-    set COMPOSE_PROFILES=cpu
+    set "COMPOSE_PROFILES=cpu"
 ) else (
-    set COMPOSE_PROFILES=gpu
+    set "COMPOSE_PROFILES=gpu"
 )
+pause
 if %HAS_PODMAN_COMPOSE%==0 (
 	echo --> Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
@@ -642,7 +643,6 @@ if defined arguments.help (
 				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:!TAG! --force
 				goto :failed
 			)
-			pause
             call :build_docker_image "!device_info_str!"
             if errorlevel 1 goto :failed
         ) else (
