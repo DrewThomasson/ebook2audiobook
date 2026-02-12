@@ -297,20 +297,17 @@ if not "%OK_DOCKER%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Docker…
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install rancher-desktop"
-		for /f "usebackq tokens=2,*" %%A in (`reg query HKCU\Environment /v PATH 2^>nul`) do set "USERPATH=%%B"
-		for /f "usebackq tokens=2,*" %%A in (`reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v PATH 2^>nul`) do set "SYSTEMPATH=%%B"
-		set "PATH=%SYSTEMPATH%;%USERPATH%"
-		where.exe /Q docker
-		if errorlevel 1 (
+		set "SCOOP_SHIMS=%USERPROFILE%\scoop\shims"
+		if exist "%SCOOP_SHIMS%\docker.exe" (
+			set "PATH=%SCOOP_SHIMS%;%PATH%"
+		)
+		where docker >nul 2>&1
+		if not errorlevel 1 (
+			echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
+			set "OK_DOCKER=0"
+		) else (
 			echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
 			goto :failed
-		) else (
-			echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
-			findstr /i /x "docker" "%INSTALLED_LOG%" >nul 2>&1
-			if errorlevel 1 (
-				echo rancher-desktop>"%INSTALLED_LOG%"
-			)
-			set "OK_DOCKER=0"
 		)
 	)
 )
