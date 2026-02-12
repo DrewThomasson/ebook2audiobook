@@ -300,7 +300,7 @@ if not "%OK_DOCKER%"=="0" (
 			echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
 			call "%PS_EXE%" -NoLogo -NoProfile -Command "$env:PATH = [Environment]::GetEnvironmentVariable('PATH','User') + ';' + [Environment]::GetEnvironmentVariable('PATH','Machine')"
 			set "SELF=%~f0"
-			start "" cmd /k ""%SELF%" %*"
+			start "" "%SELF%" %*
 			exit
 		) else (
 			echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
