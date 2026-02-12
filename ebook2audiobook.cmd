@@ -629,7 +629,6 @@ if defined arguments.help (
             if errorlevel 1	goto :install_programs
 			set "device_info_str="
 			call :check_device_info "%SCRIPT_MODE%"
-			echo !device_info_str!
 			if "!device_info_str! 1"=="" goto :failed
 			if defined DEVICE_TAG (
 				set "TAG=!DEVICE_TAG!"
