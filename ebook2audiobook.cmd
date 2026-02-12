@@ -629,6 +629,25 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			set "device_info_str="
+			if "!device_info_str!"=="" (
+				echo check_device_info() error: result is empty
+				goto :failed
+			)
+			if defined DEVICE_TAG (
+				set "TAG=!DEVICE_TAG!"
+			) else (
+				for /f "usebackq delims=" %%I in (`python -c "import json,sys; print(json.loads(sys.argv[1])['tag'])" "!device_info_str!"`) do (
+					set "TAG=%%I"
+				)
+			)
+			docker image inspect "%DOCKER_IMG_NAME%:!TAG!" >nul 2>&1
+			if not errorlevel 1 (
+				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!TAG!" already exists. Aborting build.
+				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:!TAG! --force
+				goto :failed
+			)
+            call :build_docker_image "!device_info_str!"
+            if errorlevel 1 goto :failed
         ) else (
             call :install_python_packages
             if errorlevel 1 goto :failed
