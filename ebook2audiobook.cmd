@@ -296,7 +296,7 @@ if not "%OK_DOCKER%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Docker…
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install rancher-desktop"
-		if exist "%SCOOP_SHIMS%\docker.exe" (
+		if exist "%SCOOP_APPS%\rancher-desktop\current\resources\resources\win32\bin\docker.exe" (
 			call "%PS_EXE%" -NoLogo -NoProfile -Command "$env:PATH = [Environment]::GetEnvironmentVariable('PATH','User') + ';' + [Environment]::GetEnvironmentVariable('PATH','Machine')"
 			start "" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" ^& call ""%~f0"""
 			exit
