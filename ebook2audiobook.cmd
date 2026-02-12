@@ -630,7 +630,7 @@ if defined arguments.help (
             if errorlevel 1	goto :install_programs
             set "device_info="
 			for /f "usebackq delims=" %%A in (`
-				cmd /c ""%~f0" :check_device_info "%SCRIPT_MODE%"" 
+				cmd /c ""%~f0" :check_device_info "%SCRIPT_MODE%""
 			`) do (
 				set "device_info=%%A"
 			)
