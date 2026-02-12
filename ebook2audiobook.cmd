@@ -629,7 +629,7 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			set "device_info_str="
-			for /f "usebackq delims=" %%I in (`call :check_device_info "%SCRIPT_MODE%"`) do (
+			for /f "usebackq delims=" %%I in (`:check_device_info "%SCRIPT_MODE%"`) do (
 				set "device_info_str=%%I"
 			)
 			if "!device_info_str!"=="" (
