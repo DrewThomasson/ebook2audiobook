@@ -1,4 +1,4 @@
-@echo off
+@echo( off
 
 setlocal EnableExtensions DisableDelayedExpansion
 
@@ -19,7 +19,7 @@ set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass"
 :: Detect Constrained Language Mode (corporate lockdown)
 "%PS_EXE%" %PS_ARGS% -Command "if ($ExecutionContext.SessionState.LanguageMode -ne 'FullLanguage') { exit 99 }"
 if errorlevel 99 (
-    echo ERROR: PowerShell Constrained Language Mode detected. This environment is not supported.
+    echo( ERROR: PowerShell Constrained Language Mode detected. This environment is not supported.
     goto :failed
 )
 
@@ -97,7 +97,7 @@ for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Se
 )
 
 if "%ARCH%"=="X86" (
-    echo %ESC%[31m=============== Error: 32-bit architecture is not supported.%ESC%[0m
+    echo( %ESC%[31m=============== Error: 32-bit architecture is not supported.%ESC%[0m
     goto :failed
 )
 
@@ -121,7 +121,7 @@ set "FORWARD_ARGS=!FORWARD_ARGS! !arg!"
 if "!arg:~0,2!"=="--" (
     set "key=!arg:~2!"
     if not "%~2"=="" (
-        echo %~2 | findstr "^--" >nul
+        echo( %~2 | findstr "^--" >nul
         if errorlevel 1 (
             set "arguments.!key!=%~2"
             shift
@@ -146,20 +146,20 @@ if defined arguments.script_mode (
     if /I "%arguments.script_mode%"=="%BUILD_DOCKER%" (
         set "SCRIPT_MODE=%arguments.script_mode%"
     ) else (
-        echo Error: Invalid script mode argument: %arguments.script_mode%
+        echo( Error: Invalid script mode argument: %arguments.script_mode%
         goto :failed
     )
 )
 if defined arguments.docker_device (
     set "DOCKER_DEVICE_STR=%arguments.docker_device%"
     if /i "%arguments.docker_device%"=="true" (
-        echo Error: --docker_device has no value!
+        echo( Error: --docker_device has no value!
         goto :failed
     )
 )
 if defined arguments.script_mode (
     if /I "%arguments.script_mode%"=="true" (
-        echo Error: --script_mode requires a value
+        echo( Error: --script_mode requires a value
         goto :failed
     )
 	for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
@@ -169,7 +169,7 @@ if defined arguments.script_mode (
 		if not "%argname%"=="" (
 			if /I not "%argname%"=="script_mode" (
 				if /I not "%argname%"=="docker_device" (
-					echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
+					echo( Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
 					goto :failed
 				)
 			)
@@ -192,7 +192,7 @@ if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
         call :make_shortcut "%DESKTOP_LNK%"
     )
     for /f "skip=1 delims=" %%L in ('tasklist /v /fo csv /fi "imagename eq powershell.exe" 2^>nul') do (
-        echo %%L | findstr /I "%APP_NAME%" >nul && (
+        echo( %%L | findstr /I "%APP_NAME%" >nul && (
             for /f "tokens=2 delims=," %%A in ("%%L") do (
                 taskkill /PID %%~A /F >nul 2>&1
             )
@@ -240,18 +240,18 @@ exit /b
 :check_scoop
 where.exe /Q scoop
 if errorlevel 1 (
-    echo Scoop is not installed.
+    echo( Scoop is not installed.
     set "OK_SCOOP=1"
     goto :install_programs
 ) else (
     if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
         call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
         call git config --global credential.helper
-        echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
+        echo( %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
         set "OK_SCOOP=0"
         findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
         if errorlevel 1 (
-            echo scoop>>"%INSTALLED_LOG%"
+            echo( scoop>>"%INSTALLED_LOG%"
         )
         del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
     )
@@ -283,40 +283,40 @@ goto :dispatch
 
 :install_programs
 if not "%OK_SCOOP%"=="0" (
-    echo Installing Scoop…
+    echo( Installing Scoop…
     call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
         "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
-    echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
+    echo( %ESC%[33m=============== Scoop OK ===============%ESC%[0m
     type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
 	goto :restart_script
 )
 if not "%OK_DOCKER%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-		echo Installing Docker…
+		echo( Installing Docker…
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install rancher-desktop"
 		if exist "%SCOOP_APPS%\rancher-desktop\current\resources\resources\win32\bin\docker.exe" (
-			echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
+			echo( %ESC%[33m=============== Docker OK ===============%ESC%[0m
 			goto :restart_script
 		) else (
-			echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
+			echo( %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
 			goto :failed
 		)
 	)
 )
 if not "%OK_CONDA%"=="0" (
 	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-		echo Installing Miniforge…
+		echo( Installing Miniforge…
 		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
 		call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D="%SAFE_USERPROFILE%\Miniforge3"
 		where.exe /Q conda
 		if not errorlevel 1 (
-			echo %ESC%[32m=============== Miniforge3 OK ===============%ESC%[0m
+			echo( %ESC%[32m=============== Miniforge3 OK ===============%ESC%[0m
 			findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
 			if errorlevel 1 (
-				echo Miniforge3>>"%INSTALLED_LOG%"
+				echo( Miniforge3>>"%INSTALLED_LOG%"
 			)
 		) else (
-			echo %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
+			echo( %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
 			goto :failed
 		)
 		if not exist "%SAFE_USERPROFILE%\.condarc" (
@@ -331,7 +331,7 @@ if not "%OK_CONDA%"=="0" (
 	)
 )
 if not "%OK_PROGRAMS%"=="0" (
-    echo Installing missing programs…
+    echo( Installing missing programs…
     if "%OK_SCOOP%"=="0" (
         call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
         call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
@@ -345,16 +345,16 @@ if not "%OK_PROGRAMS%"=="0" (
             where.exe /Q !prog!
             if not errorlevel 1 (
                 call :get_iso3_lang "!OS_LANG!"
-                echo Detected system language: !OS_LANG! → downloading OCR language: !ISO3_LANG!
+                echo( Detected system language: !OS_LANG! → downloading OCR language: !ISO3_LANG!
                 set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
                 if not exist "!tessdata!" mkdir "!tessdata!"
                 if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
                     call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri 'https://github.com/tesseract-ocr/tessdata_best/raw/main/!ISO3_LANG!.traineddata' -OutFile '!tessdata!\!ISO3_LANG!.traineddata' -ErrorAction Stop" || goto :failed
                 )
                 if exist "!tessdata!\!ISO3_LANG!.traineddata" (
-                    echo Tesseract OCR language !ISO3_LANG! installed in !tessdata!
+                    echo( Tesseract OCR language !ISO3_LANG! installed in !tessdata!
                 ) else (
-                    echo Failed to install OCR language !ISO3_LANG!
+                    echo( Failed to install OCR language !ISO3_LANG!
                 )
             )
         )
@@ -364,7 +364,7 @@ if not "%OK_PROGRAMS%"=="0" (
             where.exe /Q python3 && set PY_FOUND=1
             where.exe /Q py      && set PY_FOUND=1
             if not defined PY_FOUND (
-                echo %ESC%[31m=============== %%p failed.%ESC%[0m
+                echo( %ESC%[31m=============== %%p failed.%ESC%[0m
                 goto :failed
             )
         )
@@ -378,13 +378,13 @@ if not "%OK_PROGRAMS%"=="0" (
 		)
         where.exe /Q !prog!
         if not errorlevel 1 (
-            echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
+            echo( %ESC%[32m=============== %%p OK! ===============%ESC%[0m
             findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
             if errorlevel 1 (
-                echo %%p>>"%INSTALLED_LOG%"
+                echo( %%p>>"%INSTALLED_LOG%"
             )
         ) else (
-            echo %ESC%[31m=============== %%p failed.%ESC%[0m
+            echo( %ESC%[31m=============== %%p failed.%ESC%[0m
             goto :failed
         )
     )
@@ -399,7 +399,7 @@ goto :dispatch
 :check_conda
 where.exe /Q conda
 if errorlevel 1 (
-    echo Miniforge3 is not installed.
+    echo( Miniforge3 is not installed.
     set "OK_CONDA=1"
     goto :install_programs
 )
@@ -426,7 +426,7 @@ for /f "delims=" %%i in ('where.exe python') do (
 )
 if "%CURRENT_ENV%"=="" (
     if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-        echo Creating ./python_env version %PYTHON_VERSION%…
+        echo( Creating ./python_env version %PYTHON_VERSION%…
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda update -n base -c conda-forge conda -y
         call conda update --all -y
@@ -441,8 +441,8 @@ if "%CURRENT_ENV%"=="" (
         call conda deactivate
     )
 ) else (
-    echo Current python virtual environment detected: %CURRENT_ENV%. 
-    echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+    echo( Current python virtual environment detected: %CURRENT_ENV%. 
+    echo( =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
     goto :failed
 )
 goto :check_required_programs
@@ -450,7 +450,7 @@ goto :check_required_programs
 :check_docker
 where.exe /Q docker
 if errorlevel 1 (
-	echo Docker is not installed.
+	echo( Docker is not installed.
 	set "OK_DOCKER=1"
 	exit /b 1
 )
@@ -463,7 +463,7 @@ set "ARG=%~1"
 exit /b %errorlevel%
 
 :install_python_packages
-echo [ebook2audiobook] Installing dependencies…
+echo( [ebook2audiobook] Installing dependencies…
 "%PS_EXE%" %PS_ARGS% -Command ^
 "python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
 exit /b %errorlevel%
@@ -480,14 +480,14 @@ for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths(
     set "site_packages_path=%%a"
 )
 if "%site_packages_path%"=="" (
-    echo [WARN] Could not detect Python site-packages
+    echo( [WARN] Could not detect Python site-packages
     exit /b 1
 )
 set "dst_pyfile=%site_packages_path%\sitecustomize.py"
 if not exist "%dst_pyfile%" (
     copy /y "%src_pyfile%" "%dst_pyfile%" >nul
     if errorlevel 1 (
-        echo %ESC%[31m=============== sitecustomize.py hook error: copy failed.%ESC%[0m
+        echo( %ESC%[31m=============== sitecustomize.py hook error: copy failed.%ESC%[0m
         exit /b 1
     )
     exit /b 0
@@ -497,7 +497,7 @@ for %%I in ("%dst_pyfile%") do set "dst_time=%%~tI"
 if "%src_time%" GTR "%dst_time%" (
     copy /y "%src_pyfile%" "%dst_pyfile%" >nul
     if errorlevel 1 (
-        echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
+        echo( %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
         exit /b 1
     )
 )
@@ -538,7 +538,7 @@ if /i "%TAG%"=="cpu" (
     set COMPOSE_PROFILES=gpu
 )
 if %HAS_PODMAN_COMPOSE%==0 (
-	echo --> Using podman-compose
+	echo( --> Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg PYTHON_VERSION=%py_vers%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg APP_VERSION=%APP_VERSION%"
@@ -550,7 +550,7 @@ if %HAS_PODMAN_COMPOSE%==0 (
     podman-compose -f podman-compose.yml build
     if errorlevel 1 exit /b 1
 ) else if %HAS_COMPOSE%==0 (
-	echo --> Using docker-compose
+	echo( --> Using docker-compose
     set "BUILD_NAME=%DOCKER_IMG_NAME%"
     docker compose build --progress=plain --no-cache ^
         --build-arg PYTHON_VERSION="%py_vers%" ^
@@ -562,7 +562,7 @@ if %HAS_PODMAN_COMPOSE%==0 (
         --build-arg ISO3_LANG="%ISO3_LANG%"
     if errorlevel 1 exit /b 1
 ) else (
-	echo --> Using docker build
+	echo( --> Using docker build
     docker build --progress plain --no-cache ^
         --build-arg PYTHON_VERSION="%py_vers%" ^
         --build-arg APP_VERSION="%APP_VERSION%" ^
@@ -575,15 +575,15 @@ if %HAS_PODMAN_COMPOSE%==0 (
     if errorlevel 1 exit /b 1
 )
 if defined cmd_options set "cmd_extra=%cmd_options% "
-echo Docker image ready! to run your docker:"
-echo GUI mode:
-echo     docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
-echo Headless mode:
-echo     docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-echo Docker Compose:
-echo     DEVICE_TAG=%TAG% docker compose up -d
-echo Podman Compose:
-echo     DEVICE_TAG=%TAG% podman-compose up -d
+echo( Docker image ready! to run your docker:"
+echo( GUI mode:
+echo(     docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+echo( Headless mode:
+echo(     docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+echo( Docker Compose:
+echo(     DEVICE_TAG=%TAG% docker compose up -d
+echo( Podman Compose:
+echo(     DEVICE_TAG=%TAG% podman-compose up -d
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS
@@ -598,9 +598,9 @@ if "%OK_SCOOP%"=="0" (
         )
     )
 )
-echo OK_PROGRAMS: %OK_PROGRAMS%
-echo OK_CONDA: %OK_CONDA%
-echo OK_DOCKER: %OK_DOCKER%
+echo( OK_PROGRAMS: %OK_PROGRAMS%
+echo( OK_CONDA: %OK_CONDA%
+echo( OK_DOCKER: %OK_DOCKER%
 goto :install_programs
 
 :main
@@ -613,7 +613,7 @@ if defined arguments.help (
             call python "%SAFE_SCRIPT_DIR%\app.py" %FORWARD_ARGS%
             call conda deactivate
         ) else (
-            echo Ebook2Audiobook must be installed before to run --help.
+            echo( Ebook2Audiobook must be installed before to run --help.
         )
         goto :eof
     )
@@ -623,7 +623,7 @@ if defined arguments.help (
             call %PYTHON_SCOOP% --version >nul 2>&1 || call scoop install %PYTHON_SCOOP% 2>nul
             where.exe /Q %PYTHON_SCOOP%
             if errorlevel 1 (
-                echo %ESC%[31m=============== %PYTHON_SCOOP% failed.%ESC%[0m
+                echo( %ESC%[31m=============== %PYTHON_SCOOP% failed.%ESC%[0m
                 goto :failed
             )
             call :check_docker
@@ -633,7 +633,7 @@ if defined arguments.help (
 				set "device_info_str=%%I"
 			)
 			if "!device_info_str!"=="" (
-				echo error: check_device_info result is empty
+				echo( error: check_device_info result is empty
 				goto :failed
 			)
 			if defined DEVICE_TAG (
@@ -645,8 +645,8 @@ if defined arguments.help (
 			)
 			docker image inspect "%DOCKER_IMG_NAME%:!TAG!" >nul 2>&1
 			if not errorlevel 1 (
-				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!TAG!" already exists. Aborting build.
-				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:!TAG! --force
+				echo( [STOP] Docker image "%DOCKER_IMG_NAME%:!TAG!" already exists. Aborting build.
+				echo( Delete it using: docker rmi %DOCKER_IMG_NAME%:!TAG! --force
 				goto :failed
 			)
             call :build_docker_image "!device_info_str!"
@@ -674,7 +674,7 @@ endlocal
 exit /b 0
 
 :failed
-echo =============== ebook2audiobook is not correctly installed.
+echo( =============== ebook2audiobook is not correctly installed.
 where.exe /Q conda && (
     call conda deactivate >nul 2>&1
     call conda deactivate >nul
@@ -687,7 +687,7 @@ endlocal
 exit /b %CODE%
 
 :restart_script
-echo %APP_FILE% %FORWARD_ARGS%
+echo( %APP_FILE% %FORWARD_ARGS%
 ::start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %FORWARD_ARGS%"
 ::exit
 
