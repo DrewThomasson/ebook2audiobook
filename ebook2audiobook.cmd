@@ -562,7 +562,7 @@ if %HAS_PODMAN_COMPOSE%==0 (
     if errorlevel 1 exit /b 1
 ) else (
 	echo --> Using docker build
-    docker build --progress plain --no-cache ^
+    docker build --no-cache ^
         --build-arg PYTHON_VERSION="%py_vers%" ^
         --build-arg APP_VERSION="%APP_VERSION%" ^
         --build-arg DEVICE_TAG="%DEVICE_TAG%" ^
