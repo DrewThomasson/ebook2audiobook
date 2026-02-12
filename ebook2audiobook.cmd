@@ -632,7 +632,6 @@ if defined arguments.help (
 			set "device_info_str="
 			call :check_device_info "%SCRIPT_MODE%"
 			echo !device_info_str!
-			exit /b
 			if "!device_info_str! 1"=="" goto :failed
 			if defined DEVICE_TAG (
 				set "TAG=!DEVICE_TAG!"
