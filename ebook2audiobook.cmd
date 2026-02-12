@@ -632,10 +632,6 @@ if defined arguments.help (
 			for /f "usebackq delims=" %%I in (`call :check_device_info "%SCRIPT_MODE%"`) do (
 				set "device_info_str=%%I"
 			)
-			if "!device_info_str!"=="" (
-				echo check_device_info() error: result is empty
-				exit /b 1
-			)
         ) else (
             call :install_python_packages
             if errorlevel 1 goto :failed
