@@ -504,8 +504,7 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-"%PS_EXE%" %PS_ARGS% -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
-pause
+"%PS_EXE%" %PS_ARGS% -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
 "%PS_EXE%" %PS_ARGS% -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
 set "HAS_COMPOSE=%errorlevel%"
@@ -575,7 +574,7 @@ if %HAS_PODMAN_COMPOSE%==0 (
     if errorlevel 1 exit /b 1
 )
 if defined cmd_options set "cmd_extra=%cmd_options% "
-echo Docker image ready! to run your docker:"
+echo Docker image ready. to run your docker:"
 echo GUI mode:
 echo     docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 echo Headless mode:
