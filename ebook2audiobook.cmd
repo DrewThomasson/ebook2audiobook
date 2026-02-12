@@ -468,6 +468,7 @@ for /f "usebackq delims=" %%I in (`
 if not defined device_info_str exit /b 1
 exit /b 0
 
+
 :install_python_packages
 echo [ebook2audiobook] Installing dependencies…
 "%PS_EXE%" %PS_ARGS% -Command ^
@@ -634,7 +635,6 @@ if defined arguments.help (
             )
             call :check_docker
             if errorlevel 1	goto :install_programs
-			set "device_info_str="
 			call :check_device_info "%SCRIPT_MODE%"
 			if errorlevel 1 goto :failed
 			if defined DEVICE_TAG (
