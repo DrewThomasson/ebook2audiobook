@@ -289,8 +289,7 @@ if not "%OK_SCOOP%"=="0" (
     echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
     type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
     call "%PS_EXE%" -NoLogo -NoProfile -Command "$env:PATH = [Environment]::GetEnvironmentVariable('PATH','User') + ';' + [Environment]::GetEnvironmentVariable('PATH','Machine')"
-	start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %*"
-    exit
+	goto :restart_script
 )
 if not "%OK_DOCKER%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
@@ -298,8 +297,7 @@ if not "%OK_DOCKER%"=="0" (
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install rancher-desktop"
 		if exist "%SCOOP_APPS%\rancher-desktop\current\resources\resources\win32\bin\docker.exe" (
 			echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
-			start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %*"
-			exit
+			goto :restart_script
 		) else (
 			echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
 			goto :failed
@@ -330,8 +328,7 @@ if not "%OK_CONDA%"=="0" (
 		call conda clean --packages --tarballs -y
 		del "%CONDA_INSTALLER%"
 		set "OK_CONDA=0"
-		start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %*"
-		exit
+		goto :restart_script
 	)
 )
 if not "%OK_PROGRAMS%"=="0" (
@@ -687,6 +684,10 @@ exit /b 1
 set "CODE=%~1"
 endlocal
 exit /b %CODE%
+
+:restart_script
+start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %*"
+exit
 
 endlocal
 pause
