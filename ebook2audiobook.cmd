@@ -299,7 +299,8 @@ if not "%OK_DOCKER%"=="0" (
 		if exist "%SCOOP_APPS%\rancher-desktop\current\resources\resources\win32\bin\docker.exe" (
 			echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
 			call "%PS_EXE%" -NoLogo -NoProfile -Command "$env:PATH = [Environment]::GetEnvironmentVariable('PATH','User') + ';' + [Environment]::GetEnvironmentVariable('PATH','Machine')"
-			start "" cmd /k "cd /d "%SAFE_SCRIPT_DIR%" & call "%~f0""
+			set "SELF=%~f0"
+			start "" cmd /k ""%SELF%" %*"
 			exit
 		) else (
 			echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
