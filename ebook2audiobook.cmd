@@ -462,6 +462,7 @@ set "device_info_str="
 for /f "delims=" %%I in ('
 %PS_EXE% %PS_ARGS% -Command "python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); result = device.check_device_info(r''%ARG%''); print(result if result else '')\""
 ') do set "device_info_str=%%I"
+pause
 if not defined device_info_str exit /b 1
 exit /b 0
 
@@ -633,6 +634,13 @@ if defined arguments.help (
             if errorlevel 1	goto :install_programs
 			call :check_device_info "%SCRIPT_MODE%"
 			if errorlevel 1 goto :failed
+			if defined DEVICE_TAG (
+				set "TAG=!DEVICE_TAG!"
+			) else (
+				for /f "usebackq delims=" %%I in (`python -c "import json,sys; print(json.loads(sys.argv[1])['tag'])" "!device_info_str!"`) do (
+					set "TAG=%%I"
+				)
+			)
 			docker image inspect "%DOCKER_IMG_NAME%:!TAG!" >nul 2>&1
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!TAG!" already exists. Aborting build.
