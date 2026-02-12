@@ -461,7 +461,6 @@ set "ARG=%~1"
 for /f "delims=" %%I in ('
 python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"
 ') do set "device_info_str=%%I"
-echo %device_info_str%
 exit /b
 
 :install_python_packages
@@ -634,6 +633,8 @@ if defined arguments.help (
 			setlocal DisableDelayedExpansion
 			call :check_device_info "%SCRIPT_MODE%"
 			endlocal & set "device_info_str=%device_info_str%"
+			echo !device_info_str!
+			exit /b
 			if "!device_info_str! 1"=="" goto :failed
 			if defined DEVICE_TAG (
 				set "TAG=!DEVICE_TAG!"
