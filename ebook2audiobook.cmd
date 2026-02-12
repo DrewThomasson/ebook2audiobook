@@ -633,7 +633,7 @@ if defined arguments.help (
 			if defined DEVICE_TAG (
 				set "TAG=!DEVICE_TAG!"
 			) else (
-				for /f "delims=" %%I in ('python -c "import json,sys; print(json.loads(str(sys.argv[1])['tag']))" "!device_info_str!"') do set "TAG=%%I"
+				for /f "delims=" %%I in ('python -c "import json, sys; print(json.loads(str(sys.argv[1]))['tag'])" "!device_info_str!"') do set "TAG=%%I"
 			)
 			if "!TAG!"=="" goto :failed
 			docker image inspect "%DOCKER_IMG_NAME%:!TAG!" >nul 2>&1
