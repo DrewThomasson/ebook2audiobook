@@ -504,6 +504,7 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
+pause
 "%PS_EXE%" %PS_ARGS% -command "if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running!' -ForegroundColor Red; exit 1 }"
 if errorlevel 1 exit /b 1
 "%PS_EXE%" %PS_ARGS% -command "if (docker compose version > $null 2>&1) { exit 0 } else { exit 1 }"
@@ -536,7 +537,6 @@ if /i "%TAG%"=="cpu" (
 ) else (
     set "COMPOSE_PROFILES=gpu"
 )
-pause
 if %HAS_PODMAN_COMPOSE%==0 (
 	echo --> Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
