@@ -458,14 +458,10 @@ exit /b 0
 
 :check_device_info
 set "ARG=%~1"
-set "device_info_str="
-
 for /f "delims=" %%I in ('
-%PS_EXE% %PS_ARGS% -Command "python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); result = device.check_device_info(r''%ARG%''); print(result if result else '')\""
+python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"
 ') do set "device_info_str=%%I"
-
-if not defined device_info_str exit /b 1
-exit /b 0
+exit /b
 
 :install_python_packages
 echo Installing python dependencies…
@@ -633,7 +629,10 @@ if defined arguments.help (
             )
             call :check_docker
             if errorlevel 1	goto :install_programs
+			set "device_info_str="
+			setlocal DisableDelayedExpansion
 			call :check_device_info "%SCRIPT_MODE%"
+			endlocal & set "device_info_str=%device_info_str%"
 			if errorlevel 1 goto :failed
 			if defined DEVICE_TAG (
 				set "TAG=!DEVICE_TAG!"
