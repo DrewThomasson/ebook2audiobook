@@ -620,7 +620,7 @@ if defined arguments.help (
 ) else (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "!DOCKER_DEVICE_STR!"=="" (
-            call %PYTHON_SCOOP% --version >null 2>&1 || call scoop install %PYTHON_SCOOP% 2>null
+            call %PYTHON_SCOOP% --version >nul 2>&1 || call scoop install %PYTHON_SCOOP% 2>nul
             where.exe /Q %PYTHON_SCOOP%
             if errorlevel 1 (
                 echo %ESC%[31m=============== %PYTHON_SCOOP% failed.%ESC%[0m
@@ -632,30 +632,29 @@ if defined arguments.help (
 			for /f "usebackq delims=" %%I in (`call :check_device_info "%SCRIPT_MODE%"`) do (
 				set "device_info_str=%%I"
 			)
-			if "%device_info_str%"=="" (
+			if "!device_info_str!"=="" (
 				echo check_device_info() error: result is empty
 				exit /b 1
 			)
 			if defined DEVICE_TAG (
-				set "TAG=%DEVICE_TAG%"
+				set "TAG=!DEVICE_TAG!"
 			) else (
-				for /f "usebackq delims=" %%I in (`python -c "import json,sys; print(json.loads(sys.argv[1])['tag'])" "%device_info_str%"`) do (
+				for /f "usebackq delims=" %%I in (`python -c "import json,sys; print(json.loads(sys.argv[1])['tag'])" "!device_info_str!"`) do (
 					set "TAG=%%I"
 				)
 			)
-			docker image inspect "%DOCKER_IMG_NAME%:%TAG%" >nul 2>&1
+			docker image inspect "%DOCKER_IMG_NAME%:!TAG!" >nul 2>&1
 			if not errorlevel 1 (
-				echo [STOP] Docker image "%DOCKER_IMG_NAME%:%TAG%" already exists. Aborting build.
-				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:%TAG% --force
+				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!TAG!" already exists. Aborting build.
+				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:!TAG! --force
 				exit /b 1
 			)
-
-            call :build_docker_image "%device_info_str%"
+            call :build_docker_image "!device_info_str!"
             if errorlevel 1 goto :failed
         ) else (
             call :install_python_packages
             if errorlevel 1 goto :failed
-            call :install_device_packages "%DOCKER_DEVICE_STR%"
+            call :install_device_packages "!DOCKER_DEVICE_STR!"
             if errorlevel 1 goto :failed
             call :check_sitecustomized
             if errorlevel 1 goto :failed
