@@ -632,8 +632,8 @@ if defined arguments.help (
 			set "device_info_str="
 			setlocal DisableDelayedExpansion
 			call :check_device_info "%SCRIPT_MODE%"
-			endlocal & set "device_info_str=%device_info_str%"
-			echo %device_info_str%
+			endlocal
+			echo !device_info_str!
 			exit /b
 			if "!device_info_str! 1"=="" goto :failed
 			if defined DEVICE_TAG (
