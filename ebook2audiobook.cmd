@@ -458,7 +458,6 @@ exit /b 0
 
 :check_device_info
 set "ARG=%~1"
-echo %ARG%
 "%PS_EXE%" %PS_ARGS% -Command ^
 "python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); result = device.check_device_info(r'%ARG%'); print(result) if result else None; sys.exit(0 if result else 1)\""
 exit /b %errorlevel%
@@ -630,9 +629,7 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			set "device_info_str="
-			for /f "usebackq delims=" %%I in (`:check_device_info "%SCRIPT_MODE%"`) do (
-				set "device_info_str=%%I"
-			)
+			call :check_device_info "%SCRIPT_MODE%"
 			if "!device_info_str!"=="" (
 				echo error: check_device_info result is empty
 				goto :failed
