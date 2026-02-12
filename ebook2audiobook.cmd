@@ -635,8 +635,6 @@ if defined arguments.help (
 			) else (
 				for /f "delims=" %%I in ('echo(!device_info_str!^| python -c "import json,sys; print(json.loads(sys.stdin.read())['tag'])"') do set "TAG=%%I"
 			)
-			echo !TAG!
-			pause
 			if "!TAG!"=="" goto :failed
 			docker image inspect "%DOCKER_IMG_NAME%:!TAG!" >nul 2>&1
 			if not errorlevel 1 (
@@ -644,6 +642,7 @@ if defined arguments.help (
 				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:!TAG! --force
 				goto :failed
 			)
+			pause
             call :build_docker_image "!device_info_str!"
             if errorlevel 1 goto :failed
         ) else (
