@@ -458,9 +458,7 @@ exit /b 0
 
 :check_device_info
 set "ARG=%~1"
-for /f "delims=" %%I in ('
-python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"
-') do set "device_info_str=%%I"
+for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "device_info_str=%%I"
 exit /b
 
 :install_python_packages
@@ -636,10 +634,9 @@ if defined arguments.help (
 			if defined DEVICE_TAG (
 				set "TAG=!DEVICE_TAG!"
 			) else (
-				for /f "usebackq delims=" %%I in (`python -c "import json,sys; print(json.loads(sys.argv[1])['tag'])" "!device_info_str!"`) do (
-					set "TAG=%%I"
-				)
+				for /f "delims=" %%I in ('python -c "import json,sys; print(json.loads(sys.argv[1])['tag'])" "!device_info_str!"') do set "TAG=%%I"
 			)
+			if "!TAG!"=="" goto :failed
 			docker image inspect "%DOCKER_IMG_NAME%:!TAG!" >nul 2>&1
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!TAG!" already exists. Aborting build.
