@@ -313,6 +313,7 @@ if not "%OK_DOCKER_BUILDX%"=="0" (
 		if exist "%SCOOP_SHIMS%\docker-buildx.exe" (
 			echo %ESC%[33m=============== docker-buildx OK ===============%ESC%[0m
 			set "OK_DOCKER_BUILDX=0"
+			goto :dispatch
 		) else (
 			echo %ESC%[31m=============== docker-buildx install failed.%ESC%[0m
 			goto :failed
