@@ -703,7 +703,7 @@ endlocal
 exit /b %CODE%
 
 :restart_script
-echo %APP_FILE% %FORWARD_ARGS%
+echo %APP_FILE% %ARGS%
 ::start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %FORWARD_ARGS%"
 ::exit
 
