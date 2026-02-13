@@ -297,6 +297,7 @@ if not "%OK_DOCKER%"=="0" (
 		echo Installing Docker…
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker docker-buildx"
 		if exist "%SCOOP_SHIMS%\docker.exe" (
+			dockerd --register-service
 			echo %ESC%[33m=============== docker OK ===============%ESC%[0m
 			goto :restart_script
 		) else (
