@@ -292,15 +292,16 @@ if not "%OK_SCOOP%"=="0" (
     type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
 	goto :restart_script
 )
-if not "%OK_WSL2%"=="0" (
+if not "%OK_WSL%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo WSL2 is required to build Linux containers.
-		echo The script will install WSL2 in Administrator mode.
-		pause
 		net session >nul 2>&1
 		if errorlevel 1 (
+			echo The script will install WSL2 in Administrator mode.
+			pause
 			echo Restarting script as Administrator…
-			call "%PS_EXE%" -Command "Start-Process cmd -ArgumentList '/c ""%~f0""' -Verb RunAs"
+			call "%PS_EXE%" -Command ^
+			"Start-Process -FilePath '%ComSpec%' -ArgumentList '/k ""cd /d ""%CD%"" ^& ""%~f0"" %*""' -Verb RunAs"
 			exit /b
 		)
 		echo Installing WSL2…
@@ -311,6 +312,7 @@ if not "%OK_WSL2%"=="0" (
 		goto :quit
 	)
 )
+
 if not "%OK_DOCKER%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Docker…
