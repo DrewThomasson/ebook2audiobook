@@ -293,7 +293,7 @@ if not "%OK_SCOOP%"=="0" (
 if not "%OK_DOCKER%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Docker…
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop install rancher-desktop"
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker docker-buildx"
 		if exist "%SCOOP_APPS%\rancher-desktop\current\resources\resources\win32\bin\docker.exe" (
 			echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
 			goto :restart_script
@@ -504,11 +504,14 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-"%PS_EXE%" %PS_ARGS% -command "if (-not(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Host '=============== Error: Docker must be installed and running' -ForegroundColor Red; exit 1 }"
-if errorlevel 1 exit /b 1
-"%PS_EXE%" %PS_ARGS% -Command "if (Get-Command podman-compose -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"
+where.exe docker >nul 2>&1
+if errorlevel 1 (
+	echo =============== Error: Docker must be installed and running
+	exit /b 1
+)
+where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
-"%PS_EXE%" %PS_ARGS% -Command "if (Get-Command docker -ErrorAction SilentlyContinue -CommandType Application) { if (docker compose version *> `$null) { exit 0 } else { exit 1 } } else { exit 1 }"
+docker compose version >nul 2>&1
 set "HAS_COMPOSE=%errorlevel%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
 set "cmd_options="
@@ -536,7 +539,7 @@ if /i "%TAG%"=="cpu" (
 ) else (
     set "COMPOSE_PROFILES=gpu"
 )
-if %HAS_PODMAN_COMPOSE%==0 (
+if "%HAS_PODMAN_COMPOSE%"=="0" (
 	echo --> Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg PYTHON_VERSION=%py_vers%"
@@ -548,7 +551,7 @@ if %HAS_PODMAN_COMPOSE%==0 (
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
     podman-compose -f podman-compose.yml build
     if errorlevel 1 exit /b 1
-) else if %HAS_COMPOSE%==0 (
+) else if "%HAS_COMPOSE%"=="0" (
 	echo --> Using docker-compose
     set "BUILD_NAME=%DOCKER_IMG_NAME%"
     docker compose build --progress=plain --no-cache ^
@@ -562,7 +565,7 @@ if %HAS_PODMAN_COMPOSE%==0 (
     if errorlevel 1 exit /b 1
 ) else (
 	echo --> Using docker build
-    docker build --no-cache ^
+    docker buildx --progress=plain --no-cache ^
         --build-arg PYTHON_VERSION="%py_vers%" ^
         --build-arg APP_VERSION="%APP_VERSION%" ^
         --build-arg DEVICE_TAG="%DEVICE_TAG%" ^
