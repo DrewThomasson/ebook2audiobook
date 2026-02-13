@@ -296,11 +296,11 @@ if not "%OK_DOCKER%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Docker…
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker docker-buildx"
-		if exist "%SCOOP_APPS%\rancher-desktop\current\resources\resources\win32\bin\docker.exe" (
-			echo %ESC%[33m=============== Docker OK ===============%ESC%[0m
+		if exist "%SCOOP_SHIMS%\docker.exe" (
+			echo %ESC%[33m=============== docker OK ===============%ESC%[0m
 			goto :restart_script
 		) else (
-			echo %ESC%[31m=============== Docker install failed. Please install and run Docker manually.%ESC%[0m
+			echo %ESC%[31m=============== docker install failed. Please install and run docker manually.%ESC%[0m
 			goto :failed
 		)
 	)
@@ -308,13 +308,13 @@ if not "%OK_DOCKER%"=="0" (
 if not "%OK_DOCKER_BUILDX%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing docker-buildx…
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker-buildx" >nul 2>&1
-		if errorlevel 1 (
-			echo %ESC%[31m=============== docker-buildx install failed.%ESC%[0m
-			goto :failed
-		) else (
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker-buildx"
+		if exist "%SCOOP_SHIMS%\docker-buildx.exe" (
 			echo %ESC%[33m=============== docker-buildx OK ===============%ESC%[0m
 			set "OK_DOCKER_BUILDX=0"
+		) else (
+			echo %ESC%[31m=============== docker-buildx install failed.%ESC%[0m
+			goto :failed
 		)
 	)
 )
