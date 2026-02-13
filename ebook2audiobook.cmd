@@ -111,7 +111,6 @@ cd /d "%SAFE_SCRIPT_DIR%"
 
 :: Clear previous associative values
 for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
-set "FORWARD_ARGS="
 
 ::::::::::::::::::::::::::::::: CORE FUNCTIONS
 
@@ -119,7 +118,6 @@ set "FORWARD_ARGS="
 setlocal EnableDelayedExpansion
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
-set "FORWARD_ARGS=!FORWARD_ARGS! !arg!"
 if "!arg:~0,2!"=="--" (
     set "key=!arg:~2!"
     if not "%~2"=="" (
@@ -141,7 +139,6 @@ goto parse_args
 
 :parse_args_done
 endlocal & (
-    set "FORWARD_ARGS=%FORWARD_ARGS%"
     for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
 )
 if defined arguments.script_mode (
@@ -639,7 +636,7 @@ if defined arguments.help (
         where.exe /Q conda
         if errorlevel 0 (
             call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-            call python "%SAFE_SCRIPT_DIR%\app.py" %FORWARD_ARGS%
+            call python "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
             call conda deactivate
         ) else (
             echo Ebook2Audiobook must be installed before to run --help.
@@ -703,9 +700,8 @@ endlocal
 exit /b %CODE%
 
 :restart_script
-echo %APP_FILE% %ARGS%
-::start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %FORWARD_ARGS%"
-::exit
+start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %ARGS%"
+exit
 
 endlocal
 pause
