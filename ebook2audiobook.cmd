@@ -463,7 +463,7 @@ if errorlevel 1 (
 if "OK_DOCKER"=="1" (
 	exit /b 1
 )
-if "OK_DOCKER"=="1" (
+if "OK_DOCKER_BUILDX"=="1" (
 	exit /b 1
 )
 exit /b 0
