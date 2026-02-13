@@ -91,7 +91,8 @@ IF NOT DEFINED DEVICE_TAG SET "DEVICE_TAG="
 set "OK_SCOOP=0"
 set "OK_CONDA=0"
 set "OK_PROGRAMS=0"
-set "OK_WSL2=0"
+set "OK_WSL=0"
+set "OK_WSL_DISTRO=0"
 set "OK_DOCKER=0"
 set "OK_DOCKER_BUILDX=0"
 
@@ -487,16 +488,23 @@ goto :check_required_programs
 where.exe /Q wsl
 if errorlevel 1 (
 	echo WSL is not installed.
-	set "OK_WSL2=1"
+	set "OK_WSL=1"
 	exit /b 1
 )
+set "WSL_VERSION="
 for /f "tokens=2 delims=:" %%A in ('wsl --status ^| find "Default Version" 2^>nul') do (
 	set "WSL_VERSION=%%A"
 )
-set "WSL_VER=%WSL_VER: =%"
-if not "%WSL_VER%"=="2" (
-	echo WSL2 is not configured.
-	set "OK_WSL2=1"
+set "WSL_VERSION=%WSL_VERSION: =%"
+if not "%WSL_VERSION%"=="2" (
+	echo WSL is not configured.
+	set "OK_WSL=1"
+	exit /b 1
+)
+wsl -l -q 2>nul | findstr /R /C:".*" >nul
+if errorlevel 1 (
+	echo No WSL Linux distribution installed.
+	set "OK_WSL_DISTRO=1"
 	exit /b 1
 )
 where.exe /Q docker
