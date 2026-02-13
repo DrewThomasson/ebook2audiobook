@@ -155,7 +155,7 @@ if defined arguments.script_mode (
 if defined arguments.docker_device (
     set "DOCKER_DEVICE_STR=%arguments.docker_device%"
     if /i "%arguments.docker_device%"=="true" (
-        echo Error: --docker_device has no value!
+        echo Error: --docker_device has no value
         goto :failed
     )
 )
@@ -634,7 +634,7 @@ goto :install_programs
 
 :main
 if defined arguments.help (
-    if /I "!arguments.help!"=="true" (
+    if /I "%arguments.help%"=="true" (
         where.exe /Q conda
         if errorlevel 0 (
             call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
