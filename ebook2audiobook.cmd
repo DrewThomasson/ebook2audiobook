@@ -620,7 +620,9 @@ if "%OK_SCOOP%"=="0" (
     if "%OK_PROGRAMS%"=="0" (
         if "%OK_CONDA%"=="0" (
             if "%OK_DOCKER%"=="0" (
-                goto :main
+				if "%OK_DOCKER_BUILDX%"=="0" (
+					goto :main
+				)
             )
         )
     )
@@ -628,6 +630,7 @@ if "%OK_SCOOP%"=="0" (
 echo OK_PROGRAMS: %OK_PROGRAMS%
 echo OK_CONDA: %OK_CONDA%
 echo OK_DOCKER: %OK_DOCKER%
+echo OK_DOCKER_BUILDX: %OK_DOCKER_BUILDX%
 goto :install_programs
 
 :main
