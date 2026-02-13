@@ -63,6 +63,7 @@ set "HOST_PROGRAMS=cmake rustup python calibre ffmpeg mediainfo nodejs espeak-ng
 set "DOCKER_PROGRAMS=ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
+set "DEVICE_INFO_STR="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
 set "TMP=%SAFE_SCRIPT_DIR%\tmp"
 set "TEMP=%SAFE_SCRIPT_DIR%\tmp"
@@ -469,7 +470,10 @@ exit /b 0
 
 :check_device_info
 set "ARG=%~1"
-for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "device_info_str=%%I"
+for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
+if not defined DEVICE_TAG (
+	for /f "delims=" %%I in ('echo(%DEVICE_INFO_STR%^| python -c "import json,sys; print(json.loads(sys.stdin.read())['tag'])"') do set "DEVICE_TAG=%%I"
+)
 exit /b
 
 :install_python_packages
@@ -524,28 +528,27 @@ where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
 docker compose version >nul 2>&1
 set "HAS_COMPOSE=%errorlevel%"
-set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%TAG%"
+set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
 set "cmd_extra="
 set "py_vers=%PYTHON_VERSION% "
-if /i "%TAG:~0,2%"=="cu" (
+if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--gpus all"
-) else if /i "%TAG:~0,6%"=="jetson" (
+) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
     set "cmd_options=--runtime nvidia --gpus all"
     set "py_vers=3.10 "
-) else if /i "%TAG:~0,8%"=="rocm" (
+) else if /i "%DEVICE_TAG:~0,8%"=="rocm" (
     set "cmd_options=--device=/dev/kfd --device=/dev/dri"
-) else if /i "%TAG%"=="xpu" (
+) else if /i "%DEVICE_TAG%"=="xpu" (
     set "cmd_options=--device=/dev/dri"
-) else if /i "%TAG%"=="mps" (
+) else if /i "%DEVICE_TAG%"=="mps" (
     set "cmd_options="
-) else if /i "%TAG%"=="cpu" (
+) else if /i "%DEVICE_TAG%"=="cpu" (
     set "cmd_options="
 )
-set "DEVICE_TAG=%TAG%"
-if /i "%TAG%"=="cpu" (
+if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=cpu"
-) else if /i "%TAG%"=="mps" (
+) else if /i "%DEVICE_TAG%"=="mps" (
     set "COMPOSE_PROFILES=cpu"
 ) else (
     set "COMPOSE_PROFILES=gpu"
@@ -594,9 +597,9 @@ echo     docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 echo Headless mode:
 echo     docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 echo Docker Compose:
-echo     DEVICE_TAG=%TAG% docker compose up -d
+echo     DEVICE_TAG=%DEVICE_TAG% docker compose up -d
 echo Podman Compose:
-echo     DEVICE_TAG=%TAG% podman-compose up -d
+echo     DEVICE_TAG=%DEVICE_TAG% podman-compose up -d
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS
@@ -640,25 +643,17 @@ if defined arguments.help (
             )
             call :check_docker
             if errorlevel 1	goto :install_programs
-			setlocal EnableDelayedExpansion
-			set "device_info_str="
 			call :check_device_info "%SCRIPT_MODE%"
-			if "!device_info_str! 1"=="" goto :failed
-			if defined DEVICE_TAG (
-				set "TAG=!DEVICE_TAG!"
-			) else (
-				for /f "delims=" %%I in ('echo(!device_info_str!^| python -c "import json,sys; print(json.loads(sys.stdin.read())['tag'])"') do set "TAG=%%I"
-			)
-			if "!TAG!"=="" goto :failed
-			docker image inspect "%DOCKER_IMG_NAME%:!TAG!" >nul 2>&1
+			if "%DEVICE_INFO_STR%"=="" goto :failed
+			if "%DEVICE_TAG%"=="" goto :failed
+			docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
 			if not errorlevel 1 (
-				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!TAG!" already exists. Aborting build.
-				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:!TAG! --force
+				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!DEVICE_TAG!" already exists. Aborting build.
+				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
 				goto :failed
 			)
-            call :build_docker_image "!device_info_str!"
+            call :build_docker_image "%DEVICE_INFO_STR%"
             if errorlevel 1 goto :failed
-			endlocal
         ) else (
             call :install_python_packages
             if errorlevel 1 goto :failed
