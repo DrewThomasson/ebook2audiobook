@@ -90,6 +90,7 @@ set "OK_SCOOP=0"
 set "OK_CONDA=0"
 set "OK_PROGRAMS=0"
 set "OK_DOCKER=0"
+set "OK_DOCKER_BUILDX=0"
 
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
@@ -450,8 +451,18 @@ goto :check_required_programs
 :check_docker
 where.exe /Q docker
 if errorlevel 1 (
-	echo Docker is not installed.
+	echo docker is not installed.
 	set "OK_DOCKER=1"
+)
+where.exe /Q docker-buildx
+if errorlevel 1 (
+	echo docker-buildx is not installed.
+	set "OK_DOCKER_BUILDX=1"
+)
+if "OK_DOCKER"=="1" (
+	exit /b 1
+)
+if "OK_DOCKER"=="1" (
 	exit /b 1
 )
 exit /b 0
@@ -606,7 +617,6 @@ echo OK_DOCKER: %OK_DOCKER%
 goto :install_programs
 
 :main
-setlocal EnableDelayedExpansion
 if defined arguments.help (
     if /I "!arguments.help!"=="true" (
         where.exe /Q conda
@@ -621,7 +631,7 @@ if defined arguments.help (
     )
 ) else (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-        if "!DOCKER_DEVICE_STR!"=="" (
+        if "%DOCKER_DEVICE_STR%"=="" (
             call %PYTHON_SCOOP% --version >nul 2>&1 || call scoop install %PYTHON_SCOOP% 2>nul
             where.exe /Q %PYTHON_SCOOP%
             if errorlevel 1 (
@@ -630,6 +640,7 @@ if defined arguments.help (
             )
             call :check_docker
             if errorlevel 1	goto :install_programs
+			setlocal EnableDelayedExpansion
 			set "device_info_str="
 			call :check_device_info "%SCRIPT_MODE%"
 			if "!device_info_str! 1"=="" goto :failed
@@ -647,10 +658,11 @@ if defined arguments.help (
 			)
             call :build_docker_image "!device_info_str!"
             if errorlevel 1 goto :failed
+			endlocal
         ) else (
             call :install_python_packages
             if errorlevel 1 goto :failed
-            call :install_device_packages "!DOCKER_DEVICE_STR!"
+            call :install_device_packages "%DOCKER_DEVICE_STR%"
             if errorlevel 1 goto :failed
             call :check_sitecustomized
             if errorlevel 1 goto :failed
@@ -666,7 +678,6 @@ if defined arguments.help (
         call conda deactivate >nul && call conda deactivate >nul
     )
 )
-endlocal
 exit /b 0
 
 :failed
