@@ -467,16 +467,12 @@ where.exe /Q docker
 if errorlevel 1 (
 	echo docker is not installed.
 	set "OK_DOCKER=1"
+	exit /b 1
 )
 where.exe /Q docker-buildx
 if errorlevel 1 (
 	echo docker-buildx is not installed.
 	set "OK_DOCKER_BUILDX=1"
-)
-if "OK_DOCKER"=="1" (
-	exit /b 1
-)
-if "OK_DOCKER_BUILDX"=="1" (
 	exit /b 1
 )
 exit /b 0
