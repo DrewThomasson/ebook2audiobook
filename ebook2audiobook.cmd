@@ -305,6 +305,19 @@ if not "%OK_DOCKER%"=="0" (
 		)
 	)
 )
+if not "%OK_DOCKER_BUILD%"=="0" (
+	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+		echo Installing docker-buildx…
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker-buildx" >nul 2>&1
+		if errorlevel 1 (
+			echo %ESC%[31m=============== docker-build install failed.%ESC%[0m
+			goto :failed
+		) else (
+			echo %ESC%[33m=============== docker-build OK ===============%ESC%[0m
+			set "OK_DOCKER_BUILD=0"
+		)
+	)
+)
 if not "%OK_CONDA%"=="0" (
 	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Miniforge…
@@ -646,10 +659,10 @@ if defined arguments.help (
 			call :check_device_info "%SCRIPT_MODE%"
 			if "%DEVICE_INFO_STR%"=="" goto :failed
 			if "%DEVICE_TAG%"=="" goto :failed
-			docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
+			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
 			if not errorlevel 1 (
-				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!DEVICE_TAG!" already exists. Aborting build.
-				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
+				echo [STOP] Docker image "%DOCKER_IMG_NAME%:%DEVICE_TAG%" already exists. Aborting build.
+				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:%DEVICE_TAG% --force
 				goto :failed
 			)
             call :build_docker_image "%DEVICE_INFO_STR%"
