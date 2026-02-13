@@ -300,9 +300,7 @@ if not "%OK_WSL%"=="0" (
 			echo The script will install WSL2 in Administrator mode.
 			pause
 			echo Restarting script as Administrator…
-			call "%PS_EXE%" -Command ^
-			"Start-Process -FilePath '%ComSpec%' -ArgumentList '/k ""cd /d ""%CD%"" ^& ""%~f0"" %*""' -Verb RunAs"
-			exit /b
+			goto :restart_script_admin
 		)
 		echo Installing WSL2…
 		wsl --install
@@ -312,7 +310,6 @@ if not "%OK_WSL%"=="0" (
 		goto :quit
 	)
 )
-
 if not "%OK_DOCKER%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Docker…
@@ -749,6 +746,15 @@ exit /b %CODE%
 :restart_script
 start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %ARGS%"
 exit
+
+:restart_script_admin
+set "ELEVATE_VBS=%TEMP%\elevate_%RANDOM%.vbs"
+echo Set UAC = CreateObject^("Shell.Application"^) > "%ELEVATE_VBS%"
+echo UAC.ShellExecute "%ComSpec%", "/k cd /d ""%SAFE_SCRIPT_DIR%"" ^& call ""%APP_FILE%"" %ARGS%", "", "runas", 1 >> "%ELEVATE_VBS%"
+cscript //nologo "%ELEVATE_VBS%"
+del "%ELEVATE_VBS%"
+exit
+
 
 endlocal
 pause
