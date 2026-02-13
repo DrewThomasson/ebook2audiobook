@@ -63,8 +63,8 @@ set "HOST_PROGRAMS=cmake rustup python calibre ffmpeg mediainfo nodejs espeak-ng
 set "DOCKER_PROGRAMS=ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_DEVICE_STR="
-set "DEVICE_INFO_STR="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
+set "DEVICE_INFO_STR="
 set "TMP=%SAFE_SCRIPT_DIR%\tmp"
 set "TEMP=%SAFE_SCRIPT_DIR%\tmp"
 set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
@@ -84,12 +84,14 @@ set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
 set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
+set "WSL_VERSION="
 
 IF NOT DEFINED DEVICE_TAG SET "DEVICE_TAG="
 
 set "OK_SCOOP=0"
 set "OK_CONDA=0"
 set "OK_PROGRAMS=0"
+set "OK_WSL2=0"
 set "OK_DOCKER=0"
 set "OK_DOCKER_BUILDX=0"
 
@@ -289,16 +291,36 @@ if not "%OK_SCOOP%"=="0" (
     type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
 	goto :restart_script
 )
+if not "%OK_WSL2%"=="0" (
+	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+		echo WSL2 is required to build Linux containers.
+		echo The script will install WSL2 in Administrator mode.
+		pause
+		net session >nul 2>&1
+		if errorlevel 1 (
+			echo Restarting script as Administrator…
+			call "%PS_EXE%" -Command "Start-Process cmd -ArgumentList '/c ""%~f0""' -Verb RunAs"
+			exit /b
+		)
+		echo Installing WSL2…
+		wsl --install
+		echo.
+		echo Reboot required.
+		shutdown /r /t 5
+		goto :quit
+	)
+)
 if not "%OK_DOCKER%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Docker…
 		call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker docker-buildx"
 		if exist "%SCOOP_SHIMS%\docker.exe" (
-			dockerd --register-service
+			echo Registering docker service…
+			dockerd --register-service >nul 2>&1
 			echo %ESC%[33m=============== docker OK ===============%ESC%[0m
 			goto :restart_script
 		) else (
-			echo %ESC%[31m=============== docker install failed. Please install and run docker manually.%ESC%[0m
+			echo %ESC%[31m=============== docker install failed.%ESC%[0m
 			goto :failed
 		)
 	)
@@ -462,6 +484,21 @@ if "%CURRENT_ENV%"=="" (
 goto :check_required_programs
 
 :check_docker
+where.exe /Q wsl
+if errorlevel 1 (
+	echo WSL is not installed.
+	set "OK_WSL2=1"
+	exit /b 1
+)
+for /f "tokens=2 delims=:" %%A in ('wsl --status ^| find "Default Version" 2^>nul') do (
+	set "WSL_VERSION=%%A"
+)
+set "WSL_VER=%WSL_VER: =%"
+if not "%WSL_VER%"=="2" (
+	echo WSL2 is not configured.
+	set "OK_WSL2=1"
+	exit /b 1
+)
 where.exe /Q docker
 if errorlevel 1 (
 	echo docker is not installed.
