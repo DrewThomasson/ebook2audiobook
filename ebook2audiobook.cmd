@@ -92,7 +92,6 @@ set "OK_SCOOP=0"
 set "OK_CONDA=0"
 set "OK_PROGRAMS=0"
 set "OK_WSL=0"
-set "OK_WSL_DISTRO=0"
 set "OK_DOCKER=0"
 set "OK_DOCKER_BUILDX=0"
 
@@ -304,6 +303,10 @@ if not "%OK_WSL%"=="0" (
 		)
 		echo Installing WSL2…
 		wsl --install
+		dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+		dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+		wsl --set-default-version 2
+		wsl --install -d Ubuntu
 		echo.
 		echo ==================================================
 		echo WSL installation triggered.
@@ -500,14 +503,14 @@ for /f "tokens=2 delims=:" %%A in ('wsl --status ^| find "Default Version" 2^>nu
 )
 set "WSL_VERSION=%WSL_VERSION: =%"
 if not "%WSL_VERSION%"=="2" (
-	echo WSL is not configured.
+	echo WSL2 is not configured.
 	set "OK_WSL=1"
 	exit /b 1
 )
 wsl -l -q 2>nul | findstr /R /C:".*" >nul
 if errorlevel 1 (
 	echo No WSL Linux distribution installed.
-	set "OK_WSL_DISTRO=1"
+	set "OK_WSL=1"
 	exit /b 1
 )
 where.exe /Q docker
