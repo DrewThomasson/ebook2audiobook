@@ -531,7 +531,10 @@ set "ARG=%~1"
 for /f "delims=" %%I in (
 	'python -c "import sys, json; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(json.loads(r)['tag'] if r else '')" "%ARG%"'
 ) do set "DEVICE_TAG=%%I"
-if not defined DEVICE_TAG exit /b 1
+if not defined DEVICE_TAG (
+	echo Could not get device info
+	exit /b 1
+)
 exit /b 0
 
 :install_python_packages
