@@ -528,7 +528,7 @@ exit /b 0
 
 :check_device_info
 set "ARG=%~1"
-for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
+for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info('sys.argv[1]'); print(r if r else '')" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
 if not defined DEVICE_TAG (
 	for /f "delims=" %%I in ('echo(%DEVICE_INFO_STR%^| python -c "import json, sys; print(json.loads(sys.stdin.read())['tag'])"') do set "DEVICE_TAG=%%I"
 )
@@ -705,7 +705,6 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			call :check_device_info "%SCRIPT_MODE%"
-			pause
 			if "%DEVICE_INFO_STR%"=="" goto :failed
 			if "%DEVICE_TAG%"=="" goto :failed
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
