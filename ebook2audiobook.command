@@ -725,7 +725,7 @@ function build_docker_image {
 	local cmd_options=""
 	local cmd_extra=""
 	local py_vers="$PYTHON_VERSION"
-	case "$TAG" in
+	case "$DEVICE_TAG" in
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
@@ -734,10 +734,9 @@ function build_docker_image {
 		mps)		cmd_options="" ;;
 		*)			cmd_options="" ;;
 	esac
-	DEVICE_TAG="$TAG"
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
-	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
-	case "$TAG" in
+	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${DEVICE_TAG}"
+	case "$DEVICE_TAG" in
 		cpu|mps)   COMPOSE_PROFILES=cpu ;;
 		*)         COMPOSE_PROFILES=gpu ;;
 	esac
@@ -808,9 +807,9 @@ function build_docker_image {
 	echo "Headless mode:"
 	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	echo "Docker Compose:"
-	echo "	DEVICE_TAG=$TAG docker compose up -d"
+	echo "	DEVICE_TAG=$DEVICE_TAG docker compose up -d"
 	echo "Podman Compose:"
-	echo "	DEVICE_TAG=$TAG podman-compose up -d"
+	echo "	DEVICE_TAG=$DEVICE_TAG podman-compose up -d"
 }
 
 ########################################
@@ -826,10 +825,12 @@ else
 				echo "check_device_info() error: result is empty"
 				exit 1
 			fi
-			export TAG=${DEVICE_TAG:-$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$device_info_str")}
-			if docker image inspect "${DOCKER_IMG_NAME}:${TAG}" >/dev/null 2>&1; then
-				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${TAG}' already exists. Aborting build."
-				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${TAG} --force"
+			if [[ "$DEVICE_TAG" == "" ]]; then
+				DEVICE_TAG=
+			fi
+			if docker image inspect "${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
+				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
+				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
 				exit 1
 			fi
 			build_docker_image "$device_info_str" || exit 1

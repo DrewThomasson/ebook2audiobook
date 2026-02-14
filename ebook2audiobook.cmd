@@ -533,12 +533,27 @@ if not defined DEVICE_INFO_STR (
 	echo DEVICE_INFO_STR is empty
 	exit /b 1
 )
-if not defined DEVICE_TAG (
-	for /f "delims=" %%I in (
-		'python -c "import sys, json; print(json.loads(sys.argv[1])['tag'])" "%DEVICE_INFO_STR%"'
-	) do set "DEVICE_TAG=%%I"
+exit /b 0
+
+:json_get
+setlocal EnableDelayedExpansion
+set "KEY=%~1"
+set "S=%DEVICE_INFO_STR%"
+set "JSON_VALUE="
+for /f "tokens=1* delims=" %%A in ("!S:*\"%KEY%\"=:!") do set "REST=%%B"
+if not defined REST (
+	echo Noe key or no value found for %KEY%
+	endlocal & exit /b 1
 )
-echo %DEVICE_TAG%
+for /f "tokens=* delims= " %%A in ("!REST!") do set "REST=%%A"
+if "!REST:~0,1!"=="\"" (
+	set "TMP=!REST:~1!"
+	for /f "tokens=1 delims=\"" %%A in ("!TMP!") do set "JSON_VALUE=%%A"
+) else (
+	rem ---- numeric / array / boolean / null ----
+	for /f "tokens=1 delims=,}" %%A in ("!REST!") do set "JSON_VALUE=%%A"
+)
+endlocal & set "JSON_VALUE=%JSON_VALUE%"
 exit /b 0
 
 :install_python_packages
@@ -712,8 +727,12 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			call :check_device_info "%SCRIPT_MODE%"
-			if "%DEVICE_INFO_STR%"=="" goto :failed
-			if "%DEVICE_TAG%"=="" goto :failed
+			if not defined DEVICE_INFO_STR goto :failed
+			if not defined DEVICE_TAG (
+				call :json_get tag
+				if not defined JSON_VALUE goto :failed
+				set "DEVICE_TAG=%JSON_VALUE%"
+			)
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:%DEVICE_TAG%" already exists. Aborting build.
