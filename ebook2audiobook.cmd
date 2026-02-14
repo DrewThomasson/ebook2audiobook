@@ -543,7 +543,7 @@ for /f "usebackq delims=" %%I in (
 	`echo %DEVICE_INFO_STR% ^| powershell -NoProfile -Command ^
 	"$input | ConvertFrom-Json | ForEach-Object { if ($_.PSObject.Properties.Name -contains '%KEY%') { $_.%KEY% } }"`
 ) do set "JSON_VALUE=%%I"
-echo %JSON_VALUE%
+echo(%JSON_VALUE%
 if not defined JSON_VALUE (
 	echo No key nor value found for %KEY%
 	endlocal & exit /b 1
