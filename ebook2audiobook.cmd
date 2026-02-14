@@ -547,6 +547,7 @@ if not defined JSON_VALUE (
 	echo No key nor value found for %KEY%
 	endlocal & exit /b 1
 )
+echo %JSON_VALUE%
 endlocal & set "JSON_VALUE=%JSON_VALUE%"
 exit /b 0
 
