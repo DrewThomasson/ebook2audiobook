@@ -749,7 +749,7 @@ exit
 
 :restart_script_admin
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "Start-Process cmd -Verb RunAs -ArgumentList '/k echo SAFE_SCRIPT_DIR = %SAFE_SCRIPT_DIR% & echo APP_FILE = %APP_FILE% & echo ARGS = %ARGS% & pause'"
+    "Start-Process cmd -Verb RunAs -ArgumentList '/k title Admin - ebook2audiobook && cd /d ""%SAFE_SCRIPT_DIR%"" 2^>nul || echo ERROR: Cannot CD to %SAFE_SCRIPT_DIR% && echo Current dir is: & cd & echo. & echo Trying to call anyway... & call ""%SAFE_SCRIPT_DIR%\%APP_FILE%"" %ARGS% || echo Call failed too && pause'"
 exit /b
 
 endlocal
