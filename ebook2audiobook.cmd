@@ -305,9 +305,13 @@ if not "%OK_WSL%"=="0" (
 		echo Installing WSL2…
 		wsl --install
 		echo.
-		echo Reboot required.
-		shutdown /r /t 5
-		goto :quit
+		echo ==================================================
+		echo WSL installation triggered.
+		echo If your PC does not reboot automatically,
+		echo please reboot manually now.
+		echo ==================================================
+		pause
+		exit
 	)
 )
 if not "%OK_DOCKER%"=="0" (
@@ -748,8 +752,7 @@ start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %ARGS%"
 exit
 
 :restart_script_admin
-call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass ^
-  -Command "Start-Process -FilePath '%SAFE_SCRIPT_DIR%\%APP_FILE%' -ArgumentList '%ARGS%' -Verb RunAs"
+call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%SAFE_SCRIPT_DIR%\%APP_FILE%' -ArgumentList '%ARGS%' -Verb RunAs"
 exit
 
 endlocal
