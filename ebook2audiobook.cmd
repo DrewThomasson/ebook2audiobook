@@ -496,12 +496,13 @@ if errorlevel 1 (
 	set "OK_WSL=1"
 	exit /b 1
 )
-for /f "tokens=2 delims=:" %%A in ('wsl --status ^| find "Default Version" 2^>nul') do (
+for /f "tokens=3" %%A in (
+	'reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss" /v DefaultVersion 2^>nul ^| find "DefaultVersion"'
+) do (
 	set "WSL_VERSION=%%A"
 )
-set "WSL_VERSION=%WSL_VERSION: =%"
-if not "%WSL_VERSION%"=="2" (
-	echo WSL2 is not configured.
+if not "%WSL_VERSION%"=="0x2" (
+	echo WSL2 is not configured as default.
 	set "OK_WSL=1"
 	exit /b 1
 )
