@@ -541,10 +541,7 @@ set "KEY=%~1"
 set "S=%DEVICE_INFO_STR%"
 set "JSON_VALUE="
 for /f "tokens=1* delims=" %%A in ("!S:*"%KEY%"=!") do set "REST=%%B"
-if not defined REST (
-	echo No key nor value found for %KEY%
-	endlocal & exit /b 1
-)
+if not defined REST endlocal & exit /b 1
 for /f "tokens=1* delims=:" %%A in ("!REST!") do set "VAL=%%B"
 for /f "tokens=* delims= " %%A in ("!VAL!") do set "VAL=%%A"
 if "!VAL:~0,1!"=="^"" (
