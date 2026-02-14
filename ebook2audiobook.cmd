@@ -748,9 +748,9 @@ start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %ARGS%"
 exit
 
 :restart_script_admin
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
- "Start-Process cmd.exe -Verb RunAs -ArgumentList '/k', 'title Elevated - ebook2audiobook', '&', 'echo Directory  : %SAFE_SCRIPT_DIR%', '&', 'echo Script     : %APP_FILE%', '&', 'echo Args       : %ARGS%', '&', 'cd /d', '\"%SAFE_SCRIPT_DIR%\"', '||', 'echo CD failed ^&^& pause', '&', 'call', '\"%APP_FILE%\"', %ARGS%, '&', 'pause'"
-exit /b
+call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass ^
+  -Command "Start-Process -FilePath '%~f0' -ArgumentList '%ARGS%' -Verb RunAs"
+exit
 
 endlocal
 pause
