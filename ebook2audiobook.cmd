@@ -310,7 +310,6 @@ if not "%OK_WSL%"=="0" (
 		echo.
 		echo ==================================================
 		echo WSL installation triggered.
-		echo If your PC does not reboot automatically,
 		echo please reboot manually now.
 		echo ==================================================
 		pause
