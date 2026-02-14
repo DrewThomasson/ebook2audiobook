@@ -705,6 +705,7 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			call :check_device_info "%SCRIPT_MODE%"
+			pause
 			if "%DEVICE_INFO_STR%"=="" goto :failed
 			if "%DEVICE_TAG%"=="" goto :failed
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
