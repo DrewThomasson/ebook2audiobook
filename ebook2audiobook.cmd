@@ -528,10 +528,10 @@ exit /b 0
 
 :check_device_info
 set "ARG=%~1"
-echo %ARG%
 for /f "delims=" %%I in (
 	'python -c "import sys, json; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(json.loads(r)['tag'] if r else '')" "%ARG%"'
 ) do set "DEVICE_TAG=%%I"
+echo %DEVICE_TAG%
 if not defined DEVICE_TAG (
 	echo Could not get device info
 	exit /b 1
