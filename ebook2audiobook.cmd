@@ -539,11 +539,8 @@ exit /b 0
 setlocal
 set "KEY=%~1"
 set "JSON_VALUE="
-for /f "usebackq delims=" %%I in (
-	`echo %DEVICE_INFO_STR% ^| powershell -NoProfile -Command ^
-	"$input | ConvertFrom-Json | ForEach-Object { if ($_.PSObject.Properties.Name -contains '%KEY%') { $_.%KEY% } }"`
-) do set "JSON_VALUE=%%I"
-if "%JSON_VALUE%"=="" (
+for /f "usebackq delims=" %%I in (`echo %DEVICE_INFO_STR% ^| powershell -NoProfile -Command "$j=$input|ConvertFrom-Json; if ($j.PSObject.Properties.Name -contains '%KEY%') { $j.%KEY% }"`) do set "JSON_VALUE=%%I"
+if "!JSON_VALUE!"=="" (
 	echo No key nor value found for %KEY%
 	endlocal & exit /b 1
 )
