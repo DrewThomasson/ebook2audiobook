@@ -750,7 +750,7 @@ exit
 :restart_script_admin
 set "ELEVATE_VBS=%TEMP%\elevate_%RANDOM%.vbs"
 echo Set UAC = CreateObject("Shell.Application") > "%ELEVATE_VBS%"
-echo UAC.ShellExecute """%~f0""", "%ARGS%", "", "runas", 1 >> "%ELEVATE_VBS%"
+echo UAC.ShellExecute "%~f0", "%ARGS%", "", "runas", 1 >> "%ELEVATE_VBS%"
 cscript //nologo "%ELEVATE_VBS%"
 del "%ELEVATE_VBS%"
 exit
