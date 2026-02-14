@@ -540,19 +540,15 @@ setlocal EnableDelayedExpansion
 set "KEY=%~1"
 set "S=%DEVICE_INFO_STR%"
 set "JSON_VALUE="
-for /f "tokens=1* delims=" %%A in ("!S:*\"%KEY%\"=:!") do set "REST=%%B"
-echo !REST!
-if not defined REST (
-	echo No key nor value found for %KEY%
-	endlocal & exit /b 1
-)
-for /f "tokens=* delims= " %%A in ("!REST!") do set "REST=%%A"
-if "!REST:~0,1!"=="\"" (
-	set "TMP=!REST:~1!"
-	for /f "tokens=1 delims=\"" %%A in ("!TMP!") do set "JSON_VALUE=%%A"
+for /f "tokens=1* delims=" %%A in ("!S:*"%KEY%"=!") do set "REST=%%B"
+if not defined REST endlocal & exit /b 1
+for /f "tokens=1* delims=:" %%A in ("!REST!") do set "VAL=%%B"
+for /f "tokens=* delims= " %%A in ("!VAL!") do set "VAL=%%A"
+if "!VAL:~0,1!"=="^"" (
+	set "TMP=!VAL:~1!"
+	for /f "tokens=1 delims=^"" %%A in ("!TMP!") do set "JSON_VALUE=%%A"
 ) else (
-	rem ---- numeric / array / boolean / null ----
-	for /f "tokens=1 delims=,}" %%A in ("!REST!") do set "JSON_VALUE=%%A"
+	for /f "tokens=1 delims=,}" %%A in ("!VAL!") do set "JSON_VALUE=%%A"
 )
 endlocal & set "JSON_VALUE=%JSON_VALUE%"
 exit /b 0
