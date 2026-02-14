@@ -748,8 +748,9 @@ start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %ARGS%"
 exit
 
 :restart_script_admin
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process cmd -Verb RunAs -ArgumentList '/k cd /d ""%SAFE_SCRIPT_DIR%"" && call ""%APP_FILE%"" %ARGS%'"
-exit
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "Start-Process cmd -Verb RunAs -ArgumentList '/k echo SAFE_SCRIPT_DIR = %SAFE_SCRIPT_DIR% & echo APP_FILE = %APP_FILE% & echo ARGS = %ARGS% & pause'"
+exit /b
 
 endlocal
 pause
