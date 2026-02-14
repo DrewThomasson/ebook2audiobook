@@ -750,7 +750,7 @@ exit
 :restart_script_admin
 set "ELEVATE_VBS=%TEMP%\elevate_%RANDOM%.vbs"
 echo Set UAC = CreateObject("Shell.Application") > "%ELEVATE_VBS%"
-echo UAC.ShellExecute "cmd.exe", "/c start ""%APP_NAME%"" cmd /k ""cd /d """"%SAFE_SCRIPT_DIR%"""" ^& call """"%APP_FILE%"""" %ARGS%""", "", "runas", 1 >> "%ELEVATE_VBS%"
+start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %ARGS%"
 cscript //nologo "%ELEVATE_VBS%"
 del "%ELEVATE_VBS%"
 exit
