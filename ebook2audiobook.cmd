@@ -540,9 +540,10 @@ setlocal EnableDelayedExpansion
 set "KEY=%~1"
 set "S=%DEVICE_INFO_STR%"
 set "JSON_VALUE="
-set "PAT="%KEY%""
-call set "REST=%%S:*%PAT%=%%"
-if "!REST!"=="!S!" (
+set "ORIG=!S!"
+set "REST=!S!"
+set "REST=!REST:*"%KEY%"=!"
+if "!REST!"=="!ORIG!" (
 	echo No key nor value found for %KEY%
 	endlocal & exit /b 1
 )
