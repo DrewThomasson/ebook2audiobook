@@ -496,7 +496,6 @@ if errorlevel 1 (
 	set "OK_WSL=1"
 	exit /b 1
 )
-set "WSL_VERSION="
 for /f "tokens=2 delims=:" %%A in ('wsl --status ^| find "Default Version" 2^>nul') do (
 	set "WSL_VERSION=%%A"
 )
