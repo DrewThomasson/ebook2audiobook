@@ -540,8 +540,8 @@ setlocal EnableDelayedExpansion
 set "KEY=%~1"
 set "S=%DEVICE_INFO_STR%"
 set "JSON_VALUE="
-echo %S%
 for /f "tokens=1* delims=" %%A in ("!S:*\"%KEY%\"=:!") do set "REST=%%B"
+echo %REST%
 if not defined REST (
 	echo No key nor value found for %KEY%
 	endlocal & exit /b 1
