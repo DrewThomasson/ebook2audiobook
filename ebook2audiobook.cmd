@@ -540,9 +540,8 @@ setlocal
 set "KEY=%~1"
 set "JSON_VALUE="
 for /f "usebackq delims=" %%I in (
-	`powershell -NoProfile -Command ^
-	"$j = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('%DEVICE_INFO_B64%')) | ConvertFrom-Json;" ^
-	"if ($j.PSObject.Properties.Name -contains '%KEY%') { $j.%KEY% }"`
+	`echo %DEVICE_INFO_STR% ^| powershell -NoProfile -Command ^
+	"$input | ConvertFrom-Json | ForEach-Object { if ($_.PSObject.Properties.Name -contains '%KEY%') { $_.%KEY% } }"`
 ) do set "JSON_VALUE=%%I"
 if not defined JSON_VALUE (
 	echo No key nor value found for %KEY%
