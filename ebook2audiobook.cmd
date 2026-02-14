@@ -748,7 +748,7 @@ start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %ARGS%"
 exit
 
 :restart_script_admin
-call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command Start-Process -FilePath "%~f0" -ArgumentList "%ARGS%" -Verb RunAs
+call "%PS_EXE%" %PS_ARGS% -Command Start-Process -FilePath "%~f0" -ArgumentList "%ARGS%" -Verb RunAs
 exit
 
 endlocal
