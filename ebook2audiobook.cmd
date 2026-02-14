@@ -722,7 +722,7 @@ if defined arguments.help (
             if errorlevel 1	goto :install_programs
 			call :check_device_info "%SCRIPT_MODE%"
 			if "%DEVICE_INFO_STR%"=="" goto :failed
-			if "%DEVICE_TAG%=="" (
+			if "%DEVICE_TAG%"=="" (
 				call :json_get tag
 				if "%JSON_VALUE%=="" goto :failed
 				set "DEVICE_TAG=%JSON_VALUE%"
