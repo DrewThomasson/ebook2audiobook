@@ -528,16 +528,10 @@ exit /b 0
 
 :check_device_info
 set "ARG=%~1"
-for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
-if errorlevel 1 (
-	exit /b 1
-)
-if not defined DEVICE_TAG (
-	for /f "delims=" %%I in ('echo(%DEVICE_INFO_STR%^| python -c "import json, sys; print(json.loads(sys.stdin.read())['tag'])"') do set "DEVICE_TAG=%%I"
-)
-if errorlevel 1 (
-	exit /b 1	
-)
+for /f "delims=" %%I in (
+	'python -c "import sys, json; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(json.loads(r)['tag'] if r else '')" "%ARG%"'
+) do set "DEVICE_TAG=%%I"
+if not defined DEVICE_TAG exit /b 1
 exit /b 0
 
 :install_python_packages
