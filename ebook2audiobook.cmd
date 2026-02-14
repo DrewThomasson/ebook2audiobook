@@ -536,24 +536,17 @@ if not defined DEVICE_INFO_STR (
 exit /b 0
 
 :json_get
-setlocal EnableDelayedExpansion
+setlocal
 set "KEY=%~1"
-set "S=%DEVICE_INFO_STR%"
 set "JSON_VALUE="
-set "ORIG=!S!"
-set "REST=!S!"
-set "REST=!REST:*"%KEY%"=!"
-if "!REST!"=="!ORIG!" (
+for /f "usebackq delims=" %%I in (
+	`powershell -NoProfile -Command ^
+	"$j = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('%DEVICE_INFO_B64%')) | ConvertFrom-Json;" ^
+	"if ($j.PSObject.Properties.Name -contains '%KEY%') { $j.%KEY% }"`
+) do set "JSON_VALUE=%%I"
+if not defined JSON_VALUE (
 	echo No key nor value found for %KEY%
 	endlocal & exit /b 1
-)
-for /f "tokens=1* delims=:" %%A in ("!REST!") do set "VAL=%%B"
-for /f "tokens=* delims= " %%A in ("!VAL!") do set "VAL=%%A"
-if "!VAL:~0,1!"=="^"" (
-	set "TMP=!VAL:~1!"
-	for /f "tokens=1 delims=^"" %%A in ("!TMP!") do set "JSON_VALUE=%%A"
-) else (
-	for /f "tokens=1 delims=,}" %%A in ("!VAL!") do set "JSON_VALUE=%%A"
 )
 endlocal & set "JSON_VALUE=%JSON_VALUE%"
 exit /b 0
