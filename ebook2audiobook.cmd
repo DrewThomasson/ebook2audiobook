@@ -538,8 +538,8 @@ exit /b 0
 :json_get
 set "KEY=%~1"
 for /f "tokens=3,5" %%a in ('echo %KEY%') do (
+	echo %d%
 	set d=%%~a
-	echo %%a %d%
 )
 exit /b 0
 
