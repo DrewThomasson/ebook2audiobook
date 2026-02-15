@@ -535,6 +535,7 @@ if "%DEVICE_INFO_STR%"=="" (
 	endlocal & exit /b 1
 )
 endlocal & set "DEVICE_INFO_STR=%DEVICE_INFO_STR%"
+exit /b 0
 
 :json_get
 setlocal enabledelayedexpansion
