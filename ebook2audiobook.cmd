@@ -718,11 +718,10 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			call :check_device_info %SCRIPT_MODE%
-			echo %errorlevel%
 			if errorlevel 1 goto :failed
 			if "%DEVICE_TAG%"=="" (
 				call :json_get tag
-				if "%JSON_VALUE%"=="" goto :failed
+				if errorlevel 1 goto :failed
 				set "DEVICE_TAG=%JSON_VALUE%"
 			)
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
