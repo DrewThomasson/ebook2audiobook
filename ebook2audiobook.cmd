@@ -774,6 +774,7 @@ if defined arguments.help (
                 goto :failed
             )
             call :check_docker
+			pause
             if errorlevel 1	goto :install_programs
 			call :check_docker_daemon
 			if errorlevel 1 goto :failed
