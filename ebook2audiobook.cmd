@@ -637,11 +637,6 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-where.exe docker >nul 2>&1
-if errorlevel 1 (
-	echo =============== Error: Docker must be installed and running
-	exit /b 1
-)
 where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
 docker compose version >nul 2>&1
@@ -779,7 +774,6 @@ if defined arguments.help (
 				echo Delete it using: docker rmi %DOCKER_IMG_NAME%:%DEVICE_TAG% --force
 				goto :failed
 			)
-			pause
             call :build_docker_image "%DEVICE_INFO_STR%"
             if errorlevel 1 goto :failed
         ) else (
