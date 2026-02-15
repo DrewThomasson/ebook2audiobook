@@ -436,7 +436,7 @@ if not "%OK_PROGRAMS%"=="0" (
     set "OK_PROGRAMS=0"
     set "missing_prog_array="
 )
-exit /b 0
+goto :dispatch
 
 :check_conda
 where.exe /Q conda
