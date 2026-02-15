@@ -527,14 +527,13 @@ if errorlevel 1 (
 exit /b 0
 
 :check_device_info
-setlocal enabledelayedexpansion
 set "ARG=%~1"
 for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
 if "%DEVICE_INFO_STR%"=="" (
 	echo DEVICE_INFO_STR is empty
-	endlocal & exit /b 1
+	exit /b 1
 )
-endlocal & set "DEVICE_INFO_STR=%DEVICE_INFO_STR%"
+echo %DEVICE_INFO_STR%
 exit /b 0
 
 :json_get
