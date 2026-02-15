@@ -536,8 +536,11 @@ if not defined DEVICE_INFO_STR (
 exit /b 0
 
 :json_get
- 
-pause
+set "KEY=%~1"
+for /f "tokens=3,5" %%a in ('echo %KEY%') do (
+	set d=%%~a
+	echo %%a %d%
+)
 exit /b 0
 
 :install_python_packages
@@ -712,11 +715,7 @@ if defined arguments.help (
             if errorlevel 1	goto :install_programs
 			call :check_device_info "%SCRIPT_MODE%"
 			if "%DEVICE_INFO_STR%"=="" goto :failed
-			if "%DEVICE_TAG%"=="" (
-				call :json_get tag
-				if "%JSON_VALUE%=="" goto :failed
-				set "DEVICE_TAG=%JSON_VALUE%"
-			)
+			pause
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:%DEVICE_TAG%" already exists. Aborting build.
