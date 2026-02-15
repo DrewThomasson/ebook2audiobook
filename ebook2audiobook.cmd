@@ -537,36 +537,39 @@ if errorlevel 1 (
 exit /b 0
 
 :check_docker_daemon
+setlocal enabledelayedexpansion
 docker info >nul 2>&1
 if errorlevel 1 (
     echo Starting Docker service...
     net start docker >nul 2>&1
     if errorlevel 1 (
-		net session >nul 2>&1
-		if errorlevel 1 (
-			echo Registering docker service in Administrator mode…
-			pause
-			goto :restart_script_admin
-		)
-		echo Registering docker service…
-		dockerd --register-service
-		if errorlevel 1 (
-			echo Could not start Docker service. Try running it manually.
-			exit /b 1
-		)
+        net session >nul 2>&1
+        if errorlevel 1 (
+            echo Registering docker service in Administrator mode...
+            pause
+            endlocal
+            goto :restart_script_admin
+        )
+        echo Registering docker service...
+        dockerd --register-service
+        if errorlevel 1 (
+            echo Could not start Docker service. Try running it manually.
+            endlocal & exit /b 1
+        )
     )
     set "DOCKER_RETRIES=0"
     :wait_docker
     timeout /t 3 /nobreak >nul
     set /a DOCKER_RETRIES+=1
-    if %DOCKER_RETRIES% geq 20 (
+    if !DOCKER_RETRIES! geq 20 (
         echo Docker daemon failed to start after 60 seconds.
-        exit /b 1
+        endlocal & exit /b 1
     )
     docker info >nul 2>&1
     if errorlevel 1 goto :wait_docker
     echo Docker daemon is ready.
 )
+endlocal
 exit /b 0
 
 :check_device_info
