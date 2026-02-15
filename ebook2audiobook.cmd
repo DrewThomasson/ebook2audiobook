@@ -536,7 +536,6 @@ if "%DEVICE_INFO_STR%"=="" (
 exit /b 0
 
 :json_get
-setlocal enabledelayedexpansion
 set "KEY=%~1"
 set "JSON_VALUE="
 echo %DEVICE_INFO_STR%
@@ -545,8 +544,6 @@ if "!JSON_VALUE!"=="" (
     echo No key nor value found for %KEY%
     endlocal & exit /b 1
 )
-echo %KEY%: !JSON_VALUE!
-endlocal & set "JSON_VALUE=%JSON_VALUE%" & set "DEVICE_INFO_STR=%DEVICE_INFO_STR%"
 exit /b 0
 
 :install_python_packages
