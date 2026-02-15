@@ -538,14 +538,13 @@ exit /b 0
 
 :check_docker_daemon
 setlocal enabledelayedexpansion
-docker info >nul 2>&1
-if errorlevel 1 (
+if not exist "\\.\pipe\docker_engine" (
     echo Starting Docker service...
     net start docker >nul 2>&1
     if errorlevel 1 (
         net session >nul 2>&1
         if errorlevel 1 (
-            echo Registering docker service in Administrator mode...
+            echo Requires Administrator to start Docker service.
             pause
             endlocal
             goto :restart_script_admin
@@ -553,9 +552,10 @@ if errorlevel 1 (
         echo Registering docker service...
         dockerd --register-service
         if errorlevel 1 (
-            echo Could not start Docker service. Try running it manually.
+            echo Could not register Docker service.
             endlocal & exit /b 1
         )
+        net start docker >nul 2>&1
     )
     set "DOCKER_RETRIES=0"
     :wait_docker
@@ -565,8 +565,7 @@ if errorlevel 1 (
         echo Docker daemon failed to start after 60 seconds.
         endlocal & exit /b 1
     )
-    docker info >nul 2>&1
-    if errorlevel 1 goto :wait_docker
+    if not exist "\\.\pipe\docker_engine" goto :wait_docker
     echo Docker daemon is ready.
 )
 endlocal
