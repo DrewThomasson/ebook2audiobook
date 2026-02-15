@@ -712,6 +712,8 @@ if defined arguments.help (
                 goto :failed
             )
             call :check_docker
+            if errorlevel 1	goto :install_programs
+			call :check_device_info %SCRIPT_MODE%
 			pause
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
 			if not errorlevel 1 (
