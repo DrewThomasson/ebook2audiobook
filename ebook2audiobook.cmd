@@ -718,7 +718,10 @@ if defined arguments.help (
             )
             call :check_docker
             if errorlevel 1	goto :install_programs
+			echo [DEBUG 1] DEVICE_INFO_STR before call: [%DEVICE_INFO_STR%]
 			call :check_device_info %SCRIPT_MODE%
+			echo [DEBUG 2] DEVICE_INFO_STR after call: [%DEVICE_INFO_STR%]
+			echo [DEBUG 3] errorlevel: %errorlevel%
 			if "%DEVICE_INFO_STR%"=="" goto :failed
 			if "%DEVICE_TAG%"=="" (
 				call :json_get tag
