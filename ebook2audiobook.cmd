@@ -337,7 +337,7 @@ if not "%OK_DOCKER%"=="0" (
             if errorlevel 1 (
                 net localgroup docker-users /add >nul 2>&1
             )
-            net localgroup docker-users %USERNAME% /add >nul 2>&
+            net localgroup docker-users %USERNAME% /add >nul 2>&1
 			if errorlevel 1 (
 				echo Could not add %USERNAME% to docker-users. Try it manually
 				goto :failed
@@ -774,7 +774,6 @@ if defined arguments.help (
                 goto :failed
             )
             call :check_docker
-			pause
             if errorlevel 1	goto :install_programs
 			call :check_docker_daemon
 			if errorlevel 1 goto :failed
