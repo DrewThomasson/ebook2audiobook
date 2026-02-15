@@ -583,6 +583,7 @@ if errorlevel 1 (
     sc query docker 2>nul | findstr /C:"RUNNING" >nul
     if errorlevel 1 goto :wait_docker
     echo Docker daemon is ready.
+	goto :restart_script
 )
 endlocal
 exit /b 0
