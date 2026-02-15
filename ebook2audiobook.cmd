@@ -538,7 +538,8 @@ exit /b 0
 
 :check_docker_daemon
 setlocal enabledelayedexpansion
-if not exist "\\.\pipe\docker_engine" (
+sc query docker 2>nul | findstr /C:"RUNNING" >nul
+if errorlevel 1 (
     echo Starting Docker service...
     net start docker >nul 2>&1
     if errorlevel 1 (
@@ -565,7 +566,8 @@ if not exist "\\.\pipe\docker_engine" (
         echo Docker daemon failed to start after 60 seconds.
         endlocal & exit /b 1
     )
-    if not exist "\\.\pipe\docker_engine" goto :wait_docker
+    sc query docker 2>nul | findstr /C:"RUNNING" >nul
+    if errorlevel 1 goto :wait_docker
     echo Docker daemon is ready.
 )
 endlocal
