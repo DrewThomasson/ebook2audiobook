@@ -332,7 +332,21 @@ if not "%OK_DOCKER%"=="0" (
                 echo %ESC%[31m=============== docker service registration failed.%ESC%[0m
                 goto :failed
             )
+            echo Adding %USERNAME% to docker-users group...
+            net localgroup docker-users >nul 2>&1
+            if errorlevel 1 (
+                net localgroup docker-users /add >nul 2>&1
+            )
+            net localgroup docker-users %USERNAME% /add >nul 2>&
+			if errorlevel 1 (
+				echo Could not add %USERNAME% to docker-users. Try it manually
+				goto :failed
+			)
             net start docker >nul 2>&1
+			if errorlevel 1 (
+				echo Could not start docker. Try it manually
+				goto :failed
+			)
             echo %ESC%[33m=============== docker OK ===============%ESC%[0m
             goto :restart_script
         ) else (
