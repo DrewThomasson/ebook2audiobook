@@ -283,7 +283,6 @@ if not "%missing_prog_array%"=="" (
 goto :dispatch
 
 :install_programs
-setlocal EnableDelayedExpansion
 if not "%OK_SCOOP%"=="0" (
     echo Installing Scoop…
     call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
@@ -380,6 +379,7 @@ if not "%OK_PROGRAMS%"=="0" (
         call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
         call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
     )
+	setlocal EnableDelayedExpansion
     for %%p in (%missing_prog_array%) do (
         set "prog=%%p"
         call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
@@ -430,13 +430,13 @@ if not "%OK_PROGRAMS%"=="0" (
             goto :failed
         )
     )
+	endlocal
     call "%PS_EXE%" %PS_ARGS% -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
     set "OK_SCOOP=0"
     set "OK_PROGRAMS=0"
     set "missing_prog_array="
 )
-endlocal
-goto :dispatch
+exit /b 0
 
 :check_conda
 where.exe /Q conda
@@ -719,7 +719,6 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			call :check_device_info %SCRIPT_MODE%
-			echo %DEVICE_INFO_STR%
 			if "%DEVICE_INFO_STR%"=="" goto :failed
 			if "%DEVICE_TAG%"=="" (
 				call :json_get tag
