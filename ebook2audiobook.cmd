@@ -651,7 +651,6 @@ if "%src_time%" GTR "%dst_time%" (
 exit /b 0
 
 :build_docker_image
-setlocal enabledelayedexpansion
 set "ARG=%~1"
 where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
@@ -693,7 +692,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
     podman-compose -f podman-compose.yml build
-    if errorlevel 1 endlocal & exit /b 1
+    if errorlevel 1 exit /b 1
 ) else if "%HAS_COMPOSE%"=="0" (
 	echo Using docker-compose
     set "BUILD_NAME=%DOCKER_IMG_NAME%"
@@ -705,7 +704,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
         --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
         --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
         --build-arg ISO3_LANG="%ISO3_LANG%"
-    if errorlevel 1 endlocal & exit /b 1
+    if errorlevel 1 exit /b 1
 ) else (
 	echo Using docker build
     docker buildx build --progress=plain --no-cache ^
@@ -717,7 +716,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
         --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
         --build-arg ISO3_LANG="%ISO3_LANG%" ^
         -t "%DOCKER_IMG_NAME%" .
-    if errorlevel 1 endlocal & exit /b 1
+    if errorlevel 1 exit /b 1
 )
 if defined cmd_options set "cmd_extra=%cmd_options% "
 echo Docker image ready. to run your docker:"
@@ -729,7 +728,6 @@ echo Docker Compose:
 echo     DEVICE_TAG=%DEVICE_TAG% docker compose up -d
 echo Podman Compose:
 echo     DEVICE_TAG=%DEVICE_TAG% podman-compose up -d
-endlocal
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS
