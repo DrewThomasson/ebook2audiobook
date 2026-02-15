@@ -549,12 +549,11 @@ if "!JSON_VALUE!"=="" (
 setlocal EnableDelayedExpansion
 set "KEY=%~1"
 set "JSON_VALUE="
-for /F "delims={}" %%a in (%DEVICE_INFO_STR%) do (
+for /F "delims={}" %%a in ("%DEVICE_INFO_STR%") do (
    set "line=%%~a"
    for %%b in ("!line:": "==!") do echo SET %%b
-   echo %line%
 )
-endlocal & set "JSON_VALUE=%JSON_VALUE%"
+endlocal
 exit /b 0
 
 :install_python_packages
