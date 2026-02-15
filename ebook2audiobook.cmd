@@ -298,7 +298,6 @@ if not "%OK_WSL%"=="0" (
 		if errorlevel 1 (
 			echo The script will install WSL2 in Administrator mode.
 			pause
-			echo Restarting script as Administrator…
 			goto :restart_script_admin
 		)
 		echo Installing WSL2…
@@ -317,19 +316,30 @@ if not "%OK_WSL%"=="0" (
 	)
 )
 if not "%OK_DOCKER%"=="0" (
-	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-		echo Installing Docker…
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker docker-buildx"
-		if exist "%SCOOP_SHIMS%\docker.exe" (
+    if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+        echo Installing Docker…
+        call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker docker-buildx"
+        if exist "%SCOOP_SHIMS%\docker.exe" (
+            net session >nul 2>&1
+            if errorlevel 1 (
+                echo Registering docker service in Administrator mode…
+				pause
+                goto :restart_script_admin
+            )
 			echo Registering docker service…
-			dockerd --register-service >nul 2>&1
-			echo %ESC%[33m=============== docker OK ===============%ESC%[0m
-			goto :restart_script
-		) else (
-			echo %ESC%[31m=============== docker install failed.%ESC%[0m
-			goto :failed
-		)
-	)
+            dockerd --register-service
+            if errorlevel 1 (
+                echo %ESC%[31m=============== docker service registration failed.%ESC%[0m
+                goto :failed
+            )
+            net start docker >nul 2>&1
+            echo %ESC%[33m=============== docker OK ===============%ESC%[0m
+            goto :restart_script
+        ) else (
+            echo %ESC%[31m=============== docker install failed.%ESC%[0m
+            goto :failed
+        )
+    )
 )
 if not "%OK_DOCKER_BUILDX%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
@@ -526,6 +536,39 @@ if errorlevel 1 (
 )
 exit /b 0
 
+:check_docker_daemon
+docker info >nul 2>&1
+if errorlevel 1 (
+    echo Starting Docker service...
+    net start docker >nul 2>&1
+    if errorlevel 1 (
+		net session >nul 2>&1
+		if errorlevel 1 (
+			echo Registering docker service in Administrator mode…
+			pause
+			goto :restart_script_admin
+		)
+		echo Registering docker service…
+		dockerd --register-service
+		if errorlevel 1 (
+			echo Could not start Docker service. Try running it manually.
+			exit /b 1
+		)
+    )
+    set "DOCKER_RETRIES=0"
+    :wait_docker
+    timeout /t 3 /nobreak >nul
+    set /a DOCKER_RETRIES+=1
+    if %DOCKER_RETRIES% geq 20 (
+        echo Docker daemon failed to start after 60 seconds.
+        exit /b 1
+    )
+    docker info >nul 2>&1
+    if errorlevel 1 goto :wait_docker
+    echo Docker daemon is ready.
+)
+exit /b 0
+
 :check_device_info
 set "ARG=%~1"
 for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
@@ -717,6 +760,8 @@ if defined arguments.help (
             )
             call :check_docker
             if errorlevel 1	goto :install_programs
+			call :check_docker_daemon
+			if errorlevel 1 goto :failed
 			call :check_device_info %SCRIPT_MODE%
 			if errorlevel 1 goto :failed
 			if "%DEVICE_TAG%"=="" (
@@ -771,6 +816,7 @@ start "%APP_NAME%" cmd /k "cd /d ""%SAFE_SCRIPT_DIR%"" & call %APP_FILE% %ARGS%"
 exit 0
 
 :restart_script_admin
+echo Restarting script as Administrator…
 call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%SAFE_SCRIPT_DIR%\%APP_FILE%' -ArgumentList '%ARGS%' -Verb RunAs"
 exit
 
