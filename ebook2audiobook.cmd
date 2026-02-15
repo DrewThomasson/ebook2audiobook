@@ -536,6 +536,7 @@ if not defined DEVICE_INFO_STR (
 exit /b 0
 
 :json_get
+set "KEY=%~1"
 for /f "tokens=3,5" %%a in ('echo %KEY%') do (
 	set d=%%~a
 	echo %%a %d%
