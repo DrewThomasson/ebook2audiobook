@@ -718,7 +718,7 @@ if defined arguments.help (
             )
             call :check_docker
             if errorlevel 1	goto :install_programs
-			call :check_device_info %SCRIPT_MODE%
+			call :check_device_info "%SCRIPT_MODE%"
 			if "%DEVICE_INFO_STR%"=="" goto :failed
 			echo %DEVICE_INFO_STR%
 			echo %DEVICE_TAG%
