@@ -539,7 +539,6 @@ exit /b 0
 setlocal enabledelayedexpansion
 set "KEY=%~1"
 set "JSON_VALUE="
-echo %KEY%
 for /f "delims=" %%i in ('powershell -Command "$env:DEVICE_INFO_STR | ConvertFrom-Json | Select-Object -ExpandProperty %KEY%"') do set "JSON_VALUE=%%i"
 if "!JSON_VALUE!"=="" (
     echo No key nor value found for %KEY%
@@ -721,6 +720,8 @@ if defined arguments.help (
             if errorlevel 1	goto :install_programs
 			call :check_device_info %SCRIPT_MODE%
 			if "%DEVICE_INFO_STR%"=="" goto :failed
+			echo %DEVICE_INFO_STR%
+			echo %DEVICE_TAG%
 			if "%DEVICE_TAG%"=="" (
 				call :json_get tag
 				if "%JSON_VALUE%"=="" goto :failed
