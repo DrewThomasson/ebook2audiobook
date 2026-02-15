@@ -711,6 +711,7 @@ if defined arguments.help (
                 echo %ESC%[31m=============== %PYTHON_SCOOP% failed.%ESC%[0m
                 goto :failed
             )
+            call :check_docker
 			pause
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
 			if not errorlevel 1 (
