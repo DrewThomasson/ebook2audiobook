@@ -540,12 +540,12 @@ exit /b 0
 setlocal enabledelayedexpansion
 set "KEY=%~1"
 set "JSON_VALUE="
+echo %DEVICE_INFO_STR%
 for /f "delims=" %%i in ('powershell -Command "$env:DEVICE_INFO_STR | ConvertFrom-Json | Select-Object -ExpandProperty %KEY%"') do set "JSON_VALUE=%%i"
 if "!JSON_VALUE!"=="" (
     echo No key nor value found for %KEY%
     endlocal & exit /b 1
 )
-echo %KEY%: !JSON_VALUE!
 endlocal & set "JSON_VALUE=%JSON_VALUE%"
 exit /b 0
 
