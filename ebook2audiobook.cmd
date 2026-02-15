@@ -533,7 +533,6 @@ if "%DEVICE_INFO_STR%"=="" (
 	echo DEVICE_INFO_STR is empty
 	exit /b 1
 )
-set "DEVICE_INFO_STR=%DEVICE_INFO_STR%"
 exit /b 0
 
 :json_get
@@ -719,6 +718,7 @@ if defined arguments.help (
             call :check_docker
             if errorlevel 1	goto :install_programs
 			call :check_device_info %SCRIPT_MODE%
+			echo %errorlevel%
 			if errorlevel 1 goto :failed
 			if "%DEVICE_TAG%"=="" (
 				call :json_get tag
