@@ -527,15 +527,18 @@ if errorlevel 1 (
 exit /b 0
 
 :check_device_info
+setlocal enabledelayedexpansion
 set "ARG=%~1"
 for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
 if "%DEVICE_INFO_STR%"=="" (
 	echo DEVICE_INFO_STR is empty
-	exit /b 1
+	endlocal & exit /b 1
 )
+endlocal & set "DEVICE_INFO_STR=%DEVICE_INFO_STR%"
 exit /b 0
 
 :json_get
+setlocal enabledelayedexpansion
 set "KEY=%~1"
 set "JSON_VALUE="
 echo %DEVICE_INFO_STR%
@@ -544,6 +547,8 @@ if "!JSON_VALUE!"=="" (
     echo No key nor value found for %KEY%
     endlocal & exit /b 1
 )
+echo %KEY%: !JSON_VALUE!
+endlocal & set "JSON_VALUE=%JSON_VALUE%"
 exit /b 0
 
 :install_python_packages
