@@ -536,24 +536,16 @@ if not defined DEVICE_INFO_STR (
 exit /b 0
 
 :json_get
-setlocal
+setlocal enabledelayedexpansion
 set "KEY=%~1"
 set "JSON_VALUE="
-for /f "usebackq delims=" %%I in (`echo %DEVICE_INFO_STR% ^| powershell -NoProfile -Command "$j=$input|ConvertFrom-Json; if ($j.PSObject.Properties.Name -contains '%KEY%') { $j.%KEY% }"`) do set "JSON_VALUE=%%I"
+for /f "delims=" %%i in ('powershell -Command "('%DEVICE_INFO_STR%' | ConvertFrom-Json).%KEY%"') do set "JSON_VALUE=%%i"
 if "!JSON_VALUE!"=="" (
-	echo No key nor value found for %KEY%
-	endlocal & exit /b 1
+    echo No key nor value found for %KEY%
+    endlocal & exit /b 1
 )
-
-:json_get
-setlocal EnableDelayedExpansion
-set "KEY=%~1"
-set "JSON_VALUE="
-for /F "delims={}" %%a in ("%DEVICE_INFO_STR%") do (
-   set "line=%%~a"
-   for %%b in ("!line:": "==!") do echo SET %%b
-)
-endlocal
+echo %KEY%: !JSON_VALUE!
+endlocal & set "JSON_VALUE=%JSON_VALUE%"
 exit /b 0
 
 :install_python_packages
