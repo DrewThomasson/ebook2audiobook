@@ -717,6 +717,7 @@ if defined arguments.help (
 			if "%DEVICE_INFO_STR%"=="" goto :failed
 			if "%DEVICE_TAG%"=="" (
 				call :json_get tag
+				echo %JSON_VALUE%
 				if "%JSON_VALUE%"=="" goto :failed
 				set "DEVICE_TAG=%JSON_VALUE%"
 			)
