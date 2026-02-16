@@ -332,7 +332,7 @@ if not "%OK_DOCKER%"=="0" (
                 echo %ESC%[31m=============== docker service registration failed.%ESC%[0m
                 goto :failed
             )
-            echo Adding %USERNAME% to docker-users group...
+            echo Adding %USERNAME% to docker-users group…
             net localgroup docker-users >nul 2>&1
             if errorlevel 1 (
                 net localgroup docker-users /add >nul 2>&1
@@ -345,6 +345,11 @@ if not "%OK_DOCKER%"=="0" (
             net start docker >nul 2>&1
 			if errorlevel 1 (
 				echo Could not start docker. Try it manually
+				goto :failed
+			)
+			echo Registering docker deamon pipe access…
+			call :register_docker_daemon_permission
+			if errorlevel 1 (
 				goto :failed
 			)
             echo %ESC%[33m=============== docker OK ===============%ESC%[0m
@@ -554,7 +559,7 @@ exit /b 0
 setlocal enabledelayedexpansion
 sc query docker 2>nul | findstr /C:"RUNNING" >nul
 if errorlevel 1 (
-    echo Starting Docker service...
+    echo Starting Docker service…
     net start docker >nul 2>&1
     if errorlevel 1 (
         net session >nul 2>&1
@@ -564,7 +569,7 @@ if errorlevel 1 (
             endlocal
             goto :restart_script_admin
         )
-        echo Registering docker service...
+        echo Registering docker service…
         dockerd --register-service
         if errorlevel 1 (
             echo Could not register Docker service.
@@ -586,6 +591,31 @@ if errorlevel 1 (
 	goto :restart_script
 )
 endlocal
+exit /b 0
+
+:register_docker_daemon_permission
+echo Creating Docker pipe permission fix script…
+echo $account='%COMPUTERNAME%\%USERNAME%' > "%ProgramData%\docker-pipe-fix.ps1"
+echo $npipe='\\.\pipe\docker_engine' >> "%ProgramData%\docker-pipe-fix.ps1"
+echo $dInfo=New-Object 'System.IO.DirectoryInfo' -ArgumentList $npipe >> "%ProgramData%\docker-pipe-fix.ps1"
+echo $dSec=$dInfo.GetAccessControl() >> "%ProgramData%\docker-pipe-fix.ps1"
+echo $fullControl=[System.Security.AccessControl.FileSystemRights]::FullControl >> "%ProgramData%\docker-pipe-fix.ps1"
+echo $allow=[System.Security.AccessControl.AccessControlType]::Allow >> "%ProgramData%\docker-pipe-fix.ps1"
+echo $rule=New-Object 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList $account,$fullControl,$allow >> "%ProgramData%\docker-pipe-fix.ps1"
+echo $dSec.AddAccessRule($rule) >> "%ProgramData%\docker-pipe-fix.ps1"
+echo $dInfo.SetAccessControl($dSec) >> "%ProgramData%\docker-pipe-fix.ps1"
+echo Registering scheduled task…
+powershell -Command "
+$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"%ProgramData%\docker-pipe-fix.ps1\"'
+$trigger = New-ScheduledTaskTrigger -AtStartup
+$principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
+Register-ScheduledTask -TaskName 'DockerPipePermission' -Action $action -Trigger $trigger -Principal $principal -Force
+"
+if errorlevel 1 (
+    echo Failed to register scheduled task.
+    exit /b 1
+)
+echo Docker pipe permission fix registered as startup task.
 exit /b 0
 
 :check_device_info
