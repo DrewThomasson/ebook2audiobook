@@ -684,7 +684,6 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-echo DEVICE_TAG: %DEVICE_TAG%
 where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
 docker compose version >nul 2>&1
