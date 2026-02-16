@@ -508,21 +508,20 @@ exit /b 0
 
 :check_docker_daemon
 wsl -d Ubuntu -- docker info >nul 2>&1
-if errorlevel 1 (
-    echo Starting Docker daemon inside WSL2...
-    wsl -d Ubuntu -- sudo service docker start >nul 2>&1
-    set "DOCKER_RETRIES=0"
-    :wait_docker
-    timeout /t 3 /nobreak >nul
-    set /a DOCKER_RETRIES+=1
-    if %DOCKER_RETRIES% geq 20 (
-        echo Docker daemon failed to start after 60 seconds.
-        exit /b 1
-    )
-    wsl -d Ubuntu -- docker info >nul 2>&1
-    if errorlevel 1 goto :wait_docker
-    echo Docker daemon is ready.
+if not errorlevel 1 exit /b 0
+echo Starting Docker daemon inside WSL2...
+wsl -d Ubuntu -- sudo service docker start >nul 2>&1
+set "DOCKER_RETRIES=0"
+:wait_docker
+timeout /t 3 /nobreak >nul
+set /a DOCKER_RETRIES+=1
+if %DOCKER_RETRIES% geq 20 (
+    echo Docker daemon failed to start after 60 seconds.
+    exit /b 1
 )
+wsl -d Ubuntu -- docker info >nul 2>&1
+if errorlevel 1 goto :wait_docker
+echo Docker daemon is ready.
 exit /b 0
 
 :check_device_info
