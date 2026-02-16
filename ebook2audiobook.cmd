@@ -684,6 +684,7 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
+set "ARG_ESCAPED=%ARG:"=\"%"
 where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
 docker compose version >nul 2>&1
@@ -719,7 +720,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg PYTHON_VERSION=%py_vers%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg APP_VERSION=%APP_VERSION%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DEVICE_TAG=%DEVICE_TAG%"
-    set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DOCKER_DEVICE_STR=%ARG%"
+    set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DOCKER_DEVICE_STR=%ARG_ESCAPED%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DOCKER_PROGRAMS_STR=%DOCKER_PROGRAMS%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
@@ -732,16 +733,23 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
         --build-arg PYTHON_VERSION="%py_vers%" ^
         --build-arg APP_VERSION="%APP_VERSION%" ^
         --build-arg DEVICE_TAG="%DEVICE_TAG%" ^
-        --build-arg DOCKER_DEVICE_STR="%ARG%" ^
+        --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" ^
         --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
         --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
         --build-arg ISO3_LANG="%ISO3_LANG%"
     if errorlevel 1 exit /b 1
 ) else (
-echo Using docker build
-	echo docker buildx build --progress=plain --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
-	docker buildx build --progress=plain --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
-	if errorlevel 1 exit /b 1
+	echo Using docker build
+    docker buildx build --progress=plain --no-cache ^
+        --build-arg PYTHON_VERSION="%py_vers%" ^
+        --build-arg APP_VERSION="%APP_VERSION%" ^
+        --build-arg DEVICE_TAG="%DEVICE_TAG%" ^
+        --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" ^
+        --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
+        --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
+        --build-arg ISO3_LANG="%ISO3_LANG%" ^
+        -t "%DOCKER_IMG_NAME%" .
+    if errorlevel 1 exit /b 1
 )
 if defined cmd_options set "cmd_extra=%cmd_options% "
 echo Docker image ready. to run your docker:"
