@@ -809,13 +809,14 @@ if defined arguments.help (
 			call :check_docker_daemon
 			if errorlevel 1 goto :failed
 			call :check_device_info %SCRIPT_MODE%
+			set "DEVICE_INFO_STR=!DEVICE_INFO_STR!"
 			if errorlevel 1 goto :failed
 			if "%DEVICE_TAG%"=="" (
 				call :json_get tag
 				if errorlevel 1 goto :failed
 				set "DEVICE_TAG=%JSON_VALUE%"
 			)
-			echo device info string: !DEVICE_INFO_STR!
+			echo device info string: %DEVICE_INFO_STR%
 			echo device tag: !DEVICE_TAG!
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
 			if not errorlevel 1 (
