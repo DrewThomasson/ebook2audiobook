@@ -634,7 +634,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     if errorlevel 1 endlocal & exit /b 1
 ) else if "%HAS_COMPOSE%"=="0" (
     echo Using docker-compose
-    wsl -d Ubuntu -- docker compose build --progress=plain --no-cache ^
+    wsl -d Ubuntu -- docker compose --progress=plain build --no-cache ^
         --build-arg PYTHON_VERSION="%py_vers%" ^
         --build-arg APP_VERSION="%APP_VERSION%" ^
         --build-arg DEVICE_TAG="%DEVICE_TAG%" ^
