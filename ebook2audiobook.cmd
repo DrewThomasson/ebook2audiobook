@@ -813,7 +813,7 @@ if defined arguments.help (
 			if "%DEVICE_TAG%"=="" (
 				call :json_get tag
 				if errorlevel 1 goto :failed
-				echo json value: %JSON_VALUE%
+				echo json value: !JSON_VALUE!
 				set "DEVICE_TAG=%JSON_VALUE%"
 			)
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
