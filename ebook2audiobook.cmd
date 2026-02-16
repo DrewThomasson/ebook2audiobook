@@ -348,13 +348,7 @@ if not "%OK_DOCKER%"=="0" (
 				echo Could not start docker. Try it manually
 				goto :failed
 			)
-			echo Registering docker deamon pipe access…
-			call :register_docker_daemon_permission
-			if errorlevel 1 (
-				goto :failed
-			)
             echo %ESC%[33m=============== docker OK ===============%ESC%[0m
-			pause
             goto :restart_script
         ) else (
             echo %ESC%[31m=============== docker install failed.%ESC%[0m
@@ -590,6 +584,11 @@ if errorlevel 1 (
     sc query docker 2>nul | findstr /C:"RUNNING" >nul
     if errorlevel 1 goto :wait_docker
     echo Docker daemon is ready.
+	echo Registering docker deamon pipe access…
+	call :register_docker_daemon_permission
+	if errorlevel 1 (
+		endlocal & exit /b 1
+	)
 	goto :restart_script
 )
 endlocal
