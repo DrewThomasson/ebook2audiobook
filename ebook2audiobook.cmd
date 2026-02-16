@@ -798,6 +798,7 @@ if defined arguments.help (
 ) else (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "%DOCKER_DEVICE_STR%"=="" (
+			setlocal enabledelayedexpansion
             call %PYTHON_SCOOP% --version >nul 2>&1 || call scoop install %PYTHON_SCOOP% 2>nul
             where.exe /Q %PYTHON_SCOOP%
             if errorlevel 1 (
@@ -825,6 +826,7 @@ if defined arguments.help (
 			)
             call :build_docker_image "%DEVICE_INFO_STR%"
             if errorlevel 1 goto :failed
+			endlocal
         ) else (
             call :install_python_packages
             if errorlevel 1 goto :failed
