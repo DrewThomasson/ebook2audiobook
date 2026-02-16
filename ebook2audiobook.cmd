@@ -62,6 +62,7 @@ set "CURRENT_ENV="
 set "HOST_PROGRAMS=cmake rustup python calibre ffmpeg mediainfo nodejs espeak-ng sox tesseract"
 set "DOCKER_PROGRAMS=ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
+set "DOCKER_FIX_SCRIPT=dpf.ps1"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
 set "DEVICE_INFO_STR="
@@ -353,6 +354,7 @@ if not "%OK_DOCKER%"=="0" (
 				goto :failed
 			)
             echo %ESC%[33m=============== docker OK ===============%ESC%[0m
+			pause
             goto :restart_script
         ) else (
             echo %ESC%[31m=============== docker install failed.%ESC%[0m
@@ -595,23 +597,23 @@ exit /b 0
 
 :register_docker_daemon_permission
 echo Creating Docker pipe permission fix script…
-echo $account='%COMPUTERNAME%\%USERNAME%' > "%ProgramData%\docker-pipe-fix.ps1"
-echo $npipe='\\.\pipe\docker_engine' >> "%ProgramData%\docker-pipe-fix.ps1"
-echo $dInfo=New-Object 'System.IO.DirectoryInfo' -ArgumentList $npipe >> "%ProgramData%\docker-pipe-fix.ps1"
-echo $dSec=$dInfo.GetAccessControl() >> "%ProgramData%\docker-pipe-fix.ps1"
-echo $fullControl=[System.Security.AccessControl.FileSystemRights]::FullControl >> "%ProgramData%\docker-pipe-fix.ps1"
-echo $allow=[System.Security.AccessControl.AccessControlType]::Allow >> "%ProgramData%\docker-pipe-fix.ps1"
-echo $rule=New-Object 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList $account,$fullControl,$allow >> "%ProgramData%\docker-pipe-fix.ps1"
-echo $dSec.AddAccessRule($rule) >> "%ProgramData%\docker-pipe-fix.ps1"
-echo $dInfo.SetAccessControl($dSec) >> "%ProgramData%\docker-pipe-fix.ps1"
+echo $account='%COMPUTERNAME%\%USERNAME%' > "%ProgramData%\%DOCKER_FIX_SCRIPT%"
+echo $npipe='\\.\pipe\docker_engine' >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
+echo $dInfo=New-Object 'System.IO.DirectoryInfo' -ArgumentList $npipe >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
+echo $dSec=$dInfo.GetAccessControl() >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
+echo $fullControl=[System.Security.AccessControl.FileSystemRights]::FullControl >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
+echo $allow=[System.Security.AccessControl.AccessControlType]::Allow >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
+echo $rule=New-Object 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList $account,$fullControl,$allow >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
+echo $dSec.AddAccessRule($rule) >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
+echo $dInfo.SetAccessControl($dSec) >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
 echo Registering scheduled task…
-powershell -Command "$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""%ProgramData%\docker-pipe-fix.ps1""'; $trigger = New-ScheduledTaskTrigger -AtStartup; $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest; Register-ScheduledTask -TaskName 'DockerPipePermission' -Action $action -Trigger $trigger -Principal $principal -Force"
+powershell -Command "$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""%ProgramData%\%DOCKER_FIX_SCRIPT%""'; $trigger = New-ScheduledTaskTrigger -AtStartup; $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest; Register-ScheduledTask -TaskName 'DockerPipePermission' -Action $action -Trigger $trigger -Principal $principal -Force"
 if errorlevel 1 (
     echo Failed to register scheduled task.
     exit /b 1
 )
 echo Applying permissions now…
-powershell -ExecutionPolicy Bypass -File "%ProgramData%\docker-pipe-fix.ps1"
+powershell -ExecutionPolicy Bypass -File "%ProgramData%\%DOCKER_FIX_SCRIPT%"
 if errorlevel 1 (
     echo Failed to apply Docker pipe permissions.
     exit /b 1
