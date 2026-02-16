@@ -740,7 +740,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     if errorlevel 1 exit /b 1
 ) else (
 	echo Using docker build
-    docker buildx build --progress=plain --no-cache --platform linux/amd64 ^
+    wsl -d Ubuntu -- docker buildx build --progress=plain --no-cache --platform linux/amd64 ^
         --build-arg PYTHON_VERSION="%py_vers%" ^
         --build-arg APP_VERSION="%APP_VERSION%" ^
         --build-arg DEVICE_TAG="%DEVICE_TAG%" ^
