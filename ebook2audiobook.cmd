@@ -594,7 +594,7 @@ endlocal
 exit /b 0
 
 :register_docker_daemon_permission
-echo Creating Docker pipe permission fix script...
+echo Creating Docker pipe permission fix script…
 echo $account='%COMPUTERNAME%\%USERNAME%' > "%ProgramData%\docker-pipe-fix.ps1"
 echo $npipe='\\.\pipe\docker_engine' >> "%ProgramData%\docker-pipe-fix.ps1"
 echo $dInfo=New-Object 'System.IO.DirectoryInfo' -ArgumentList $npipe >> "%ProgramData%\docker-pipe-fix.ps1"
@@ -604,13 +604,13 @@ echo $allow=[System.Security.AccessControl.AccessControlType]::Allow >> "%Progra
 echo $rule=New-Object 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList $account,$fullControl,$allow >> "%ProgramData%\docker-pipe-fix.ps1"
 echo $dSec.AddAccessRule($rule) >> "%ProgramData%\docker-pipe-fix.ps1"
 echo $dInfo.SetAccessControl($dSec) >> "%ProgramData%\docker-pipe-fix.ps1"
-echo Registering scheduled task...
+echo Registering scheduled task…
 powershell -Command "$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""%ProgramData%\docker-pipe-fix.ps1""'; $trigger = New-ScheduledTaskTrigger -AtStartup; $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest; Register-ScheduledTask -TaskName 'DockerPipePermission' -Action $action -Trigger $trigger -Principal $principal -Force"
 if errorlevel 1 (
     echo Failed to register scheduled task.
     exit /b 1
 )
-echo Applying permissions now...
+echo Applying permissions now…
 powershell -ExecutionPolicy Bypass -File "%ProgramData%\docker-pipe-fix.ps1"
 if errorlevel 1 (
     echo Failed to apply Docker pipe permissions.
@@ -859,8 +859,9 @@ exit /b %CODE%
 :restart_script
 net session >nul 2>&1
 if not errorlevel 1 (
-    echo Restarting as normal user %USERNAME%...
+    echo Restarting as normal user %USERNAME%…
     schtasks /create /tn "RestartScript" /tr "cmd /k \"cd /d \"%SAFE_SCRIPT_DIR%\" & call %APP_FILE% %ARGS%\"" /sc once /st 00:00 /ru "%USERNAME%" /it /f >nul 2>&1
+	pause
     schtasks /run /tn "RestartScript" >nul 2>&1
     schtasks /delete /tn "RestartScript" /f >nul 2>&1
     exit 0
