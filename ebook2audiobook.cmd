@@ -684,7 +684,6 @@ exit /b 0
 
 :build_docker_image
 set "ARG=%~1"
-echo %ARG%
 where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
 docker compose version >nul 2>&1
@@ -816,6 +815,8 @@ if defined arguments.help (
 				if errorlevel 1 goto :failed
 				set "DEVICE_TAG=%JSON_VALUE%"
 			)
+			echo device info string: %DEVICE_INFO_STR%
+			echo device tag: %DEVICE_TAG%
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:%DEVICE_TAG%" already exists. Aborting build.
