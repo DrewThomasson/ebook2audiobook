@@ -816,7 +816,7 @@ if defined arguments.help (
 				set "DEVICE_TAG=%JSON_VALUE%"
 			)
 			echo device info string: !DEVICE_INFO_STR!
-			echo device tag: !DEVICE_TAG!
+			echo device tag: %DEVICE_TAG%
 			docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:%DEVICE_TAG%" already exists. Aborting build.
