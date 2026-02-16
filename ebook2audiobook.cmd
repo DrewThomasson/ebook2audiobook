@@ -859,10 +859,10 @@ exit /b %CODE%
 :restart_script
 net session >nul 2>&1
 if not errorlevel 1 (
-    echo Restarting as normal user %USERNAME%…
-    schtasks /create /tn "RestartScript" /tr "cmd /k \"cd /d \"%SAFE_SCRIPT_DIR%\" & call %APP_FILE% %ARGS%\"" /sc once /st 00:00 /ru "%USERNAME%" /it /f >nul 2>&1
-	pause
+    echo Restarting as normal user %USERNAME%...
+    schtasks /create /tn "RestartScript" /tr "cmd /k cd /d \"%SAFE_SCRIPT_DIR%\" & call %APP_FILE% %ARGS%" /sc once /st 00:00 /ru "%USERNAME%" /it /f >nul 2>&1
     schtasks /run /tn "RestartScript" >nul 2>&1
+    timeout /t 2 /nobreak >nul
     schtasks /delete /tn "RestartScript" /f >nul 2>&1
     exit 0
 )
