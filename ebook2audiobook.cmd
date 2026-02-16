@@ -94,7 +94,6 @@ set "OK_CONDA=0"
 set "OK_PROGRAMS=0"
 set "OK_WSL=0"
 set "OK_DOCKER=0"
-set "OK_DOCKER_BUILDX=0"
 
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
@@ -318,57 +317,15 @@ if not "%OK_WSL%"=="0" (
 )
 if not "%OK_DOCKER%"=="0" (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-        echo Installing Docker…
-        call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker docker-buildx"
-        if exist "%SCOOP_SHIMS%\docker.exe" (
-            net session >nul 2>&1
-            if errorlevel 1 (
-                echo Registering docker service in Administrator mode…
-				pause
-                goto :restart_script_admin
-            )
-			echo Registering docker service…
-            dockerd --register-service
-            if errorlevel 1 (
-                echo %ESC%[31m=============== docker service registration failed.%ESC%[0m
-                goto :failed
-            )
-            echo Adding %USERNAME% to docker-users group…
-            net localgroup docker-users >nul 2>&1
-            if errorlevel 1 (
-                net localgroup docker-users /add >nul 2>&1
-            )
-            net localgroup docker-users %USERNAME% /add >nul 2>&1
-			if errorlevel 1 (
-				echo Could not add %USERNAME% to docker-users. Try it manually
-				goto :failed
-			)
-            net start docker >nul 2>&1
-			if errorlevel 1 (
-				echo Could not start docker. Try it manually
-				goto :failed
-			)
-            echo %ESC%[33m=============== docker OK ===============%ESC%[0m
-            goto :restart_script
-        ) else (
+        echo Installing Docker inside WSL2...
+        wsl -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | sh"
+        if errorlevel 1 (
             echo %ESC%[31m=============== docker install failed.%ESC%[0m
             goto :failed
         )
+        echo %ESC%[33m=============== docker OK ===============%ESC%[0m
+        goto :restart_script
     )
-)
-if not "%OK_DOCKER_BUILDX%"=="0" (
-	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-		echo Installing docker-buildx…
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop install docker-buildx"
-		if exist "%SCOOP_SHIMS%\docker-buildx.exe" (
-			echo %ESC%[33m=============== docker-buildx OK ===============%ESC%[0m
-			set "OK_DOCKER_BUILDX=0"
-			goto :dispatch
-		) else (
-			echo %ESC%[31m=============== docker-buildx install failed.%ESC%[0m
-			goto :failed
-		)
-	)
 )
 if not "%OK_CONDA%"=="0" (
 	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
@@ -517,107 +474,55 @@ goto :check_required_programs
 :check_docker
 where.exe /Q wsl
 if errorlevel 1 (
-	echo WSL is not installed.
-	set "OK_WSL=1"
-	exit /b 1
+    echo WSL is not installed.
+    set "OK_WSL=1"
+    exit /b 1
 )
 for /f "tokens=3" %%A in (
-	'reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss" /v DefaultVersion 2^>nul ^| find "DefaultVersion"'
-) do (
-	set "WSL_VERSION=%%A"
-)
+    'reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss" /v DefaultVersion 2^>nul ^| find "DefaultVersion"'
+) do set "WSL_VERSION=%%A"
 if not "%WSL_VERSION%"=="0x2" (
-	echo WSL2 is not configured as default.
-	set "OK_WSL=1"
-	exit /b 1
+    echo WSL2 is not configured as default.
+    set "OK_WSL=1"
+    exit /b 1
 )
 wsl -l -q 2>nul | findstr /R /C:".*" >nul
 if errorlevel 1 (
-	echo No WSL Linux distribution installed.
-	set "OK_WSL=1"
-	exit /b 1
+    echo No WSL Linux distribution installed.
+    set "OK_WSL=1"
+    exit /b 1
 )
-where.exe /Q docker
+wsl -d Ubuntu -- which docker >nul 2>&1
 if errorlevel 1 (
-	echo docker is not installed.
-	set "OK_DOCKER=1"
-	exit /b 1
+    echo Docker is not installed inside WSL2.
+    set "OK_DOCKER=1"
+    exit /b 1
 )
-where.exe /Q docker-buildx
+wsl -d Ubuntu -- docker compose version >nul 2>&1
 if errorlevel 1 (
-	echo docker-buildx is not installed.
-	set "OK_DOCKER_BUILDX=1"
-	exit /b 1
+    echo docker compose is not available inside WSL2.
+    set "OK_DOCKER=1"
+    exit /b 1
 )
 exit /b 0
 
 :check_docker_daemon
-setlocal enabledelayedexpansion
-sc query docker 2>nul | findstr /C:"RUNNING" >nul
+wsl -d Ubuntu -- docker info >nul 2>&1
 if errorlevel 1 (
-    echo Starting Docker service…
-    net start docker >nul 2>&1
-    if errorlevel 1 (
-        net session >nul 2>&1
-        if errorlevel 1 (
-            echo Requires Administrator to start Docker service.
-            pause
-            endlocal
-            goto :restart_script_admin
-        )
-        echo Registering docker service…
-        dockerd --register-service
-        if errorlevel 1 (
-            echo Could not register Docker service.
-            endlocal & exit /b 1
-        )
-        net start docker >nul 2>&1
-    )
+    echo Starting Docker daemon inside WSL2...
+    wsl -d Ubuntu -- sudo service docker start >nul 2>&1
     set "DOCKER_RETRIES=0"
     :wait_docker
     timeout /t 3 /nobreak >nul
     set /a DOCKER_RETRIES+=1
-    if !DOCKER_RETRIES! geq 20 (
+    if %DOCKER_RETRIES% geq 20 (
         echo Docker daemon failed to start after 60 seconds.
-        endlocal & exit /b 1
+        exit /b 1
     )
-    sc query docker 2>nul | findstr /C:"RUNNING" >nul
+    wsl -d Ubuntu -- docker info >nul 2>&1
     if errorlevel 1 goto :wait_docker
     echo Docker daemon is ready.
-	echo Registering docker deamon pipe access…
-	call :register_docker_daemon_permission
-	if errorlevel 1 (
-		endlocal & exit /b 1
-	)
-	goto :restart_script
 )
-endlocal
-exit /b 0
-
-:register_docker_daemon_permission
-echo Creating Docker pipe permission fix script…
-echo $account='%COMPUTERNAME%\%USERNAME%' > "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-echo $npipe='\\.\pipe\docker_engine' >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-echo $dInfo=New-Object 'System.IO.DirectoryInfo' -ArgumentList $npipe >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-echo $dSec=$dInfo.GetAccessControl() >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-echo $fullControl=[System.Security.AccessControl.FileSystemRights]::FullControl >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-echo $allow=[System.Security.AccessControl.AccessControlType]::Allow >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-echo $rule=New-Object 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList $account,$fullControl,$allow >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-echo $dSec.AddAccessRule($rule) >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-echo $dInfo.SetAccessControl($dSec) >> "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-echo Registering scheduled task…
-powershell -Command "$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""%ProgramData%\%DOCKER_FIX_SCRIPT%""'; $trigger = New-ScheduledTaskTrigger -AtStartup; $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest; Register-ScheduledTask -TaskName 'DockerPipePermission' -Action $action -Trigger $trigger -Principal $principal -Force"
-if errorlevel 1 (
-    echo Failed to register scheduled task.
-    exit /b 1
-)
-echo Applying permissions now…
-powershell -ExecutionPolicy Bypass -File "%ProgramData%\%DOCKER_FIX_SCRIPT%"
-if errorlevel 1 (
-    echo Failed to apply Docker pipe permissions.
-    exit /b 1
-)
-echo Docker pipe permissions applied and registered for startup.
 exit /b 0
 
 :check_device_info
@@ -683,11 +588,12 @@ if "%src_time%" GTR "%dst_time%" (
 exit /b 0
 
 :build_docker_image
+setlocal
 set "ARG=%~1"
 set "ARG_ESCAPED=%ARG:"=\"%"
 where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
-docker compose version >nul 2>&1
+wsl -d Ubuntu -- docker compose version >nul 2>&1
 set "HAS_COMPOSE=%errorlevel%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
@@ -714,8 +620,9 @@ if /i "%DEVICE_TAG%"=="cpu" (
 ) else (
     set "COMPOSE_PROFILES=gpu"
 )
+for /f "delims=" %%i in ('wsl -d Ubuntu -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
 if "%HAS_PODMAN_COMPOSE%"=="0" (
-	echo Using podman-compose
+    echo Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg PYTHON_VERSION=%py_vers%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg APP_VERSION=%APP_VERSION%"
@@ -725,21 +632,21 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
     podman-compose -f podman-compose.yml build
-    if errorlevel 1 exit /b 1
+    if errorlevel 1 endlocal & exit /b 1
 ) else if "%HAS_COMPOSE%"=="0" (
-	echo Using docker-compose
-    set "BUILD_NAME=%DOCKER_IMG_NAME%"
-    docker compose build --progress=plain --no-cache ^
+    echo Using docker-compose
+    wsl -d Ubuntu -- docker compose build --progress=plain --no-cache --platform linux/amd64 ^
         --build-arg PYTHON_VERSION="%py_vers%" ^
         --build-arg APP_VERSION="%APP_VERSION%" ^
         --build-arg DEVICE_TAG="%DEVICE_TAG%" ^
         --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" ^
         --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
         --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
-        --build-arg ISO3_LANG="%ISO3_LANG%"
-    if errorlevel 1 exit /b 1
+        --build-arg ISO3_LANG="%ISO3_LANG%" ^
+        "%WSL_DIR%"
+    if errorlevel 1 endlocal & exit /b 1
 ) else (
-	echo Using docker build
+    echo Using docker buildx
     wsl -d Ubuntu -- docker buildx build --progress=plain --no-cache --platform linux/amd64 ^
         --build-arg PYTHON_VERSION="%py_vers%" ^
         --build-arg APP_VERSION="%APP_VERSION%" ^
@@ -748,11 +655,12 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
         --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
         --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
         --build-arg ISO3_LANG="%ISO3_LANG%" ^
-        -t "%DOCKER_IMG_NAME%" .
-    if errorlevel 1 exit /b 1
+        -t "%DOCKER_IMG_NAME%" ^
+        "%WSL_DIR%"
+    if errorlevel 1 endlocal & exit /b 1
 )
 if defined cmd_options set "cmd_extra=%cmd_options% "
-echo Docker image ready. to run your docker:"
+echo Docker image ready. To run your docker:
 echo GUI mode:
 echo     docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 echo Headless mode:
@@ -761,6 +669,7 @@ echo Docker Compose:
 echo     DEVICE_TAG=%DEVICE_TAG% docker compose up -d
 echo Podman Compose:
 echo     DEVICE_TAG=%DEVICE_TAG% podman-compose up -d
+endlocal
 exit /b 0
 
 :::::::::::: END CORE FUNCTIONS
@@ -770,9 +679,7 @@ if "%OK_SCOOP%"=="0" (
     if "%OK_PROGRAMS%"=="0" (
         if "%OK_CONDA%"=="0" (
             if "%OK_DOCKER%"=="0" (
-				if "%OK_DOCKER_BUILDX%"=="0" (
-					goto :main
-				)
+				goto :main
             )
         )
     )
@@ -780,7 +687,6 @@ if "%OK_SCOOP%"=="0" (
 echo OK_PROGRAMS: %OK_PROGRAMS%
 echo OK_CONDA: %OK_CONDA%
 echo OK_DOCKER: %OK_DOCKER%
-echo OK_DOCKER_BUILDX: %OK_DOCKER_BUILDX%
 goto :install_programs
 
 :main
