@@ -630,32 +630,16 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DOCKER_PROGRAMS_STR=%DOCKER_PROGRAMS%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
+    cd /d "%SAFE_SCRIPT_DIR%"
     podman-compose -f podman-compose.yml build
     if errorlevel 1 endlocal & exit /b 1
 ) else if "%HAS_COMPOSE%"=="0" (
     echo Using docker-compose
-    wsl -d Ubuntu -- docker compose --progress=plain build --no-cache ^
-        --build-arg PYTHON_VERSION="%py_vers%" ^
-        --build-arg APP_VERSION="%APP_VERSION%" ^
-        --build-arg DEVICE_TAG="%DEVICE_TAG%" ^
-        --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" ^
-        --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
-        --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
-        --build-arg ISO3_LANG="%ISO3_LANG%" ^
-        "%WSL_DIR%"
+    wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker compose build --progress=plain --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
     if errorlevel 1 endlocal & exit /b 1
 ) else (
     echo Using docker buildx
-    wsl -d Ubuntu -- docker buildx build --progress=plain --no-cache ^
-        --build-arg PYTHON_VERSION="%py_vers%" ^
-        --build-arg APP_VERSION="%APP_VERSION%" ^
-        --build-arg DEVICE_TAG="%DEVICE_TAG%" ^
-        --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" ^
-        --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" ^
-        --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" ^
-        --build-arg ISO3_LANG="%ISO3_LANG%" ^
-        -t "%DOCKER_IMG_NAME%" ^
-        "%WSL_DIR%"
+    wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker buildx build --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
     if errorlevel 1 endlocal & exit /b 1
 )
 if defined cmd_options set "cmd_extra=%cmd_options% "
