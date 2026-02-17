@@ -31,7 +31,7 @@ WORKDIR /app
 # ------------------------------------------------------------
 RUN set -eux; \
 	apt-get update; \
-	apt-get install -y --no-install-recommends \
+	apt-get install -y --no-install-recommends --allow-change-held-packages\
 		gcc g++ make pkg-config cmake \
 		curl wget git bash xz-utils \
 		fontconfig libfontconfig1 libfreetype6 \
