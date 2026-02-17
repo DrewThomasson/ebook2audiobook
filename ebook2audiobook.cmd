@@ -368,8 +368,8 @@ if not "%OK_PROGRAMS%"=="0" (
         if "%%p"=="tesseract" (
             where.exe /Q !prog!
             if not errorlevel 1 (
-                call :get_iso3_lang "!OS_LANG!"
-                echo Detected system language: !OS_LANG! → downloading OCR language: !ISO3_LANG!
+                call :get_iso3_lang "%OS_LANG%"
+                echo Detected system language: %OS_LANG% → downloading OCR language: !ISO3_LANG!
                 set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
                 if not exist "!tessdata!" mkdir "!tessdata!"
                 if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
@@ -620,6 +620,10 @@ if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=gpu"
 )
 for /f "delims=" %%i in ('wsl -d Ubuntu -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
+if "ISO3_LANG"=="" (
+	call :get_iso3_lang "%OS_LANG%"
+	echo iso3 lang: %ISO3_LANG% or !ISO3_LANG!
+)
 if "%HAS_PODMAN_COMPOSE%"=="0" (
     echo Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
