@@ -301,12 +301,15 @@ if not "%OK_WSL%"=="0" (
 			pause
 			goto :restart_script_admin
 		)
-		echo Installing WSL2…
-		wsl --install
+		echo Installing WSL2...
+		wsl --install --no-distribution
 		dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 		dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 		wsl --set-default-version 2
-		wsl --install -d Ubuntu
+		wsl --install -d Ubuntu --no-launch
+		ubuntu config --default-user root
+		echo [wsl2] > "%USERPROFILE%\.wslconfig"
+		echo automount=false >> "%USERPROFILE%\.wslconfig"
 		echo.
 		echo ==================================================
 		echo WSL installation triggered.
@@ -324,6 +327,7 @@ if not "%OK_DOCKER%"=="0" (
             echo %ESC%[31m=============== docker install failed.%ESC%[0m
             goto :failed
         )
+        wsl -d Ubuntu -- bash -c "usermod -aG docker root"
         echo %ESC%[33m=============== docker OK ===============%ESC%[0m
         goto :restart_script
     )
