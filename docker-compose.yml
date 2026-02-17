@@ -11,6 +11,7 @@ services:
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     tty: true
     stdin_open: true
+    shm_size: '2gb'
     ports:
       - "7860:7860"
     volumes:
@@ -30,6 +31,7 @@ services:
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     tty: true
     stdin_open: true
+    shm_size: '4gb'
     ports:
       - "7860:7860"
     volumes:
