@@ -623,7 +623,7 @@ if /i "%DEVICE_TAG%"=="cpu" (
 for /f "delims=" %%i in ('wsl -d Ubuntu -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
 call :get_iso3_lang "%OS_LANG%"
 set "ISO3_LANG=!ISO3_LANG!"
-docker buildx use wslbuilder
+wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder
 if "%HAS_PODMAN_COMPOSE%"=="0" (
     echo Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
