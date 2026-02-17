@@ -302,11 +302,10 @@ if not "%OK_WSL%"=="0" (
 			goto :restart_script_admin
 		)
 		echo Installing WSL2...
-		wsl --install --no-distribution
 		dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 		dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 		wsl --set-default-version 2
-		wsl --install -d Ubuntu --no-launch
+		wsl --install -d Ubuntu
 		ubuntu config --default-user root
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
 		echo automount=false >> "%USERPROFILE%\.wslconfig"
