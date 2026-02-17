@@ -86,6 +86,9 @@ RUN chmod +x /app/ebook2audiobook.sh
 
 COPY . /app
 
+# Ensure Unix line endings
+RUN find /app -type f \( -name "*.sh" -o -name "*.command" \) -exec sed -i 's/\r$//' {} \;
+
 # ------------------------------------------------------------
 # Build dependencies via project script
 # ------------------------------------------------------------
