@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      shm_size: '2gb'
       args:
         APP_VERSION: ${APP_VERSION:-26.2.16}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
@@ -24,6 +25,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      shm_size: '4gb'
       args:
         APP_VERSION: ${APP_VERSION:-26.2.16}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
