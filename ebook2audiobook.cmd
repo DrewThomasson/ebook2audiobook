@@ -60,7 +60,8 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 set "HOST_PROGRAMS=cmake rustup python calibre ffmpeg mediainfo nodejs espeak-ng sox tesseract"
-set "DOCKER_PROGRAMS=ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr" # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+:: tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+set "DOCKER_PROGRAMS=xz-utils ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_FIX_SCRIPT=dpf.ps1"
 set "DOCKER_DEVICE_STR="
