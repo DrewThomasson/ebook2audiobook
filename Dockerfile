@@ -89,7 +89,7 @@ COPY . /app
 # ------------------------------------------------------------
 # Build dependencies via project script
 # ------------------------------------------------------------
-RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 # ------------------------------------------------------------
 # Cleanup
