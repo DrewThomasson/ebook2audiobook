@@ -81,7 +81,7 @@ VOLUME \
 	/app/tmp \
 	/app/ebooks
 
-COPY ebook2audiobook.sh /app/ebook2audiobook.sh
+COPY ebook2audiobook.command /app/ebook2audiobook.sh
 RUN chmod +x /app/ebook2audiobook.sh
 
 COPY . /app

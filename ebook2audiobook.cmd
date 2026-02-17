@@ -370,7 +370,6 @@ if not "%OK_PROGRAMS%"=="0" (
             if not errorlevel 1 (
                 call :get_iso3_lang "!OS_LANG!"
                 echo Detected system language: !OS_LANG! → downloading OCR language: !ISO3_LANG!
-				pause
                 set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
                 if not exist "!tessdata!" mkdir "!tessdata!"
                 if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
