@@ -772,9 +772,9 @@ function build_docker_image {
 		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
 			-f docker-compose.yml \
+			--progress plain \
 			build \
 			--no-cache \
-			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$DEVICE_TAG" \
@@ -785,7 +785,7 @@ function build_docker_image {
 			|| return 1
 	else
 		echo "--> Using docker build"
-		docker build \
+		docker buildx build \
 			--no-cache \
 			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
