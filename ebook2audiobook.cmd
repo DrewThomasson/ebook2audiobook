@@ -301,11 +301,11 @@ if not "%OK_WSL%"=="0" (
 			pause
 			goto :restart_script_admin
 		)
-		echo Installing WSL2...
+		echo Installing WSL2…
 		dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 		dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 		wsl --set-default-version 2
-		echo Updating WSL2 kernel...
+		echo Updating WSL2 kernel…
 		wsl --update
 		wsl --shutdown
 		wsl --install -d Ubuntu
@@ -323,7 +323,7 @@ if not "%OK_WSL%"=="0" (
 )
 if not "%OK_DOCKER%"=="0" (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-        echo Installing Docker inside WSL2...
+        echo Installing Docker inside WSL2…
         wsl -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | sh"
         if errorlevel 1 (
             echo %ESC%[31m=============== docker install failed.%ESC%[0m
@@ -516,8 +516,8 @@ exit /b 0
 :check_docker_daemon
 wsl -d Ubuntu -- docker info >nul 2>&1
 if not errorlevel 1 exit /b 0
-echo Starting Docker daemon inside WSL2...
-wsl -d Ubuntu -- sudo service docker start >nul 2>&1
+echo Starting Docker daemon inside WSL2…
+wsl -d Ubuntu -- service docker start >nul 2>&1
 set "DOCKER_RETRIES=0"
 :wait_docker
 timeout /t 3 /nobreak >nul
@@ -760,7 +760,7 @@ exit /b %CODE%
 :restart_script
 net session >nul 2>&1
 if not errorlevel 1 (
-    echo Restarting as normal user %USERNAME%...
+    echo Restarting as normal user %USERNAME%…
     schtasks /create /tn "RestartScript" /tr "cmd /k cd /d \"%SAFE_SCRIPT_DIR%\" & call %APP_FILE% %ARGS%" /sc once /st 00:00 /ru "%USERNAME%" /it /f >nul 2>&1
     schtasks /run /tn "RestartScript" >nul 2>&1
     timeout /t 2 /nobreak >nul
