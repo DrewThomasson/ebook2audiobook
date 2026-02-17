@@ -635,8 +635,8 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     if errorlevel 1 endlocal & exit /b 1
 ) else if "%HAS_COMPOSE%"=="0" (
     echo Using docker-compose
-	wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
-    if errorlevel 1 endlocal & exit /b 1
+    wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
+    if errorlevel 1 endlocal & exit /b 1    if errorlevel 1 endlocal & exit /b 1
 ) else (
     echo Using docker buildx
     wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker buildx build --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
