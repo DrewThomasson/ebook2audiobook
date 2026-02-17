@@ -620,7 +620,7 @@ if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=gpu"
 )
 for /f "delims=" %%i in ('wsl -d Ubuntu -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
-if "%ISO3_LANG%"=="" (
+if "!ISO3_LANG!"=="" (
 	call :get_iso3_lang "%OS_LANG%"
 	echo iso3 lang: %ISO3_LANG% or !ISO3_LANG!
 )
