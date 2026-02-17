@@ -305,6 +305,9 @@ if not "%OK_WSL%"=="0" (
 		dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 		dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 		wsl --set-default-version 2
+		echo Updating WSL2 kernel...
+		wsl --update
+		wsl --shutdown
 		wsl --install -d Ubuntu
 		ubuntu config --default-user root
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
