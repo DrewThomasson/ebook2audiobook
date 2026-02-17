@@ -623,6 +623,7 @@ if /i "%DEVICE_TAG%"=="cpu" (
 for /f "delims=" %%i in ('wsl -d Ubuntu -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
 call :get_iso3_lang "%OS_LANG%"
 set "ISO3_LANG=!ISO3_LANG!"
+docker buildx use wslbuilder
 if "%HAS_PODMAN_COMPOSE%"=="0" (
     echo Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
@@ -638,7 +639,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     if errorlevel 1 endlocal & exit /b 1
 ) else if "%HAS_COMPOSE%"=="0" (
     echo Using docker-compose
-    wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --shm-size=4g --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
+    wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
     if errorlevel 1 endlocal & exit /b 1    if errorlevel 1 endlocal & exit /b 1
 ) else (
     echo Using docker buildx
