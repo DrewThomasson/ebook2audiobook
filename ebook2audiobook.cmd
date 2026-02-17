@@ -620,11 +620,8 @@ if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=gpu"
 )
 for /f "delims=" %%i in ('wsl -d Ubuntu -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
-if "%ISO3_LANG%"=="" (
-	call :get_iso3_lang "%OS_LANG%"
-)
+call :get_iso3_lang "%OS_LANG%"
 set "ISO3_LANG=!ISO3_LANG!"
-echo iso3 lang = %ISO3_LANG%
 if "%HAS_PODMAN_COMPOSE%"=="0" (
     echo Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
