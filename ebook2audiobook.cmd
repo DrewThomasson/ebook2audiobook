@@ -323,13 +323,14 @@ if not "%OK_WSL%"=="0" (
 )
 if not "%OK_DOCKER%"=="0" (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-        echo Installing Docker inside WSL2…
-        wsl -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | sh"
+        echo Installing Docker inside WSL2...
+        wsl --user root -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
         if errorlevel 1 (
             echo %ESC%[31m=============== docker install failed.%ESC%[0m
             goto :failed
         )
-        wsl -d Ubuntu -- bash -c "usermod -aG docker root"
+        wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
+        wsl --shutdown
         echo %ESC%[33m=============== docker OK ===============%ESC%[0m
         goto :restart_script
     )
@@ -499,13 +500,13 @@ if errorlevel 1 (
     set "OK_WSL=1"
     exit /b 1
 )
-wsl -d Ubuntu -- which docker >nul 2>&1
+wsl --user root -d Ubuntu -- which docker >nul 2>&1
 if errorlevel 1 (
     echo Docker is not installed inside WSL2.
     set "OK_DOCKER=1"
     exit /b 1
 )
-wsl -d Ubuntu -- docker compose version >nul 2>&1
+wsl --user root -d Ubuntu -- docker compose version >nul 2>&1
 if errorlevel 1 (
     echo docker compose is not available inside WSL2.
     set "OK_DOCKER=1"
@@ -514,10 +515,14 @@ if errorlevel 1 (
 exit /b 0
 
 :check_docker_daemon
-wsl -d Ubuntu -- docker info >nul 2>&1
+wsl --user root -d Ubuntu -- docker info >nul 2>&1
 if not errorlevel 1 exit /b 0
 echo Starting Docker daemon inside WSL2…
-wsl -d Ubuntu -- service docker start >nul 2>&1
+wsl --user root -d Ubuntu -- service docker start >nul 2>&1
+if errorlevel 1 (
+    echo Docker failed to start
+    goto :failed
+)
 set "DOCKER_RETRIES=0"
 :wait_docker
 timeout /t 3 /nobreak >nul
@@ -526,7 +531,7 @@ if %DOCKER_RETRIES% geq 20 (
     echo Docker daemon failed to start after 60 seconds.
     exit /b 1
 )
-wsl -d Ubuntu -- docker info >nul 2>&1
+wsl --user root -d Ubuntu -- docker info >nul 2>&1
 if errorlevel 1 goto :wait_docker
 echo Docker daemon is ready.
 exit /b 0
@@ -599,7 +604,7 @@ set "ARG=%~1"
 set "ARG_ESCAPED=%ARG:"=\"%"
 where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
-wsl -d Ubuntu -- docker compose version >nul 2>&1
+wsl --user root -d Ubuntu -- docker compose version >nul 2>&1
 set "HAS_COMPOSE=%errorlevel%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
@@ -626,10 +631,10 @@ if /i "%DEVICE_TAG%"=="cpu" (
 ) else (
     set "COMPOSE_PROFILES=gpu"
 )
-for /f "delims=" %%i in ('wsl -d Ubuntu -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
+for /f "delims=" %%i in ('wsl --user root -d Ubuntu -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
 call :get_iso3_lang "%OS_LANG%"
 set "ISO3_LANG=!ISO3_LANG!"
-wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder
+wsl --user root -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder
 if "%HAS_PODMAN_COMPOSE%"=="0" (
     echo Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
@@ -645,11 +650,11 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     if errorlevel 1 endlocal & exit /b 1
 ) else if "%HAS_COMPOSE%"=="0" (
     echo Using docker-compose
-    wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
+    wsl --user root -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
     if errorlevel 1 endlocal & exit /b 1    if errorlevel 1 endlocal & exit /b 1
 ) else (
     echo Using docker buildx
-    wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker buildx build --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
+    wsl --user root -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker buildx build --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
     if errorlevel 1 endlocal & exit /b 1
 )
 if defined cmd_options set "cmd_extra=%cmd_options% "
