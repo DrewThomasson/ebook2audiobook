@@ -705,14 +705,23 @@ if errorlevel 1 (
 )
 if defined cmd_options set "cmd_extra=%cmd_options% "
 echo Docker image ready. To run your docker:
-echo GUI mode:
-echo     docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
-echo Headless mode:
-echo     docker run %cmd_extra%--rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-echo Docker Compose:
-echo     DEVICE_TAG=%DEVICE_TAG% docker compose up -d
-echo Podman Compose:
-echo     DEVICE_TAG=%DEVICE_TAG% podman-compose up -d
+if "%DOCKER_DESKTOP%"=="1" (
+    echo GUI mode:
+    echo     docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+    echo Headless mode:
+    echo     docker run %cmd_extra%--rm -it -v "C:\path\to\ebooks:/app/ebooks" -v "C:\path\to\audiobooks:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+    echo Docker Compose:
+    echo     DEVICE_TAG=%DEVICE_TAG% docker compose up -d
+    echo Podman Compose:
+    echo     DEVICE_TAG=%DEVICE_TAG% podman-compose up -d
+) else (
+    echo GUI mode ^(run inside WSL^):
+    echo     wsl -d Ubuntu -- docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+    echo Headless mode ^(run inside WSL^):
+    echo     wsl -d Ubuntu -- docker run %cmd_extra%--rm -it -v "/mnt/c/Users/YourName/ebooks:/app/ebooks" -v "/mnt/c/Users/YourName/audiobooks:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf"
+    echo Docker Compose ^(run inside WSL^):
+    echo     wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && DEVICE_TAG=%DEVICE_TAG% docker compose up -d"
+)
 endlocal
 exit /b 0
 
