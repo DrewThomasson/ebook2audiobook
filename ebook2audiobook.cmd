@@ -820,7 +820,11 @@ if defined arguments.help (
 			)
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!DEVICE_TAG!" already exists.
-				echo To rebuild, first remove it with: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
+				if "%DOCKER_DESKTOP%"=="1" (
+					echo To rebuild, first remove it with: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
+				) else (
+					echo To rebuild, first remove it with: wsl -d Ubuntu -- docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
+				)
 				goto :failed
 			)
             call :build_docker_image "!DEVICE_INFO_STR!"
