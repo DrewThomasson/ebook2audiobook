@@ -314,6 +314,13 @@ if errorlevel 1 (
     goto :failed
 )
 del "%TEMP%\%PYTHON_INSTALLER%"
+echo Refreshing PATH...
+REM Manually add Python to current session PATH (avoid duplicates)
+set "PYTHON_PATH=%LOCALAPPDATA%\Programs\Python\Python%PYTHON_VERSION:.=%"
+echo ;%PATH%; | findstr /C:";%PYTHON_PATH%;" >nul
+if errorlevel 1 (
+    set "PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%"
+)
 echo %ESC%[33m=============== Python OK ===============%ESC%[0m
 set "OK_PYTHON=0"
 goto :restart_script
