@@ -2706,10 +2706,10 @@ def convert_ebook(args:dict)->tuple:
                                                     if not checksum:
                                                         session['blocks'] = get_blocks(session_id, epubBook)
                                                     if session['blocks']:
-                                                        if session['chapters_preview']:
-                                                           return 'confirm_blocks', True
-                                                        else:
-                                                            progress_status, passed = finalize_audiobook(session_id)
+                                                        #if session['chapters_preview']:
+                                                        #   return 'confirm_blocks', True
+                                                        #else:
+                                                        progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
                                                     else:
                                                         error = f"get_blocks() failed! {session['blocks']}"

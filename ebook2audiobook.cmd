@@ -309,24 +309,33 @@ if not "%OK_WSL%"=="0" (
 		echo Updating WSL2 kernel…
 		wsl --update 2>nul
 		wsl --shutdown
-		echo Installing Ubuntu...
+		echo Installing Ubuntu silently...
 		wsl --unregister Ubuntu >nul 2>&1
-		start /min wsl --install -d Ubuntu
-		echo Waiting for Ubuntu installation to initialize...
-		timeout /t 15 /nobreak >nul
-		taskkill /IM ubuntu.exe /F >nul 2>&1
+		powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://aka.ms/wslubuntu2204' -OutFile '%TEMP%\ubuntu.appx'"
+		if errorlevel 1 (
+			echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
+			goto :failed
+		)
+		powershell -NoProfile -Command "Add-AppxPackage '%TEMP%\ubuntu.appx'"
+		if errorlevel 1 (
+			echo %ESC%[31m=============== Failed to install Ubuntu appx.%ESC%[0m
+			del "%TEMP%\ubuntu.appx"
+			goto :failed
+		)
+		del "%TEMP%\ubuntu.appx"
+		timeout /t 3 /nobreak >nul
+		wsl --shutdown
+		REM Launch Ubuntu once to initialize, then kill it
+		start /min ubuntu2204.exe install --root
+		timeout /t 10 /nobreak >nul
+		taskkill /IM ubuntu2204.exe /F >nul 2>&1
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
-		REM Verify Ubuntu was installed
+		REM Verify installation
 		wsl -l -q | findstr /i "Ubuntu" >nul
 		if errorlevel 1 (
-			echo %ESC%[31m=============== Ubuntu installation failed. Please reboot Windows and retry.%ESC%[0m
-			pause
-			exit
-		)
-		REM Set root as default via registry
-		for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
-			reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
+			echo %ESC%[31m=============== Ubuntu installation verification failed.%ESC%[0m
+			goto :failed
 		)
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
 		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
