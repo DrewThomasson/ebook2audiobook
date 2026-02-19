@@ -313,13 +313,9 @@ if not "%OK_WSL%"=="0" (
 		ubuntu config --default-user root
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
 		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
-		echo.
-		echo ==================================================
-		echo WSL installation triggered.
-		echo please reboot manually now.
-		echo ==================================================
-		pause
-		exit
+		echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
+		set "OK_WSL=0"
+		goto :restart_script
 	)
 )
 if not "%OK_DOCKER%"=="0" (
