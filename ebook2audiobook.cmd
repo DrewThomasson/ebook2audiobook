@@ -311,11 +311,13 @@ if not "%OK_WSL%"=="0" (
 		wsl --shutdown
 		echo Installing Ubuntu silently...
 		wsl --unregister Ubuntu >nul 2>&1
+		echo Downloading Ubuntu...
 		powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://aka.ms/wslubuntu2204' -OutFile '%TEMP%\ubuntu.appx'"
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
 			goto :failed
 		)
+		echo Installing Ubuntu appx...
 		powershell -NoProfile -Command "Add-AppxPackage '%TEMP%\ubuntu.appx'"
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Failed to install Ubuntu appx.%ESC%[0m
@@ -323,15 +325,11 @@ if not "%OK_WSL%"=="0" (
 			goto :failed
 		)
 		del "%TEMP%\ubuntu.appx"
-		timeout /t 3 /nobreak >nul
-		wsl --shutdown
-		REM Launch Ubuntu once to initialize, then kill it
-		start /min ubuntu2204.exe install --root
-		timeout /t 10 /nobreak >nul
-		taskkill /IM ubuntu2204.exe /F >nul 2>&1
+		echo Initializing Ubuntu as root...
+		ubuntu2204.exe install --root >nul 2>&1
+		echo Verifying installation...
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
-		REM Verify installation
 		wsl -l -q | findstr /i "Ubuntu" >nul
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Ubuntu installation verification failed.%ESC%[0m
