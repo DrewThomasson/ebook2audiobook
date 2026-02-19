@@ -309,19 +309,18 @@ if not "%OK_WSL%"=="0" (
 		echo Updating WSL2 kernel…
 		wsl --update 2>nul
 		wsl --shutdown
-		echo Installing Ubuntu silently...
+		echo Installing Ubuntu...
 		wsl --unregister Ubuntu >nul 2>&1
-		wsl --install -d Ubuntu
-		timeout /t 10 /nobreak >nul
+		start /min wsl --install -d Ubuntu
+		echo Waiting for Ubuntu installation to initialize...
+		timeout /t 15 /nobreak >nul
+		taskkill /IM ubuntu.exe /F >nul 2>&1
 		wsl --shutdown
-		REM Set root via direct registry edit
-		for /f "skip=1" %%G in ('wsl -l -q') do (
-			for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { $name = (Get-ItemProperty $_.PSPath).DistributionName; $name -and $name.Trim() -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
-				reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
-			)
-			goto :ubuntu_configured
+		timeout /t 3 /nobreak >nul
+		REM Set root as default via registry
+		for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
+			reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
 		)
-		:ubuntu_configured
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
 		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
 		wsl --shutdown
