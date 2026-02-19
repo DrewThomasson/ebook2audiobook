@@ -317,6 +317,13 @@ if not "%OK_WSL%"=="0" (
 		taskkill /IM ubuntu.exe /F >nul 2>&1
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
+		REM Verify Ubuntu was installed
+		wsl -l -q | findstr /i "Ubuntu" >nul
+		if errorlevel 1 (
+			echo %ESC%[31m=============== Ubuntu installation failed. Please reboot Windows and retry.%ESC%[0m
+			pause
+			exit
+		)
 		REM Set root as default via registry
 		for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
 			reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
@@ -326,7 +333,6 @@ if not "%OK_WSL%"=="0" (
 		wsl --shutdown
 		echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
 		set "OK_WSL=0"
-		pause
 		goto :restart_script
 	)
 )
