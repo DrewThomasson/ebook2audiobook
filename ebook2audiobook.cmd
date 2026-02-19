@@ -307,7 +307,7 @@ if not "%OK_WSL%"=="0" (
 		dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 		wsl --set-default-version 2
 		echo Updating WSL2 kernel…
-		wsl --update
+		wsl --update 2>nul
 		wsl --shutdown
 		echo Installing Ubuntu silently...
 		wsl --unregister Ubuntu >nul 2>&1
@@ -322,12 +322,11 @@ if not "%OK_WSL%"=="0" (
 			del "%TEMP%\ubuntu.appx"
 			goto :failed
 		)
-		ubuntu config --default-user root
-		if errorlevel 1 (
-			echo %ESC%[31m=============== Failed to set root as default user.%ESC%[0m
-			goto :failed
-		)
 		del "%TEMP%\ubuntu.appx"
+		REM Set root as default using registry (works regardless of ubuntu command name)
+		for /f "tokens=*" %%G in ('wsl -l -q ^| findstr /i "Ubuntu"') do set "DISTRO_NAME=%%G"
+		for /f %%A in ('powershell -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq '%DISTRO_NAME%' } | Select-Object -ExpandProperty PSChildName"') do set "DISTRO_GUID=%%A"
+		reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%DISTRO_GUID%" /v DefaultUid /t REG_DWORD /d 0 /f >nul 2>&1
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
 		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
 		wsl --shutdown
