@@ -309,15 +309,15 @@ if not "%OK_WSL%"=="0" (
 		echo Updating WSL2 kernel…
 		wsl --update 2>nul
 		wsl --shutdown
-		echo Installing Ubuntu silently...
+		echo Installing Ubuntu silently…
 		wsl --unregister Ubuntu >nul 2>&1
-		echo Downloading Ubuntu...
+		echo Downloading Ubuntu…
 		powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://aka.ms/wslubuntu2204' -OutFile '%TEMP%\ubuntu.appx'"
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
 			goto :failed
 		)
-		echo Installing Ubuntu appx...
+		echo Installing Ubuntu appx…
 		powershell -NoProfile -Command "Add-AppxPackage '%TEMP%\ubuntu.appx'"
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Failed to install Ubuntu appx.%ESC%[0m
@@ -325,9 +325,9 @@ if not "%OK_WSL%"=="0" (
 			goto :failed
 		)
 		del "%TEMP%\ubuntu.appx"
-		echo Initializing Ubuntu as root...
+		echo Initializing Ubuntu as root…
 		ubuntu2204.exe install --root >nul 2>&1
-		echo Verifying installation...
+		echo Verifying installation…
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
 		wsl -l -q | findstr /i "Ubuntu" >nul
@@ -345,15 +345,28 @@ if not "%OK_WSL%"=="0" (
 )
 if not "%OK_DOCKER%"=="0" (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-        echo Installing Docker inside WSL2...
+        echo Installing Docker inside WSL2…
+        REM First verify WSL Ubuntu is actually working
+        wsl --user root -d Ubuntu -- bash -c "echo 'WSL is ready'" >nul 2>&1
+        if errorlevel 1 (
+            echo %ESC%[31m=============== WSL Ubuntu is not ready. Initializing…%ESC%[0m
+            wsl --user root -d Ubuntu -- bash -c "apt-get update" >nul 2>&1
+            wsl --shutdown
+            timeout /t 3 /nobreak >nul
+        )
+        echo Downloading and installing Docker…
         wsl --user root -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
         if errorlevel 1 (
             echo %ESC%[31m=============== docker install failed.%ESC%[0m
+            echo Try running: wsl --user root -d Ubuntu
+            echo Then manually run: curl -fsSL https://get.docker.com ^| sh
             goto :failed
         )
-		wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
-		wsl --shutdown
+        echo Enabling systemd…
+        wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
+        wsl --shutdown
         echo %ESC%[33m=============== docker OK ===============%ESC%[0m
+        set "OK_DOCKER=0"
         goto :restart_script
     )
 )
@@ -853,7 +866,7 @@ if not errorlevel 1 (
     exit 0
 )
 start "%APP_NAME%" cmd /k "cd /d "%SAFE_SCRIPT_DIR%" & call %APP_FILE% %ARGS%"
-exit
+exit 0
 
 :restart_script_admin
 echo Restarting script as Administrator…
