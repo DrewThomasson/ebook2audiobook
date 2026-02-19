@@ -309,10 +309,27 @@ if not "%OK_WSL%"=="0" (
 		echo Updating WSL2 kernel…
 		wsl --update
 		wsl --shutdown
-		wsl --install -d Ubuntu
+		echo Installing Ubuntu silently...
+		curl -L -o "%TEMP%\ubuntu.appx" "https://aka.ms/wslubuntu"
+		if errorlevel 1 (
+			echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
+			goto :failed
+		)
+		powershell -Command "Add-AppxPackage '%TEMP%\ubuntu.appx'"
+		if errorlevel 1 (
+			echo %ESC%[31m=============== Failed to install Ubuntu appx.%ESC%[0m
+			del "%TEMP%\ubuntu.appx"
+			goto :failed
+		)
 		ubuntu config --default-user root
+		if errorlevel 1 (
+			echo %ESC%[31m=============== Failed to set root as default user.%ESC%[0m
+			goto :failed
+		)
+		del "%TEMP%\ubuntu.appx"
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
 		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
+		wsl --shutdown
 		echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
 		set "OK_WSL=0"
 		goto :restart_script
