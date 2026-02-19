@@ -310,6 +310,7 @@ if not "%OK_WSL%"=="0" (
 		wsl --update
 		wsl --shutdown
 		echo Installing Ubuntu silently...
+		wsl --unregister Ubuntu >nul 2>&1
 		curl -L -o "%TEMP%\ubuntu.appx" "https://aka.ms/wslubuntu"
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
