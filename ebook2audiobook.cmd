@@ -311,28 +311,22 @@ if not "%OK_WSL%"=="0" (
 		wsl --shutdown
 		echo Installing Ubuntu silently...
 		wsl --unregister Ubuntu >nul 2>&1
-		curl -L -o "%TEMP%\ubuntu.appx" "https://aka.ms/wslubuntu"
-		if errorlevel 1 (
-			echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
-			goto :failed
+		wsl --install -d Ubuntu
+		timeout /t 10 /nobreak >nul
+		wsl --shutdown
+		REM Set root via direct registry edit
+		for /f "skip=1" %%G in ('wsl -l -q') do (
+			for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { $name = (Get-ItemProperty $_.PSPath).DistributionName; $name -and $name.Trim() -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
+				reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
+			)
+			goto :ubuntu_configured
 		)
-		powershell -Command "Add-AppxPackage '%TEMP%\ubuntu.appx'"
-		if errorlevel 1 (
-			echo %ESC%[31m=============== Failed to install Ubuntu appx.%ESC%[0m
-			del "%TEMP%\ubuntu.appx"
-			goto :failed
-		)
-		del "%TEMP%\ubuntu.appx"
-		REM Set root as default using registry (works regardless of ubuntu command name)
-		for /f "tokens=*" %%G in ('wsl -l -q ^| findstr /i "Ubuntu"') do set "DISTRO_NAME=%%G"
-		for /f %%A in ('powershell -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq '%DISTRO_NAME%' } | Select-Object -ExpandProperty PSChildName"') do set "DISTRO_GUID=%%A"
-		reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%DISTRO_GUID%" /v DefaultUid /t REG_DWORD /d 0 /f >nul 2>&1
+		:ubuntu_configured
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
 		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
 		wsl --shutdown
 		echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
 		set "OK_WSL=0"
-		pause
 		goto :restart_script
 	)
 )
