@@ -59,7 +59,7 @@ set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=cmake rustup python calibre ffmpeg mediainfo nodejs espeak-ng sox tesseract"
+set "HOST_PROGRAMS=cmake rustup calibre ffmpeg mediainfo nodejs espeak-ng sox tesseract"
 :: tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_PROGRAMS=xz-utils ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
@@ -179,7 +179,7 @@ if defined arguments.script_mode (
 		)
 	)
 )
-goto :check_scoop
+goto :main
 
 ::::::::::::::: DESKTOP APP
 :make_shortcut
@@ -240,6 +240,15 @@ if /i "%~1"=="te" set "ISO3_LANG=tel"
 if /i "%~1"=="yo" set "ISO3_LANG=yor"
 exit /b
 
+:check_python
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo Python is not installed.
+    set "OK_PYTHON=1"
+    exit /b 1
+)
+exit /b 0
+
 :check_scoop
 where.exe /Q scoop
 if errorlevel 1 (
@@ -259,12 +268,7 @@ if errorlevel 1 (
         del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
     )
 )
-if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-    goto :check_required_programs
-) else (
-    goto :check_conda
-)
-exit /b
+exit /b 0
 
 :check_required_programs
 set "missing_prog_array="
@@ -283,6 +287,36 @@ if not "%missing_prog_array%"=="" (
     goto :install_programs
 )
 goto :dispatch
+
+:install_python
+echo Installing Python %PYTHON_VERSION%...
+if /i "%ARCH%"=="ARM64" (
+    set "PYTHON_ARCH=arm64"
+) else if /i "%ARCH%"=="AMD64" (
+    set "PYTHON_ARCH=amd64"
+) else (
+    echo %ESC%[31m=============== Unsupported architecture: %ARCH%%ESC%[0m
+    goto :failed
+)
+set "PYTHON_INSTALLER=python-%PYTHON_VERSION%-%PYTHON_ARCH%.exe"
+set "PYTHON_URL=https://www.python.org/ftp/python/%PYTHON_VERSION%.0/python-%PYTHON_VERSION%.0-%PYTHON_ARCH%.exe"
+echo Downloading Python installer for %PYTHON_ARCH%...
+powershell -NoProfile -Command "Invoke-WebRequest -Uri '%PYTHON_URL%' -OutFile '%TEMP%\%PYTHON_INSTALLER%'"
+if errorlevel 1 (
+    echo %ESC%[31m=============== Failed to download Python installer.%ESC%[0m
+    goto :failed
+)
+echo Installing Python silently...
+"%TEMP%\%PYTHON_INSTALLER%" /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
+if errorlevel 1 (
+    echo %ESC%[31m=============== Python installation failed.%ESC%[0m
+    del "%TEMP%\%PYTHON_INSTALLER%"
+    goto :failed
+)
+del "%TEMP%\%PYTHON_INSTALLER%"
+echo %ESC%[33m=============== Python OK ===============%ESC%[0m
+set "OK_PYTHON=0"
+goto :restart_script
 
 :install_programs
 if not "%OK_SCOOP%"=="0" (
@@ -773,24 +807,19 @@ goto :install_programs
 :main
 if defined arguments.help (
     if /I "%arguments.help%"=="true" (
-        where.exe /Q conda
-        if errorlevel 0 (
-            call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-            call python "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
-            call conda deactivate
-        ) else (
-            echo Ebook2Audiobook must be installed before to run --help.
-        )
+		call :check_python
+		if errorlevel 1 (
+			goto :install_python
+		)
+        call python "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
         goto :eof
     )
 ) else (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "%DOCKER_DEVICE_STR%"=="" (
-            call %PYTHON_SCOOP% --version >nul 2>&1 || call scoop install %PYTHON_SCOOP% 2>nul
-            where.exe /Q %PYTHON_SCOOP%
+            call :check_python
             if errorlevel 1 (
-                echo %ESC%[31m=============== %PYTHON_SCOOP% failed.%ESC%[0m
-                goto :failed
+                goto :install_python
             )
             call :check_docker
             if errorlevel 1	goto :install_programs
@@ -820,6 +849,12 @@ if defined arguments.help (
             call :build_docker_image "!DEVICE_INFO_STR!"
             if errorlevel 1 goto :failed
         ) else (
+            call :check_python
+            if errorlevel 1 (
+                goto :install_python
+            )
+			call :check_scoop
+			if errorlevel 1 goto :failed
             call :install_python_packages
             if errorlevel 1 goto :failed
             call :install_device_packages "%DOCKER_DEVICE_STR%"
@@ -828,6 +863,8 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
         )
     ) else (
+		call :check_conda
+		if errorlevel 1 goto :failed
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda activate base
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
