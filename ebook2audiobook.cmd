@@ -332,6 +332,7 @@ if not "%OK_WSL%"=="0" (
 		wsl --shutdown
 		echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
 		set "OK_WSL=0"
+		pause
 		goto :restart_script
 	)
 )
