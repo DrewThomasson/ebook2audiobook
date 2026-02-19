@@ -521,12 +521,6 @@ if not errorlevel 1 (
     if not errorlevel 1 (
         echo Docker Desktop detected.
         set "DOCKER_DESKTOP=1"
-        docker compose version >nul 2>&1
-        if errorlevel 1 (
-            echo docker compose is not available in Docker Desktop.
-            set "OK_DOCKER=1"
-            exit /b 1
-        )
         exit /b 0
     )
 )
@@ -556,12 +550,8 @@ if errorlevel 1 (
     set "OK_DOCKER=1"
     exit /b 1
 )
-wsl --user root -d Ubuntu -- docker compose version >nul 2>&1
-if errorlevel 1 (
-    echo docker compose is not available inside WSL2.
-    set "OK_DOCKER=1"
-    exit /b 1
-)
+:: Docker Desktop not found, using WSL Docker
+set "DOCKER_DESKTOP=0"
 exit /b 0
 
 :check_docker_daemon
