@@ -33,7 +33,7 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends --allow-change-held-packages\
 		gcc g++ make pkg-config cmake \
-		curl wget git bash \
+		curl wget git bash xz-utils \
 		fontconfig libfontconfig1 libfreetype6 \
 		libgl1 libegl1 libopengl0 \
 		libx11-6 libxext6 libxrender1 \
