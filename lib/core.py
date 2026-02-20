@@ -2403,10 +2403,10 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
 
 def delete_proc_audio_files(dir:str)->None:
     base = Path(dir)
-	for key in ("chapters_dir", "sentences_dir"):
-		for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
-			if file.stem.isdigit():
-				file.unlink()
+    for key in ("chapters_dir", "sentences_dir"):
+        for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
+            if file.stem.isdigit():
+                file.unlink()
 
 def clear_folder(folder_path:str)->None:
     for name in os.listdir(folder_path):
