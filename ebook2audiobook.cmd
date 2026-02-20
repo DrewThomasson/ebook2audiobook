@@ -367,11 +367,12 @@ if not "%OK_WSL%"=="0" (
 		)
 		del "%TEMP%\ubuntu.appx"
 		echo Initializing Ubuntu as root…
-		ubuntu2204.exe install --root >nul 2>&1
+		ubuntu.exe install --root >nul 2>&1
 		echo Verifying installation…
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
 		wsl -l -q | findstr /i "Ubuntu" >nul
+		pause
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Ubuntu installation verification failed.%ESC%[0m
 			goto :failed
@@ -381,7 +382,6 @@ if not "%OK_WSL%"=="0" (
 		wsl --shutdown
 		echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
 		set "OK_WSL=0"
-		pause
 		goto :restart_script
 	)
 )
