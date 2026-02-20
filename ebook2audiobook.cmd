@@ -840,14 +840,14 @@ if defined arguments.help (
                 if errorlevel 1 goto :failed
                 set "DEVICE_TAG=!JSON_VALUE!"
             )
-			if "%DOCKER_DESKTOP%"=="1" (
+			if "!DOCKER_DESKTOP!"=="1" (
 				docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
 			) else (
 				wsl --user root -d Ubuntu -- docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
 			)
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!DEVICE_TAG!" already exists.
-				if "%DOCKER_DESKTOP%"=="1" (
+				if "!DOCKER_DESKTOP!"=="1" (
 					echo To rebuild, first remove it with: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
 				) else (
 					echo To rebuild, first remove it with: wsl -d Ubuntu -- docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
