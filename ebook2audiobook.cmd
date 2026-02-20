@@ -242,24 +242,11 @@ exit /b
 
 :check_python
 python --version >nul 2>&1
-if not errorlevel 1 (
-    echo Python is installed.
-    exit /b 0
+if errorlevel 1 (
+	echo Python is not installed.
+    exit /b 1
 )
-REM Check if we just installed it (may need PATH refresh)
-findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
-if not errorlevel 1 (
-    echo Python installed but not in PATH yet. Refreshing...
-    set "PYTHON_PATH=%LOCALAPPDATA%\Programs\Python\Python%PYTHON_VERSION:.=%"
-    set "PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%"
-    python --version >nul 2>&1
-    if not errorlevel 1 (
-        echo Python is now available.
-        exit /b 0
-    )
-)
-echo Python is not installed.
-exit /b 1
+exit /b 0
 
 :check_scoop
 where.exe /Q scoop
@@ -326,22 +313,15 @@ if errorlevel 1 (
     goto :failed
 )
 del "%TEMP%\%PYTHON_INSTALLER%"
-echo Refreshing PATH...
-REM Remove WindowsApps python stub from PATH
-set "PATH=%PATH:C:\Users\%USERNAME%\AppData\Local\Microsoft\WindowsApps;=%"
-REM Add real Python to PATH (avoid duplicates)
-set "PYTHON_PATH=%LOCALAPPDATA%\Programs\Python\Python%PYTHON_VERSION:.=%"
-echo ;%PATH%; | findstr /C:";%PYTHON_PATH%;" >nul
-if errorlevel 1 (
-    set "PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%"
-)
-REM Mark Python as installed
-findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
-if errorlevel 1 (
-    echo python>>"%INSTALLED_LOG%"
-)
-echo %ESC%[33m=============== Python OK ===============%ESC%[0m
-goto :restart_script
+echo %ESC%[33m=============== Python installed successfully ===============%ESC%[0m
+echo.
+echo ==================================================
+echo Python has been installed.
+echo Please REBOOT your computer for PATH to update.
+echo After reboot, run this script again to continue.
+echo ==================================================
+pause
+exit
 
 :install_programs
 if not "%OK_SCOOP%"=="0" (
@@ -876,9 +856,7 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
         ) else (
             call :check_python
-            if errorlevel 1 (
-                goto :install_python
-            )
+            if errorlevel 1 goto :install_python
 			call :check_scoop
 			if errorlevel 1 goto :failed
             call :install_python_packages
@@ -889,6 +867,10 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
         )
     ) else (
+		call :check_python
+		if errorlevel 1 goto :install_python
+		call :check_scoop
+		if errorlevel 1 goto :failed
 		call :check_conda
 		if errorlevel 1 goto :failed
         call "%CONDA_HOME%\Scripts\activate.bat"
