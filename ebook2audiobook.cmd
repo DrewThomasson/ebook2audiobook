@@ -351,38 +351,38 @@ if not "%OK_WSL%"=="0" (
 		wsl --update 2>nul
 		wsl --shutdown
 		echo Installing Ubuntu silently…
-		wsl --unregister Ubuntu >nul 2>&1
-		echo Downloading Ubuntu…
-		powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://aka.ms/wslubuntu2204' -OutFile '%TEMP%\ubuntu.appx'"
-		if errorlevel 1 (
-			echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
-			goto :failed
-		)
-		echo Installing Ubuntu appx…
-		powershell -NoProfile -Command "Add-AppxPackage '%TEMP%\ubuntu.appx'"
-		if errorlevel 1 (
-			echo %ESC%[31m=============== Failed to install Ubuntu appx.%ESC%[0m
+		powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -First 1" >nul 2>&1
+		if not errorlevel 1 (
+			echo Ubuntu package is already installed. Skipping appx install...
+			wsl --shutdown
+			wsl -l -q 2>nul | findstr /i "Ubuntu" >nul
+			if errorlevel 1 (
+				echo Initializing Ubuntu distro...
+				ubuntu install --root >nul 2>&1
+				if errorlevel 1 ubuntu2204 install --root >nul 2>&1
+				if errorlevel 1 ubuntu2404 install --root >nul 2>&1
+			)
+		) else (
+			wsl --unregister Ubuntu >nul 2>&1
+			echo Downloading Ubuntu...
+			powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://aka.ms/wslubuntu2204' -OutFile '%TEMP%\ubuntu.appx'"
+			if errorlevel 1 (
+				echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
+				goto :failed
+			)
+			echo Installing Ubuntu appx...
+			powershell -NoProfile -Command "Add-AppxPackage '%TEMP%\ubuntu.appx'"
+			if errorlevel 1 (
+				echo %ESC%[31m=============== Failed to install Ubuntu appx.%ESC%[0m
+				del "%TEMP%\ubuntu.appx"
+				goto :failed
+			)
 			del "%TEMP%\ubuntu.appx"
-			goto :failed
+			timeout /t 3 /nobreak >nul
+			wsl --shutdown
+			echo Initializing Ubuntu as root...
+			ubuntu2204.exe install --root >nul 2>&1
 		)
-		del "%TEMP%\ubuntu.appx"
-		echo Initializing Ubuntu as root…
-		ubuntu.exe install --root >nul 2>&1
-		echo Verifying installation…
-		wsl --shutdown
-		timeout /t 3 /nobreak >nul
-		wsl -l -q | findstr /i "Ubuntu" >nul
-		pause
-		if errorlevel 1 (
-			echo %ESC%[31m=============== Ubuntu installation verification failed.%ESC%[0m
-			goto :failed
-		)
-		echo [wsl2] > "%USERPROFILE%\.wslconfig"
-		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
-		wsl --shutdown
-		echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
-		set "OK_WSL=0"
-		goto :restart_script
 	)
 )
 if not "%OK_DOCKER%"=="0" (
