@@ -242,12 +242,24 @@ exit /b
 
 :check_python
 python --version >nul 2>&1
-if errorlevel 1 (
-    echo Python is not installed.
-    set "OK_PYTHON=1"
-    exit /b 1
+if not errorlevel 1 (
+    echo Python is installed.
+    exit /b 0
 )
-exit /b 0
+REM Check if we just installed it (may need PATH refresh)
+findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
+if not errorlevel 1 (
+    echo Python installed but not in PATH yet. Refreshing...
+    set "PYTHON_PATH=%LOCALAPPDATA%\Programs\Python\Python%PYTHON_VERSION:.=%"
+    set "PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%"
+    python --version >nul 2>&1
+    if not errorlevel 1 (
+        echo Python is now available.
+        exit /b 0
+    )
+)
+echo Python is not installed.
+exit /b 1
 
 :check_scoop
 where.exe /Q scoop
@@ -313,17 +325,22 @@ if errorlevel 1 (
     del "%TEMP%\%PYTHON_INSTALLER%"
     goto :failed
 )
-pause
 del "%TEMP%\%PYTHON_INSTALLER%"
 echo Refreshing PATH...
-REM Manually add Python to current session PATH (avoid duplicates)
+REM Remove WindowsApps python stub from PATH
+set "PATH=%PATH:C:\Users\%USERNAME%\AppData\Local\Microsoft\WindowsApps;=%"
+REM Add real Python to PATH (avoid duplicates)
 set "PYTHON_PATH=%LOCALAPPDATA%\Programs\Python\Python%PYTHON_VERSION:.=%"
 echo ;%PATH%; | findstr /C:";%PYTHON_PATH%;" >nul
 if errorlevel 1 (
     set "PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%"
 )
+REM Mark Python as installed
+findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
+if errorlevel 1 (
+    echo python>>"%INSTALLED_LOG%"
+)
 echo %ESC%[33m=============== Python OK ===============%ESC%[0m
-set "OK_PYTHON=0"
 goto :restart_script
 
 :install_programs
