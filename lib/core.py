@@ -297,6 +297,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
 def extract_custom_model(session_id)->str|None:
     session = context.get_session(session_id)
     if session and session.get('id', False):
+        progress_bar = None
         file_src = session['custom_model']
         required_files = default_engine_settings[session['tts_engine']]['files']
         model_path = None
@@ -1876,6 +1877,7 @@ def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         try:
+            progress_bar = None
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 print(msg)
@@ -2016,7 +2018,7 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         print(msg)
                         return False
                     f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunks(concat_list, file, session.get('is_gui_process'))
+            result = assemble_audio_chunks(concat_list, file, session['is_gui_process'])
             if not result:
                 error = 'combine_audio_sentences() FFmpeg concat failed.'
                 print(error)
@@ -2306,16 +2308,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
-    if is_gui_process:
-        progress_bar = gr.Progress(track_tqdm=False)
-
     def on_progress(p:float)->None:
-        if progress_bar:
+        if is_gui_process:
             progress_bar(p / 100.0, desc='Assemble')
 
     try:
         total_duration = 0.0
         filepaths = []
+        progress_bar = None
         try:
             with open(txt_file, 'r') as f:
                 for line in f:
@@ -2332,10 +2332,16 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             durations = get_audiolist_duration(filepaths)
             total_duration = sum(durations.values())
         except Exception as e:
-            print(f'assemble_audio_chunks() open file {txt_file} Error: {e}')
+            error = f'assemble_audio_chunks() open file {txt_file} Error: {e}'
+            print(error)
             return False
-
         ffmpeg = shutil.which('ffmpeg')
+        if not ffmpeg:
+            error = 'ffmpeg not found'
+            print(error)
+            return False
+        if is_gui_process:
+            progress_bar = gr.Progress(track_tqdm=False)
         cmd = [
             ffmpeg,
             '-hide_banner',
@@ -2399,11 +2405,11 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
 def delete_proc_audio_files(dir:str)->None:
-	for key in ("chapters_dir", "sentences_dir"):
-		base = Path(dir)
-		for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
-			if file.stem.isdigit():
-				file.unlink()
+    base = Path(dir)
+    for key in ("chapters_dir", "sentences_dir"):
+        for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
+            if file.stem.isdigit():
+                file.unlink()
 
 def clear_folder(folder_path:str)->None:
     for name in os.listdir(folder_path):

@@ -70,6 +70,13 @@ BUILD_DOCKER = 'build_docker'
 debug_mode = False
 
 # ---------------------------------------------------------------------
+# Python environment references
+# ---------------------------------------------------------------------
+
+python_env_dir = os.path.abspath(os.path.join('.','python_env'))
+requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
+
+# ---------------------------------------------------------------------
 # Hardware mappings
 # ---------------------------------------------------------------------
 
@@ -101,7 +108,7 @@ default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a perman
 
 torch_matrix = {
     # CPU
-    "cpu":       {"url": None, "base": ((lambda m:m.group(1) if m else '')(re.search(r'(?m)^\s*torch\s*==\s*([0-9]+\.[0-9]+\.[0-9]+)',open('requirements.txt').read())))},
+    "cpu":       {"url": None, "base": ((lambda m:m.group(1) if m else '')(re.search(r'(?m)^\s*torch\s*==\s*([0-9]+\.[0-9]+\.[0-9]+)',open(requirements_file).read())))},
     # CUDA
     "cu118":     {"url": default_pytorch_url, "base": "2.7.1"},
     "cu121":     {"url": default_pytorch_url, "base": "2.5.1"},
@@ -129,13 +136,6 @@ rocm_version_range = {"min": (5,7), "max": (6,3)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
 jetson_version_range = {"min": (6,0), "max": (6,1)}
-
-# ---------------------------------------------------------------------
-# Python environment references
-# ---------------------------------------------------------------------
-
-python_env_dir = os.path.abspath(os.path.join('.','python_env'))
-requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 
 # ---------------------------------------------------------------------
 # Interface configuration
