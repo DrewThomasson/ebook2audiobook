@@ -2331,10 +2331,14 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             durations = get_audiolist_duration(filepaths)
             total_duration = sum(durations.values())
         except Exception as e:
-            print(f'assemble_audio_chunks() open file {txt_file} Error: {e}')
+            error = f'assemble_audio_chunks() open file {txt_file} Error: {e}'
+            print(error)
             return False
-
         ffmpeg = shutil.which('ffmpeg')
+        if not ffmpeg:
+            error = 'ffmpeg not found'
+            print(error)
+            return False
         cmd = [
             ffmpeg,
             '-hide_banner',
@@ -2398,8 +2402,8 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
 def delete_proc_audio_files(dir:str)->None:
+    base = Path(dir)
 	for key in ("chapters_dir", "sentences_dir"):
-		base = Path(dir)
 		for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
 			if file.stem.isdigit():
 				file.unlink()
