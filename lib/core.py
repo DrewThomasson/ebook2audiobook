@@ -2016,7 +2016,7 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
                         print(msg)
                         return False
                     f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunks(concat_list, file, session.get('is_gui_process'))
+            result = assemble_audio_chunks(concat_list, file, session['is_gui_process'])
             if not result:
                 error = 'combine_audio_sentences() FFmpeg concat failed.'
                 print(error)
@@ -2306,11 +2306,10 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
-    if is_gui_process:
-        progress_bar = gr.Progress(track_tqdm=False)
-
     def on_progress(p:float)->None:
-        if progress_bar:
+        if is_gui_process:
+            if not progress_bar:
+                progress_bar = gr.Progress(track_tqdm=False)
             progress_bar(p / 100.0, desc='Assemble')
 
     try:
