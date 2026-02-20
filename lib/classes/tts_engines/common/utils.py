@@ -458,12 +458,12 @@ class TTSUtils:
         value = m.group('value')
         assert tag in TTS_SML, f'Unknown SML tag: {tag!r}'
         if tag == 'break':
-            silence_time = float(int(np.random.uniform(0.3, 0.6) * 100) / 100)
+            silence_time = float(int(np.random.uniform(0.2, 0.5) * 100) / 100)
             self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone())
             return True, ''
         elif tag == 'pause':
             silence_time = float(value) if value else float(
-                int(np.random.uniform(1.0, 1.6) * 100) / 100
+                int(np.random.uniform(0.6, 1.2) * 100) / 100
             )
             self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone())
             return True, ''

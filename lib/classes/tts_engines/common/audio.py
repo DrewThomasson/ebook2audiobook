@@ -159,7 +159,7 @@ def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_proc
             total_duration=get_audio_duration(str(input_file)),
             msg='Normalize'
         )
-        return bool(proc_pipe)
+        return proc_pipe.result
     except Exception as e:
         print(f'normalize_audio() error: {input_file}: {e}')
         return False

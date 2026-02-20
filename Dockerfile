@@ -3,7 +3,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ARG APP_VERSION=26.2.1
+ARG APP_VERSION=26.2.19
 ARG DEVICE_TAG=cu128
 ARG DOCKER_DEVICE_STR='{"name": "cu128", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg nodejs npm espeak-ng sox tesseract-ocr"
@@ -31,9 +31,9 @@ WORKDIR /app
 # ------------------------------------------------------------
 RUN set -eux; \
 	apt-get update; \
-	apt-get install -y --no-install-recommends \
+	apt-get install -y --no-install-recommends --allow-change-held-packages\
 		gcc g++ make pkg-config cmake \
-		curl wget git bash xz-utils \
+		curl wget git bash \
 		fontconfig libfontconfig1 libfreetype6 \
 		libgl1 libegl1 libopengl0 \
 		libx11-6 libxext6 libxrender1 \
@@ -81,15 +81,18 @@ VOLUME \
 	/app/tmp \
 	/app/ebooks
 
-COPY ebook2audiobook.sh /app/ebook2audiobook.sh
+COPY ebook2audiobook.command /app/ebook2audiobook.sh
 RUN chmod +x /app/ebook2audiobook.sh
 
 COPY . /app
 
+# Ensure Unix line endings
+RUN find /app -type f \( -name "*.sh" -o -name "*.command" \) -exec sed -i 's/\r$//' {} \;
+
 # ------------------------------------------------------------
 # Build dependencies via project script
 # ------------------------------------------------------------
-RUN ./ebook2audiobook.sh --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
 
 # ------------------------------------------------------------
 # Cleanup
