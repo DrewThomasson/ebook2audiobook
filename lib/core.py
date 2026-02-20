@@ -297,6 +297,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
 def extract_custom_model(session_id)->str|None:
     session = context.get_session(session_id)
     if session and session.get('id', False):
+        progress_bar = None
         file_src = session['custom_model']
         required_files = default_engine_settings[session['tts_engine']]['files']
         model_path = None
@@ -1876,6 +1877,7 @@ def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         try:
+            progress_bar = None
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 print(msg)
@@ -2308,13 +2310,12 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
 
     def on_progress(p:float)->None:
         if is_gui_process:
-            if not progress_bar:
-                progress_bar = gr.Progress(track_tqdm=False)
             progress_bar(p / 100.0, desc='Assemble')
 
     try:
         total_duration = 0.0
         filepaths = []
+        progress_bar = None
         try:
             with open(txt_file, 'r') as f:
                 for line in f:
@@ -2339,6 +2340,8 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             error = 'ffmpeg not found'
             print(error)
             return False
+        if is_gui_process:
+            progress_bar = gr.Progress(track_tqdm=False)
         cmd = [
             ffmpeg,
             '-hide_banner',
