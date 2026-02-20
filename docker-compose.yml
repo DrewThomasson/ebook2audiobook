@@ -5,8 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.2.2}
-        DEVICE_TAG: ${DEVICE_TAG:-cu128}
+        APP_VERSION: ${APP_VERSION:-26.2.19}
+        DEVICE_TAG: ${DEVICE_TAG:-cpu}
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     tty: true
@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.2.2}
+        APP_VERSION: ${APP_VERSION:-26.2.19}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]

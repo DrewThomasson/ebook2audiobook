@@ -1,9 +1,10 @@
-import os, subprocess, multiprocessing, sys, gradio as gr
+import os, re, select, subprocess, multiprocessing, sys, gradio as gr
 
 from collections.abc import Callable
 
 class SubprocessPipe:
-    def __init__(self, cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing', on_progress:Callable[[float], None]|None=None)->None:
+
+    def __init__(self, cmd:list[str], is_gui_process:bool, total_duration:float, msg:str='Processing', on_progress:Callable[[float], None]|None=None)->None:
         self.cmd = cmd
         self.is_gui_process = is_gui_process
         self.total_duration = total_duration
@@ -14,15 +15,15 @@ class SubprocessPipe:
         self.progress_bar = False
         if self.is_gui_process:
             self.progress_bar = gr.Progress(track_tqdm=False)
-        self._run_process()
+        self.result = self._run_process()
         
     def _emit_progress(self, percent:float)->None:
-        sys.stdout.write(f"\r{self.msg} - {percent:.1f}%")
-        sys.stdout.flush()
         if self.on_progress is not None:
             self.on_progress(percent)
         elif self.progress_bar:
             self.progress_bar(percent / 100.0, desc=self.msg)
+        sys.stdout.write(f"\r{self.msg} - {percent:.1f}%")
+        sys.stdout.flush()
 
     def _on_complete(self)->None:
         msg = f"\n{self.msg} completed!"
@@ -38,14 +39,12 @@ class SubprocessPipe:
 
     def _run_process(self)->bool:
         try:
-            import re
             is_ffmpeg = "ffmpeg" in os.path.basename(self.cmd[0])
             if is_ffmpeg:
                 self.process = subprocess.Popen(
                     self.cmd,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.PIPE,
-                    text=False,
                     bufsize=0
                 )
             else:
@@ -54,45 +53,48 @@ class SubprocessPipe:
                         self.cmd,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.STDOUT,
-                        text=False,
                         bufsize=0
                     )
                 else:
                     self.process = subprocess.Popen(
                         self.cmd,
                         stdout=None,
-                        stderr=None,
-                        text=False
+                        stderr=None
                     )
             if is_ffmpeg:
-                time_pattern=re.compile(rb'out_time_ms=(\d+)')
-                last_percent=0.0
+                time_pattern = re.compile(rb'out_time_ms=(\d+)')
+                buffer = b''
+                last_percent = 0.0
                 while True:
-                    raw_line = self.process.stderr.readline()
-                    if not raw_line:
+                    if self.process.poll() is not None:
                         break
-                    line=raw_line.decode(errors='ignore')
-                    match=time_pattern.search(raw_line)
-                    if match and self.total_duration > 0:
-                        current_time=int(match.group(1))/1_000_000
-                        percent=min((current_time/self.total_duration)*100,100)
-                        if abs(percent-last_percent) >= 0.5:
-                            self._emit_progress(percent)
-                            last_percent=percent
-                    elif b'progress=end' in raw_line:
-                        self._emit_progress(100.0)
-                        break
+                    ready, _, _ = select.select([self.process.stderr], [], [], 0.1)
+                    if ready:
+                        chunk = self.process.stderr.read(4096)
+                        if not chunk:
+                            break
+                        buffer += chunk
+                        while b'\n' in buffer:
+                            line, buffer = buffer.split(b'\n', 1)
+                            match = time_pattern.search(line)
+                            if match and self.total_duration > 0:
+                                current_time = int(match.group(1)) / 1_000_000
+                                percent = min((current_time / self.total_duration) * 100, 100)
+                                if abs(percent - last_percent) >= 0.5:
+                                    self._emit_progress(percent)
+                                    last_percent = percent
+                            elif b'progress=end' in line:
+                                self._emit_progress(100.0)
             else:
                 if self.progress_bar:
                     tqdm_re = re.compile(rb'(\d{1,3})%\|')
+                    buffer = b''
                     last_percent = 0.0
-                    buffer = b""
                     while True:
                         chunk = self.process.stdout.read(1024)
                         if not chunk:
                             break
                         buffer += chunk
-                        # tqdm updates via \r, keep buffer small
                         if b'\r' in buffer:
                             parts = buffer.split(b'\r')
                             buffer = parts[-1]

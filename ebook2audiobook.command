@@ -45,7 +45,7 @@ SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-DOCKER_PROGRAMS=("ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+DOCKER_PROGRAMS=("xz-utils", "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
@@ -390,10 +390,10 @@ function check_required_programs {
 
 function install_programs {
 	if [[ "${OSTYPE-}" == darwin* ]]; then
-		echo -e "\e[33mInstalling required programs...\e[0m"
+		echo -e "\e[33mInstalling required programs…\e[0m"
 		PACK_MGR="brew install"
 		if ! command -v brew &> /dev/null; then
-			echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
+			echo -e "\e[33mHomebrew is not installed. Installing Homebrew…\e[0m"
 			/usr/bin/env bash -c "$(curl -fsSL $BREW_INSTALLER_URL)"
 			echo >> $HOME/.zprofile
 			echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
@@ -432,7 +432,7 @@ function install_programs {
 			PACK_MGR_OPTIONS="-y"
 		elif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then
 			if ! command -v un-get &>/dev/null; then
-				echo "  → Installing un-get plugin..."
+				echo "  → Installing un-get plugin…"
 				installplg ./ext/app/un-get.plg
 				# Add the two best repos for Unraid 7 (current as of Dec 2025)
 				mkdir -p /boot/config/plugins/un-get
@@ -451,7 +451,7 @@ EOF
 		fi
 	fi
 	if [[ -z "$WGET" ]]; then
-		echo -e "\e[33m wget is missing! trying to install it... \e[0m"
+		echo -e "\e[33m wget is missing! trying to install it… \e[0m"
 		result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
 		result_code=$?
 		if [[ $result_code -eq 0 ]]; then
@@ -468,7 +468,7 @@ EOF
 			else
 				# avoid conflict with calibre builtin lxml
 				python3 -m pip uninstall -y lxml 2>/dev/null || true
-				echo -e "\e[33mInstalling Calibre...\e[0m"
+				echo -e "\e[33mInstalling Calibre…\e[0m"
 				if [[ "${OSTYPE-}" == darwin* ]]; then
 					eval "$PACK_MGR --cask calibre"
 				else
@@ -571,7 +571,7 @@ function check_conda {
 		local installer_url
 		local installer_path="/tmp/Miniforge3.sh"
 		local config_path
-		echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
+		echo -e "\e[33mDownloading Miniforge3 installer…\e[0m"
 		if [[ "${OSTYPE-}" == darwin* ]]; then
 			config_path="$HOME/.zshrc"
 			curl -fsSLo "$installer_path" "$MINIFORGE_MACOSX_INSTALLER_URL"
@@ -580,7 +580,7 @@ function check_conda {
 			wget -O "$installer_path" "$MINIFORGE_LINUX_INSTALLER_URL"
 		fi
 		if [[ -f "$installer_path" ]]; then
-			echo -e "\e[33mInstalling Miniforge3...\e[0m"
+			echo -e "\e[33mInstalling Miniforge3…\e[0m"
 			bash "$installer_path" -b -u -p "$CONDA_HOME"
 			rm -f "$installer_path"
 			if [[ -f "$CONDA_HOME/bin/conda" ]]; then
@@ -624,7 +624,7 @@ function check_conda {
 				2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
 			esac
 		fi
-		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION...\e[0m"
+		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION…\e[0m"
 		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
 		conda update -n base -c conda-forge conda -y
 		conda update --all -y
@@ -649,7 +649,7 @@ function check_docker {
 }
 
 function install_python_packages {
-	echo "[ebook2audiobook] Installing dependencies..."
+	echo "[ebook2audiobook] Installing dependencies…"
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip setuptools wheel >nul 2>&1
 	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
@@ -725,7 +725,7 @@ function build_docker_image {
 	local cmd_options=""
 	local cmd_extra=""
 	local py_vers="$PYTHON_VERSION"
-	case "$TAG" in
+	case "$DEVICE_TAG" in
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
@@ -734,10 +734,9 @@ function build_docker_image {
 		mps)		cmd_options="" ;;
 		*)			cmd_options="" ;;
 	esac
-	DEVICE_TAG="$TAG"
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
-	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${TAG}"
-	case "$TAG" in
+	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${DEVICE_TAG}"
+	case "$DEVICE_TAG" in
 		cpu|mps)   COMPOSE_PROFILES=cpu ;;
 		*)         COMPOSE_PROFILES=gpu ;;
 	esac
@@ -749,7 +748,7 @@ function build_docker_image {
 				return 1
 			fi
 		fi
-		echo "podman-compose"
+		echo "--> Using podman-compose"
 		export PODMAN_BUILD_ARGS=(
 			--format docker
 			--no-cache
@@ -770,12 +769,12 @@ function build_docker_image {
 			echo "ERROR: docker compose found no services or yml file is not valid."
 			return 1
 		fi
-		echo "docker compose"
+		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
 			-f docker-compose.yml \
+			--progress plain \
 			build \
 			--no-cache \
-			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$DEVICE_TAG" \
@@ -785,8 +784,8 @@ function build_docker_image {
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
 	else
-		echo "docker build"
-		docker build \
+		echo "--> Using docker build"
+		docker buildx build \
 			--no-cache \
 			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
@@ -808,9 +807,9 @@ function build_docker_image {
 	echo "Headless mode:"
 	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	echo "Docker Compose:"
-	echo "	DEVICE_TAG=$TAG docker compose up -d"
+	echo "	DEVICE_TAG=$DEVICE_TAG docker compose up -d"
 	echo "Podman Compose:"
-	echo "	DEVICE_TAG=$TAG podman-compose up -d"
+	echo "	DEVICE_TAG=$DEVICE_TAG podman-compose up -d"
 }
 
 ########################################
@@ -826,10 +825,12 @@ else
 				echo "check_device_info() error: result is empty"
 				exit 1
 			fi
-			export TAG=${DEVICE_TAG:-$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["tag"])' "$device_info_str")}
-			if docker image inspect "${DOCKER_IMG_NAME}:${TAG}" >/dev/null 2>&1; then
-				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${TAG}' already exists. Aborting build."
-				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${TAG} --force"
+			if [[ "$DEVICE_TAG" == "" ]]; then
+				DEVICE_TAG=
+			fi
+			if docker image inspect "${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
+				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
+				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
 				exit 1
 			fi
 			build_docker_image "$device_info_str" || exit 1

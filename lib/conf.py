@@ -1,4 +1,4 @@
-import os, tempfile, sys
+import os, tempfile, sys, re
 
 # ---------------------------------------------------------------------
 # Global configuration
@@ -100,12 +100,14 @@ default_pytorch_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a permanent website where to upload the jetpack torch
 
 torch_matrix = {
+    # CPU
+    "cpu":       {"url": None, "base": ((lambda m:m.group(1) if m else '')(re.search(r'(?m)^\s*torch\s*==\s*([0-9]+\.[0-9]+\.[0-9]+)',open('requirements.txt').read())))},
     # CUDA
-    "cu118": {"url": default_pytorch_url, "base": "2.7.1"},
-    "cu121": {"url": default_pytorch_url, "base": "2.5.1"},
-    "cu124": {"url": default_pytorch_url, "base": "2.6.0"},
-    "cu126": {"url": default_pytorch_url, "base": "2.7.1"},
-    "cu128": {"url": default_pytorch_url, "base": "2.7.1"},
+    "cu118":     {"url": default_pytorch_url, "base": "2.7.1"},
+    "cu121":     {"url": default_pytorch_url, "base": "2.5.1"},
+    "cu124":     {"url": default_pytorch_url, "base": "2.6.0"},
+    "cu126":     {"url": default_pytorch_url, "base": "2.7.1"},
+    "cu128":     {"url": default_pytorch_url, "base": "2.7.1"},
     # ROCm
     "rocm5.7":   {"url": default_pytorch_url, "base": "2.3.1"},
     "rocm6.0":   {"url": default_pytorch_url, "base": "2.4.1"},
@@ -114,12 +116,12 @@ torch_matrix = {
     "rocm6.2.4": {"url": default_pytorch_url, "base": "2.7.1"},
     "rocm6.3":   {"url": default_pytorch_url, "base": "2.7.1"},
     # MPS
-    "mps": {"url": default_pytorch_url, "base": "2.7.1"},
+    "mps":       {"url": default_pytorch_url, "base": "2.7.1"},
     # XPU
-    "xpu": {"url": default_pytorch_url, "base": "2.7.1"},
+    "xpu":       {"url": default_pytorch_url, "base": "2.7.1"},
     # JETSON
-    "jetson60": {"url": default_jetson_url, "base": "2.4.0"},
-    "jetson61": {"url": default_jetson_url, "base": "2.5.0"},
+    "jetson60":  {"url": default_jetson_url, "base": "2.4.0"},
+    "jetson61":  {"url": default_jetson_url, "base": "2.5.0"}
 }
 
 cuda_version_range = {"min": (11,8), "max": (12,8)}

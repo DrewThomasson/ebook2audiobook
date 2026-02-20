@@ -141,10 +141,10 @@ Podman Compose (i.e. cuda 12.8:
             DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
     
 SML tags available:
-        [break]` — silence (random range **0.3–0.6 sec.**)
-        [pause]` — silence (random range **1.0–1.6 sec.**)
-        [pause:N]` — fixed pause (**N sec.**)
-        [voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
+        [break] — silence (random range **0.3–0.6 sec.**)
+        [pause] — silence (random range **1.0–1.6 sec.**)
+        [pause:N] — fixed pause (**N sec.**)
+        [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
         ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
@@ -235,20 +235,26 @@ SML tags available:
         args['ebook_list'] = None
 
         print(f"v{prog_version} {args['script_mode']} mode")
-        from lib.classes.device_installer import DeviceInstaller
-        manager = DeviceInstaller()
-        result = manager.install_python_packages()
-        if result == 0:
-            device_info_str = manager.check_device_info(args['script_mode'])
-            if manager.install_device_packages(device_info_str) == 1:
-                error = f'Error: Could not installed device packages!'
-                print(error)
-                sys.exit(1)
+        
+        if args['script_mode'] in [NATIVE, BUILD_DOCKER]:
+            from lib.classes.device_installer import DeviceInstaller
+            manager = DeviceInstaller()
+            result = manager.install_python_packages()
+            if result == 0:
+                device_info_str = manager.check_device_info(args['script_mode'])
+                if manager.install_device_packages(device_info_str) == 1:
+                    error = f'Error: Could not installed device packages!'
+                    print(error)
+                    sys.exit(1)
         import lib.core as c
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         if args['headless']:
+            if args['script_mode'] == FULL_DOCKER:
+                for k, v in args.items():
+                    if isinstance(v, str) and v.startswith('/app/'):
+                        args[k] = v.replace('/app/', './', 1)
             args['id'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
             args['chapters_preview'] = False

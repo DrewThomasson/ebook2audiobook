@@ -25,6 +25,8 @@ def build_interface(args:dict)->gr.Blocks:
         options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
         src_label_file = 'Upload File'
         src_label_dir = 'Select a Directory'
+        confirm_blocks = 'confirm_blocks'
+        page_size = 15
         visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
@@ -358,9 +360,26 @@ def build_interface(args:dict)->gr.Blocks:
                     width: 60px !important;
                     height: 60px !important;
                 }
-                #gr_state_update, #gr_restore_session, #gr_save_session,
+                #gr_session_update, #gr_restore_session, #gr_save_session,
                 #gr_audiobook_vtt, #gr_playback_time {
                     display: none !important;
+                }
+                #gr_blocks_nav button.nav-btn {
+                    width:44px !important;
+                    min-width:44px !important;
+                    max-width:44px !important;
+                    padding:0 !important;
+                }
+                #gr_blocks_nav .nav-header {
+                    overflow:hidden !important;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                }
+                #gr_blocks_nav .nav-header p {
+                    margin:0 !important;
+                    white-space:nowrap !important;
+                    overflow:hidden !important;
                 }
                 ///////////
                 .fade-in {
@@ -432,7 +451,11 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
-                .button-red  { background-color: #dc3545 !important; color: white !important; }
+                .button-green:active, .button-red:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
+                }
+                .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
                 .button-green:active, .button-red:active {
                     background: var(--body-text-color) !important;
@@ -645,21 +668,27 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
             )
 
-            with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes=['gr-group-main']) as gr_group_blocks:
-                gr.Markdown('### Confirm Blocks')
-                with gr.Group() as gr_group_blocks_content:
-                    pass
-                with gr.Row():
-                    gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
-                    gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
+            gr_blocks_page = gr.State(0)
+            gr_blocks_data = gr.State([])
+            gr_blocks_keep = gr.State({})
+            gr_blocks_text = gr.State({})
+            gr_blocks_open = gr.State({})
+            gr_blocks_panel = gr.Column(visible=False)
+            with gr_blocks_panel:
+                gr_blocks_nav = gr.Row(elem_id='gr_blocks_nav')
+                with gr_blocks_nav:
+                    gr_blocks_prev = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
+                    gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
+                    gr_blocks_next = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
+                gr_blocks_cancel = gr.Button('✖', variant='stop')
+                gr_blocks_continue = gr.Button('✔', variant='primary')
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
             gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-            gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
-            gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
-
-            gr_state_update = gr.State(value={'hash': None})
+            gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='✖', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
+            gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='✔', variant='primary', visible=True, scale=0, size='sm', min_width=0)
+            gr_session_update = gr.State(value={'hash': None})
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
 
@@ -670,9 +699,6 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['event'] == 'confirm_blocks':
-                        outputs = tuple([gr.update() for _ in range(12)])
-                        return outputs
                     outputs = tuple([gr.update(interactive=True) for _ in range(12)])
                     return outputs
                 outputs = tuple([gr.update() for _ in range(12)])
@@ -692,8 +718,6 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     visible = True if session['voice'] is not None else 'hidden'
                     convert_btn_enabled = True if session['ebook'] is not None else False
-                    if session.get('event') == 'confirm_blocks':
-                        return outputs
                     return (
                         gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
                         gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=convert_btn_enabled),
@@ -712,8 +736,6 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 outputs = tuple([gr.update(interactive=False) for _ in range(8)])
                 if session and session.get('id', False):
-                    if session['event'] == 'confirm_blocks':
-                        return outputs
                     convert_btn_enabled = True if session['ebook'] is not None else False
                     custom_del_btn_visible = True if session['custom_model'] is not None else 'hidden'
                     return (
@@ -733,13 +755,13 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
 
             def show_confirm_buttons(mode:str)->str:
-                if mode in ['confirm_deletion', 'confirm_blocks']:
+                if mode in ['confirm_deletion']:
                     button_yes = f'#gr_{mode}_yes_btn'
                     button_no = f'#gr_{mode}_no_btn'
                     return f'''
                     <div class="confirm-buttons">
-                        <button class="button-green" onclick="document.querySelector('{button_yes}').click()">✔</button>
-                        <button class="button-red" onclick="document.querySelector('{button_no}').click()">⨉</button>
+                        <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{button_no}').click()">⨉</button>
+                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{button_yes}').click()">✔</button>
                     </div>
                     '''
                 else:
@@ -872,14 +894,10 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['event'] == 'confirm_blocks':
-                        outputs = tuple([gr.update() for _ in range(9)])
-                        return outputs
-                    else:
-                        return (
-                            gr.update(interactive=False), gr.update(value=None), gr.update(value=session['device']), update_gr_audiobook_list(session_id), 
-                            gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
-                        )
+                    return (
+                        gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), update_gr_audiobook_list(session_id), 
+                        gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
+                    )
                 outputs = tuple([gr.update() for _ in range(8)])
                 return outputs
 
@@ -1147,15 +1165,6 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'confirm_deletion(): {e}!'
                     alert_exception(error, session_id)
                 return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
-
-            def confirm_blocks(choice:str, session_id:str)->dict:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    if choice == 'yes':           
-                        session['event'] = 'blocks_confirmed'
-                    else:
-                        session['status'] = 'ready'
-                return gr.update(value='', visible=False)
 
             def update_gr_voice_list(session_id:str)->dict:
                 try:
@@ -1564,11 +1573,13 @@ def build_interface(args:dict)->gr.Blocks:
                                             count_file = len(args['ebook_list'])
                                             if count_file > 0:
                                                 msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
-                                                yield gr.update(value=msg), gr.update()
+                                                yield gr.update(value=msg)
                                             else:
                                                 msg = 'Conversion successful!'
+                                                session['ebook'] = None
+                                                session['ebook_list'] = None
                                                 session['status'] = 'ready'
-                                                return gr.update(value=msg), gr.update()
+                                                return gr.update(value=msg)
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                                 progress_status, passed = convert_ebook(args)
@@ -1578,18 +1589,18 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         error = 'Conversion failed.'
                                 else:
-                                    if progress_status == 'confirm_blocks':
-                                        session['event'] = progress_status
-                                        msg = 'Select the blocks to convert:'
+                                    if progress_status == confirm_blocks:
+                                        session['status'] = progress_status
+                                        msg = 'Select the blocks to convert'
                                         print(msg)
-                                        yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
-                                        return
+                                        return gr.update(value=msg)
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
                                         reset_session(args['id'])
-                                        msg = 'Conversion successful!'
+                                        session['ebook'] = None
                                         session['status'] = 'ready'
-                                        return gr.update(value=msg), gr.update()
+                                        msg = 'Conversion successful!'
+                                        return gr.update(value=msg)
                         if error is not None:
                             show_alert({"type": "warning", "msg": error})
                         session['status'] = 'ready'
@@ -1597,55 +1608,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'submit_convert_btn(): {e}'
                     alert_exception(error, session_id)
                     session['status'] = 'ready'
-                return gr.update(), gr.update()
-            
-            def submit_confirmed_blocks(session_id:str)->tuple:
-                try:
-                    session = context.get_session(session_id)
-                    if session and session.get('id', False):
-                        error = None
-                        if isinstance(session['ebook_list'], list):
-                            ebook_list = session['ebook_list'][:]
-                            for file in ebook_list:
-                                if any(file.endswith(ext) for ext in ebook_formats):
-                                    print(f'Processing eBook file: {os.path.basename(file)}')
-                                    session['ebook'] = file
-                                    progress_status, passed = convert_ebook(session)
-                                    if passed is False:
-                                        if session['status'] == 'converting':
-                                            error = 'Conversion cancelled.'
-                                            break
-                                        else:
-                                            error = 'Conversion failed.'
-                                            break
-                                    else:
-                                        show_alert({"type": "success", "msg": progress_status})
-                                        session['ebook_list'].remove(file)
-                                        reset_session(session['id'])
-                                        msg = 'Conversion successful!'
-                                        session['status'] = 'ready'
-                                        return gr.update(value=msg), gr.update()
-                        else:
-                            print(f"Processing eBook file: {os.path.basename(session['ebook'])}")
-                            progress_status, passed = convert_ebook(session)
-                            if passed is False:
-                                if session['status'] == 'converting':
-                                    error = 'Conversion cancelled.'
-                                else:
-                                    error = 'Conversion failed.'
-                                session['status'] = 'ready'
-                            else:
-                                show_alert({"type": "success", "msg": progress_status})
-                                reset_session(session['id'])
-                                msg = 'Conversion successful!'
-                                session['status'] = 'ready'
-                                return gr.update(value=msg), gr.update()
-                        if error is not None:
-                            show_alert({"type": "warning", "msg": error})
-                except Exception as e:
-                    error = f'submit_confirmed_blocks(): {e}'
-                    alert_exception(error, session_id)
-                return gr.update(), gr.update()          
+                return gr.update()
 
             def update_gr_audiobook_list(session_id:str)->dict:
                 try:
@@ -1678,6 +1641,82 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'update_gr_audiobook_list(): {e}!'
                     alert_exception(error, session_id)              
                 return gr.update()
+
+            @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text, gr_blocks_open])
+            def render_blocks(blocks:list[str], page:int, keep_map:dict[int,bool], text_map:dict[int,str], open_map:dict[int,bool])->None:
+                start = page * page_size
+                end = min(start + page_size, len(blocks))
+                with gr.Column():
+                    for i in range(start, end):
+                        with gr.Accordion(f'Block {i}', open=open_map.get(i, False)) as acc:
+                            acc.expand(
+                                lambda idx=i, m=open_map: {**m, idx: True},
+                                outputs=gr_blocks_open
+                            )
+                            acc.collapse(
+                                lambda idx=i, m=open_map: {**m, idx: False},
+                                outputs=gr_blocks_open
+                            )
+                            keep = gr.Checkbox(
+                                value=keep_map.get(i, True),
+                                label='Keep block',
+                                interactive=True
+                            )
+                            txt = gr.Textbox(
+                                value=text_map.get(i, blocks[i]),
+                                lines=18,
+                                max_lines=18,
+                                show_label=False,
+                                container=False,
+                                interactive=True
+                            )
+
+            def save_page_state(blocks:list[str], page:int, keep_map:bool, text_map:str, *values):
+                start = page * page_size
+                index = 0
+                for i in range(start, min(start + page_size, len(blocks))):
+                    keep_map[i] = values[index]
+                    text_map[i] = values[index + 1]
+                    index += 2
+                return keep_map, text_map
+
+            def prev_page(page:int)->int:
+                new_page = max(page - 1, 0)
+                return new_page, gr.update(visible=new_page > 0), gr.update(visible=True)
+
+            def next_page(page:int, blocks:list[str])->int:
+                max_page = (len(blocks) - 1) // page_size
+                new_page = min(page + 1, max_page)
+                return new_page, gr.update(visible=new_page < max_page), gr.update(visible=True)
+
+            def update_blocks_header(page:int, blocks:list[str])->str:
+                start = page * page_size
+                end = min(start + page_size, len(blocks))
+                if not blocks:
+                    return ''
+                return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks) - 1}')
+
+            def edit_blocks(session_id:str)->tuple:
+                session = context.get_session(session_id)
+                if session and session['status'] == confirm_blocks:
+                    return (
+                        gr.update(visible=True), update_blocks_header(0, session['blocks']), session['blocks'], 0, {}, {},
+                        gr.update(visible=False), gr.update(visible=len(session['blocks']) > page_size)
+                    )
+                return tuple(gr.update(visible=False) for _ in range(8))
+
+            def cancel_blocks(session_id:str)->tuple:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    session["status"] = 'ready'
+                return gr.update(visible=False), [], 0, {}, {}
+
+            def continue_blocks(blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->list[str]:
+                new_blocks = []
+                for i, block in enumerate(blocks):
+                    if keep_map.get(i, True):
+                        new_blocks.append(text_map.get(i, block))
+                return new_blocks
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -1799,8 +1838,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session_id:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['event'] is not None:
-                            session['event'] = None
+                        session['event'] = None
 
             gr_ebook_file.change(
                 fn=change_convert_btn,
@@ -2098,8 +2136,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_timer = gr.Timer(9, active=False)
             gr_timer.tick(
                 fn=update_gr_save_session,
-                inputs=[gr_session, gr_state_update],
-                outputs=[gr_save_session, gr_state_update, gr_audiobook_list]
+                inputs=[gr_session, gr_session_update],
+                outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
             ).then(
                 fn=clear_event,
                 inputs=[gr_session],
@@ -2121,7 +2159,14 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                     gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
                 ],
-                outputs=[gr_progress, gr_modal]
+                outputs=[gr_progress]
+            ).then(
+                fn=edit_blocks,
+                inputs=[gr_session],
+                outputs=[
+                    gr_blocks_panel, gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
+                    gr_blocks_text, gr_blocks_prev, gr_blocks_next
+                ]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
@@ -2151,8 +2196,8 @@ def build_interface(args:dict)->gr.Blocks:
             )       
             gr_restore_session.change(
                 fn=change_gr_restore_session,
-                inputs=[gr_restore_session, gr_state_update],
-                outputs=[gr_save_session, gr_state_update, gr_session, gr_glassmask]
+                inputs=[gr_restore_session, gr_session_update],
+                outputs=[gr_save_session, gr_session_update, gr_session, gr_glassmask]
             ).then(
                 fn=restore_interface,
                 inputs=[gr_session],
@@ -2186,35 +2231,45 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
                 outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
             )
-            gr_confirm_blocks_yes_btn.click(
-                fn=lambda session: confirm_blocks("yes", session),
-                inputs=[gr_session],
-                outputs=[gr_modal]
+            gr_blocks_prev.click(
+                fn=prev_page,
+                inputs=[gr_blocks_page],
+                outputs=[gr_blocks_page, gr_blocks_prev, gr_blocks_next]
             ).then(
-                fn=submit_confirmed_blocks,
+                fn=update_blocks_header,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[gr_blocks_header]
+            )
+            gr_blocks_next.click(
+                fn=next_page,
+                inputs=[gr_blocks_page,gr_blocks_data],
+                outputs=[gr_blocks_page, gr_blocks_next, gr_blocks_prev]
+            ).then(
+                fn=update_blocks_header,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[gr_blocks_header]
+            )
+            gr_blocks_cancel.click(
+                fn=cancel_blocks,
                 inputs=[gr_session],
-                outputs=[gr_progress, gr_modal]
+                outputs=[gr_blocks_panel, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
+            )
+            gr_blocks_continue.click(
+                fn=continue_blocks,
+                inputs=[gr_blocks_data, gr_blocks_keep, gr_blocks_text],
+                outputs=[gr_blocks_data]
+            ).then(
+                fn=finalize_audiobook,
+                inputs=[gr_session, gr_blocks_data],
+                outputs=[gr_progress]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
                 outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
-            )
-            gr_confirm_blocks_no_btn.click(
-                fn=lambda session: confirm_blocks("no", session),
-                inputs=[gr_session],
-                outputs=[gr_modal]
-            ).then(
-                fn=change_convert_btn,
-                inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
-                outputs=[gr_convert_btn]
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
             )
             ############
             app.load(
