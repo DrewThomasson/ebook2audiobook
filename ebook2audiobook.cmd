@@ -313,6 +313,7 @@ if errorlevel 1 (
     del "%TEMP%\%PYTHON_INSTALLER%"
     goto :failed
 )
+pause
 del "%TEMP%\%PYTHON_INSTALLER%"
 echo Refreshing PATH...
 REM Manually add Python to current session PATH (avoid duplicates)
