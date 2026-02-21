@@ -172,7 +172,6 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 if device == devices['CPU']['proc']:
                                     audio_part = self.engine.tts(
                                         text=part,
-                                        **speaker_argument
                                     )
                                 else:
                                     with torch.autocast(
@@ -181,7 +180,6 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                     ):
                                         audio_part = self.engine.tts(
                                             text=part,
-                                            **speaker_argument
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
