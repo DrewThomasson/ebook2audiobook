@@ -253,7 +253,6 @@ where.exe /Q scoop
 if errorlevel 1 (
     echo Scoop is not installed.
     set "OK_SCOOP=1"
-    goto :install_programs
 ) else (
     if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
         call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
@@ -283,9 +282,8 @@ for %%p in (%HOST_PROGRAMS%) do (
 endlocal & set "missing_prog_array=%missing_prog_array%"
 if not "%missing_prog_array%"=="" (
     set "OK_PROGRAMS=1"
-    goto :install_programs
 )
-goto :dispatch
+exit /b 0
 
 :install_python
 echo Installing Python %PYTHON_VERSION%...
@@ -326,14 +324,6 @@ pause
 exit
 
 :install_programs
-if not "%OK_SCOOP%"=="0" (
-    echo Installing Scoop…
-    call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
-        "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
-    echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
-    type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
-	goto :restart_script
-)
 if not "%OK_WSL%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo WSL2 is required to build Linux containers.
@@ -385,32 +375,13 @@ if not "%OK_WSL%"=="0" (
 		)
 	)
 )
-if not "%OK_DOCKER%"=="0" (
-    if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-        echo Installing Docker inside WSL2…
-        REM First verify WSL Ubuntu is actually working
-        wsl --user root -d Ubuntu -- bash -c "echo 'WSL is ready'" >nul 2>&1
-        if errorlevel 1 (
-            echo %ESC%[31m=============== WSL Ubuntu is not ready. Initializing…%ESC%[0m
-            wsl --user root -d Ubuntu -- bash -c "apt-get update" >nul 2>&1
-            wsl --shutdown
-            timeout /t 3 /nobreak >nul
-        )
-        echo Downloading and installing Docker…
-        wsl --user root -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
-        if errorlevel 1 (
-            echo %ESC%[31m=============== docker install failed.%ESC%[0m
-            echo Try running: wsl --user root -d Ubuntu
-            echo Then manually run: curl -fsSL https://get.docker.com ^| sh
-            goto :failed
-        )
-        echo Enabling systemd…
-        wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
-        wsl --shutdown
-        echo %ESC%[33m=============== docker OK ===============%ESC%[0m
-        set "OK_DOCKER=0"
-        goto :restart_script
-    )
+if not "%OK_SCOOP%"=="0" (
+    echo Installing Scoop…
+    call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
+        "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
+    echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
+    type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
+	goto :restart_script
 )
 if not "%OK_CONDA%"=="0" (
 	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
@@ -438,6 +409,33 @@ if not "%OK_CONDA%"=="0" (
 		set "OK_CONDA=0"
 		goto :restart_script
 	)
+)
+if not "%OK_DOCKER%"=="0" (
+    if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+        echo Installing Docker inside WSL2…
+        REM First verify WSL Ubuntu is actually working
+        wsl --user root -d Ubuntu -- bash -c "echo 'WSL is ready'" >nul 2>&1
+        if errorlevel 1 (
+            echo %ESC%[31m=============== WSL Ubuntu is not ready. Initializing…%ESC%[0m
+            wsl --user root -d Ubuntu -- bash -c "apt-get update" >nul 2>&1
+            wsl --shutdown
+            timeout /t 3 /nobreak >nul
+        )
+        echo Downloading and installing Docker…
+        wsl --user root -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
+        if errorlevel 1 (
+            echo %ESC%[31m=============== docker install failed.%ESC%[0m
+            echo Try running: wsl --user root -d Ubuntu
+            echo Then manually run: curl -fsSL https://get.docker.com ^| sh
+            goto :failed
+        )
+        echo Enabling systemd…
+        wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
+        wsl --shutdown
+        echo %ESC%[33m=============== docker OK ===============%ESC%[0m
+        set "OK_DOCKER=0"
+        goto :restart_script
+    )
 )
 if not "%OK_PROGRAMS%"=="0" (
     echo Installing missing programs…
@@ -503,14 +501,13 @@ if not "%OK_PROGRAMS%"=="0" (
     set "OK_PROGRAMS=0"
     set "missing_prog_array="
 )
-goto :dispatch
 
 :check_conda
 where.exe /Q conda
 if errorlevel 1 (
     echo Miniforge3 is not installed.
     set "OK_CONDA=1"
-    goto :install_programs
+    exit /b 0
 )
 :: Check if running in a Conda environment
 if defined CONDA_DEFAULT_ENV (
@@ -554,7 +551,7 @@ if "%CURRENT_ENV%"=="" (
     echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
     goto :failed
 )
-goto :check_required_programs
+exit /b 0
 
 :check_docker
 where.exe /Q docker.exe
@@ -797,38 +794,19 @@ exit /b 0
 
 :::::::::::: END CORE FUNCTIONS
 
-:dispatch
-if "%OK_SCOOP%"=="0" (
-    if "%OK_PROGRAMS%"=="0" (
-        if "%OK_CONDA%"=="0" (
-            if "%OK_DOCKER%"=="0" (
-				goto :main
-            )
-        )
-    )
-)
-echo OK_PROGRAMS: %OK_PROGRAMS%
-echo OK_CONDA: %OK_CONDA%
-echo OK_DOCKER: %OK_DOCKER%
-goto :install_programs
-
 :main
 if defined arguments.help (
     if /I "%arguments.help%"=="true" (
 		call :check_python
-		if errorlevel 1 (
-			goto :install_python
-		)
+		if errorlevel 1 goto :install_python
         call python "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
         goto :eof
     )
 ) else (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "%DOCKER_DEVICE_STR%"=="" (
-            call :check_python
-            if errorlevel 1 (
-                goto :install_python
-            )
+			call :check_python
+			if errorlevel 1 goto :install_python
             call :check_docker
             if errorlevel 1	goto :install_programs
             call :check_docker_daemon
@@ -857,24 +835,15 @@ if defined arguments.help (
             call :build_docker_image "!DEVICE_INFO_STR!"
             if errorlevel 1 goto :failed
         ) else (
-            call :check_python
-            if errorlevel 1 goto :install_python
-			call :check_scoop
-			if errorlevel 1 goto :failed
-            call :install_python_packages
-            if errorlevel 1 goto :failed
-            call :install_device_packages "%DOCKER_DEVICE_STR%"
-            if errorlevel 1 goto :failed
-            call :check_sitecustomized
-            if errorlevel 1 goto :failed
+			echo The Docker image is only available with a Linux container
         )
     ) else (
-		call :check_python
-		if errorlevel 1 goto :install_python
 		call :check_scoop
-		if errorlevel 1 goto :failed
+		if "%OK_SCOOP%"=="1" goto :install_programs
+		call :check_required_programs
+		if "%OK_PROGRAMS%"=="1" goto :install_programs
 		call :check_conda
-		if errorlevel 1 goto :failed
+		if "%OK_CONDA%"=="1" goto :install_programss
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda activate base
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
@@ -885,7 +854,7 @@ if defined arguments.help (
         call conda deactivate >nul && call conda deactivate >nul
     )
 )
-exit /b 0
+goto :quit
 
 :failed
 echo =============== ebook2audiobook is not correctly installed.
