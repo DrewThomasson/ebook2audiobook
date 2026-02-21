@@ -1219,7 +1219,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 for f in Path(session['custom_model_dir']).rglob('*.wav')
                                 if f.is_file()
                             )
-                        if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+                        if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                             voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                         else:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
