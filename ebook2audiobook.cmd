@@ -314,14 +314,7 @@ del "%TEMP%\%PYTHON_INSTALLER%"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python.exe"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python3.exe"
 echo %ESC%[33m=============== Python OK ===============%ESC%[0m
-echo.
-echo ==================================================
-echo Python has been installed.
-echo Please REBOOT your computer for PATH to update.
-echo After reboot, run this script again to continue.
-echo ==================================================
-pause
-exit
+goto :main
 
 :install_programs
 if not "%OK_WSL%"=="0" (
