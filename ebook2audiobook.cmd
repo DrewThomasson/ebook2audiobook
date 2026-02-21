@@ -211,7 +211,7 @@ if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
     reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\%APP_NAME%" /v "NoRepair" /t REG_DWORD /d 1 /f >nul 2>&1
     start "%APP_NAME%" /min "%PS_EXE%" %PS_ARGS% -File "%BROWSER_HELPER%" -HostName "%TEST_HOST%" -Port %TEST_PORT%
 )
-exit /b
+exit /b 0
 :::::: END OF DESKTOP APP
 
 :get_iso3_lang
