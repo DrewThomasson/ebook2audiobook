@@ -10,6 +10,7 @@ TTS_ENGINES = {
     "TORTOISE": "tortoise",
     "VITS": "vits",
     "FAIRSEQ": "fairseq",
+    "GLOWTTS": "glowtts",
     "TACOTRON2": "tacotron",
     "YOURTTS": "yourtts"
 }
@@ -170,11 +171,18 @@ default_engine_settings = {
         "voices": {},
         "rating": {"VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
     },
+    TTS_ENGINES['GLOWTTS']: {
+        "languages": {"eng": "en", "ukr": "uk", "tur": "tr", "ita": "it", "fas": "fa", "bel": "be"},
+        "samplerate": 22050,
+        "files": [],
+        "voices": {},
+        "rating": {"VRAM": 1, "CPU": 4, "RAM": 2, "Realism": 3}
+    },
     TTS_ENGINES['TACOTRON2']: {
         "languages": {"deu": "de", "eng": "en", "fra": "fr", "spa": "es"},
         "samplerate": 22050,
         "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
-        "voices": {},
+        "files": ['config.json', 'model_file.pth'],
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 3}
     },
     TTS_ENGINES['YOURTTS']: {
