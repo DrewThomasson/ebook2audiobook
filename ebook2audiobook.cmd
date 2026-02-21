@@ -543,8 +543,7 @@ if "%CURRENT_ENV%"=="" (
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
         call :install_python_packages
         if errorlevel 1 goto :failed
-        call conda deactivate
-        call conda deactivate
+		call conda deactivate >nul && call conda deactivate >nul
     )
 ) else (
     echo Current python virtual environment detected: %CURRENT_ENV%. 
@@ -844,17 +843,16 @@ if defined arguments.help (
 		if "%OK_PROGRAMS%"=="1" goto :install_programs
 		call :check_conda
 		if "%OK_CONDA%"=="1" goto :install_programss
-        call "%CONDA_HOME%\Scripts\activate.bat"
-        call conda activate base
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+		if errorlevel 1 goto :failed
         call :check_sitecustomized
         if errorlevel 1 goto :failed
         call :build_gui
         call python "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-        call conda deactivate >nul && call conda deactivate >nul
+		call conda deactivate >nul && call conda deactivate >nul
     )
 )
-goto :quit
+goto :eof
 
 :failed
 echo =============== ebook2audiobook is not correctly installed.
