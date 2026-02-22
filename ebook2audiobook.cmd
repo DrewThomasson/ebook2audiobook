@@ -313,36 +313,34 @@ goto :restart_script
 if not "%OK_WSL%"=="0" (
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo WSL2 is required to build Linux containers.
-		net session >nul 2>&1
-		if errorlevel 1 (
-			echo The script will install WSL2 in Administrator mode.
-			pause
-			goto :restart_script_admin
-		)
-		echo Installing WSL2…
-		dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-		dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-		wsl --set-default-version 2
-		echo Updating WSL2 kernel…
-		wsl --update 2>nul
-		wsl --shutdown
-		echo Installing Ubuntu silently…
+		echo.
+		echo ==================================================
+		echo WSL and Ubuntu will now be installed.
+		echo.
+		echo INSTRUCTIONS:
+		echo 1. Enter a username and password when prompted
+		echo 2. After setup completes, type: exit
+		echo 3. Press Enter to return to this script
+		echo.
+		echo The username is temporary - root will be set as default.
+		echo ==================================================
+		pause
 		wsl --unregister Ubuntu >nul 2>&1
-		echo Downloading Ubuntu root filesystem for %PYTHON_ARCH%...
-		curl -L -o "%TEMP%\ubuntu.tar.gz" "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-%PYTHON_ARCH%-wsl.rootfs.tar.gz"
+		wsl --install
+		echo.
+		echo Ubuntu setup complete. Configuring for Docker...
+		wsl --shutdown
+		timeout /t 3 /nobreak >nul
+		REM Verify Ubuntu was installed
+		wsl -l -q 2>nul | findstr /i "Ubuntu" >nul
 		if errorlevel 1 (
-			echo %ESC%[31m=============== Failed to download Ubuntu rootfs.%ESC%[0m
+			echo %ESC%[31m=============== Ubuntu installation failed.%ESC%[0m
 			goto :failed
 		)
-		echo Importing Ubuntu into WSL2...
-		wsl --import Ubuntu "%LOCALAPPDATA%\WSL\Ubuntu" "%TEMP%\ubuntu.tar.gz" --version 2
-		if errorlevel 1 (
-			echo %ESC%[31m=============== Failed to import Ubuntu.%ESC%[0m
-			del "%TEMP%\ubuntu.tar.gz"
-			goto :failed
+		REM Set root as default via registry
+		for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
+			reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
 		)
-		del "%TEMP%\ubuntu.tar.gz"
-		wsl --set-default Ubuntu
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
 		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
 		wsl --shutdown
