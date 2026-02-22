@@ -314,7 +314,7 @@ del "%TEMP%\%PYTHON_INSTALLER%"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python.exe"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python3.exe"
 echo %ESC%[33m=============== Python OK ===============%ESC%[0m
-timeout /t 3 /nobreak >nul
+timeout /t 6 /nobreak >nul
 goto :restart_script
 
 :install_programs
