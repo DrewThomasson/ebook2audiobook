@@ -328,9 +328,8 @@ if not "%OK_WSL%"=="0" (
 		wsl --shutdown
 		echo Installing Ubuntu silently…
 		wsl --unregister Ubuntu >nul 2>&1
-		set "UBUNTU_ROOTFS_URL=https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-%PYTHON_ARCH%-wsl.rootfs.tar.gz"
 		echo Downloading Ubuntu root filesystem for %PYTHON_ARCH%...
-		curl -L -o "%TEMP%\ubuntu.tar.gz" "%UBUNTU_ROOTFS_URL%"
+		curl -L -o "%TEMP%\ubuntu.tar.gz" "https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-%PYTHON_ARCH%-wsl.rootfs.tar.gz"
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Failed to download Ubuntu rootfs.%ESC%[0m
 			goto :failed
