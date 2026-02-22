@@ -15,7 +15,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones":{}}
-            self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)

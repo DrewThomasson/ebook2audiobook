@@ -146,7 +146,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                             else:
                                 tmp_out_wav = tmp_in_wav
                             if self.engine_zs:
-                                #self.params['samplerate'] = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
+                                self.params['samplerate'] = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
                                 source_wav = self._resample_wav(tmp_out_wav, self.params['samplerate'])
                                 target_wav = self._resample_wav(self.params['current_voice'], self.params['samplerate'])
                                 self.engine_zs.to(device)
