@@ -335,6 +335,7 @@ if not "%OK_WSL%"=="0" (
 		wsl --shutdown
 		echo Installing Ubuntu silently…
 		powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -First 1" >nul 2>&1
+		pause
 		if not errorlevel 1 (
 			echo Ubuntu package is already installed. Skipping appx install...
 			wsl --shutdown
@@ -342,8 +343,10 @@ if not "%OK_WSL%"=="0" (
 			if errorlevel 1 (
 				echo Initializing Ubuntu distro...
 				ubuntu install --root >nul 2>&1
-				if errorlevel 1 ubuntu2204 install --root >nul 2>&1
-				if errorlevel 1 ubuntu2404 install --root >nul 2>&1
+				if errorlevel 1 (
+					echo %ESC%[31m=============== Failed to intializing Ubuntu.%ESC%[0m
+					goto :failed
+				)
 			)
 		) else (
 			wsl --unregister Ubuntu >nul 2>&1
