@@ -333,24 +333,24 @@ if not "%OK_WSL%"=="0" (
 		echo Updating WSL2 kernel…
 		wsl --update 2>nul
 		wsl --shutdown
-		echo Installing Ubuntu…
+		echo Installing Ubuntu silently…
 		wsl --unregister Ubuntu >nul 2>&1
-		wsl --install -d Ubuntu
-		echo Waiting for Ubuntu to initialize...
-		timeout /t 15 /nobreak >nul
-		taskkill /IM ubuntu.exe /F >nul 2>&1
-		wsl --shutdown
-		timeout /t 3 /nobreak >nul
-		REM Verify Ubuntu was installed
-		wsl -l -q 2>nul | findstr /i "Ubuntu" >nul
+		REM Download Ubuntu rootfs and import it
+		echo Downloading Ubuntu root filesystem...
+		powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz' -OutFile '%TEMP%\ubuntu.tar.gz'"
 		if errorlevel 1 (
-			echo %ESC%[31m=============== Ubuntu installation failed.%ESC%[0m
+			echo %ESC%[31m=============== Failed to download Ubuntu rootfs.%ESC%[0m
 			goto :failed
 		)
-		REM Set root as default via registry
-		for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
-			reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
+		echo Importing Ubuntu into WSL2...
+		wsl --import Ubuntu "%LOCALAPPDATA%\WSL\Ubuntu" "%TEMP%\ubuntu.tar.gz" --version 2
+		if errorlevel 1 (
+			echo %ESC%[31m=============== Failed to import Ubuntu.%ESC%[0m
+			del "%TEMP%\ubuntu.tar.gz"
+			goto :failed
 		)
+		del "%TEMP%\ubuntu.tar.gz"
+		wsl --set-default Ubuntu
 		echo [wsl2] > "%USERPROFILE%\.wslconfig"
 		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
 		wsl --shutdown
@@ -358,6 +358,33 @@ if not "%OK_WSL%"=="0" (
 		set "OK_WSL=0"
 		goto :restart_script
 	)
+)
+if not "%OK_DOCKER%"=="0" (
+    if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+        echo Installing Docker inside WSL2…
+        REM First verify WSL Ubuntu is actually working
+        wsl --user root -d Ubuntu -- bash -c "echo 'WSL is ready'" >nul 2>&1
+        if errorlevel 1 (
+            echo %ESC%[31m=============== WSL Ubuntu is not ready. Initializing…%ESC%[0m
+            wsl --user root -d Ubuntu -- bash -c "apt-get update" >nul 2>&1
+            wsl --shutdown
+            timeout /t 3 /nobreak >nul
+        )
+        echo Downloading and installing Docker…
+        wsl --user root -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
+        if errorlevel 1 (
+            echo %ESC%[31m=============== docker install failed.%ESC%[0m
+            echo Try running: wsl --user root -d Ubuntu
+            echo Then manually run: curl -fsSL https://get.docker.com ^| sh
+            goto :failed
+        )
+        echo Enabling systemd…
+        wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
+        wsl --shutdown
+        echo %ESC%[33m=============== docker OK ===============%ESC%[0m
+        set "OK_DOCKER=0"
+        goto :restart_script
+    )
 )
 if not "%OK_SCOOP%"=="0" (
     echo Installing Scoop…
@@ -393,33 +420,6 @@ if not "%OK_CONDA%"=="0" (
 		set "OK_CONDA=0"
 		goto :restart_script
 	)
-)
-if not "%OK_DOCKER%"=="0" (
-    if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-        echo Installing Docker inside WSL2…
-        REM First verify WSL Ubuntu is actually working
-        wsl --user root -d Ubuntu -- bash -c "echo 'WSL is ready'" >nul 2>&1
-        if errorlevel 1 (
-            echo %ESC%[31m=============== WSL Ubuntu is not ready. Initializing…%ESC%[0m
-            wsl --user root -d Ubuntu -- bash -c "apt-get update" >nul 2>&1
-            wsl --shutdown
-            timeout /t 3 /nobreak >nul
-        )
-        echo Downloading and installing Docker…
-        wsl --user root -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
-        if errorlevel 1 (
-            echo %ESC%[31m=============== docker install failed.%ESC%[0m
-            echo Try running: wsl --user root -d Ubuntu
-            echo Then manually run: curl -fsSL https://get.docker.com ^| sh
-            goto :failed
-        )
-        echo Enabling systemd…
-        wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
-        wsl --shutdown
-        echo %ESC%[33m=============== docker OK ===============%ESC%[0m
-        set "OK_DOCKER=0"
-        goto :restart_script
-    )
 )
 if not "%OK_PROGRAMS%"=="0" (
     echo Installing missing programs…
