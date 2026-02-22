@@ -7,7 +7,7 @@ models = {
         "sub": {
             "ljspeech/glow-tts": ['en'],
             "mai/glow-tts": ['uk'],
-            "mai_female/glow-tts": ['it'],
+            "mai_male/glow-tts": ['it'],
             "custom/glow-tts": ['fa'],
             "common-voice/glow-tts": ['be', 'tr']
         },
