@@ -756,11 +756,11 @@ if "%DOCKER_DESKTOP%"=="1" (
     echo     DEVICE_TAG=%DEVICE_TAG% podman-compose up -d
 ) else (
     echo GUI mode ^(run inside WSL^):
-    echo     wsl -d Ubuntu -- docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+    echo     wsl --user root -d Ubuntu -- docker run %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
     echo Headless mode ^(run inside WSL^):
-    echo     wsl -d Ubuntu -- docker run %cmd_extra%--rm -it -v "/mnt/c/Users/YourName/ebooks:/app/ebooks" -v "/mnt/c/Users/YourName/audiobooks:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf"
+    echo     wsl --user root -d Ubuntu -- docker run %cmd_extra%--rm -it -v "/mnt/c/Users/YourName/ebooks:/app/ebooks" -v "/mnt/c/Users/YourName/audiobooks:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf"
     echo Docker Compose ^(run inside WSL^):
-    echo     wsl -d Ubuntu -- bash -c "cd '%WSL_DIR%' && DEVICE_TAG=%DEVICE_TAG% docker compose up -d"
+    echo     wsl --user root -d Ubuntu -- bash -c "cd '%WSL_DIR%' && DEVICE_TAG=%DEVICE_TAG% docker compose up -d"
 )
 endlocal
 exit /b 0
