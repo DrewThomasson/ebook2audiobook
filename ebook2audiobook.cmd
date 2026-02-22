@@ -332,13 +332,11 @@ if not "%OK_WSL%"=="0" (
 		echo Ubuntu setup complete. Configuring for Docker...
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
-		REM Verify Ubuntu was installed
-		wsl -l -q 2>nul | findstr /i "Ubuntu" >nul
+		wsl --user root -- echo "Ubuntu OK" >nul 2>&1
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Ubuntu installation failed.%ESC%[0m
 			goto :failed
 		)
-		REM Set root as default via registry
 		for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
 			reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
 		)
