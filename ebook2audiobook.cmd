@@ -339,10 +339,10 @@ if not "%OK_WSL%"=="0" (
 			echo Ubuntu package is already installed. Skipping appx install...
 			wsl --shutdown
 			wsl -l -q 2>nul | findstr /i "Ubuntu" >nul
-			pause
 			if errorlevel 1 (
 				echo Initializing Ubuntu distro...
-				ubuntu install --root >nul 2>&1
+				pause
+				ubuntu2204.exe install --root >nul 2>&1
 				if errorlevel 1 (
 					echo %ESC%[31m=============== Failed to intializing Ubuntu.%ESC%[0m
 					goto :failed
