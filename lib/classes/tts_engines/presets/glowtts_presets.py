@@ -16,7 +16,7 @@ models = {
         "samplerate": {
             "ljspeech/glow-tts": default_engine_settings[TTS_ENGINES['GLOWTTS']]['samplerate'],
             "mai/glow-tts": 16000,
-            "mai_female/glow-tts": 16000,
+            "mai_male/glow-tts": 16000,
             "custom/glow-tts": 24000,
             "common-voice/glow-tts": default_engine_settings[TTS_ENGINES['GLOWTTS']]['samplerate']
         }
