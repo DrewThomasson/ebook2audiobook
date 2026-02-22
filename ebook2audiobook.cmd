@@ -415,7 +415,7 @@ if not "%OK_DOCKER%"=="0" (
         if errorlevel 1 (
             echo %ESC%[31m=============== docker install failed.%ESC%[0m
             echo Try running: wsl --user root -d Ubuntu
-            echo Then manually run: curl -fsSL https://get.docker.com ^^^| sh
+            echo Then manually run: curl -fsSL https://get.docker.com ^| sh
             goto :failed
         )
         echo Enabling systemd…
