@@ -241,7 +241,7 @@ if /i "%~1"=="yo" set "ISO3_LANG=yor"
 exit /b
 
 :check_python
-python --version >nul 2>&1
+where.exe python >nul 2>&1
 if errorlevel 1 (
 	echo Python is not installed.
     exit /b 1
@@ -314,7 +314,6 @@ del "%TEMP%\%PYTHON_INSTALLER%"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python.exe"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python3.exe"
 echo %ESC%[33m=============== Python OK ===============%ESC%[0m
-timeout /t 6 /nobreak >nul
 goto :restart_script
 
 :install_programs
