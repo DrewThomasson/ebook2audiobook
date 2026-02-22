@@ -340,13 +340,18 @@ if not "%OK_WSL%"=="0" (
 			wsl --shutdown
 			wsl -l -q 2>nul | findstr /i "Ubuntu" >nul
 			if errorlevel 1 (
-				echo Initializing Ubuntu distro...
-				pause
-				ubuntu2204.exe install --root >nul 2>&1
-				if errorlevel 1 (
-					echo %ESC%[31m=============== Failed to intializing Ubuntu.%ESC%[0m
-					goto :failed
+				echo Initializing Ubuntu distro from AppxPackage...
+				for /f "tokens=*" %%p in ('powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -ExpandProperty InstallLocation"') do (
+					echo Found Ubuntu at: %%p
+					"%%p\ubuntu.exe" install --root
+					if errorlevel 1 (
+						echo %ESC%[31m=============== Failed to initialize Ubuntu.%ESC%[0m
+						goto :failed
+					)
 				)
+				wsl --shutdown
+				timeout /t 3 /nobreak >nul
+				echo Ubuntu initialized successfully.
 			)
 		) else (
 			wsl --unregister Ubuntu >nul 2>&1
@@ -364,10 +369,18 @@ if not "%OK_WSL%"=="0" (
 				goto :failed
 			)
 			del "%TEMP%\ubuntu.appx"
-			timeout /t 3 /nobreak >nul
+			echo Initializing Ubuntu distro from AppxPackage...
+			for /f "tokens=*" %%p in ('powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -ExpandProperty InstallLocation"') do (
+				echo Found Ubuntu at: %%p
+				"%%p\ubuntu.exe" install --root
+				if errorlevel 1 (
+					echo %ESC%[31m=============== Failed to initialize Ubuntu.%ESC%[0m
+					goto :failed
+				)
+			)
 			wsl --shutdown
-			echo Initializing Ubuntu as root...
-			ubuntu2204.exe install --root >nul 2>&1
+			timeout /t 3 /nobreak >nul
+			echo Ubuntu initialized successfully.
 		)
 	)
 )
