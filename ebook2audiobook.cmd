@@ -314,6 +314,7 @@ del "%TEMP%\%PYTHON_INSTALLER%"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python.exe"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python3.exe"
 echo %ESC%[33m=============== Python OK ===============%ESC%[0m
+timeout /t 3 /nobreak >nul
 goto :restart_script
 
 :install_programs
@@ -841,7 +842,7 @@ if defined arguments.help (
         call :check_sitecustomized
         if errorlevel 1 goto :failed
         call :build_gui
-        call python "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+        call python.exe "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 		call conda deactivate >nul && call conda deactivate >nul
     )
 )
@@ -850,8 +851,7 @@ goto :eof
 :failed
 echo =============== ebook2audiobook is not correctly installed.
 where.exe /Q conda && (
-    call conda deactivate >nul 2>&1
-    call conda deactivate >nul
+    call conda deactivate >nul && call conda deactivate >nul
 )
 exit /b 1
 
