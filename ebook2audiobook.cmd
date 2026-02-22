@@ -496,6 +496,7 @@ if not "%OK_PROGRAMS%"=="0" (
     set "OK_PROGRAMS=0"
     set "missing_prog_array="
 )
+goto :main
 
 :check_conda
 where.exe /Q conda
