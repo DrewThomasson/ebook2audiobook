@@ -339,13 +339,11 @@ if not "%OK_WSL%"=="0" (
 		echo ==================================================
 		echo Ubuntu will launch for first-time setup.
 		echo Enter ANY username and password when prompted.
-		echo The terminal will auto-close in 30 seconds.
+		echo After setup, type 'exit' and press Enter.
 		echo This is temporary - root will be set as default.
 		echo ==================================================
 		pause
-		start "Ubuntu Setup" wsl --install -d Ubuntu
-		timeout /t 10 /nobreak >nul
-		taskkill /FI "WINDOWTITLE eq Ubuntu Setup*" /F >nul 2>&1
+		wsl --install -d Ubuntu
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
 		REM Verify Ubuntu was installed
