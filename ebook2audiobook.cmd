@@ -339,11 +339,11 @@ if not "%OK_WSL%"=="0" (
 		echo ==================================================
 		echo Ubuntu will launch for first-time setup.
 		echo Enter ANY username and password when prompted.
-		echo After setup, type 'exit' and press Enter.
+		echo After setup completes, CLOSE the Ubuntu window (X button).
 		echo This is temporary - root will be set as default.
 		echo ==================================================
 		pause
-		wsl --install -d Ubuntu
+		start /wait cmd /c "wsl --install -d Ubuntu"
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
 		REM Verify Ubuntu was installed
