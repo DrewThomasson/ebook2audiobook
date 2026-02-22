@@ -326,6 +326,7 @@ if not "%OK_WSL%"=="0" (
 		echo ==================================================
 		pause
 		wsl --unregister Ubuntu >nul 2>&1
+		wsl --update
 		wsl --install -d Ubuntu
 		echo.
 		echo Ubuntu setup complete. Configuring for Docker...
