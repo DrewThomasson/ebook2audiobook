@@ -343,6 +343,7 @@ if not "%OK_WSL%"=="0" (
 				echo Initializing Ubuntu distro from AppxPackage...
 				for /f "tokens=*" %%p in ('powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -ExpandProperty InstallLocation"') do (
 					echo Found Ubuntu at: %%p
+					pause
 					"%%p\ubuntu.exe" install --root
 					if errorlevel 1 (
 						echo %ESC%[31m=============== Failed to initialize Ubuntu.%ESC%[0m
