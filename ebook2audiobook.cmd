@@ -53,6 +53,7 @@ set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\%APP_NAME%"
 set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
 set "DESKTOP_LNK=%SAFE_USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "ARCH=%PROCESSOR_ARCHITECTURE%" & if defined PROCESSOR_ARCHITEW6432 set "ARCH=%PROCESSOR_ARCHITEW6432%"
+if /i "%ARCH%"=="ARM64" (set "PYTHON_ARCH=arm64") else if /i "%ARCH%"=="AMD64" (set "PYTHON_ARCH=amd64")
 set "PYTHON_VERSION=3.12"
 set "PYTHON_SCOOP=python%PYTHON_VERSION:.=%"
 set "PYTHON_ENV=python_env"
@@ -287,14 +288,6 @@ exit /b 0
 
 :install_python
 echo Installing Python %PYTHON_VERSION%…
-if /i "%ARCH%"=="ARM64" (
-    set "PYTHON_ARCH=arm64"
-) else if /i "%ARCH%"=="AMD64" (
-    set "PYTHON_ARCH=amd64"
-) else (
-    echo %ESC%[31m=============== Unsupported architecture: %ARCH%%ESC%[0m
-    goto :failed
-)
 set "PYTHON_INSTALLER=python-%PYTHON_VERSION%-%PYTHON_ARCH%.exe"
 set "PYTHON_URL=https://www.python.org/ftp/python/%PYTHON_VERSION%.0/python-%PYTHON_VERSION%.0-%PYTHON_ARCH%.exe"
 echo Downloading Python installer for %PYTHON_ARCH%…
@@ -335,19 +328,14 @@ if not "%OK_WSL%"=="0" (
 		wsl --shutdown
 		echo Installing Ubuntu silently…
 		wsl --unregister Ubuntu >nul 2>&1
-		REM Detect architecture and set correct rootfs URL
-		if /i "%ARCH%"=="ARM64" (
-			set "UBUNTU_ROOTFS_URL=https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-arm64-wsl.rootfs.tar.gz"
-		) else (
-			set "UBUNTU_ROOTFS_URL=https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz"
-		)
-		echo Downloading Ubuntu root filesystem for %ARCH%…
-		powershell -NoProfile -Command "Invoke-WebRequest -Uri '%UBUNTU_ROOTFS_URL%' -OutFile '%TEMP%\ubuntu.tar.gz'"
+		set "UBUNTU_ROOTFS_URL=https://cloud-images.ubuntu.com/wsl/noble/current/ubuntu-noble-wsl-%PYTHON_ARCH%-wsl.rootfs.tar.gz"
+		echo Downloading Ubuntu root filesystem for %PYTHON_ARCH%...
+		curl -L -o "%TEMP%\ubuntu.tar.gz" "%UBUNTU_ROOTFS_URL%"
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Failed to download Ubuntu rootfs.%ESC%[0m
 			goto :failed
 		)
-		echo Importing Ubuntu into WSL2…
+		echo Importing Ubuntu into WSL2...
 		wsl --import Ubuntu "%LOCALAPPDATA%\WSL\Ubuntu" "%TEMP%\ubuntu.tar.gz" --version 2
 		if errorlevel 1 (
 			echo %ESC%[31m=============== Failed to import Ubuntu.%ESC%[0m
