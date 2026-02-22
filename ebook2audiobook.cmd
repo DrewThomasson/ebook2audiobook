@@ -314,7 +314,7 @@ del "%TEMP%\%PYTHON_INSTALLER%"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python.exe"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python3.exe"
 echo %ESC%[33m=============== Python OK ===============%ESC%[0m
-goto :main
+goto :restart_script
 
 :install_programs
 if not "%OK_WSL%"=="0" (
