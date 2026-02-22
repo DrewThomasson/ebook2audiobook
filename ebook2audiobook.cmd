@@ -335,7 +335,6 @@ if not "%OK_WSL%"=="0" (
 		wsl --shutdown
 		echo Installing Ubuntu silently…
 		powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -First 1" >nul 2>&1
-		pause
 		if not errorlevel 1 (
 			echo Ubuntu package is already installed. Skipping appx install...
 			wsl --shutdown
@@ -351,7 +350,7 @@ if not "%OK_WSL%"=="0" (
 		) else (
 			wsl --unregister Ubuntu >nul 2>&1
 			echo Downloading Ubuntu...
-			powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://aka.ms/wslubuntu2204' -OutFile '%TEMP%\ubuntu.appx'"
+			powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://aka.ms/wslubuntu' -OutFile '%TEMP%\ubuntu.appx'"
 			if errorlevel 1 (
 				echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
 				goto :failed
