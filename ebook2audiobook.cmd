@@ -333,57 +333,21 @@ if not "%OK_WSL%"=="0" (
 		echo Updating WSL2 kernel…
 		wsl --update 2>nul
 		wsl --shutdown
-		echo Installing Ubuntu silently…
-		powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -First 1" >nul 2>&1
-		if not errorlevel 1 (
-			echo Ubuntu package is already installed. Skipping appx install...
-			wsl --shutdown
-			wsl -l -q 2>nul | findstr /i "Ubuntu" >nul
-			if errorlevel 1 (
-				echo Initializing Ubuntu distro from AppxPackage...
-				for /f "tokens=*" %%p in ('powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -ExpandProperty InstallLocation"') do (
-					echo Found Ubuntu at: %%p
-					pause
-					"%%p\ubuntu.exe" install --root
-					if errorlevel 1 (
-						echo %ESC%[31m=============== Failed to initialize Ubuntu.%ESC%[0m
-						goto :failed
-					)
-				)
-				wsl --shutdown
-				timeout /t 3 /nobreak >nul
-				echo Ubuntu initialized successfully.
-			)
-		) else (
-			wsl --unregister Ubuntu >nul 2>&1
-			echo Downloading Ubuntu...
-			powershell -NoProfile -Command "Invoke-WebRequest -Uri 'https://aka.ms/wslubuntu' -OutFile '%TEMP%\ubuntu.appx'"
-			if errorlevel 1 (
-				echo %ESC%[31m=============== Failed to download Ubuntu.%ESC%[0m
-				goto :failed
-			)
-			echo Installing Ubuntu appx...
-			powershell -NoProfile -Command "Add-AppxPackage '%TEMP%\ubuntu.appx'"
-			if errorlevel 1 (
-				echo %ESC%[31m=============== Failed to install Ubuntu appx.%ESC%[0m
-				del "%TEMP%\ubuntu.appx"
-				goto :failed
-			)
-			del "%TEMP%\ubuntu.appx"
-			echo Initializing Ubuntu distro from AppxPackage...
-			for /f "tokens=*" %%p in ('powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -ExpandProperty InstallLocation"') do (
-				echo Found Ubuntu at: %%p
-				"%%p\ubuntu.exe" install --root
-				if errorlevel 1 (
-					echo %ESC%[31m=============== Failed to initialize Ubuntu.%ESC%[0m
-					goto :failed
-				)
-			)
-			wsl --shutdown
-			timeout /t 3 /nobreak >nul
-			echo Ubuntu initialized successfully.
+		echo Installing Ubuntu…
+		wsl --unregister Ubuntu >nul 2>&1
+		wsl --install -d Ubuntu
+		echo Waiting for Ubuntu to initialize...
+		timeout /t 15 /nobreak >nul
+		taskkill /IM ubuntu.exe /F >nul 2>&1
+		wsl --shutdown
+		timeout /t 3 /nobreak >nul
+		REM Verify Ubuntu was installed
+		wsl -l -q 2>nul | findstr /i "Ubuntu" >nul
+		if errorlevel 1 (
+			echo %ESC%[31m=============== Ubuntu installation failed.%ESC%[0m
+			goto :failed
 		)
-		REM Set root as default via registry (works for any Ubuntu version)
+		REM Set root as default via registry
 		for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
 			reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
 		)
