@@ -343,7 +343,6 @@ if not "%OK_WSL%"=="0" (
 				echo Initializing Ubuntu distro from AppxPackage...
 				for /f "tokens=*" %%p in ('powershell -NoProfile -Command "Get-AppxPackage -Name '*Ubuntu*' | Select-Object -ExpandProperty InstallLocation"') do (
 					echo Found Ubuntu at: %%p
-					pause
 					"%%p\ubuntu.exe" install --root
 					if errorlevel 1 (
 						echo %ESC%[31m=============== Failed to initialize Ubuntu.%ESC%[0m
@@ -383,6 +382,16 @@ if not "%OK_WSL%"=="0" (
 			timeout /t 3 /nobreak >nul
 			echo Ubuntu initialized successfully.
 		)
+		REM Set root as default via registry (works for any Ubuntu version)
+		for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
+			reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
+		)
+		echo [wsl2] > "%USERPROFILE%\.wslconfig"
+		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
+		wsl --shutdown
+		echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
+		set "OK_WSL=0"
+		goto :restart_script
 	)
 )
 if not "%OK_SCOOP%"=="0" (
