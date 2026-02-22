@@ -78,6 +78,7 @@ class DeviceInstaller():
         return 'unknown'
 
     def detect_device(self)->str:
+        import re
 
         def has_cmd(cmd:str)->bool:
             return shutil.which(cmd) is not None
