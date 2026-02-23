@@ -274,6 +274,8 @@ for %%p in (%HOST_PROGRAMS%) do (
         set "missing_prog_array=!missing_prog_array! %%p"
     )
 )
+echo %missing_progr_array%
+pause
 endlocal & set "missing_prog_array=%missing_prog_array%"
 if not "%missing_prog_array%"=="" (
 	exit /b 1
