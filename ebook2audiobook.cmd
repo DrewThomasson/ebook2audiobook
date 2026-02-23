@@ -275,7 +275,6 @@ for %%p in (%HOST_PROGRAMS%) do (
     )
 )
 endlocal & set "missing_prog_array=%missing_prog_array%"
-echo %missing_prog_array%
 if not "%missing_prog_array%"=="" (
 	exit /b 1
 )
@@ -442,7 +441,10 @@ for %%p in (%missing_prog_array%) do (
 	)
 	if "%%p"=="rustup" (
 		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
-			set "PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;!PATH!"
+			set "_RUSTUP_PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin"
+			echo !PATH! | findstr /I /C:"!_RUSTUP_PATH!" >nul 2>&1 || (
+				set "PATH=!_RUSTUP_PATH!;!PATH!"
+			)
 		)
 	)
 	where.exe /Q !prog!
@@ -458,7 +460,7 @@ for %%p in (%missing_prog_array%) do (
 	)
 )
 endlocal
-call "%PS_EXE%" %PS_ARGS% -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
+call "%PS_EXE%" %PS_ARGS% -Command "$cp=[System.Environment]::GetEnvironmentVariable('Path','User'); $np=$cp; @('%SCOOP_SHIMS%','%SCOOP_APPS%','%CONDA_PATH%','%NODE_PATH%') | Where-Object {$_ -and $cp -notlike ('*'+$_+'*')} | ForEach-Object {$np+=(';'+$_)}; [System.Environment]::SetEnvironmentVariable('Path',$np,'User')"
 set "missing_prog_array="
 goto :main
 
