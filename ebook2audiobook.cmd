@@ -797,8 +797,8 @@ if defined arguments.help (
 			echo The Docker image is only available with a Linux container
         )
     ) else (
-		call :check_scoop
 		pause
+		call :check_scoop
 		if errorlevel 1 goto :install_scoop
 		call :check_required_programs
 		if errorlevel 1 goto :install_programs
