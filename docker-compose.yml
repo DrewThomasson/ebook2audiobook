@@ -17,10 +17,6 @@ services:
       - .:/app:rw
     restart: unless-stopped
     profiles: [cpu]
-    networks:
-      default:
-        external: true
-        name: bridge
 
   ebook2audiobook-gpu:
     image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}
@@ -40,10 +36,6 @@ services:
       - .:/app:rw
     restart: unless-stopped
     profiles: [gpu]
-    networks:
-      default:
-        external: true
-        name: bridge
     deploy:
       resources:
         reservations:
