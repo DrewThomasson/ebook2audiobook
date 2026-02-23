@@ -251,17 +251,18 @@ if errorlevel 1 (
     echo Scoop is not installed.
     exit /b 1
 )
-if not exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
-    echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
-    exit /b 0
+exit /b 0
+
+:check_scoop_buckets
+call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket list" > "%TEMP%\scoop_buckets.txt" 2>&1
+set "_MISSING_BUCKETS="
+findstr /i "muggle" "%TEMP%\scoop_buckets.txt" >nul 2>&1 || set "_MISSING_BUCKETS=!_MISSING_BUCKETS! muggle"
+findstr /i "extras" "%TEMP%\scoop_buckets.txt" >nul 2>&1 || set "_MISSING_BUCKETS=!_MISSING_BUCKETS! extras"
+findstr /i "versions" "%TEMP%\scoop_buckets.txt" >nul 2>&1 || set "_MISSING_BUCKETS=!_MISSING_BUCKETS! versions"
+del "%TEMP%\scoop_buckets.txt" >nul 2>&1
+if defined _MISSING_BUCKETS (
+    exit /b 1
 )
-call "%PS_EXE%" %PS_ARGS% -Command "$WarningPreference='SilentlyContinue'; scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions"
-if errorlevel 1 exit /b 1
-call git config --global credential.helper
-echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
-findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
-del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
 exit /b 0
 
 :check_required_programs
@@ -313,6 +314,15 @@ call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
 echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
 type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
 goto :restart_script
+
+:install_scoop_buckets
+call "%PS_EXE%" %PS_ARGS% -Command "$WarningPreference='SilentlyContinue'; scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions"
+call git config --global credential.helper
+findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
+del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
+echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
+exit /b 0
 
 :install_wsl
 if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
@@ -799,6 +809,8 @@ if defined arguments.help (
     ) else (
 		call :check_scoop
 		if errorlevel 1 goto :install_scoop
+		call :check_scoop_buckets
+		if errorlevel 1 goto :install_scoop_buckets
 		call :check_required_programs
 		if errorlevel 1 goto :install_programs
 		call :check_conda
