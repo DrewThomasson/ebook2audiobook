@@ -254,6 +254,7 @@ where.exe /Q scoop
 if errorlevel 1 (
     echo Scoop is not installed.
     set "OK_SCOOP=1"
+	echo %OK_SCOOP%
 	exit /b 1
 ) else (
     if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
@@ -812,7 +813,6 @@ if defined arguments.help (
         )
     ) else (
 		call :check_scoop
-		echo %OK_SCOOP%
 		if "%OK_SCOOP%"=="1" goto :install_programs
 		call :check_required_programs
 		if "%OK_PROGRAMS%"=="1" goto :install_programs
