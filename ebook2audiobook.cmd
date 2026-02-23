@@ -384,6 +384,7 @@ if not "%OK_SCOOP%"=="0" (
 	goto :restart_script
 )
 if not "%OK_CONDA%"=="0" (
+	echo conda called
 	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Miniforge…
 		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
