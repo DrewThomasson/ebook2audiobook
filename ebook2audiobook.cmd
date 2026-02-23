@@ -92,11 +92,6 @@ set "DOCKER_DESKTOP=0"
 
 IF NOT DEFINED DEVICE_TAG SET "DEVICE_TAG="
 
-set "OK_CONDA=0"
-set "OK_PROGRAMS=0"
-set "OK_WSL=0"
-set "OK_DOCKER=0"
-
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
     set "PATH=%%B;%PATH%"
@@ -280,7 +275,6 @@ for %%p in (%HOST_PROGRAMS%) do (
 )
 endlocal & set "missing_prog_array=%missing_prog_array%"
 if not "%missing_prog_array%"=="" (
-    set "OK_PROGRAMS=1"
 	exit /b 1
 )
 exit /b 0
@@ -319,164 +313,157 @@ echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
 type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
 goto :restart_script
 
-:install_programs
-if not "%OK_WSL%"=="0" (
-	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-		echo WSL2 is required to build Linux containers.
-		echo.
-		echo ==================================================
-		echo WSL and Ubuntu will now be installed.
-		echo.
-		echo INSTRUCTIONS:
-		echo 1. Enter a username and password when prompted
-		echo 2. After setup completes, type: exit
-		echo 3. Press Enter to return to this script
-		echo.
-		echo The username is temporary - root will be set as default.
-		echo ==================================================
-		pause
-		wsl --unregister Ubuntu >nul 2>&1
-		wsl --update
-		wsl --install -d Ubuntu
-		echo.
-		echo Ubuntu setup complete. Configuring for Docker...
+:install_wsl
+if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+	echo WSL2 is required to build Linux containers.
+	echo.
+	echo ==================================================
+	echo WSL and Ubuntu will now be installed.
+	echo.
+	echo INSTRUCTIONS:
+	echo 1. Enter a username and password when prompted
+	echo 2. After setup completes, type: exit
+	echo 3. Press Enter to return to this script
+	echo.
+	echo The username is temporary - root will be set as default.
+	echo ==================================================
+	pause
+	wsl --unregister Ubuntu >nul 2>&1
+	wsl --update
+	wsl --install -d Ubuntu
+	echo.
+	echo Ubuntu setup complete. Configuring for Docker...
+	wsl --shutdown
+	timeout /t 3 /nobreak >nul
+	wsl --user root -- echo "Ubuntu OK" >nul 2>&1
+	if errorlevel 1 (
+		echo %ESC%[31m=============== Ubuntu installation failed.%ESC%[0m
+		goto :failed
+	)
+	for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
+		reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
+	)
+	echo [wsl2] > "%USERPROFILE%\.wslconfig"
+	echo memory=4GB >> "%USERPROFILE%\.wslconfig"
+	wsl --shutdown
+	echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
+)
+goto :restart_script
+
+:install_conda
+if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+	echo Installing Miniforge…
+	call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
+	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D="%SAFE_USERPROFILE%\Miniforge3"
+	where.exe /Q conda
+	if not errorlevel 1 (
+		echo %ESC%[32m=============== Miniforge3 OK ===============%ESC%[0m
+		findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo Miniforge3>>"%INSTALLED_LOG%"
+		)
+	) else (
+		echo %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
+		goto :failed
+	)
+	if not exist "%SAFE_USERPROFILE%\.condarc" (
+		call conda config --set auto_activate false
+	)
+	call conda update --all -y
+	call conda clean --index-cache -y
+	call conda clean --packages --tarballs -y
+	del "%CONDA_INSTALLER%"
+)
+goto :restart_script
+
+:install_docker
+if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+	echo Installing Docker inside WSL2…
+	REM First verify WSL Ubuntu is actually working
+	wsl --user root -d Ubuntu -- bash -c "echo 'WSL is ready'" >nul 2>&1
+	if errorlevel 1 (
+		echo %ESC%[31m=============== WSL Ubuntu is not ready. Initializing…%ESC%[0m
+		wsl --user root -d Ubuntu -- bash -c "apt-get update" >nul 2>&1
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
-		wsl --user root -- echo "Ubuntu OK" >nul 2>&1
-		if errorlevel 1 (
-			echo %ESC%[31m=============== Ubuntu installation failed.%ESC%[0m
-			goto :failed
-		)
-		for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
-			reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
-		)
-		echo [wsl2] > "%USERPROFILE%\.wslconfig"
-		echo memory=4GB >> "%USERPROFILE%\.wslconfig"
-		wsl --shutdown
-		echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
-		set "OK_WSL=0"
-		goto :restart_script
 	)
+	echo Downloading and installing Docker…
+	wsl --user root -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
+	if errorlevel 1 (
+		echo %ESC%[31m=============== docker install failed.%ESC%[0m
+		echo Try running: wsl --user root -d Ubuntu
+		echo Then manually run: curl -fsSL https://get.docker.com ^| sh
+		goto :failed
+	)
+	echo Enabling systemd…
+	wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
+	wsl --shutdown
+	echo %ESC%[33m=============== docker OK ===============%ESC%[0m
 )
-if not "%OK_DOCKER%"=="0" (
-    if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-        echo Installing Docker inside WSL2…
-        REM First verify WSL Ubuntu is actually working
-        wsl --user root -d Ubuntu -- bash -c "echo 'WSL is ready'" >nul 2>&1
-        if errorlevel 1 (
-            echo %ESC%[31m=============== WSL Ubuntu is not ready. Initializing…%ESC%[0m
-            wsl --user root -d Ubuntu -- bash -c "apt-get update" >nul 2>&1
-            wsl --shutdown
-            timeout /t 3 /nobreak >nul
-        )
-        echo Downloading and installing Docker…
-        wsl --user root -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
-        if errorlevel 1 (
-            echo %ESC%[31m=============== docker install failed.%ESC%[0m
-            echo Try running: wsl --user root -d Ubuntu
-            echo Then manually run: curl -fsSL https://get.docker.com ^| sh
-            goto :failed
-        )
-        echo Enabling systemd…
-        wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
-        wsl --shutdown
-        echo %ESC%[33m=============== docker OK ===============%ESC%[0m
-        set "OK_DOCKER=0"
-        goto :restart_script
-    )
-)
-if not "%OK_CONDA%"=="0" (
-	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-		echo Installing Miniforge…
-		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
-		call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D="%SAFE_USERPROFILE%\Miniforge3"
-		where.exe /Q conda
+goto :restart_script
+
+:install_programs
+echo Installing missing programs…
+setlocal EnableDelayedExpansion
+for %%p in (%missing_prog_array%) do (
+	set "prog=%%p"
+	call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
+	if "%%p"=="tesseract" (
+		where.exe /Q !prog!
 		if not errorlevel 1 (
-			echo %ESC%[32m=============== Miniforge3 OK ===============%ESC%[0m
-			findstr /i /x "Miniforge3" "%INSTALLED_LOG%" >nul 2>&1
-			if errorlevel 1 (
-				echo Miniforge3>>"%INSTALLED_LOG%"
+			call :get_iso3_lang "%OS_LANG%"
+			echo Detected system language: %OS_LANG% → downloading OCR language: !ISO3_LANG!
+			set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
+			if not exist "!tessdata!" mkdir "!tessdata!"
+			if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
+				call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri 'https://github.com/tesseract-ocr/tessdata_best/raw/main/!ISO3_LANG!.traineddata' -OutFile '!tessdata!\!ISO3_LANG!.traineddata' -ErrorAction Stop" || goto :failed
 			)
-		) else (
-			echo %ESC%[31m=============== Miniforge3 failed.%ESC%[0m
+			if exist "!tessdata!\!ISO3_LANG!.traineddata" (
+				echo Tesseract OCR language !ISO3_LANG! installed in !tessdata!
+			) else (
+				echo Failed to install OCR language !ISO3_LANG!
+			)
+		)
+	)
+	if "%%p"=="python" (
+		set "PY_FOUND="
+		where.exe /Q python  && set PY_FOUND=1
+		where.exe /Q python3 && set PY_FOUND=1
+		where.exe /Q py      && set PY_FOUND=1
+		if not defined PY_FOUND (
+			echo %ESC%[31m=============== %%p failed.%ESC%[0m
 			goto :failed
 		)
-		if not exist "%SAFE_USERPROFILE%\.condarc" (
-			call conda config --set auto_activate false
+	)
+	if "%%p"=="nodejs" (
+		set "prog=node"
+	)
+	if "%%p"=="rustup" (
+		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
+			set "PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;!PATH!"
 		)
-		call conda update --all -y
-		call conda clean --index-cache -y
-		call conda clean --packages --tarballs -y
-		del "%CONDA_INSTALLER%"
-		set "OK_CONDA=0"
-		goto :restart_script
+	)
+	where.exe /Q !prog!
+	if not errorlevel 1 (
+		echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
+		findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 (
+			echo %%p>>"%INSTALLED_LOG%"
+		)
+	) else (
+		echo %ESC%[31m=============== %%p failed.%ESC%[0m
+		goto :failed
 	)
 )
-if not "%OK_PROGRAMS%"=="0" (
-    echo Installing missing programs…
-	setlocal EnableDelayedExpansion
-    for %%p in (%missing_prog_array%) do (
-        set "prog=%%p"
-        call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
-        if "%%p"=="tesseract" (
-            where.exe /Q !prog!
-            if not errorlevel 1 (
-                call :get_iso3_lang "%OS_LANG%"
-                echo Detected system language: %OS_LANG% → downloading OCR language: !ISO3_LANG!
-                set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
-                if not exist "!tessdata!" mkdir "!tessdata!"
-                if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
-                    call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri 'https://github.com/tesseract-ocr/tessdata_best/raw/main/!ISO3_LANG!.traineddata' -OutFile '!tessdata!\!ISO3_LANG!.traineddata' -ErrorAction Stop" || goto :failed
-                )
-                if exist "!tessdata!\!ISO3_LANG!.traineddata" (
-                    echo Tesseract OCR language !ISO3_LANG! installed in !tessdata!
-                ) else (
-                    echo Failed to install OCR language !ISO3_LANG!
-                )
-            )
-        )
-        if "%%p"=="python" (
-            set "PY_FOUND="
-            where.exe /Q python  && set PY_FOUND=1
-            where.exe /Q python3 && set PY_FOUND=1
-            where.exe /Q py      && set PY_FOUND=1
-            if not defined PY_FOUND (
-                echo %ESC%[31m=============== %%p failed.%ESC%[0m
-                goto :failed
-            )
-        )
-        if "%%p"=="nodejs" (
-            set "prog=node"
-        )
-		if "%%p"=="rustup" (
-			if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
-				set "PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin;!PATH!"
-			)
-		)
-        where.exe /Q !prog!
-        if not errorlevel 1 (
-            echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
-            findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
-            if errorlevel 1 (
-                echo %%p>>"%INSTALLED_LOG%"
-            )
-        ) else (
-            echo %ESC%[31m=============== %%p failed.%ESC%[0m
-            goto :failed
-        )
-    )
-	endlocal
-    call "%PS_EXE%" %PS_ARGS% -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
-    set "OK_PROGRAMS=0"
-    set "missing_prog_array="
-)
+endlocal
+call "%PS_EXE%" %PS_ARGS% -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
+set "missing_prog_array="
 goto :main
 
 :check_conda
 where.exe /Q conda
 if errorlevel 1 (
     echo Miniforge3 is not installed.
-    set "OK_CONDA=1"
     exit /b 1
 )
 if defined CONDA_DEFAULT_ENV (
@@ -520,6 +507,26 @@ if "%CURRENT_ENV%"=="" (
 )
 exit /b 0
 
+:check_wsl
+where.exe /Q wsl
+if errorlevel 1 (
+    echo WSL is not installed.
+    exit /b 1
+)
+for /f "tokens=3" %%A in (
+    'reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss" /v DefaultVersion 2^>nul ^| find "DefaultVersion"'
+) do set "WSL_VERSION=%%A"
+if not "%WSL_VERSION%"=="0x2" (
+    echo WSL2 is not configured as default.
+    exit /b 1
+)
+wsl -l -q 2>nul | findstr /R /C:".*" >nul
+if errorlevel 1 (
+    echo No WSL Linux distribution installed.
+    exit /b 1
+)
+exit /b 0
+
 :check_docker
 where.exe /Q docker.exe
 if not errorlevel 1 (
@@ -530,30 +537,9 @@ if not errorlevel 1 (
         exit /b 0
     )
 )
-where.exe /Q wsl
-if errorlevel 1 (
-    echo WSL is not installed.
-    set "OK_WSL=1"
-    exit /b 1
-)
-for /f "tokens=3" %%A in (
-    'reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss" /v DefaultVersion 2^>nul ^| find "DefaultVersion"'
-) do set "WSL_VERSION=%%A"
-if not "%WSL_VERSION%"=="0x2" (
-    echo WSL2 is not configured as default.
-    set "OK_WSL=1"
-    exit /b 1
-)
-wsl -l -q 2>nul | findstr /R /C:".*" >nul
-if errorlevel 1 (
-    echo No WSL Linux distribution installed.
-    set "OK_WSL=1"
-    exit /b 1
-)
 wsl --user root -d Ubuntu -- which docker >nul 2>&1
 if errorlevel 1 (
     echo Docker is not installed inside WSL2.
-    set "OK_DOCKER=1"
     exit /b 1
 )
 :: Docker Desktop not found, using WSL Docker
@@ -774,8 +760,10 @@ if defined arguments.help (
         if "%DOCKER_DEVICE_STR%"=="" (
 			call :check_python
 			if errorlevel 1 goto :install_python
+			call :check_wsl
+			if errorlevel 1 goto :install_wsl
             call :check_docker
-            if errorlevel 1	goto :install_programs
+            if errorlevel 1	goto :install_docker
             call :check_docker_daemon
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
@@ -808,9 +796,9 @@ if defined arguments.help (
 		call :check_scoop
 		if errorlevel 1 goto :install_scoop
 		call :check_required_programs
-		if "%OK_PROGRAMS%"=="1" goto :install_programs
+		if errorlevel 1 goto :install_programs
 		call :check_conda
-		if "%OK_CONDA%"=="1" goto :install_programs
+		if errorlevel 1 goto :install_conda
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 		if errorlevel 1 goto :failed
         call :check_sitecustomized
