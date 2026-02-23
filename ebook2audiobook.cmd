@@ -797,20 +797,9 @@ if defined arguments.help (
 			echo The Docker image is only available with a Linux container
         )
     ) else (
-		pause
 		call :check_scoop
 		if errorlevel 1 goto :install_scoop
-		call :check_required_programs
-		if errorlevel 1 goto :install_programs
-		call :check_conda
-		if errorlevel 1 goto :install_conda
-        call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-		if errorlevel 1 goto :failed
-        call :check_sitecustomized
-        if errorlevel 1 goto :failed
-        call :build_gui
-        call python.exe "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-		call conda deactivate >nul && call conda deactivate >nul
+		pause
     )
 )
 goto :eof
