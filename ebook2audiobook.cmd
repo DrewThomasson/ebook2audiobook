@@ -250,17 +250,15 @@ where.exe /Q scoop
 if errorlevel 1 (
     echo Scoop is not installed.
 	exit /b 1
-) else (
-    if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
-        call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
-        call git config --global credential.helper
-        echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
-        findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-        if errorlevel 1 (
-            echo scoop>>"%INSTALLED_LOG%"
-        )
-        del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
-    )
+if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
+	call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
+	call git config --global credential.helper
+	echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
+	findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+	if errorlevel 1 (
+		echo scoop>>"%INSTALLED_LOG%"
+	)
+	del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
 )
 exit /b 0
 
@@ -405,6 +403,7 @@ goto :restart_script
 
 :install_programs
 echo Installing missing programs…
+setlocal EnableDelayedExpansion
 for %%p in (%missing_prog_array%) do (
 	set "prog=%%p"
 	call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
@@ -458,6 +457,7 @@ for %%p in (%missing_prog_array%) do (
 		goto :failed
 	)
 )
+endlocal
 call "%PS_EXE%" %PS_ARGS% -Command "$cp=[System.Environment]::GetEnvironmentVariable('Path','User'); $np=$cp; @('%SCOOP_SHIMS%','%SCOOP_APPS%','%CONDA_PATH%','%NODE_PATH%') | Where-Object {$_ -and $cp -notlike ('*'+$_+'*')} | ForEach-Object {$np+=(';'+$_)}; [System.Environment]::SetEnvironmentVariable('Path',$np,'User')"
 set "missing_prog_array="
 goto :main
@@ -797,6 +797,7 @@ if defined arguments.help (
     ) else (
 		call :check_scoop
 		if errorlevel 1 goto :install_scoop
+		pause
 		call :check_required_programs
 		if errorlevel 1 goto :install_programs
 		call :check_conda
