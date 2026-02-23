@@ -254,6 +254,7 @@ where.exe /Q scoop
 if errorlevel 1 (
     echo Scoop is not installed.
     set "OK_SCOOP=1"
+	exit /b 1
 ) else (
     if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
         call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
@@ -283,6 +284,7 @@ for %%p in (%HOST_PROGRAMS%) do (
 endlocal & set "missing_prog_array=%missing_prog_array%"
 if not "%missing_prog_array%"=="" (
     set "OK_PROGRAMS=1"
+	exit /b 1
 )
 exit /b 0
 
@@ -384,7 +386,6 @@ if not "%OK_SCOOP%"=="0" (
 	goto :restart_script
 )
 if not "%OK_CONDA%"=="0" (
-	echo conda called
 	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Miniforge…
 		call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
