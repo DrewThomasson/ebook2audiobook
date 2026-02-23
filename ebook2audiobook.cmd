@@ -265,20 +265,24 @@ if defined _MISSING_BUCKETS (
 )
 exit /b 0
 
-:check_required_programs
+:check_programs
 setlocal EnableDelayedExpansion
 for %%p in (%HOST_PROGRAMS%) do (
     set "prog=%%p"
-    if "%%p"=="nodejs" set "prog=node"
-	if "%%p"=="calibre" set "prog=ebook-convert"
-    where.exe /Q !prog!
-    if errorlevel 1 (
-        set "missing_prog_array=!missing_prog_array! %%p"
+    set "_FOUND=0"
+    if "%%p"=="nodejs"  set "prog=node"
+    if "%%p"=="calibre" set "prog=ebook-convert"
+    if "%%p"=="rustup" (
+        if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_FOUND=1"
+    )
+    if "!_FOUND!"=="0" (
+        where.exe /Q !prog! >nul 2>&1
+        if errorlevel 1 set "missing_prog_array=!missing_prog_array! %%p"
     )
 )
 endlocal & set "missing_prog_array=%missing_prog_array%"
 if not "%missing_prog_array%"=="" (
-	exit /b 1
+    exit /b 1
 )
 exit /b 0
 
@@ -812,7 +816,7 @@ if defined arguments.help (
 		if errorlevel 1 goto :install_scoop
 		call :check_scoop_buckets
 		if errorlevel 1 goto :install_scoop_buckets
-		call :check_required_programs
+		call :check_programs
 		if errorlevel 1 goto :install_programs
 		call :check_conda
 		if errorlevel 1 goto :install_conda
