@@ -44,7 +44,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                         msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                         raise KeyError(msg)
                     self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
-                    model_path = self.models[self.session['fine_tuned']]['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
+                    model_path =  sub if self.session['language'] in ['bel'] else self.models[self.session['fine_tuned']]['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
                     self.tts_key = model_path
                     engine = self._load_api(self.tts_key, model_path)
                 except Exception as e:
