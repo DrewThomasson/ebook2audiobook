@@ -252,7 +252,7 @@ if errorlevel 1 (
 	exit /b 1
 ) else (
 	if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
-		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
+		call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || exit /b 1
 		call git config --global credential.helper
 		echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
 		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
@@ -799,7 +799,17 @@ if defined arguments.help (
     ) else (
 		call :check_scoop
 		if errorlevel 1 goto :install_scoop
-		pause
+		call :check_required_programs
+		if errorlevel 1 goto :install_programs
+		call :check_conda
+		if errorlevel 1 goto :install_conda
+        call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+		if errorlevel 1 goto :failed
+        call :check_sitecustomized
+        if errorlevel 1 goto :failed
+        call :build_gui
+        call python.exe "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+		call conda deactivate >nul && call conda deactivate >nul
     )
 )
 goto :eof
