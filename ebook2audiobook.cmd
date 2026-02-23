@@ -270,6 +270,7 @@ setlocal EnableDelayedExpansion
 for %%p in (%HOST_PROGRAMS%) do (
     set "prog=%%p"
     if "%%p"=="nodejs" set "prog=node"
+	if "%%p"=="calibre" set "prog=ebook-convert"
     where.exe /Q !prog!
     if errorlevel 1 (
         set "missing_prog_array=!missing_prog_array! %%p"
