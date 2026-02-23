@@ -92,6 +92,8 @@ set "DOCKER_DESKTOP=0"
 
 IF NOT DEFINED DEVICE_TAG SET "DEVICE_TAG="
 
+set "missing_prog_array="
+
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
     set "PATH=%%B;%PATH%"
@@ -263,7 +265,6 @@ if errorlevel 1 (
 exit /b 0
 
 :check_required_programs
-set "missing_prog_array="
 setlocal EnableDelayedExpansion
 for %%p in (%HOST_PROGRAMS%) do (
     set "prog=%%p"
