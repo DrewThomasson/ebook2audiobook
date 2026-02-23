@@ -254,7 +254,7 @@ where.exe /Q scoop
 if errorlevel 1 (
     echo Scoop is not installed.
     set "OK_SCOOP=1"
-	echo %OK_SCOOP%
+	echo !OK_SCOOP!
 	exit /b 1
 ) else (
     if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
