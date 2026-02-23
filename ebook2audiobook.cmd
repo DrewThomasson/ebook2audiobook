@@ -92,7 +92,6 @@ set "DOCKER_DESKTOP=0"
 
 IF NOT DEFINED DEVICE_TAG SET "DEVICE_TAG="
 
-set "OK_SCOOP=0"
 set "OK_CONDA=0"
 set "OK_PROGRAMS=0"
 set "OK_WSL=0"
@@ -253,15 +252,12 @@ exit /b 0
 where.exe /Q scoop
 if errorlevel 1 (
     echo Scoop is not installed.
-    set "OK_SCOOP=1"
-	echo !OK_SCOOP!
 	exit /b 1
 ) else (
     if exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
         call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || goto :failed
         call git config --global credential.helper
         echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
-        set "OK_SCOOP=0"
         findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
         if errorlevel 1 (
             echo scoop>>"%INSTALLED_LOG%"
@@ -310,6 +306,17 @@ del "%TEMP%\%PYTHON_INSTALLER%"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python.exe"
 del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python3.exe"
 echo %ESC%[33m=============== Python OK ===============%ESC%[0m
+goto :restart_script
+
+:install_scoop
+echo Installing Scoop…
+call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
+if errorlevel 1 goto :failed
+call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
+call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
+call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
+echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
+type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
 goto :restart_script
 
 :install_programs
@@ -378,14 +385,6 @@ if not "%OK_DOCKER%"=="0" (
         goto :restart_script
     )
 )
-if not "%OK_SCOOP%"=="0" (
-    echo Installing Scoop…
-    call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
-        "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
-    echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
-    type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
-	goto :restart_script
-)
 if not "%OK_CONDA%"=="0" (
 	if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		echo Installing Miniforge…
@@ -415,11 +414,6 @@ if not "%OK_CONDA%"=="0" (
 )
 if not "%OK_PROGRAMS%"=="0" (
     echo Installing missing programs…
-    if "%OK_SCOOP%"=="0" (
-        call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
-        call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
-        call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
-    )
 	setlocal EnableDelayedExpansion
     for %%p in (%missing_prog_array%) do (
         set "prog=%%p"
@@ -473,7 +467,6 @@ if not "%OK_PROGRAMS%"=="0" (
     )
 	endlocal
     call "%PS_EXE%" %PS_ARGS% -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
-    set "OK_SCOOP=0"
     set "OK_PROGRAMS=0"
     set "missing_prog_array="
 )
@@ -813,7 +806,7 @@ if defined arguments.help (
         )
     ) else (
 		call :check_scoop
-		if "%OK_SCOOP%"=="1" goto :install_programs
+		if errorlevel 1 goto :install_scoop
 		call :check_required_programs
 		if "%OK_PROGRAMS%"=="1" goto :install_programs
 		call :check_conda
