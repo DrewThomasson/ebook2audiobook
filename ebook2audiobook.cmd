@@ -481,13 +481,11 @@ where.exe /Q conda
 if errorlevel 1 (
     echo Miniforge3 is not installed.
     set "OK_CONDA=1"
-    exit /b 0
+    exit /b 1
 )
-:: Check if running in a Conda environment
 if defined CONDA_DEFAULT_ENV (
     set "CURRENT_ENV=%CONDA_PREFIX%"
 )
-:: Check if running in a Python virtual environment
 if defined VIRTUAL_ENV (
     set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
