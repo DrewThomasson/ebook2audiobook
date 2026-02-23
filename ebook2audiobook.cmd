@@ -798,8 +798,8 @@ if defined arguments.help (
         )
     ) else (
 		call :check_scoop
-		if errorlevel 1 goto :install_scoop
 		pause
+		if errorlevel 1 goto :install_scoop
 		call :check_required_programs
 		if errorlevel 1 goto :install_programs
 		call :check_conda
