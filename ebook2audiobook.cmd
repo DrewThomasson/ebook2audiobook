@@ -251,7 +251,7 @@ if errorlevel 1 (
     echo Scoop is not installed.
     exit /b 1
 )
-echo %SAFE_SCRIPT_DIR%
+dir /a "%SAFE_SCRIPT_DIR%\.after-scoop" 2>&1
 pause
 if not exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
     echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
