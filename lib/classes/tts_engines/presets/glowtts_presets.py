@@ -5,17 +5,15 @@ models = {
         "lang": "multi",
         "repo": "tts_models/[lang_iso1]/[xxx]",
         "sub": {
-            "jhlfrfufyfn/bel-tts": ['be'],
             "ljspeech/glow-tts": ['en'],
             "mai/glow-tts": ['uk'],
             "mai_male/glow-tts": ['it'],
             "custom/glow-tts": ['fa'],
-            "common-voice/glow-tts": ['tr']
+            "common-voice/glow-tts": ['be', 'tr']
         },
         "voice": None,
         "files": default_engine_settings[TTS_ENGINES['GLOWTTS']]['files'],
         "samplerate": {
-            "jhlfrfufyfn/bel-tts": default_engine_settings[TTS_ENGINES['GLOWTTS']]['samplerate'],
             "ljspeech/glow-tts": default_engine_settings[TTS_ENGINES['GLOWTTS']]['samplerate'],
             "mai/glow-tts": 16000,
             "mai_male/glow-tts": 16000,
