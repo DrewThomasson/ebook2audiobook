@@ -257,7 +257,7 @@ if not exist "%SAFE_SCRIPT_DIR%\.after-scoop" (
     echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
     exit /b 0
 )
-call "%PS_EXE%" %PS_ARGS% -Command "scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || exit /b 1
+call "%PS_EXE%" %PS_ARGS% -Command "$WarningPreference='SilentlyContinue'; scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions" || exit /b 1
 call git config --global credential.helper
 echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
 findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
