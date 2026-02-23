@@ -817,7 +817,7 @@ if defined arguments.help (
 		if "%OK_PROGRAMS%"=="1" goto :install_programs
 		call :check_conda
 		if "%OK_CONDA%"=="1" goto :install_programs
-		echo %OK_SCOOP% %OK_PROGRAMS% %OK_PROGRAMS%
+		echo !OK_SCOOP! !OK_PROGRAMS! !OK_PROGRAMS!
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 		if errorlevel 1 goto :failed
         call :check_sitecustomized
