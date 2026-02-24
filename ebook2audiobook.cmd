@@ -336,13 +336,6 @@ if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	echo.
 	echo ==================================================
 	echo WSL and %DOCKER_WSL_CONTAINER% will now be installed.
-	echo.
-	echo INSTRUCTIONS:
-	echo 1. Enter a username and password when prompted
-	echo 2. After setup completes, type: exit
-	echo 3. Press Enter to return to this script
-	echo.
-	echo The username is temporary - root will be set as default.
 	echo ==================================================
 	pause
 	wsl --unregister %DOCKER_WSL_CONTAINER% >nul 2>&1
@@ -364,6 +357,31 @@ if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	echo memory=4GB >> "%USERPROFILE%\.wslconfig"
 	wsl --shutdown
 	echo %ESC%[33m=============== WSL2 OK ===============%ESC%[0m
+)
+goto :restart_script
+
+:install_docker
+if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+	echo Installing Docker inside WSL2…
+	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "echo 'WSL is ready'" >nul 2>&1
+	if errorlevel 1 (
+		echo %ESC%[31m=============== WSL %DOCKER_WSL_CONTAINER% is not ready. Initializing…%ESC%[0m
+		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "apt-get update" >nul 2>&1
+		wsl --shutdown
+		timeout /t 3 /nobreak >nul
+	)
+	echo Downloading and installing Docker…
+	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "wget -qO- https://get.docker.com | SKIP_SLEEP=1 sh"
+	if errorlevel 1 (
+		echo %ESC%[31m=============== docker install failed.%ESC%[0m
+		echo Try running: wsl --user root -d %DOCKER_WSL_CONTAINER%
+		echo Then manually run: curl -fsSL https://get.docker.com ^| sh
+		goto :failed
+	)
+	echo Enabling systemd…
+	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
+	wsl --shutdown
+	echo %ESC%[33m=============== docker OK ===============%ESC%[0m
 )
 goto :restart_script
 
@@ -390,31 +408,6 @@ if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	call conda clean --index-cache -y
 	call conda clean --packages --tarballs -y
 	del "%CONDA_INSTALLER%"
-)
-goto :restart_script
-
-:install_docker
-if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-	echo Installing Docker inside WSL2…
-	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "echo 'WSL is ready'" >nul 2>&1
-	if errorlevel 1 (
-		echo %ESC%[31m=============== WSL %DOCKER_WSL_CONTAINER% is not ready. Initializing…%ESC%[0m
-		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "apt-get update" >nul 2>&1
-		wsl --shutdown
-		timeout /t 3 /nobreak >nul
-	)
-	echo Downloading and installing Docker…
-	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
-	if errorlevel 1 (
-		echo %ESC%[31m=============== docker install failed.%ESC%[0m
-		echo Try running: wsl --user root -d %DOCKER_WSL_CONTAINER%
-		echo Then manually run: curl -fsSL https://get.docker.com ^| sh
-		goto :failed
-	)
-	echo Enabling systemd…
-	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
-	wsl --shutdown
-	echo %ESC%[33m=============== docker OK ===============%ESC%[0m
 )
 goto :restart_script
 
