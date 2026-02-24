@@ -89,6 +89,17 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
                             part = part[:-1]
+                        if self.session['language'] == 'bel':
+                            import requests
+                            url = "http://fonemizer.nikuchin.fun/processText"
+                            response = requests.post(
+                                url,
+                                headers={"Content-Type": "text/plain"},
+                                data=part.encode("utf-8")
+                            )
+                            part_phonemized = response.text
+                        else:
+                            part_phonemized = part
                         if self.params['current_voice'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
@@ -98,7 +109,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 self.engine.to(device)
                                 if device == devices['CPU']['proc']:
                                     self.engine.tts_to_file(
-                                        text=part,
+                                        text=part_phonemized,
                                         file_path=tmp_in_wav,
                                     )
                                 else:
@@ -107,7 +118,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                         dtype=self.amp_dtype
                                     ):
                                         self.engine.tts_to_file(
-                                            text=part,
+                                            text=part_phonemized,
                                             file_path=tmp_in_wav,
                                         )
                                 self.engine.to(devices['CPU']['proc'])
@@ -170,7 +181,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 self.engine.to(device)
                                 if device == devices['CPU']['proc']:
                                     audio_part = self.engine.tts(
-                                        text=part,
+                                        text=part_phonemized,
                                     )
                                 else:
                                     with torch.autocast(
@@ -178,7 +189,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                         dtype=self.amp_dtype
                                     ):
                                         audio_part = self.engine.tts(
-                                            text=part,
+                                            text=part_phonemized,
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
