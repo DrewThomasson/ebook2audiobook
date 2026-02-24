@@ -8,21 +8,10 @@ warnings.filterwarnings('ignore', category=SyntaxWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='jieba._compat')
 
 def init_multiprocessing():
-    if sys.platform == systems['MACOS']:
-        try:
-            multiprocessing.set_start_method('spawn')
-        except RuntimeError:
-            pass
-    elif sys.platform == systems['LINUX']:
-        try:
-            multiprocessing.set_start_method('fork')
-        except RuntimeError:
-            pass
-    else:
-        try:
-            multiprocessing.set_start_method('spawn')
-        except RuntimeError:
-            pass
+    try:
+        multiprocessing.set_start_method('spawn')
+    except RuntimeError:
+        pass
 
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
