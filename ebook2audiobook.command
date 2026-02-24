@@ -689,6 +689,15 @@ raise SystemExit(1)
 EOF
 }
 
+function json_get {
+    local key="$1"
+    echo "$DEVICE_INFO_STR" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(data['$key'])
+"
+}
+
 function install_device_packages {
 	local ARG="$1"
 	python3 - "$ARG" << 'EOF'
@@ -826,7 +835,7 @@ else
 				exit 1
 			fi
 			if [[ "$DEVICE_TAG" == "" ]]; then
-				DEVICE_TAG=
+                DEVICE_TAG=$(json_get "tag")
 			fi
 			if docker image inspect "${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
 				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
