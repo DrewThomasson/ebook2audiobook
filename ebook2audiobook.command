@@ -845,8 +845,7 @@ else
 			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
-			install_python_packages || exit 1
-			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
+			install_device_packages "$DOCKER_DEVICE_STR" || exit 1
 			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
