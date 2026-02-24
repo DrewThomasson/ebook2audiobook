@@ -91,7 +91,7 @@ while (( $# > 0 )); do
 	esac
 done
 
-echo "xxxxxxxxxxx: ${arguments[script_mode]}"
+echo "xxxxxxxxxxx: ${arguments}"
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
