@@ -371,7 +371,8 @@ if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		timeout /t 3 /nobreak >nul
 	)
 	echo Downloading and installing Docker…
-	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "wget -qO- https://get.docker.com | SKIP_SLEEP=1 sh"
+	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "apt-get update && apt-get install -y curl"
+	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
 	if errorlevel 1 (
 		echo %ESC%[31m=============== docker install failed.%ESC%[0m
 		echo Try running: wsl --user root -d %DOCKER_WSL_CONTAINER%
