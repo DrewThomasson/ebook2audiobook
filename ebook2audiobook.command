@@ -835,7 +835,6 @@ else
 			fi
 			build_docker_image "$device_info_str" || exit 1
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
-			echo "slslslsksksksks"
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
 			check_sitecustomized || exit 1
