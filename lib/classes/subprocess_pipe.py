@@ -65,8 +65,6 @@ class SubprocessPipe:
                 time_pattern = re.compile(rb'out_time_ms=(\d+)')
                 last_percent = 0.0
                 stderr_queue = queue.Queue()
-                stderr_thread = threading.Thread(target=read_stderr, daemon=True)
-                stderr_thread.start()
 
                 def read_stderr():
                     try:
@@ -83,6 +81,9 @@ class SubprocessPipe:
                         pass
                     finally:
                         stderr_queue.put(None)
+
+                stderr_thread = threading.Thread(target=read_stderr, daemon=True)
+                stderr_thread.start()
 
                 while True:
                     try:
