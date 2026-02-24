@@ -75,11 +75,11 @@ while (( $# > 0 )); do
 		--*)
 			key="${1#--}"
 			if (( $# > 1 )) && [[ "$2" != --* ]]; then
-				arguments["$key"]="$2"
+				arguments[$key]=$2
 				shift 2
 				continue
 			else
-				arguments["$key"]=true
+				arguments[$key]=true
 				shift
 				continue
 			fi
