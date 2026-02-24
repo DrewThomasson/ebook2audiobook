@@ -819,7 +819,6 @@ if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
-			echo "okkkkkkkk"
 			check_docker || exit 1
 			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
 			if [[ "$device_info_str" == "" ]]; then
@@ -836,6 +835,7 @@ else
 			fi
 			build_docker_image "$device_info_str" || exit 1
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
+			echo "slslslsksksksks"
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
 			check_sitecustomized || exit 1
