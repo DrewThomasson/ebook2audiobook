@@ -91,7 +91,7 @@ while (( $# > 0 )); do
 	esac
 done
 
-if [ -n "$ZSH_VERSION" ]; then
+if [[ "${OSTYPE:-}" == darwin* ]]; then
     for key in "${(k)arguments[@]}"; do echo "$key = ${arguments[$key]}"; done
 else
     for key in "${!arguments[@]}"; do echo "$key = ${arguments[$key]}"; done
