@@ -828,8 +828,8 @@ if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
+		echo "AHAHAHAHA"
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
-			echo "AHAHAHAHA"
 			check_docker || exit 1
 			DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
 			if [[ "$DEVICE_INFO_STR" == "" ]]; then
