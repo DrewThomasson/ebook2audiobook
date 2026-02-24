@@ -59,7 +59,7 @@ UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 WGET="$(command -v wget 2>/dev/null || true)"
 
 typeset -A arguments=() # associative array
-declare -a programs_missing=() # indexed array
+typeset -a programs_missing=() # indexed array
 
 PACK_MGR=""
 PACK_MGR_OPTIONS=""
