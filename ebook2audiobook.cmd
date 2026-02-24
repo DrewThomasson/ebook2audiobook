@@ -347,7 +347,7 @@ if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	pause
 	wsl --unregister %DOCKER_WSL_CONTAINER% >nul 2>&1
 	wsl --update
-	wsl --install -d %DOCKER_WSL_CONTAINER% -no-launch
+	wsl --install -d %DOCKER_WSL_CONTAINER% --no-launch
 	echo.
 	echo %DOCKER_WSL_CONTAINER% setup complete. Configuring for Docker...
 	wsl --shutdown
