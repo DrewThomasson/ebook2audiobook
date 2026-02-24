@@ -92,9 +92,9 @@ while (( $# > 0 )); do
 done
 
 if [ -n "$ZSH_VERSION" ]; then
-    for key in "${(k)myarray[@]}"; do echo "$key = ${myarray[$key]}"; done
+    for key in "${(k)arguments[@]}"; do echo "$key = ${arguments[$key]}"; done
 else
-    for key in "${!myarray[@]}"; do echo "$key = ${myarray[$key]}"; done
+    for key in "${!arguments[@]}"; do echo "$key = ${arguments[$key]}"; done
 fi
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
