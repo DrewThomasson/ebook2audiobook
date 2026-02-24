@@ -819,6 +819,7 @@ if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
+			echo "okkkkkkkk"
 			check_docker || exit 1
 			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
 			if [[ "$device_info_str" == "" ]]; then
