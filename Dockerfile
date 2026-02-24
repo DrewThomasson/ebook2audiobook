@@ -3,7 +3,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ARG APP_VERSION=26.2.23
+ARG APP_VERSION=26.2.24
 ARG DEVICE_TAG=cu128
 ARG DOCKER_DEVICE_STR='{"name": "cu128", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg nodejs npm espeak-ng sox tesseract-ocr"
@@ -75,11 +75,11 @@ RUN set -eux; \
 RUN pip install --upgrade pip setuptools wheel
 
 VOLUME \
+	/app/ebooks \
 	/app/audiobooks \
-	/app/voices \
 	/app/models \
-	/app/tmp \
-	/app/ebooks
+	/app/voices \
+	/app/tmp
 
 COPY ebook2audiobook.command /app/ebook2audiobook.sh
 RUN chmod +x /app/ebook2audiobook.sh
