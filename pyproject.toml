@@ -44,6 +44,7 @@ dependencies = [
 	"pydub",
 	"unidecode",
 	"langdetect",
+	"phonemizer",
 	"stanza==1.10.1",
 	"pyannote-audio==3.4.0",
 	"argostranslate<=1.10.0",
