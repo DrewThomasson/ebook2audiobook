@@ -91,12 +91,6 @@ while (( $# > 0 )); do
 	esac
 done
 
-if [[ "${OSTYPE:-}" == darwin* ]]; then
-    for key in "${(k)arguments[@]}"; do echo "$key = ${arguments[$key]}"; done
-else
-    for key in "${!arguments[@]}"; do echo "$key = ${arguments[$key]}"; done
-fi
-
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 		SCRIPT_MODE="${arguments[script_mode]}"
