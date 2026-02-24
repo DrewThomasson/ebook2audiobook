@@ -48,6 +48,7 @@ HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "mediainfo" "nodej
 DOCKER_PROGRAMS=("xz-utils", "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
+DEVICE_INFO_STR=""
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 BREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 MINIFORGE_MACOSX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
@@ -829,8 +830,8 @@ else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
 			check_docker || exit 1
-			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
-			if [[ "$device_info_str" == "" ]]; then
+			DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
+			if [[ "$DEVICE_INFO_STR" == "" ]]; then
 				echo "check_device_info() error: result is empty"
 				exit 1
 			fi
@@ -842,7 +843,7 @@ else
 				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
 				exit 1
 			fi
-			build_docker_image "$device_info_str" || exit 1
+			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
 			install_python_packages || exit 1
 			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
