@@ -91,6 +91,7 @@ while (( $# > 0 )); do
 	esac
 done
 
+echo "xxxxxxxxxxx: ${arguments[script_mode]}"
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
@@ -827,7 +828,6 @@ function build_docker_image {
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
-	echo "script mode: $SCRIPT_MODE - $BUILD_DOCKER"
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
 			check_docker || exit 1
