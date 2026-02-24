@@ -91,9 +91,11 @@ while (( $# > 0 )); do
 	esac
 done
 
-for key in "${!myarray[@]}"; do
-    echo "$key = ${myarray[$key]}"
-done
+if [ -n "$ZSH_VERSION" ]; then
+    for key in "${(k)myarray[@]}"; do echo "$key = ${myarray[$key]}"; done
+else
+    for key in "${!myarray[@]}"; do echo "$key = ${myarray[$key]}"; done
+fi
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
