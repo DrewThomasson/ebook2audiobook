@@ -653,16 +653,13 @@ function install_python_packages {
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip setuptools wheel >nul 2>&1
 	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
-	
 	total=$(grep -vE '^\s*($|#)' "$SCRIPT_DIR/requirements.txt" | wc -l | tr -d ' ')
 	i=0
-
 	progress_bar() {
 		local cur=$1 max=$2 width=30
 		local filled=$(( cur * width / max ))
 		printf "\r[%-${width}s] %d/%d" "$(printf '#%.0s' $(printf '%*s' "$filled" ''))" "$cur" "$max"
 	}
-
 	while IFS= read -r pkg || [[ -n "$pkg" ]]; do
 		[[ -z "$pkg" || "$pkg" == \#* ]] && continue
 		((i++))
@@ -670,7 +667,6 @@ function install_python_packages {
 		echo " Installing $pkg"
 		python3 -m pip install --upgrade --no-cache-dir "$pkg"
 	done < "$SCRIPT_DIR/requirements.txt"
-
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
 	return 0
