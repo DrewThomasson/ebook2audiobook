@@ -64,6 +64,7 @@ set "HOST_PROGRAMS=cmake rustup calibre ffmpeg mediainfo nodejs espeak-ng sox te
 :: tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_PROGRAMS=xz-utils ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
+set "DOCKER_WSL_CONTAINER=Debian"
 set "DOCKER_FIX_SCRIPT=dpf.ps1"
 set "DOCKER_DEVICE_STR="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
@@ -334,7 +335,7 @@ if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	echo WSL2 is required to build Linux containers.
 	echo.
 	echo ==================================================
-	echo WSL and Ubuntu will now be installed.
+	echo WSL and %DOCKER_WSL_CONTAINER% will now be installed.
 	echo.
 	echo INSTRUCTIONS:
 	echo 1. Enter a username and password when prompted
@@ -344,19 +345,19 @@ if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	echo The username is temporary - root will be set as default.
 	echo ==================================================
 	pause
-	wsl --unregister Ubuntu >nul 2>&1
+	wsl --unregister %DOCKER_WSL_CONTAINER% >nul 2>&1
 	wsl --update
-	wsl --install -d Ubuntu
+	wsl --install -d %DOCKER_WSL_CONTAINER% -no-launch
 	echo.
-	echo Ubuntu setup complete. Configuring for Docker...
+	echo %DOCKER_WSL_CONTAINER% setup complete. Configuring for Docker...
 	wsl --shutdown
 	timeout /t 3 /nobreak >nul
-	wsl --user root -- echo "Ubuntu OK" >nul 2>&1
+	wsl --user root -- echo "%DOCKER_WSL_CONTAINER% OK" >nul 2>&1
 	if errorlevel 1 (
-		echo %ESC%[31m=============== Ubuntu installation failed.%ESC%[0m
+		echo %ESC%[31m=============== %DOCKER_WSL_CONTAINER% installation failed.%ESC%[0m
 		goto :failed
 	)
-	for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq 'Ubuntu' } | Select-Object -ExpandProperty PSChildName"') do (
+	for /f %%A in ('powershell -NoProfile -Command "Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' | Where-Object { (Get-ItemProperty $_.PSPath).DistributionName -eq '%DOCKER_WSL_CONTAINER%' } | Select-Object -ExpandProperty PSChildName"') do (
 		reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\%%A" /v DefaultUid /t REG_DWORD /d 0 /f >nul
 	)
 	echo [wsl2] > "%USERPROFILE%\.wslconfig"
@@ -395,24 +396,23 @@ goto :restart_script
 :install_docker
 if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	echo Installing Docker inside WSL2…
-	REM First verify WSL Ubuntu is actually working
-	wsl --user root -d Ubuntu -- bash -c "echo 'WSL is ready'" >nul 2>&1
+	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "echo 'WSL is ready'" >nul 2>&1
 	if errorlevel 1 (
-		echo %ESC%[31m=============== WSL Ubuntu is not ready. Initializing…%ESC%[0m
-		wsl --user root -d Ubuntu -- bash -c "apt-get update" >nul 2>&1
+		echo %ESC%[31m=============== WSL %DOCKER_WSL_CONTAINER% is not ready. Initializing…%ESC%[0m
+		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "apt-get update" >nul 2>&1
 		wsl --shutdown
 		timeout /t 3 /nobreak >nul
 	)
 	echo Downloading and installing Docker…
-	wsl --user root -d Ubuntu -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
+	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "curl -fsSL https://get.docker.com | SKIP_SLEEP=1 sh"
 	if errorlevel 1 (
 		echo %ESC%[31m=============== docker install failed.%ESC%[0m
-		echo Try running: wsl --user root -d Ubuntu
+		echo Try running: wsl --user root -d %DOCKER_WSL_CONTAINER%
 		echo Then manually run: curl -fsSL https://get.docker.com ^| sh
 		goto :failed
 	)
 	echo Enabling systemd…
-	wsl --user root -d Ubuntu -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
+	wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "echo '[boot]' > /etc/wsl.conf && echo 'systemd=true' >> /etc/wsl.conf"
 	wsl --shutdown
 	echo %ESC%[33m=============== docker OK ===============%ESC%[0m
 )
@@ -556,7 +556,7 @@ if not errorlevel 1 (
         exit /b 0
     )
 )
-wsl --user root -d Ubuntu -- which docker >nul 2>&1
+wsl --user root -d %DOCKER_WSL_CONTAINER% -- which docker >nul 2>&1
 if errorlevel 1 (
     echo Docker is not installed inside WSL2.
     exit /b 1
@@ -572,10 +572,10 @@ if "%DOCKER_DESKTOP%"=="1" (
     echo Docker Desktop daemon is not running. Please start Docker Desktop.
     exit /b 1
 )
-wsl --user root -d Ubuntu -- docker info >nul 2>&1
+wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker info >nul 2>&1
 if not errorlevel 1 exit /b 0
 echo Starting Docker daemon inside WSL2…
-wsl --user root -d Ubuntu -- service docker start >nul 2>&1
+wsl --user root -d %DOCKER_WSL_CONTAINER% -- service docker start >nul 2>&1
 if errorlevel 1 (
     echo Docker failed to start
     exit /b 1
@@ -588,7 +588,7 @@ if %DOCKER_RETRIES% geq 20 (
     echo Docker daemon failed to start after 60 seconds.
     exit /b 1
 )
-wsl --user root -d Ubuntu -- docker info >nul 2>&1
+wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker info >nul 2>&1
 if errorlevel 1 goto :wait_docker
 echo Docker daemon is ready.
 exit /b 0
@@ -665,7 +665,7 @@ if "%DOCKER_DESKTOP%"=="1" (
     docker compose version >nul 2>&1
     set "HAS_COMPOSE=%errorlevel%"
 ) else (
-    wsl --user root -d Ubuntu -- docker compose version >nul 2>&1
+    wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker compose version >nul 2>&1
     set "HAS_COMPOSE=%errorlevel%"
 )
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
@@ -696,7 +696,7 @@ if /i "%DEVICE_TAG%"=="cpu" (
 if "%DOCKER_DESKTOP%"=="1" (
     set "WSL_DIR=%SAFE_SCRIPT_DIR%"
 ) else (
-    for /f "delims=" %%i in ('wsl --user root -d Ubuntu -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
+    for /f "delims=" %%i in ('wsl --user root -d %DOCKER_WSL_CONTAINER% -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
 )
 call :get_iso3_lang "%OS_LANG%"
 set "ISO3_LANG=!ISO3_LANG!"
@@ -717,7 +717,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     if "%DOCKER_DESKTOP%"=="1" (
         docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
     ) else (
-        wsl --user root -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
+        wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
     )
 ) else (
     echo Using docker buildx
@@ -726,15 +726,15 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     ) else (
 		echo Using docker buildx
 		REM Ensure Docker daemon is running
-		wsl --user root -d Ubuntu -- bash -c "service docker status >/dev/null 2>&1 || service docker start"
+		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "service docker status >/dev/null 2>&1 || service docker start"
 		timeout /t 3 /nobreak >nul
-		wsl --user root -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder 2>/dev/null || docker buildx create --name wslbuilder --use"
+		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder 2>/dev/null || docker buildx create --name wslbuilder --use"
 		if errorlevel 1 (
 			echo Failed to setup buildx builder
 			endlocal 
 			exit /b 1
 		)
-		wsl --user root -d Ubuntu -- bash -c "cd '%WSL_DIR%' && docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
+		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
     )
 )
 if errorlevel 1 (
@@ -755,11 +755,11 @@ if "%DOCKER_DESKTOP%"=="1" (
     echo     DEVICE_TAG=%DEVICE_TAG% podman-compose up -d
 ) else (
     echo GUI mode ^(run inside WSL^):
-    echo     wsl --user root -d Ubuntu -- docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\tmp:/app/tmp" -v ".\voices:/app/voices" %cmd_extra%--rm -it -p 7860:7860 athomasson2/%DOCKER_IMG_NAME%
+    echo     wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\tmp:/app/tmp" -v ".\voices:/app/voices" %cmd_extra%--rm -it -p 7860:7860 athomasson2/%DOCKER_IMG_NAME%
     echo Headless mode ^(run inside WSL^):
-    echo     wsl --user root -d Ubuntu -- docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\tmp:/app/tmp" -v ".\voices:/app/voices" %cmd_extra%--rm -it -v "/mnt/c/Users/YourName/ebooks:/app/ebooks" -v "/mnt/c/Users/YourName/audiobooks:/app/audiobooks" -p 7860:7860 athomasson2/%DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf"
+    echo     wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\tmp:/app/tmp" -v ".\voices:/app/voices" %cmd_extra%--rm -it -v "/mnt/c/Users/YourName/ebooks:/app/ebooks" -v "/mnt/c/Users/YourName/audiobooks:/app/audiobooks" -p 7860:7860 athomasson2/%DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf"
     echo Docker Compose ^(run inside WSL^):
-    echo     wsl --user root -d Ubuntu -- bash -c "cd '%WSL_DIR%' && DEVICE_TAG=%DEVICE_TAG% docker compose up -d"
+    echo     wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && DEVICE_TAG=%DEVICE_TAG% docker compose up -d"
 )
 endlocal
 exit /b 0
@@ -795,14 +795,14 @@ if defined arguments.help (
 			if "!DOCKER_DESKTOP!"=="1" (
 				docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
 			) else (
-				wsl --user root -d Ubuntu -- docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
+				wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
 			)
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!DEVICE_TAG!" already exists.
 				if "!DOCKER_DESKTOP!"=="1" (
 					echo To rebuild, first remove it with: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
 				) else (
-					echo To rebuild, first remove it with: wsl -d Ubuntu -- docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
+					echo To rebuild, first remove it with: wsl -d %DOCKER_WSL_CONTAINER% -- docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
 				)
 				goto :failed
 			)
