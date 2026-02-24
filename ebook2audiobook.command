@@ -643,7 +643,7 @@ function check_conda {
 
 function check_docker {
 	if ! command -v docker &> /dev/null; then
-		echo -e "\e[31m=============== Docker is not installed or not running. Please install or run Docker manually.\e[0m"
+		echo -e "\e[31m=============== Docker is not installed.\e[0m"
 		return 1
 	fi
 	return 0
