@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.2.23}
+        APP_VERSION: ${APP_VERSION:-26.2.24}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
       x-podman:
         format: docker
@@ -18,7 +18,11 @@ services:
     security_opt:
       - label=disable  # Required on SELinux/Podman hosts like Unraid/Fedora
     volumes:
-      - .:/app:rw      # Bind mount current directory – works everywhere
+      - ./ebooks:/app/ebooks:rw
+      - ./audiobooks:/app/audiobooks:rw
+      - ./models:/app/models:rw
+      - ./tmp:/app/tmp:rw
+      - ./voices:/app/voices:rw
     restart: unless-stopped
 
     # All are optional and harmless if the device/backend is not present

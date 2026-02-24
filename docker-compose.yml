@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.2.23}
+        APP_VERSION: ${APP_VERSION:-26.2.24}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
@@ -14,7 +14,11 @@ services:
     ports:
       - "7860:7860"
     volumes:
-      - .:/app:rw
+      - ./ebooks:/app/ebooks:rw
+      - ./audiobooks:/app/audiobooks:rw
+      - ./models:/app/models:rw
+      - ./tmp:/app/tmp:rw
+      - ./voices:/app/voices:rw
     restart: unless-stopped
     profiles: [cpu]
 
@@ -24,7 +28,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.2.23}
+        APP_VERSION: ${APP_VERSION:-26.2.24}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
     working_dir: /app
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
@@ -33,7 +37,11 @@ services:
     ports:
       - "7860:7860"
     volumes:
-      - .:/app:rw
+      - ./ebooks:/app/ebooks:rw
+      - ./audiobooks:/app/audiobooks:rw
+      - ./models:/app/models:rw
+      - ./tmp:/app/tmp:rw
+      - ./voices:/app/voices:rw
     restart: unless-stopped
     profiles: [gpu]
     deploy:
