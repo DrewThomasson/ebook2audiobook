@@ -91,8 +91,8 @@ while (( $# > 0 )); do
 	esac
 done
 
-for key in "${(k)arguments[@]}"; do # zsh
-    echo "$key = ${arguments[$key]}"
+for key in "${!myarray[@]}"; do
+    echo "$key = ${myarray[$key]}"
 done
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
