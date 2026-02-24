@@ -133,7 +133,7 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 fi
 
 [[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
-[[ ${OSTYPE-} == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
+[[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
 cd "$SCRIPT_DIR"
 
@@ -822,13 +822,14 @@ function build_docker_image {
 	echo "	DEVICE_TAG=$DEVICE_TAG podman-compose up -d"
 }
 
-########################################
+######################################## END of functions
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
+			echo "AHAHAHAHA"
 			check_docker || exit 1
 			DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
 			if [[ "$DEVICE_INFO_STR" == "" ]]; then
