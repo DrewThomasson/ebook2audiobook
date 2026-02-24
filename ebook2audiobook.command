@@ -827,7 +827,7 @@ function build_docker_image {
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
-	echo "AHAHAHAHA"
+	echo "script mode: $SCRIPT_MODE - $BUILD_DOCKER"
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
 			check_docker || exit 1
