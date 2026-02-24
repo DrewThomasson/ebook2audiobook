@@ -90,14 +90,13 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                         if part.endswith("'"):
                             part = part[:-1]
                         if self.session['language'] == 'bel':
-                            import requests
-                            url = "http://fonemizer.nikuchin.fun/processText"
-                            response = requests.post(
-                                url,
-                                headers={"Content-Type": "text/plain"},
-                                data=part.encode("utf-8")
+                            from phonemizer import phonemize
+                            part_phonemized = phonemize(
+                                part,
+                                backend="espeak",
+                                language="be",
+                                with_stress=True
                             )
-                            part_phonemized = response.text
                         else:
                             part_phonemized = part
                         if self.params['current_voice'] is not None:
