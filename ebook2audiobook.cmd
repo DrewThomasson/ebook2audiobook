@@ -41,6 +41,7 @@ for /f "delims=" %%e in ('
 set "ARGS=%*"
 set "NATIVE=native"
 set "BUILD_DOCKER=build_docker"
+set "FULL_DOCKER=full_docker"
 set "SCRIPT_MODE=%NATIVE%"
 set "APP_NAME=ebook2audiobook"
 set /p APP_VERSION=<"%SAFE_SCRIPT_DIR%\VERSION.txt"
@@ -765,6 +766,10 @@ if defined arguments.help (
     if /I "%arguments.help%"=="true" (
 		call :check_python
 		if errorlevel 1 goto :install_python
+		wsl --user root -d %DOCKER_WSL_CONTAINER% -- which docker >nul 2>&1
+		if not errorlevel 1 (
+			set DOCKER_IN_WSL=1
+		)
         call python "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
         goto :eof
     )

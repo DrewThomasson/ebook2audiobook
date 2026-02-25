@@ -36,6 +36,7 @@ export PATH="$CONDA_BIN_PATH:${PATH-}"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
+FULL_DOCKER="full_docker"
 ARCH=$(uname -m)
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.12"
@@ -820,6 +821,7 @@ function build_docker_image {
 ######################################## END of functions
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
+	
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
