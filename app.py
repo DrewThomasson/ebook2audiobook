@@ -69,10 +69,13 @@ def kill_previous_instances(script_name: str):
             continue
 
 def main()->None:
+    wsl_cmd = ''
+    if os.environ.get('DOCKER_IN_WSL', 0) == "1":
+        wsl_cmd = 'wsl --user root --'
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
-        epilog='''
+        epilog=f'''
 Example usage:    
 Windows native mode:
     Gradio/GUI:
@@ -92,42 +95,42 @@ Docker build image:
 Docker run image:
     Gradio/GUI:
         CPU:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --rm -it -p 7860:7860 ebook2audiobook:cpu
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --rm -it -p 7860:7860 ebook2audiobook:cpu
         CUDA:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --gpus all --rm -it -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..]
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --gpus all --rm -it -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..]
         ROCM:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
         XPU:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu
         JETSON:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --runtime nvidia  --rm -it -p 7860:7860 ebook2audiobook:jetson[60/61 etc...]
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --runtime nvidia  --rm -it -p 7860:7860 ebook2audiobook:jetson[60/61 etc...]
     Headless mode:
         CPU:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         CUDA:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --gpus all --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --gpus all --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         ROCM:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --device=/dev/kfd --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --device=/dev/kfd --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc..] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         XPU:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --device=/dev/dri --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         JETSON:
-        docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+        {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./tmp:/app/tmp" -v "./voices:/app/voices" --runtime nvidia --rm -it -v "/my/real/ebooks/folder/absolute/path:/app/ebooks" -v "/my/real/output/folder/absolute/path:/app/audiobooks" -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc...] --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 
 Docker Compose (i.e. cuda 12.8:
         Build
-            DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up -d --build
+            {wsl_cmd} DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up -d --build
         Run Gradio GUI:
-            DEVICE_TAG=cu128 docker compose --profile gpu up -d
+            {wsl_cmd} DEVICE_TAG=cu128 docker compose --profile gpu up -d
         Run Headless mode:
-            DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+            {wsl_cmd} DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 
 Podman Compose (i.e. cuda 12.8:
         Build
-            DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d --build
+            {wsl_cmd} DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d --build
         Run Gradio GUI:
-            DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d
+            {wsl_cmd} DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d
         Run Headless mode:
-            DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+            {wsl_cmd} DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
     
 SML tags available:
         [break] — silence (random range **0.3–0.6 sec.**)
