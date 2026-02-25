@@ -17,7 +17,6 @@ services:
       - ./ebooks:/app/ebooks:rw
       - ./audiobooks:/app/audiobooks:rw
       - ./models:/app/models:rw
-      - ./tmp:/app/tmp:rw
       - ./voices:/app/voices:rw
     restart: unless-stopped
     profiles: [cpu]
@@ -40,7 +39,6 @@ services:
       - ./ebooks:/app/ebooks:rw
       - ./audiobooks:/app/audiobooks:rw
       - ./models:/app/models:rw
-      - ./tmp:/app/tmp:rw
       - ./voices:/app/voices:rw
     restart: unless-stopped
     profiles: [gpu]
