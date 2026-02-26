@@ -654,6 +654,7 @@ exit /b 0
 setlocal
 set "ARG=%~1"
 set "ARG_ESCAPED=%ARG:"=\"%"
+set "wsl_cmd="
 where.exe podman-compose >nul 2>&1
 set "HAS_PODMAN_COMPOSE=%errorlevel%"
 if "%DOCKER_DESKTOP%"=="1" (
@@ -745,7 +746,7 @@ if "%DOCKER_DESKTOP%"=="1" (
 echo GUI mode:
 echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 echo Headless mode:
-echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices"%cmd_extra%--rm -it -v "C:\path\to\ebooks:/app/ebooks" -v "C:\path\to\audiobooks:/app/audiobooks" -v "D:\path\to\custom\voices:/app/custom_voice" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
+echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v "D:\path\to\custom\voices:/app/custom_voice" %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
 echo Docker Compose:
 echo 	GUI mode:
 echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
