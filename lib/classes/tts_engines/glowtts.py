@@ -22,6 +22,14 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
+            iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
+            sub_dict = self.models[self.session['fine_tuned']]['sub']
+            sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+            if sub is None:
+                msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
+                raise KeyError(msg)
+            self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
+            self.model_path = self.models[self.session['fine_tuned']]['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
@@ -36,20 +44,8 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                 if self.session['custom_model'] is not None:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     raise NotImplementedError(msg)
-                try:
-                    iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
-                    sub_dict = self.models[self.session['fine_tuned']]['sub']
-                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-                    if sub is None:
-                        msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
-                        raise KeyError(msg)
-                    self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
-                    model_path = self.models[self.session['fine_tuned']]['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
-                    self.tts_key = model_path
-                    engine = self._load_api(self.tts_key, model_path)
-                except Exception as e:
-                    error = f"load_engine(): language/sub resolution failed: {e}"
-                    raise RuntimeError(error) from e
+                self.tts_key = self.model_path
+                engine = self._load_api(self.tts_key, self.model_path)
             if engine:
                 msg = f"TTS {self.tts_key} Loaded!"
                 print(msg)
