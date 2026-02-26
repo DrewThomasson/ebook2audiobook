@@ -740,22 +740,22 @@ if errorlevel 1 (
 if defined cmd_options set "cmd_extra=%cmd_options% "
 echo Docker image ready. To run your docker:
 if "%DOCKER_DESKTOP%"=="1" (
-    echo GUI mode:
-    echo     docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
-    echo Headless mode:
-    echo     docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices"%cmd_extra%--rm -it -v "C:\path\to\ebooks:/app/ebooks" -v "C:\path\to\audiobooks:/app/audiobooks" -v "D:\path\to\custom\voices:/app/custom_voice" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
-    echo Docker Compose:
-    echo     DEVICE_TAG=%DEVICE_TAG% docker compose up -d
-    echo Podman Compose:
-    echo     DEVICE_TAG=%DEVICE_TAG% podman-compose up -d
-) else (
-    echo GUI mode ^(run inside WSL^):
-    echo     wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
-    echo Headless mode ^(run inside WSL^):
-    echo     wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" %cmd_extra%--rm -it -v "/mnt/c/Users/YourName/ebooks:/app/ebooks" -v "/mnt/c/Users/YourName/audiobooks:/app/audiobooks" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf"
-    echo Docker Compose ^(run inside WSL^):
-    echo     wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && DEVICE_TAG=%DEVICE_TAG% docker compose up -d"
+	set "wsl_cmd=wsl --user root -d %DOCKER_WSL_CONTAINER% --"
 )
+echo GUI mode:
+echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+echo Headless mode:
+echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices"%cmd_extra%--rm -it -v "C:\path\to\ebooks:/app/ebooks" -v "C:\path\to\audiobooks:/app/audiobooks" -v "D:\path\to\custom\voices:/app/custom_voice" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
+echo Docker Compose:
+echo 	GUI mode:
+echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% up -d
+echo 	Headless mode:
+echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" etc.
+echo Podman Compose:
+echo 	GUI mode:
+echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose --profile %COMPOSE_PROFILES% up -d
+echo 	Headless mode:
+echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose --profile %COMPOSE_PROFILES% run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" etc.
 endlocal
 exit /b 0
 
