@@ -229,7 +229,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 return False
         except Exception as e:
             error = f'Vits.convert(): {e}'
-            raise ValueError(e)
+            print(error)
             return False
 
     def create_vtt(self, all_sentences:list)->bool:

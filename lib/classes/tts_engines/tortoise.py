@@ -156,7 +156,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 return False
         except Exception as e:
             error = f'Tortoise.convert(): {e}'
-            raise ValueError(e)
+            print(error)
             return False
 
     def create_vtt(self, all_sentences:list)->bool:
