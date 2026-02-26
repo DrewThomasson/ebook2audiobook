@@ -115,7 +115,6 @@ Docker run image:
          {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         JETSON:
          {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-
 Docker Compose (i.e. cuda 12.8:
         Build
              {wsl_cmd}  DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up --build
@@ -123,7 +122,6 @@ Docker Compose (i.e. cuda 12.8:
              {wsl_cmd}  DEVICE_TAG=cu128 docker compose --profile gpu up --no-log-prefix
         Run Headless mode:
              {wsl_cmd}  DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
-
 Podman Compose (i.e. cuda 12.8:
         Build
              {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up --build
@@ -131,7 +129,6 @@ Podman Compose (i.e. cuda 12.8:
              {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up
         Run Headless mode:
              {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
-
 SML tags available:
         [break] — silence (random range **0.3–0.6 sec.**)
         [pause] — silence (random range **1.0–1.6 sec.**)
