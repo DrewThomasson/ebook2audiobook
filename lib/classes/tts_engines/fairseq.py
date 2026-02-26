@@ -3,33 +3,34 @@ from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
 class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
 
-    def __init__(self, session:DictProxy):
+    def __init__(self, session: DictProxy):
         try:
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
             self.tts_key = self.session['model_cache']
-            self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
+            self.tts_zs_key = default_vc_model.rsplit('/', 1)[-1]
             self.pth_voice_file = None
             self.resampler_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
-            self.params = {"semitones":{}}
-            self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
-            enough_vram = self.session['free_vram_gb'] > 4.0
-            seed = 0
-            #random.seed(seed)
-            self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
-            self.xtts_speakers = self._load_xtts_builtin_list()
+            self.params = {"semitones": {}}
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
-            if 'repo' not in model_cfg:
-                error = f'fine_tuned model {fine_tuned} is missing required key repo.'
-                raise ValueError(error)
+            for required_key in ('repo', 'samplerate'):
+                if required_key not in model_cfg:
+                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
+                    raise ValueError(error)
+            self.params['samplerate'] = model_cfg['samplerate']
             self.model_path = model_cfg['repo'].replace("[lang]", self.session['language'])
+            enough_vram = self.session['free_vram_gb'] > 4.0
+            seed = 0
+            #random.seed(seed)
+            self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
+            self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
         except Exception as e:
