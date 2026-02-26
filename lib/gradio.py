@@ -1219,7 +1219,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 for f in Path(session['custom_model_dir']).rglob('*.wav')
                                 if f.is_file()
                             )
-                        if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+                        if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                             voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                         else:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
@@ -1772,9 +1772,10 @@ def build_interface(args:dict)->gr.Blocks:
                         session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
                         delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session['id'])
                     else:
-                        msg = f' Note: if no activity is detected after {tmp_expire} days, your session will be cleaned up.'
+                        msg = f' Note: if no activity is detected after {tmp_expire} days, your session will be cleaned up. '
                         session['audiobooks_dir'] = os.path.join(audiobooks_host_dir, f"web-{session['id']}")
                         delete_unused_tmp_dirs(audiobooks_host_dir, tmp_expire, session['id'])
+                    msg += 'Your browser needs cookies enabled to resume the conversions.'
                     if not os.path.exists(session['audiobooks_dir']):
                         os.makedirs(session['audiobooks_dir'], exist_ok=True)
                     previous_hash = state['hash']
