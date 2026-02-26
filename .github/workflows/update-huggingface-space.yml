@@ -23,10 +23,10 @@ jobs:
       space_status: ${{ steps.check-status.outputs.space_status }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
 
@@ -75,7 +75,7 @@ jobs:
     if: ${{ needs.check-space.outputs.space_status != 'RUNNING' }}
     steps:
       - name: Checkout self repository for VERSION.txt
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: source
 
