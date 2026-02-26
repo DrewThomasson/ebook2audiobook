@@ -118,17 +118,17 @@ Docker run image:
 
 Docker Compose (i.e. cuda 12.8:
         Build
-            {wsl_cmd} DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up -d --build
+            {wsl_cmd} DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up --build
         Run Gradio GUI:
-            {wsl_cmd} DEVICE_TAG=cu128 docker compose --profile gpu up -d
+            {wsl_cmd} DEVICE_TAG=cu128 docker compose --profile gpu up --no-log-prefix
         Run Headless mode:
             {wsl_cmd} DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 
 Podman Compose (i.e. cuda 12.8:
         Build
-            {wsl_cmd} DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d --build
+            {wsl_cmd} DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up --build
         Run Gradio GUI:
-            {wsl_cmd} DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up -d
+            {wsl_cmd} DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up
         Run Headless mode:
             {wsl_cmd} DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
     
