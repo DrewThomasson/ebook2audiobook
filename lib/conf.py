@@ -136,7 +136,7 @@ cuda_version_range = {"min": (11,8), "max": (12,8)}
 rocm_version_range = {"min": (5,7), "max": (6,3)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
-jetson_version_range = {"min": (6,0), "max": (6,1)}
+jetson_version_range = {"min": (5,1), "max": (6,1)}
 
 # ---------------------------------------------------------------------
 # Interface configuration
