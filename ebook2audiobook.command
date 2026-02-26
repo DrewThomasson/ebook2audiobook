@@ -36,6 +36,7 @@ export PATH="$CONDA_BIN_PATH:${PATH-}"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
+FULL_DOCKER="full_docker"
 ARCH=$(uname -m)
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.12"
@@ -45,9 +46,10 @@ SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-DOCKER_PROGRAMS=("xz-utils", "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+DOCKER_PROGRAMS=("ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
+DEVICE_INFO_STR=""
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 BREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 MINIFORGE_MACOSX_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
@@ -58,7 +60,7 @@ UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 WGET="$(command -v wget 2>/dev/null || true)"
 
 typeset -A arguments=() # associative array
-declare -a programs_missing=() # indexed array
+typeset -a programs_missing=() # indexed array
 
 PACK_MGR=""
 PACK_MGR_OPTIONS=""
@@ -74,11 +76,11 @@ while (( $# > 0 )); do
 		--*)
 			key="${1#--}"
 			if (( $# > 1 )) && [[ "$2" != --* ]]; then
-				arguments["$key"]="$2"
+				arguments[$key]=$2
 				shift 2
 				continue
 			else
-				arguments["$key"]=true
+				arguments[$key]=true
 				shift
 				continue
 			fi
@@ -89,7 +91,6 @@ while (( $# > 0 )); do
 			;;
 	esac
 done
-
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
@@ -132,7 +133,7 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 fi
 
 [[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
-[[ ${OSTYPE-} == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
+[[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
 cd "$SCRIPT_DIR"
 
@@ -642,7 +643,7 @@ function check_conda {
 
 function check_docker {
 	if ! command -v docker &> /dev/null; then
-		echo -e "\e[31m=============== Docker is not installed or not running. Please install or run Docker manually.\e[0m"
+		echo -e "\e[31m=============== Docker is not installed.\e[0m"
 		return 1
 	fi
 	return 0
@@ -653,16 +654,13 @@ function install_python_packages {
 	python3 -m pip cache purge > /dev/null 2>&1
 	python3 -m pip install --upgrade pip setuptools wheel >nul 2>&1
 	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
-	
 	total=$(grep -vE '^\s*($|#)' "$SCRIPT_DIR/requirements.txt" | wc -l | tr -d ' ')
 	i=0
-
 	progress_bar() {
 		local cur=$1 max=$2 width=30
 		local filled=$(( cur * width / max ))
 		printf "\r[%-${width}s] %d/%d" "$(printf '#%.0s' $(printf '%*s' "$filled" ''))" "$cur" "$max"
 	}
-
 	while IFS= read -r pkg || [[ -n "$pkg" ]]; do
 		[[ -z "$pkg" || "$pkg" == \#* ]] && continue
 		((i++))
@@ -670,7 +668,6 @@ function install_python_packages {
 		echo " Installing $pkg"
 		python3 -m pip install --upgrade --no-cache-dir "$pkg"
 	done < "$SCRIPT_DIR/requirements.txt"
-
 	python3 -m unidic download || exit 1
 	echo "[ebook2audiobook] Installation completed."
 	return 0
@@ -687,6 +684,15 @@ if result:
 	raise SystemExit(0)
 raise SystemExit(1)
 EOF
+}
+
+function json_get {
+    local key="$1"
+    echo "$DEVICE_INFO_STR" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(data['$key'])
+"
 }
 
 function install_device_packages {
@@ -802,41 +808,48 @@ function build_docker_image {
 		cmd_extra="$cmd_options "
 	fi
 	echo "Docker image ready! to run your docker: "
-	echo "GUI mode:"
-	echo "	docker run ${cmd_extra}--rm -it -p 7860:7860 $DOCKER_IMG_NAME"
-	echo "Headless mode:"
-	echo "	docker run ${cmd_extra}--rm -it -v \"/my/real/ebooks/folder/absolute/path:/app/ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
+	echo "	GUI mode:"
+	echo "		docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" ${cmd_extra}--rm -it -p 7860:7860 $DOCKER_IMG_NAME"
+	echo "	Headless mode:"
+	echo "		docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_extra}--rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	echo "Docker Compose:"
-	echo "	DEVICE_TAG=$DEVICE_TAG docker compose up -d"
+	echo "	GUI mode:"
+	echo "		DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
+	echo "	Headless mode:"
+	echo "  	DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	echo "Podman Compose:"
-	echo "	DEVICE_TAG=$DEVICE_TAG podman-compose up -d"
+	echo "	GUI mode:"
+	echo "		DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up"
+	echo "	Headless mode:"
+	echo "  	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 }
 
-########################################
+######################################## END of functions
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
+	
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
 			check_docker || exit 1
-			device_info_str="$(check_device_info "${SCRIPT_MODE}")"
-			if [[ "$device_info_str" == "" ]]; then
+			DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
+			if [[ "$DEVICE_INFO_STR" == "" ]]; then
 				echo "check_device_info() error: result is empty"
 				exit 1
 			fi
 			if [[ "$DEVICE_TAG" == "" ]]; then
-				DEVICE_TAG=
+                DEVICE_TAG=$(json_get "tag")
 			fi
 			if docker image inspect "${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
 				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
 				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
 				exit 1
 			fi
-			build_docker_image "$device_info_str" || exit 1
+			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
-			install_python_packages || exit 1
-			install_device_packages "${DOCKER_DEVICE_STR}" || exit 1
+			install_python_packages || return 1
+			install_device_packages "$DOCKER_DEVICE_STR" || exit 1
 			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then

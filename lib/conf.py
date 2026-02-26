@@ -127,6 +127,7 @@ torch_matrix = {
     # XPU
     "xpu":       {"url": default_pytorch_url, "base": "2.7.1"},
     # JETSON
+    "jetson51":  {"url": default_jetson_url, "base": "2.4.1"},
     "jetson60":  {"url": default_jetson_url, "base": "2.4.0"},
     "jetson61":  {"url": default_jetson_url, "base": "2.5.0"}
 }
@@ -135,7 +136,7 @@ cuda_version_range = {"min": (11,8), "max": (12,8)}
 rocm_version_range = {"min": (5,7), "max": (6,3)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
-jetson_version_range = {"min": (6,0), "max": (6,1)}
+jetson_version_range = {"min": (5,1), "max": (6,1)}
 
 # ---------------------------------------------------------------------
 # Interface configuration
