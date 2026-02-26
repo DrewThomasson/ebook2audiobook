@@ -15,19 +15,37 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones": {}, "samplerate": None}
+            tts_engine = self.session.get('tts_engine')
+            language = self.session.get('language')
+            fine_tuned = self.session.get('fine_tuned')
+            if tts_engine not in default_engine_settings:
+                error = f'Invalid tts_engine {tts_engine}.'
+                raise ValueError(error)
+            engine_langs = default_engine_settings[tts_engine].get('languages', {})
+            if language not in engine_langs:
+                error = f'Language {language} not supported by engine {tts_engine}.'
+                raise ValueError(error)
+            iso_dir = engine_langs[language]
+            if fine_tuned not in self.models:
+                error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
+                raise ValueError(error)
+            model_cfg = self.models[fine_tuned]
+            for required_key in ('repo', 'samplerate', 'sub'):
+                if required_key not in model_cfg:
+                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
+                    raise ValueError(error)
+            sub_dict = model_cfg['sub']
+            sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+            if sub is None:
+                error = f'{tts_engine} checkpoint for {language} not found.'
+                raise KeyError(error)
+            self.params['samplerate'] = model_cfg['samplerate'][sub]
+            self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
-            iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
-            sub_dict = self.models[self.session['fine_tuned']]['sub']
-            sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-            if sub is None:
-                msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
-                raise KeyError(msg)
-            self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
-            self.model_path = self.models[self.session['fine_tuned']]['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
         except Exception as e:
