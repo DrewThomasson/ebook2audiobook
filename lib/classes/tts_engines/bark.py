@@ -21,6 +21,8 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             #random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
+            model_cfg = self.models[self.session['fine_tuned']]
+            self.model_path = model_cfg['repo']
             self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -35,17 +37,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             if self.session['custom_model'] is not None:
                 error = f"{self.session['tts_engine']} custom model not implemented yet!"
                 raise NotImplementedError(error)
-            try:
-                model_cfg = self.models[self.session['fine_tuned']]
-                model_path = model_cfg['repo']
-            except KeyError as e:
-                error = f"Invalid fine_tuned model '{self.session['fine_tuned']}'"
-                raise KeyError(error) from e
-            try:
-                engine = self._load_api(self.tts_key, model_path)
-            except Exception as e:
-                error = 'load_engine(): _load_api() failed'
-                raise RuntimeError(error) from e
+            engine = self._load_api(self.tts_key, self.model_path)
         if engine:
             msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
