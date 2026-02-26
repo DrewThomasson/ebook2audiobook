@@ -21,6 +21,8 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             #random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
+            model_cfg = self.models[self.session['fine_tuned']]
+            self.model_path = model_cfg['repo'].replace("[lang]", self.session['language'])
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
         except Exception as e:
@@ -36,15 +38,9 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             if self.session['custom_model'] is not None:
                 error = f"{self.session['tts_engine']} custom model not implemented yet!"
                 raise NotImplementedError(error)
+            self.tts_key = self.model_path
             try:
-                model_cfg = self.models[self.session['fine_tuned']]
-                model_path = model_cfg['repo'].replace("[lang]", self.session['language'])
-            except KeyError as e:
-                error = f"Invalid fine_tuned model '{self.session['fine_tuned']}'"
-                raise KeyError(error) from e
-            self.tts_key = model_path
-            try:
-                engine = self._load_api(self.tts_key, model_path)
+                engine = self._load_api(self.tts_key, self.model_path)
             except Exception as e:
                 error = 'load_engine(): _load_api() failed'
                 raise RuntimeError(error) from e
