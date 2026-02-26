@@ -37,7 +37,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
             sub_dict = model_cfg['sub']
             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
-                error = f'{tts_engine} checkpoint for {language} not found!'
+                error = f'{tts_engine} checkpoint for {language} not found.'
                 raise KeyError(error)
             self.params['samplerate'] = model_cfg['samplerate'][sub]
             self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)

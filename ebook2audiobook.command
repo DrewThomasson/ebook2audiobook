@@ -45,7 +45,7 @@ PYTHON_ENV="python_env"
 SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
-HOST_PROGRAMS=("cmake" "curl" "pkg-config" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
+HOST_PROGRAMS=("cmake" "curl" "pkg-config" "xcb-util-cursor" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
 DOCKER_PROGRAMS=("ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
@@ -380,10 +380,27 @@ function check_required_programs {
 			else
 				pkg="$program"
 			fi
+		elif [[ "$program" == "xcb-util-cursor" ]]; then
+			bin=""
+			if [[ "${OSTYPE-}" != darwin* ]]; then
+				if command -v apt-get >/dev/null 2>&1 || command -v zypper >/dev/null 2>&1; then
+					pkg="libxcb-cursor0"
+				elif command -v apk >/dev/null 2>&1; then
+					pkg="xcb-util-cursor"
+				else
+					pkg="$program"
+				fi
+				check_xcb=$(ldconfig -p 2>/dev/null | grep libxcb-cursor)
+				if [[ "$check_xcb" == "" ]]; then
+					programs_missing+=("$pkg")
+				fi
+			fi
 		fi
-		if ! command -v "$bin" &>/dev/null; then
-			echo -e "\e[33m$pkg is not installed.\e[0m"
-			programs_missing+=("$pkg")
+		if [[ "$bin" != "" ]]; then
+			if ! command -v "$bin" &>/dev/null; then
+				echo -e "\e[33m$pkg is not installed.\e[0m"
+				programs_missing+=("$pkg")
+			fi
 		fi
 	done
 	(( ${#programs_missing[@]} == 0 ))

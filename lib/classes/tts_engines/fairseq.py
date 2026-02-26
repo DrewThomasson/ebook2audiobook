@@ -25,7 +25,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                     error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
                     raise ValueError(error)
             self.params['samplerate'] = model_cfg['samplerate']
-            self.model_path = model_cfg['repo'].replace("[lang]", self.session['language'])
+            self.model_path = model_cfg['repo'].replace('[lang]', self.session['language'])
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
