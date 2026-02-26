@@ -193,14 +193,17 @@ class DeviceInstaller():
             rev_major = int(parts[0])
             rev_minor = int(parts[1]) if len(parts) > 1 else 0
             rev_patch = int(parts[2]) if len(parts) > 2 else 0
-            if l4t_major < 36:
-                msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 6.0+. Falling back to CPU.'
+            if l4t_major < 35:
+                msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 6+. Falling back to CPU.'
                 return ('unsupported', msg)
             else:
-                if rev_major == 2:
-                    return ('60', msg)
+                if l4t_major == 35:
+                    return ('51', msg)
                 else:
-                    return ('61', msg)
+                    if rev_major == 2:
+                        return ('60', msg)
+                    else:
+                        return ('61', msg)
                 msg = 'Unrecognized JetPack 6.x version. Falling back to CPU.'
             return ('unknown', msg)
 
