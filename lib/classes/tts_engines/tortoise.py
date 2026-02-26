@@ -15,11 +15,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
-            enough_vram = self.session['free_vram_gb'] > 4.0
-            seed = 0
-            #random.seed(seed)
-            self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
-            self.xtts_speakers = self._load_xtts_builtin_list()
             tts_engine = self.session.get('tts_engine')
             language = self.session.get('language')
             fine_tuned = self.session.get('fine_tuned')
@@ -35,15 +30,10 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
-            if 'sub' not in model_cfg:
-                error = f'fine_tuned model {fine_tuned} is missing required key sub.'
-                raise ValueError(error)
-            if 'samplerate' not in model_cfg:
-                error = f'fine_tuned model {fine_tuned} is missing required key samplerate.'
-                raise ValueError(error)
-            if 'repo' not in model_cfg:
-                error = f'fine_tuned model {fine_tuned} is missing required key repo.'
-                raise ValueError(error)
+            for required_key in ('repo', 'samplerate', 'sub'):
+                if required_key not in model_cfg:
+                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
+                    raise ValueError(error)
             sub_dict = model_cfg['sub']
             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
@@ -51,6 +41,11 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 raise KeyError(error)
             self.params['samplerate'] = model_cfg['samplerate'][sub]
             self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
+            enough_vram = self.session['free_vram_gb'] > 4.0
+            seed = 0
+            #random.seed(seed)
+            self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
+            self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
