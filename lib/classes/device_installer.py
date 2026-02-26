@@ -204,7 +204,7 @@ class DeviceInstaller():
                         return ('60', msg)
                     else:
                         return ('61', msg)
-                msg = 'Unrecognized JetPack 6.x version. Falling back to CPU.'
+            msg = 'Unrecognized JetPack 6.x version. Falling back to CPU.'
             return ('unknown', msg)
 
         def has_amd_gpu_pci():
