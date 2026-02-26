@@ -748,14 +748,14 @@ echo Headless mode:
 echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices"%cmd_extra%--rm -it -v "C:\path\to\ebooks:/app/ebooks" -v "C:\path\to\audiobooks:/app/audiobooks" -v "D:\path\to\custom\voices:/app/custom_voice" -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
 echo Docker Compose:
 echo 	GUI mode:
-echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% up -d
+echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
 echo 	Headless mode:
-echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" etc.
+echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 echo Podman Compose:
 echo 	GUI mode:
-echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose --profile %COMPOSE_PROFILES% up -d
+echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up
 echo 	Headless mode:
-echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose --profile %COMPOSE_PROFILES% run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" etc.
+echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 endlocal
 exit /b 0
 
