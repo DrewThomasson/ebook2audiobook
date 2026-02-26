@@ -1,4 +1,4 @@
-import os, re, select, subprocess, multiprocessing, sys, gradio as gr
+import os, re, queue, threading, subprocess, multiprocessing, sys, gradio as gr
 
 from collections.abc import Callable
 
@@ -63,28 +63,48 @@ class SubprocessPipe:
                     )
             if is_ffmpeg:
                 time_pattern = re.compile(rb'out_time_ms=(\d+)')
-                buffer = b''
                 last_percent = 0.0
+                stderr_queue = queue.Queue()
+
+                def read_stderr():
+                    try:
+                        buffer = b''
+                        while True:
+                            chunk = self.process.stderr.read(4096)
+                            if not chunk:
+                                break
+                            buffer += chunk
+                            while b'\n' in buffer:
+                                line, buffer = buffer.split(b'\n', 1)
+                                stderr_queue.put(line)
+                    except Exception:
+                        pass
+                    finally:
+                        stderr_queue.put(None)
+
+                stderr_thread = threading.Thread(target=read_stderr, daemon=True)
+                stderr_thread.start()
+
                 while True:
-                    if self.process.poll() is not None:
-                        break
-                    ready, _, _ = select.select([self.process.stderr], [], [], 0.1)
-                    if ready:
-                        chunk = self.process.stderr.read(4096)
-                        if not chunk:
+                    try:
+                        line = stderr_queue.get(timeout=0.1)
+                    except queue.Empty:
+                        if self.process.poll() is not None:
                             break
-                        buffer += chunk
-                        while b'\n' in buffer:
-                            line, buffer = buffer.split(b'\n', 1)
-                            match = time_pattern.search(line)
-                            if match and self.total_duration > 0:
-                                current_time = int(match.group(1)) / 1_000_000
-                                percent = min((current_time / self.total_duration) * 100, 100)
-                                if abs(percent - last_percent) >= 0.5:
-                                    self._emit_progress(percent)
-                                    last_percent = percent
-                            elif b'progress=end' in line:
-                                self._emit_progress(100.0)
+                        continue
+
+                    if line is None:  # sentinel = stderr closed
+                        break
+                    match = time_pattern.search(line)
+                    if match and self.total_duration > 0:
+                        current_time = int(match.group(1)) / 1_000_000
+                        percent = min((current_time / self.total_duration) * 100, 100)
+                        if abs(percent - last_percent) >= 0.5:
+                            self._emit_progress(percent)
+                            last_percent = percent
+                    elif b'progress=end' in line:
+                        self._emit_progress(100.0)
+                stderr_thread.join()
             else:
                 if self.progress_bar:
                     tqdm_re = re.compile(rb'(\d{1,3})%\|')

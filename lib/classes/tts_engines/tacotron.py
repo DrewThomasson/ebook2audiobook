@@ -14,8 +14,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             self.resampler_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
-            self.params = {"semitones":{}}
-            self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate']
+            self.params = {"semitones":{}, "samplerate": None}
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
@@ -241,7 +240,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 return False
         except Exception as e:
             error = f'Tacotron2.convert(): {e}'
-            raise ValueError(e)
+            print(error)
             return False
 
     def create_vtt(self, all_sentences:list)->bool:
