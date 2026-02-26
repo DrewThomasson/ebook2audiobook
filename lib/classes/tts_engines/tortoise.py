@@ -20,7 +20,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             #random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
-            self.engine = self.load_engine()
             iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
             sub_dict = self.models[self.session['fine_tuned']]['sub']
             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
@@ -29,6 +28,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 raise KeyError(error)
             self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
             self.model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
+            self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
