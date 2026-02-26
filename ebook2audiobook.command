@@ -380,16 +380,18 @@ function check_required_programs {
 			else
 				pkg="$program"
 			fi
-		elif [[ "$program" == "libxcb-cursor0" ]]; then
+		elif [[ "$program" == "xcb-util-cursor" ]]; then
 			if [[ "${OSTYPE-}" != darwin* ]]; then
 				bin=""
-				if command -v zypper >/dev/null 2>&1 || command -v apt-get >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then
+				if command -v apt-get >/dev/null 2>&1 || command -v zypper >/dev/null 2>&1; then
 					pkg="libxcb-cursor0"
+				elif command -v apk >/dev/null 2>&1; then
+					pkg="xcb-util-cursor"
 				else
 					pkg="$program"
 				fi
 				check_xcb=$(ldconfig -p 2>/dev/null | grep libxcb-cursor)
-				if [[ "$check_xcb" != "" ]]; then
+				if [[ "$check_xcb" == "" ]]; then
 					programs_missing+=("$pkg")
 				fi
 			fi
