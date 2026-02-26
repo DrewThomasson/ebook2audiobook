@@ -240,7 +240,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 return False
         except Exception as e:
             error = f'Tacotron2.convert(): {e}'
-            raise ValueError(e)
+            print(error)
             return False
 
     def create_vtt(self, all_sentences:list)->bool:
