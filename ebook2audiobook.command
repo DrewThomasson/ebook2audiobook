@@ -381,8 +381,8 @@ function check_required_programs {
 				pkg="$program"
 			fi
 		elif [[ "$program" == "xcb-util-cursor" ]]; then
+			bin=""
 			if [[ "${OSTYPE-}" != darwin* ]]; then
-				bin=""
 				if command -v apt-get >/dev/null 2>&1 || command -v zypper >/dev/null 2>&1; then
 					pkg="libxcb-cursor0"
 				elif command -v apk >/dev/null 2>&1; then
