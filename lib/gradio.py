@@ -1775,7 +1775,7 @@ def build_interface(args:dict)->gr.Blocks:
                         msg = f' Note: if no activity is detected after {tmp_expire} days, your session will be cleaned up.'
                         session['audiobooks_dir'] = os.path.join(audiobooks_host_dir, f"web-{session['id']}")
                         delete_unused_tmp_dirs(audiobooks_host_dir, tmp_expire, session['id'])
-                    msg + 'Your browser needs cookies enabled to resume the conversions.'
+                    msg += 'Your browser needs cookies enabled to resume the conversions.'
                     if not os.path.exists(session['audiobooks_dir']):
                         os.makedirs(session['audiobooks_dir'], exist_ok=True)
                     previous_hash = state['hash']
