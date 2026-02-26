@@ -3,7 +3,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ARG APP_VERSION=26.2.20
+ARG APP_VERSION=26.2.26
 ARG DEVICE_TAG=cu128
 ARG DOCKER_DEVICE_STR='{"name": "cu128", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg nodejs npm espeak-ng sox tesseract-ocr"
@@ -32,16 +32,10 @@ WORKDIR /app
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends --allow-change-held-packages\
-		gcc g++ make pkg-config cmake \
-		curl wget git bash xz-utils \
-		fontconfig libfontconfig1 libfreetype6 \
-		libgl1 libegl1 libopengl0 \
-		libx11-6 libxext6 libxrender1 \
-		libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libxcb-cursor0 \
-		libgomp1 libsndfile1 \
-		python3-dev \
-		${DOCKER_PROGRAMS_STR} \
-		tesseract-ocr-${ISO3_LANG}; \
+		gcc g++ make pkg-config cmake curl wget git bash xz-utils \
+		fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
+		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libxcb-cursor0 \
+		libgomp1 libsndfile1 python3-dev ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
 	rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------
@@ -75,11 +69,11 @@ RUN set -eux; \
 RUN pip install --upgrade pip setuptools wheel
 
 VOLUME \
+	/app/ebooks \
 	/app/audiobooks \
-	/app/voices \
 	/app/models \
-	/app/tmp \
-	/app/ebooks
+	/app/voices \
+	/app/tmp
 
 COPY ebook2audiobook.command /app/ebook2audiobook.sh
 RUN chmod +x /app/ebook2audiobook.sh

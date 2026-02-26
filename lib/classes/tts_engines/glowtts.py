@@ -1,7 +1,7 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
-class Vits(TTSUtils, TTSRegistry, name='vits'):
+class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
 
     def __init__(self, session:DictProxy):
         try:
@@ -14,7 +14,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.resampler_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
-            self.params = {"semitones":{}, "samplerate": None}
+            self.params = {"semitones": {}, "samplerate": None}
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
@@ -72,13 +72,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 if not self._set_voice():
                     return False
-                speaker_argument = {}
-                if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
-                    if self.session['language'] in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
-                        speaker_argument = {"speaker": 'p262'}
-                elif self.session['language'] == 'cat' and 'custom/vits' in self.models['internal']['sub']:
-                    if self.session['language'] in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
-                        speaker_argument = {"speaker": '09901'}
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -96,6 +89,16 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
                             part = part[:-1]
+                        if self.session['language'] == 'bel':
+                            from phonemizer import phonemize
+                            part_phonemized = phonemize(
+                                part,
+                                backend="espeak",
+                                language="be",
+                                with_stress=True
+                            )
+                        else:
+                            part_phonemized = part
                         if self.params['current_voice'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
@@ -105,9 +108,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 self.engine.to(device)
                                 if device == devices['CPU']['proc']:
                                     self.engine.tts_to_file(
-                                        text=part,
+                                        text=part_phonemized,
                                         file_path=tmp_in_wav,
-                                        **speaker_argument
                                     )
                                 else:
                                     with torch.autocast(
@@ -115,9 +117,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                         dtype=self.amp_dtype
                                     ):
                                         self.engine.tts_to_file(
-                                            text=part,
+                                            text=part_phonemized,
                                             file_path=tmp_in_wav,
-                                            **speaker_argument
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                             if self.params['current_voice'] in self.params['semitones'].keys():
@@ -179,8 +180,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 self.engine.to(device)
                                 if device == devices['CPU']['proc']:
                                     audio_part = self.engine.tts(
-                                        text=part,
-                                        **speaker_argument
+                                        text=part_phonemized,
                                     )
                                 else:
                                     with torch.autocast(
@@ -188,8 +188,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                         dtype=self.amp_dtype
                                     ):
                                         audio_part = self.engine.tts(
-                                            text=part,
-                                            **speaker_argument
+                                            text=part_phonemized,
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
@@ -228,7 +227,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 print(error)
                 return False
         except Exception as e:
-            error = f'Vits.convert(): {e}'
+            error = f'GlowTTS.convert(): {e}'
             print(error)
             return False
 

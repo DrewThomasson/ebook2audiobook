@@ -950,6 +950,7 @@ language_mapping = {
     "bjv": {"name": "Bedjond", "native_name": "Bedjond", "max_chars": 142, "script": "latin"},
     "bep": {"name": "Behoa", "native_name": "Behoa", "max_chars": 142, "script": "latin"},
     "bkv": {"name": "Bekwarra", "native_name": "Bekwarra", "max_chars": 142, "script": "latin"},
+    "bel": {"name": "Belarusian", "native_name": "Беларуская", "max_chars": 182, "script": "cyrillic"},
     "bzj": {"name": "Belize English Creole", "native_name": "Kriol", "max_chars": 182, "script": "latin"},
     "bem": {"name": "Bemba", "native_name": "Ichibemba", "max_chars": 142, "script": "latin"},
     "bng": {"name": "Benga", "native_name": "Benga", "max_chars": 182, "script": "latin"},
