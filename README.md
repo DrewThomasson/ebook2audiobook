@@ -1,6 +1,6 @@
 # 📚 ebook2audiobook
 CPU/GPU Converter from E-Book to audiobook with chapters and metadata<br/>
-using the last TTS engines and much more.<br/>
+using advanced TTS engines and much more.<br/>
 Supports voice cloning and 1158 languages!
 > [!IMPORTANT]
 **This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
