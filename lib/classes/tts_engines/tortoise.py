@@ -14,13 +14,21 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             self.resampler_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
-            self.params = {"samplerate": None}
+            self.params = {}
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
+            iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
+            sub_dict = self.models[self.session['fine_tuned']]['sub']
+            sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+            if sub is None:
+                error = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found"
+                raise KeyError(error)
+            self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
+            self.model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
@@ -34,21 +42,9 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             if self.session['custom_model'] is not None:
                 error = f"{self.session['tts_engine']} custom model not implemented yet!"
                 raise NotImplementedError(error)
+            self.tts_key = self.model_path
             try:
-                iso_dir = default_engine_settings[self.session['tts_engine']]['languages'][self.session['language']]
-                sub_dict = self.models[self.session['fine_tuned']]['sub']
-                sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-                if sub is None:
-                    error = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found"
-                    raise KeyError(error)
-                self.params['samplerate'] = self.models[self.session['fine_tuned']]['samplerate'][sub]
-                model_path = self.models[self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
-            except Exception as e:
-                error = 'load_engine(): language/sub resolution failed'
-                raise RuntimeError(error) from e
-            self.tts_key = model_path
-            try:
-                engine = self._load_api(self.tts_key, model_path)
+                engine = self._load_api(self.tts_key, self.model_path)
             except Exception as e:
                 error = 'load_engine(): _load_api() failed'
                 raise RuntimeError(error) from e
