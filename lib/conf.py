@@ -127,6 +127,7 @@ torch_matrix = {
     # XPU
     "xpu":       {"url": default_pytorch_url, "base": "2.7.1"},
     # JETSON
+    "jetson51":  {"url": default_jetson_url, "base": "2.4.1"},
     "jetson60":  {"url": default_jetson_url, "base": "2.4.0"},
     "jetson61":  {"url": default_jetson_url, "base": "2.5.0"}
 }
