@@ -1724,7 +1724,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session["status"] = 'ready'
-                return gr.update(visible=True), gr.update(visible=False), [], 0, {}, {}
+                return gr.update(visible=False), [], 0, {}, {}
 
             def continue_blocks(blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->list[str]:
                 new_blocks = []
@@ -2268,7 +2268,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_cancel.click(
                 fn=cancel_blocks,
                 inputs=[gr_session],
-                outputs=[gr_group_main, gr_group_blocks, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
+                outputs=[r_group_blocks, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
+            ).then(
+                fn=refresh_interface,
+                inputs=[gr_session],
+                outputs=[gr_group_main, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
