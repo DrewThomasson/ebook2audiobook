@@ -2744,6 +2744,9 @@ def convert_ebook(args:dict)->tuple:
 def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
+        if session['cancellation_requested']:
+            error = 'Cancelled' if error is None else error + '. Cancelled'
+            return error, False
         if session['blocks']:
             if blocks and blocks != session['blocks']:
                 delete_proc_audio_files(session['sentences_dir'])
@@ -2754,6 +2757,9 @@ def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
             msg = f'Get sentences…'
             print(msg)
             for text in session['blocks']:
+                if session['cancellation_requested']:
+                    error = 'Cancelled' if error is None else error + '. Cancelled'
+                    return error, False
                 if text:
                     sentences_list = get_sentences(text, session_id)
                     if sentences_list is None:
