@@ -1879,10 +1879,6 @@ def convert_chapters2audio(session_id:str)->bool:
     if session and session.get('id', False):
         try:
             progress_bar = None
-            if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
-                return False
             tts_manager = TTSManager(session)
             resume_chapter = 0
             missing_chapters = []
@@ -1890,6 +1886,10 @@ def convert_chapters2audio(session_id:str)->bool:
             chapter_re = re.compile(r'^(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
             existing_chapters = [f for f in os.listdir(session['chapters_dir']) if chapter_re.match(f)]
             existing_numbers = sorted(int(chapter_re.match(f).group(1)) for f in existing_chapters)
+            if session['cancellation_requested']:
+                msg = 'Cancel requested'
+                print(msg)
+                return False
             if existing_numbers:
                 expected = set(range(0, max(existing_numbers) + 1))
                 missing_chapters = sorted(expected - set(existing_numbers))
@@ -1927,6 +1927,10 @@ def convert_chapters2audio(session_id:str)->bool:
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     idx_target = 0
                     for c in range(0, total_chapters):
+                        if session['cancellation_requested']:
+                            msg = 'Cancel requested'
+                            print(msg)
+                            return False
                         chapter_idx = c
                         sentences = session['chapters'][c]
                         start = idx_target

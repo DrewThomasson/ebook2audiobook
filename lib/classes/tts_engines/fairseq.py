@@ -33,9 +33,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
-            if self.session['cancellation_requested']:
-                error = 'Conversion cancelled'
-                raise ValueError(error)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)

@@ -47,9 +47,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
-            if self.session['cancellation_requested']:
-                error = 'Conversion cancelled'
-                raise ValueError(error)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
