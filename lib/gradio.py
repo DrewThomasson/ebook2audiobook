@@ -2270,6 +2270,10 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=[gr_group_blocks, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
             ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+            ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
                 outputs=[gr_group_main, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
