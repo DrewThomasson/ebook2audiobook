@@ -703,9 +703,9 @@ def build_interface(args:dict)->gr.Blocks:
 
                 with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
                     gr.Column(scale=1)
-                    gr_blocks_cancel = gr.Button('✖', elem_classes=['blocks-buttons'], variant='stop', scale=0, size='lg')
+                    gr_blocks_cancel = gr.Button('✖', elem_classes=['blocks-buttons'], variant='stop', scale=0, size='md')
                     gr.Column(scale=0, min_width=100)
-                    gr_blocks_continue = gr.Button('✔', elem_classes=['blocks-buttons'], variant='primary', scale=0, size='lg')
+                    gr_blocks_continue = gr.Button('✔', elem_classes=['blocks-buttons'], variant='primary', scale=0, size='md')
                     gr.Column(scale=1)
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
