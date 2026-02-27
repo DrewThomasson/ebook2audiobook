@@ -670,7 +670,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_page = gr.State(0)
             gr_blocks_data = gr.State([])
             gr_blocks_keep = gr.State({})
-            gr_blocks_text = gr.State({})
+            gr_blocks_text = gr.State({}
             gr_blocks_open = gr.State({})
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
@@ -682,6 +682,14 @@ def build_interface(args:dict)->gr.Blocks:
                     with gr.Column():
                         for i in range(start, end):
                             with gr.Accordion(f'Block {i}', open=open_map.get(i, False)) as acc:
+                                acc.expand(
+                                    lambda idx=i, m=open_map: {**m, idx: True},
+                                    outputs=gr_blocks_open
+                                )
+                                acc.collapse(
+                                    lambda idx=i, m=open_map: {**m, idx: False},
+                                    outputs=gr_blocks_open
+                                )
                                 keep = gr.Checkbox(
                                     value=keep_map.get(i, True),
                                     label='Keep block',
@@ -1726,14 +1734,13 @@ def build_interface(args:dict)->gr.Blocks:
                     )
                 return tuple(gr.update(visible=False) for _ in range(9))
 
-            def cancel_blocks(session_id:str)->tuple:
+            def cancel_blocks(session_id:str, blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->tuple:
+                new_blocks = []
+                for i, block in enumerate(blocks):
+                    new_blocks.append(text_map.get(i, block))
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session["status"] = 'ready'
-                new_blocks = []
-                for i, block in enumerate(blocks):
-                    if keep_map.get(i, True):
-                        new_blocks.append(text_map.get(i, block))
                 return gr.update(visible=False), new_blocks
 
             def continue_blocks(blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->list[str]:
