@@ -491,7 +491,7 @@ def build_interface(args:dict)->gr.Blocks:
         
         with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(604800, 86400)) as app:
             with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
-                with gr.Tabs(elem_id='gr_tabs'):
+                with gr.Tabs(elem_id='gr_tabs') as gr_tabs:
                     with gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab') as gr_tab_main:
                         with gr.Row(elem_id='gr_row_tab_main'):
                             with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
@@ -928,13 +928,19 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     visible_main = False
+                    visible_xtts = False
+                    visible_bark = False
                     if session['status'] != confirm_blocks_txt or session['cancellation_requested']:
                         visible_main = True
+                    if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                        visible_xtts = visible_gr_tab_xtts_params
+                    elif session['tts_engine'] == TTS_ENGINES['BARK']:
+                        visible_bark = visible_gr_tab_bark_params
                     return (
-                        gr.update(visible=visible_main), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
+                        gr.update(visible=visible_main), gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
                         update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
                     )
-                outputs = tuple([gr.update() for _ in range(8)])
+                outputs = tuple([gr.update() for _ in range(11)])
                 return outputs
 
             def change_gr_audiobook_list(selected:str|None, session_id:str)->dict:
@@ -2190,7 +2196,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_group_main, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+                outputs=[gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
             )
             gr_save_session.change(
                 fn=None,
@@ -2276,7 +2282,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_group_main, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+                outputs=[gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
@@ -2293,7 +2299,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_group_main, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+                outputs=[gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
             )
             ############
             app.load(
