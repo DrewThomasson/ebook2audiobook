@@ -670,7 +670,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_page = gr.State(0)
             gr_blocks_data = gr.State([])
             gr_blocks_keep = gr.State({})
-            gr_blocks_text = gr.State({}
+            gr_blocks_text = gr.State({})
             gr_blocks_open = gr.State({})
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
