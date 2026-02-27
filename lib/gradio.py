@@ -928,8 +928,8 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     return (
-                        gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), update_gr_audiobook_list(session_id), 
-                        gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
+                        gr.update(interactive=True),, gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
+                        update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
                     )
                 outputs = tuple([gr.update() for _ in range(8)])
                 return outputs
@@ -2180,7 +2180,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+                outputs=[gr_group_main, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
             )
             gr_save_session.change(
                 fn=None,
@@ -2275,7 +2275,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+                outputs=[gr_group_main, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
             )
             ############
             app.load(
