@@ -2268,7 +2268,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_cancel.click(
                 fn=cancel_blocks,
                 inputs=[gr_session],
-                outputs=[r_group_blocks, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
+                outputs=[gr_group_blocks, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
