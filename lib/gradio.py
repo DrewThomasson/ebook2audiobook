@@ -681,7 +681,7 @@ def build_interface(args:dict)->gr.Blocks:
                     end = min(start + page_size, len(blocks))
                     with gr.Column():
                         for i in range(start, end):
-                            with gr.Accordion(f'Block {i}', open=open_map.get(i, False)) as acc:
+                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', open=open_map.get(i, False)) as acc:
                                 acc.expand(
                                     lambda idx=i, m=open_map: {**m, idx: True},
                                     outputs=gr_blocks_open
@@ -691,11 +691,13 @@ def build_interface(args:dict)->gr.Blocks:
                                     outputs=gr_blocks_open
                                 )
                                 keep = gr.Checkbox(
+                                    elem_id=f'block_keep_{i}',
                                     value=keep_map.get(i, True),
                                     label='Keep block',
                                     interactive=True
                                 )
                                 txt = gr.Textbox(
+                                    elem_id=f'block_text_{i}',
                                     value=text_map.get(i, blocks[i]),
                                     lines=18,
                                     max_lines=18,
@@ -1734,7 +1736,7 @@ def build_interface(args:dict)->gr.Blocks:
                     )
                 return tuple(gr.update(visible=False) for _ in range(9))
 
-            def cancel_blocks(session_id:str, blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->tuple:
+            def cancel_blocks(session_id:str, blocks:list[str], open_map:dict[int,bool], keep_map:dict[int,bool], text_map:dict[int,str])->tuple:
                 new_blocks = []
                 for i, block in enumerate(blocks):
                     new_blocks.append(text_map.get(i, block))
@@ -2283,8 +2285,8 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_blocks_header]
             )
             gr_blocks_cancel.click(
-                fn=cancel_blocks,
-                inputs=[gr_session],
+                fn=cancel_blocks, ,
+                inputs=[gr_session, gr_blocks_data, gr_blocks_open, gr_blocks_keep, gr_blocks_text],
                 outputs=[gr_group_blocks, gr_blocks_data]
             ).then(
                 fn=enable_components,
