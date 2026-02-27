@@ -57,6 +57,7 @@ from lib import *
 context = None
 context_tracker = None
 active_sessions = None
+confirm_blocks_txt = 'confirm_blocks'
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
@@ -2712,7 +2713,7 @@ def convert_ebook(args:dict)->tuple:
                                                         session['blocks'] = get_blocks(session_id, epubBook)
                                                     if session['blocks']:
                                                         if session['chapters_preview']:
-                                                           return 'confirm_blocks', True
+                                                           return confirm_blocks_txt, True
                                                         else:
                                                             progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed

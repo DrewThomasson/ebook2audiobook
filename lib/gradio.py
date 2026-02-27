@@ -25,7 +25,6 @@ def build_interface(args:dict)->gr.Blocks:
         options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
         src_label_file = 'Upload File'
         src_label_dir = 'Select a Directory'
-        confirm_blocks = 'confirm_blocks'
         page_size = 15
         visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
@@ -640,10 +639,12 @@ def build_interface(args:dict)->gr.Blocks:
                                 elem_id='gr_bark_waveform_temp',
                                 info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                             )
+                
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                     gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
                     gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
                 gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True)
+                
                 with gr_group_audiobook_list:
                     gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                     gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
@@ -660,21 +661,14 @@ def build_interface(args:dict)->gr.Blocks:
                 with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
-            gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
-                <div style="right:0;margin:auto;padding:10px;text-align:center">
-                    <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
-                    <b>{title}</b>&nbsp;<b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
-                </div>
-                '''
-            )
-
             gr_blocks_page = gr.State(0)
             gr_blocks_data = gr.State([])
             gr_blocks_keep = gr.State({})
             gr_blocks_text = gr.State({})
             gr_blocks_open = gr.State({})
-            gr_blocks_panel = gr.Column(visible=False)
-            with gr_blocks_panel:
+
+            gr_blocks_group = gr.Group(visible=False, elem_id='gr_blocks_group', elem_classes='gr-group-main'):
+            with gr_blocks_group:
                 @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text, gr_blocks_open])
                 def render_blocks(blocks:list[str], page:int, keep_map:dict[int,bool], text_map:dict[int,str], open_map:dict[int,bool])->None:
                     start = page * page_size
@@ -704,6 +698,15 @@ def build_interface(args:dict)->gr.Blocks:
                 with gr_row_buttons:
                     gr_blocks_cancel = gr.Button('✖', variant='stop')
                     gr_blocks_continue = gr.Button('✔', variant='primary')
+
+            gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
+                <div style="right:0;margin:auto;padding:10px;text-align:center">
+                    <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
+                    <b>{title}</b>&nbsp;<b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
+                </div>
+                '''
+            )
+
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
             gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
@@ -1610,7 +1613,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         error = 'Conversion failed.'
                                 else:
-                                    if progress_status == confirm_blocks:
+                                    if progress_status == confirm_blocks_txt:
                                         session['status'] = progress_status
                                         msg = 'Select the blocks to convert'
                                         print(msg)
@@ -1690,7 +1693,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
-                if session and session['status'] == confirm_blocks:
+                if session and session['status'] == confirm_blocks_txt:
                     return (
                         gr.update(visible=True), update_blocks_header(0, session['blocks']), session['blocks'], 0, {}, {},
                         gr.update(visible=False), gr.update(visible=len(session['blocks']) > page_size)
@@ -2157,7 +2160,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=[
-                    gr_blocks_panel, gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
+                    gr_blocks_group, gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
                     gr_blocks_text, gr_blocks_prev, gr_blocks_next
                 ]
             ).then(
@@ -2245,7 +2248,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_cancel.click(
                 fn=cancel_blocks,
                 inputs=[gr_session],
-                outputs=[gr_blocks_panel, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
+                outputs=[gr_blocks_group, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
