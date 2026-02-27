@@ -682,14 +682,6 @@ def build_interface(args:dict)->gr.Blocks:
                     with gr.Column():
                         for i in range(start, end):
                             with gr.Accordion(f'Block {i}', open=open_map.get(i, False)) as acc:
-                                acc.expand(
-                                    lambda idx=i, m=open_map: {**m, idx: True},
-                                    outputs=gr_blocks_open
-                                )
-                                acc.collapse(
-                                    lambda idx=i, m=open_map: {**m, idx: False},
-                                    outputs=gr_blocks_open
-                                )
                                 keep = gr.Checkbox(
                                     value=keep_map.get(i, True),
                                     label='Keep block',
