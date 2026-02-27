@@ -928,7 +928,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     visible_main = True
-                    if session and session['status'] == confirm_blocks_txt
+                    if session and session['status'] == confirm_blocks_txt and not session['cancellation_requested']:
                         visible_main = False
                     return (
                         gr.update(visible=True), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
