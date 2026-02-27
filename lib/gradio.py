@@ -675,6 +675,34 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_open = gr.State({})
             gr_blocks_panel = gr.Column(visible=False)
             with gr_blocks_panel:
+                @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text, gr_blocks_open])
+                def render_blocks(blocks:list[str], page:int, keep_map:dict[int,bool], text_map:dict[int,str], open_map:dict[int,bool])->None:
+                    start = page * page_size
+                    end = min(start + page_size, len(blocks))
+                    with gr.Column():
+                        for i in range(start, end):
+                            with gr.Accordion(f'Block {i}', open=open_map.get(i, False)) as acc:
+                                acc.expand(
+                                    lambda idx=i, m=open_map: {**m, idx: True},
+                                    outputs=gr_blocks_open
+                                )
+                                acc.collapse(
+                                    lambda idx=i, m=open_map: {**m, idx: False},
+                                    outputs=gr_blocks_open
+                                )
+                                keep = gr.Checkbox(
+                                    value=keep_map.get(i, True),
+                                    label='Keep block',
+                                    interactive=True
+                                )
+                                txt = gr.Textbox(
+                                    value=text_map.get(i, blocks[i]),
+                                    lines=18,
+                                    max_lines=18,
+                                    show_label=False,
+                                    container=False,
+                                    interactive=True
+                                )
                 gr_blocks_nav = gr.Row(elem_id='gr_blocks_nav')
                 with gr_blocks_nav:
                     gr_blocks_prev = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
@@ -1642,35 +1670,6 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'update_gr_audiobook_list(): {e}!'
                     alert_exception(error, session_id)              
                 return gr.update()
-
-            @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text, gr_blocks_open])
-            def render_blocks(blocks:list[str], page:int, keep_map:dict[int,bool], text_map:dict[int,str], open_map:dict[int,bool])->None:
-                start = page * page_size
-                end = min(start + page_size, len(blocks))
-                with gr.Column():
-                    for i in range(start, end):
-                        with gr.Accordion(f'Block {i}', open=open_map.get(i, False)) as acc:
-                            acc.expand(
-                                lambda idx=i, m=open_map: {**m, idx: True},
-                                outputs=gr_blocks_open
-                            )
-                            acc.collapse(
-                                lambda idx=i, m=open_map: {**m, idx: False},
-                                outputs=gr_blocks_open
-                            )
-                            keep = gr.Checkbox(
-                                value=keep_map.get(i, True),
-                                label='Keep block',
-                                interactive=True
-                            )
-                            txt = gr.Textbox(
-                                value=text_map.get(i, blocks[i]),
-                                lines=18,
-                                max_lines=18,
-                                show_label=False,
-                                container=False,
-                                interactive=True
-                            )
 
             def save_page_state(blocks:list[str], page:int, keep_map:bool, text_map:str, *values):
                 start = page * page_size
