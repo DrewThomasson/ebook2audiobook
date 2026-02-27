@@ -448,6 +448,19 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
+                .blocks-buttons {
+                    display: flex !important;
+                    justify-content: space-evenly !important;
+                    margin-top: 20px !important;
+                    margin-bottom: 20px !important;
+                }
+                .blocks-buttons button {
+                    padding: 10px 20px !important;
+                    border: none !important;
+                    border-radius: 12px !important;
+                    font-size: 16px !important;
+                    cursor: pointer !important;
+                }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
                 .button-green:active, .button-red:active {
@@ -697,9 +710,9 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_row_buttons = gr.Row(elem_id='gr_row_buttons', visible=True)
                 with gr_row_buttons:
                     gr.Column(scale=1)
-                    gr_blocks_cancel = gr.Button('✖', elem_classes=['confirm-buttons'], scale=0, min_width=180)
+                    gr_blocks_cancel = gr.Button('✖', elem_classes=['blocks-buttons'], variant='stop', scale=0, min_width=180)
                     gr.Column(scale=0, min_width=100)
-                    gr_blocks_continue = gr.Button('✔', elem_classes=['confirm-buttons'], scale=0, min_width=180)
+                    gr_blocks_continue = gr.Button('✔', elem_classes=['blocks-buttons'], variant='primary', scale=0, min_width=180)
                     gr.Column(scale=1)
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
