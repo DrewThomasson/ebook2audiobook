@@ -927,6 +927,9 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
+                    visible_main = True
+                    if session and session['status'] == confirm_blocks_txt
+                        visible_main = False
                     return (
                         gr.update(visible=True), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
                         update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
