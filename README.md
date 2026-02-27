@@ -78,7 +78,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Demos](#demos)
 - [Supported Languages](#supported-languages)
 - [Minimum Requirements](#hardware-requirements)
-- [Usage](#launching-gradio-web-interface)
+- [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
     - [Basic Headless Usage](#basic--usage)
