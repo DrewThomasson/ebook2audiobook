@@ -1704,7 +1704,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session['status'] == confirm_blocks_txt:
                     return (
-                        gr.update(visible, False),
+                        gr.update(visible=False),
                         gr.update(visible=True), update_blocks_header(0, session['blocks']), session['blocks'], 0, {}, {},
                         gr.update(visible=False), gr.update(visible=len(session['blocks']) > page_size)
                     )
