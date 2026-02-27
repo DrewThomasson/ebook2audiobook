@@ -2745,7 +2745,7 @@ def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
-            error = 'Cancelled' if error is None else error + '. Cancelled'
+            error = 'Conversion ancelled'
             return error, False
         if session['blocks']:
             if blocks and blocks != session['blocks']:
@@ -2758,13 +2758,12 @@ def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
             print(msg)
             for text in session['blocks']:
                 if session['cancellation_requested']:
-                    error = 'Cancelled' if error is None else error + '. Cancelled'
+                    error = 'Conversion ancelled'
                     return error, False
                 if text:
                     sentences_list = get_sentences(text, session_id)
                     if sentences_list is None:
                         error = 'No sentences found!'
-                        print(error)
                         return error, False
                     if sentences_list:
                         chapters.append(sentences_list)
