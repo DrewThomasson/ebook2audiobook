@@ -931,7 +931,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] != confirm_blocks_txt or session['cancellation_requested']:
                         visible_main = True
                     return (
-                        gr.update(visible=True), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
+                        gr.update(visible=visible_main), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
                         update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
                     )
                 outputs = tuple([gr.update() for _ in range(8)])
