@@ -673,7 +673,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_text = gr.State({})
             gr_blocks_open = gr.State({})
 
-            with gr.Group(visible=False, elem_id='gr_blocks_group', elem_classes='gr-group-main') as gr_blocks_group:
+            with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 
                 @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text, gr_blocks_open])
                 def render_blocks(blocks:list[str], page:int, keep_map:dict[int,bool], text_map:dict[int,str], open_map:dict[int,bool])->None:
@@ -2170,7 +2170,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=[
-                    gr_blocks_group, gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
+                    gr_group_main, gr_group_blocks, gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
                     gr_blocks_text, gr_blocks_prev, gr_blocks_next
                 ]
             ).then(
@@ -2258,12 +2258,12 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_cancel.click(
                 fn=cancel_blocks,
                 inputs=[gr_session],
-                outputs=[gr_group_main, gr_blocks_group, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
+                outputs=[gr_group_main, gr_group_blocks, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
                 inputs=[gr_blocks_data, gr_blocks_keep, gr_blocks_text],
-                outputs=[gr_group_main, gr_blocks_group, gr_blocks_data]
+                outputs=[gr_group_main, gr_group_blocks, gr_blocks_data]
             ).then(
                 fn=finalize_audiobook,
                 inputs=[gr_session, gr_blocks_data],
