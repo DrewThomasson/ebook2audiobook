@@ -2561,7 +2561,7 @@ def convert_ebook(args:dict)->tuple:
                 session['bark_text_temp'] =  float(args['bark_text_temp'])
                 session['bark_waveform_temp'] =  float(args['bark_waveform_temp'])
                 session['audiobooks_dir'] = str(args['audiobooks_dir']) if args['audiobooks_dir'] else None
-                session['output_dir'] = str(args['output_dir']) if args['output_dir'] else None
+                session['output_dir'] = str(args['output_dir']) if args['output_dir'] is not None else None
                 session['output_format'] = str(args['output_format'])
                 session['output_channel'] = str(args['output_channel'])
                 session['output_split'] = bool(args['output_split'])
