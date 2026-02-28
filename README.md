@@ -14,7 +14,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ### Run locally
 
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#launching-gradio-web-interface)
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
 
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
 
@@ -78,7 +78,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Demos](#demos)
 - [Supported Languages](#supported-languages)
 - [Minimum Requirements](#hardware-requirements)
-- [Usage](#launching-gradio-web-interface)
+- [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
     - [Basic Headless Usage](#basic--usage)
@@ -94,7 +94,6 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
-- [Updating to Latest Version](#updating-to-latest-version)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
