@@ -2537,7 +2537,6 @@ def convert_ebook(args:dict)->tuple:
                         error = 'convert_ebook() error: Session initialization failed!'
                         print(error)
                         return error, False
-                session['output_dir'] = args['output_dir'] if args['output_dir'] else None
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
@@ -2562,6 +2561,7 @@ def convert_ebook(args:dict)->tuple:
                 session['bark_text_temp'] =  float(args['bark_text_temp'])
                 session['bark_waveform_temp'] =  float(args['bark_waveform_temp'])
                 session['audiobooks_dir'] = str(args['audiobooks_dir']) if args['audiobooks_dir'] else None
+                session['output_dir'] = args['output_dir'] if args['output_dir'] else None
                 session['output_format'] = str(args['output_format'])
                 session['output_channel'] = str(args['output_channel'])
                 session['output_split'] = bool(args['output_split'])
