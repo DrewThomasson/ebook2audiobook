@@ -2562,7 +2562,6 @@ def convert_ebook(args:dict)->tuple:
                 session['bark_text_temp'] =  float(args['bark_text_temp'])
                 session['bark_waveform_temp'] =  float(args['bark_waveform_temp'])
                 session['audiobooks_dir'] = str(args['audiobooks_dir']) if args['audiobooks_dir'] else None
-                session['output_dir'] = str(args['output_dir']) if args['output_dir'] is not None else None
                 session['output_format'] = str(args['output_format'])
                 session['output_channel'] = str(args['output_channel'])
                 session['output_split'] = bool(args['output_split'])
@@ -2572,6 +2571,7 @@ def convert_ebook(args:dict)->tuple:
                 if not session['is_gui_process']:
                     session['system'] = sys.platform
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
+                    session['output_dir'] = str(args['output_dir']) if args['output_dir'] is not None else None
                     session['audiobooks_dir'] = os.path.abspath(session['output_dir']) if session['output_dir'] is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                     os.makedirs(session['voice_dir'], exist_ok=True)
