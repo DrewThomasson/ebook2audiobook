@@ -191,7 +191,8 @@ class SessionContext:
                 "Source": None,
                 "Modified": None,
             },
-            "blocks": [],
+            "blocks_orig": [],
+            "blocks_current": [],
             "chapters": [],
             "cover": None,
             "duration": 0,
@@ -522,7 +523,7 @@ def save_json_blocks(session_id:str, filepath:str)->bool:
             print(f"save_json_blocks error: session not found ({session_id})")
             return False
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(session['blocks'], f, ensure_ascii=False, indent=2)
+            json.dump(session['blocks_current'], f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
         print(f"save_json_blocks() error: {e}")
@@ -2536,6 +2537,7 @@ def convert_ebook(args:dict)->tuple:
                         error = 'convert_ebook() error: Session initialization failed!'
                         print(error)
                         return error, False
+                session['output_dir'] = args['output_dir'] if args['output_dir'] else None
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
@@ -2569,6 +2571,7 @@ def convert_ebook(args:dict)->tuple:
                 if not session['is_gui_process']:
                     session['system'] = sys.platform
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
+                    session['audiobooks_dir'] = os.path.abspath(session['output_dir']) if session['output_dir'] is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                     os.makedirs(session['voice_dir'], exist_ok=True)
                     if session['custom_model'] is not None:
@@ -2670,7 +2673,7 @@ def convert_ebook(args:dict)->tuple:
                                 checksum, error = compare_checksums(session['ebook'], checksum_path)
                                 if error is None:
                                     if not checksum:
-                                        session['blocks'] = []
+                                        session['blocks_current'] = []
                                         session['chapters'] = []
                                         result_epub = convert2epub(session_id)
                                         if not result_epub:
@@ -2678,7 +2681,7 @@ def convert_ebook(args:dict)->tuple:
                                     else:
                                         json_blocks_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
                                         if os.path.exists(json_blocks_file):
-                                            session['blocks'] = load_json_blocks(json_blocks_file)
+                                            session['blocks_orig'] = load_json_blocks(json_blocks_file)
                                         else:
                                             checksum = False
                                     if error is None:
@@ -2714,15 +2717,15 @@ def convert_ebook(args:dict)->tuple:
                                                 session['cover'] = get_cover(epubBook, session_id)
                                                 if session['cover']:
                                                     if not checksum:
-                                                        session['blocks'] = get_blocks(session_id, epubBook)
-                                                    if session['blocks']:
+                                                        session['blocks_orig'] = get_blocks(session_id, epubBook)
+                                                    if session['blocks_orig']:
                                                         if session['chapters_preview']:
                                                            return confirm_blocks_txt, True
                                                         else:
                                                             progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
                                                     else:
-                                                        error = f"get_blocks() failed! {session['blocks']}"
+                                                        error = f"get_blocks() failed! {session['blocks_orig']}"
                                                 else:
                                                     error = 'get_cover() failed!'
                                             else:
@@ -2751,16 +2754,16 @@ def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
         if session['cancellation_requested']:
             error = 'Conversion ancelled'
             return error, False
-        if session['blocks']:
-            if blocks and blocks != session['blocks']:
+        if session['blocks_current']:
+            if blocks and blocks != session['blocks_current']:
                 delete_proc_audio_files(session['sentences_dir'])
                 delete_proc_audio_files(session['chapters_dir'])
-                json_blocks = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                save_json_blocks(session_id, json_blocks)
+                json_blocks_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+                save_json_blocks(session_id, json_blocks_file)
             chapters = []
             msg = f'Get sentences…'
             print(msg)
-            for text in session['blocks']:
+            for text in session['blocks_current']:
                 if session['cancellation_requested']:
                     error = 'Conversion ancelled'
                     return error, False

@@ -668,14 +668,14 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
             gr_blocks_page = gr.State(0)
-            gr_blocks_data = gr.State([])
-            gr_blocks_keep = gr.State({})
-            gr_blocks_text = gr.State({})
-            gr_blocks_open = gr.State({})
+            gr_blocks_expand = gr.State({})
+            gr_blocks_keep_checked = gr.State({})
+            gr_blocks_text_orig = gr.State([])
+            gr_blocks_text_current = gr.State({})
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 
-                @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text, gr_blocks_open])
+                @gr.render(inputs=[gr_blocks_text_orig, gr_blocks_page, gr_blocks_keep_checked, gr_blocks_text_current, gr_blocks_expand])
                 def render_blocks(blocks:list[str], page:int, keep_map:dict[int,bool], text_map:dict[int,str], open_map:dict[int,bool])->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
@@ -684,11 +684,11 @@ def build_interface(args:dict)->gr.Blocks:
                             with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', open=open_map.get(i, False)) as acc:
                                 acc.expand(
                                     lambda idx=i, m=open_map: {**m, idx: True},
-                                    outputs=gr_blocks_open
+                                    outputs=gr_blocks_expand
                                 )
                                 acc.collapse(
                                     lambda idx=i, m=open_map: {**m, idx: False},
-                                    outputs=gr_blocks_open
+                                    outputs=gr_blocks_expand
                                 )
                                 keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
@@ -1731,8 +1731,8 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_blocks = False
                     return (
                         gr.update(visible=visible_main),
-                        gr.update(visible=visible_blocks), update_blocks_header(0, session['blocks']), session['blocks'], 0, {}, {},
-                        gr.update(visible=False), gr.update(visible=len(session['blocks']) > page_size)
+                        gr.update(visible=visible_blocks), update_blocks_header(0, session['blocks_current']), session['blocks_current'], 0, {}, {},
+                        gr.update(visible=False), gr.update(visible=len(session['blocks_current']) > page_size)
                     )
                 return tuple(gr.update(visible=False) for _ in range(9))
 
@@ -2199,8 +2199,8 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=[
-                    gr_group_main, gr_group_blocks, gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
-                    gr_blocks_text, gr_blocks_prev, gr_blocks_next
+                    gr_group_main, gr_group_blocks, gr_blocks_header, gr_blocks_text_orig, gr_blocks_page, gr_blocks_keep_checked,
+                    gr_blocks_text_current, gr_blocks_prev, gr_blocks_next
                 ]
             ).then(
                 fn=enable_components,
@@ -2272,22 +2272,22 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_blocks_page, gr_blocks_prev, gr_blocks_next]
             ).then(
                 fn=update_blocks_header,
-                inputs=[gr_blocks_page, gr_blocks_data],
+                inputs=[gr_blocks_page, gr_blocks_text_orig],
                 outputs=[gr_blocks_header]
             )
             gr_blocks_next.click(
                 fn=next_page,
-                inputs=[gr_blocks_page,gr_blocks_data],
+                inputs=[gr_blocks_page,gr_blocks_text_orig],
                 outputs=[gr_blocks_page, gr_blocks_next, gr_blocks_prev]
             ).then(
                 fn=update_blocks_header,
-                inputs=[gr_blocks_page, gr_blocks_data],
+                inputs=[gr_blocks_page, gr_blocks_text_orig],
                 outputs=[gr_blocks_header]
             )
             gr_blocks_cancel.click(
-                fn=cancel_blocks, ,
-                inputs=[gr_session, gr_blocks_data, gr_blocks_open, gr_blocks_keep, gr_blocks_text],
-                outputs=[gr_group_blocks, gr_blocks_data]
+                fn=cancel_blocks,
+                inputs=[gr_session, gr_blocks_text_orig, gr_blocks_expand, gr_blocks_keep_checked, gr_blocks_text_current],
+                outputs=[gr_group_blocks, gr_blocks_text_orig]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
@@ -2299,11 +2299,11 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
-                inputs=[gr_blocks_data, gr_blocks_keep, gr_blocks_text],
-                outputs=[gr_group_main, gr_group_blocks, gr_blocks_data]
+                inputs=[gr_blocks_text_orig, gr_blocks_keep_checked, gr_blocks_text_current],
+                outputs=[gr_group_main, gr_group_blocks, gr_blocks_text_orig]
             ).then(
                 fn=finalize_audiobook,
-                inputs=[gr_session, gr_blocks_data],
+                inputs=[gr_session, gr_blocks_text_orig],
                 outputs=[gr_progress]
             ).then(
                 fn=enable_components,
