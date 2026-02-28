@@ -2637,10 +2637,14 @@ def convert_ebook(args:dict)->tuple:
                                 if session['free_vram_gb'] > 4.0:
                                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                                         os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
-                            if session['device'] == devices['CUDA']['proc'] or session['device'] == devices['JETSON']['proc']:
+                            if session['device'] == devices['CUDA']['proc']:
                                 if not devices['CUDA']['found']:
                                     session['device'] = devices['CPU']['proc']
                                     msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
+                                if not devices['JETSON']['found']:
+                                    session['device'] = devices['CPU']['proc']
+                                    msg += f'JETSON CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
                             elif session['device'] == devices['MPS']['proc']:
                                 if not devices['MPS']['found']:
                                     session['device'] = devices['CPU']['proc']
