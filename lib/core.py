@@ -169,6 +169,7 @@ class SessionContext:
             "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
             "final_name": None,
+            "output_dir": None,
             "output_format": default_output_format,
             "output_channel": default_output_channel,
             "output_split": default_output_split,
