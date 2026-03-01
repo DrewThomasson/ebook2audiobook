@@ -193,7 +193,7 @@ class SessionContext:
                 "Modified": None,
             },
             "blocks_orig": [],
-            "blocks_current": [],
+            "blocks_orig": [],
             "chapters": [],
             "cover": None,
             "duration": 0,
@@ -524,7 +524,7 @@ def save_json_blocks(session_id:str, filepath:str)->bool:
             print(f"save_json_blocks error: session not found ({session_id})")
             return False
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(session['blocks_current'], f, ensure_ascii=False, indent=2)
+            json.dump(session['blocks_orig'], f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
         print(f"save_json_blocks() error: {e}")
@@ -2678,7 +2678,7 @@ def convert_ebook(args:dict)->tuple:
                                 checksum, error = compare_checksums(session['ebook'], checksum_path)
                                 if error is None:
                                     if not checksum:
-                                        session['blocks_current'] = []
+                                        session['blocks_orig'] = []
                                         session['chapters'] = []
                                         result_epub = convert2epub(session_id)
                                         if not result_epub:
@@ -2727,7 +2727,6 @@ def convert_ebook(args:dict)->tuple:
                                                         if session['chapters_preview']:
                                                             return confirm_blocks_txt, True
                                                         else:
-                                                            return 'ok', False
                                                             progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
                                                     else:
@@ -2758,10 +2757,10 @@ def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
-            error = 'Conversion ancelled'
+            error = 'Conversion cancelled'
             return error, False
-        if session['blocks_current']:
-            if blocks and blocks != session['blocks_current']:
+        if session['blocks_orig']:
+            if blocks and blocks != session['blocks_orig']:
                 delete_proc_audio_files(session['sentences_dir'])
                 delete_proc_audio_files(session['chapters_dir'])
                 json_blocks_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
@@ -2769,9 +2768,9 @@ def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
             chapters = []
             msg = f'Get sentences…'
             print(msg)
-            for text in session['blocks_current']:
+            for text in session['blocks_orig']:
                 if session['cancellation_requested']:
-                    error = 'Conversion ancelled'
+                    error = 'Conversion cancelled'
                     return error, False
                 if text:
                     sentences_list = get_sentences(text, session_id)
