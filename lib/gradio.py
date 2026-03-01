@@ -1719,6 +1719,7 @@ def build_interface(args:dict)->gr.Blocks:
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session['status'] == confirm_blocks_txt:
+                    print(session['blocks_edit'])
                     visible_main = False
                     visible_blocks = True
                     if session['cancellation_requested']:
