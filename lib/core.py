@@ -2727,10 +2727,10 @@ def convert_ebook(args:dict)->tuple:
                                                 if session['cover']:
                                                     if not checksum:
                                                         session['blocks_orig'] = get_blocks(session_id, epubBook)
-                                                        if session['block_orig']:
-                                                            save_json_blocks(session_id, json_blocks_orig_file, 'block_orig')
+                                                        if session['blocks_orig']:
+                                                            save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
                                                             save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
-                                                            session['blocks_edit'] = copy.deepcopy(session['block_orig'])
+                                                            session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
                                                     if session['blocks_orig'] and session['blocks_edit']: 
                                                         if session['chapters_preview']:
                                                             return confirm_blocks_txt, True
