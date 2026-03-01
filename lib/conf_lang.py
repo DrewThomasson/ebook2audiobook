@@ -28,9 +28,7 @@ ebook2audiobook.cmd --help
 python app.py --help
 '''
 session_info = 'In headless mode, store it in case of interruption, crash, or reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option.'
-
 default_language_code = 'eng' # ISO-639-3
-
 year_to_decades_languages = ['eng', 'deu', 'nld', 'nob', 'dan', 'swe']
 
 punctuation_switch = {
