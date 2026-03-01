@@ -1,5 +1,9 @@
+import warnings
+
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+
+warnings.filterwarnings('ignore', message='Could not initialize NNPACK')
 
 class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
 

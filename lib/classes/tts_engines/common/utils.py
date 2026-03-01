@@ -1,4 +1,4 @@
-import os, threading, gc, shutil, tempfile, warnings, regex as re
+import os, threading, gc, shutil, tempfile, regex as re
 
 from typing import Any, Union, Dict, TYPE_CHECKING
 from pathlib import Path
@@ -6,8 +6,6 @@ from pathlib import Path
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
 from lib import *
-
-warnings.filterwarnings('ignore', message='Could not initialize NNPACK')
 
 _lock = threading.Lock()
 
