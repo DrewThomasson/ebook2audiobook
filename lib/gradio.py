@@ -1731,8 +1731,8 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_blocks = False
                     return (
                         gr.update(visible=visible_main),
-                        gr.update(visible=visible_blocks), update_blocks_header(0, session['blocks_current']), session['blocks_current'], 0, {}, {},
-                        gr.update(visible=False), gr.update(visible=len(session['blocks_current']) > page_size)
+                        gr.update(visible=visible_blocks), update_blocks_header(0, session['blocks_orig']), session['blocks_orig'], 0, {}, {},
+                        gr.update(visible=False), gr.update(visible=len(session['blocks_orig']) > page_size)
                     )
                 return tuple(gr.update(visible=False) for _ in range(9))
 
