@@ -785,7 +785,6 @@ function build_docker_image {
 		return 1
 	fi
 	local cmd_options=""
-	local cmd_extra=""
 	local py_vers="$PYTHON_VERSION"
 	case "$DEVICE_TAG" in
 		cpu)		cmd_options="";;
@@ -793,8 +792,6 @@ function build_docker_image {
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
 		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="3.10" ;;
 		xpu)		cmd_options="--device=/dev/dri" ;;
-		mps)		cmd_options="" ;;
-		*)			cmd_options="" ;;
 	esac
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${DEVICE_TAG}"
@@ -831,6 +828,12 @@ function build_docker_image {
 		PODMAN_BUILD_ARGS_STR=$(printf ' %q' "${PODMAN_BUILD_ARGS[@]}")
 		export PODMAN_BUILD_ARGS="$PODMAN_BUILD_ARGS_STR"
 		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose -f podman-compose.yml build || return 1
+		echo "Docker image ready! to run your docker: "
+		echo "Podman Compose:"
+		echo "	GUI mode:"
+		echo "		DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up"
+		echo "	Headless mode:"
+		echo "  	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	elif [[ "$DOCKER_MODE" == "compose" ]]; then
 		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
@@ -846,6 +849,12 @@ function build_docker_image {
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
+		echo "Docker image ready! to run your docker: "
+		echo "Docker Compose:"
+		echo "	GUI mode:"
+		echo "		DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
+		echo "	Headless mode:"
+		echo "  	DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	else
 		echo "--> Using docker build"
 		docker buildx build \
@@ -860,25 +869,12 @@ function build_docker_image {
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
+		echo "Docker image ready! to run your docker: "
+		echo "	GUI mode:"
+		echo "		docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME"
+		echo "	Headless mode:"
+		echo "		docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	fi
-	if [[ -n "$cmd_options" ]]; then
-		cmd_extra="$cmd_options "
-	fi
-	echo "Docker image ready! to run your docker: "
-	echo "	GUI mode:"
-	echo "		docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" ${cmd_extra}--rm -it -p 7860:7860 $DOCKER_IMG_NAME"
-	echo "	Headless mode:"
-	echo "		docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_extra}--rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
-	echo "Docker Compose:"
-	echo "	GUI mode:"
-	echo "		DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
-	echo "	Headless mode:"
-	echo "  	DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
-	echo "Podman Compose:"
-	echo "	GUI mode:"
-	echo "		DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up"
-	echo "	Headless mode:"
-	echo "  	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 }
 
 ######################################## END of functions
