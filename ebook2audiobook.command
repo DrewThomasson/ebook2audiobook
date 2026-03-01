@@ -629,7 +629,7 @@ function check_conda {
 			MODEL="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
 			if [[ "$MODEL" == *jetson* ]]; then
 				# needed gfortran to compile pip scipy pkg
-				sudo apt-get install gfortran
+				conda install -c conda-forge gfortran
 				PYTHON_VERSION="3.10"
 			fi
 		else
