@@ -2727,6 +2727,7 @@ def convert_ebook(args:dict)->tuple:
                                                         if session['chapters_preview']:
                                                             return confirm_blocks_txt, True
                                                         else:
+                                                            return 'ok', False
                                                             progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
                                                     else:
