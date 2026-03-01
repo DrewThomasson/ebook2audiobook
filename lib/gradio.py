@@ -675,18 +675,18 @@ def build_interface(args:dict)->gr.Blocks:
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 
                 @gr.render(inputs=[gr_blocks_page, gr_blocks_expand, gr_blocks_keep_checked, gr_blocks_edit])
-                def render_blocks(page:int, open_map:dict[int,bool], keep_map:dict[int,bool], blocks:list[str])->None:
+                def render_blocks(page:int, expand:dict[int,bool], keep_map:dict[int,bool], blocks:list[str])->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
                     with gr.Column():
                         for i in range(start, end):
-                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', open=open_map.get(i, False)) as acc:
+                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', open=expand.get(i, False)) as acc:
                                 acc.expand(
-                                    lambda idx=i, m=open_map: {**m, idx: True},
+                                    lambda idx=i, m=expand: {**m, idx: True},
                                     outputs=gr_blocks_expand
                                 )
                                 acc.collapse(
-                                    lambda idx=i, m=open_map: {**m, idx: False},
+                                    lambda idx=i, m=expand: {**m, idx: False},
                                     outputs=gr_blocks_expand
                                 )
                                 keep = gr.Checkbox(
