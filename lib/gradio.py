@@ -1711,9 +1711,9 @@ def build_interface(args:dict)->gr.Blocks:
                 new_page = min(page + 1, max_page)
                 return new_page, gr.update(visible=new_page < max_page), gr.update(visible=True)
 
-            def update_blocks_header(page:int, blocks:list[str])->str:
+            def update_blocks_header(page:int, len_blocks:int)->str:
                 start = page * page_size
-                end = min(start + page_size, len(blocks))
+                end = min(start + page_size, len_blocks)
                 if not blocks:
                     return ''
                 return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks) - 1}')
@@ -1730,7 +1730,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_blocks = False
                     return (
                         gr.update(visible=visible_main),
-                        gr.update(visible=visible_blocks), update_blocks_header(0, session['blocks_orig']), session['blocks_orig'], 0, {}, {},
+                        gr.update(visible=visible_blocks), update_blocks_header(0, len(session['blocks_edit'])), session['blocks_edit'], 0, {}, {},
                         gr.update(visible=False), gr.update(visible=len(session['blocks_orig']) > page_size)
                     )
                 return tuple(gr.update(visible=False) for _ in range(9))
