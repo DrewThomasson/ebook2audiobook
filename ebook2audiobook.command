@@ -112,8 +112,12 @@ fi
 
 if [[ -n "${arguments[docker_mode]+exists}" ]]; then
 	DOCKER_MODE="${arguments[docker_mode]}"
-	if [[ "$DOCKER_MODE" == "true" ]]; then
-		echo "Error: --docker_mode has no value!"
+	if [[ "$DOCKER_MODE" != "podman" || "$DOCKER_MODE" != "compose" ]]; then
+		if [[ "$DOCKER_MODE" == "true"]]; then
+			echo "Error: --docker_mode has no value!"
+		else
+			echo "Error: --docker_mode accepts only podman or compose as value"
+		fi
 		exit 1
 	fi
 fi
@@ -799,13 +803,18 @@ function build_docker_image {
 		*)         COMPOSE_PROFILES=gpu ;;
 	esac
 	export COMPOSE_PROFILES
-	if command -v podman-compose >/dev/null 2>&1; then
-		if command -v podman-compose >/dev/null 2>&1; then
-			if ! podman-compose -f podman-compose.yml config >/dev/null 2>&1; then
-				echo "ERROR: podman-compose.yml is not valid"
-				return 1
-			fi
+	if [[ "$DOCKER_MODE" == "podman" ]]; then
+		if ! command -v podman-compose &>/dev/null || ! podman-compose -f podman-compose.yml config &>/dev/null; then
+			echo "ERROR: podman-compose.yml is not valid"
+			return 1
 		fi
+	elif [[ "$DOCKER_MODE" == "compose" ]]; then
+		if ! docker compose config --services 2>/dev/null | grep -q .; then
+			echo "ERROR: docker compose found no services or yml file is not valid."
+			return 1
+		fi
+	fi
+	if [[ "$DOCKER_MODE" == "podman" ]]; then
 		echo "--> Using podman-compose"
 		export PODMAN_BUILD_ARGS=(
 			--format docker
@@ -822,11 +831,7 @@ function build_docker_image {
 		PODMAN_BUILD_ARGS_STR=$(printf ' %q' "${PODMAN_BUILD_ARGS[@]}")
 		export PODMAN_BUILD_ARGS="$PODMAN_BUILD_ARGS_STR"
 		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose -f podman-compose.yml build || return 1
-	elif docker compose version >/dev/null 2>&1; then
-		if ! docker compose config --services | grep -q .; then
-			echo "ERROR: docker compose found no services or yml file is not valid."
-			return 1
-		fi
+	elif [[ "$DOCKER_MODE" == "compose" ]]; then
 		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
 			-f docker-compose.yml \

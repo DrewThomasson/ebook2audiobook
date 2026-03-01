@@ -161,9 +161,15 @@ if defined arguments.docker_device (
 	set "DOCKER_DEVICE_STR=%arguments.docker_device%"
 )
 if defined arguments.docker_mode(
-    if /i "%arguments.docker_mode%"=="true" (
-        echo Error: --docker_mode has no value
-        goto :failed
+    if /i "%arguments.docker_mode%"!="podman" (
+		if /i "%arguments.docker_mode%"!="compose" (
+			if /i "%arguments.docker_mode%"=="true" (
+				echo Error: --docker_mode has no value
+			) else (
+				echo Error: --docker_mode accepts only podman or compose as value
+			)
+			goto :failed
+		)
     )
 	set "DOCKER_MODE=%arguments.docker_mode%"
 )
@@ -664,8 +670,6 @@ setlocal
 set "ARG=%~1"
 set "ARG_ESCAPED=%ARG:"=\"%"
 set "wsl_cmd="
-set "HAS_PODMAN_COMPOSE=1"
-set "HAS_COMPOSE=1"
 if "%DOCKER_MODE%"=="podman" (
 	where.exe podman-compose >nul 2>&1
 	if errorlevel 1 (
@@ -673,7 +677,6 @@ if "%DOCKER_MODE%"=="podman" (
 		endlocal 
 		exit /b 1
 	)
-	set "HAS_PODMAN_COMPOSE=0"
 )
 if "%DOCKER_MODE%"=="compose" (
 	if "%DOCKER_DESKTOP%"=="1" (
@@ -686,7 +689,6 @@ if "%DOCKER_MODE%"=="compose" (
 		endlocal 
 		exit /b 1
 	)
-	set "HAS_COMPOSE=0"
 )
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
@@ -720,7 +722,7 @@ if "%DOCKER_DESKTOP%"=="1" (
 )
 call :get_iso3_lang "%OS_LANG%"
 set "ISO3_LANG=!ISO3_LANG!"
-if "%HAS_PODMAN_COMPOSE%"=="0" (
+if "%DOCKER_MODE%"=="podman" (
     echo Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg PYTHON_VERSION=%py_vers%"
@@ -732,7 +734,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
     cd /d "%SAFE_SCRIPT_DIR%"
     podman-compose -f podman-compose.yml build
-) else if "%HAS_COMPOSE%"=="0" (
+) else if "%DOCKER_MODE%"=="compose" (
     echo Using docker compose
     if "%DOCKER_DESKTOP%"=="1" (
         docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
