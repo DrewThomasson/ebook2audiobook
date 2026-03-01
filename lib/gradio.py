@@ -1735,20 +1735,20 @@ def build_interface(args:dict)->gr.Blocks:
                     )
                 return tuple(gr.update(visible=False) for _ in range(9))
 
-            def cancel_blocks(session_id:str, blocks:list[str], open_map:dict[int,bool], keep_map:dict[int,bool], text_map:dict[int,str])->tuple:
+            def cancel_blocks(session_id:str, blocks:list[str], open_map:dict[int,bool], keep_map:dict[int,bool])->tuple:
                 new_blocks = []
                 for i, block in enumerate(blocks):
-                    new_blocks.append(text_map.get(i, block))
+                    new_blocks.append(blocks.get(i, block))
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session["status"] = 'ready'
                 return gr.update(visible=False), new_blocks
 
-            def continue_blocks(blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->list[str]:
+            def continue_blocks(blocks:list[str], keep_map:dict[int,bool])->list[str]:
                 new_blocks = []
                 for i, block in enumerate(blocks):
                     if keep_map.get(i, True):
-                        new_blocks.append(text_map.get(i, block))
+                        new_blocks.append(blocks.get(i, block))
                 return gr.update(visible=True), gr.update(visible=False), new_blocks
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
@@ -2285,7 +2285,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_cancel.click(
                 fn=cancel_blocks,
-                inputs=[gr_session, gr_blocks_edit, gr_blocks_expand, gr_blocks_keep_checked, gr_blocks_text_current],
+                inputs=[gr_session, gr_blocks_edit, gr_blocks_expand, gr_blocks_keep_checked],
                 outputs=[gr_group_blocks, gr_blocks_edit]
             ).then(
                 fn=enable_components,
@@ -2298,7 +2298,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
-                inputs=[gr_blocks_edit, gr_blocks_keep_checked, gr_blocks_text_current],
+                inputs=[gr_blocks_edit, gr_blocks_keep_checked],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
             ).then(
                 fn=finalize_audiobook,
