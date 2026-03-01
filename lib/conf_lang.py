@@ -27,7 +27,7 @@ ebook2audiobook.cmd --help
 # or if conda ./python_env activated:
 python app.py --help
 '''
-session_info = 'In headless mode, store it in case of interruption, crash, or reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option.'
+session_info = 'In headless mode, store it in case of interruption, crash, or reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option.\n********************************************************************'
 default_language_code = 'eng' # ISO-639-3
 year_to_decades_languages = ['eng', 'deu', 'nld', 'nob', 'dan', 'swe']
 
