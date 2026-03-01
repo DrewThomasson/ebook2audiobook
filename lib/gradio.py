@@ -1729,8 +1729,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_main = True
                         visible_blocks = False
                     return (
-                        gr.update(visible=visible_main),
-                        gr.update(visible=visible_blocks), update_blocks_header(0, len(session['blocks_edit'])), session['blocks_edit'], 0, {}, {},
+                        gr.update(visible=visible_main), gr.update(visible=visible_blocks), update_blocks_header(0, len(session['blocks_edit'])), session['blocks_edit'], 0, {}, {},
                         gr.update(visible=False), gr.update(visible=len(session['blocks_orig']) > page_size)
                     )
                 return tuple(gr.update(visible=False) for _ in range(9))
@@ -2198,8 +2197,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=[
-                    gr_group_main, gr_group_blocks, gr_blocks_header, gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked,
-                    gr_blocks_text_current, gr_blocks_prev, gr_blocks_next
+                    gr_group_main, gr_group_blocks, gr_blocks_header, gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked, gr_blocks_prev, gr_blocks_next
                 ]
             ).then(
                 fn=enable_components,
