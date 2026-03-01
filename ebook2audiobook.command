@@ -48,6 +48,7 @@ OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "xcb-util-cursor" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
 DOCKER_PROGRAMS=("ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_DEVICE_STR=""
+DOCKER_MODE=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
 DEVICE_INFO_STR=""
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
@@ -109,6 +110,14 @@ if [[ -n "${arguments[docker_device]+exists}" ]]; then
 	fi
 fi
 
+if [[ -n "${arguments[docker_mode]+exists}" ]]; then
+	DOCKER_MODE="${arguments[docker_mode]}"
+	if [[ "$DOCKER_MODE" == "true" ]]; then
+		echo "Error: --docker_mode has no value!"
+		exit 1
+	fi
+fi
+
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "true" || -z "${arguments[script_mode]}" ]]; then
 		echo "Error: --script_mode requires a value"
@@ -117,14 +126,14 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 
 	if [[ -n "${ZSH_VERSION:-}" ]]; then
 		for key in ${(k)arguments}; do
-			if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
 				echo "Error: when --script_mode is used, only --docker_device is allowed. Invalid: --$key"
 				exit 1
 			fi
 		done
 	else
 		for key in "${!arguments[@]}"; do
-			if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
 				echo "Error: when --script_mode is used, only --docker_device is allowed. Invalid: --$key"
 				exit 1
 			fi

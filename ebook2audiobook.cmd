@@ -68,6 +68,7 @@ set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-insta
 set "DOCKER_WSL_CONTAINER=Debian"
 set "DOCKER_FIX_SCRIPT=dpf.ps1"
 set "DOCKER_DEVICE_STR="
+set "DOCKER_MODE="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
 set "DEVICE_INFO_STR="
 set "TMP=%SAFE_SCRIPT_DIR%\tmp"
@@ -153,11 +154,18 @@ if defined arguments.script_mode (
     )
 )
 if defined arguments.docker_device (
-    set "DOCKER_DEVICE_STR=%arguments.docker_device%"
     if /i "%arguments.docker_device%"=="true" (
         echo Error: --docker_device has no value
         goto :failed
     )
+	set "DOCKER_DEVICE_STR=%arguments.docker_device%"
+)
+if defined arguments.docker_mode(
+    if /i "%arguments.docker_mode%"=="true" (
+        echo Error: --docker_mode has no value
+        goto :failed
+    )
+	set "DOCKER_MODE=%arguments.docker_mode%"
 )
 if defined arguments.script_mode (
     if /I "%arguments.script_mode%"=="true" (
@@ -167,12 +175,13 @@ if defined arguments.script_mode (
 	for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
 		set "argname=%%A"
 		call set "argname=%%argname:arguments.=%%"
-
 		if not "%argname%"=="" (
 			if /I not "%argname%"=="script_mode" (
 				if /I not "%argname%"=="docker_device" (
-					echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
-					goto :failed
+					if /I not "%argname%"=="docker_mode" (
+						echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
+						goto :failed
+					)
 				)
 			)
 		)
@@ -655,14 +664,29 @@ setlocal
 set "ARG=%~1"
 set "ARG_ESCAPED=%ARG:"=\"%"
 set "wsl_cmd="
-where.exe podman-compose >nul 2>&1
-set "HAS_PODMAN_COMPOSE=%errorlevel%"
-if "%DOCKER_DESKTOP%"=="1" (
-    docker compose version >nul 2>&1
-    set "HAS_COMPOSE=%errorlevel%"
-) else (
-    wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker compose version >nul 2>&1
-    set "HAS_COMPOSE=%errorlevel%"
+set "HAS_PODMAN_COMPOSE=1"
+set "HAS_COMPOSE=1"
+if "%DOCKER_MODE%"=="podman" (
+	where.exe podman-compose >nul 2>&1
+	if errorlevel 1 (
+		echo podman-compose is not installed.
+		endlocal 
+		exit /b 1
+	)
+	set "HAS_PODMAN_COMPOSE=0"
+)
+if "%DOCKER_MODE%"=="compose" (
+	if "%DOCKER_DESKTOP%"=="1" (
+		docker compose version >nul 2>&1
+	) else (
+		wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker compose version >nul 2>&1
+	)
+	if errorlevel 1 (
+		echo docker compose is not installed.
+		endlocal 
+		exit /b 1
+	)
+	set "HAS_COMPOSE=0"
 )
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
@@ -709,7 +733,7 @@ if "%HAS_PODMAN_COMPOSE%"=="0" (
     cd /d "%SAFE_SCRIPT_DIR%"
     podman-compose -f podman-compose.yml build
 ) else if "%HAS_COMPOSE%"=="0" (
-    echo Using docker-compose
+    echo Using docker compose
     if "%DOCKER_DESKTOP%"=="1" (
         docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
     ) else (
