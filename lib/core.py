@@ -2724,14 +2724,14 @@ def convert_ebook(args:dict)->tuple:
                                             )
                                             if is_lang_in_tts_engine:
                                                 session['cover'] = get_cover(epubBook, session_id)
-                                                if session['cover']:
+                                                if session.get('cover', False):
                                                     if not checksum:
                                                         session['blocks_orig'] = get_blocks(session_id, epubBook)
-                                                        if session['blocks_orig']:
+                                                        if session.get('blocks_orig', []):
                                                             save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
                                                             save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                                             session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
-                                                    if session['blocks_orig'] and session['blocks_edit']: 
+                                                    if session.get('blocks_orig', []) and if session.get('blocks_edit', [])]:
                                                         if session['chapters_preview']:
                                                             return confirm_blocks_txt, True
                                                         else:
