@@ -2736,7 +2736,7 @@ def convert_ebook(args:dict)->tuple:
                                                         if session['chapters_preview']:
                                                             return confirm_blocks_txt, True
                                                         else:
-                                                            progress_status, passed = finalize_audiobook(session_id, json_blocks_edit_file)
+                                                            progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
                                                     else:
                                                         error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
@@ -2762,17 +2762,17 @@ def convert_ebook(args:dict)->tuple:
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def finalize_audiobook(session_id:str, json_blocks_edit_file:str=[])->tuple:
+def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
             error = 'Conversion cancelled'
             return error, False
-        if session['blocks_edit']:
-            if session.get('blocks_edit', []):
-                delete_proc_audio_files(session['sentences_dir'])
-                delete_proc_audio_files(session['chapters_dir'])
-                save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
+        if session.get('blocks_edit', []):
+            #delete_proc_audio_files(session['sentences_dir'])
+            #delete_proc_audio_files(session['chapters_dir'])
+            json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+            save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
             chapters = []
             msg = f'Get sentences…'
             print(msg)
