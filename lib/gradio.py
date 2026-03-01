@@ -697,7 +697,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 )
                                 txt = gr.Textbox(
                                     elem_id=f'block_text_{i}',
-                                    value=blocks.get(i, blocks[i]),
+                                    value=blocks[i],
                                     lines=18,
                                     max_lines=18,
                                     show_label=False,
