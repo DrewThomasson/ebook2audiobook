@@ -2538,6 +2538,8 @@ def convert_ebook(args:dict)->tuple:
                         error = 'convert_ebook() error: Session initialization failed!'
                         print(error)
                         return error, False
+                msg = f'\n*********** Session: {session_id} **************\n{session_info}'
+                print(msg)
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
@@ -2798,8 +2800,8 @@ def finalize_audiobook(session_id:str)->tuple:
                     if not session['is_gui_process']:
                         process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
                         shutil.rmtree(process_dir, ignore_errors=True)
-                    info_session = f"\n*********** Session: {session_id} **************\nIn headless mode, store it in case of interruption, crash, or reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option."
-                    print(info_session)
+                    msg = f'\n*********** Session: {session_id} **************\n{session_info}'
+                    print(msg)
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'

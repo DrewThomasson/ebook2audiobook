@@ -142,7 +142,7 @@ if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
 fi
 
 ######## check if the user is part of the read/write group
-if [[ -n "${arguments[headless]+exists}" ]]; then
+if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exists}" ]]; then
 	PUBLIC_DIRS=("$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" "$SCRIPT_DIR/audiobooks")
 	if [[ "$OSTYPE" == "darwin"* ]]; then
 		APP_GROUP=$(stat -f '%Sg' "$SCRIPT_DIR")
