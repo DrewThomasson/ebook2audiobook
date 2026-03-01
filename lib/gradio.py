@@ -1727,10 +1727,10 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_main = True
                         visible_blocks = False
                     return (
-                        gr.update(visible=visible_main), gr.update(visible=visible_blocks), update_blocks_header(0, len(session['blocks_edit'])), session['blocks_edit'], 0, {}, {},
-                        gr.update(visible=False), gr.update(visible=len(session['blocks_orig']) > page_size)
+                        gr.update(visible=visible_main), gr.update(visible=visible_blocks), update_blocks_header(0, len(session['blocks_edit'])), session['blocks_edit'],
+                        0, {}, gr.update(visible=False), gr.update(visible=len(session['blocks_orig']) > page_size)
                     )
-                return tuple(gr.update(visible=False) for _ in range(9))
+                return tuple(gr.update(visible=False) for _ in range(8))
 
             def cancel_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
