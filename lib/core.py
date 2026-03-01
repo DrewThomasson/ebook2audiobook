@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
-import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, warnings
+import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
 
@@ -47,8 +47,6 @@ from lib.classes.tts_manager import TTSManager
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
 
 from lib import *
-
-warnings.filterwarnings('ignore', message='Could not initialize NNPACK')
 
 #import logging
 #logging.basicConfig(
