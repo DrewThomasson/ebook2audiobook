@@ -52,6 +52,7 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128,garbage_collectio
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
+os.environ['CUDA_VISIBLE_DEVICES'] = ""
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
 if sys.platform == 'win32':

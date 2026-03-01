@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
-import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
+import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
 
@@ -193,7 +193,7 @@ class SessionContext:
                 "Modified": None,
             },
             "blocks_orig": [],
-            "blocks_orig": [],
+            "blocks_edit": [],
             "chapters": [],
             "cover": None,
             "duration": 0,
@@ -517,14 +517,14 @@ def load_json_blocks(filepath:str)->list:
         print(f"load_json_blocks() error: {e}")
         return []
 
-def save_json_blocks(session_id:str, filepath:str)->bool:
+def save_json_blocks(session_id:str, file_path:str, key:str)->bool:
     try:
         session = context.get_session(session_id)
         if not session:
             print(f"save_json_blocks error: session not found ({session_id})")
             return False
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(session['blocks_orig'], f, ensure_ascii=False, indent=2)
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(session[key], f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
         print(f"save_json_blocks() error: {e}")
@@ -2676,17 +2676,21 @@ def convert_ebook(args:dict)->tuple:
                                 session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                                 checksum_path = os.path.join(session['process_dir'], 'checksum')
                                 checksum, error = compare_checksums(session['ebook'], checksum_path)
+                                json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+                                json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
                                 if error is None:
                                     if not checksum:
                                         session['blocks_orig'] = []
+                                        session['blocks_edit'] = []
                                         session['chapters'] = []
                                         result_epub = convert2epub(session_id)
                                         if not result_epub:
                                             error = 'convert2epub() failed!'
                                     else:
-                                        json_blocks_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                                        if os.path.exists(json_blocks_file):
-                                            session['blocks_orig'] = load_json_blocks(json_blocks_file)
+                                        if os.path.exists(json_blocks_orig_file):
+                                            session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
+                                            if os.path.exists(json_blocks_edit_file):
+                                                session['blocks_edit'] = load_json_blocks(json_blocks_edit_file)
                                         else:
                                             checksum = False
                                     if error is None:
@@ -2723,14 +2727,18 @@ def convert_ebook(args:dict)->tuple:
                                                 if session['cover']:
                                                     if not checksum:
                                                         session['blocks_orig'] = get_blocks(session_id, epubBook)
-                                                    if session['blocks_orig']:
+                                                        if session['block_orig']:
+                                                            save_json_blocks(session_id, json_blocks_orig_file, 'block_orig')
+                                                            save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
+                                                            session['blocks_edit'] = copy.deepcopy(session['block_orig'])
+                                                    if session['blocks_orig'] and session['blocks_edit']: 
                                                         if session['chapters_preview']:
                                                             return confirm_blocks_txt, True
                                                         else:
-                                                            progress_status, passed = finalize_audiobook(session_id)
+                                                            progress_status, passed = finalize_audiobook(session_id, json_blocks_edit_file)
                                                         return progress_status, passed
                                                     else:
-                                                        error = f"get_blocks() failed! {session['blocks_orig']}"
+                                                        error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
                                                 else:
                                                     error = 'get_cover() failed!'
                                             else:
@@ -2753,22 +2761,21 @@ def convert_ebook(args:dict)->tuple:
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
+def finalize_audiobook(session_id:str, json_blocks_edit_file:str=[])->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
             error = 'Conversion cancelled'
             return error, False
-        if session['blocks_orig']:
-            if blocks and blocks != session['blocks_orig']:
+        if session['blocks_edit']:
+            if blocks and blocks != session['blocks_edit']:
                 delete_proc_audio_files(session['sentences_dir'])
                 delete_proc_audio_files(session['chapters_dir'])
-                json_blocks_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                save_json_blocks(session_id, json_blocks_file)
+                save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
             chapters = []
             msg = f'Get sentences…'
             print(msg)
-            for text in session['blocks_orig']:
+            for text in session['blocks_edit']:
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
                     return error, False
@@ -2850,6 +2857,8 @@ def reset_session(session_id:str)->None:
             "Source": None,
             "Modified": None,
         },
+        "blocks_orig": [],
+        "blocks_edit": [],
         "chapters": [],
         "cover": None,
         "duration": 0,
