@@ -2768,7 +2768,7 @@ def finalize_audiobook(session_id:str, json_blocks_edit_file:str=[])->tuple:
             error = 'Conversion cancelled'
             return error, False
         if session['blocks_edit']:
-            if blocks and blocks != session['blocks_edit']:
+            if session.get('blocks_edit', []):
                 delete_proc_audio_files(session['sentences_dir'])
                 delete_proc_audio_files(session['chapters_dir'])
                 save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
