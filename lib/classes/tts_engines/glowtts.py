@@ -1,9 +1,5 @@
-import warnings
-
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
-
-warnings.filterwarnings('ignore', message='Could not initialize NNPACK')
 
 class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
 
@@ -87,6 +83,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
             if self.engine:
                 final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
+                print(f'********** {device} ***********')
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 if not self._set_voice():
                     return False
