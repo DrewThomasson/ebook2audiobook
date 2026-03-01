@@ -1719,7 +1719,6 @@ def build_interface(args:dict)->gr.Blocks:
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session['status'] == confirm_blocks_txt:
-                    print(session['blocks_edit'])
                     visible_main = False
                     visible_blocks = True
                     if session['cancellation_requested']:
@@ -1729,7 +1728,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_blocks = False
                     return (
                         gr.update(visible=visible_main), gr.update(visible=visible_blocks), update_blocks_header(0, len(session['blocks_edit'])), session['blocks_edit'],
-                        0, {}, gr.update(visible=False), gr.update(visible=len(session['blocks_orig']) > page_size)
+                        0, {}, gr.update(visible=False), gr.update(visible=len(session['blocks_edit']) > page_size)
                     )
                 return tuple(gr.update(visible=False) for _ in range(8))
 

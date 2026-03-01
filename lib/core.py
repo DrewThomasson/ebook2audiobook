@@ -2679,10 +2679,10 @@ def convert_ebook(args:dict)->tuple:
                                 json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
                                 json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
                                 if error is None:
+                                    session['blocks_orig'] = []
+                                    session['blocks_edit'] = []
+                                    session['chapters'] = []
                                     if not checksum:
-                                        session['blocks_orig'] = []
-                                        session['blocks_edit'] = []
-                                        session['chapters'] = []
                                         result_epub = convert2epub(session_id)
                                         if not result_epub:
                                             error = 'convert2epub() failed!'
