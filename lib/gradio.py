@@ -670,13 +670,12 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_page = gr.State(0)
             gr_blocks_expand = gr.State({})
             gr_blocks_keep_checked = gr.State({})
-            gr_blocks_text_orig = gr.State([])
-            gr_blocks_text_current = gr.State({})
+            gr_blocks_edit = gr.State([])
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 
-                @gr.render(inputs=[gr_blocks_text_orig, gr_blocks_page, gr_blocks_keep_checked, gr_blocks_text_current, gr_blocks_expand])
-                def render_blocks(blocks:list[str], page:int, keep_map:dict[int,bool], text_map:dict[int,str], open_map:dict[int,bool])->None:
+                @gr.render(inputs=[gr_blocks_page, gr_blocks_expand, gr_blocks_keep_checked, gr_blocks_edit])
+                def render_blocks(page:int, open_map:dict[int,bool], keep_map:dict[int,bool], blocks:list[str])->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
                     with gr.Column():
@@ -698,7 +697,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 )
                                 txt = gr.Textbox(
                                     elem_id=f'block_text_{i}',
-                                    value=text_map.get(i, blocks[i]),
+                                    value=blocks.get(i, blocks[i]),
                                     lines=18,
                                     max_lines=18,
                                     show_label=False,
@@ -2199,7 +2198,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=[
-                    gr_group_main, gr_group_blocks, gr_blocks_header, gr_blocks_text_orig, gr_blocks_page, gr_blocks_keep_checked,
+                    gr_group_main, gr_group_blocks, gr_blocks_header, gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked,
                     gr_blocks_text_current, gr_blocks_prev, gr_blocks_next
                 ]
             ).then(
@@ -2272,22 +2271,22 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_blocks_page, gr_blocks_prev, gr_blocks_next]
             ).then(
                 fn=update_blocks_header,
-                inputs=[gr_blocks_page, gr_blocks_text_orig],
+                inputs=[gr_blocks_page, gr_blocks_edit],
                 outputs=[gr_blocks_header]
             )
             gr_blocks_next.click(
                 fn=next_page,
-                inputs=[gr_blocks_page,gr_blocks_text_orig],
+                inputs=[gr_blocks_page,gr_blocks_edit],
                 outputs=[gr_blocks_page, gr_blocks_next, gr_blocks_prev]
             ).then(
                 fn=update_blocks_header,
-                inputs=[gr_blocks_page, gr_blocks_text_orig],
+                inputs=[gr_blocks_page, gr_blocks_edit],
                 outputs=[gr_blocks_header]
             )
             gr_blocks_cancel.click(
                 fn=cancel_blocks,
-                inputs=[gr_session, gr_blocks_text_orig, gr_blocks_expand, gr_blocks_keep_checked, gr_blocks_text_current],
-                outputs=[gr_group_blocks, gr_blocks_text_orig]
+                inputs=[gr_session, gr_blocks_edit, gr_blocks_expand, gr_blocks_keep_checked, gr_blocks_text_current],
+                outputs=[gr_group_blocks, gr_blocks_edit]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
@@ -2299,11 +2298,11 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
-                inputs=[gr_blocks_text_orig, gr_blocks_keep_checked, gr_blocks_text_current],
-                outputs=[gr_group_main, gr_group_blocks, gr_blocks_text_orig]
+                inputs=[gr_blocks_edit, gr_blocks_keep_checked, gr_blocks_text_current],
+                outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
             ).then(
                 fn=finalize_audiobook,
-                inputs=[gr_session, gr_blocks_text_orig],
+                inputs=[gr_session, gr_blocks_edit],
                 outputs=[gr_progress]
             ).then(
                 fn=enable_components,
