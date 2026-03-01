@@ -675,7 +675,7 @@ def build_interface(args:dict)->gr.Blocks:
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 
                 @gr.render(inputs=[gr_blocks_page, gr_blocks_expand, gr_blocks_keep_checked, gr_blocks_edit])
-                def render_blocks(page:int, expand:dict[int,bool], keep_map:dict[int,bool], blocks:list[str])->None:
+                def render_blocks(page:int, expand:dict[int, bool], keep_map:dict[int, bool], blocks:list)->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
                     with gr.Column():
