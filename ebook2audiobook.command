@@ -142,26 +142,28 @@ if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
 fi
 
 ######## check if the user is part of the read/write group
-PUBLIC_DIRS=("$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" "$SCRIPT_DIR/audiobooks")
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    APP_GROUP=$(stat -f '%Sg' "$SCRIPT_DIR")
-else
-    APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR")
-fi
-user_in_group() {
-    id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
-}
-if ! user_in_group "$APP_GROUP"; then
-    echo "Adding $USER to group $APP_GROUP (requires sudo)..."
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        sudo dseditgroup -o edit -a "$USER" -t user "$APP_GROUP"
-        echo "Group added. Please restart your terminal and re-run:"
-        echo "  $0 $*"
-        exit 0
-    else
-        sudo usermod -aG "$APP_GROUP" "$USER"
-        exec sg "$APP_GROUP" -c "\"$0\" $*"
-    fi
+if [[ -n "${arguments[headless]+exists}" ]]; then
+	PUBLIC_DIRS=("$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" "$SCRIPT_DIR/audiobooks")
+	if [[ "$OSTYPE" == "darwin"* ]]; then
+		APP_GROUP=$(stat -f '%Sg' "$SCRIPT_DIR")
+	else
+		APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR")
+	fi
+	user_in_group() {
+		id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
+	}
+	if ! user_in_group "$APP_GROUP"; then
+		echo "Adding $USER to group $APP_GROUP (requires sudo)..."
+		if [[ "$OSTYPE" == "darwin"* ]]; then
+			sudo dseditgroup -o edit -a "$USER" -t user "$APP_GROUP"
+			echo "Group added. Please restart your terminal and re-run:"
+			echo "  $0 $*"
+			exit 0
+		else
+			sudo usermod -aG "$APP_GROUP" "$USER"
+			exec sg "$APP_GROUP" -c "\"$0\" $*"
+		fi
+	fi
 fi
 
 ############### FUNCTIONS ##############
