@@ -107,7 +107,7 @@ if "%ARCH%"=="X86" (
     goto :failed
 )
 
-if not exist "%INSTALLED_LOG%" if /I not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+if not exist "%INSTALLED_LOG%" if /i not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
     type nul > "%INSTALLED_LOG%"
 )
 
@@ -146,7 +146,7 @@ endlocal & (
     for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
 )
 if defined arguments.script_mode (
-    if /I "%arguments.script_mode%"=="%BUILD_DOCKER%" (
+    if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" (
         set "SCRIPT_MODE=%arguments.script_mode%"
     ) else (
         echo Error: Invalid script mode argument: %arguments.script_mode%
@@ -160,9 +160,9 @@ if defined arguments.docker_device (
     )
 	set "DOCKER_DEVICE_STR=%arguments.docker_device%"
 )
-if defined arguments.docker_mode(
-    if /i "%arguments.docker_mode%"!="podman" (
-		if /i "%arguments.docker_mode%"!="compose" (
+if defined arguments.docker_mode (
+    if not "%arguments.docker_mode%"=="podman" (
+		if not "%arguments.docker_mode%"=="compose" (
 			if /i "%arguments.docker_mode%"=="true" (
 				echo Error: --docker_mode has no value
 			) else (
@@ -174,7 +174,7 @@ if defined arguments.docker_mode(
 	set "DOCKER_MODE=%arguments.docker_mode%"
 )
 if defined arguments.script_mode (
-    if /I "%arguments.script_mode%"=="true" (
+    if /i "%arguments.script_mode%"=="true" (
         echo Error: --script_mode requires a value
         goto :failed
     )
@@ -182,9 +182,9 @@ if defined arguments.script_mode (
 		set "argname=%%A"
 		call set "argname=%%argname:arguments.=%%"
 		if not "%argname%"=="" (
-			if /I not "%argname%"=="script_mode" (
-				if /I not "%argname%"=="docker_device" (
-					if /I not "%argname%"=="docker_mode" (
+			if /i not "%argname%"=="script_mode" (
+				if /i not "%argname%"=="docker_device" (
+					if /i not "%argname%"=="docker_mode" (
 						echo Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --%argname%
 						goto :failed
 					)
@@ -202,14 +202,14 @@ set "shortcut=%~1"
 exit /b
 
 :build_gui
-if /I not "%HEADLESS_FOUND%"=="%ARGS%" (
+if /i not "%HEADLESS_FOUND%"=="%ARGS%" (
     if not exist "%STARTMENU_DIR%" mkdir "%STARTMENU_DIR%"
     if not exist "%STARTMENU_LNK%" (
         call :make_shortcut "%STARTMENU_LNK%"
         call :make_shortcut "%DESKTOP_LNK%"
     )
     for /f "skip=1 delims=" %%L in ('tasklist /v /fo csv /fi "imagename eq powershell.exe" 2^>nul') do (
-        echo %%L | findstr /I "%APP_NAME%" >nul && (
+        echo %%L | findstr /i "%APP_NAME%" >nul && (
             for /f "tokens=2 delims=," %%A in ("%%L") do (
                 taskkill /PID %%~A /F >nul 2>&1
             )
@@ -467,7 +467,7 @@ for %%p in (%missing_prog_array%) do (
 	if "%%p"=="rustup" (
 		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
 			set "_RUSTUP_PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin"
-			echo !PATH! | findstr /I /C:"!_RUSTUP_PATH!" >nul 2>&1 || (
+			echo !PATH! | findstr /i /c:"!_RUSTUP_PATH!" >nul 2>&1 || (
 				set "PATH=!_RUSTUP_PATH!;!PATH!"
 			)
 		)
@@ -800,7 +800,7 @@ exit /b 0
 
 :main
 if defined arguments.help (
-    if /I "%arguments.help%"=="true" (
+    if /i "%arguments.help%"=="true" (
 		call :check_python
 		if errorlevel 1 goto :install_python
 		wsl --user root -d %DOCKER_WSL_CONTAINER% -- which docker >nul 2>&1
