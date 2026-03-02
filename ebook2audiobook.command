@@ -801,7 +801,7 @@ function build_docker_image {
 	export COMPOSE_PROFILES
 	if [[ "$DOCKER_MODE" == "podman" ]]; then
 		if ! command -v podman-compose &>/dev/null || ! podman-compose -f podman-compose.yml config &>/dev/null; then
-			echo "ERROR: podman-compose.yml is not valid"
+			echo "ERROR: podman-compose is not installed or podman-compose.yml is not valid"
 			return 1
 		fi
 	elif [[ "$DOCKER_MODE" == "compose" ]]; then
