@@ -89,9 +89,19 @@ Linux/Mac natvie mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 Docker build image:
     Windows:
-    ebook2audiobook.cmd --script_mode build_docker
+        Docker:
+            ebook2audiobook.cmd --script_mode build_docker
+        Docker Compose:
+            ebook2audiobook.cmd --script_mode build_docker --docker_mode compose
+        Podman Compose:
+            ebook2audiobook.cmd --script_mode build_docker --docker_mode podman
     Linux/Mac
-    ./ebook2audiobook.command --script_mode build_docker
+        Docker:
+            ./ebook2audiobook.command --script_mode build_docker
+        Docker Compose
+            ./ebook2audiobook.command --script_mode build_docker --docker_mode compose
+        Podman Compose:
+            ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 Docker run image:
     Gradio/GUI:
         CPU:
@@ -116,15 +126,11 @@ Docker run image:
         JETSON:
          {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 Docker Compose (i.e. cuda 12.8:
-        Build
-             {wsl_cmd}  DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up --build
         Run Gradio GUI:
              {wsl_cmd}  DEVICE_TAG=cu128 docker compose --profile gpu up --no-log-prefix
         Run Headless mode:
              {wsl_cmd}  DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 Podman Compose (i.e. cuda 12.8:
-        Build
-             {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up --build
         Run Gradio GUI:
              {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up
         Run Headless mode:
