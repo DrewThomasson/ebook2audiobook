@@ -35,9 +35,10 @@ class DeviceInstaller():
         else:
             if mode == BUILD_DOCKER:
                 name, tag, msg = self.check_hardware
-                arch = self.check_arch
+                arch = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else self.check_arch
+                tag = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else tag
                 pyvenv = list(sys.version_info[:2])
-                os_env = 'linux' if name == devices['JETSON']['proc'] else 'manylinux_2_28'
+                os_env = 'manylinux_2_28'
                 pyvenv = [3, 10] if tag in ['jetson60', 'jetson61'] else pyvenv
                 device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg.replace('!', '')}
                 with open('.device_info.json', 'w', encoding='utf-8') as f:
