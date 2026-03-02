@@ -35,7 +35,7 @@ class DeviceInstaller():
         else:
             if mode == BUILD_DOCKER:
                 name, tag, msg = self.check_hardware
-                arch = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else self.check_arch
+                arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
                 tag = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else tag
                 pyvenv = list(sys.version_info[:2])
                 os_env = 'manylinux_2_28'
