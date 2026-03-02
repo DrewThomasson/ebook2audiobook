@@ -666,7 +666,7 @@ if "%src_time%" GTR "%dst_time%" (
 exit /b 0
 
 :build_docker_image
-setlocal
+setlocal enabledelayedexpansion
 set "ARG=%~1"
 set "ARG_ESCAPED=%ARG:"=\"%"
 set "wsl_cmd="
@@ -692,7 +692,6 @@ if "%DOCKER_MODE%"=="compose" (
 )
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
-set "cmd_extra="
 set "py_vers=%PYTHON_VERSION%"
 if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--gpus all"
@@ -734,6 +733,17 @@ if "%DOCKER_MODE%"=="podman" (
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
     cd /d "%SAFE_SCRIPT_DIR%"
     podman-compose -f podman-compose.yml build
+	if errorlevel 1 (
+		echo Build failed
+		endlocal 
+		exit /b 1
+	)
+	echo Docker image ready. To run your docker:
+	echo Podman Compose:
+	echo 	GUI mode:
+	echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up
+	echo 	Headless mode:
+	echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
     echo Using docker compose
     if "%DOCKER_DESKTOP%"=="1" (
@@ -741,6 +751,17 @@ if "%DOCKER_MODE%"=="podman" (
     ) else (
         wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
     )
+	if errorlevel 1 (
+		echo Build failed
+		endlocal 
+		exit /b 1
+	)
+	echo Docker image ready. To run your docker:
+	echo Docker Compose:
+	echo 	GUI mode:
+	echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
+	echo 	Headless mode:
+	echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else (
     echo Using docker buildx
     if "%DOCKER_DESKTOP%"=="1" (
@@ -757,32 +778,21 @@ if "%DOCKER_MODE%"=="podman" (
 			exit /b 1
 		)
 		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
-    )
+		if errorlevel 1 (
+			echo Build failed
+			endlocal 
+			exit /b 1
+		)
+		echo Docker image ready. To run your docker:
+		echo GUI mode:
+		echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+		echo Headless mode:
+		echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
+	)
 )
-if errorlevel 1 (
-	echo Build failed
-	endlocal 
-	exit /b 1
-)
-if defined cmd_options set "cmd_extra=%cmd_options% "
-echo Docker image ready. To run your docker:
 if "%DOCKER_DESKTOP%"=="1" (
 	set "wsl_cmd=wsl --user root -d %DOCKER_WSL_CONTAINER% --"
 )
-echo GUI mode:
-echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
-echo Headless mode:
-echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v "D:\path\to\custom\voices:/app/custom_voice" %cmd_extra%--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
-echo Docker Compose:
-echo 	GUI mode:
-echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
-echo 	Headless mode:
-echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
-echo Podman Compose:
-echo 	GUI mode:
-echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up
-echo 	Headless mode:
-echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 endlocal
 exit /b 0
 
