@@ -806,7 +806,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
             for doc_idx, doc in enumerate(all_docs):
-                text = filter_blocks(doc_idx, doc, session_id, stanza_nlp, is_num2words_compat)
+                text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat)
                 if text is None:
                     break
                 elif text:
@@ -822,7 +822,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return []
 
-def filter_blocks(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -907,7 +907,7 @@ def filter_blocks(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is
             raw_html = doc_body.decode('utf-8') if isinstance(doc_body, bytes) else doc_body
             soup = BeautifulSoup(raw_html, 'html.parser')
             body = soup.body
-            if not body or not body.get_text(strip=True):
+            if not body:
                 msg = 'No body found. Skip to next doc…'
                 print(msg)
                 return ''
@@ -929,6 +929,60 @@ def filter_blocks(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is
             # remove scripts/styles
             for tag in soup(['script', 'style']):
                 tag.decompose()
+            if not body.get_text(strip=True):
+                images = body.find_all('img') + body.find_all('image')
+                if images:
+                    msg = f'Doc {idx}: no text but {len(images)} image(s) detected. Running OCR…'
+                    print(msg)
+                    if session['is_gui_process']:
+                        show_alert({"type": "warning", "msg": msg})
+                    ocr_parts = []
+                    doc_dir = os.path.dirname(doc.get_name())
+                    with zipfile.ZipFile(session['epub_path'], 'r') as zf:
+                        zip_names = set(zf.namelist())
+                        for img_tag in images:
+                            img_ref = (
+                                img_tag.get('src')
+                                or img_tag.get('href')
+                                or img_tag.get('{http://www.w3.org/1999/xlink}href')
+                                or img_tag.get('xlink:href')
+                            )
+                            if not img_ref:
+                                continue
+                            # Resolve relative path from doc's location
+                            img_zip_path = os.path.normpath(os.path.join(doc_dir, img_ref)).replace('\\', '/')
+                            if img_zip_path not in zip_names:
+                                img_basename = os.path.basename(img_ref)
+                                img_zip_path = next(
+                                    (n for n in zip_names if os.path.basename(n) == img_basename),
+                                    None
+                                )
+                            if not img_zip_path:
+                                print(f'Could not resolve image in EPUB: {img_ref}')
+                                continue
+                            try:
+                                img_data = zf.read(img_zip_path)
+                                img = Image.open(io.BytesIO(img_data))
+                                img = img.convert('RGB')
+                                xhtml_content = ocr2xhtml(img, lang)
+                                if xhtml_content:
+                                    ocr_parts.append(xhtml_content)
+                            except Exception as ocr_err:
+                                print(f'OCR error on {img_zip_path}: {ocr_err}')
+                    if ocr_parts:
+                        ocr_html = '\n'.join(ocr_parts)
+                        body.clear()
+                        body.append(BeautifulSoup(ocr_html, 'html.parser'))
+                        msg = f'Doc {idx}: OCR injected {len(ocr_parts)} page(s) into body.'
+                        print(msg)
+                    else:
+                        msg = 'No body text and OCR produced nothing. Skip to next doc…'
+                        print(msg)
+                        return ''
+                else:
+                    msg = 'No body text and no images found. Skip to next doc…'
+                    print(msg)
+                    return ''
             tuples_list = list(_tuple_row(body))
             if not tuples_list:
                 error = 'No tuples_list from body created!'
