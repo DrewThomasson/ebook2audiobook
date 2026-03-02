@@ -7,6 +7,7 @@ services:
       args:
         APP_VERSION: ${APP_VERSION:-26.3.3}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
+        BUILDAH_FORMAT: docker
       x-podman:
         format: docker
     working_dir: /app
