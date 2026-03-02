@@ -112,7 +112,7 @@ fi
 
 if [[ -n "${arguments[docker_mode]+exists}" ]]; then
 	DOCKER_MODE="${arguments[docker_mode]}"
-	if [[ "$DOCKER_MODE" != "podman" || "$DOCKER_MODE" != "compose" ]]; then
+	if [[ "$DOCKER_MODE" != "podman" && "$DOCKER_MODE" != "compose" ]]; then
 		if [[ "$DOCKER_MODE" == "true" ]]; then
 			echo "Error: --docker_mode has no value!"
 		else
