@@ -185,7 +185,7 @@ if defined arguments.script_mode (
 			if /I not "%argname%"=="script_mode" (
 				if /I not "%argname%"=="docker_device" (
 					if /I not "%argname%"=="docker_mode" (
-						echo Error: when --script_mode is used, only --docker_device is allowed as additional option. Invalid option: --%argname%
+						echo Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --%argname%
 						goto :failed
 					)
 				)
