@@ -110,21 +110,26 @@ def get_audio_duration(filepath:str)->float:
         print(f"get_audio_duration() Error: Failed to process {filepath}: {e}")
         return 0.0
 
-def get_audiolist_duration(filepaths:list[str])->dict[str, float]:
+def get_audiolist_duration(filepaths: list[str]) -> dict[str, float]:
     durations = {os.path.realpath(p): 0.0 for p in filepaths}
     mediainfo = shutil.which("mediainfo")
     if not mediainfo:
         return durations
-    try:
-        cmd = [mediainfo, "--Output=JSON", *filepaths]
-        out = subprocess.check_output(cmd, text=True)
-        data = json.loads(out)
-        extracted = _extract_mediainfo_durations(data)
-        for path in durations:
-            if path in extracted:
-                durations[path] = extracted[path]
-    except Exception:
-        pass
+    batch_size = 500  # safe margin under ARG_MAX
+    for i in range(0, len(filepaths), batch_size):
+        batch = filepaths[i:i + batch_size]
+        try:
+            cmd = [mediainfo, "--Output=JSON", *batch]
+            out = subprocess.check_output(cmd, text=True)
+            data = json.loads(out)
+            extracted = _extract_mediainfo_durations(data)
+            for path, dur in extracted.items():
+                if path in durations:
+                    durations[path] = dur
+        except Exception as e:
+            error = f'get_audiolist_duration batch {i}: {e}'
+            print(error)
+            raise
     return durations
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
