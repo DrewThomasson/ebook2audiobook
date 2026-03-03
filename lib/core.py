@@ -57,6 +57,7 @@ from lib import *
 context = None
 context_tracker = None
 active_sessions = None
+progress_bar = None
 confirm_blocks_txt = 'confirm_blocks'
 
 class DependencyError(Exception):

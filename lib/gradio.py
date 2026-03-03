@@ -1,8 +1,6 @@
 from lib.core import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
-progress_bar = None
-
 def build_interface(args:dict)->gr.Blocks:
     global progress_bar
     try:
