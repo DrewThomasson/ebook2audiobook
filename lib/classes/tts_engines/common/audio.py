@@ -2,6 +2,8 @@ import os, subprocess, shutil, json
 
 from typing import Any, Union, TYPE_CHECKING
 from lib.classes.subprocess_pipe import SubprocessPipe
+from mutagen import File as MutagenFile
+from mutagen.aac import AAC
 
 
 if TYPE_CHECKING:
@@ -59,77 +61,32 @@ def trim_audio(audio_data: Union[list[float], 'Tensor'], samplerate: int, silenc
     error = 'audio_data must be a PyTorch tensor or a list of numerical values.'
     print(error)
     return torch.tensor([], dtype=torch.float32)
-    
-def _extract_mediainfo_durations(data:dict|list)->dict[str, float]:
-    durations: dict[str, float] = {}
-    if isinstance(data, list):
-        media_blocks = data
-    else:
-        media_blocks = [data]
-    for block in media_blocks:
-        media = block.get("media")
-        if not media:
-            continue
-        media_list = media if isinstance(media, list) else [media]
-        for m in media_list:
-            ref = m.get("@ref")
-            if not ref:
-                continue
-            ref = os.path.realpath(ref)
 
-            for track in m.get("track", []):
-                raw = track.get("Duration")
-                if not raw:
-                    continue
-                try:
-                    durations[ref] = float(raw)
-                    break
-                except (TypeError, ValueError):
-                    continue
-    return durations
+def _get_length(filepath: str) -> float:
+    """Return duration in seconds for a single audio file."""
+    audio = MutagenFile(filepath)
+    if audio is None:
+        audio = AAC(filepath)
+    if audio.info is None:
+        raise ValueError(f"No audio info: {filepath}")
+    return audio.info.length
 
-def get_audio_duration(filepath:str)->float:
-    mediainfo = shutil.which("mediainfo")
-    if not mediainfo:
-        return 0.0
-    cmd = [mediainfo, "--Output=JSON", filepath]
+def get_audio_duration(filepath: str) -> float:
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        data = json.loads(result.stdout)
-        durations = _extract_mediainfo_durations(data)
-        return durations.get(os.path.realpath(filepath), 0.0)
-    except subprocess.CalledProcessError as e:
-        DependencyError(e)
-        return 0.0
+        return _get_length(filepath)
     except Exception as e:
-        print(f"get_audio_duration() Error: Failed to process {filepath}: {e}")
+        print(f"get_audio_duration: {filepath}: {e}")
         return 0.0
 
 def get_audiolist_duration(filepaths: list[str]) -> dict[str, float]:
-    durations = {os.path.realpath(p): 0.0 for p in filepaths}
-    mediainfo = shutil.which("mediainfo")
-    if not mediainfo:
-        return durations
-    batch_size = 256  # safe margin under ARG_MAX
-    for i in range(0, len(filepaths), batch_size):
-        batch = filepaths[i:i + batch_size]
+    durations = {}
+    for p in filepaths:
+        real = os.path.realpath(p)
         try:
-            cmd = [mediainfo, "--Output=JSON", *batch]
-            out = subprocess.check_output(cmd, text=True)
-            data = json.loads(out)
-            extracted = _extract_mediainfo_durations(data)
-            for path, dur in extracted.items():
-                if path in durations:
-                    durations[path] = dur
+            durations[real] = _get_length(p)
         except Exception as e:
-            error = f'get_audiolist_duration batch {i}: {e}'
-            print(error)
-            raise
+            print(f"get_audiolist_duration: {real}: {e}")
+            durations[real] = 0.0
     return durations
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
