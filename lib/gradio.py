@@ -1,5 +1,6 @@
+from lib.core import *
+
 def build_interface(args:dict)->gr.Blocks:
-    from lib.core import *
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
     try:
         script_mode = args['script_mode']
