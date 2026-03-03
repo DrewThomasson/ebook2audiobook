@@ -62,6 +62,7 @@ progress_bar = None
 confirm_blocks_txt = 'confirm_blocks'
 
 class DependencyError(Exception):
+
     def __init__(self, message:str|None):
         super().__init__(message)
         print(message)
@@ -76,6 +77,7 @@ class DependencyError(Exception):
         print(error)
 
 class SessionTracker:
+
     def __init__(self):
         self.lock = threading.Lock()
 
@@ -93,6 +95,7 @@ class SessionTracker:
             context.sessions.pop(session_id, None)
 
 class SessionContext:
+
     def __init__(self):
         self.manager:Manager = Manager()
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
@@ -216,6 +219,7 @@ class SessionContext:
         return None
 
 class JSONDictProxyEncoder(json.JSONEncoder):
+
     def default(self, o:Any)->Any:
         if isinstance(o, DictProxy):
             return dict(o)
@@ -826,6 +830,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return []
 
 def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
+
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             prev_child_had_data = False
@@ -1584,6 +1589,7 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
     return time_rx.sub(repl_num, text)
 
 def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
+
     def repl_ambiguous(match:re.Match)->str:
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
@@ -2204,7 +2210,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-y', ffmpeg_final_file
                 ]
             is_gui_process = session['is_gui_process']
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export')
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export', on_progress=on_progress)
             if proc_pipe.result:
                 if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
