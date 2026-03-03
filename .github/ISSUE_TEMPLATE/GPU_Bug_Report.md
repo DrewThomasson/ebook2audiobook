@@ -10,6 +10,8 @@ assignees: ''
 **To report an issue here, thanks to respect strictly the process 
 **or this issue will become too big and unreadable.
 
+**IMPORTANT: DON'T COPY/PASTE ANY A.I. SOLUTION OR YOUR ISSUE WILL BE IMMEDIATELY CLOSED WITHOUT NOTICE**
+
 1)**Operating System:**
  - Windows, Linux, MacOS
 
