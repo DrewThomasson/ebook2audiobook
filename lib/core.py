@@ -57,8 +57,8 @@ from lib import *
 context = None
 context_tracker = None
 active_sessions = None
+progress_bar = None
 confirm_blocks_txt = 'confirm_blocks'
-progress_bar = gr.Progress(track_tqdm=False)
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
