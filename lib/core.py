@@ -2607,7 +2607,7 @@ def convert_ebook(args:dict)->tuple:
                 session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
                 cleanup_models_cache()
                 if not session['is_gui_process']:
-                    session['system'] = sys.platform
+                    session['system'] = DEVICE_SYSTEM
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['output_dir'] = str(args['output_dir']) if args['output_dir'] is not None else None
                     session['audiobooks_dir'] = os.path.abspath(session['output_dir']) if session['output_dir'] is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
