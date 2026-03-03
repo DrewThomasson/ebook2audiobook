@@ -1,7 +1,7 @@
 from lib.core import *
  
 def build_interface(args:dict)->gr.Blocks:
-    import lib.core.progress_bar as progress_bar
+    from lib.core import progress_bar
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
     try:
         script_mode = args['script_mode']
