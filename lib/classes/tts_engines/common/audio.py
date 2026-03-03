@@ -115,7 +115,7 @@ def get_audiolist_duration(filepaths: list[str]) -> dict[str, float]:
     mediainfo = shutil.which("mediainfo")
     if not mediainfo:
         return durations
-    batch_size = 500  # safe margin under ARG_MAX
+    batch_size = 256  # safe margin under ARG_MAX
     for i in range(0, len(filepaths), batch_size):
         batch = filepaths[i:i + batch_size]
         try:

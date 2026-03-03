@@ -1,5 +1,13 @@
 import os, tempfile, sys, re
 
+DEVICE_SYSTEM = sys.platform
+
+systems = {
+    "LINUX": "linux",
+    "MACOS": "darwin",
+    "WINDOWS": "win32"
+}
+
 # ---------------------------------------------------------------------
 # Global configuration
 # ---------------------------------------------------------------------
@@ -55,7 +63,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
-if sys.platform == 'win32':
+if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
 
 # ---------------------------------------------------------------------
@@ -81,12 +89,6 @@ requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 # ---------------------------------------------------------------------
 # Hardware mappings
 # ---------------------------------------------------------------------
-
-systems = {
-    "LINUX": "linux",
-    "MACOS": "darwin",
-    "WINDOWS": "win32"
-}
 
 devices = {
     "CPU": {"proc": "cpu", "found": True},
