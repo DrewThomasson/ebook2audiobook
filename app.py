@@ -246,7 +246,7 @@ SML tags available:
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         if args['headless']:
-            args['id'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
+            args['id'] = workflow_id if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
             args['chapters_preview'] = False
             args['event'] = ''
