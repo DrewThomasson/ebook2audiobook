@@ -1,9 +1,7 @@
-from lib.core import *
-from lib.classes.tts_engines.common.preset_loader import load_engine_presets
-
 def build_interface(args:dict)->gr.Blocks:
+    import lib.core as c
+    from lib.classes.tts_engines.common.preset_loader import load_engine_presets
     try:
-        import lib.core as c
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
         is_gui_shared = args['share']
