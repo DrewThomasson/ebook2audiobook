@@ -1,10 +1,8 @@
-def build_interface(args:dict)->gr.Blocks:
-    import lib.core as c
+ import lib.core as c
+ 
+def build_interface(args:dict)->c.gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
-    
     gr = c.gr
-    
-    
     try:
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
