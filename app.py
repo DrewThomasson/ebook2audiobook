@@ -154,11 +154,10 @@ SML tags available:
     ]
     tts_engine_list_keys = [k for k in TTS_ENGINES.keys()]
     tts_engine_list_values = [k for k in TTS_ENGINES.values()]
-    all_group = parser.add_argument_group('**** The following options are for all modes', 'Optional')
-    all_group.add_argument(options[0], type=str, help='''Option for container builder only. The only value is: build_docker.''')
-    all_group.add_argument(options[1], type=str, help='''Option for container builder only. The only values are: podman and compose. without this option standard docker is used.''')
-    parser.add_argument(options[1], type=str, help='''Session to resume the conversion in case of interruption, crash, 
-    or reuse of custom models and custom cloning voices.''')
+    all_group = parser.add_argument_group('**** The following options are for container only', 'Optional')
+    all_group.add_argument(options[0], type=str, help='Mandatory to build a container. The only value is: build_docker.')
+    all_group.add_argument(options[1], type=str, help='Optional. The only values are: podman and compose. without this option standard docker buildx is used.')
+    parser.add_argument(options[2], type=str, help='Session to resume the conversion in case of interruption, crash, or reuse of custom models and custom cloning voices.')
     gui_group = parser.add_argument_group('**** The following option are for gradio/gui mode only', 'Optional')
     gui_group.add_argument(options[3], action='store_true', help='''Enable a public shareable Gradio link.''')
     headless_group = parser.add_argument_group('**** The following options are for --headless mode only')
