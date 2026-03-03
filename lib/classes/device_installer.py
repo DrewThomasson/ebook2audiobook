@@ -29,7 +29,6 @@ class DeviceInstaller():
         os_env = None
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
-            msg = 'cacaca'
             arch = self.check_arch
             pyvenv = list(sys.version_info[:2])
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
@@ -441,6 +440,7 @@ class DeviceInstaller():
                     out = try_cmd('uname -a')
                     if 'tegra' in out:
                         msg = 'Jetson GPU detected but not(?) compatible'
+                print(f'MSG: {msg}')
                     
             # ============================================================
             # ROCm
