@@ -236,6 +236,7 @@ SML tags available:
             manager = DeviceInstaller()
             result = manager.install_python_packages()
             if result == 0:
+                print('ahahahahahah')
                 device_info_str = manager.check_device_info(args['script_mode'])
                 if manager.install_device_packages(device_info_str) == 1:
                     error = f'Error: Could not installed device packages!'
