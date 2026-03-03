@@ -2,7 +2,6 @@ from lib.core import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
 def build_interface(args:dict)->gr.Blocks:
-    global progress_bar
     try:
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
@@ -31,7 +30,7 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
-        progress_bar = gr.Progress(track_tqdm=False)
+        lib.core.progress_bar = gr.Progress(track_tqdm=False)
         theme = gr.themes.Origin(
             primary_hue='green',
             secondary_hue='amber',
