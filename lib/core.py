@@ -965,15 +965,11 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                                 ocr_parts.append(xhtml_content)
                         except Exception as ocr_err:
                             print(f'OCR error on {img_zip_path}: {ocr_err}')
-                else:
-                    msg = 'No body text and no images found. Skip to next doc…'
-                    print(msg)
-                    return ''
             tuples_list = list(_tuple_row(body))
             if not tuples_list:
-                error = 'No tuples_list from body created!'
-                print(error)
-                return None
+                msg = 'No body text and no images found. Skip to next doc…'
+                print(msg)
+                return ''
             msg = f'Parsing xhtml markers…'
             print(msg)
             text_list = []
