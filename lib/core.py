@@ -2140,6 +2140,11 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             return False
 
     def export_audio(ffmpeg_combined_audio:str, ffmpeg_metadata_file:str, ffmpeg_final_file:str)->bool:
+        
+        def on_progress(p:float)->None:
+            if is_gui_process:
+                progress_bar(p / 100.0, desc='Assemble')
+        
         try:
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
