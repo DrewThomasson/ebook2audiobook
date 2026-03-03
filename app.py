@@ -327,6 +327,7 @@ SML tags available:
             if passed_args_set.issubset(allowed_arguments):
                 try:
                     from lib.gradio import build_interface
+                    c.progress_bar = gr.Progress(track_tqdm=False)
                     app = build_interface(args)
                     if app is not None:
                         app.queue(
