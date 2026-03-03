@@ -440,7 +440,6 @@ class DeviceInstaller():
                     out = try_cmd('uname -a')
                     if 'tegra' in out:
                         msg = 'Jetson GPU detected but not(?) compatible'
-                print(f'MSG: {msg}')
                     
             # ============================================================
             # ROCm
@@ -684,7 +683,7 @@ class DeviceInstaller():
             if tag is None:
                 name = devices['CPU']['proc']
                 tag = devices['CPU']['proc']
-
+        print(f'MSG: {msg}')
         name, tag, msg = (v.strip() if isinstance(v, str) else v for v in (name, tag, msg))
         return (name, tag, msg)
 
