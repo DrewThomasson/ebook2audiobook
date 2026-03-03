@@ -1,4 +1,4 @@
- import lib.core as c
+import lib.core as c
  
 def build_interface(args:dict)->c.gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
