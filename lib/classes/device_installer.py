@@ -29,7 +29,6 @@ class DeviceInstaller():
         os_env = None
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
-            msg = 'cacaca'
             arch = self.check_arch
             pyvenv = list(sys.version_info[:2])
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
@@ -52,6 +51,7 @@ class DeviceInstaller():
                 except FileNotFoundError:
                     return ''
         if all([name, tag, os_env, arch, pyvenv]):
+            msg = 'cacaca'
             device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg}
             return json.dumps(device_info)
         return ''
