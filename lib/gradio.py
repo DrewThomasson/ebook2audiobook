@@ -1,6 +1,6 @@
 from lib.core import *
- from lib.core import progress_bar
- from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.core import progress_bar
+from lib.classes.tts_engines.common.preset_loader import load_engine_presets
  
 def build_interface(args:dict)->gr.Blocks:
     try:
