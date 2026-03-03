@@ -58,6 +58,7 @@ context = None
 context_tracker = None
 active_sessions = None
 confirm_blocks_txt = 'confirm_blocks'
+progress_bar = gr.Progress(track_tqdm=False)
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
@@ -300,14 +301,11 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
 def extract_custom_model(session_id)->str|None:
     session = context.get_session(session_id)
     if session and session.get('id', False):
-        progress_bar = None
         file_src = session['custom_model']
         required_files = default_engine_settings[session['tts_engine']]['files']
         model_path = None
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
         model_name = get_sanitized(model_name)
-        if session['is_gui_process']:
-            progress_bar = gr.Progress(track_tqdm=False)
         try:
             with zipfile.ZipFile(file_src, 'r') as zip_ref:
                 files = zip_ref.namelist()
@@ -1916,7 +1914,6 @@ def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         try:
-            progress_bar = None
             tts_manager = TTSManager(session)
             resume_chapter = 0
             missing_chapters = []
@@ -1958,8 +1955,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 return False
             msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
             print(msg)
-            if session['is_gui_process']:
-                progress_bar = gr.Progress(track_tqdm=False)
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
@@ -2331,8 +2326,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             return None
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
-                if is_gui_process:
-                    progress_bar = gr.Progress(track_tqdm=False)
                 result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
                 if not result:
                     print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
@@ -2358,7 +2351,6 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
     try:
         total_duration = 0.0
         filepaths = []
-        progress_bar = None
         try:
             with open(txt_file, 'r') as f:
                 for line in f:
@@ -2383,8 +2375,6 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             error = 'ffmpeg not found'
             print(error)
             return False
-        if is_gui_process:
-            progress_bar = gr.Progress(track_tqdm=False)
         cmd = [
             ffmpeg,
             '-hide_banner',
