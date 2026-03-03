@@ -8,7 +8,8 @@
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
-import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
+import ebooklib, psutil, requests, stanza, importlib, queue
+import regex as re, gradio as gr
 
 from typing import Any, Generator, Dict
 from PIL import Image, ImageSequence
