@@ -1,8 +1,8 @@
 from lib.core import *
  from lib.core import progress_bar
-     
+ from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+ 
 def build_interface(args:dict)->gr.Blocks:
-    from lib.classes.tts_engines.common.preset_loader import load_engine_presets
     try:
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
