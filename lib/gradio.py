@@ -693,7 +693,8 @@ def build_interface(args:dict)->gr.Blocks:
                     end = min(start + page_size, len(blocks))
                     with gr.Column(elem_id='gr_column_blocks') as gr_column_blocks:
                         for i in range(start, end):
-                            kept = keep_map.get(str(i), True) if isinstance(keep_map, dict) else True
+                            key = str(i)
+                            kept = keep_map.get(key, True) if isinstance(keep_map, dict) else True
                             cls = 'gr-block-kept' if kept else 'gr-block-skipped'
                             is_open = expand_map.get(key, False) if isinstance(expand_map, dict) else False
                             with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', elem_classes=['gr-block-skipped'], visible=True, open=is_open) as acc:
