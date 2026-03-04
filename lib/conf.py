@@ -100,7 +100,7 @@ devices = {
 }
 
 default_device = devices['CPU']['proc']
-default_chapters_preview = False
+default_blocks_preview = False
 
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
 
