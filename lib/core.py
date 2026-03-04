@@ -2143,7 +2143,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         
         def on_progress(p:float)->None:
             if is_gui_process:
-                progress_bar(p / 100.0, desc='Assemble')
+                progress_bar(p / 100.0, desc='Export')
         
         try:
             if session['cancellation_requested']:
