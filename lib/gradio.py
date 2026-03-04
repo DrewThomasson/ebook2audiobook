@@ -679,7 +679,6 @@ def build_interface(args:dict)->gr.Blocks:
                 def render_blocks(page:int, expand:dict[int, bool], keep_map:dict[int, bool], blocks:list)->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
-                    print(f"render_blocks called: {len(blocks)} blocks, page={page}")
                     with gr.Column():
                         for i in range(start, end):
                             with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', open=expand.get(i, False)) as acc:
@@ -691,13 +690,14 @@ def build_interface(args:dict)->gr.Blocks:
                                     lambda idx=i, m=expand: {**m, idx: False},
                                     outputs=gr_blocks_expand
                                 )
-                                keep = gr.Checkbox(
+                                gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=keep_map.get(i, True),
                                     label='Keep block',
                                     interactive=True
                                 )
-                                txt = gr.Textbox(
+                                print(f'block {i}: {blocks[i]}')
+                                gr.Textbox(
                                     elem_id=f'block_text_{i}',
                                     value=blocks[i],
                                     lines=18,
