@@ -1731,7 +1731,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     interactive = False
                     session['status'] = status_tags['READY']
-                    if not confirmed
+                    if not confirmed:
                         interactive = True
                     return gr.update(value='', visible=False), gr.update(interactive=interactive)
                 return gr.update(), gr.update(interactive=interactive)
