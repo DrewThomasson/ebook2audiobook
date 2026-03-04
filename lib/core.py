@@ -59,9 +59,12 @@ context = None
 context_tracker = None
 active_sessions = None
 progress_bar = None
-confirm_blocks_txt = 'confirm_blocks'
-confirm_override_txt = 'confirm_override'
-confirm_deletion_txt = 'confirm_deletion'
+
+confirm_tags = {
+    "BLOCKS": "confirm_blocks",
+    "OVERRIDE": "confirm_override",
+    "DELETION": "confirm_deletion"
+}
 
 class DependencyError(Exception):
 
@@ -2776,7 +2779,7 @@ def convert_ebook(args:dict)->tuple:
                                                         save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                                     if session.get('blocks_orig', []) and session.get('blocks_edit', []):
                                                         if session['blocks_preview']:
-                                                            return confirm_blocks_txt, True
+                                                            return confirm_tags['BLOKS'], True
                                                         else:
                                                             progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
