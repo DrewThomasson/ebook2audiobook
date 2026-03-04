@@ -714,6 +714,20 @@ def build_interface(args:dict)->gr.Blocks:
                                     visible=True,
                                     scale=0
                                 )
+                                keep.change(
+                                    fn=None,
+                                    inputs=[keep],
+                                    js=f'''
+                                    (checked) => {{
+                                        const acc = document.getElementById('block_{i}');
+                                        if (acc) {{
+                                            acc.classList.toggle('block-kept', checked);
+                                            acc.classList.toggle('block-skipped', !checked);
+                                        }}
+                                        return checked;
+                                    }}
+                                    '''
+                                )
                                 gr.Textbox(
                                     elem_id=f'block_text_{i}',
                                     value=blocks[i],
