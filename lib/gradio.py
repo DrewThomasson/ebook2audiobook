@@ -721,8 +721,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     (checked) => {{
                                         const acc = document.getElementById('block_{i}');
                                         if (acc) {{
-                                            acc.classList.toggle('block-kept', checked);
-                                            acc.classList.toggle('block-skipped', !checked);
+                                            acc.classList.toggle('gr-block-kept', checked);
+                                            acc.classList.toggle('gr-block-skipped', !checked);
                                         }}
                                         return checked;
                                     }}
