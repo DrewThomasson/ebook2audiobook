@@ -797,7 +797,7 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
 
             def show_confirm_buttons(mode:str)->str:
-                if mode in ['confirm_deletion']:
+                if mode in ['confirm_deletion', 'confirm_override']:
                     button_yes = f'#gr_{mode}_yes_btn'
                     button_no = f'#gr_{mode}_no_btn'
                     return f'''
@@ -1718,8 +1718,11 @@ def build_interface(args:dict)->gr.Blocks:
 
             def check_override(session_id:str)->dict:
                 session = context.get_session(session_id)
-                if session and session['status'] != confirm_blocks_txt:   
-                    
+                if session and audiobook_opptions and session['status'] != confirm_blocks_txt:
+                    final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
+                    if any(final_file in path for key, path in audiobook_options):
+                        msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
+                        return gr.update(value=show_gr_modal('confirm_override', msg), visible=True)
                 return gr.update()
 
             def edit_blocks(session_id:str)->tuple:
