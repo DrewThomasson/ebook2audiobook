@@ -674,7 +674,10 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_edit = gr.State([])
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
-                
+                with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
+                    gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
+                    gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
+                    gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
                 @gr.render(inputs=[gr_blocks_page, gr_blocks_expand, gr_blocks_keep_checked, gr_blocks_edit])
                 def render_blocks(page:int, expand:dict[int, bool], keep_map:dict[int, bool], blocks:list)->None:
                     start = page * page_size
@@ -705,12 +708,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     container=False,
                                     interactive=True
                                 )
-
-                with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
-                    gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
-                    gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
-                    gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
-
                 with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
                     gr.Column(scale=1)
                     gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['blocks-buttons'], variant='stop', scale=0, size='md')
