@@ -243,11 +243,11 @@ def build_interface(args:dict)->gr.Blocks:
                 .gr-convert-btn {
                     font-size: 30px !important;
                 }
-                .gr-block-kept div button {
+                .gr-block-kept, .gr-block-kept div {
                     background-color: rgba(34, 197, 94, 0.08) !important;
                     border-left: 3px solid #22c55e !important;
                 }
-                .gr-block-skipped div button {
+                .gr-block-skipped, .gr-block-skipped div {
                     background-color: rgba(239, 68, 68, 0.08) !important;
                     border-left: 3px solid #ef4444 !important;
                 }
