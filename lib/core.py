@@ -150,7 +150,7 @@ class SessionContext:
             "ebook": None,
             "ebook_list": None,
             "ebook_mode": "single",
-            "chapters_preview": default_chapters_preview,
+            "blocks_preview": default_blocks_preview,
             "chapters_dir": None,
             "sentences_dir": None,
             "epub_path": None,
@@ -2583,7 +2583,7 @@ def convert_ebook(args:dict)->tuple:
                 session['is_gui_process'] = bool(args['is_gui_process'])
                 session['ebook'] = str(args['ebook']) if args['ebook'] else None
                 session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
-                session['chapters_preview'] = bool(args['chapters_preview']) if args.get('chapters_preview') else False
+                session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
                 session['device'] = str(args['device'])
                 session['language'] = str(args['language'])
                 session['language_iso1'] = str(args['language_iso1'])
@@ -2773,7 +2773,7 @@ def convert_ebook(args:dict)->tuple:
                                                         session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
                                                         save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                                     if session.get('blocks_orig', []) and session.get('blocks_edit', []):
-                                                        if session['chapters_preview']:
+                                                        if session['blocks_preview']:
                                                             return confirm_blocks_txt, True
                                                         else:
                                                             progress_status, passed = finalize_audiobook(session_id)

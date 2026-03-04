@@ -314,7 +314,7 @@ def build_interface(args:dict)->gr.Blocks:
                     display: none !important;
                 }
                 #gr_row_ebook_mode { align-items: center !important; }
-                #gr_chapters_preview {
+                #gr_blocks_preview {
                     align-self: center !important; 
                     overflow: visible !important;
                     padding: 20px 0 20px 10px !important;
@@ -500,7 +500,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
-                                        gr_chapters_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_preview', value=False, interactive=True, scale=1)
+                                        gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                     gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
@@ -902,7 +902,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return (
                             gr.update(value=session['ebook']),
                             gr.update(value=session['ebook_mode']),
-                            gr.update(value=bool(session['chapters_preview'])),
+                            gr.update(value=bool(session['blocks_preview'])),
                             gr.update(value=session['device']),
                             gr.update(value=session['language']),
                             update_gr_voice_list(session_id),
@@ -1018,10 +1018,10 @@ def build_interface(args:dict)->gr.Blocks:
                         session['ebook'] = None
                         session['ebook_list'] = None
                         if data is None:
-                            if session.get("status") == "converting":
+                            if session.get('status') == 'converting':
                                 session['cancellation_requested'] = True
-                                msg = "Cancellation requested, please wait..."
-                                yield gr.update(value=show_gr_modal("wait", msg), visible=True)
+                                msg = 'Cancellation requested, please wait...'
+                                yield gr.update(value=show_gr_modal('wait', msg), visible=True)
                                 return
                         if isinstance(data, list):
                             ebook_list = []
@@ -1534,7 +1534,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session[key] = val
                     state = {}
-                    if key == "chapters_preview":
+                    if key == "blocks_preview":
                         msg = 'Chapters preview feature will be available to the next version'   
                         state['type'] = 'info'
                         state['msg'] = msg
@@ -1555,7 +1555,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 show_alert(state)
 
             def submit_convert_btn(
-                    session_id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
+                    session_id:str, device:str, ebook_file:str, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
@@ -1566,7 +1566,7 @@ def build_interface(args:dict)->gr.Blocks:
                             "id": session_id,
                             "is_gui_process": session['is_gui_process'],
                             "script_mode": script_mode,
-                            "chapters_preview": chapters_preview,
+                            "blocks_preview": blocks_preview,
                             "device": device,
                             "tts_engine": tts_engine,
                             "ebook": ebook_file if isinstance(ebook_file, str) else None,
@@ -1603,7 +1603,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['status'] = 'converting'
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
-                                args['chapters_preview'] = None
+                                args['blocks_preview'] = None
                                 ebook_list = args['ebook_list'][:]
                                 for file in ebook_list:
                                     if any(file.endswith(ext) for ext in ebook_formats):
@@ -1715,6 +1715,10 @@ def build_interface(args:dict)->gr.Blocks:
                 start = page * page_size
                 end = min(start + page_size, len_blocks)
                 return gr.update(value=f'Blocks {start}–{end-1} of {len_blocks - 1}')
+
+            def check_override(session_id:str, audiobooks_list:list, chapter_preview:bool)->tuple:
+                session = context.get_session(session_id)
+                if session and session['status'] == confirm_blocks_txt:           
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -1883,11 +1887,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
                 inputs=[gr_ebook_mode, gr_session],
-                outputs=[gr_ebook_file, gr_chapters_preview]
+                outputs=[gr_ebook_file, gr_blocks_preview]
             )
-            gr_chapters_preview.select(
-                fn=lambda val, session_id: change_param('chapters_preview', bool(val), session_id),
-                inputs=[gr_chapters_preview, gr_session],
+            gr_blocks_preview.select(
+                fn=lambda val, session_id: change_param('blocks_preview', bool(val), session_id),
+                inputs=[gr_blocks_preview, gr_session],
                 outputs=None
             )
             gr_voice_file.upload(
@@ -2181,30 +2185,44 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=disable_components,
                 inputs=None,
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=[gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
                 fn=submit_convert_btn,
                 inputs=[
-                    gr_session, gr_device, gr_ebook_file, gr_chapters_preview, gr_tts_engine_list, gr_language, gr_voice_list,
+                    gr_session, gr_device, gr_ebook_file, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
                     gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                     gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                     gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
                 ],
                 outputs=[gr_progress]
             ).then(
+                fn=check_override,
+                inputs=[gr_session, gr_audiobook_list, gr_blocks_preview],
+                outputs=[gr_modal]
+            ).then(
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=[
-                    gr_group_main, gr_group_blocks, gr_blocks_header, gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked, gr_blocks_prev, gr_blocks_next
+                    gr_group_main, gr_group_blocks, gr_blocks_header,
+                    gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked,
+                    gr_blocks_prev, gr_blocks_next
                 ]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=[
+                    gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                    gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                    gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+                ]
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+                outputs=[
+                    gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
+                    gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player,
+                    gr_modal, gr_voice_list, gr_progress
+                ]
             )
             gr_save_session.change(
                 fn=None,
@@ -2232,7 +2250,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=restore_interface,
                 inputs=[gr_session],
                 outputs=[
-                    gr_ebook_file, gr_ebook_mode, gr_chapters_preview, gr_device, gr_language, gr_voice_list,
+                    gr_ebook_file, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
                     gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                     gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model
                 ]
@@ -2286,7 +2304,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=[gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
@@ -2303,7 +2321,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=[gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
