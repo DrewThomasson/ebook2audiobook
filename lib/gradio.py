@@ -742,8 +742,9 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    outputs = tuple([gr.update(interactive=True) for _ in range(12)])
-                    return outputs
+                    if session['status'] not in [confirm_override_txt, confirm_blocks_txt]:
+                        outputs = tuple([gr.update(interactive=True) for _ in range(12)])
+                        return outputs
                 outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
                 
@@ -937,6 +938,7 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
+                    if session['status'] not in [confirm_override_txt, confirm_blocks_txt]:
                     visible_main = False
                     visible_xtts = False
                     visible_bark = False
@@ -1721,15 +1723,15 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and audiobook_options and not isinstance(data, list) and not blocks_preview:
                     final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
-                    print(f'final file ===============> {final_file}')
                     if any(final_file in path for key, path in audiobook_options):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
+                        session['status'] = confirm_override_txt
                         return gr.update(value=show_gr_modal('confirm_override', msg), visible=True)
                 return gr.update()
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
-                if session and session['status'] == confirm_blocks_txt:
+                if session and session['status'] in [confirm_blocks_txt]:
                     visible_main = False
                     visible_blocks = True
                     if session['cancellation_requested']:
