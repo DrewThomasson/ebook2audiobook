@@ -1718,7 +1718,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def check_override(session_id:str)->dict:
                 session = context.get_session(session_id)
-                if session and audiobook_opptions and session['status'] != confirm_blocks_txt:
+                if session and audiobook_options and session['status'] != confirm_blocks_txt:
                     final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
                     if any(final_file in path for key, path in audiobook_options):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
