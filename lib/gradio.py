@@ -799,7 +799,7 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
 
             def show_confirm_buttons(mode:str)->str:
-                if mode in ['confirm_deletion', 'confirm_override']:
+                if mode in [confirm_deletion_txt, confirm_override_txt]:
                     button_yes = f'#gr_{mode}_yes_btn'
                     button_no = f'#gr_{mode}_no_btn'
                     return f'''
@@ -1129,7 +1129,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     msg = f'Are you sure to delete {speaker}...'
                                     return (
                                         gr.update(value='confirm_voice_del'),
-                                        gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                                        gr.update(value=show_gr_modal(confirm_deletion_txt, msg), visible=True)
                                     )
                                 else:
                                     error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
@@ -1153,7 +1153,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session and session.get('id', False):
                             selected_name = os.path.basename(selected)
                             msg = f'Are you sure to delete {selected_name}...'
-                            return gr.update(value='confirm_custom_model_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                            return gr.update(value='confirm_custom_model_del'), gr.update(value=show_gr_modal(confirm_deletion_txt, msg), visible=True)
                 except Exception as e:
                     error = f'Could not delete the custom model {selected_name}!'
                     alert_exception(error, session_id)
@@ -1166,7 +1166,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session and session.get('id', False):
                             selected_name = Path(selected).stem
                             msg = f'Are you sure to delete {selected_name}...'
-                            return gr.update(value='confirm_audiobook_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                            return gr.update(value='confirm_audiobook_del'), gr.update(value=show_gr_modal(confirm_deletion_txt, msg), visible=True)
                 except Exception as e:
                     error = f'Could not delete the audiobook {selected_name}!'
                     alert_exception(error, session_id)
@@ -1565,7 +1565,7 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['status'] not in [confirm_override]:
+                        if session['status'] not in [confirm_override_txt]:
                             args = {
                                 "id": session_id,
                                 "is_gui_process": session['is_gui_process'],
@@ -1727,7 +1727,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if any(final_file in path for key, path in audiobook_options):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
                         session['status'] = confirm_override_txt
-                        return gr.update(value=show_gr_modal('confirm_override', msg), visible=True)
+                        return gr.update(value=show_gr_modal(confirm_override_txt, msg), visible=True)
                 return gr.update()
 
             def edit_blocks(session_id:str)->tuple:
