@@ -954,10 +954,13 @@ def build_interface(args:dict)->gr.Blocks:
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
                         return (
-                            gr.update(value='', visible=False), gr.update(visible=False), gr.update(visible=visible_main), gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
-                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']), update_gr_voice_list(session_id), gr.update(value='')
+                            gr.update(value='', visible=False), gr.update(visible=False),
+                            gr.update(visible=visible_main), gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
+                            gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
+                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
+                            update_gr_voice_list(session_id), gr.update(value='')
                         )
-                outputs = tuple([gr.update() for _ in range(11)])
+                outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
 
             def change_gr_audiobook_list(selected:str|None, session_id:str)->dict:
