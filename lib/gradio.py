@@ -688,7 +688,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=keep_map.get(i, True),
-                                    label='Keep block',
+                                    label='📌',
                                     interactive=True,
                                     visible=True,
                                     scale=0
