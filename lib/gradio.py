@@ -1914,7 +1914,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list
             ]
-            outputs_edit_bloks = [
+            outputs_edit_blocks = [
                 gr_group_main, gr_group_blocks, gr_blocks_header,
                 gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked,
                 gr_blocks_previous_btn, gr_blocks_next_btn
