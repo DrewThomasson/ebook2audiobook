@@ -60,7 +60,7 @@ context_tracker = None
 active_sessions = None
 progress_bar = None
 confirm_blocks_txt = 'confirm_blocks'
-confirm_override_txt 'confirm_override'
+confirm_override_txt = 'confirm_override'
 
 class DependencyError(Exception):
 
