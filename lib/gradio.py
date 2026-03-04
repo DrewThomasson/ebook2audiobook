@@ -696,14 +696,6 @@ def build_interface(args:dict)->gr.Blocks:
                             kept = keep_map.get(i, True) if isinstance(keep_map, dict) else True
                             cls = 'gr-block-kept' if kept else 'gr-block-skipped'
                             with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', elem_classes=[cls], visible=True, open=expand.get(i, False) if isinstance(expand, dict) else False) as acc:
-                                acc.expand(
-                                    lambda idx=i, m=expand: {**(m if isinstance(m, dict) else {}), idx: True},
-                                    outputs=gr_blocks_expand
-                                )
-                                acc.collapse(
-                                    lambda idx=i, m=expand: {**(m if isinstance(m, dict) else {}), idx: False},
-                                    outputs=gr_blocks_expand
-                                )
                                 keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=kept,
