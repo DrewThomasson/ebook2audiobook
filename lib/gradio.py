@@ -955,7 +955,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_bark = visible_gr_tab_bark_params
                         return (
                             gr.update(visible=False), gr.update(visible=visible_main), gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
-                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']), gr.update(value='', visible=False), update_gr_voice_list(session_id), gr.update(value='')
+                            update_gr_audiobook_list(session_id), gr.update(value='', visible=False), gr.update(value=session['audiobook']), update_gr_voice_list(session_id), gr.update(value='')
                         )
                 outputs = tuple([gr.update() for _ in range(11)])
                 return outputs
