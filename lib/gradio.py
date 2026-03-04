@@ -708,6 +708,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 )
                                 keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
+                                    elem_classes=[cls],
                                     value=kept,
                                     label='',
                                     interactive=True,
