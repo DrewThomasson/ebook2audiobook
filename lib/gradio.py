@@ -713,9 +713,9 @@ def build_interface(args:dict)->gr.Blocks:
 
                 with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
                     gr.Column(scale=1)
-                    gr_blocks_cancel = gr.Button('✖', elem_classes=['blocks-buttons'], variant='stop', scale=0, size='md')
+                    gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['blocks-buttons'], variant='stop', scale=0, size='md')
                     gr.Column(scale=0, min_width=100)
-                    gr_blocks_continue = gr.Button('✔', elem_classes=['blocks-buttons'], variant='primary', scale=0, size='md')
+                    gr_blocks_continue_btn = gr.Button('✔', elem_classes=['blocks-buttons'], variant='primary', scale=0, size='md')
                     gr.Column(scale=1)
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
@@ -739,6 +739,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session_update = gr.State(value={'hash': None})
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
+            
+            ############## End of Gradio Components creation
 
             def disable_components()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(12)])
@@ -1756,13 +1758,15 @@ def build_interface(args:dict)->gr.Blocks:
                     )
                 return tuple(gr.update() for _ in range(8))
 
-            def cancel_blocks(session_id:str)->tuple:
+            def click_gr_blocks_cancel_btn(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session["status"] = status_tags['READY']
+                    msg = 'Blocks editing cancelled'
+                    print(msg)
                 return gr.update(visible=False)
 
-            def continue_blocks(session_id:str, keep_map:dict[int,bool])->list[str]:
+            def click_continue_blocks_btn(session_id:str, keep_map:dict[int,bool])->list[str]:
                 new_blocks = []
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
@@ -2370,8 +2374,8 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_blocks_page, gr_blocks_edit],
                 outputs=[gr_blocks_header]
             )
-            gr_blocks_cancel.click(
-                fn=cancel_blocks,
+            gr_blocks_cancel_btn.click(
+                fn=click_gr_blocks_cancel_btn,
                 inputs=[gr_session],
                 outputs=[gr_group_blocks]
             ).then(
@@ -2383,8 +2387,8 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
             )
-            gr_blocks_continue.click(
-                fn=continue_blocks,
+            gr_blocks_continue_btn.click(
+                fn=click_continue_blocks_btn,
                 inputs=[gr_session, gr_blocks_keep_checked],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
             ).then(
