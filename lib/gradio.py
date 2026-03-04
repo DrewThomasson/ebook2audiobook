@@ -954,8 +954,8 @@ def build_interface(args:dict)->gr.Blocks:
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
                         return (
-                            gr.update(visible=False), gr.update(visible=visible_main), gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
-                            update_gr_audiobook_list(session_id), gr.update(value='', visible=False), gr.update(value=session['audiobook']), update_gr_voice_list(session_id), gr.update(value='')
+                            gr.update(value='', visible=False), gr.update(visible=False), gr.update(visible=visible_main), gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
+                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']), update_gr_voice_list(session_id), gr.update(value='')
                         )
                 outputs = tuple([gr.update() for _ in range(11)])
                 return outputs
@@ -1917,9 +1917,9 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model
             ]
             outputs_refresh_interface = [
-                gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
+                gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
                 gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player,
-                gr_modal, gr_voice_list, gr_progress
+                gr_voice_list, gr_progress
             ]
             outputs_on_voice_upload = [
                 gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list,
