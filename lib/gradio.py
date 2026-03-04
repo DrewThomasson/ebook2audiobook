@@ -714,11 +714,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     visible=True,
                                     scale=0
                                 )
-                                keep.change(
-                                    fn=lambda checked, idx=key, m=keep_map: {**(m if isinstance(m, dict) else {}), idx: checked},
-                                    inputs=[keep],
-                                    outputs=gr_blocks_keep
-                                )
                                 gr.Textbox(
                                     elem_id=f'block_text_{i}',
                                     value=blocks[i],
