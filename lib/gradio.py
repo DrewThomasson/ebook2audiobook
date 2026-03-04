@@ -748,9 +748,9 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] not in [status_tags['OVERRIDE'], status_tags['BLOCKS']]:
-                        outputs = tuple([gr.update(interactive=True) for _ in range(13)])
+                        outputs = tuple([gr.update(interactive=True) for _ in range(12)])
                         return outputs
-                outputs = tuple([gr.update() for _ in range(13)])
+                outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
                 
             def disable_on_voice_upload()->tuple:
@@ -1889,6 +1889,45 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         session['event'] = None
 
+            ################## Events
+
+            inputs_start_conversion = [
+                gr_session, gr_device, gr_ebook_file, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
+                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
+                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
+                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
+            ]
+
+            outputs_enable_components = [
+                gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+            ]
+            outputs_disable_components = [
+                gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+            ]
+            outputs_restore_interface = [
+                gr_ebook_file, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
+                gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
+                gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model
+            ]
+            outputs_refresh_interface = [
+                gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
+                gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player,
+                gr_modal, gr_voice_list, gr_progress
+            ]
+            outputs_on_voice_upload = [
+                gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list,
+                gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list,
+                gr_convert_btn, gr_voice_play, gr_voice_del_btn
+            ]
+            outputs_on_custom_upload = [
+                gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list,
+                gr_fine_tuned_list, gr_voice_file, gr_convert_btn, gr_custom_model_del_btn
+            ]
+            
             gr_ebook_file.change(
                 fn=change_convert_btn,
                 inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
@@ -1911,7 +1950,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_voice_file.upload(
                 fn=disable_on_voice_upload,
                 inputs=None,
-                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_convert_btn, gr_voice_play, gr_voice_del_btn]
+                outputs=outputs_on_voice_upload
             ).then(
                 fn=change_gr_voice_file,
                 inputs=[gr_voice_file, gr_session],
@@ -1923,7 +1962,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_on_voice_upload,
                 inputs=[gr_session],
-                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_convert_btn, gr_voice_play, gr_voice_del_btn]
+                outputs=outputs_on_voice_upload
             )
             gr_voice_list.change(
                 fn=change_gr_voice_list,
@@ -1970,7 +2009,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_file.upload(
                 fn=disable_on_custom_upload,
                 inputs=None,
-                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_voice_file, gr_convert_btn, gr_custom_model_del_btn]
+                outputs=outputs_on_custom_upload
             ).then(
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
@@ -1983,7 +2022,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_on_custom_upload,
                 inputs=[gr_session],
-                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_voice_file, gr_convert_btn, gr_custom_model_del_btn]
+                outputs=outputs_on_custom_upload
             )
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
@@ -2199,19 +2238,14 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=disable_components,
                 inputs=None,
-                outputs=[gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=outputs_disable_components
             ).then(
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview],
                 outputs=[gr_modal]
             ).then(
                 fn=start_conversion,
-                inputs=[
-                    gr_session, gr_device, gr_ebook_file, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
-                    gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                    gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                    gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
-                ],
+                inputs=inputs_start_conversion,
                 outputs=[gr_progress]
             ).then(
                 fn=edit_blocks,
@@ -2224,19 +2258,11 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[
-                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
-                    gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                    gr_custom_model_list, gr_output_format_list, gr_output_channel_list
-                ]
+                outputs=outputs_enable_components
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[
-                    gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
-                    gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player,
-                    gr_modal, gr_voice_list, gr_progress
-                ]
+                outputs=outputs_refresh_interface
             )
             gr_override_confirm_btn.click(
                 fn=click_gr_override_buttons,
@@ -2244,12 +2270,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal]
             ).then(
                 fn=start_conversion,
-                inputs=[
-                    gr_session, gr_device, gr_ebook_file, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
-                    gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                    gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                    gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
-                ],
+                inputs=inputs_start_conversion,
                 outputs=[gr_progress]
             ).then(
                 fn=edit_blocks,
@@ -2262,19 +2283,11 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[
-                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
-                    gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                    gr_custom_model_list, gr_output_format_list, gr_output_channel_list
-                ]
+                outputs=outputs_enable_components
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[
-                    gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
-                    gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player,
-                    gr_modal, gr_voice_list, gr_progress
-                ]
+                outputs=outputs_refresh_interface
             )
             gr_override_cancel_btn.click(
                 fn=click_gr_override_buttons,
@@ -2283,11 +2296,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[
-                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
-                    gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                    gr_custom_model_list, gr_output_format_list, gr_output_channel_list
-                ]            
+                outputs=outputs_enable_components            
             )
             gr_save_session.change(
                 fn=None,
@@ -2314,11 +2323,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=restore_interface,
                 inputs=[gr_session],
-                outputs=[
-                    gr_ebook_file, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
-                    gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                    gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model
-                ]
+                outputs=outputs_restore_interface
             ).then(
                 fn=restore_audiobook_player,
                 inputs=[gr_audiobook_list],
@@ -2369,15 +2374,11 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[
-                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
-                    gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                    gr_custom_model_list, gr_output_format_list, gr_output_channel_list
-                ]
+                outputs=outputs_enable_components
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_voice_list, gr_progress]
+                outputs=outputs_refresh_interface
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
@@ -2390,15 +2391,11 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[
-                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
-                    gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                    gr_custom_model_list, gr_output_format_list, gr_output_channel_list
-                ]           
+                outputs=outputs_enable_components          
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_voice_list, gr_progress]
+                outputs=outputs_refresh_interface
             )
             ############
             app.load(
