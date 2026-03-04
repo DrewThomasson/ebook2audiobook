@@ -693,7 +693,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     visible=True,
                                     scale=0
                                 )
-                                with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=True, open=expand.get(i, False)) as acc:
+                                with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=True, scale=2, open=expand.get(i, False)) as acc:
                                     acc.expand(
                                         lambda idx=i, m=expand: {**m, idx: True},
                                         outputs=gr_blocks_expand
