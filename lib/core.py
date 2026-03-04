@@ -2779,7 +2779,7 @@ def convert_ebook(args:dict)->tuple:
                                                         save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                                     if session.get('blocks_orig', []) and session.get('blocks_edit', []):
                                                         if session['blocks_preview']:
-                                                            return confirm_tags['BLOKS'], True
+                                                            return confirm_tags['BLOCKS'], True
                                                         else:
                                                             progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed

@@ -742,7 +742,7 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] not in [confirm_tags['OVERRIDE'], confirm_tags['BLOKS']]:
+                    if session['status'] not in [confirm_tags['OVERRIDE'], confirm_tags['BLOCKS']]:
                         outputs = tuple([gr.update(interactive=True) for _ in range(12)])
                         return outputs
                 outputs = tuple([gr.update() for _ in range(12)])
@@ -938,11 +938,11 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] not in [confirm_tags['OVERRIDE'], confirm_tags['BLOKS']]:
+                    if session['status'] not in [confirm_tags['OVERRIDE'], confirm_tags['BLOCKS']]:
                         visible_main = False
                         visible_xtts = False
                         visible_bark = False
-                        if session['status'] != confirm_tags['BLOKS'] or session['cancellation_requested']:
+                        if session['status'] != confirm_tags['BLOCKS'] or session['cancellation_requested']:
                             visible_main = True
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
@@ -1644,7 +1644,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         else:
                                             error = 'Conversion failed.'
                                     else:
-                                        if progress_status == confirm_tags['BLOKS']:
+                                        if progress_status == confirm_tags['BLOCKS']:
                                             session['status'] = progress_status
                                             msg = 'Select the blocks to convert'
                                             print(msg)
@@ -1720,7 +1720,7 @@ def build_interface(args:dict)->gr.Blocks:
                 end = min(start + page_size, len_blocks)
                 return gr.update(value=f'Blocks {start}–{end-1} of {len_blocks - 1}')
 
-            def conversion_check_override(session_id:str, data:any, blocks_preview:bool)->dict:
+            def convert_check_override(session_id:str, data:any, blocks_preview:bool)->dict:
                 session = context.get_session(session_id)
                 if session and audiobook_options and not isinstance(data, list) and not blocks_preview:
                     final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
@@ -1732,7 +1732,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
-                if session and session['status'] in [confirm_tags['BLOKS']]:
+                if session and session['status'] in [confirm_tags['BLOCKS']]:
                     visible_main = False
                     visible_blocks = True
                     if session['cancellation_requested']:
@@ -2198,7 +2198,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=[gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
-                fn=conversion_check_override,
+                fn=convert_check_override,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview],
                 outputs=[gr_modal]
             ).then(
