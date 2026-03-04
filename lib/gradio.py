@@ -689,7 +689,6 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
-            gr_blocks_acc = gr.JSON(value={}, visible=False)
             gr_blocks_keep = gr.State({})
             gr_blocks_edit = gr.JSON(value=[], visible=False)
 
@@ -699,23 +698,13 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
                     gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
 
-                @gr.render(inputs=[gr_blocks_page, gr_blocks_acc, gr_blocks_edit])
-                def render_blocks(page:int, expand_map:dict[str, bool], blocks:list)->None:
+                @gr.render(inputs=[gr_blocks_page, gr_blocks_edit])
+                def render_blocks(page:int, blocks:list)->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
                     with gr.Column(elem_id='gr_column_blocks'):
                         for i in range(start, end):
-                            key = str(i)
-                            is_open = expand_map.get(key, False) if isinstance(expand_map, dict) else False
-                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=True, open=is_open) as acc:
-                                acc.expand(
-                                    lambda idx=key, m=expand_map: {**(m if isinstance(m, dict) else {}), idx: True},
-                                    outputs=gr_blocks_acc
-                                )
-                                acc.collapse(
-                                    lambda idx=key, m=expand_map: {**(m if isinstance(m, dict) else {}), idx: False},
-                                    outputs=gr_blocks_acc
-                                )
+                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=True, open=False) as acc:
                                 keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=True,
@@ -1776,10 +1765,13 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_main = True
                         visible_blocks = False
                     return (
-                        gr.update(visible=visible_main), gr.update(visible=visible_blocks), update_blocks_header(0, len(session['blocks_edit'])), session['blocks_edit'],
-                        0, {}, gr.update(visible=False), gr.update(visible=len(session['blocks_edit']) > page_size)
+                        gr.update(visible=visible_main), gr.update(visible=visible_blocks),
+                        update_blocks_header(0, len(session['blocks_edit'])),
+                        session['blocks_edit'],
+                        0, {}, gr.update(visible=False),
+                        gr.update(visible=len(session['blocks_edit']) > page_size)
                     )
-                return tuple(gr.update() for _ in range(8))
+                return tuple(gr.update() for _ in range(7))
 
             def click_gr_blocks_cancel_btn(session_id:str)->tuple:
                 session = context.get_session(session_id)
