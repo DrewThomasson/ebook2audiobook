@@ -1716,10 +1716,10 @@ def build_interface(args:dict)->gr.Blocks:
                 end = min(start + page_size, len_blocks)
                 return gr.update(value=f'Blocks {start}–{end-1} of {len_blocks - 1}')
 
-            def check_override(session_id:str)->dict:
+            def check_override(session_id:str, blocks_preview:bool)->dict:
                 session = context.get_session(session_id)
-                if session and audiobook_options and session['status'] != confirm_blocks_txt:
-                    final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
+                if session and audiobook_options and not blocks_preview:
+                    final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(session['ebook']).stem + '.' + session['output_format']))
                     if any(final_file in path for key, path in audiobook_options):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
                         return gr.update(value=show_gr_modal('confirm_override', msg), visible=True)
@@ -2192,6 +2192,10 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=[gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             ).then(
+                fn=check_override,
+                inputs=[gr_session, gr_ebook_file, gr_blocks_preview],
+                outputs=[gr_modal]
+            ).then(
                 fn=submit_convert_btn,
                 inputs=[
                     gr_session, gr_device, gr_ebook_file, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
@@ -2200,10 +2204,6 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
                 ],
                 outputs=[gr_progress]
-            ).then(
-                fn=check_override,
-                inputs=[gr_session],
-                outputs=[gr_modal]
             ).then(
                 fn=edit_blocks,
                 inputs=[gr_session],
