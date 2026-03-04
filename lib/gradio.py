@@ -947,6 +947,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_main = False
                         visible_xtts = False
                         visible_bark = False
+                        interactive_convert_btn = True if session['ebook'] else False
                         if session['status'] != status_tags['BLOCKS'] or session['cancellation_requested']:
                             visible_main = True
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
@@ -956,7 +957,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return (
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
-                            gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
+                            gr.update(interactive=interactive_convert_btn), gr.update(value=session['ebook']), gr.update(value=session['device']), 
                             update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
                             update_gr_voice_list(session_id), gr.update(value='')
                         )
