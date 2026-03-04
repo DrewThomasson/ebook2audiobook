@@ -691,7 +691,7 @@ def build_interface(args:dict)->gr.Blocks:
                 def render_blocks(page:int, expand:dict[int, bool], keep_map:dict[int, bool], blocks:list)->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
-                    with gr.Column(id='gr_column_blocks') as gr_column_blocks:
+                    with gr.Column(elem_id='gr_column_blocks') as gr_column_blocks:
                         for i in range(start, end):
                             kept = keep_map.get(i, True) if isinstance(keep_map, dict) else True
                             cls = 'gr-block-kept' if kept else 'gr-block-skipped'
