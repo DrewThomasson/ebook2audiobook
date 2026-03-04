@@ -60,10 +60,12 @@ context_tracker = None
 active_sessions = None
 progress_bar = None
 
-confirm_tags = {
+status_tags = {
     "BLOCKS": "blocks",
     "OVERRIDE": "override",
-    "DELETION": "deletion"
+    "DELETION": "deletion",
+    "READY": "ready",
+    "CONVERTING": "converting"
 }
 
 class DependencyError(Exception):
@@ -90,7 +92,7 @@ class SessionTracker:
         with self.lock:
             session = context.get_session(session_id)
             if session['status'] is None:
-                session['status'] = 'ready'
+                session['status'] = status_tags['READY']
                 return True
         return False
 
@@ -2779,7 +2781,7 @@ def convert_ebook(args:dict)->tuple:
                                                         save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                                     if session.get('blocks_orig', []) and session.get('blocks_edit', []):
                                                         if session['blocks_preview']:
-                                                            return confirm_tags['BLOCKS'], True
+                                                            return status_tags['BLOCKS'], True
                                                         else:
                                                             progress_status, passed = finalize_audiobook(session_id)
                                                         return progress_status, passed
@@ -2945,7 +2947,7 @@ def alert_exception(error:str, session_id:str|None)->None:
     if session_id is not None:
         session = context.get_session(session_id)
         if session and session.get('id', False):
-            session['status'] = 'ready'
+            session['status'] = status_tags['READY']
     print(error)
     gr.Error(error)
     DependencyError(error)
