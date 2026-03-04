@@ -750,7 +750,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] not in [status_tags['OVERRIDE'], status_tags['BLOCKS']]:
                         outputs = tuple([gr.update(interactive=True) for _ in range(12)])
                         return outputs
-                outputs = tuple([gr.update() for _ in range(12)])
+                outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
                 
             def disable_on_voice_upload()->tuple:
@@ -2225,7 +2225,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=[
-                    gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                     gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                     gr_custom_model_list, gr_output_format_list, gr_output_channel_list
                 ]
@@ -2263,7 +2263,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=[
-                    gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                     gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                     gr_custom_model_list, gr_output_format_list, gr_output_channel_list
                 ]
@@ -2283,7 +2283,11 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=[
+                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                    gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                    gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+                ]            
             )
             gr_save_session.change(
                 fn=None,
@@ -2365,7 +2369,11 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=[
+                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                    gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                    gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+                ]
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
@@ -2382,7 +2390,11 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=[
+                    gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                    gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                    gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+                ]           
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
