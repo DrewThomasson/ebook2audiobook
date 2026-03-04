@@ -1726,12 +1726,15 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True)
                 return gr.update()
 
-            def click_gr_override_buttons(session_id:str)->dict:
+            def click_gr_override_buttons(session_id:str, confirmed:bool)->dict:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
+                    interactive = False
                     session['status'] = status_tags['READY']
-                    return gr.update(value='', visible=False)
-                return gr.update()
+                    if not confirmed
+                        interactive = True
+                    return gr.update(value='', visible=False), gr.update(interactive=interactive)
+                return gr.update(), gr.update(interactive=interactive)
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -2265,9 +2268,9 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_refresh_interface
             )
             gr_override_confirm_btn.click(
-                fn=click_gr_override_buttons,
+                fn=lambda session: click_gr_override_buttons(session, confirmed=True),
                 inputs=[gr_session],
-                outputs=[gr_modal]
+                outputs=[gr_modal, gr_convert_btn]
             ).then(
                 fn=start_conversion,
                 inputs=inputs_start_conversion,
@@ -2290,9 +2293,9 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_refresh_interface
             )
             gr_override_cancel_btn.click(
-                fn=click_gr_override_buttons,
+                fn=lambda session: click_gr_override_buttons(session, confirmed=False),
                 inputs=[gr_session],
-                outputs=[gr_modal]
+                outputs=[gr_modal, gr_convert_btn]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
