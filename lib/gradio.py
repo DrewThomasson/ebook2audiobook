@@ -1754,7 +1754,6 @@ def build_interface(args:dict)->gr.Blocks:
                         gr.update(visible=visible_main), gr.update(visible=visible_blocks), update_blocks_header(0, len(session['blocks_edit'])), session['blocks_edit'],
                         0, {}, gr.update(visible=False), gr.update(visible=len(session['blocks_edit']) > page_size)
                     )
-                    return tuple(gr.update(visible=False) for _ in range(8))
                 return tuple(gr.update() for _ in range(8))
 
             def cancel_blocks(session_id:str)->tuple:
@@ -1914,6 +1913,11 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+            ]
+            outputs_edit_bloks = [
+                gr_group_main, gr_group_blocks, gr_blocks_header,
+                gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked,
+                gr_blocks_previous_btn, gr_blocks_next_btn
             ]
             outputs_restore_interface = [
                 gr_ebook_file, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
@@ -2257,11 +2261,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=edit_blocks,
                 inputs=[gr_session],
-                outputs=[
-                    gr_group_main, gr_group_blocks, gr_blocks_header,
-                    gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked,
-                    gr_blocks_previous_btn, gr_blocks_next_btn
-                ]
+                outputs=outputs_edit_blocks
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
@@ -2282,11 +2282,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=edit_blocks,
                 inputs=[gr_session],
-                outputs=[
-                    gr_group_main, gr_group_blocks, gr_blocks_header,
-                    gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked,
-                    gr_blocks_previous_btn, gr_blocks_next_btn
-                ]
+                outputs=outputs_edit_blocks
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
