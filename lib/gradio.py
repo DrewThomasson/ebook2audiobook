@@ -728,9 +728,11 @@ def build_interface(args:dict)->gr.Blocks:
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
-            gr_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
+            
+            gr_deletion_field_hidden = gr.Textbox(elem_id='gr_deletion_field_hidden', visible=False)
             gr_deletion_cancel_btn = gr.Button(elem_id='gr_deletion_cancel_btn', elem_classes=['hide-elem'], value='✖', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
             gr_deletion_confirm_btn = gr.Button(elem_id='gr_deletion_confirm_btn', elem_classes=['hide-elem'], value='✔', variant='primary', visible=True, scale=0, size='sm', min_width=0)
+            
             gr_session_update = gr.State(value={'hash': None})
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
@@ -793,19 +795,19 @@ def build_interface(args:dict)->gr.Blocks:
                 <div id="custom-gr_modal" class="gr-modal">
                     <div class="gr-modal-content">
                         <p style="color:#ffffff">{msg}</p>            
-                        {show_confirm_buttons(type)}
+                        {show_gr_modal_buttons(type)}
                     </div>
                 </div>
                 '''
 
-            def show_confirm_buttons(mode:str)->str:
-                if mode in [confirm_tags['DELETION'], confirm_tags['OVERRIDE']]:
-                    button_yes = f'#gr_{mode}_confirm_btn'
-                    button_no = f'#gr_{mode}_cancel_btn'
+            def show_gr_modal_buttons(type:str)->str:
+                if type in [confirm_tags['DELETION'], confirm_tags['OVERRIDE']]:
+                    confirm_btn = f'#gr_{type}_confirm_btn'
+                    cancel_btn = f'#gr_{type}_cancel_btn'
                     return f'''
                     <div class="confirm-buttons">
-                        <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{button_no}').click()">⨉</button>
-                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{button_yes}').click()">✔</button>
+                        <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{cancel_btn}').click()">⨉</button>
+                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{confirm_btn}').click()">✔</button>
                     </div>
                     '''
                 else:
@@ -949,8 +951,8 @@ def build_interface(args:dict)->gr.Blocks:
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
                         return (
-                            gr.update(visible=visible_main), gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
-                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
+                            gr.update(visible=False), gr.update(visible=visible_main), gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), 
+                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']), update_gr_voice_list(session_id), gr.update(value='')
                         )
                 outputs = tuple([gr.update() for _ in range(11)])
                 return outputs
@@ -1117,34 +1119,34 @@ def build_interface(args:dict)->gr.Blocks:
                             if is_builtin and is_in_builtin:
                                 error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                                 show_alert({"type": "warning", "msg": error})
-                                return gr.update(), gr.update(visible=False)
+                                return gr.update(visible=False), gr.update()
                             if is_in_models:
                                 error = f'Voice file {speaker} is a voice of one of your custom model and cannot be deleted.'
                                 show_alert({"type": "warning", "msg": error})
-                                return gr.update(), gr.update(visible=False)                          
+                                return gr.update(visible=False), gr.update()                          
                             try:
                                 selected_path = Path(selected).resolve()
                                 parent_path = Path(session['voice_dir']).parent.resolve()
                                 if parent_path in selected_path.parents:
                                     msg = f'Are you sure to delete {speaker}...'
                                     return (
-                                        gr.update(value='confirm_voice_del'),
-                                        gr.update(value=show_gr_modal(confirm_tags['DELETION'], msg), visible=True)
+                                        gr.update(value=show_gr_modal(confirm_tags['DELETION'], msg), visible=True),
+                                        gr.update(value='confirm_voice_del')
                                     )
                                 else:
                                     error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
                                     show_alert({"type": "warning", "msg": error})
-                                    return gr.update(), gr.update(visible=False)
+                                    return gr.update(visible=False), gr.update()
                             except Exception as e:
                                 error = f'Could not delete the voice file {selected}!\n{e}'
                                 alert_exception(error, session_id)
-                                return gr.update(), gr.update(visible=False)
+                                return gr.update(visible=False), gr.update()
                     # Fallback/default return if not selected or after errors
-                    return gr.update(), gr.update(visible=False)
+                    return gr.update(visible=False), gr.update()
                 except Exception as e:
                     error = f'click_gr_voice_del_btn(): {e}'
                     alert_exception(error, session_id)
-                    return gr.update(), gr.update(visible=False)
+                    return gr.update(visible=False), gr.update()
 
             def click_gr_custom_model_del_btn(selected:str, session_id:str)->tuple:
                 try:
@@ -1153,11 +1155,11 @@ def build_interface(args:dict)->gr.Blocks:
                         if session and session.get('id', False):
                             selected_name = os.path.basename(selected)
                             msg = f'Are you sure to delete {selected_name}...'
-                            return gr.update(value='confirm_custom_model_del'), gr.update(value=show_gr_modal(confirm_tags['DELETION'], msg), visible=True)
+                            return gr.update(value=show_gr_modal(confirm_tags['DELETION'], msg), visible=True), gr.update(value='confirm_custom_model_del')
                 except Exception as e:
                     error = f'Could not delete the custom model {selected_name}!'
                     alert_exception(error, session_id)
-                return gr.update(), gr.update(visible=False)
+                return gr.update(visible=False), gr.update()
 
             def click_gr_audiobook_del_btn(selected:str, session_id:str)->tuple:
                 try:
@@ -1166,18 +1168,18 @@ def build_interface(args:dict)->gr.Blocks:
                         if session and session.get('id', False):
                             selected_name = Path(selected).stem
                             msg = f'Are you sure to delete {selected_name}...'
-                            return gr.update(value='confirm_audiobook_del'), gr.update(value=show_gr_modal(confirm_tags['DELETION'], msg), visible=True)
+                            return gr.update(value=show_gr_modal(confirm_tags['DELETION'], msg), visible=True), gr.update(value='confirm_audiobook_del')
                 except Exception as e:
                     error = f'Could not delete the audiobook {selected_name}!'
                     alert_exception(error, session_id)
-                return gr.update(), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(visible=False), gr.update()
 
-            def submit_deletion(voice_path:str, custom_model:str, audiobook:str, session_id:str, method:str|None=None)->tuple:
+            def click_gr_deletion(session_id:str, voice_path:str, custom_model:str, audiobook:str, method:str|None=None)->tuple:
                 try:
                     nonlocal models
                     if method is not None:
                         session = context.get_session(session_id)
-                        if session and session.get('id', False):
+                        if sessiogr.update(visible=False), n and session.get('id', False):
                             models = load_engine_presets(session['tts_engine'])
                             if method == 'confirm_voice_del':
                                 selected_name = Path(voice_path).stem
@@ -1189,7 +1191,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                                 session['voice'] = None
                                 show_alert({"type": "warning", "msg": msg})
-                                return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(session_id)
+                                return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                             elif method == 'confirm_custom_model_del':
                                 selected_name = os.path.basename(custom_model)
                                 shutil.rmtree(custom_model, ignore_errors=True)                           
@@ -1199,7 +1201,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         session['voice'] = models[session['fine_tuned']]['voice']
                                 session['custom_model'] = None
                                 show_alert({"type": "warning", "msg": msg})
-                                return update_gr_custom_model_list(session_id), gr.update(), gr.update(value='', visible=False), gr.update()
+                                return gr.update(value='', visible=False), update_gr_custom_model_list(session_id), gr.update(),  gr.update()
                             elif method == 'confirm_audiobook_del':
                                 selected_name = Path(audiobook).stem
                                 if os.path.isdir(audiobook):
@@ -1214,11 +1216,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 msg = f'Audiobook {selected_name} deleted!'
                                 session['audiobook'] = None
                                 show_alert({"type": "warning", "msg": msg})
-                                return gr.update(), update_gr_audiobook_list(session_id), gr.update(value='', visible=False), gr.update()
+                                return gr.update(value='', visible=False), gr.update(), update_gr_audiobook_list(session_id), gr.update()
                 except Exception as e:
-                    error = f'submit_deletion(): {e}!'
+                    error = f'click_gr_deletion(): {e}!'
                     alert_exception(error, session_id)
-                return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
+                return  gr.update(value='', visible=False), gr.update(), gr.update(), gr.update()
 
             def update_gr_voice_list(session_id:str)->dict:
                 try:
@@ -1930,7 +1932,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_voice_del_btn.click(
                 fn=click_gr_voice_del_btn,
                 inputs=[gr_voice_list, gr_session],
-                outputs=[gr_deletion_field_hidden, gr_modal]
+                outputs=[gr_modal, gr_deletion_field_hidden]
             )
             gr_device.change(
                 fn=change_gr_device,
@@ -1990,7 +1992,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_del_btn.click(
                 fn=click_gr_custom_model_del_btn,
                 inputs=[gr_custom_model_list, gr_session],
-                outputs=[gr_deletion_field_hidden, gr_modal]
+                outputs=[gr_modal, gr_deletion_field_hidden]
             )
             gr_output_format_list.change(
                 fn=change_gr_output_format_list,
@@ -2086,7 +2088,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_audiobook_del_btn.click(
                 fn=click_gr_audiobook_del_btn,
                 inputs=[gr_audiobook_list, gr_session],
-                outputs=[gr_deletion_field_hidden, gr_modal]
+                outputs=[gr_modal, gr_deletion_field_hidden]
             )
             ########### XTTSv2 Params
             gr_tab_xtts_params.select(
@@ -2281,14 +2283,24 @@ def build_interface(args:dict)->gr.Blocks:
                 js='()=>{init_interface();}'
             )
             gr_deletion_confirm_btn.click(
-                fn=submit_deletion,
-                inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_deletion_field_hidden],
-                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+                fn=click_gr_deletion,
+                inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_deletion_field_hidden],
+                outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
             )
             gr_deletion_cancel_btn.click(
-                fn=submit_deletion,
-                inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+                fn=click_gr_deletion,
+                inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list],
+                outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
+            )
+            gr_override_confirm_btn.click(
+                fn=click_gr_override,
+                inputs=[gr_session],
+                outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
+            )
+            gr_override_cancel_btn.click(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=[gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
             )
             gr_blocks_prev.click(
                 fn=prev_page,
@@ -2319,7 +2331,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+                outputs=[gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_voice_list, gr_progress]
             )
             gr_blocks_continue.click(
                 fn=continue_blocks,
@@ -2336,7 +2348,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+                outputs=[gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_voice_list, gr_progress]
             )
             ############
             app.load(

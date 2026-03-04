@@ -61,9 +61,9 @@ active_sessions = None
 progress_bar = None
 
 confirm_tags = {
-    "BLOCKS": "confirm_blocks",
-    "OVERRIDE": "confirm_override",
-    "DELETION": "confirm_deletion"
+    "BLOCKS": "blocks",
+    "OVERRIDE": "override",
+    "DELETION": "deletion"
 }
 
 class DependencyError(Exception):
