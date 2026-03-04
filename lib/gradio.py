@@ -2280,7 +2280,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_gr_override_buttons,
                 inputs=[gr_session],
                 outputs=[gr_modal]
-            ).then
+            ).then(
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=[gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
