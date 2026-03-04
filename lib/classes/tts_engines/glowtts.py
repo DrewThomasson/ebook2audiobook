@@ -105,7 +105,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                             part = part[:-1]
                         if self.session['language'] == 'bel':
                             from phonemizer import phonemize
-                            part = phonemize(
+                            part_phonemized = phonemize(
                                 part,
                                 backend="espeak",
                                 language="be",
