@@ -728,8 +728,8 @@ def build_interface(args:dict)->gr.Blocks:
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
+            gr_data_field_hidden = gr.Textbox(elem_id='gr_data_field_hidden', visible=False)
             
-            gr_deletion_field_hidden = gr.Textbox(elem_id='gr_deletion_field_hidden', visible=False)
             gr_deletion_cancel_btn = gr.Button(elem_id='gr_deletion_cancel_btn', elem_classes=['hide-elem'], value='✖', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
             gr_deletion_confirm_btn = gr.Button(elem_id='gr_deletion_confirm_btn', elem_classes=['hide-elem'], value='✔', variant='primary', visible=True, scale=0, size='sm', min_width=0)
             
@@ -1726,7 +1726,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True)
                 return gr.update()
 
-            def click_gr_override_confirm_btn(session_id:str)->dict:
+            def click_gr_override_buttons(session_id:str)->dict:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session['status'] = status_tags['READY']
@@ -1933,7 +1933,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_voice_del_btn.click(
                 fn=click_gr_voice_del_btn,
                 inputs=[gr_voice_list, gr_session],
-                outputs=[gr_modal, gr_deletion_field_hidden]
+                outputs=[gr_modal, gr_data_field_hidden]
             )
             gr_device.change(
                 fn=change_gr_device,
@@ -1993,7 +1993,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_del_btn.click(
                 fn=click_gr_custom_model_del_btn,
                 inputs=[gr_custom_model_list, gr_session],
-                outputs=[gr_modal, gr_deletion_field_hidden]
+                outputs=[gr_modal, gr_data_field_hidden]
             )
             gr_output_format_list.change(
                 fn=change_gr_output_format_list,
@@ -2089,7 +2089,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_audiobook_del_btn.click(
                 fn=click_gr_audiobook_del_btn,
                 inputs=[gr_audiobook_list, gr_session],
-                outputs=[gr_modal, gr_deletion_field_hidden]
+                outputs=[gr_modal, gr_data_field_hidden]
             )
             ########### XTTSv2 Params
             gr_tab_xtts_params.select(
@@ -2239,7 +2239,7 @@ def build_interface(args:dict)->gr.Blocks:
                 ]
             )
             gr_override_confirm_btn.click(
-                fn=click_gr_override_confirm_btn,
+                fn=click_gr_override_buttons,
                 inputs=[gr_session],
                 outputs=[gr_modal]
             ).then(
@@ -2277,6 +2277,10 @@ def build_interface(args:dict)->gr.Blocks:
                 ]
             )
             gr_override_cancel_btn.click(
+                fn=click_gr_override_buttons,
+                inputs=[gr_session],
+                outputs=[gr_modal]
+            ).then
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=[gr_modal, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
@@ -2328,7 +2332,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_deletion_confirm_btn.click(
                 fn=click_gr_deletion,
-                inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_deletion_field_hidden],
+                inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_data_field_hidden],
                 outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
             )
             gr_deletion_cancel_btn.click(
