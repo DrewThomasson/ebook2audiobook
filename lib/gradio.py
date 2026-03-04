@@ -251,6 +251,18 @@ def build_interface(args:dict)->gr.Blocks:
                     background-color: rgba(239, 68, 68, 0.08) !important;
                     border-left: 3px solid #ef4444 !important;
                 }
+                [id^="block_"]:has(input[type="checkbox"]:checked) {
+                    border-left: 3px solid #22c55e !important;
+                }
+                [id^="block_"]:has(input[type="checkbox"]:checked) > div {
+                    background-color: rgba(34, 197, 94, 0.08) !important;
+                }
+                [id^="block_"]:has(input[type="checkbox"]:not(:checked)) {
+                    border-left: 3px solid #ef4444 !important;
+                }
+                [id^="block_"]:has(input[type="checkbox"]:not(:checked)) > div {
+                    background-color: rgba(239, 68, 68, 0.08) !important;
+                }
                 ////////////////////
                 #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                     height: 100px !important;
@@ -678,7 +690,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
             gr_blocks_acc = gr.JSON(value={}, visible=False)
-            gr_blocks_keep = gr.JSON(value={}, visible=False)
+            gr_blocks_keep = gr.State({})
             gr_blocks_edit = gr.JSON(value=[], visible=False)
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
@@ -687,17 +699,15 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
                     gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
 
-                @gr.render(inputs=[gr_blocks_page, gr_blocks_acc, gr_blocks_keep, gr_blocks_edit])
-                def render_blocks(page:int, expand_map:dict[str, bool], keep_map:dict[str, bool], blocks:list)->None:
+                @gr.render(inputs=[gr_blocks_page, gr_blocks_acc, gr_blocks_edit])
+                def render_blocks(page:int, expand_map:dict[str, bool], blocks:list)->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
-                    with gr.Column(elem_id='gr_column_blocks') as gr_column_blocks:
+                    with gr.Column(elem_id='gr_column_blocks'):
                         for i in range(start, end):
                             key = str(i)
-                            kept = bool(keep_map.get(key, True)) if isinstance(keep_map, dict) else True
                             is_open = expand_map.get(key, False) if isinstance(expand_map, dict) else False
-                            cls = 'gr-block-kept' if kept else 'gr-block-skipped'
-                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', elem_classes=[cls], visible=True, open=is_open) as acc:
+                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=True, open=is_open) as acc:
                                 acc.expand(
                                     lambda idx=key, m=expand_map: {**(m if isinstance(m, dict) else {}), idx: True},
                                     outputs=gr_blocks_acc
@@ -708,25 +718,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 )
                                 keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
-                                    value=kept,
+                                    value=True,
                                     label='',
                                     interactive=True,
                                     visible=True,
                                     scale=0
-                                )
-                                keep.change(
-                                    fn=None,
-                                    inputs=[keep],
-                                    js=f'''
-                                    (checked) => {{
-                                        const acc = document.getElementById('block_{i}');
-                                        if (acc) {{
-                                            acc.classList.toggle('gr-block-kept', checked);
-                                            acc.classList.toggle('gr-block-skipped', !checked);
-                                        }}
-                                        return checked;
-                                    }}
-                                    '''
                                 )
                                 gr.Textbox(
                                     elem_id=f'block_text_{i}',
