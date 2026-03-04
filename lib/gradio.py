@@ -243,6 +243,14 @@ def build_interface(args:dict)->gr.Blocks:
                 .gr-convert-btn {
                     font-size: 30px !important;
                 }
+                .gr-block-kept {
+                    background-color: rgba(34, 197, 94, 0.08) !important;
+                    border-left: 3px solid #22c55e !important;
+                }
+                .gr-block-skipped {
+                    background-color: rgba(239, 68, 68, 0.08) !important;
+                    border-left: 3px solid #ef4444 !important;
+                }
                 ////////////////////
                 #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                     height: 100px !important;
@@ -668,38 +676,45 @@ def build_interface(args:dict)->gr.Blocks:
                 with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
-            gr_blocks_page = gr.State(0)
-            gr_blocks_expand = gr.State({})
-            gr_blocks_keep_checked = gr.State({})
-            gr_blocks_edit = gr.State([])
+            gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
+            gr_blocks_expand = gr.JSON(value={}, visible=False)
+            gr_blocks_keep = gr.JSON(value={}, visible=False)
+            gr_blocks_edit = gr.JSON(value=[], visible=False)
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
                     gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
                     gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
                     gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
-                @gr.render(inputs=[gr_blocks_page, gr_blocks_expand, gr_blocks_keep_checked, gr_blocks_edit])
+                @gr.render(inputs=[gr_blocks_page, gr_blocks_expand, gr_blocks_keep, gr_blocks_edit])
                 def render_blocks(page:int, expand:dict[int, bool], keep_map:dict[int, bool], blocks:list)->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
                     with gr.Column():
                         for i in range(start, end):
-                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=True, open=expand.get(i, False)) as acc:
+                            kept = keep_map.get(i, True) if isinstance(keep_map, dict) else True
+                            cls = 'block-kept' if kept else 'block-skipped'
+                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', elem_classes=[cls], visible=True, open=expand.get(i, False) if isinstance(expand, dict) else False) as acc:
                                 acc.expand(
-                                    lambda idx=i, m=expand: {**m, idx: True},
+                                    lambda idx=i, m=expand: {**(m if isinstance(m, dict) else {}), idx: True},
                                     outputs=gr_blocks_expand
                                 )
                                 acc.collapse(
-                                    lambda idx=i, m=expand: {**m, idx: False},
+                                    lambda idx=i, m=expand: {**(m if isinstance(m, dict) else {}), idx: False},
                                     outputs=gr_blocks_expand
                                 )
-                                gr.Checkbox(
+                                keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
-                                    value=keep_map.get(i, True),
+                                    value=kept,
                                     label='📌',
                                     interactive=True,
                                     visible=True,
                                     scale=0
+                                )
+                                keep.change(
+                                    fn=lambda checked, idx=i, m=keep_map: {**(m if isinstance(m, dict) else {}), idx: checked},
+                                    inputs=[keep],
+                                    outputs=gr_blocks_keep
                                 )
                                 gr.Textbox(
                                     elem_id=f'block_text_{i}',
@@ -1919,7 +1934,7 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_edit_blocks = [
                 gr_group_main, gr_group_blocks, gr_blocks_header,
-                gr_blocks_edit, gr_blocks_page, gr_blocks_keep_checked,
+                gr_blocks_edit, gr_blocks_page, gr_blocks_keep,
                 gr_blocks_previous_btn, gr_blocks_next_btn
             ]
             outputs_restore_interface = [
@@ -2388,7 +2403,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_continue_btn.click(
                 fn=click_continue_blocks_btn,
-                inputs=[gr_session, gr_blocks_keep_checked],
+                inputs=[gr_session, gr_blocks_keep],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
             ).then(
                 fn=finalize_audiobook,
