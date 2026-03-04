@@ -2139,7 +2139,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             print(error)
             return False
 
-    def export_audio(ffmpeg_combined_audio:str, ffmpeg_metadata_file:str, ffmpeg_final_file:str)->bool:
+    def export_audio(combined_audio:str, metadata_file:str, final_file:str)->bool:
         
         def on_progress(p:float)->None:
             if is_gui_process:
@@ -2154,13 +2154,13 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             ffprobe_cmd = [
                 shutil.which('ffprobe'), '-v', 'error', '-threads', '0', '-select_streams', 'a:0',
                 '-show_entries', 'stream=codec_name,sample_rate,sample_fmt',
-                '-of', 'default=nokey=1:noprint_wrappers=1', ffmpeg_combined_audio
+                '-of', 'default=nokey=1:noprint_wrappers=1', combined_audio
             ]
             probe = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
             codec_info = probe.stdout.strip().splitlines()
             input_codec = codec_info[0] if len(codec_info) > 0 else None
             input_rate = codec_info[1] if len(codec_info) > 1 else None
-            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
+            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', combined_audio]
             target_codec, target_rate = None, None
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
@@ -2175,7 +2175,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 target_rate = '44100'
                 cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', target_rate]
             else:
-                cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
+                cmd += ['-f', 'ffmetadata', '-i', metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
                     target_codec = 'aac'
                     target_rate = '44100'
@@ -2199,11 +2199,11 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cmd += ['-ac', '1']
             if input_codec == target_codec and input_rate == target_rate:
                 cmd = [
-                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio,
-                    '-threads', '0', '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', combined_audio,
+                    '-threads', '0', '-f', 'ffmetadata', '-i', metadata_file,
                     '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
                     '-progress', 'pipe:2',
-                    '-y', ffmpeg_final_file
+                    '-y', final_file
                 ]
             else:
                 cmd += [
@@ -2212,12 +2212,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
                     '-threads', '0',
                     '-progress', 'pipe:2',
-                    '-y', ffmpeg_final_file
+                    '-y', final_file
                 ]
             is_gui_process = session['is_gui_process']
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export', on_progress=on_progress)
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=on_progress)
             if proc_pipe.result:
-                if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
+                if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                         if session['cover'] is not None:
                             cover_path = session['cover']
@@ -2226,7 +2226,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             if session['output_format'] == 'mp3':
                                 from mutagen.mp3 import MP3
                                 from mutagen.id3 import ID3, APIC, error
-                                audio = MP3(ffmpeg_final_file, ID3=ID3)
+                                audio = MP3(final_file, ID3=ID3)
                                 try:
                                     audio.add_tags()
                                 except error:
@@ -2235,19 +2235,19 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                     audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=img.read()))
                             elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
                                 from mutagen.mp4 import MP4, MP4Cover
-                                audio = MP4(ffmpeg_final_file)
+                                audio = MP4(final_file)
                                 with open(cover_path, 'rb') as f:
                                     cover_data = f.read()
                                 audio['covr'] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
                             if audio:
                                 audio.save()
-                    final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
+                    final_vtt = f"{Path(final_file).stem}.vtt"
                     proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
                     final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
                     shutil.move(proc_vtt_path, final_vtt_path)
                     return True
                 else:
-                    error = f"{Path(ffmpeg_final_file).name} is corrupted or does not exist"
+                    error = f"{Path(final_file).name} is corrupted or does not exist"
                     print(error)
         except Exception as e:
             error = f'Export failed: {e}'

@@ -1716,9 +1716,11 @@ def build_interface(args:dict)->gr.Blocks:
                 end = min(start + page_size, len_blocks)
                 return gr.update(value=f'Blocks {start}–{end-1} of {len_blocks - 1}')
 
-            def check_override(session_id:str, audiobooks_list:list, chapter_preview:bool)->tuple:
+            def check_override(session_id:str)->dict:
                 session = context.get_session(session_id)
-                if session and session['status'] == confirm_blocks_txt:           
+                if session and session['status'] != confirm_blocks_txt:   
+                    
+                return gr.update()
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -2197,7 +2199,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_progress]
             ).then(
                 fn=check_override,
-                inputs=[gr_session, gr_audiobook_list, gr_blocks_preview],
+                inputs=[gr_session],
                 outputs=[gr_modal]
             ).then(
                 fn=edit_blocks,
