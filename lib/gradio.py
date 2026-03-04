@@ -1770,7 +1770,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session["status"] = status_tags['READY']
                     msg = 'Blocks editing cancelled'
                     print(msg)
-                return gr.update(visible=True), visible=False)
+                return gr.update(visible=True), gr.update(visible=False)
 
             def click_continue_blocks_btn(session_id:str, keep_map:dict[int,bool])->list[str]:
                 new_blocks = []
