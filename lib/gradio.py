@@ -689,7 +689,9 @@ def build_interface(args:dict)->gr.Blocks:
                                     elem_id=f'block_keep_{i}',
                                     value=keep_map.get(i, True),
                                     label='Keep block',
-                                    interactive=True
+                                    interactive=True,
+                                    visible=True,
+                                    scale=0
                                 )
                                 with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=True, open=expand.get(i, False)) as acc:
                                     acc.expand(
