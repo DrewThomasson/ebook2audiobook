@@ -431,6 +431,7 @@ def build_interface(args:dict)->gr.Blocks:
                     border-radius: 9px !important;
                     text-align: center !important;
                     max-width: 300px !important;
+                    height: auto !important;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
                     border: 2px solid #FFA500 !important;
                     color: white !important;
@@ -790,7 +791,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return f'''
                 <div id="custom-gr_modal" class="gr-modal">
                     <div class="gr-modal-content">
-                        <p style="color:#ffffff">{msg[:70]}...</p>            
+                        <p style="color:#ffffff">{msg}</p>            
                         {show_confirm_buttons(type)}
                     </div>
                 </div>
