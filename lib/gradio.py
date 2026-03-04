@@ -748,7 +748,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] not in [status_tags['OVERRIDE'], status_tags['BLOCKS']]:
-                        outputs = tuple([gr.update(interactive=True) for _ in range(12)])
+                        outputs = tuple([gr.update(interactive=True) for _ in range(13)])
                         return outputs
                 outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
