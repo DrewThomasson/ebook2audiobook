@@ -677,7 +677,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
-            gr_blocks_expand = gr.JSON(value={}, visible=False)
+            gr_blocks_acc = gr.JSON(value={}, visible=False)
             gr_blocks_keep = gr.JSON(value={}, visible=False)
             gr_blocks_edit = gr.JSON(value=[], visible=False)
 
@@ -687,8 +687,8 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
                     gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
 
-                @gr.render(inputs=[gr_blocks_page, gr_blocks_expand, gr_blocks_keep, gr_blocks_edit])
-                def render_blocks(page:int, expand:dict[str, bool], keep_map:dict[str, bool], blocks:list)->None:
+                @gr.render(inputs=[gr_blocks_page, gr_blocks_acc, gr_blocks_keep, gr_blocks_edit])
+                def render_blocks(page:int, expand_map:dict[str, bool], keep_map:dict[str, bool], blocks:list)->None:
                     start = page * page_size
                     end = min(start + page_size, len(blocks))
                     with gr.Column(elem_id='gr_column_blocks') as gr_column_blocks:
@@ -696,19 +696,19 @@ def build_interface(args:dict)->gr.Blocks:
                             key = str(i)
                             kept = keep_map.get(key, True) if isinstance(keep_map, dict) else True
                             cls = 'gr-block-kept' if kept else 'gr-block-skipped'
-                            is_open = expand.get(key, False) if isinstance(expand, dict) else False
+                            print(f'cls: =========> {cls}')
+                            is_open = expand_map.get(key, False) if isinstance(expand_map, dict) else False
                             with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', elem_classes=[cls], visible=True, open=is_open) as acc:
                                 acc.expand(
-                                    lambda idx=key, m=expand: {**(m if isinstance(m, dict) else {}), idx: True},
-                                    outputs=gr_blocks_expand
+                                    lambda idx=key, m=expand_map: {**(m if isinstance(m, dict) else {}), idx: True},
+                                    outputs=gr_blocks_acc
                                 )
                                 acc.collapse(
-                                    lambda idx=key, m=expand: {**(m if isinstance(m, dict) else {}), idx: False},
-                                    outputs=gr_blocks_expand
+                                    lambda idx=key, m=expand_map: {**(m if isinstance(m, dict) else {}), idx: False},
+                                    outputs=gr_blocks_acc
                                 )
                                 keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
-                                    elem_classes=[cls],
                                     value=kept,
                                     label='',
                                     interactive=True,
