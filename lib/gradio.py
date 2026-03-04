@@ -243,14 +243,6 @@ def build_interface(args:dict)->gr.Blocks:
                 .gr-convert-btn {
                     font-size: 30px !important;
                 }
-                .gr-block-kept, .gr-block-kept div {
-                    background-color: rgba(34, 197, 94, 0.08) !important;
-                    border-left: 3px solid #22c55e !important;
-                }
-                .gr-block-skipped, .gr-block-skipped div {
-                    background-color: rgba(239, 68, 68, 0.08) !important;
-                    border-left: 3px solid #ef4444 !important;
-                }
                 [id^="block_"]:has(input[type="checkbox"]:checked) {
                     border-left: 3px solid #22c55e !important;
                 }
@@ -1767,8 +1759,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return (
                         gr.update(visible=visible_main), gr.update(visible=visible_blocks),
                         update_blocks_header(0, len(session['blocks_edit'])),
-                        session['blocks_edit'],
-                        0, {}, gr.update(visible=False),
+                        session['blocks_edit'], 0, {}, gr.update(visible=False),
                         gr.update(visible=len(session['blocks_edit']) > page_size)
                     )
                 return tuple(gr.update() for _ in range(7))
