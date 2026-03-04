@@ -684,7 +684,7 @@ def build_interface(args:dict)->gr.Blocks:
                     end = min(start + page_size, len(blocks))
                     with gr.Column():
                         for i in range(start, end):
-                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', interactive=True, visible=True, open=expand.get(i, False)) as acc:
+                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=True, open=expand.get(i, False)) as acc:
                                 acc.expand(
                                     lambda idx=i, m=expand: {**m, idx: True},
                                     outputs=gr_blocks_expand
