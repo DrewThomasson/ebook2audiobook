@@ -694,10 +694,10 @@ def build_interface(args:dict)->gr.Blocks:
                     with gr.Column(elem_id='gr_column_blocks') as gr_column_blocks:
                         for i in range(start, end):
                             key = str(i)
-                            kept = keep_map.get(key, True) if isinstance(keep_map, dict) else True
-                            cls = 'gr-block-kept' if kept else 'gr-block-skipped'
+                            kept = bool(keep_map.get(key, True)) if isinstance(keep_map, dict) else True
                             is_open = expand_map.get(key, False) if isinstance(expand_map, dict) else False
-                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', elem_classes=['gr-block-skipped'], visible=True, open=is_open) as acc:
+                            cls = 'gr-block-kept' if kept else 'gr-block-skipped'
+                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', elem_classes=[cls], visible=True, open=is_open) as acc:
                                 acc.expand(
                                     lambda idx=key, m=expand_map: {**(m if isinstance(m, dict) else {}), idx: True},
                                     outputs=gr_blocks_acc
