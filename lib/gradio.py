@@ -1182,7 +1182,7 @@ def build_interface(args:dict)->gr.Blocks:
                     nonlocal models
                     if method is not None:
                         session = context.get_session(session_id)
-                        if sessiogr.update(visible=False), n and session.get('id', False):
+                        if session and session.get('id', False):
                             models = load_engine_presets(session['tts_engine'])
                             if method == 'confirm_voice_del':
                                 selected_name = Path(voice_path).stem
