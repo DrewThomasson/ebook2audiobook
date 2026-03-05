@@ -1673,6 +1673,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if error is not None:
                                 show_alert({"type": "warning", "msg": error})
                             session['status'] = status_tags['READY']
+                            return gr.update(error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
                     alert_exception(error, session_id)
