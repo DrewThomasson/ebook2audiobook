@@ -2817,7 +2817,6 @@ def finalize_audiobook(session_id:str)->tuple:
             return error, False
         if session['status'] in [status_tags['BLOCKS']]:
             error = 'No blocks have been selected to convert!'
-            session['status'] = status_tags['READY']
             return error, False
         if session.get('blocks_edit', []):
             #delete_proc_audio_files(session['sentences_dir'])
