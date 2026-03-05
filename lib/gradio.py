@@ -1737,7 +1737,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update(value=status_tags['CONVERTING'])
                 return gr.update(), gr.update()
 
-            def click_gr_override_buttons(confirmed:bool)->dict:
+            def click_gr_override_buttons(confirmed:bool)->tuple:
                 if not confirmed:
                     return gr.update(value='', visible=False), gr.update()
                 return gr.update(), gr.update(value=status_tags['CONVERTING'])
