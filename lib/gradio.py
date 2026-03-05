@@ -1583,98 +1583,97 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['status'] not in [status_tags['OVERRIDE']]:
-                            args = {
-                                "id": session_id,
-                                "is_gui_process": session['is_gui_process'],
-                                "script_mode": script_mode,
-                                "blocks_preview": blocks_preview,
-                                "device": device,
-                                "tts_engine": tts_engine,
-                                "ebook": ebook_file if isinstance(ebook_file, str) else None,
-                                "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
-                                "audiobooks_dir": session['audiobooks_dir'],
-                                "voice": voice,
-                                "language": language,
-                                "custom_model": custom_model,
-                                "fine_tuned": fine_tuned,
-                                "output_format": output_format,
-                                "output_channel": output_channel,
-                                "xtts_temperature": float(xtts_temperature),
-                                "xtts_length_penalty": float(xtts_length_penalty),
-                                "xtts_num_beams": int(session['xtts_num_beams']),
-                                "xtts_repetition_penalty": float(xtts_repetition_penalty),
-                                "xtts_top_k": int(xtts_top_k),
-                                "xtts_top_p": float(xtts_top_p),
-                                "xtts_speed": float(xtts_speed),
-                                "xtts_enable_text_splitting": bool(xtts_enable_text_splitting),
-                                "bark_text_temp": float(bark_text_temp),
-                                "bark_waveform_temp": float(bark_waveform_temp),
-                                "output_split": bool(output_split),
-                                "output_split_hours": output_split_hours,
-                            }
-                            error = None
-                            if args['ebook'] is None and args['ebook_list'] is None:
-                                error = 'Error: a file or directory is required.'
-                                show_alert({"type": "warning", "msg": error})
-                            elif args['xtts_num_beams'] < args['xtts_length_penalty']:
-                                error = 'Error: num beams must be greater or equal than length penalty.'
-                                show_alert({"type": "warning", "msg": error})                   
-                            else:
-                                session['status'] = status_tags['CONVERTING']
-                                session['ticker'] = len(audiobook_options)
-                                if isinstance(args['ebook_list'], list):
-                                    args['blocks_preview'] = None
-                                    ebook_list = args['ebook_list'][:]
-                                    for file in ebook_list:
-                                        if any(file.endswith(ext) for ext in ebook_formats):
-                                            print(f'Processing eBook file: {os.path.basename(file)}')
-                                            args['ebook'] = file
-                                            progress_status, passed = convert_ebook(args)
-                                            if passed is False:
-                                                if session['status'] == status_tags['CONVERTING']:
-                                                    error = 'Conversion cancelled.'
-                                                    break
-                                                else:
-                                                    error = 'Conversion failed.'
-                                                    break
+                        args = {
+                            "id": session_id,
+                            "is_gui_process": session['is_gui_process'],
+                            "script_mode": script_mode,
+                            "blocks_preview": blocks_preview,
+                            "device": device,
+                            "tts_engine": tts_engine,
+                            "ebook": ebook_file if isinstance(ebook_file, str) else None,
+                            "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
+                            "audiobooks_dir": session['audiobooks_dir'],
+                            "voice": voice,
+                            "language": language,
+                            "custom_model": custom_model,
+                            "fine_tuned": fine_tuned,
+                            "output_format": output_format,
+                            "output_channel": output_channel,
+                            "xtts_temperature": float(xtts_temperature),
+                            "xtts_length_penalty": float(xtts_length_penalty),
+                            "xtts_num_beams": int(session['xtts_num_beams']),
+                            "xtts_repetition_penalty": float(xtts_repetition_penalty),
+                            "xtts_top_k": int(xtts_top_k),
+                            "xtts_top_p": float(xtts_top_p),
+                            "xtts_speed": float(xtts_speed),
+                            "xtts_enable_text_splitting": bool(xtts_enable_text_splitting),
+                            "bark_text_temp": float(bark_text_temp),
+                            "bark_waveform_temp": float(bark_waveform_temp),
+                            "output_split": bool(output_split),
+                            "output_split_hours": output_split_hours,
+                        }
+                        error = None
+                        if args['ebook'] is None and args['ebook_list'] is None:
+                            error = 'Error: a file or directory is required.'
+                            show_alert({"type": "warning", "msg": error})
+                        elif args['xtts_num_beams'] < args['xtts_length_penalty']:
+                            error = 'Error: num beams must be greater or equal than length penalty.'
+                            show_alert({"type": "warning", "msg": error})                   
+                        else:
+                            session['status'] = status_tags['CONVERTING']
+                            session['ticker'] = len(audiobook_options)
+                            if isinstance(args['ebook_list'], list):
+                                args['blocks_preview'] = None
+                                ebook_list = args['ebook_list'][:]
+                                for file in ebook_list:
+                                    if any(file.endswith(ext) for ext in ebook_formats):
+                                        print(f'Processing eBook file: {os.path.basename(file)}')
+                                        args['ebook'] = file
+                                        progress_status, passed = convert_ebook(args)
+                                        if passed is False:
+                                            if session['status'] == status_tags['CONVERTING']:
+                                                error = 'Conversion cancelled.'
+                                                break
                                             else:
-                                                show_alert({"type": "success", "msg": progress_status})
-                                                args['ebook_list'].remove(file)
-                                                reset_session(args['id'])
-                                                count_file = len(args['ebook_list'])
-                                                if count_file > 0:
-                                                    msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
-                                                    yield gr.update(value=msg)
-                                                else:
-                                                    msg = 'Conversion successful!'
-                                                    session['ebook'] = None
-                                                    session['ebook_list'] = None
-                                                    session['status'] = status_tags['READY']
-                                                    return gr.update(value=msg)
-                                else:
-                                    print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
-                                    progress_status, passed = convert_ebook(args)
-                                    if passed is False:
-                                        error = progress_status
-                                    else:
-                                        if progress_status == status_tags['BLOCKS']:
-                                            session['status'] = progress_status
-                                            msg = 'Select the blocks to convert'
-                                            print(msg)
-                                            return gr.update(value=msg)
+                                                error = 'Conversion failed.'
+                                                break
                                         else:
-                                            msg = progress_status
-                                            print(msg)
+                                            show_alert({"type": "success", "msg": progress_status})
+                                            args['ebook_list'].remove(file)
                                             reset_session(args['id'])
-                                            session['ebook'] = None
-                                            session['status'] = status_tags['READY']
-                                            show_alert({"type": "success", "msg": msg})
-                                            return gr.update(value=msg)
-                            if error is not None:
-                                show_alert({"type": "warning", "msg": error})
-                            session['status'] = status_tags['READY']
-                            return gr.update(error)
+                                            count_file = len(args['ebook_list'])
+                                            if count_file > 0:
+                                                msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                                yield gr.update(value=msg)
+                                            else:
+                                                msg = 'Conversion successful!'
+                                                session['ebook'] = None
+                                                session['ebook_list'] = None
+                                                session['status'] = status_tags['READY']
+                                                return gr.update(value=msg)
+                            else:
+                                print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
+                                progress_status, passed = convert_ebook(args)
+                                if passed is False:
+                                    error = progress_status
+                                else:
+                                    if progress_status == status_tags['BLOCKS']:
+                                        session['status'] = progress_status
+                                        msg = 'Select the blocks to convert'
+                                        print(msg)
+                                        return gr.update(value=msg)
+                                    else:
+                                        msg = progress_status
+                                        print(msg)
+                                        reset_session(args['id'])
+                                        session['ebook'] = None
+                                        session['status'] = status_tags['READY']
+                                        show_alert({"type": "success", "msg": msg})
+                                        return gr.update(value=msg)
+                        if error is not None:
+                            show_alert({"type": "warning", "msg": error})
+                        session['status'] = status_tags['READY']
+                        return gr.update(error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
                     alert_exception(error, session_id)
