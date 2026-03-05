@@ -2360,9 +2360,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_confirm_blocks_btn,
                 inputs=[gr_session, gr_blocks_edit, gr_blocks_keep],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
-            )
-            '''
-            .then(
+            ).then(
                 fn=finalize_audiobook,
                 inputs=[gr_session,],
                 outputs=[gr_progress]
