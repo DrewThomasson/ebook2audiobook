@@ -392,6 +392,10 @@ def build_interface(args:dict)->gr.Blocks:
                     white-space:nowrap !important;
                     overflow:hidden !important;
                 }
+                #gr_row_buttons {
+                    justify-content: center !important;
+                    gap: 100px !important;
+                }
                 ///////////
                 .fade-in {
                     animation: fadeIn 1s ease-in !important;
@@ -461,13 +465,13 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
-                .blocks-buttons {
+                .gr-blocks-buttons {
                     display: flex !important;
                     justify-content: space-evenly !important;
                     margin-top: 12px !important;
                     margin-bottom: 12px !important;
                 }
-                .blocks-buttons button {
+                .gr-blocks-buttons button {
                     padding: 12px !important;
                     border: none !important;
                     border-radius: 9px !important;
@@ -715,12 +719,9 @@ def build_interface(args:dict)->gr.Blocks:
                                     interactive=True
                                 )
 
-                with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
-                    gr.Column(scale=1)
-                    gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['blocks-buttons'], variant='stop', scale=0, size='md')
-                    gr.Column(scale=0, min_width=100)
-                    gr_blocks_confirm_btn = gr.Button('✔', elem_classes=['blocks-buttons'], variant='primary', scale=0, size='md')
-                    gr.Column(scale=1)
+            with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
+                gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
+                gr_blocks_confirm_btn = gr.Button('✔', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
