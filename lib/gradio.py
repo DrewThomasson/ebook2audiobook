@@ -745,7 +745,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session_update = gr.State({'hash': None})
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
             
-            gr_event = gr.State(None)
+            gr_event = gr.Number(value=0, visible=False, precision=0)
             
             ############## End of Gradio Components creation
 
@@ -1727,21 +1727,15 @@ def build_interface(args:dict)->gr.Blocks:
                 new_page = min(page + 1, max_page)
                 return new_page, gr.update(visible=new_page < max_page), gr.update(visible=True)
 
-            def check_override_audiobook(session_id:str, data:any, blocks_preview:bool)->dict:
+            def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False) and audiobook_options and not isinstance(data, list):
                     final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
                     if any(final_file in path for key, path in audiobook_options):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
                         session['status'] = status_tags['OVERRIDE']
-                        return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update(value=status_tags['CONVERTING'])
-                return gr.update(), gr.update()
-
-            def click_gr_override_buttons(confirmed:bool)->tuple:
-                event = None
-                if confirmed:
-                   event =  status_tags['CONVERTING']
-                return gr.update(value='', visible=False), event
+                        return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
+                return gr.update(), event + 1
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -1899,10 +1893,10 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)
                     yield gr.update(), gr.update(value=e), gr.update()
 
-            def on_gr_event(event:str|None)->dict:
-                if event == status_tags['CONVERTING']:
-                    return gr.update(interactive=False), None
-                return gr.update(interactive=False), event
+            def on_gr_event(event:int)->tuple:
+                if event > 0:
+                    return gr.update(interactive=False)
+                return gr.update()
 
             ################## Events
 
@@ -2248,13 +2242,13 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_convert_btn.click(
                 fn=check_override_audiobook,
-                inputs=[gr_session, gr_ebook_file, gr_blocks_preview],
+                inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_event],
                 outputs=[gr_modal, gr_event]
             )
             gr_event.change(
                 fn=on_gr_event,
                 inputs=[gr_event],
-                outputs=[gr_convert_btn, gr_event]
+                outputs=[gr_convert_btn]
             ).then(
                 fn=disable_components,
                 inputs=None,
@@ -2277,15 +2271,14 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_refresh_interface
             )
             gr_override_confirm_btn.click(
-                fn=lambda: click_gr_override_buttons(confirmed=True),
-                inputs=None,
+                fn=lambda event: (gr.update(value='', visible=False), event + 1),
+                inputs=[gr_event],
                 outputs=[gr_modal, gr_event]
             )
             gr_override_cancel_btn.click(
-                fn=lambda: click_gr_override_buttons(confirmed=False),
+                fn=lambda: gr.update(value='', visible=False),
                 inputs=None,
-                outputs=[gr_modal, gr_event]
-            )
+                outputs=[gr_modal]
             gr_save_session.change(
                 fn=None,
                 inputs=[gr_save_session],
