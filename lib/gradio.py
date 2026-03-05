@@ -745,7 +745,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session_update = gr.State({'hash': None})
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
             
-            gr_event = gr.Number(value=0, visible=False, precision=0)
+            gr_override_event = gr.Number(value=0, visible=False, precision=0)
+            gr_blocks_event = gr.Number(value=0, visible=False, precision=0)
             
             ############## End of Gradio Components creation
 
@@ -1758,7 +1759,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session["status"] = status_tags['READY']
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False)
 
-            def click_confirm_blocks_btn(session_id:str, blocks_list:list, keep_map:dict[int,bool])->list[str]:
+            def click_confirm_blocks_btn(session_id:str, blocks_list:list, keep_map:dict[int,bool], event:int)->list[str]:
                 new_blocks_list = []
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
@@ -1768,11 +1769,11 @@ def build_interface(args:dict)->gr.Blocks:
                     if new_blocks_list:
                         session['blocks_edit'] = new_blocks_list
                         session['status'] = status_tags['CONVERTING']
-                        return gr.update(visible=True), gr.update(visible=False), new_blocks_list
+                        return gr.update(visible=True), gr.update(visible=False), new_blocks_list, event + 1
                     session["status"] = status_tags['READY']
                     error = 'No Blocks selected for conversion!'
                     show_alert({"type": "warning", "msg": error})
-                return gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -2235,12 +2236,12 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_convert_btn.click(
                 fn=check_override_audiobook,
-                inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_event],
-                outputs=[gr_modal, gr_event]
+                inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
+                outputs=[gr_modal, gr_override_event]
             )
-            gr_event.change(
+            gr_override_event.change(
                 fn=lambda event: gr.update(interactive=False),
-                inputs=[gr_event],
+                inputs=[gr_override_event],
                 outputs=[gr_convert_btn]
             ).then(
                 fn=disable_components,
@@ -2265,8 +2266,8 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_override_confirm_btn.click(
                 fn=lambda event: (gr.update(value='', visible=False), event + 1),
-                inputs=[gr_event],
-                outputs=[gr_modal, gr_event]
+                inputs=[gr_override_event],
+                outputs=[gr_modal, gr_override_event]
             )
             gr_override_cancel_btn.click(
                 fn=lambda: gr.update(value='', visible=False),
@@ -2353,9 +2354,10 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_confirm_btn.click(
                 fn=click_confirm_blocks_btn,
-                inputs=[gr_session, gr_blocks_edit, gr_blocks_keep],
-                outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
-            ).then(
+                inputs=[gr_session, gr_blocks_edit, gr_blocks_keep, gr_blocks_event],
+                outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit, gr_blocks_event]
+            )
+            gr_blocks_event.change(
                 fn=finalize_audiobook,
                 inputs=[gr_session,],
                 outputs=[gr_progress]
