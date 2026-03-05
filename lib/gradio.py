@@ -1784,8 +1784,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session['blocks_edit'] = new_blocks
                         session['status'] = status_tags['CONVERTING']
                         return gr.update(visible=True), gr.update(visible=False), new_blocks
-                    msg = 'No blocks have been selected to convert!'
-                    show_alert({"type": "warning", "msg": msg})
                 return gr.update(visible=True), gr.update(visible=False), blocks
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
