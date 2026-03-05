@@ -719,7 +719,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gr.Column(scale=1)
                     gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['blocks-buttons'], variant='stop', scale=0, size='md')
                     gr.Column(scale=0, min_width=100)
-                    gr_blocks_continue_btn = gr.Button('✔', elem_classes=['blocks-buttons'], variant='primary', scale=0, size='md')
+                    gr_blocks_confirm_btn = gr.Button('✔', elem_classes=['blocks-buttons'], variant='primary', scale=0, size='md')
                     gr.Column(scale=1)
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
@@ -811,8 +811,8 @@ def build_interface(args:dict)->gr.Blocks:
 
             def show_gr_modal_buttons(type:str)->str:
                 if type in [status_tags['DELETION'], status_tags['OVERRIDE']]:
-                    confirm_btn = f'#gr_{type}_confirm_btn'
                     cancel_btn = f'#gr_{type}_cancel_btn'
+                    confirm_btn = f'#gr_{type}_confirm_btn'
                     return f'''
                     <div class="confirm-buttons">
                         <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{cancel_btn}').click()">⨉</button>
@@ -2393,7 +2393,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
             )
-            gr_blocks_continue_btn.click(
+            gr_blocks_confirm_btn.click(
                 fn=click_continue_blocks_btn,
                 inputs=[gr_session, gr_blocks_keep],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
