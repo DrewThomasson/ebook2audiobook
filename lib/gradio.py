@@ -1893,7 +1893,8 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)
                     yield gr.update(), gr.update(value=e), gr.update()
 
-            def on_gr_event(event:int)->tuple:
+            def on_gr_event(event:int)->dict:
+                print(f'event: {event}')
                 if event > 0:
                     return gr.update(interactive=False)
                 return gr.update()
