@@ -1776,9 +1776,10 @@ def build_interface(args:dict)->gr.Blocks:
             def click_confirm_blocks_btn(session_id:str, blocks:list, keep_map:dict[int,bool])->list[str]:
                 new_blocks = []
                 session = context.get_session(session_id)
+                print(f'blocks: {blocks}')
                 if session and session.get('id', False):
                     for i, block in enumerate(blocks):
-                        if keep_map.get(i, True):
+                        if keep_map.get(i, False):
                             new_blocks.append(blocks[i])
                     if new_blocks:
                         session['blocks_edit'] = new_blocks
