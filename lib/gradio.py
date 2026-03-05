@@ -686,7 +686,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
             gr_blocks_edit = gr.JSON(value=[], visible=False)
-            gr_blocks_keep = gr.State(value={})
+            gr_blocks_keep = gr.State({})
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
@@ -742,10 +742,10 @@ def build_interface(args:dict)->gr.Blocks:
             gr_override_confirm_btn = gr.Button(elem_id='gr_override_confirm_btn', elem_classes=['hide-elem'], value='✔', variant='primary', visible=True, scale=0, size='sm', min_width=0)
             
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
-            gr_session_update = gr.State(value={'hash': None})
+            gr_session_update = gr.State({'hash': None})
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
             
-            gr_event = gr.State(value=None)
+            gr_event = gr.State(None)
             
             ############## End of Gradio Components creation
 
