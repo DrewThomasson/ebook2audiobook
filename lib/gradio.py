@@ -1763,7 +1763,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session['blocks_edit'], 0, {}, gr.update(visible=False),
                         gr.update(visible=len(session['blocks_edit']) > page_size)
                     )
-                return tuple(gr.update() for _ in range(7))
+                return tuple(gr.update() for _ in range(8))
 
             def click_gr_blocks_cancel_btn(session_id:str)->tuple:
                 session = context.get_session(session_id)
