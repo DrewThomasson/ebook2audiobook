@@ -1741,7 +1741,7 @@ def build_interface(args:dict)->gr.Blocks:
                 event = None
                 if confirmed:
                    event =  status_tags['CONVERTING']
-                return gr.update(value='', visible=False), gr.update(value=event)
+                return gr.update(value='', visible=False), event
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -1948,7 +1948,6 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list,
                 gr_fine_tuned_list, gr_voice_file, gr_convert_btn, gr_custom_model_del_btn
             ]
-            
             gr_ebook_file.change(
                 fn=change_convert_btn,
                 inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
