@@ -1741,7 +1741,6 @@ def build_interface(args:dict)->gr.Blocks:
                 event = None
                 if confirmed:
                    event =  status_tags['CONVERTING']
-                print(f'event: {event}')
                 return gr.update(value='', visible=False), gr.update(value=event)
 
             def edit_blocks(session_id:str)->tuple:
@@ -1900,7 +1899,8 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)
                     yield gr.update(), gr.update(value=e), gr.update()
 
-            def on_gr_event(event):
+            def on_gr_event(event:str|None)->dict:
+                print(f'event: {event}')
                 if event == status_tags['CONVERTING']:
                     return gr.update(interactive=False), gr.update(value=None)
                 raise gr.Error('')
