@@ -719,7 +719,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     interactive=True
                                 )
 
-                with gr.Row(elem_id='gr_row_buttons', visible=False) as gr_row_buttons:
+                with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
                     gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
                     gr_blocks_confirm_btn = gr.Button('✔', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
 
