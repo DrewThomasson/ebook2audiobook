@@ -1902,7 +1902,7 @@ def build_interface(args:dict)->gr.Blocks:
             def on_gr_event(event:str|None)->dict:
                 if event == status_tags['CONVERTING']:
                     return gr.update(interactive=False), None
-                raise gr.Error('')
+                return gr.update(interactive=False), event
 
             ################## Events
 
