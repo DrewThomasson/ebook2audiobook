@@ -2277,7 +2277,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_refresh_interface
             )
             gr_override_confirm_btn.click(
-                fn=lambda: :click_gr_override_buttons(confirmed=True),
+                fn=lambda: click_gr_override_buttons(confirmed=True),
                 inputs=None,
                 outputs=[gr_modal, gr_event]
             )
