@@ -1742,8 +1742,6 @@ def build_interface(args:dict)->gr.Blocks:
                     visible_main = False
                     visible_blocks = True
                     if session['cancellation_requested']:
-                        msg = 'Cancel requested'
-                        print(msg)
                         visible_main = True
                         visible_blocks = False
                     return (
@@ -1758,8 +1756,6 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session["status"] = status_tags['READY']
-                    msg = 'Blocks editing cancelled'
-                    print(msg)
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False)
 
             def click_confirm_blocks_btn(session_id:str, blocks_list:list, keep_map:dict[int,bool])->list[str]:
@@ -1775,7 +1771,6 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(visible=True), gr.update(visible=False), new_blocks_list
                     session["status"] = status_tags['READY']
                     error = 'No Blocks selected for conversion!'
-                    print(error)
                     show_alert({"type": "warning", "msg": error})
                 return gr.update(), gr.update(), gr.update()
 
