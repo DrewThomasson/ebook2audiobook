@@ -1733,6 +1733,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if any(final_file in path for key, path in audiobook_options):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
                         session['status'] = status_tags['OVERRIDE']
+                        raise
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True)
                 return gr.update()
 
@@ -2259,8 +2260,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview],
                 outputs=[gr_modal]
-            )
-            '''.then(
+            ).then(
                 fn=change_convert_btn,
                 inputs=None,
                 outputs=[gr_convert_btn]
