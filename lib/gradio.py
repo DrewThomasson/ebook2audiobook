@@ -1733,7 +1733,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if any(final_file in path for key, path in audiobook_options):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
                         session['status'] = status_tags['OVERRIDE']
-                        raise gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True)
+                        return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True)
                 return gr.update()
 
             def click_gr_override_buttons(session_id:str, confirmed:bool)->dict:
@@ -2259,30 +2259,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview],
                 outputs=[gr_modal]
-            ).then(
-                fn=change_convert_btn,
-                inputs=None,
-                outputs=[gr_convert_btn]
-            ).then(
-                fn=disable_components,
-                inputs=None,
-                outputs=outputs_disable_components
-            ).then(
-                fn=start_conversion,
-                inputs=inputs_start_conversion,
-                outputs=[gr_progress]
-            ).then(
-                fn=edit_blocks,
-                inputs=[gr_session],
-                outputs=outputs_edit_blocks
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=outputs_enable_components
-            ).then(
-                fn=refresh_interface,
-                inputs=[gr_session],
-                outputs=outputs_refresh_interface
             )
             gr_override_confirm_btn.click(
                 fn=lambda session: click_gr_override_buttons(session, confirmed=True),
