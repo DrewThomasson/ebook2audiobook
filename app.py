@@ -249,7 +249,6 @@ SML tags available:
             args['id'] = workflow_id if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
             args['blocks_preview'] = False
-            args['event'] = ''
             args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None

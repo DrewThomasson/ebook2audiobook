@@ -685,8 +685,8 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
-            gr_blocks_keep = gr.State({})
             gr_blocks_edit = gr.JSON(value=[], visible=False)
+            gr_blocks_keep = gr.State(value={})
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
@@ -741,9 +741,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_override_cancel_btn = gr.Button(elem_id='gr_override_cancel_btn', elem_classes=['hide-elem'], value='✖', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
             gr_override_confirm_btn = gr.Button(elem_id='gr_override_confirm_btn', elem_classes=['hide-elem'], value='✔', variant='primary', visible=True, scale=0, size='sm', min_width=0)
             
-            gr_session_update = gr.State(value={'hash': None})
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
+            gr_session_update = gr.State(value={'hash': None})
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
+            
+            gr_event = gr.State(value=None)
             
             ############## End of Gradio Components creation
 
@@ -962,13 +964,13 @@ def build_interface(args:dict)->gr.Blocks:
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
                         return (
-                            gr.update(value='', visible=False), gr.update(visible=visible_main),
+                            gr.update(value=None), gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
                             gr.update(interactive=interactive_convert_btn), gr.update(value=session['ebook']), gr.update(value=session['device']), 
                             update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
                             update_gr_voice_list(session_id), gr.update(value='')
                         )
-                outputs = tuple([gr.update() for _ in range(11)])
+                outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
 
             def change_gr_audiobook_list(selected:str|None, session_id:str)->dict:
@@ -1610,7 +1612,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 "bark_waveform_temp": float(bark_waveform_temp),
                                 "output_split": bool(output_split),
                                 "output_split_hours": output_split_hours,
-                                "event": None
                             }
                             error = None
                             if args['ebook'] is None and args['ebook_list'] is None:
@@ -1733,9 +1734,8 @@ def build_interface(args:dict)->gr.Blocks:
                     if any(final_file in path for key, path in audiobook_options):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
                         session['status'] = status_tags['OVERRIDE']
-                        raise
-                        return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True)
-                return gr.update()
+                        return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update(value=status_tas['CONVERTING'])
+                return gr.update(), gr.update()
 
             def click_gr_override_buttons(session_id:str, confirmed:bool)->dict:
                 session = context.get_session(session_id)
@@ -1902,12 +1902,11 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'update_gr_save_session(): {e}!'
                     alert_exception(error, session_id)
                     yield gr.update(), gr.update(value=e), gr.update()
-            
-            def clear_event(session_id:str)->None:
-                if session_id:
-                    session = context.get_session(session_id)
-                    if session and session.get('id', False):
-                        session['event'] = None
+
+            def on_gr_event(event):
+                if event == status_tags['CONVERTING']:
+                    return gr.update(interactive=False), gr.update(value=None)
+                raise gr.Error('')
 
             ################## Events
 
@@ -2251,19 +2250,16 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_save_session,
                 inputs=[gr_session, gr_session_update],
                 outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
-            ).then(
-                fn=clear_event,
-                inputs=[gr_session],
-                outputs=None
             )
             gr_convert_btn.click(
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview],
-                outputs=[gr_modal]
-            ).then(
-                fn=change_convert_btn,
-                inputs=None,
-                outputs=[gr_convert_btn]
+                outputs=[gr_modal, gr_event]
+            )
+            gr_event.change(
+                fn=on_gr_event,
+                inputs=[gr_event],
+                outputs=[gr_convert_btn, gr_event]
             ).then(
                 fn=disable_components,
                 inputs=None,
