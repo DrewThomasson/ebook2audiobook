@@ -2256,6 +2256,10 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=None
             )
             gr_convert_btn.click(
+                fn=check_override_audiobook,
+                inputs=[gr_session, gr_ebook_file, gr_blocks_preview],
+                outputs=[gr_modal]
+            ).then(
                 fn=change_convert_btn,
                 inputs=None,
                 outputs=[gr_convert_btn]
@@ -2263,10 +2267,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components
-            ).then(
-                fn=check_override_audiobook,
-                inputs=[gr_session, gr_ebook_file, gr_blocks_preview],
-                outputs=[gr_modal]
             ).then(
                 fn=start_conversion,
                 inputs=inputs_start_conversion,
