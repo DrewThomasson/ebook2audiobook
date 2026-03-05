@@ -1782,7 +1782,7 @@ def build_interface(args:dict)->gr.Blocks:
                             new_blocks.append(blocks[i])
                     if new_blocks:
                         session['blocks_edit'] = new_blocks
-                        session['status'] = status_tag['CONVERTING']
+                        session['status'] = status_tags['CONVERTING']
                         return gr.update(visible=True), gr.update(visible=False), new_blocks
                     msg = 'No blocks have been selected to convert!'
                     show_alert({"type": "warning", "msg": msg})
