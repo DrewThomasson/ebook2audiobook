@@ -1666,11 +1666,11 @@ def build_interface(args:dict)->gr.Blocks:
                                             print(msg)
                                             return gr.update(value=msg)
                                         else:
-                                            show_alert({"type": "success", "msg": progress_status})
+                                            msg = 'Conversion successful!'
                                             reset_session(args['id'])
+                                            show_alert({"type": "success", "msg": msg})
                                             session['ebook'] = None
                                             session['status'] = status_tags['READY']
-                                            msg = 'Conversion successful!'
                                             return gr.update(value=msg)
                             if error is not None:
                                 show_alert({"type": "warning", "msg": error})
