@@ -1772,7 +1772,7 @@ def build_interface(args:dict)->gr.Blocks:
                     print(msg)
                 return gr.update(visible=True), gr.update(visible=False)
 
-            def click_continue_blocks_btn(session_id:str, keep_map:dict[int,bool])->list[str]:
+            def click_confirm_blocks_btn(session_id:str, keep_map:dict[int,bool])->list[str]:
                 new_blocks = []
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
@@ -2394,7 +2394,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_refresh_interface
             )
             gr_blocks_confirm_btn.click(
-                fn=click_continue_blocks_btn,
+                fn=click_confirm_blocks_btn,
                 inputs=[gr_session, gr_blocks_keep],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
             ).then(
