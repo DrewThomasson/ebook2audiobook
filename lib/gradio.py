@@ -1773,7 +1773,11 @@ def build_interface(args:dict)->gr.Blocks:
                         session['blocks_edit'] = new_blocks_list
                         session['status'] = status_tags['CONVERTING']
                         return gr.update(visible=True), gr.update(visible=False), new_blocks_list
-                return gr.update(visible=True), gr.update(visible=False), blocks_list
+                    session["status"] = status_tags['READY']
+                    error = 'No Blocks selected for conversion!'
+                    print(error)
+                    show_alert({"type": "warning", "msg": error})
+                return gr.update(), gr.update(), gr.update()
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -2356,7 +2360,9 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_confirm_blocks_btn,
                 inputs=[gr_session, gr_blocks_edit, gr_blocks_keep],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
-            ).then(
+            )
+            '''
+            .then(
                 fn=finalize_audiobook,
                 inputs=[gr_session,],
                 outputs=[gr_progress]
@@ -2369,6 +2375,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
             )
+            '''
             ############
             app.load(
                 fn=None,
