@@ -1738,9 +1738,10 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(), gr.update()
 
             def click_gr_override_buttons(confirmed:bool)->tuple:
-                if not confirmed:
-                    return gr.update(value='', visible=False), gr.update()
-                return gr.update(), gr.update(value=status_tags['CONVERTING'])
+                event = None
+                if confirmed:
+                   event =  status_tags['CONVERTING']
+                return gr.update(value='', visible=False), gr.update(value=event)
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
