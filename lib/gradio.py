@@ -1900,9 +1900,8 @@ def build_interface(args:dict)->gr.Blocks:
                     yield gr.update(), gr.update(value=e), gr.update()
 
             def on_gr_event(event:str|None)->dict:
-                print(f'event: {event}')
                 if event == status_tags['CONVERTING']:
-                    return gr.update(interactive=False), gr.update(value=None)
+                    return gr.update(interactive=False), None
                 raise gr.Error('')
 
             ################## Events
