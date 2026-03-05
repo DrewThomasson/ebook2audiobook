@@ -1667,8 +1667,8 @@ def build_interface(args:dict)->gr.Blocks:
                                             return gr.update(value=msg)
                                         else:
                                             msg = 'Conversion successful!'
-                                            reset_session(args['id'])
                                             show_alert({"type": "success", "msg": msg})
+                                            reset_session(args['id'])
                                             session['ebook'] = None
                                             session['status'] = status_tags['READY']
                                             return gr.update(value=msg)
@@ -1773,15 +1773,20 @@ def build_interface(args:dict)->gr.Blocks:
                     print(msg)
                 return gr.update(visible=True), gr.update(visible=False)
 
-            def click_confirm_blocks_btn(session_id:str, keep_map:dict[int,bool])->list[str]:
+            def click_confirm_blocks_btn(session_id:str, blocks:list, keep_map:dict[int,bool])->list[str]:
                 new_blocks = []
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    blocks = session['blocks_edit']
                     for i, block in enumerate(blocks):
                         if keep_map.get(i, True):
                             new_blocks.append(blocks[i])
-                return gr.update(visible=True), gr.update(visible=False), new_blocks
+                    if new_blocks:
+                        session['blocks_edit'] = new_blocks
+                        session['status'] = status_tag['CONVERTING']
+                        return gr.update(visible=True), gr.update(visible=False), new_blocks
+                    msg = 'No blocks have been selected to convert!'
+                    show_alert({"type": "warning", "msg": msg})
+                return gr.update(visible=True), gr.update(visible=False), blocks
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -2396,7 +2401,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_confirm_btn.click(
                 fn=click_confirm_blocks_btn,
-                inputs=[gr_session, gr_blocks_keep],
+                inputs=[gr_session, gr_blocks_edit, gr_blocks_keep],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit]
             ).then(
                 fn=finalize_audiobook,
