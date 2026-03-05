@@ -2368,7 +2368,6 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
             )
-            '''
             ############
             app.load(
                 fn=None,
