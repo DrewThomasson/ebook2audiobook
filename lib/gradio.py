@@ -2347,14 +2347,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_gr_blocks_cancel_btn,
                 inputs=[gr_session],
                 outputs=[gr_group_main, gr_group_blocks]
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=outputs_enable_components
-            ).then(
-                fn=refresh_interface,
-                inputs=[gr_session],
-                outputs=outputs_refresh_interface
             )
             gr_blocks_confirm_btn.click(
                 fn=click_confirm_blocks_btn,
