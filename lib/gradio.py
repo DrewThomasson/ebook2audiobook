@@ -1734,7 +1734,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if any(final_file in path for key, path in audiobook_options):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue it will completely override the previous conversion!"
                         session['status'] = status_tags['OVERRIDE']
-                        return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update(value=status_tas['CONVERTING'])
+                        return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update(value=status_tags['CONVERTING'])
                 return gr.update(), gr.update()
 
             def click_gr_override_buttons(confirmed:bool)->dict:
