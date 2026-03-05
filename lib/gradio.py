@@ -2285,10 +2285,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=lambda: click_gr_override_buttons(confirmed=False),
                 inputs=None,
                 outputs=[gr_modal, gr_event]
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=outputs_enable_components            
             )
             gr_save_session.change(
                 fn=None,
