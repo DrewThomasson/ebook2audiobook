@@ -1773,19 +1773,19 @@ def build_interface(args:dict)->gr.Blocks:
                     print(msg)
                 return gr.update(visible=True), gr.update(visible=False)
 
-            def click_confirm_blocks_btn(session_id:str, blocks:list, keep_map:dict[int,bool])->list[str]:
-                new_blocks = []
+            def click_confirm_blocks_btn(session_id:str, blocks_list:list, keep_map:dict[int,bool])->list[str]:
+                new_blocks_list = []
                 session = context.get_session(session_id)
-                print(f'blocks: {blocks}')
                 if session and session.get('id', False):
-                    for i, block in enumerate(blocks):
+                    for i, block in enumerate(blocks_list):
                         if keep_map.get(i, False):
-                            new_blocks.append(blocks[i])
-                    if new_blocks:
-                        session['blocks_edit'] = new_blocks
+                            new_blocks_list.append(blocks_list[i])
+                    print(f'new_blocks_list: {new_blocks_list}')
+                    if new_blocks_list:
+                        session['blocks_edit'] = new_blocks_list
                         session['status'] = status_tags['CONVERTING']
-                        return gr.update(visible=True), gr.update(visible=False), new_blocks
-                return gr.update(visible=True), gr.update(visible=False), blocks
+                        return gr.update(visible=True), gr.update(visible=False), new_blocks_list
+                return gr.update(visible=True), gr.update(visible=False), blocks_list
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
