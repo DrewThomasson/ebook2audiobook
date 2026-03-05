@@ -2279,6 +2279,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=lambda: gr.update(value='', visible=False),
                 inputs=None,
                 outputs=[gr_modal]
+            )
             gr_save_session.change(
                 fn=None,
                 inputs=[gr_save_session],
