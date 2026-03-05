@@ -2284,7 +2284,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=refresh_interface,
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
-            )'''
+            )
             gr_override_confirm_btn.click(
                 fn=lambda session: click_gr_override_buttons(session, confirmed=True),
                 inputs=[gr_session],
