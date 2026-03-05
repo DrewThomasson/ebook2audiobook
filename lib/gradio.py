@@ -1655,10 +1655,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                                     progress_status, passed = convert_ebook(args)
                                     if passed is False:
-                                        if session['status'] == status_tags['CONVERTING']:
-                                            error = 'Conversion cancelled.'
-                                        else:
-                                            error = 'Conversion failed.'
+                                        error = progress_status
                                     else:
                                         if progress_status == status_tags['BLOCKS']:
                                             session['status'] = progress_status
@@ -1666,11 +1663,12 @@ def build_interface(args:dict)->gr.Blocks:
                                             print(msg)
                                             return gr.update(value=msg)
                                         else:
-                                            msg = 'Conversion successful!'
-                                            show_alert({"type": "success", "msg": msg})
+                                            msg = progress_status
+                                            print(msg)
                                             reset_session(args['id'])
                                             session['ebook'] = None
                                             session['status'] = status_tags['READY']
+                                            show_alert({"type": "success", "msg": msg})
                                             return gr.update(value=msg)
                             if error is not None:
                                 show_alert({"type": "warning", "msg": error})
@@ -1780,7 +1778,6 @@ def build_interface(args:dict)->gr.Blocks:
                     for i, block in enumerate(blocks_list):
                         if keep_map.get(i, False):
                             new_blocks_list.append(blocks_list[i])
-                    print(f'new_blocks_list: {new_blocks_list}')
                     if new_blocks_list:
                         session['blocks_edit'] = new_blocks_list
                         session['status'] = status_tags['CONVERTING']
