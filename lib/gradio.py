@@ -1780,7 +1780,7 @@ def build_interface(args:dict)->gr.Blocks:
                     blocks = session['blocks_edit']
                     for i, block in enumerate(blocks):
                         if keep_map.get(i, True):
-                            new_blocks.append(blocks[i]))
+                            new_blocks.append(blocks[i])
                 return gr.update(visible=True), gr.update(visible=False), new_blocks
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
