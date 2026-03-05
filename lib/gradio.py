@@ -1893,12 +1893,6 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)
                     yield gr.update(), gr.update(value=e), gr.update()
 
-            def on_gr_event(event:int)->dict:
-                print(f'event: {event}')
-                if event > 0:
-                    return gr.update(interactive=False)
-                return gr.update()
-
             ################## Events
 
             inputs_start_conversion = [
@@ -2247,7 +2241,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal, gr_event]
             )
             gr_event.change(
-                fn=on_gr_event,
+                fn=lambda event: gr.update(interactive=False),
                 inputs=[gr_event],
                 outputs=[gr_convert_btn]
             ).then(
