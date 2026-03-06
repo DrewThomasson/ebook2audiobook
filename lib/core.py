@@ -381,28 +381,33 @@ def hash_proxy_dict(proxy_dict)->str:
 
 def compare_checksums(session_id:str)->str|None:
     try:
-        hash_algorithm:str = 'sha256'
-        checksum_path = os.path.join(session['process_dir'], 'checksum')
-        hash_func = hashlib.new(hash_algorithm)
-        with open(session['ebook'], 'rb') as f:
-            while chunk := f.read(8192):
-                hash_func.update(chunk)
-        new_checksum = hash_func.hexdigest()
-        if not os.path.exists(checksum_path):
-            with open(checksum_path, 'w', encoding='utf-8') as f:
-                f.write(new_checksum)
-            return False, None
-        else:
-            with open(checksum_path, 'r', encoding='utf-8') as f:
-                saved_checksum = f.read().strip()
-            if saved_checksum == new_checksum:
-                return True, None
-            else:
+        session = context.get_session(session_id)
+        if session and session.get('id', False):
+            hash_algorithm:str = 'sha256'
+            checksum_path = os.path.join(session['process_dir'], 'checksum')
+            hash_func = hashlib.new(hash_algorithm)
+            with open(session['ebook'], 'rb') as f:
+                while chunk := f.read(8192):
+                    hash_func.update(chunk)
+            new_checksum = hash_func.hexdigest()
+            if not os.path.exists(checksum_path):
                 with open(checksum_path, 'w', encoding='utf-8') as f:
                     f.write(new_checksum)
-                    return False, None
+                return False, None
+            else:
+                with open(checksum_path, 'r', encoding='utf-8') as f:
+                    saved_checksum = f.read().strip()
+                if saved_checksum == new_checksum:
+                    return True, None
+                else:
+                    with open(checksum_path, 'w', encoding='utf-8') as f:
+                        f.write(new_checksum)
+                        return False, None
+        error = f'compare_checksums() error: session does not exist'
+        return False, error
     except Exception as e:
-        return False, f'compare_checksums() error: {e}'
+        error = f'compare_checksums() error: {e}'
+        return False, error
 
 def compare_dict_keys(d1, d2):
     if not isinstance(d1, Mapping) or not isinstance(d2, Mapping):
