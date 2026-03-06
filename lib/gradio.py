@@ -1723,11 +1723,13 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
                 return gr.update(), event + 1
 
-            def click_gr_blocks_cancel_btn(session_id:str)->tuple:
+            def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session["status"] = status_tags['READY']
-                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False)
+                    new_blocks = collect_page(page, blocks, *args)
+                    session['blocks_edit'] = new_blocks
+                    session['status'] = status_tags['READY']
+                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
 
             def populate_page(page:int, blocks:list[dict])->tuple:
                 start = int(page) * page_size
@@ -2377,8 +2379,8 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_cancel_btn.click(
                 fn=click_gr_blocks_cancel_btn,
-                inputs=[gr_session],
-                outputs=[gr_convert_btn, gr_group_main, gr_group_blocks]
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
