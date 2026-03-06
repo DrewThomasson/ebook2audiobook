@@ -1785,13 +1785,14 @@ def build_interface(args:dict)->gr.Blocks:
                     page = 0
                     page_updates = list(populate_page(page, blocks))
                     return (
-                        gr.update(visible=False), gr.update(visible=True),
+                        gr.update(visible=visible_main), gr.update(visible=visible_blocks),
                         blocks, page,
                         gr.update(visible=False),
                         gr.update(visible=len(blocks) > page_size),
                         *page_updates
                     )
                 n = len(blocks_components_flat) + 1
+                print(blocks_components_flat)
                 return tuple(gr.update() for _ in range(6 + n))
 
             def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
