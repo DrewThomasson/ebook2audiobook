@@ -1745,7 +1745,6 @@ def build_interface(args:dict)->gr.Blocks:
                         updates.append(gr.update())
                 end = min(start + page_size, len(blocks))
                 header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
-                print(f'updates: {updates}')
                 return (*updates, header)
 
             def collect_page(page:int, blocks:list[dict], *args)->list[dict]:
@@ -1783,14 +1782,17 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_main = True
                         visible_blocks = False
                     blocks = session['blocks_edit']
+                    page = 0
+                    page_updates = list(populate_page(page, blocks))
                     return (
                         gr.update(visible=visible_main), gr.update(visible=visible_blocks),
-                        update_blocks_header(0, blocks),
-                        blocks, 0,
+                        blocks, page,
                         gr.update(visible=False),
-                        gr.update(visible=len(blocks) > page_size)
+                        gr.update(visible=len(blocks) > page_size),
+                        *page_updates
                     )
-                return tuple(gr.update() for _ in range(7))
+                n = len(blocks_components_flat) + 1
+                return tuple(gr.update() for _ in range(6 + n))
 
             def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
                 session = context.get_session(session_id)
@@ -1940,9 +1942,10 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list
             ]
             outputs_edit_blocks = [
-                gr_group_main, gr_group_blocks, gr_blocks_header,
+                gr_group_main, gr_group_blocks,
                 gr_blocks_data, gr_blocks_page,
-                gr_blocks_previous_btn, gr_blocks_next_btn
+                gr_blocks_previous_btn, gr_blocks_next_btn,
+                *blocks_components_flat, gr_blocks_header
             ]
             outputs_restore_interface = [
                 gr_ebook_file, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
@@ -2283,10 +2286,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=outputs_edit_blocks
-            ).then(
-                fn=populate_page,
-                inputs=[gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
