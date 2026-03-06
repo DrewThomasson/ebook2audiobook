@@ -1774,38 +1774,26 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
 
             def edit_blocks(session_id:str)->tuple:
-                try:
-                    session = context.get_session(session_id)
-                    print(f"edit_blocks called, status={session['status'] if session else 'no session'}")
-                    if session and session['status'] in [status_tags['BLOCKS']]:
-                        visible_main = False
-                        visible_blocks = True
-                        if session['cancellation_requested']:
-                            visible_main = True
-                            visible_blocks = False
-                        blocks = session['blocks_edit']
-                        print(f"edit_blocks: {len(blocks)} blocks, type={type(blocks)}")
-                        print(f"edit_blocks: first block={blocks[0] if blocks else 'empty'}")
-                        page = 0
-                        page_updates = list(populate_page(page, blocks))
-                        print(f"edit_blocks: page_updates={len(page_updates)}, expected={len(blocks_components_flat) + 1}")
-                        result = (
-                            gr.update(visible=visible_main), gr.update(visible=visible_blocks),
-                            blocks, page,
-                            gr.update(visible=False),
-                            gr.update(visible=len(blocks) > page_size),
-                            *page_updates
-                        )
-                        print(f"edit_blocks: total result={len(result)}, total outputs={len(outputs_edit_blocks)}")
-                        return result
-                    n = len(blocks_components_flat) + 1
-                    return tuple(gr.update() for _ in range(6 + n))
-                except Exception as e:
-                    print(f"edit_blocks EXCEPTION: {e}")
-                    import traceback
-                    traceback.print_exc()
-                    n = len(blocks_components_flat) + 1
-                    return tuple(gr.update() for _ in range(6 + n))
+                session = context.get_session(session_id)
+                if session and session['status'] in [status_tags['BLOCKS']]:
+                    visible_main = False
+                    visible_blocks = True
+                    if session['cancellation_requested']:
+                        visible_main = True
+                        visible_blocks = False
+                    blocks = session['blocks_edit']
+                    page = 0
+                    page_updates = list(populate_page(page, blocks))
+                    result = (
+                        gr.update(visible=visible_main), gr.update(visible=visible_blocks),
+                        blocks, page,
+                        gr.update(visible=False),
+                        gr.update(visible=len(blocks) > page_size),
+                        *page_updates
+                    )
+                    return result
+                n = len(blocks_components_flat) + 1
+                return tuple(gr.update() for _ in range(6 + n))
 
             def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
                 session = context.get_session(session_id)
