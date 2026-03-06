@@ -2309,9 +2309,22 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_refresh_interface
             )
             gr_test_btn = gr.Button("Test", visible=True)
+
+            def test_edit_blocks():
+                blocks = [{"expand": False, "keep": True, "text": "Test block"}]
+                page = 0
+                page_updates = list(populate_page(page, blocks))
+                return (
+                    gr.update(visible=False), gr.update(visible=True),
+                    blocks, page,
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    *page_updates
+                )
+
             gr_test_btn.click(
-                fn=edit_blocks,
-                inputs=[gr_session],
+                fn=test_edit_blocks,
+                inputs=None,
                 outputs=outputs_edit_blocks
             )
             gr_override_confirm_btn.click(
