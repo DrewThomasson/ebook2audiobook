@@ -1660,8 +1660,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     if progress_status == status_tags['BLOCKS']:
                                         session['status'] = progress_status
-                                        msg = 'Select the blocks to convert'
-                                        print(msg)
                                         return gr.update(value=msg)
                                     else:
                                         msg = progress_status
