@@ -1778,6 +1778,19 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session['status'] in [status_tags['BLOCKS']]:
                     visible_main = False
                     visible_blocks = True
+                    if session['cancellation_requested']:
+                        visible_main = True
+                        visible_blocks = False
+                    blocks = session['blocks_edit']
+                    page = 0
+                    page_updates = list(populate_page(page, blocks))
+                    return (
+                        gr.update(visible=visible_main), gr.update(visible=visible_blocks),
+                        blocks, page,
+                        gr.update(visible=False),
+                        gr.update(visible=len(blocks) > page_size),
+                        *page_updates
+                    )
                 n = len(blocks_components_flat) + 1
                 return tuple(gr.update() for _ in range(6 + n))
 
@@ -2273,14 +2286,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=outputs_edit_blocks
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=outputs_enable_components
-            ).then(
-                fn=refresh_interface,
-                inputs=[gr_session],
-                outputs=outputs_refresh_interface
             )
             gr_override_confirm_btn.click(
                 fn=lambda event: (gr.update(value='', visible=False), event + 1),
