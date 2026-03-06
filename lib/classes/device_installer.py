@@ -260,7 +260,7 @@ class DeviceInstaller():
                 if hip_path and os.path.isdir(hip_path):
                     return True
                 program_files = os.environ.get('ProgramFiles', '')
-                if program_files and glob.glob(os.path.join(program_files, 'AMD', 'ROCm', '*')):
+                if program_files and glob(os.path.join(program_files, 'AMD', 'ROCm', '*')):
                     return True
                 return has_cmd('rocminfo')
             return False
