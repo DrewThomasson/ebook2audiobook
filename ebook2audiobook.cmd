@@ -829,17 +829,7 @@ if defined arguments.help (
                 if errorlevel 1 goto :failed
                 set "DEVICE_TAG=!JSON_VALUE!"
             )
-			if "!DOCKER_DESKTOP!"=="1" (
-				docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
-			) else (
-				wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
-			)
-			if not errorlevel 1 (
-				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!DEVICE_TAG!" already exists.
-				goto :failed
-			)
-            call :build_docker_image "!DEVICE_INFO_STR!"
-            if errorlevel 1 goto :failed
+
         ) else (
 			echo The Docker image is only available with a Linux container
         )
