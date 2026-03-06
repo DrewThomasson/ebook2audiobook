@@ -772,7 +772,7 @@ if "%DOCKER_MODE%"=="podman" (
 		REM Ensure Docker daemon is running
 		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "service docker status >/dev/null 2>&1 || service docker start"
 		timeout /t 3 /nobreak >nul
-		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder 2>/dev/null || docker buildx create --name wslbuilder --use"
+		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd \"%WSL_DIR%\" && docker buildx use wslbuilder 2>/dev/null || docker buildx create --name wslbuilder --use"
 		if errorlevel 1 (
 			echo Failed to setup buildx builder
 			endlocal 
