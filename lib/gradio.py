@@ -1745,6 +1745,7 @@ def build_interface(args:dict)->gr.Blocks:
                         updates.append(gr.update())
                 end = min(start + page_size, len(blocks))
                 header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
+                print(f'updates: {updates}')
                 return (*updates, header)
 
             def collect_page(page:int, blocks:list[dict], *args)->list[dict]:
@@ -1782,7 +1783,6 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_main = True
                         visible_blocks = False
                     blocks = session['blocks_edit']
-                    print(f'blocks: {blocks}')
                     return (
                         gr.update(visible=visible_main), gr.update(visible=visible_blocks),
                         update_blocks_header(0, blocks),
