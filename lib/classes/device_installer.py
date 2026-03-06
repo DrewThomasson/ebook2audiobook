@@ -1,4 +1,4 @@
-import os, re, sys, platform, shutil, subprocess, json, importlib
+import os, re, sys, platform, shutil, subprocess, importlib, json
 
 from functools import cached_property
 from typing import Union
@@ -79,7 +79,6 @@ class DeviceInstaller():
         return 'unknown'
 
     def detect_device(self)->str:
-        import re
 
         def has_cmd(cmd:str)->bool:
             return shutil.which(cmd) is not None
@@ -101,7 +100,6 @@ class DeviceInstaller():
             text = text.strip()
             if text.startswith('{'):
                 try:
-                    import json
                     obj = json.loads(text)
 
                     if isinstance(obj, dict):
@@ -249,7 +247,6 @@ class DeviceInstaller():
             return False
 
         def has_working_rocm():
-            # ROCm does not exist on macOS or Windows (runtime)
             if self.system != systems['LINUX']:
                 return False
             # /dev/kfd is required but not sufficient
@@ -448,13 +445,11 @@ class DeviceInstaller():
                 version = ''
                 msg = ''
                 def _normalize_version(v:str)->str:
-                    import re
                     m = re.search(r'\d+\.\d+(?:\.\d+)?', v or '')
                     return m.group(0) if m else ''
                 if not version and has_cmd("hipcc"):
                     out = try_cmd("hipcc --version")
                     if out:
-                        import re
                         m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
                         if m:
                             version = _normalize_version(m.group(1))
@@ -466,8 +461,7 @@ class DeviceInstaller():
                     except Exception:
                         pass
                 if not version and os.name == 'posix':
-                    import glob
-                    for p in sorted(glob.glob('/opt/rocm-*'), reverse=True):
+                    for p in sorted(glob('/opt/rocm-*'), reverse=True):
                         base = os.path.basename(p).replace('rocm-', '')
                         v = _normalize_version(base)
                         if v:
