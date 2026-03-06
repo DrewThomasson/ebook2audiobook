@@ -743,7 +743,8 @@ if "%DOCKER_MODE%"=="podman" (
 	echo 	GUI mode:
 	echo 		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% podman-compose -f podman-compose.yml up
 	echo 	Headless mode:
-	echo   		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.) else if "%DOCKER_MODE%"=="compose" (
+	echo   		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+) else if "%DOCKER_MODE%"=="compose" (
     echo Using docker compose
     if "%DOCKER_DESKTOP%"=="1" (
         docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
@@ -798,6 +799,7 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
+setlocal EnableDelayedExpansion
 if defined arguments.help (
     if /i "%arguments.help%"=="true" (
 		call :check_python
@@ -864,6 +866,7 @@ if defined arguments.help (
 		call conda deactivate >nul && call conda deactivate >nul
     )
 )
+endlocal
 goto :eof
 
 :failed
