@@ -328,7 +328,7 @@ goto :restart_script
 
 :install_scoop
 echo Installing Scoop…
-call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
+call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass Process; iwr -useb https://get.scoop.sh | iex"
 if errorlevel 1 goto :failed
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
@@ -741,9 +741,9 @@ if "%DOCKER_MODE%"=="podman" (
 	echo Docker image ready. To run your docker:
 	echo Podman Compose:
 	echo 	GUI mode:
-	echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up
+	echo 		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% podman-compose -f podman-compose.yml up
 	echo 	Headless mode:
-	echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
     echo Using docker compose
     if "%DOCKER_DESKTOP%"=="1" (
@@ -759,9 +759,9 @@ if "%DOCKER_MODE%"=="podman" (
 	echo Docker image ready. To run your docker:
 	echo Docker Compose:
 	echo 	GUI mode:
-	echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
+	echo 		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
 	echo 	Headless mode:
-	echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else (
     echo Using docker buildx
     if "%DOCKER_DESKTOP%"=="1" (
@@ -785,9 +785,9 @@ if "%DOCKER_MODE%"=="podman" (
 		)
 		echo Docker image ready. To run your docker:
 		echo GUI mode:
-		echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+		echo     %%wsl_cmd%% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 		echo Headless mode:
-		echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
+		echo     %%wsl_cmd%% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
 	)
 )
 if "%DOCKER_DESKTOP%"=="1" (
@@ -799,6 +799,7 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
+setlocal EnableDelayedExpansion
 if defined arguments.help (
     if /i "%arguments.help%"=="true" (
 		call :check_python
@@ -865,6 +866,7 @@ if defined arguments.help (
 		call conda deactivate >nul && call conda deactivate >nul
     )
 )
+endlocal
 goto :eof
 
 :failed
