@@ -684,44 +684,44 @@ def build_interface(args:dict)->gr.Blocks:
                 with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
-                gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
-                gr_blocks_data = gr.State([])
+            gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
+            gr_blocks_data = gr.State([])
 
-                with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
-                    with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
-                        gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
-                        gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
-                        gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
+            with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
+                with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
+                    gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
+                    gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
+                    gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
 
-                    block_components = []
-                    with gr.Column(elem_id='gr_column_blocks'):
-                        for i in range(page_size):
-                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=False, open=False) as acc:
-                                keep = gr.Checkbox(
-                                    elem_id=f'block_keep_{i}',
-                                    value=True,
-                                    label='',
-                                    interactive=True,
-                                    visible=True,
-                                    scale=0
-                                )
-                                txt = gr.Textbox(
-                                    elem_id=f'block_text_{i}',
-                                    lines=18,
-                                    max_lines=18,
-                                    show_label=False,
-                                    container=False,
-                                    interactive=True
-                                )
-                                block_components.append((acc, keep, txt))
+                block_components = []
+                with gr.Column(elem_id='gr_column_blocks'):
+                    for i in range(page_size):
+                        with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=False, open=False) as acc:
+                            keep = gr.Checkbox(
+                                elem_id=f'block_keep_{i}',
+                                value=True,
+                                label='',
+                                interactive=True,
+                                visible=True,
+                                scale=0
+                            )
+                            txt = gr.Textbox(
+                                elem_id=f'block_text_{i}',
+                                lines=18,
+                                max_lines=18,
+                                show_label=False,
+                                container=False,
+                                interactive=True
+                            )
+                            block_components.append((acc, keep, txt))
 
-                    with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
-                        gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
-                        gr_blocks_confirm_btn = gr.Button('✔', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
+                with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
+                    gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
+                    gr_blocks_confirm_btn = gr.Button('✔', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
 
-                blocks_components_flat = [comp for triplet in block_components for comp in triplet]
-                blocks_keeps = [c[1] for c in block_components]
-                blocks_texts = [c[2] for c in block_components]
+            blocks_components_flat = [comp for triplet in block_components for comp in triplet]
+            blocks_keeps = [c[1] for c in block_components]
+            blocks_texts = [c[2] for c in block_components]
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
@@ -2308,21 +2308,6 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
             )
-
-
-            gr_test_btn = gr.Button("Test", visible=True)
-
-            def test_simple():
-                print("test_simple called")
-                return gr.update(visible=True)
-
-            gr_test_btn.click(
-                fn=test_simple,
-                inputs=None,
-                outputs=[gr_group_blocks]
-            )
-
-
             gr_override_confirm_btn.click(
                 fn=lambda event: (gr.update(value='', visible=False), event + 1),
                 inputs=[gr_override_event],
