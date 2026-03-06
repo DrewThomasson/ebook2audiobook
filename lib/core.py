@@ -2621,7 +2621,7 @@ def convert_ebook(args:dict)->tuple:
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
                 if os.path.exists(final_file):
-                    msg = f"Warning! The final file {session['final_name']} already exists. If you continue, all changes will override the previous conversion!"
+                    msg = f"Warning! The final file {session['final_name']} already exists. If you continue, all new text and setting changes will override the previous conversion!"
                     print(msg)
                     while True:
                         choice = input("[s]kip / [y]es: ").strip().lower()
