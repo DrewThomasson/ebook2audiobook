@@ -1788,7 +1788,7 @@ def build_interface(args:dict)->gr.Blocks:
                         gr.update(visible=visible_main), gr.update(visible=visible_blocks),
                         gr.update(), gr.update(),
                         gr.update(),
-                        gr.update()),
+                        gr.update(),
                         gr.update()
                     )
                 n = len(blocks_components_flat) + 1
