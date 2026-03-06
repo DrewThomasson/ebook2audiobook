@@ -1,6 +1,6 @@
 import os, re, sys, platform, shutil, subprocess, importlib, json
 
-from functools import cached_property
+from functools y cached_property
 from typing import Union
 from glob import glob
 from importlib.metadata import version, PackageNotFoundError
@@ -35,10 +35,10 @@ class DeviceInstaller():
         else:
             if mode == BUILD_DOCKER:
                 name, tag, msg = self.check_hardware
+                pyvenv = list(sys.version_info[:2])
                 pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
                 arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
                 tag = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else tag
-                pyvenv = list(sys.version_info[:2])
                 os_env = 'manylinux_2_28'
                 device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg.replace('!', '')}
                 with open('.device_info.json', 'w', encoding='utf-8') as f:
@@ -247,24 +247,23 @@ class DeviceInstaller():
             return False
 
         def has_working_rocm():
-            if self.system != systems['LINUX']:
-                return False
-            # /dev/kfd is required but not sufficient
-            if not os.path.exists("/dev/kfd"):
-                return False
-            # rocminfo is the authoritative runtime check
-            if not has_cmd("rocminfo"):
-                return False
-            out = try_cmd("rocminfo").lower()
-            if not out:
-                return False
-            # Must enumerate agents
-            if "agent" not in out or "gpu" not in out:
-                return False
-            # Guard against broken installs
-            if "error" in out or "failed" in out:
-                return False
-            return True
+            if self.system == systems['LINUX']:
+                rocm_paths = [
+                    '/opt/rocm',
+                    '/opt/rocm/bin/rocminfo',
+                ]
+                if any(os.path.exists(p) for p in rocm_paths):
+                    return True
+                return has_cmd('rocminfo')
+            elif self.system == systems['WINDOWS']:
+                hip_path = os.environ.get('HIP_PATH')
+                if hip_path and os.path.isdir(hip_path):
+                    return True
+                program_files = os.environ.get('ProgramFiles', '')
+                if program_files and glob.glob(os.path.join(program_files, 'AMD', 'ROCm', '*')):
+                    return True
+                return has_cmd('rocminfo')
+            return False
 
         def has_nvidia_gpu_pci():
             # macOS: NVIDIA GPUs are unsupported → always False
