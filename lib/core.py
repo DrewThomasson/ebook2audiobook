@@ -2715,11 +2715,10 @@ def convert_ebook(args:dict)->tuple:
                             checksum, error = compare_checksums(session['ebook'], checksum_path)
                             json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
                             json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+                            missing_json = False
                             if error is None:
-                                session['blocks_orig'] = []
-                                session['blocks_edit'] = []
-                                session['chapters'] = []
                                 if not checksum:
+                                    reset_session(session_id)
                                     result_epub = convert2epub(session_id)
                                     if not result_epub:
                                         error = 'convert2epub() failed!'
@@ -2729,7 +2728,7 @@ def convert_ebook(args:dict)->tuple:
                                         if os.path.exists(json_blocks_edit_file):
                                             session['blocks_edit'] = load_json_blocks(json_blocks_edit_file)
                                     else:
-                                        checksum = False
+                                        missing_json = True
                                 if error is None:
                                     epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                     if epubBook:
@@ -2762,7 +2761,7 @@ def convert_ebook(args:dict)->tuple:
                                         if is_lang_in_tts_engine:
                                             session['cover'] = get_cover(epubBook, session_id)
                                             if session.get('cover', False):
-                                                if not checksum:
+                                                if missing_json:
                                                     session['blocks_orig'] = get_blocks(session_id, epubBook)
                                                     raw_blocks = get_blocks(session_id, epubBook)
                                                     if raw_blocks:
