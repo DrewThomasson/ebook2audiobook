@@ -824,11 +824,6 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
             if errorlevel 1 goto :failed
-            if "%DEVICE_TAG%"=="" (
-                call :json_get tag
-                if errorlevel 1 goto :failed
-                set "DEVICE_TAG=!JSON_VALUE!"
-            )
 
         ) else (
 			echo The Docker image is only available with a Linux container
