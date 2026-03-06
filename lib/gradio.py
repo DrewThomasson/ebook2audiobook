@@ -2286,7 +2286,9 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=edit_blocks,
                 inputs=[gr_session],
                 outputs=outputs_edit_blocks
-            )'''.then(
+            )
+            '''
+            .then(
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components
@@ -2294,7 +2296,8 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=refresh_interface,
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
-            )'''
+            )
+            '''
             gr_override_confirm_btn.click(
                 fn=lambda event: (gr.update(value='', visible=False), event + 1),
                 inputs=[gr_override_event],
