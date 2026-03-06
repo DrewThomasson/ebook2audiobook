@@ -1718,9 +1718,10 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
                     if any(final_file in path for key, path in audiobook_options):
-                        msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue all changes will override the previous conversion!"
-                        session['status'] = status_tags['OVERRIDE']
-                        return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
+                        checksum, error = compare_checksums(session_id)
+                        if checksum:
+                            msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue all changes will override the previous conversion!"
+                            return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
                 return gr.update(), event + 1
 
             def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
