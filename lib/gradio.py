@@ -2313,12 +2313,13 @@ def build_interface(args:dict)->gr.Blocks:
             gr_test_btn = gr.Button("Test", visible=True)
 
             def test_simple():
-                return gr.update(visible=False), gr.update(visible=True)
+                print("test_simple called")
+                return gr.update(visible=True)
 
             gr_test_btn.click(
                 fn=test_simple,
                 inputs=None,
-                outputs=[gr_group_main, gr_group_blocks]
+                outputs=[gr_group_blocks]
             )
 
 
