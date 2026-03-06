@@ -1774,6 +1774,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
 
             def edit_blocks(session_id:str)->tuple:
+                print(f'blocks_components_flat: {blocks_components_flat}')
                 session = context.get_session(session_id)
                 if session and session['status'] in [status_tags['BLOCKS']]:
                     visible_main = False
@@ -1792,7 +1793,6 @@ def build_interface(args:dict)->gr.Blocks:
                         *page_updates
                     )
                 n = len(blocks_components_flat) + 1
-                print(blocks_components_flat)
                 return tuple(gr.update() for _ in range(6 + n))
 
             def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
