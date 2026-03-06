@@ -687,7 +687,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
                 gr_blocks_data = gr.State([])
 
-                with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
+                with gr.Group(visible=True, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                     with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
                         gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
                         gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
