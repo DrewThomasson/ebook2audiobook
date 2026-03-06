@@ -1940,7 +1940,7 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_edit_blocks = [
                 gr_group_main, gr_group_blocks, gr_blocks_header,
-                gr_blocks_edit, gr_blocks_page, gr_blocks_keep,
+                gr_blocks_data, gr_blocks_page,
                 gr_blocks_previous_btn, gr_blocks_next_btn
             ]
             outputs_restore_interface = [
