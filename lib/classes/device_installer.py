@@ -1,6 +1,6 @@
 import os, re, sys, platform, shutil, subprocess, importlib, json
 
-from functools y cached_property
+from functools import cached_property
 from typing import Union
 from glob import glob
 from importlib.metadata import version, PackageNotFoundError
