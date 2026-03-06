@@ -741,9 +741,9 @@ if "%DOCKER_MODE%"=="podman" (
 	echo Docker image ready. To run your docker:
 	echo Podman Compose:
 	echo 	GUI mode:
-	echo 		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% podman-compose -f podman-compose.yml up
+	echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up
 	echo 	Headless mode:
-	echo   		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
     echo Using docker compose
     if "%DOCKER_DESKTOP%"=="1" (
@@ -759,9 +759,9 @@ if "%DOCKER_MODE%"=="podman" (
 	echo Docker image ready. To run your docker:
 	echo Docker Compose:
 	echo 	GUI mode:
-	echo 		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
+	echo 		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
 	echo 	Headless mode:
-	echo   		%%wsl_cmd%% DEVICE_TAG=%%DEVICE_TAG%% docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		%wsl_cmd% DEVICE_TAG=$DEVICE_TAG docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else (
     echo Using docker buildx
     if "%DOCKER_DESKTOP%"=="1" (
@@ -785,9 +785,9 @@ if "%DOCKER_MODE%"=="podman" (
 		)
 		echo Docker image ready. To run your docker:
 		echo GUI mode:
-		echo     %%wsl_cmd%% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+		echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 		echo Headless mode:
-		echo     %%wsl_cmd%% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
+		echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
 	)
 )
 if "%DOCKER_DESKTOP%"=="1" (
@@ -799,7 +799,6 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
-setlocal EnableDelayedExpansion
 if defined arguments.help (
     if /i "%arguments.help%"=="true" (
 		call :check_python
@@ -824,7 +823,27 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
             if errorlevel 1 goto :failed
-
+            if "%DEVICE_TAG%"=="" (
+                call :json_get tag
+                if errorlevel 1 goto :failed
+                set "DEVICE_TAG=!JSON_VALUE!"
+            )
+			if "!DOCKER_DESKTOP!"=="1" (
+				docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
+			) else (
+				wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
+			)
+			if not errorlevel 1 (
+				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!DEVICE_TAG!" already exists.
+				if "!DOCKER_DESKTOP!"=="1" (
+					echo To rebuild, first remove it with: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
+				) else (
+					echo To rebuild, first remove it with: wsl -d %DOCKER_WSL_CONTAINER% -- docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
+				)
+				goto :failed
+			)
+            call :build_docker_image "!DEVICE_INFO_STR!"
+            if errorlevel 1 goto :failed
         ) else (
 			echo The Docker image is only available with a Linux container
         )
@@ -846,7 +865,6 @@ if defined arguments.help (
 		call conda deactivate >nul && call conda deactivate >nul
     )
 )
-endlocal
 goto :eof
 
 :failed
