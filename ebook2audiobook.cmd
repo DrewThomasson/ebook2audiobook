@@ -799,6 +799,7 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
+setlocal EnableDelayedExpansion
 if defined arguments.help (
     if /i "%arguments.help%"=="true" (
 		call :check_python
@@ -865,6 +866,7 @@ if defined arguments.help (
 		call conda deactivate >nul && call conda deactivate >nul
     )
 )
+endlocal
 goto :eof
 
 :failed
