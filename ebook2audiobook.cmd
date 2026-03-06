@@ -799,7 +799,6 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
-setlocal EnableDelayedExpansion
 if defined arguments.help (
     if /i "%arguments.help%"=="true" (
 		call :check_python
@@ -837,9 +836,9 @@ if defined arguments.help (
 			if not errorlevel 1 (
 				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!DEVICE_TAG!" already exists.
 				if "!DOCKER_DESKTOP!"=="1" (
-					echo To rebuild, first remove it with: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG!
+					echo To rebuild, first remove it with: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
 				) else (
-					echo To rebuild, first remove it with: wsl -d %DOCKER_WSL_CONTAINER% -- docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG!
+					echo To rebuild, first remove it with: wsl -d %DOCKER_WSL_CONTAINER% -- docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
 				)
 				goto :failed
 			)
@@ -866,7 +865,6 @@ if defined arguments.help (
 		call conda deactivate >nul && call conda deactivate >nul
     )
 )
-endlocal
 goto :eof
 
 :failed
