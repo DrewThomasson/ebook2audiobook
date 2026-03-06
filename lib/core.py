@@ -2619,36 +2619,46 @@ def convert_ebook(args:dict)->tuple:
                 session['audiobooks_dir'] = os.path.abspath(session['output_dir']) if session['output_dir'] is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 os.makedirs(session['voice_dir'], exist_ok=True)
-                if session['custom_model'] is not None:
-                    if not os.path.exists(session['custom_model_dir']):
-                        os.makedirs(session['custom_model_dir'], exist_ok=True)
-                    custom_src_path = Path(session['custom_model'])
-                    custom_src_name = custom_src_path.stem
-                    if not os.path.exists(os.path.join(session['custom_model_dir'], custom_src_name)):
-                        try:
-                            if analyze_uploaded_file(session['custom_model'], default_engine_settings[session['tts_engine']]['files']):
-                                model = extract_custom_model(session_id)
-                                if model is not None:
-                                    session['custom_model'] = model
+                final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
+                if os.path.exists(final_file):
+                    msg = f"Warning! The final file {session['final_name']} already exists. If you continue, all changes will override the previous conversion!"
+                    print(msg)
+                    while True:
+                        choice = input("[s]kip / [y]es: ").strip().lower()
+                        if choice in ('c', 's', 'y'):
+                            break
+                        print("Please enter 'c', 's', or 'y'.")
+                    elif choice == 's':
+                        error = 'Conversion skipped.'
+                if error is None:
+                    if session['custom_model'] is not None:
+                        if not os.path.exists(session['custom_model_dir']):
+                            os.makedirs(session['custom_model_dir'], exist_ok=True)
+                        custom_src_path = Path(session['custom_model'])
+                        custom_src_name = custom_src_path.stem
+                        if not os.path.exists(os.path.join(session['custom_model_dir'], custom_src_name)):
+                            try:
+                                if analyze_uploaded_file(session['custom_model'], default_engine_settings[session['tts_engine']]['files']):
+                                    model = extract_custom_model(session_id)
+                                    if model is not None:
+                                        session['custom_model'] = model
+                                    else:
+                                        error = f"{model} could not be extracted or mandatory files are missing"
                                 else:
-                                    error = f"{model} could not be extracted or mandatory files are missing"
+                                    error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                            except ModuleNotFoundError as e:
+                                error = f"No presets module for TTS engine '{session['tts_engine']}': {e}"
+                    if session['voice'] is not None:
+                        voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
+                        voice_name = get_sanitized(voice_name)
+                        final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
+                        if not os.path.exists(final_voice_file):
+                            extractor = VoiceExtractor(session, session['voice'], voice_name)
+                            status, msg = extractor.extract_voice()
+                            if status:
+                                session['voice'] = final_voice_file
                             else:
-                                error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
-                        except ModuleNotFoundError as e:
-                            error = f"No presets module for TTS engine '{session['tts_engine']}': {e}"
-                            print(error)
-                if session['voice'] is not None:
-                    voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
-                    voice_name = get_sanitized(voice_name)
-                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
-                    if not os.path.exists(final_voice_file):
-                        extractor = VoiceExtractor(session, session['voice'], voice_name)
-                        status, msg = extractor.extract_voice()
-                        if status:
-                            session['voice'] = final_voice_file
-                        else:
-                            error = f'VoiceExtractor.extract_voice() failed! {msg}'
-                            print(error)
+                                error = f'VoiceExtractor.extract_voice() failed! {msg}'
             if error is None:
                 if session['script_mode'] == NATIVE:
                     is_installed = check_programs('Calibre', 'ebook-convert', '--version')

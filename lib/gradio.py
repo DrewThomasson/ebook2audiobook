@@ -1715,7 +1715,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
-                    if any(final_file in path for key, path in audiobook_options):
+                    if os.path.exists(final_file):
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue all changes will override the previous conversion!"
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
                 return gr.update(), event + 1
