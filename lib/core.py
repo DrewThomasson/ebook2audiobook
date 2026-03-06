@@ -379,10 +379,12 @@ def hash_proxy_dict(proxy_dict)->str:
     data_str = json.dumps(data, sort_keys=True, default=str)
     return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
-def compare_checksums(src_path:str, checksum_path:str, hash_algorithm:str='sha256')->tuple[bool, str|None]:
+def compare_checksums(session_id:str)->str|None:
     try:
+        hash_algorithm:str = 'sha256'
+        checksum_path = os.path.join(session['process_dir'], 'checksum')
         hash_func = hashlib.new(hash_algorithm)
-        with open(src_path, 'rb') as f:
+        with open(session['ebook'], 'rb') as f:
             while chunk := f.read(8192):
                 hash_func.update(chunk)
         new_checksum = hash_func.hexdigest()
@@ -2711,80 +2713,77 @@ def convert_ebook(args:dict)->tuple:
                                 show_alert({"type": "warning", "msg": msg})
                             print(msg.replace('<br/>','\n'))
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
-                            checksum_path = os.path.join(session['process_dir'], 'checksum')
-                            checksum, error = compare_checksums(session['ebook'], checksum_path)
-                            json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                            json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
-                            missing_json = False
+                            checksum, error = compare_checksums(session_id)
+                            if not checksum:
+                                result_epub = convert2epub(session_id)
+                                if not result_epub:
+                                    error = 'convert2epub() failed!'
                             if error is None:
-                                if not checksum:
-                                    reset_session(session_id)
-                                    result_epub = convert2epub(session_id)
-                                    if not result_epub:
-                                        error = 'convert2epub() failed!'
-                                else:
-                                    if os.path.exists(json_blocks_orig_file):
-                                        session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
-                                        if os.path.exists(json_blocks_edit_file):
-                                            session['blocks_edit'] = load_json_blocks(json_blocks_edit_file)
+                                json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+                                json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+                                missing_json = True
+                                if os.path.exists(json_blocks_orig_file):
+                                    session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
+                                    if os.path.exists(json_blocks_edit_file):
+                                        session['blocks_edit'] = load_json_blocks(json_blocks_edit_file)
                                     else:
-                                        missing_json = True
-                                if error is None:
-                                    epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
-                                    if epubBook:
-                                        metadata = dict(session['metadata'])
-                                        for key, value in metadata.items():
-                                            data = epubBook.get_metadata('DC', key)
-                                            if data:
-                                                for value, attributes in data:
-                                                    metadata[key] = value
-                                        metadata['language'] = session['language']
-                                        metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
-                                        metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
-                                        session['metadata'] = metadata                  
-                                        try:
-                                            if len(session['metadata']['language']) == 2:
-                                                lang_dict = Lang(session['language'])
-                                                if lang_dict:
-                                                    session['metadata']['language'] = lang_dict.pt3
-                                        except Exception as e:
-                                            pass                         
-                                        if session['metadata']['language'] != session['language']:
-                                            error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                            print(error)
-                                            if session['is_gui_process']:
-                                                show_alert({"type": "warning", "msg": error})
-                                        is_lang_in_tts_engine = (
-                                            session.get('tts_engine') in default_engine_settings and
-                                            session.get('language') in default_engine_settings[session['tts_engine']].get('languages', {})
-                                        )
-                                        if is_lang_in_tts_engine:
-                                            session['cover'] = get_cover(epubBook, session_id)
-                                            if session.get('cover', False):
-                                                if missing_json:
-                                                    session['blocks_orig'] = get_blocks(session_id, epubBook)
-                                                    raw_blocks = get_blocks(session_id, epubBook)
-                                                    if raw_blocks:
-                                                        session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
-                                                    if session.get('blocks_orig', []):
-                                                        save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
-                                                if not session.get('blocks_edit', []):
-                                                    session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
-                                                    save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
-                                                if session.get('blocks_orig', []) and session.get('blocks_edit', []):
-                                                    if session['blocks_preview']:
-                                                        return status_tags['BLOCKS'], True
-                                                    else:
-                                                        progress_status, passed = finalize_audiobook(session_id)
-                                                    return progress_status, passed
+                                        
+                                    missing_json = False
+                                epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
+                                if epubBook:
+                                    metadata = dict(session['metadata'])
+                                    for key, value in metadata.items():
+                                        data = epubBook.get_metadata('DC', key)
+                                        if data:
+                                            for value, attributes in data:
+                                                metadata[key] = value
+                                    metadata['language'] = session['language']
+                                    metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
+                                    metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                    session['metadata'] = metadata                  
+                                    try:
+                                        if len(session['metadata']['language']) == 2:
+                                            lang_dict = Lang(session['language'])
+                                            if lang_dict:
+                                                session['metadata']['language'] = lang_dict.pt3
+                                    except Exception as e:
+                                        pass                         
+                                    if session['metadata']['language'] != session['language']:
+                                        error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                        print(error)
+                                        if session['is_gui_process']:
+                                            show_alert({"type": "warning", "msg": error})
+                                    is_lang_in_tts_engine = (
+                                        session.get('tts_engine') in default_engine_settings and
+                                        session.get('language') in default_engine_settings[session['tts_engine']].get('languages', {})
+                                    )
+                                    if is_lang_in_tts_engine:
+                                        session['cover'] = get_cover(epubBook, session_id)
+                                        if session.get('cover', False):
+                                            if missing_json:
+                                                session['blocks_orig'] = get_blocks(session_id, epubBook)
+                                                raw_blocks = get_blocks(session_id, epubBook)
+                                                if raw_blocks:
+                                                    session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
+                                                if session.get('blocks_orig', []):
+                                                    save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
+                                            if not session.get('blocks_edit', []):
+                                                session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
+                                                save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
+                                            if session.get('blocks_orig', []) and session.get('blocks_edit', []):
+                                                if session['blocks_preview']:
+                                                    return status_tags['BLOCKS'], True
                                                 else:
-                                                    error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
+                                                    progress_status, passed = finalize_audiobook(session_id)
+                                                return progress_status, passed
                                             else:
-                                                error = 'get_cover() failed!'
+                                                error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
                                         else:
-                                             error = f"language {session['language']} not supported by {session['tts_engine']}!"
+                                            error = 'get_cover() failed!'
                                     else:
-                                        error = 'epubBook.read_epub failed!'
+                                         error = f"language {session['language']} not supported by {session['tts_engine']}!"
+                                else:
+                                    error = 'epubBook.read_epub failed!'
                         else:
                             error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
                     else:
