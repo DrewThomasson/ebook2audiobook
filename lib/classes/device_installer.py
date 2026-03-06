@@ -246,7 +246,7 @@ class DeviceInstaller():
                 return False
             return False
 
-        def has_working_rocm():
+        def has_rocm():
             if self.system == systems['LINUX']:
                 rocm_paths = [
                     '/opt/rocm',
@@ -316,7 +316,7 @@ class DeviceInstaller():
             except Exception:
                 return False
 
-        def has_working_cuda():
+        def has_cuda():
             if self.system == systems['MACOS']:
                 return False
             if not has_cmd("nvidia-smi"):
@@ -368,7 +368,7 @@ class DeviceInstaller():
                 return False
             return False
 
-        def has_working_xpu():
+        def has_xpu():
             # No XPU on macOS
             if self.system == systems['MACOS']:
                 return False
@@ -436,38 +436,40 @@ class DeviceInstaller():
                     out = try_cmd('uname -a')
                     if 'tegra' in out:
                         msg = 'Jetson GPU detected but not(?) compatible'
-                    
+
             # ============================================================
             # ROCm
             # ============================================================
-            elif has_working_rocm() and has_amd_gpu_pci():
-                version = ''
-                msg = ''
+            elif has_rocm() and has_amd_gpu_pci():
+                
                 def _normalize_version(v:str)->str:
                     m = re.search(r'\d+\.\d+(?:\.\d+)?', v or '')
                     return m.group(0) if m else ''
-                if not version and has_cmd("hipcc"):
-                    out = try_cmd("hipcc --version")
-                    if out:
-                        m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
-                        if m:
-                            version = _normalize_version(m.group(1))
-                if not version:
-                    try:
-                        import torch
-                        if getattr(torch.version, "hip", None):
-                            version = _normalize_version(torch.version.hip)
-                    except Exception:
-                        pass
-                if not version and os.name == 'posix':
-                    for p in sorted(glob('/opt/rocm-*'), reverse=True):
-                        base = os.path.basename(p).replace('rocm-', '')
-                        v = _normalize_version(base)
-                        if v:
-                            version = v
-                            break
-                if not version:
-                    if os.name == 'posix':
+
+                version = ''
+                msg = ''
+                if os.name == 'posix':
+                    if not version and has_cmd('hipcc'):
+                        out = try_cmd('hipcc --version')
+                        if out:
+                            m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
+                            if m:
+                                version = _normalize_version(m.group(1))
+                    if not version:
+                        try:
+                            import torch
+                            if getattr(torch.version, 'hip', None):
+                                version = _normalize_version(torch.version.hip)
+                        except Exception:
+                            pass
+                    if not version:
+                        for p in sorted(glob('/opt/rocm-*'), reverse=True):
+                            base = os.path.basename(p).replace('rocm-', '')
+                            v = _normalize_version(base)
+                            if v:
+                                version = v
+                                break
+                    if not version:
                         for p in (
                             '/opt/rocm/.info/version',
                             '/opt/rocm/version',
@@ -480,7 +482,38 @@ class DeviceInstaller():
                                     break
                                 except Exception:
                                     pass
-                    elif os.name == 'nt':
+                elif os.name == 'nt':
+                    if not version:
+                        hip_path = os.environ.get('HIP_PATH', '')
+                        hipcc = os.path.join(hip_path, 'bin', 'hipcc') if hip_path else ''
+                        if hipcc and os.path.isfile(hipcc):
+                            out = try_cmd(f'"{hipcc}" --version')
+                            if out:
+                                m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
+                                if m:
+                                    version = _normalize_version(m.group(1))
+                    if not version and has_cmd('hipcc'):
+                        out = try_cmd('hipcc --version')
+                        if out:
+                            m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
+                            if m:
+                                version = _normalize_version(m.group(1))
+                    if not version:
+                        try:
+                            import torch
+                            if getattr(torch.version, 'hip', None):
+                                version = _normalize_version(torch.version.hip)
+                        except Exception:
+                            pass
+                    if not version:
+                        program_files = os.environ.get('ProgramFiles', '')
+                        if program_files:
+                            for p in sorted(glob(os.path.join(program_files, 'AMD', 'ROCm', '*')), reverse=True):
+                                v = _normalize_version(os.path.basename(p))
+                                if v:
+                                    version = v
+                                    break
+                    if not version:
                         for env in ('ROCM_PATH', 'HIP_PATH'):
                             base = os.environ.get(env)
                             if base:
@@ -500,11 +533,11 @@ class DeviceInstaller():
                                 break
                 if version:
                     cmp = toolkit_version_compare(version, rocm_version_range)
-                    min_version = rocm_version_range["min"]
-                    max_version = rocm_version_range["max"]
+                    min_version = rocm_version_range['min']
+                    max_version = rocm_version_range['max']
 
-                    min_version_str = ".".join(map(str, min_version)) if isinstance(min_version, (tuple, list)) else str(min_version)
-                    max_version_str = ".".join(map(str, max_version)) if isinstance(max_version, (tuple, list)) else str(max_version)
+                    min_version_str = '.'.join(map(str, min_version)) if isinstance(min_version, (tuple, list)) else str(min_version)
+                    max_version_str = '.'.join(map(str, max_version)) if isinstance(max_version, (tuple, list)) else str(max_version)
 
                     if cmp == -1:
                         msg = f'ROCm {version} < min {min_version_str}. Please upgrade.'
@@ -514,22 +547,20 @@ class DeviceInstaller():
 
                     elif cmp == 0:
                         devices['ROCM']['found'] = True
-                        parts = version.split(".")
+                        parts = version.split('.')
                         major = parts[0]
                         minor = parts[1] if len(parts) > 1 else 0
                         name = devices['ROCM']['proc']
                         tag = f'rocm{major}{minor}'
-
                     else:
                         msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
-
                 else:
                     msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
 
             # ============================================================
             # CUDA
             # ============================================================
-            elif has_working_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
+            elif has_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
                 version = ''
                 msg = ''
                 # 1) CUDA RUNTIME detection
@@ -615,7 +646,7 @@ class DeviceInstaller():
             # ============================================================
             # INTEL XPU
             # ============================================================
-            elif has_working_xpu() and has_intel_gpu_pci():
+            elif has_xpu() and has_intel_gpu_pci():
                 version = ''
                 msg = ''
                 if os.name == 'posix':
