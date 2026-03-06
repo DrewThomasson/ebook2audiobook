@@ -178,20 +178,22 @@ if defined arguments.script_mode (
         echo Error: --script_mode requires a value
         goto :failed
     )
-	for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
-		set "argname=%%A"
-		call set "argname=%%argname:arguments.=%%"
-		if not "%argname%"=="" (
-			if /i not "%argname%"=="script_mode" (
-				if /i not "%argname%"=="docker_device" (
-					if /i not "%argname%"=="docker_mode" (
-						echo Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --%argname%
-						goto :failed
-					)
-				)
-			)
-		)
-	)
+    setlocal enabledelayedexpansion
+    for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
+        set "argname=%%A"
+        set "argname=!argname:arguments.=!"
+        if not "!argname!"=="" (
+            if /i not "!argname!"=="script_mode" (
+                if /i not "!argname!"=="docker_device" (
+                    if /i not "!argname!"=="docker_mode" (
+                        echo Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --!argname!
+                        goto :failed
+                    )
+                )
+            )
+        )
+    )
+    endlocal
 )
 goto :main
 
@@ -767,7 +769,6 @@ if "%DOCKER_MODE%"=="podman" (
     if "%DOCKER_DESKTOP%"=="1" (
         docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
     ) else (
-		echo Using docker buildx
 		REM Ensure Docker daemon is running
 		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "service docker status >/dev/null 2>&1 || service docker start"
 		timeout /t 3 /nobreak >nul
