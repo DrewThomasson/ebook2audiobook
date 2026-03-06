@@ -518,7 +518,7 @@ def ocr2xhtml(img: Image.Image, lang: str)->str:
         print(error)
         return False
 
-def load_json_blocks(filepath:str)->list:
+def load_json_blocks(filepath:str)->list[dict]:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -2764,6 +2764,9 @@ def convert_ebook(args:dict)->tuple:
                                             if session.get('cover', False):
                                                 if not checksum:
                                                     session['blocks_orig'] = get_blocks(session_id, epubBook)
+                                                    raw_blocks = get_blocks(session_id, epubBook)
+                                                    if raw_blocks:
+                                                        session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
                                                     if session.get('blocks_orig', []):
                                                         save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
                                                 if not session.get('blocks_edit', []):

@@ -684,23 +684,19 @@ def build_interface(args:dict)->gr.Blocks:
                 with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
-            gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
-            gr_blocks_edit = gr.JSON(value=[], visible=False)
-            gr_blocks_keep = gr.State({})
+                gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
+                gr_blocks_data = gr.State([])
 
-            with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
-                with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
-                    gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
-                    gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
-                    gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
+                with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
+                    with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
+                        gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
+                        gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
+                        gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
 
-                @gr.render(inputs=[gr_blocks_page, gr_blocks_edit])
-                def render_blocks(page:int, blocks:list)->None:
-                    start = page * page_size
-                    end = min(start + page_size, len(blocks))
+                    block_components = []
                     with gr.Column(elem_id='gr_column_blocks'):
-                        for i in range(start, end):
-                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=True, open=False) as acc:
+                        for i in range(page_size):
+                            with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=False, open=False) as acc:
                                 keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=True,
@@ -709,19 +705,23 @@ def build_interface(args:dict)->gr.Blocks:
                                     visible=True,
                                     scale=0
                                 )
-                                gr.Textbox(
+                                txt = gr.Textbox(
                                     elem_id=f'block_text_{i}',
-                                    value=blocks[i],
                                     lines=18,
                                     max_lines=18,
                                     show_label=False,
                                     container=False,
                                     interactive=True
                                 )
+                                block_components.append((acc, keep, txt))
 
-                with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
-                    gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
-                    gr_blocks_confirm_btn = gr.Button('✔', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
+                    with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
+                        gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
+                        gr_blocks_confirm_btn = gr.Button('✔', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
+
+                blocks_components_flat = [comp for triplet in block_components for comp in triplet]
+                blocks_keeps = [c[1] for c in block_components]
+                blocks_texts = [c[2] for c in block_components]
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
@@ -1682,8 +1682,8 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update()
 
             def update_gr_audiobook_list(session_id:str)->dict:
+                nonlocal audiobook_options
                 try:
-                    nonlocal audiobook_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session['audiobooks_dir'] is not None:
@@ -1713,20 +1713,6 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)              
                 return gr.update()
 
-            def update_blocks_header(page:int, len_blocks:int)->str:
-                start = page * page_size
-                end = min(start + page_size, len_blocks)
-                return gr.update(value=f'Blocks {start}–{end-1} of {len_blocks - 1}')
-
-            def click_gr_blocks_previous_btn(page:int)->int:
-                new_page = max(page - 1, 0)
-                return new_page, gr.update(visible=new_page > 0), gr.update(visible=True)
-
-            def click_gr_blocks_next_btn(page:int, blocks:list[str])->int:
-                max_page = (len(blocks) - 1) // page_size
-                new_page = min(page + 1, max_page)
-                return new_page, gr.update(visible=new_page < max_page), gr.update(visible=True)
-
             def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False) and audiobook_options and not isinstance(data, list):
@@ -1737,6 +1723,56 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
                 return gr.update(), event + 1
 
+            def click_gr_blocks_cancel_btn(session_id:str)->tuple:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    session["status"] = status_tags['READY']
+                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False)
+
+            def populate_page(page:int, blocks:list[dict])->tuple:
+                start = int(page) * page_size
+                updates = []
+                for i in range(page_size):
+                    idx = start + i
+                    if idx < len(blocks):
+                        b = blocks[idx]
+                        updates.append(gr.update(label=f'Block {idx}', visible=True, open=b['expand']))
+                        updates.append(gr.update(value=b['keep']))
+                        updates.append(gr.update(value=b['text']))
+                    else:
+                        updates.append(gr.update(visible=False))
+                        updates.append(gr.update())
+                        updates.append(gr.update())
+                end = min(start + page_size, len(blocks))
+                header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
+                return (*updates, header)
+
+            def collect_page(page:int, blocks:list[dict], *args)->list[dict]:
+                keeps = args[:page_size]
+                texts = args[page_size:]
+                new_blocks = [dict(b) for b in blocks]
+                start = int(page) * page_size
+                for i in range(page_size):
+                    idx = start + i
+                    if idx < len(new_blocks):
+                        new_blocks[idx] = {"expand": new_blocks[idx]['expand'], "keep": keeps[i], "text": texts[i]}
+                return new_blocks
+
+            def navigate(page:int, blocks:list[dict], direction:int, *args)->tuple:
+                new_blocks = collect_page(page, blocks, *args)
+                max_page = max((len(new_blocks) - 1) // page_size, 0)
+                new_page = max(0, min(int(page) + direction, max_page))
+                return (
+                    new_blocks, new_page,
+                    gr.update(visible=new_page > 0),
+                    gr.update(visible=new_page < max_page)
+                )
+
+            def update_blocks_header(page:int, blocks:list[dict])->str:
+                start = int(page) * page_size
+                end = min(start + page_size, len(blocks))
+                return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
+
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session['status'] in [status_tags['BLOCKS']]:
@@ -1745,35 +1781,27 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['cancellation_requested']:
                         visible_main = True
                         visible_blocks = False
+                    blocks = session['blocks_edit']
                     return (
                         gr.update(visible=visible_main), gr.update(visible=visible_blocks),
-                        update_blocks_header(0, len(session['blocks_edit'])),
-                        session['blocks_edit'], 0, {}, gr.update(visible=False),
-                        gr.update(visible=len(session['blocks_edit']) > page_size)
+                        update_blocks_header(0, blocks),
+                        blocks, 0,
+                        gr.update(visible=False),
+                        gr.update(visible=len(blocks) > page_size)
                     )
-                return tuple(gr.update() for _ in range(8))
+                return tuple(gr.update() for _ in range(7))
 
-            def click_gr_blocks_cancel_btn(session_id:str)->tuple:
+            def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session["status"] = status_tags['READY']
-                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False)
-
-            def click_confirm_blocks_btn(session_id:str, blocks_list:list, keep_map:dict[int,bool], event:int)->list[str]:
-                new_blocks_list = []
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    for i, block in enumerate(blocks_list):
-                        if keep_map.get(i, False):
-                            new_blocks_list.append(blocks_list[i])
-                    if new_blocks_list:
-                        session['blocks_edit'] = new_blocks_list
-                        session['status'] = status_tags['CONVERTING']
-                        return gr.update(visible=True), gr.update(visible=False), new_blocks_list, event + 1
-                    session["status"] = status_tags['READY']
-                    error = 'No Blocks selected for conversion!'
-                    show_alert({"type": "warning", "msg": error})
-                return gr.update(), gr.update(), gr.update(), gr.update()
+                    kept = [b['text'].strip() for b in blocks if b['keep'] and b['text'].strip()]
+                    if not kept:
+                        gr.Warning('At least one block must be kept.')
+                        return gr.update(), gr.update(), gr.update()
+                    session['blocks_edit'] = [{"expand": False, "keep": True, "text": t} for t in kept]
+                    session['status'] = status_tags['CONVERTING']
+                    return gr.update(visible=True), gr.update(visible=False), event + 1
+                return gr.update(), gr.update(), gr.update()
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -1900,7 +1928,6 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ]
-
             outputs_enable_components = [
                 gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
@@ -2256,6 +2283,10 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_edit_blocks
             ).then(
+                fn=populate_page,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[*blocks_components_flat, gr_blocks_header]
+            ).then(
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components
@@ -2326,22 +2357,22 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
             )
             gr_blocks_previous_btn.click(
-                fn=click_gr_blocks_previous_btn,
-                inputs=[gr_blocks_page],
-                outputs=[gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
+                fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
             ).then(
-                fn=update_blocks_header,
-                inputs=[gr_blocks_page, gr_blocks_edit],
-                outputs=[gr_blocks_header]
+                fn=populate_page,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[*blocks_components_flat, gr_blocks_header]
             )
             gr_blocks_next_btn.click(
-                fn=click_gr_blocks_next_btn,
-                inputs=[gr_blocks_page,gr_blocks_edit],
-                outputs=[gr_blocks_page, gr_blocks_next_btn, gr_blocks_previous_btn]
+                fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
             ).then(
-                fn=update_blocks_header,
-                inputs=[gr_blocks_page, gr_blocks_edit],
-                outputs=[gr_blocks_header]
+                fn=populate_page,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[*blocks_components_flat, gr_blocks_header]
             )
             gr_blocks_cancel_btn.click(
                 fn=click_gr_blocks_cancel_btn,
@@ -2353,13 +2384,17 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_enable_components
             )
             gr_blocks_confirm_btn.click(
-                fn=click_confirm_blocks_btn,
-                inputs=[gr_session, gr_blocks_edit, gr_blocks_keep, gr_blocks_event],
-                outputs=[gr_group_main, gr_group_blocks, gr_blocks_edit, gr_blocks_event]
+                fn=lambda page, blocks, *args: collect_page(page, blocks, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data]
+            ).then(
+                fn=click_gr_blocks_confirm_btn,
+                inputs=[gr_session, gr_blocks_data, gr_blocks_event],
+                outputs=[gr_group_main, gr_group_blocks, gr_blocks_event]
             )
             gr_blocks_event.change(
                 fn=finalize_audiobook,
-                inputs=[gr_session,],
+                inputs=[gr_session],
                 outputs=[gr_progress]
             ).then(
                 fn=enable_components,
