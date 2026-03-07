@@ -2628,14 +2628,16 @@ def convert_ebook(args:dict)->tuple:
                 final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
                 audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{session['output_format']}")
                 if os.path.exists(final_file) or audio_sentences_exist:
-                    msg = f"Warning! The final file {session['final_name']} already exists. If you continue, all new text and setting changes will override the previous conversion!"
+                    msg = f"Warning! The final file {session['final_name']} already exists. Continue? WARNING! The whole previous conversion will be deleted!"
                     print(msg)
                     while True:
                         choice = input("[s]kip / [y]es: ").strip().lower()
-                        if choice in ('c', 's', 'y'):
+                        if choice in ('s', 'y'):
                             break
-                        print("Please enter 'c', 's', or 'y'.")
-                    if choice == 's':
+                        print("Please enter 's', or 'y'.")
+                    if choice == 'y':
+                        shutil.rmtree(process_dir, ignore_errors=True)
+                    elif choice == 's':
                         error = 'Conversion skipped.'
                 if error is None:
                     if session['custom_model'] is not None:
@@ -2853,9 +2855,6 @@ def finalize_audiobook(session_id:str)->tuple:
                 if exported_files is not None:
                     progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                     session['audiobook'] = exported_files[-1]
-                    #if not session['is_gui_process']:
-                    #    process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
-                    #    shutil.rmtree(process_dir, ignore_errors=True)
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
                     session['status'] = status_tags['READY']
