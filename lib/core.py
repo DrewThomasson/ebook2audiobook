@@ -2462,11 +2462,12 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(sml_token('pause'), '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
-def delete_proc_audio_files(dir:str)->None:
+def delete_proc_audio_files(dir:str, files:list)->None:
     base = Path(dir)
     for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
         if file.stem.isdigit():
-            file.unlink()
+            if file in files
+                file.unlink()
 
 def clear_folder(folder_path:str)->None:
     for name in os.listdir(folder_path):
@@ -2611,6 +2612,10 @@ def convert_ebook(args:dict)->tuple:
             session['output_split'] = bool(args['output_split'])
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
+            session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
+            session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
+            session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+            session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             cleanup_models_cache()
             if not session['is_gui_process']:
                 session['system'] = DEVICE_SYSTEM
@@ -2620,7 +2625,8 @@ def convert_ebook(args:dict)->tuple:
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
-                if os.path.exists(final_file):
+                audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{session['output_format']}")
+                if os.path.exists(final_file) or audio_sentences_exist:
                     msg = f"Warning! The final file {session['final_name']} already exists. If you continue, all new text and setting changes will override the previous conversion!"
                     print(msg)
                     while True:
@@ -2668,13 +2674,6 @@ def convert_ebook(args:dict)->tuple:
                     if not is_installed:
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
-                    old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
-                    if os.path.isdir(old_session_dir):
-                        os.rename(old_session_dir, session['session_dir'])
-                    session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
-                    session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
-                    session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                    session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                     if prepare_dirs(session['ebook'], session_id):
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
@@ -2823,8 +2822,6 @@ def finalize_audiobook(session_id:str)->tuple:
             error = 'No blocks have been selected for the conversion!'
             return error, False
         if session.get('blocks_edit', []):
-            #delete_proc_audio_files(session['sentences_dir'])
-            #delete_proc_audio_files(session['chapters_dir'])
             json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
             save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
             chapters = []
