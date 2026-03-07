@@ -804,7 +804,6 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
-setlocal enabledelayedexpansion
 if defined arguments.help (
     if /i "%arguments.help%"=="true" (
 		call :check_python
@@ -819,6 +818,7 @@ if defined arguments.help (
 ) else (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "%DOCKER_DEVICE_STR%"=="" (
+			setlocal enabledelayedexpansion
 			call :check_python
 			if errorlevel 1 goto :install_python
 			call :check_wsl
@@ -829,27 +829,27 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
             if errorlevel 1 goto :failed
-            if "%DEVICE_TAG%"=="" (
+            if "!DEVICE_TAG!"=="" (
                 call :json_get tag
                 if errorlevel 1 goto :failed
             )
-			echo DOCKER_DESKTOP: !DOCKER_DESKTOP! DEVICE_TAG: !DEVICE_TAG! DEVICE_INFO_STR: !DEVICE_INFO_STR!
 			if "%DOCKER_DESKTOP%"=="1" (
-				docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
+				docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
 			) else (
-				wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
+				wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
 			)
 			if not errorlevel 1 (
-				echo [STOP] Docker image "%DOCKER_IMG_NAME%:%DEVICE_TAG%" already exists.
+				echo [STOP] Docker image "%DOCKER_IMG_NAME%:!DEVICE_TAG!" already exists.
 				if "%DOCKER_DESKTOP%"=="1" (
-					echo To rebuild, first remove it with: docker rmi %DOCKER_IMG_NAME%:%DEVICE_TAG% --force
+					echo To rebuild, first remove it with: docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
 				) else (
-					echo To rebuild, first remove it with: wsl -d %DOCKER_WSL_CONTAINER% -- docker rmi %DOCKER_IMG_NAME%:%DEVICE_TAG% --force
+					echo To rebuild, first remove it with: wsl -d %DOCKER_WSL_CONTAINER% -- docker rmi %DOCKER_IMG_NAME%:!DEVICE_TAG! --force
 				)
 				goto :failed
 			)
             call :build_docker_image '!DEVICE_INFO_STR!'
             if errorlevel 1 goto :failed
+			endlocal
         ) else (
 			echo The Docker image is only available with a Linux container
         )
@@ -871,7 +871,6 @@ if defined arguments.help (
 		call conda deactivate >nul && call conda deactivate >nul
     )
 )
-endlocal
 goto :eof
 
 :failed
