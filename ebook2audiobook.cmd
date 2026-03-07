@@ -846,7 +846,8 @@ if defined arguments.help (
 				)
 				goto :failed
 			)
-            call :build_docker_image "%DEVICE_INFO_STR%"
+			echo DEVICE_INFO_STR: %DEVICE_INFO_STR%
+            call :build_docker_image '%DEVICE_INFO_STR%'
             if errorlevel 1 goto :failed
         ) else (
 			echo The Docker image is only available with a Linux container
