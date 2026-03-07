@@ -829,7 +829,7 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
             if errorlevel 1 goto :failed
-			echo DEVICE_INFO_STR %DEVICE_INFO_STR%
+			echo DEVICE_INFO_STR !DEVICE_INFO_STR!
             if "%DEVICE_TAG%"=="" (
                 call :json_get tag
                 if errorlevel 1 goto :failed
