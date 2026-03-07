@@ -772,6 +772,17 @@ if "%DOCKER_MODE%"=="podman" (
 		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "service docker status >/dev/null 2>&1 || service docker start"
 		timeout /t 3 /nobreak >nul
 		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder 2>/dev/null || docker buildx create --name wslbuilder --use"
+		if errorlevel 1 (
+			echo Failed to setup buildx builder
+			endlocal 
+			exit /b 1
+		)
+		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
+		if errorlevel 1 (
+			echo Build failed
+			endlocal 
+			exit /b 1
+		)
 	)
 )
 if "%DOCKER_DESKTOP%"=="1" (
