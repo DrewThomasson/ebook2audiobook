@@ -670,7 +670,11 @@ exit /b 0
 :build_docker_image
 setlocal enabledelayedexpansion
 set "ARG=%~1"
-set "ARG_ESCAPED=%ARG:"=\"%"
+if defined ARG (
+    set "ARG_ESCAPED=%ARG:"=\"%"
+) else (
+    set "ARG_ESCAPED="
+)
 set "wsl_cmd="
 if "%DOCKER_MODE%"=="podman" (
 	where.exe podman-compose >nul 2>&1
