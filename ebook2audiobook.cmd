@@ -847,7 +847,7 @@ if defined arguments.help (
 				)
 				goto :failed
 			)
-            call :build_docker_image '!DEVICE_INFO_STR!'
+            call :build_docker_image "!DEVICE_INFO_STR!"
             if errorlevel 1 goto :failed
 			endlocal
         ) else (
