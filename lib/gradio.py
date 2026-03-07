@@ -953,19 +953,15 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    print(f"status_tags: {session['status']}")
                     if session['status'] not in [status_tags['BLOCKS']]:
-                        visible_main = False
+                        visible_main = True
                         visible_xtts = False
                         visible_bark = False
                         interactive_convert_btn = True if session['ebook'] else False
-                        if session['cancellation_requested'] or session['status'] in [status_tags['CONVERTING']]:
-                            visible_main = True
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
-                        session['status'] = status_tags['READY']
                         return (
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
