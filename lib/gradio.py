@@ -757,8 +757,9 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    outputs = tuple([gr.update(interactive=True) for _ in range(12)])
-                    return outputs
+                    if session['status'] not in [status_tags['BLOCKS']]:
+                        outputs = tuple([gr.update(interactive=True) for _ in range(12)])
+                        return outputs
                 outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
                 
@@ -952,24 +953,25 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['status'] = status_tags['READY']
-                    visible_main = False
-                    visible_xtts = False
-                    visible_bark = False
-                    interactive_convert_btn = True if session['ebook'] else False
-                    if session['status'] != status_tags['BLOCKS'] or session['cancellation_requested']:
-                        visible_main = True
-                    if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                        visible_xtts = visible_gr_tab_xtts_params
-                    elif session['tts_engine'] == TTS_ENGINES['BARK']:
-                        visible_bark = visible_gr_tab_bark_params
-                    return (
-                        gr.update(value='', visible=False), gr.update(visible=visible_main),
-                        gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
-                        gr.update(interactive=interactive_convert_btn), gr.update(value=session['ebook']), gr.update(value=session['device']), 
-                        update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
-                        update_gr_voice_list(session_id), gr.update(value='')
-                    )
+                    if session['status'] not in [status_tags['BLOCKS']]:
+                        session['status'] = status_tags['READY']
+                        visible_main = False
+                        visible_xtts = False
+                        visible_bark = False
+                        interactive_convert_btn = True if session['ebook'] else False
+                        if session['cancellation_requested']:
+                            visible_main = True
+                        if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                            visible_xtts = visible_gr_tab_xtts_params
+                        elif session['tts_engine'] == TTS_ENGINES['BARK']:
+                            visible_bark = visible_gr_tab_bark_params
+                        return (
+                            gr.update(value='', visible=False), gr.update(visible=visible_main),
+                            gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
+                            gr.update(interactive=interactive_convert_btn), gr.update(value=session['ebook']), gr.update(value=session['device']), 
+                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
+                            update_gr_voice_list(session_id), gr.update(value='')
+                        )
                 outputs = tuple([gr.update() for _ in range(11)])
                 return outputs
 
