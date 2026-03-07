@@ -11,6 +11,8 @@ ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh
 ARG ISO3_LANG=eng
 ARG INSTALL_RUST=1
 
+ENV DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR}
+
 LABEL org.opencontainers.image.title="ebook2audiobook" \
 	org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
 	org.opencontainers.image.version="${APP_VERSION}" \
@@ -86,7 +88,7 @@ RUN find /app -type f \( -name "*.sh" -o -name "*.command" \) -exec sed -i 's/\r
 # ------------------------------------------------------------
 # Build dependencies via project script
 # ------------------------------------------------------------
-RUN ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+RUN ./ebook2audiobook.command --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR"
 
 # ------------------------------------------------------------
 # Cleanup
