@@ -883,13 +883,12 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
 
             def is_valid_gradio_cache(path):
-                gradio_cache_root = os.path.normpath(os.path.join(tmp_dir, 'gradio'))
                 if not path or not os.path.isfile(path):
                     return False
                 path = os.path.normpath(path)
                 parent = os.path.dirname(path)
                 return (
-                    parent.startswith(gradio_cache_root) and
+                    parent.startswith(gradio_cache_dir) and
                     len(os.path.basename(parent)) >= 32
                 )
 

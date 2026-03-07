@@ -17,14 +17,16 @@ max_python_version = (3,12)
 root_dir = os.path.dirname(os.path.abspath(__file__))
 tmp_dir = os.path.abspath('tmp')
 run_dir = os.path.abspath('run')
-tempfile.tempdir = run_dir
-tmp_expire = 7 # days
+gradio_cache_dir = os.path.normpath(os.path.join(run_dir, 'gradio'))
 
 models_dir = os.path.abspath('models')
 ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
+
+tempfile.tempdir = run_dir
+tmp_expire = 7 # days
 
 # ---------------------------------------------------------------------
 # Environment setup
