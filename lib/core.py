@@ -2466,7 +2466,7 @@ def delete_proc_audio_files(dir:str, files:list)->None:
     base = Path(dir)
     for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
         if file.stem.isdigit():
-            if file in files
+            if file in files:
                 file.unlink()
 
 def clear_folder(folder_path:str)->None:
