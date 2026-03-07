@@ -1660,7 +1660,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     if progress_status == status_tags['BLOCKS']:
                                         session['status'] = progress_status
-                                        return gr.update(value=msg)
+                                        return gr.update(value=session['status'])
                                     else:
                                         msg = progress_status
                                         print(msg)
