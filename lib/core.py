@@ -104,7 +104,7 @@ class SessionTracker:
 class SessionContext:
 
     def __init__(self):
-        self.manager:Manager = Manager()
+        self.manager:Manager = Manager(address=tempfile.mktemp(dir='/dev/shm'))
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
         self.cancellation_events = {}
 
