@@ -953,6 +953,7 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
+                    print(f"status_tags: {session['status']}")
                     if session['status'] not in [status_tags['BLOCKS']]:
                         visible_main = False
                         visible_xtts = False
