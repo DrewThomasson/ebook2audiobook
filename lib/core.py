@@ -2854,6 +2854,7 @@ def finalize_audiobook(session_id:str)->tuple:
                         shutil.rmtree(process_dir, ignore_errors=True)
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
+                    session['status'] = status_tags['READY']
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
@@ -2861,6 +2862,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 error = 'convert_chapters2audio() failed!'
         else:
             error = 'finalize_audiobook() failed!'
+        session['status'] = status_tags['READY']
     return error, False
 
 def restore_session_from_data(data:dict, session:dict)->None:
