@@ -804,6 +804,7 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
+setlocal enabledelayedexpansion
 if defined arguments.help (
     if /i "%arguments.help%"=="true" (
 		call :check_python
@@ -818,7 +819,6 @@ if defined arguments.help (
 ) else (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "%DOCKER_DEVICE_STR%"=="" (
-			setlocal enabledelayedexpansion
 			call :check_python
 			if errorlevel 1 goto :install_python
 			call :check_wsl
@@ -829,7 +829,6 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
             if errorlevel 1 goto :failed
-			echo DEVICE_INFO_STR !DEVICE_INFO_STR!
             if "%DEVICE_TAG%"=="" (
                 call :json_get tag
                 if errorlevel 1 goto :failed
@@ -848,9 +847,8 @@ if defined arguments.help (
 				)
 				goto :failed
 			)
-            call :build_docker_image '%DEVICE_INFO_STR%'
+            call :build_docker_image '!DEVICE_INFO_STR!'
             if errorlevel 1 goto :failed
-			endlocal
         ) else (
 			echo The Docker image is only available with a Linux container
         )
@@ -872,6 +870,7 @@ if defined arguments.help (
 		call conda deactivate >nul && call conda deactivate >nul
     )
 )
+endlocal
 goto :eof
 
 :failed
