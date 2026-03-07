@@ -716,8 +716,8 @@ def build_interface(args:dict)->gr.Blocks:
                             block_components.append((acc, keep, txt))
 
                 with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
-                    gr_blocks_cancel_btn = gr.Button('✖', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
-                    gr_blocks_confirm_btn = gr.Button('✔', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
+                    gr_blocks_cancel_btn = gr.Button('🡄', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
+                    gr_blocks_confirm_btn = gr.Button('🡆', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
 
             blocks_components_flat = [comp for triplet in block_components for comp in triplet]
             blocks_keeps = [c[1] for c in block_components]
@@ -735,11 +735,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
             gr_data_field_hidden = gr.Textbox(elem_id='gr_data_field_hidden', visible=False)
             
-            gr_deletion_cancel_btn = gr.Button(elem_id='gr_deletion_cancel_btn', elem_classes=['hide-elem'], value='✖', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
-            gr_deletion_confirm_btn = gr.Button(elem_id='gr_deletion_confirm_btn', elem_classes=['hide-elem'], value='✔', variant='primary', visible=True, scale=0, size='sm', min_width=0)
+            gr_deletion_cancel_btn = gr.Button(elem_id='gr_deletion_cancel_btn', elem_classes=['hide-elem'], value='🡄', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
+            gr_deletion_confirm_btn = gr.Button(elem_id='gr_deletion_confirm_btn', elem_classes=['hide-elem'], value='🡆', variant='primary', visible=True, scale=0, size='sm', min_width=0)
             
-            gr_override_cancel_btn = gr.Button(elem_id='gr_override_cancel_btn', elem_classes=['hide-elem'], value='✖', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
-            gr_override_confirm_btn = gr.Button(elem_id='gr_override_confirm_btn', elem_classes=['hide-elem'], value='✔', variant='primary', visible=True, scale=0, size='sm', min_width=0)
+            gr_override_cancel_btn = gr.Button(elem_id='gr_override_cancel_btn', elem_classes=['hide-elem'], value='🡄', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
+            gr_override_confirm_btn = gr.Button(elem_id='gr_override_confirm_btn', elem_classes=['hide-elem'], value='🡆', variant='primary', visible=True, scale=0, size='sm', min_width=0)
             
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
             gr_session_update = gr.State({'hash': None})
@@ -820,7 +820,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return f'''
                     <div class="confirm-buttons">
                         <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{cancel_btn}').click()">⨉</button>
-                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{confirm_btn}').click()">✔</button>
+                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{confirm_btn}').click()">🡆</button>
                     </div>
                     '''
                 else:
