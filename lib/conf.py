@@ -16,7 +16,8 @@ max_python_version = (3,12)
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 tmp_dir = os.path.abspath('tmp')
-tempfile.tempdir = tmp_dir
+run_dir = os.path.abspath('run')
+tempfile.tempdir = run_dir
 tmp_expire = 7 # days
 
 models_dir = os.path.abspath('models')
