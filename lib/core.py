@@ -131,6 +131,7 @@ class SessionContext:
     def set_session(self, session_id:str)->Any:
         self.sessions[session_id] = self._recursive_proxy({
             "id": session_id,
+            "session_dir": None,
             "script_mode": NATIVE,
             "tab_id": None,
             "is_gui_process": False,
@@ -138,7 +139,6 @@ class SessionContext:
             "process_id": None,
             "status": None,
             "ticker": 0,
-            "heartbeat": time.time(),
             "cancellation_requested": False,
             "device": default_device,
             "tts_engine": default_tts_engine,
@@ -2615,13 +2615,13 @@ def convert_ebook(args:dict)->tuple:
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
-            session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
             session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
             session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             cleanup_models_cache()
             if not session['is_gui_process']:
                 session['system'] = DEVICE_SYSTEM
                 session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
+                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                 session['output_dir'] = str(args['output_dir']) if args['output_dir'] is not None else None
                 session['audiobooks_dir'] = os.path.abspath(session['output_dir']) if session['output_dir'] is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
@@ -2637,7 +2637,7 @@ def convert_ebook(args:dict)->tuple:
                             break
                         print("Please enter 's', or 'y'.")
                     if choice == 'y':
-                        shutil.rmtree(process_dir, ignore_errors=True)
+                        shutil.rmtree(session['process_dir'], ignore_errors=True)
                     elif choice == 's':
                         error = 'Conversion skipped.'
                 if error is None:
