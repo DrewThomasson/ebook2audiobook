@@ -2827,10 +2827,13 @@ def finalize_audiobook(session_id:str)->tuple:
             chapters = []
             msg = f'Get sentences…'
             print(msg)
-            for text in session['blocks_edit']:
+            for block in session['blocks_edit']:
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
                     return error, False
+                if not block['keep']:
+                    continue
+                text = block['text']
                 if text:
                     sentences_list = get_sentences(text, session_id)
                     if sentences_list is None:
