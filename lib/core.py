@@ -2853,12 +2853,16 @@ def finalize_audiobook(session_id:str)->tuple:
                 if exported_files is not None:
                     progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                     session['audiobook'] = exported_files[-1]
-                    if not session['is_gui_process']:
-                        process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
-                        shutil.rmtree(process_dir, ignore_errors=True)
+                    #if not session['is_gui_process']:
+                    #    process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
+                    #    shutil.rmtree(process_dir, ignore_errors=True)
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
                     session['status'] = status_tags['READY']
+                    if session['blocks_preview']:
+                        reset_session(session_id)
+                        session['ebook'] = None
+                        show_alert({"type": "success", "msg": progress_status})
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
