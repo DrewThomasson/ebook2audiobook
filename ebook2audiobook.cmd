@@ -67,7 +67,6 @@ set "DOCKER_PROGRAMS=xz-utils ffmpeg mediainfo nodejs espeak-ng sox tesseract-oc
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_WSL_CONTAINER=Debian"
 set "DOCKER_FIX_SCRIPT=dpf.ps1"
-set "DOCKER_DEVICE_STR="
 set "DOCKER_MODE="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
 set "DEVICE_INFO_STR="

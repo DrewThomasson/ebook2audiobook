@@ -47,7 +47,6 @@ APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "xcb-util-cursor" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
 DOCKER_PROGRAMS=("ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
-DOCKER_DEVICE_STR=""
 DOCKER_MODE=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
 DEVICE_INFO_STR=""
