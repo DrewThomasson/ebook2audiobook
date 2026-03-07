@@ -954,17 +954,17 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] not in [status_tags['BLOCKS']]:
-                        session['status'] = status_tags['READY']
                         visible_main = False
                         visible_xtts = False
                         visible_bark = False
                         interactive_convert_btn = True if session['ebook'] else False
-                        if session['cancellation_requested']:
+                        if session['cancellation_requested'] or session['status'] in [status_tags['CONVERTING']]:
                             visible_main = True
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
+                        session['status'] = status_tags['READY']
                         return (
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
@@ -2267,6 +2267,16 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event]
             )
+            gr_override_confirm_btn.click(
+                fn=lambda event: (gr.update(value='', visible=False), event + 1),
+                inputs=[gr_override_event],
+                outputs=[gr_modal, gr_override_event]
+            )
+            gr_override_cancel_btn.click(
+                fn=lambda: gr.update(value='', visible=False),
+                inputs=None,
+                outputs=[gr_modal]
+            )
             gr_override_event.change(
                 fn=lambda event: gr.update(interactive=False),
                 inputs=[gr_override_event],
@@ -2292,15 +2302,54 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
             )
-            gr_override_confirm_btn.click(
-                fn=lambda event: (gr.update(value='', visible=False), event + 1),
-                inputs=[gr_override_event],
-                outputs=[gr_modal, gr_override_event]
+            gr_blocks_previous_btn.click(
+                fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
+            ).then(
+                fn=populate_page,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[*blocks_components_flat, gr_blocks_header]
             )
-            gr_override_cancel_btn.click(
-                fn=lambda: gr.update(value='', visible=False),
-                inputs=None,
-                outputs=[gr_modal]
+            gr_blocks_next_btn.click(
+                fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
+            ).then(
+                fn=populate_page,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[*blocks_components_flat, gr_blocks_header]
+            )
+            gr_blocks_cancel_btn.click(
+                fn=click_gr_blocks_cancel_btn,
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data]
+            ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=outputs_enable_components
+            )
+            gr_blocks_confirm_btn.click(
+                fn=lambda page, blocks, *args: collect_page(page, blocks, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data]
+            ).then(
+                fn=click_gr_blocks_confirm_btn,
+                inputs=[gr_session, gr_blocks_data, gr_blocks_event],
+                outputs=[gr_group_main, gr_group_blocks, gr_blocks_event]
+            )
+            gr_blocks_event.change(
+                fn=finalize_audiobook,
+                inputs=[gr_session],
+                outputs=[gr_progress]
+            ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=outputs_enable_components          
+            ).then(
+                fn=refresh_interface,
+                inputs=[gr_session],
+                outputs=outputs_refresh_interface
             )
             gr_save_session.change(
                 fn=None,
@@ -2352,55 +2401,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_gr_deletion,
                 inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list],
                 outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
-            )
-            gr_blocks_previous_btn.click(
-                fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
-            ).then(
-                fn=populate_page,
-                inputs=[gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header]
-            )
-            gr_blocks_next_btn.click(
-                fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
-            ).then(
-                fn=populate_page,
-                inputs=[gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header]
-            )
-            gr_blocks_cancel_btn.click(
-                fn=click_gr_blocks_cancel_btn,
-                inputs=[gr_session, gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
-                outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data]
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=outputs_enable_components
-            )
-            gr_blocks_confirm_btn.click(
-                fn=lambda page, blocks, *args: collect_page(page, blocks, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
-                outputs=[gr_blocks_data]
-            ).then(
-                fn=click_gr_blocks_confirm_btn,
-                inputs=[gr_session, gr_blocks_data, gr_blocks_event],
-                outputs=[gr_group_main, gr_group_blocks, gr_blocks_event]
-            )
-            gr_blocks_event.change(
-                fn=finalize_audiobook,
-                inputs=[gr_session],
-                outputs=[gr_progress]
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=outputs_enable_components          
-            ).then(
-                fn=refresh_interface,
-                inputs=[gr_session],
-                outputs=outputs_refresh_interface
             )
             ############
             app.load(
