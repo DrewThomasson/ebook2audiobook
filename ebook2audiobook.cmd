@@ -559,7 +559,6 @@ if errorlevel 1 (
 exit /b 0
 
 :check_docker
-setlocal enabledelayedexpansion
 where.exe /Q docker.exe
 if not errorlevel 1 (
     docker version >nul 2>&1
@@ -576,7 +575,6 @@ if errorlevel 1 (
 )
 :: Docker Desktop not found, using WSL Docker
 set "DOCKER_DESKTOP=0"
-endlocal
 exit /b 0
 
 :check_docker_daemon
@@ -753,10 +751,11 @@ if "%DOCKER_MODE%"=="podman" (
 	echo 	Headless mode:
 	echo   		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
-    echo Using docker compose
     if "%DOCKER_DESKTOP%"=="1" (
+		echo Using docker compose
         docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
     ) else (
+		echo Using docker compose into WSL2 %DOCKER_WSL_CONTAINER%
         wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
     )
 	if errorlevel 1 (
@@ -771,10 +770,11 @@ if "%DOCKER_MODE%"=="podman" (
 	echo 	Headless mode:
 	echo   		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else (
-    echo Using docker buildx
     if "%DOCKER_DESKTOP%"=="1" (
+		echo Using docker buildx
         docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
     ) else (
+		echo Using docker buildx into WSL2 %DOCKER_WSL_CONTAINER%
 		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "service docker status >/dev/null 2>&1 || service docker start"
 		timeout /t 3 /nobreak >nul
 		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder 2>/dev/null || docker buildx create --name wslbuilder --use"
