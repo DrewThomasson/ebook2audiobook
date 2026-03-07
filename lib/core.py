@@ -2634,7 +2634,7 @@ def convert_ebook(args:dict)->tuple:
                         if choice in ('c', 's', 'y'):
                             break
                         print("Please enter 'c', 's', or 'y'.")
-                    elif choice == 's':
+                    if choice == 's':
                         error = 'Conversion skipped.'
                 if error is None:
                     if session['custom_model'] is not None:
