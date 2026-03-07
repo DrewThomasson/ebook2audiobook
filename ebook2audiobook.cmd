@@ -674,7 +674,6 @@ if defined ARG (
 ) else (
     set "ARG_ESCAPED="
 )
-set "wsl_cmd="
 if "%DOCKER_MODE%"=="podman" (
 	where.exe podman-compose >nul 2>&1
 	if errorlevel 1 (
@@ -720,8 +719,10 @@ if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=gpu"
 )
 if "%DOCKER_DESKTOP%"=="1" (
+	set "wsl_cmd="
     set "WSL_DIR=%SAFE_SCRIPT_DIR%"
 ) else (
+	set "wsl_cmd=wsl --user root -d %DOCKER_WSL_CONTAINER% --"
     for /f "delims=" %%i in ('wsl --user root -d %DOCKER_WSL_CONTAINER% -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
 )
 call :get_iso3_lang "%OS_LANG%"
