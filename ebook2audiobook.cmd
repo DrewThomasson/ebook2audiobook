@@ -833,6 +833,7 @@ if defined arguments.help (
                 call :json_get tag
                 if errorlevel 1 goto :failed
             )
+			echo DOCKER_DESKTOP: %DOCKER_DESKTOP% DEVICE_TAG: %DEVICE_TAG% DEVICE_INFO_STR: !DEVICE_INFO_STR!
 			if "%DOCKER_DESKTOP%"=="1" (
 				docker image inspect "%DOCKER_IMG_NAME%:%DEVICE_TAG%" >nul 2>&1
 			) else (
