@@ -2402,9 +2402,18 @@ def build_interface(args:dict)->gr.Blocks:
                                         ];
                                         sliders.forEach(slider => {
                                             if(!slider) return;
-                                            const key = slider.closest("div[id]").id.replace(/^gr_/, "");
-                                            const saved = window.session_storage[key];
-                                            slider.value = (slider === gr_xtts_top_k) ? parseInt(saved) : parseFloat(saved);
+                                            const container = slider.closest("div[id]");
+                                            if(!container) return;
+                                            const key = container.id.replace(/^gr_/, "");
+                                            const saved = window.session_storage?.[key];
+                                            if(saved === undefined || saved === null || saved === ""){
+                                                return;
+                                            }
+                                            const parsed = (slider === gr_xtts_top_k) ? parseInt(saved, 10) : parseFloat(saved);
+                                            if(!Number.isFinite(parsed)){
+                                                return;
+                                            }
+                                            slider.value = parsed;
                                             slider.dispatchEvent(new Event("input", { bubbles: true }));
                                         });
                                     }catch(e){
@@ -2423,9 +2432,18 @@ def build_interface(args:dict)->gr.Blocks:
                                         ];
                                         sliders.forEach(slider => {
                                             if(!slider) return;
-                                            const key = slider.closest("div[id]").id.replace(/^gr_/, "");
-                                            const saved = window.session_storage[key];
-                                            slider.value = parseFloat(saved);
+                                            const container = slider.closest("div[id]");
+                                            if(!container) return;
+                                            const key = container.id.replace(/^gr_/, "");
+                                            const saved = window.session_storage?.[key];
+                                            if(saved === undefined || saved === null || saved === ""){
+                                                return;
+                                            }
+                                            const parsed = parseFloat(saved);
+                                            if(!Number.isFinite(parsed)){
+                                                return;
+                                            }
+                                            slider.value = parsed;
                                             slider.dispatchEvent(new Event("input", { bubbles: true }));
                                         });
                                     }catch(e){
