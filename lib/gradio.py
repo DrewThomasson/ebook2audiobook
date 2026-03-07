@@ -1622,7 +1622,6 @@ def build_interface(args:dict)->gr.Blocks:
                             error = 'Error: num beams must be greater or equal than length penalty.'
                             show_alert({"type": "warning", "msg": error})                   
                         else:
-                            session['status'] = status_tags['CONVERTING']
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
                                 args['blocks_preview'] = None
@@ -1651,7 +1650,6 @@ def build_interface(args:dict)->gr.Blocks:
                                                 msg = 'Conversion successful!'
                                                 session['ebook'] = None
                                                 session['ebook_list'] = None
-                                                session['status'] = status_tags['READY']
                                                 return gr.update(value=msg)
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
@@ -1667,17 +1665,14 @@ def build_interface(args:dict)->gr.Blocks:
                                         print(msg)
                                         reset_session(args['id'])
                                         session['ebook'] = None
-                                        session['status'] = status_tags['READY']
                                         show_alert({"type": "success", "msg": msg})
                                         return gr.update(value=msg)
                         if error is not None:
                             show_alert({"type": "warning", "msg": error})
-                        session['status'] = status_tags['READY']
                         return gr.update(error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
                     alert_exception(error, session_id)
-                    session['status'] = status_tags['READY']
                 return gr.update()
 
             def update_gr_audiobook_list(session_id:str)->dict:

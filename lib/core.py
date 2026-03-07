@@ -2583,6 +2583,7 @@ def convert_ebook(args:dict)->tuple:
                     return error, False
             msg = f'*********** Session: {session_id} **************\n{session_info}'
             print(msg)
+            session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
@@ -2817,6 +2818,7 @@ def finalize_audiobook(session_id:str)->tuple:
     if session and session.get('id', False):
         if session['cancellation_requested']:
             error = 'Conversion cancelled'
+            session['status'] = status_tags['READY']
             return error, False
         if session['status'] in [status_tags['BLOCKS']]:
             error = 'No blocks have been selected for the conversion!'
@@ -2830,6 +2832,7 @@ def finalize_audiobook(session_id:str)->tuple:
             for block in session['blocks_edit']:
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
+                    session['status'] = status_tags['READY']
                     return error, False
                 if not block['keep']:
                     continue
@@ -2838,6 +2841,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     sentences_list = get_sentences(text, session_id)
                     if sentences_list is None:
                         error = 'No sentences found!'
+                        session['status'] = status_tags['READY']
                         return error, False
                     if sentences_list:
                         chapters.append(sentences_list)
