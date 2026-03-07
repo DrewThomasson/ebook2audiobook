@@ -81,7 +81,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
-    - [Basic Headless Usage](#basic--usage)
+    - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
   - [Run Remotely](#run-remotely)

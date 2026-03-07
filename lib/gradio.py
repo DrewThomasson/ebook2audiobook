@@ -2515,37 +2515,33 @@ def build_interface(args:dict)->gr.Blocks:
                                     }
                                 };
                             }
+                            if(typeof(window._restoreSlider) !== "function"){
+                                window._restoreSlider = (slider, parseFn = parseFloat)=>{
+                                    if(!slider) return;
+                                    const container = slider.closest("div[id]");
+                                    if(!container) return;
+                                    const key = container.id.replace(/^gr_/, "");
+                                    const saved = window.session_storage?.[key];
+                                    if(saved === undefined || saved === null || saved === ""){
+                                        return;
+                                    }
+                                    const parsed = parseFn(saved);
+                                    if(!Number.isFinite(parsed)){
+                                        return;
+                                    }
+                                    slider.value = parsed;
+                                    slider.dispatchEvent(new Event("input", { bubbles: true }));
+                                };
+                            }
                             if(typeof(window.init_xtts_sliders) !== "function"){
                                 window.init_xtts_sliders = ()=>{
                                     try{
-                                        const gr_xtts_temperature           = gr_root.querySelector("#gr_xtts_temperature input[type=number]");
-                                        const gr_xtts_repetition_penalty    = gr_root.querySelector("#gr_xtts_repetition_penalty input[type=number]");
-                                        const gr_xtts_top_k                 = gr_root.querySelector("#gr_xtts_top_k input[type=number]");
-                                        const gr_xtts_top_p                 = gr_root.querySelector("#gr_xtts_top_p input[type=number]");
-                                        const gr_xtts_speed                 = gr_root.querySelector("#gr_xtts_speed input[type=number]");
-                                        const sliders = [
-                                            gr_xtts_temperature,
-                                            gr_xtts_repetition_penalty,
-                                            gr_xtts_top_k,
-                                            gr_xtts_top_p,
-                                            gr_xtts_speed
-                                        ];
-                                        sliders.forEach(slider => {
-                                            if(!slider) return;
-                                            const container = slider.closest("div[id]");
-                                            if(!container) return;
-                                            const key = container.id.replace(/^gr_/, "");
-                                            const saved = window.session_storage?.[key];
-                                            if(saved === undefined || saved === null || saved === ""){
-                                                return;
-                                            }
-                                            const parsed = (slider === gr_xtts_top_k) ? parseInt(saved, 10) : parseFloat(saved);
-                                            if(!Number.isFinite(parsed)){
-                                                return;
-                                            }
-                                            slider.value = parsed;
-                                            slider.dispatchEvent(new Event("input", { bubbles: true }));
-                                        });
+                                        const q = (id) => gr_root.querySelector(`#gr_${id} input[type=number]`);
+                                        window._restoreSlider(q("xtts_temperature"));
+                                        window._restoreSlider(q("xtts_repetition_penalty"));
+                                        window._restoreSlider(q("xtts_top_k"), (v) => parseInt(v, 10));
+                                        window._restoreSlider(q("xtts_top_p"));
+                                        window._restoreSlider(q("xtts_speed"));
                                     }catch(e){
                                         console.warn("init_xtts_sliders error:", e);
                                     }
@@ -2554,28 +2550,9 @@ def build_interface(args:dict)->gr.Blocks:
                             if(typeof(window.init_bark_sliders) !== "function"){
                                 window.init_bark_sliders = ()=>{
                                     try{
-                                        const gr_bark_text_temp_slider       = gr_root.querySelector("#gr_bark_text_temp input[type=number]");
-                                        const gr_bark_waveform_temp_slider   = gr_root.querySelector("#gr_bark_waveform_temp input[type=number]");
-                                        const sliders = [
-                                            gr_bark_text_temp_slider,
-                                            gr_bark_waveform_temp_slider
-                                        ];
-                                        sliders.forEach(slider => {
-                                            if(!slider) return;
-                                            const container = slider.closest("div[id]");
-                                            if(!container) return;
-                                            const key = container.id.replace(/^gr_/, "");
-                                            const saved = window.session_storage?.[key];
-                                            if(saved === undefined || saved === null || saved === ""){
-                                                return;
-                                            }
-                                            const parsed = parseFloat(saved);
-                                            if(!Number.isFinite(parsed)){
-                                                return;
-                                            }
-                                            slider.value = parsed;
-                                            slider.dispatchEvent(new Event("input", { bubbles: true }));
-                                        });
+                                        const q = (id) => gr_root.querySelector(`#gr_${id} input[type=number]`);
+                                        window._restoreSlider(q("bark_text_temp"));
+                                        window._restoreSlider(q("bark_waveform_temp"));
                                     }catch(e){
                                         console.warn("init_bark_sliders error:", e);
                                     }
