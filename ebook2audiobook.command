@@ -879,7 +879,6 @@ function build_docker_image {
 ######################################## END of functions
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
-	
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
@@ -899,7 +898,7 @@ else
 				exit 1
 			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
-		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
+		else
 			install_python_packages || return 1
 			install_device_packages "$DOCKER_DEVICE_STR" || exit 1
 			check_sitecustomized || exit 1
