@@ -243,6 +243,11 @@ def build_interface(args:dict)->gr.Blocks:
                 .gr-convert-btn {
                     font-size: 30px !important;
                 }
+                .gr-convert-btn:hover { background-color: #34d058 !important; }
+                .gr-convert-btn:active, .button-red:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
+                }
                 [id^="block_"]:has(input[type="checkbox"]:checked) {
                     border-left: 3px solid #22c55e !important;
                 }
@@ -681,7 +686,7 @@ def build_interface(args:dict)->gr.Blocks:
                         gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
                     gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
                     gr_audiobook_files_toggled = gr.State(False)
-                with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
+                with gr.Group(elem_id='gr_group_convert_btn', elem_classes=['gr-group-convert-btn']) as gr_group_convert_btn:
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
@@ -819,8 +824,8 @@ def build_interface(args:dict)->gr.Blocks:
                     confirm_btn = f'#gr_{type}_confirm_btn'
                     return f'''
                     <div class="confirm-buttons">
-                        <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{cancel_btn}').click()">🡄</button>
-                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{confirm_btn}').click()">🡆</button>
+                        <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{cancel_btn}').click()">✖</button>
+                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{confirm_btn}').click()">✔</button>
                     </div>
                     '''
                 else:
