@@ -483,6 +483,11 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
+                .gr-blocks-buttons:hover { background-color: #34d058 !important; }
+                .gr-blocks-buttons:active, .button-red:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
+                }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
                 .button-green:active, .button-red:active {
