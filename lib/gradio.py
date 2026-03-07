@@ -2575,7 +2575,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             }
                                             slider.value = parsed;
                                             slider.dispatchEvent(new Event("input", { bubbles: true }));
-                                            slider.dispatchEvent(new Event("input", { bubbles: true }));
                                         });
                                     }catch(e){
                                         console.warn("init_bark_sliders error:", e);
