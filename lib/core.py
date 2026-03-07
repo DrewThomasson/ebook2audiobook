@@ -2477,20 +2477,21 @@ def clear_folder(folder_path:str)->None:
         else:
             shutil.rmtree(path)
 
-def delete_unused_tmp_dirs(web_dir:str, days:int, session_id:str)->None:
+def delete_unused_tmp_dirs(session_id:str, output_dir:str, days:int)->None:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         dir_array = [
             tmp_dir,
-            web_dir,
+            output_dir,
             os.path.join(models_dir, '__sessions'),
             os.path.join(voices_dir, '__sessions')
         ]
         current_user_dirs = {
-            f"proc-{session['id']}",
-            f"web-{session['id']}",
-            f"voice-{session['id']}",
-            f"model-{session['id']}"
+            f'proc-{session_id}',
+            f'web-{session_id}',
+            f'cli-{session_id}',
+            f'voice-{session_id}',
+            f'model-{session_id}'
         }
         current_time = time.time()
         threshold_time = current_time - (days * 24 * 60 * 60)  # Convert days to seconds
@@ -2620,10 +2621,10 @@ def convert_ebook(args:dict)->tuple:
             cleanup_models_cache()
             if not session['is_gui_process']:
                 session['system'] = DEVICE_SYSTEM
-                session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
+                session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
                 session['output_dir'] = str(args['output_dir']) if args['output_dir'] is not None else None
                 session['audiobooks_dir'] = os.path.abspath(session['output_dir']) if session['output_dir'] is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
                 audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{session['output_format']}")
@@ -2640,6 +2641,7 @@ def convert_ebook(args:dict)->tuple:
                     elif choice == 's':
                         error = 'Conversion skipped.'
                 if error is None:
+                    #delete_unused_tmp_dirs(audiobooks_cli_dir, 180, session_id)
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
@@ -2851,7 +2853,7 @@ def finalize_audiobook(session_id:str)->tuple:
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
-                exported_files = combine_audio_chapters(session['id'])               
+                exported_files = combine_audio_chapters(session_id)               
                 if exported_files is not None:
                     progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                     session['audiobook'] = exported_files[-1]

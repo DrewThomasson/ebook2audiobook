@@ -1285,7 +1285,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
                                 ]
                         voice_options = builtin_options + eng_options + bark_options
-                        session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                        session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
                         os.makedirs(session['voice_dir'], exist_ok=True)
                         if session['voice_dir'] is not None:
                             session_voice_dir = Path(session['voice_dir'])
