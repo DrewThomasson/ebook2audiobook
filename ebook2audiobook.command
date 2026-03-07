@@ -854,7 +854,8 @@ function build_docker_image {
 		echo "	Headless mode:"
 		echo "  DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	else
-		echo "--> Using docker build"
+		echo "--> Using docker buildx"
+		docker buildx use default
 		docker buildx build \
 			--no-cache \
 			--progress plain \
