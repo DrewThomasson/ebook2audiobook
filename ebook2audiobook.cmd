@@ -559,6 +559,7 @@ if errorlevel 1 (
 exit /b 0
 
 :check_docker
+setlocal enabledelayedexpansion
 where.exe /Q docker.exe
 if not errorlevel 1 (
     docker version >nul 2>&1
@@ -575,6 +576,7 @@ if errorlevel 1 (
 )
 :: Docker Desktop not found, using WSL Docker
 set "DOCKER_DESKTOP=0"
+endlocal
 exit /b 0
 
 :check_docker_daemon
