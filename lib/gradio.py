@@ -698,6 +698,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_data = gr.State([])
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
+                gr_blocks_markdown = gr.Markdown(elem_id='gr_blocks_markdown', elem_classes=['gr-markdown'], value='')
                 with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
                     gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
                     gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
@@ -1783,10 +1784,12 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['cancellation_requested']:
                         visible_main = True
                         visible_blocks = False
+                    ebook_name = Path(session['ebook']).name
                     blocks = session['blocks_edit']
                     page = 0
                     page_updates = list(populate_page(page, blocks))
                     result = (
+                        gr.update(value=ebook_name),
                         gr.update(visible=visible_main), gr.update(visible=visible_blocks),
                         blocks, page,
                         gr.update(visible=False),
@@ -1795,7 +1798,7 @@ def build_interface(args:dict)->gr.Blocks:
                     )
                     return result
                 n = len(blocks_components_flat) + 1
-                return tuple(gr.update() for _ in range(6 + n))
+                return tuple(gr.update() for _ in range(7 + n))
 
             def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
                 session = context.get_session(session_id)
@@ -1945,7 +1948,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list
             ]
             outputs_edit_blocks = [
-                gr_group_main, gr_group_blocks,
+                gr_blocks_markdown, gr_group_main, gr_group_blocks,
                 gr_blocks_data, gr_blocks_page,
                 gr_blocks_previous_btn, gr_blocks_next_btn,
                 *blocks_components_flat, gr_blocks_header
