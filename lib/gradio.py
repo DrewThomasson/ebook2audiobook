@@ -1784,7 +1784,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['cancellation_requested']:
                         visible_main = True
                         visible_blocks = False
-                    ebook_name = Path(session['ebook']).name
+                    ebook_name = Path(session['ebook']).stem
                     blocks = session['blocks_edit']
                     page = 0
                     page_updates = list(populate_page(page, blocks))
