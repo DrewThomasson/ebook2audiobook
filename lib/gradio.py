@@ -408,6 +408,7 @@ def build_interface(args:dict)->gr.Blocks:
                     align-items: center;
                     padding-top: 20px;
                     padding-bottom: 20px;
+                    font-size: 14px;
                 }
                 ///////////
                 .fade-in {
