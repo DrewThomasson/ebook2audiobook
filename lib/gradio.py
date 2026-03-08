@@ -401,6 +401,12 @@ def build_interface(args:dict)->gr.Blocks:
                     justify-content: center !important;
                     gap: 100px !important;
                 }
+                #gr_blocks_markdown {
+                    text-align: center;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
                 ///////////
                 .fade-in {
                     animation: fadeIn 1s ease-in !important;
