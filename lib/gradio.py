@@ -1610,7 +1610,6 @@ def build_interface(args:dict)->gr.Blocks:
                             "tts_engine": tts_engine,
                             "ebook": ebook_file if isinstance(ebook_file, str) else None,
                             "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
-                            "audiobooks_dir": session['audiobooks_dir'],
                             "voice": voice,
                             "language": language,
                             "custom_model": custom_model,
