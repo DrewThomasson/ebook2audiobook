@@ -555,7 +555,7 @@ if errorlevel 1 (
     echo No WSL Linux distribution installed.
     exit /b 1
 )
-for /f "delims=" %%a in ('powershell -NoProfile -Command "(wsl --list --quiet)[0].Trim([char]0)"') do set "DOCKER_WSL_CONTAINER=%%a"
+for /f "delims=" %%a in ('powershell -NoProfile -Command "[Console]::OutputEncoding=[Text.Encoding]::Unicode; (wsl --list --quiet)[0].Trim()"') do set "DOCKER_WSL_CONTAINER=%%a"
 exit /b 0
 
 :check_docker
