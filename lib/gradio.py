@@ -406,6 +406,8 @@ def build_interface(args:dict)->gr.Blocks:
                     display: flex;
                     justify-content: center;
                     align-items: center;
+                    padding-top: 20px;
+                    padding-bottom: 20px;
                 }
                 ///////////
                 .fade-in {
