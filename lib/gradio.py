@@ -1603,12 +1603,14 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         args = {
                             "id": session_id,
+                            "is_gui_process": session['is_gui_process'],
                             "script_mode": script_mode,
                             "blocks_preview": blocks_preview,
                             "device": device,
                             "tts_engine": tts_engine,
                             "ebook": ebook_file if isinstance(ebook_file, str) else None,
                             "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
+                            "audiobooks_dir": session['audiobooks_dir'],
                             "voice": voice,
                             "language": language,
                             "custom_model": custom_model,
