@@ -555,7 +555,7 @@ if errorlevel 1 (
     echo No WSL Linux distribution installed.
     exit /b 1
 )
-for /f "delims=" %%a in ('wsl --list --quiet') do (
+for /f "delims=" %%a in ('wsl --list --quiet ^| findstr /r "."') do (
     set "DOCKER_WSL_CONTAINER=%%a"
 )
 exit /b 0
@@ -827,7 +827,6 @@ if defined arguments.help (
 			call :check_python
 			if errorlevel 1 goto :install_python
 			call :check_wsl
-			echo !DOCKER_WSL_CONTAINER!
 			if errorlevel 1 goto :install_wsl
             call :check_docker
             if errorlevel 1	goto :install_docker
