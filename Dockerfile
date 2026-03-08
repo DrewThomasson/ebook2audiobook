@@ -109,6 +109,7 @@ RUN set -eux; \
 		/tmp/* \
 		$HOME/.cargo \
 		$HOME/.rustup || true; \
+	apt-mark manual ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
 	apt-get purge -y --auto-remove gcc g++ make pkg-config python3-dev git; \
 	apt-get clean; \
 	rm -rf /var/lib/apt/lists/*
