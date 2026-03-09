@@ -2614,15 +2614,18 @@ def convert_ebook(args:dict)->tuple:
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
-            session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-            session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             cleanup_models_cache()
-            if not session['is_gui_process']:
+            if session['is_gui_process']:
+                session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+            else:
                 session['system'] = DEVICE_SYSTEM
                 session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
+                session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
                 audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{session['output_format']}")
@@ -2668,6 +2671,7 @@ def convert_ebook(args:dict)->tuple:
                                 session['voice'] = final_voice_file
                             else:
                                 error = f'VoiceExtractor.extract_voice() failed! {msg}'
+                                
             if error is None:
                 if session['script_mode'] == NATIVE:
                     is_installed = check_programs('Calibre', 'ebook-convert', '--version')
