@@ -1896,6 +1896,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(), gr.update(), gr.update(), gr.update()
 
             async def update_gr_save_session(session_id:str, state:dict)->tuple:
+                omit_keys = {'blocks_orig', 'blocks_edit'}
                 try:
                     session = context.get_session(session_id)
                     if not session or (session and not session.get('id', False)):
@@ -1908,7 +1909,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['ticker'] = len(audiobook_options)
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
                                 state['hash'] = new_hash
-                                session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                                session_filtered = {k: v for k, v in session.items() if k not in omit_keys}
+                                session_dict = json.dumps(session_filtered, cls=JSONDictProxyEncoder)
                                 yield (
                                     gr.update(value=session_dict),
                                     gr.update(value=state),
@@ -1919,7 +1921,8 @@ def build_interface(args:dict)->gr.Blocks:
                         except NameError:
                             new_hash = hash_proxy_dict(MappingProxyType(session))
                             state['hash'] = new_hash
-                            session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                            session_filtered = {k: v for k, v in session.items() if k not in omit_keys}
+                            session_dict = json.dumps(session_filtered, cls=JSONDictProxyEncoder)
                             yield (
                                 gr.update(value=session_dict),
                                 gr.update(value=state),
@@ -1931,7 +1934,8 @@ def build_interface(args:dict)->gr.Blocks:
                             yield gr.update(), gr.update(), gr.update()
                         else:
                             state['hash'] = new_hash
-                            session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                            session_filtered = {k: v for k, v in session.items() if k not in omit_keys}
+                            session_dict = json.dumps(session_filtered, cls=JSONDictProxyEncoder)
                             yield (
                                 gr.update(value=session_dict),
                                 gr.update(value=state),

@@ -2883,12 +2883,13 @@ def restore_session_from_data(data:dict, session:dict)->None:
     try:
         for key, value in data.items():
             if key in session:
-                if isinstance(value, dict) and isinstance(session[key], dict):
-                    restore_session_from_data(value, session[key])
-                else:
-                    if value is None and session[key] is not None:
-                        continue
-                    session[key] = value
+                if key not in ['blocks_orig', 'blocks_edit']:
+                    if isinstance(value, dict) and isinstance(session[key], dict):
+                        restore_session_from_data(value, session[key])
+                    else:
+                        if value is None and session[key] is not None:
+                            continue
+                        session[key] = value
     except Exception as e:
         DependencyError(e)
 
