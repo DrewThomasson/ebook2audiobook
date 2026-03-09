@@ -2613,9 +2613,9 @@ def convert_ebook(args:dict)->tuple:
             session['output_split'] = bool(args['output_split'])
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
-            session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
             cleanup_models_cache()
             if session['is_gui_process']:
+                session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
@@ -2626,10 +2626,10 @@ def convert_ebook(args:dict)->tuple:
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+                session['final_name'] = os.path.join(session['audiobooks_dir'], get_sanitized(Path(session['ebook']).stem + '.' + session['output_format']))
                 os.makedirs(session['voice_dir'], exist_ok=True)
-                final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
                 audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{session['output_format']}")
-                if os.path.exists(final_file) or audio_sentences_exist:
+                if os.path.exists(session['final_name']) or audio_sentences_exist:
                     msg = f"Warning! The final file {session['final_name']} already exists. Continue? WARNING! The whole previous conversion will be deleted!"
                     print(msg)
                     while True:
