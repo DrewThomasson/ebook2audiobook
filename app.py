@@ -310,7 +310,7 @@ SML tags available:
                     sys.exit(1) 
                 progress_status, passed = c.convert_ebook(args)
                 if passed is False:
-                    error = f'Conversion failed: {progress_status}'
+                    error = progress_status
                     print(error)
                     sys.exit(1)
             else:
