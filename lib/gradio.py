@@ -401,14 +401,17 @@ def build_interface(args:dict)->gr.Blocks:
                     justify-content: center !important;
                     gap: 100px !important;
                 }
+                #gr_blocks_markdown {
+                    text-align: center !important;
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                    padding-top: 20px !important;
+                    padding-bottom: 20px !important;
+                }
                 #gr_blocks_markdown p {
-                    text-align: center;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    padding-top: 20px;
-                    padding-bottom: 20px;
-                    font-size: 14px;
+                    font-size: 16px !important;
+                    font-weight: bold !important;
                 }
                 ///////////
                 .fade-in {
