@@ -89,9 +89,19 @@ Linux/Mac natvie mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 Docker build image:
     Windows:
-    ebook2audiobook.cmd --script_mode build_docker
+        Docker:
+            ebook2audiobook.cmd --script_mode build_docker
+        Docker Compose:
+            ebook2audiobook.cmd --script_mode build_docker --docker_mode compose
+        Podman Compose:
+            ebook2audiobook.cmd --script_mode build_docker --docker_mode podman
     Linux/Mac
-    ./ebook2audiobook.command --script_mode build_docker
+        Docker:
+            ./ebook2audiobook.command --script_mode build_docker
+        Docker Compose
+            ./ebook2audiobook.command --script_mode build_docker --docker_mode compose
+        Podman Compose:
+            ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 Docker run image:
     Gradio/GUI:
         CPU:
@@ -116,15 +126,11 @@ Docker run image:
         JETSON:
          {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 Docker Compose (i.e. cuda 12.8:
-        Build
-             {wsl_cmd}  DEVICE_TAG=cu128 docker compose --progress plain --profile gpu up --build
         Run Gradio GUI:
              {wsl_cmd}  DEVICE_TAG=cu128 docker compose --profile gpu up --no-log-prefix
         Run Headless mode:
              {wsl_cmd}  DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 Podman Compose (i.e. cuda 12.8:
-        Build
-             {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up --build
         Run Gradio GUI:
              {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up
         Run Headless mode:
@@ -138,7 +144,7 @@ SML tags available:
         formatter_class=argparse.RawTextHelpFormatter
     )
     options = [
-        '--script_mode', '--session', '--share', '--headless', 
+        '--script_mode', '--docker_mode', '--session', '--share', '--headless', 
         '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
         '--custom_model', '--fine_tuned', '--output_format', '--output_channel',
         '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', 
@@ -148,55 +154,55 @@ SML tags available:
     ]
     tts_engine_list_keys = [k for k in TTS_ENGINES.keys()]
     tts_engine_list_values = [k for k in TTS_ENGINES.values()]
-    all_group = parser.add_argument_group('**** The following options are for all modes', 'Optional')
-    all_group.add_argument(options[0], type=str, help=argparse.SUPPRESS)
-    parser.add_argument(options[1], type=str, help='''Session to resume the conversion in case of interruption, crash, 
-    or reuse of custom models and custom cloning voices.''')
+    all_group = parser.add_argument_group('**** The following options are for container only', 'Optional')
+    all_group.add_argument(options[0], type=str, help='Mandatory to build a container. The only value is: build_docker.')
+    all_group.add_argument(options[1], type=str, help='Optional. The only values are: podman and compose. without this option standard docker buildx is used.')
+    parser.add_argument(options[2], type=str, help='Session to resume the conversion in case of interruption, crash, or reuse of custom models and custom cloning voices.')
     gui_group = parser.add_argument_group('**** The following option are for gradio/gui mode only', 'Optional')
-    gui_group.add_argument(options[2], action='store_true', help='''Enable a public shareable Gradio link.''')
+    gui_group.add_argument(options[3], action='store_true', help='''Enable a public shareable Gradio link.''')
     headless_group = parser.add_argument_group('**** The following options are for --headless mode only')
-    headless_group.add_argument(options[3], action='store_true', help='''Run the script in headless mode''')
-    headless_group.add_argument(options[4], type=str, help='''Path to the ebook file for conversion. Cannot be used when --ebooks_dir is present.''')
-    headless_group.add_argument(options[5], type=str, help=f'''Relative or absolute path of the directory containing the files to convert. 
+    headless_group.add_argument(options[4], action='store_true', help='''Run the script in headless mode''')
+    headless_group.add_argument(options[5], type=str, help='''Path to the ebook file for conversion. Cannot be used when --ebooks_dir is present.''')
+    headless_group.add_argument(options[6], type=str, help=f'''Relative or absolute path of the directory containing the files to convert. 
     Cannot be used when --ebook is present.''')
-    headless_group.add_argument(options[6], type=str, default=default_language_code, help=f'''Language of the e-book. Default language is set 
+    headless_group.add_argument(options[7], type=str, default=default_language_code, help=f'''Language of the e-book. Default language is set 
     in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py''')
     headless_optional_group = parser.add_argument_group('optional parameters')
-    headless_optional_group.add_argument(options[7], type=str, default=None, help='''(Optional) Path to the voice cloning file for TTS engine. 
+    headless_optional_group.add_argument(options[8], type=str, default=None, help='''(Optional) Path to the voice cloning file for TTS engine. 
     Uses the default voice if not present.''')
-    headless_optional_group.add_argument(options[8], type=str, default=default_device, choices=list(devices.keys()), help=f'''(Optional) Processor unit type for the conversion.
+    headless_optional_group.add_argument(options[9], type=str, default=default_device, choices=list(devices.keys())+[k.lower() for k in devices.keys()], help=f'''(Optional) Processor unit type for the conversion.
     Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.''')
-    headless_optional_group.add_argument(options[9], type=str, default=None, choices=tts_engine_list_keys+tts_engine_list_values, help=f'''(Optional) Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
+    headless_optional_group.add_argument(options[10], type=str, default=None, choices=tts_engine_list_keys+tts_engine_list_values, help=f'''(Optional) Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
     Default depends on the selected language. The tts engine should be compatible with the chosen language''')
-    headless_optional_group.add_argument(options[10], type=str, default=None, help=f'''(Optional) Path to the custom model zip file cntaining mandatory model files. 
+    headless_optional_group.add_argument(options[11], type=str, default=None, help=f'''(Optional) Path to the custom model zip file cntaining mandatory model files. 
     Please refer to ./lib/models.py''')
-    headless_optional_group.add_argument(options[11], type=str, default=default_fine_tuned, help='''(Optional) Fine tuned model path. Default is builtin model.''')
-    headless_optional_group.add_argument(options[12], type=str, default=default_output_format, help=f'''(Optional) Output audio format. Default is {default_output_format} set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[13], type=str, default=default_output_channel, help=f'''(Optional) Output audio channel. Default is {default_output_channel} set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[14], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'], help=f"""(xtts only, optional) Temperature for the model. 
+    headless_optional_group.add_argument(options[12], type=str, default=default_fine_tuned, help='''(Optional) Fine tuned model path. Default is builtin model.''')
+    headless_optional_group.add_argument(options[13], type=str, default=default_output_format, help=f'''(Optional) Output audio format. Default is {default_output_format} set in ./lib/conf.py''')
+    headless_optional_group.add_argument(options[14], type=str, default=default_output_channel, help=f'''(Optional) Output audio channel. Default is {default_output_channel} set in ./lib/conf.py''')
+    headless_optional_group.add_argument(options[15], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'], help=f"""(xtts only, optional) Temperature for the model. 
     Default to config.json model. Higher temperatures lead to more creative outputs.""")
-    headless_optional_group.add_argument(options[15], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder. 
+    headless_optional_group.add_argument(options[16], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder. 
     Default to config.json model. Not applied to custom models.""")
-    headless_optional_group.add_argument(options[16], type=int, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
+    headless_optional_group.add_argument(options[17], type=int, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[17], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
+    headless_optional_group.add_argument(options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[18], type=int, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'], help=f"""(xtts only, optional) Top-k sampling. 
+    headless_optional_group.add_argument(options[19], type=int, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'], help=f"""(xtts only, optional) Top-k sampling. 
     Lower values mean more likely outputs and increased audio generation speed. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[19], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'], help=f"""(xtts only, optional) Top-p sampling. 
+    headless_optional_group.add_argument(options[20], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'], help=f"""(xtts only, optional) Top-p sampling. 
     Lower values mean more likely outputs and increased audio generation speed. Default to config.json model.""")
-    headless_optional_group.add_argument(options[20], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation. 
+    headless_optional_group.add_argument(options[21], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[21], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
+    headless_optional_group.add_argument(options[22], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[22], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['text_temp'], help=f"""(bark only, optional) Text Temperature for the model. 
+    headless_optional_group.add_argument(options[23], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['text_temp'], help=f"""(bark only, optional) Text Temperature for the model. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[23], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model. 
+    headless_optional_group.add_argument(options[24], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[24], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[25], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
-    headless_optional_group.add_argument(options[26], action='store_true', help=argparse.SUPPRESS)
+    headless_optional_group.add_argument(options[25], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
+    headless_optional_group.add_argument(options[26], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
+    headless_optional_group.add_argument(options[27], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:
@@ -240,11 +246,9 @@ SML tags available:
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         if args['headless']:
-            args['id'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
+            args['id'] = workflow_id if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
-            args['chapters_preview'] = False
-            args['event'] = ''
-            args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
+            args['blocks_preview'] = False
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
@@ -278,7 +282,7 @@ SML tags available:
             if args['custom_model'] is not None:
                 if os.path.exists(args['custom_model']):
                     args['custom_model'] = os.path.abspath(args['custom_model'])
-            if not os.path.exists(args['audiobooks_dir']):
+            if args['output_dir'] is not None and not os.path.exists(args['output_dir']):
                 error = 'Error: --output_dir path does not exist.'
                 print(error)
                 sys.exit(1)                
@@ -295,7 +299,7 @@ SML tags available:
                         args['ebook_list'].append(full_path)
                 progress_status, passed = c.convert_ebook_batch(args)
                 if passed is False:
-                    error = f'Conversion failed: {progress_status}'
+                    error = progress_status
                     print(error)
                     sys.exit(1)
             elif args['ebook']:
@@ -306,7 +310,7 @@ SML tags available:
                     sys.exit(1) 
                 progress_status, passed = c.convert_ebook(args)
                 if passed is False:
-                    error = f'Conversion failed: {progress_status}'
+                    error = progress_status
                     print(error)
                     sys.exit(1)
             else:
@@ -321,6 +325,7 @@ SML tags available:
             if passed_args_set.issubset(allowed_arguments):
                 try:
                     from lib.gradio import build_interface
+                    c.progress_bar = c.gr.Progress(track_tqdm=False)
                     app = build_interface(args)
                     if app is not None:
                         app.queue(

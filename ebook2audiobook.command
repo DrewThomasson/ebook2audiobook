@@ -26,7 +26,7 @@ export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
 export TTS_CACHE="$SCRIPT_DIR/models"
 export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
-export TMPDIR="$SCRIPT_DIR/tmp"
+export TMPDIR="$SCRIPT_DIR/run"
 export APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 export DEVICE_TAG="${DEVICE_TAG:-}"
 export CONDA_HOME="$HOME/Miniforge3"
@@ -47,7 +47,7 @@ APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "xcb-util-cursor" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
 DOCKER_PROGRAMS=("ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
-DOCKER_DEVICE_STR=""
+DOCKER_MODE=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
 DEVICE_INFO_STR=""
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
@@ -109,23 +109,34 @@ if [[ -n "${arguments[docker_device]+exists}" ]]; then
 	fi
 fi
 
+if [[ -n "${arguments[docker_mode]+exists}" ]]; then
+	DOCKER_MODE="${arguments[docker_mode]}"
+	if [[ "$DOCKER_MODE" != "podman" && "$DOCKER_MODE" != "compose" ]]; then
+		if [[ "$DOCKER_MODE" == "true" ]]; then
+			echo "Error: --docker_mode has no value!"
+		else
+			echo "Error: --docker_mode accepts only podman or compose as value"
+		fi
+		exit 1
+	fi
+fi
+
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "true" || -z "${arguments[script_mode]}" ]]; then
 		echo "Error: --script_mode requires a value"
 		exit 1
 	fi
-
 	if [[ -n "${ZSH_VERSION:-}" ]]; then
 		for key in ${(k)arguments}; do
-			if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
-				echo "Error: when --script_mode is used, only --docker_device is allowed. Invalid: --$key"
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+				echo "Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --$key"
 				exit 1
 			fi
 		done
 	else
 		for key in "${!arguments[@]}"; do
-			if [[ "$key" != "script_mode" && "$key" != "docker_device" ]]; then
-				echo "Error: when --script_mode is used, only --docker_device is allowed. Invalid: --$key"
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+				echo "Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --$key"
 				exit 1
 			fi
 		done
@@ -139,6 +150,31 @@ cd "$SCRIPT_DIR"
 
 if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
 	touch "$INSTALLED_LOG"
+fi
+
+######## check if the user is part of the read/write group
+if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exists}" ]]; then
+	PUBLIC_DIRS=("$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" "$SCRIPT_DIR/audiobooks")
+	if [[ "$OSTYPE" == "darwin"* ]]; then
+		APP_GROUP=$(stat -f '%Sg' "$SCRIPT_DIR")
+	else
+		APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR")
+	fi
+	user_in_group() {
+		id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
+	}
+	if ! user_in_group "$APP_GROUP"; then
+		echo "Adding $USER to group $APP_GROUP (requires sudo)..."
+		if [[ "$OSTYPE" == "darwin"* ]]; then
+			sudo dseditgroup -o edit -a "$USER" -t user "$APP_GROUP"
+			echo "Group added. Please restart your terminal and re-run:"
+			echo "  $0 $*"
+			exit 0
+		else
+			sudo usermod -aG "$APP_GROUP" "$USER"
+			exec sg "$APP_GROUP" -c "\"$0\" $*"
+		fi
+	fi
 fi
 
 ############### FUNCTIONS ##############
@@ -629,7 +665,7 @@ function check_conda {
 			MODEL="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
 			if [[ "$MODEL" == *jetson* ]]; then
 				# needed gfortran to compile pip scipy pkg
-				sudo apt-get install gfortran
+				conda install -c conda-forge gfortran
 				PYTHON_VERSION="3.10"
 			fi
 		else
@@ -643,7 +679,8 @@ function check_conda {
 			esac
 		fi
 		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION…\e[0m"
-		chmod -R u+rwX,go+rX "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
+		chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
+		chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
 		conda update -n base -c conda-forge conda -y
 		conda update --all -y
 		conda clean --index-cache -y
@@ -746,7 +783,6 @@ function build_docker_image {
 		return 1
 	fi
 	local cmd_options=""
-	local cmd_extra=""
 	local py_vers="$PYTHON_VERSION"
 	case "$DEVICE_TAG" in
 		cpu)		cmd_options="";;
@@ -754,8 +790,6 @@ function build_docker_image {
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
 		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="3.10" ;;
 		xpu)		cmd_options="--device=/dev/dri" ;;
-		mps)		cmd_options="" ;;
-		*)			cmd_options="" ;;
 	esac
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${DEVICE_TAG}"
@@ -764,13 +798,18 @@ function build_docker_image {
 		*)         COMPOSE_PROFILES=gpu ;;
 	esac
 	export COMPOSE_PROFILES
-	if command -v podman-compose >/dev/null 2>&1; then
-		if command -v podman-compose >/dev/null 2>&1; then
-			if ! podman-compose -f podman-compose.yml config >/dev/null 2>&1; then
-				echo "ERROR: podman-compose.yml is not valid"
-				return 1
-			fi
+	if [[ "$DOCKER_MODE" == "podman" ]]; then
+		if ! command -v podman-compose &>/dev/null || ! podman-compose -f podman-compose.yml config &>/dev/null; then
+			echo "ERROR: podman-compose is not installed or podman-compose.yml is not valid"
+			return 1
 		fi
+	elif [[ "$DOCKER_MODE" == "compose" ]]; then
+		if ! docker compose config --services 2>/dev/null | grep -q .; then
+			echo "ERROR: docker compose found no services or yml file is not valid."
+			return 1
+		fi
+	fi
+	if [[ "$DOCKER_MODE" == "podman" ]]; then
 		echo "--> Using podman-compose"
 		export PODMAN_BUILD_ARGS=(
 			--format docker
@@ -787,11 +826,13 @@ function build_docker_image {
 		PODMAN_BUILD_ARGS_STR=$(printf ' %q' "${PODMAN_BUILD_ARGS[@]}")
 		export PODMAN_BUILD_ARGS="$PODMAN_BUILD_ARGS_STR"
 		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose -f podman-compose.yml build || return 1
-	elif docker compose version >/dev/null 2>&1; then
-		if ! docker compose config --services | grep -q .; then
-			echo "ERROR: docker compose found no services or yml file is not valid."
-			return 1
-		fi
+		echo "Docker image ready! to run your docker: "
+		echo "Podman Compose:"
+		echo "	GUI mode:"
+		echo "	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up"
+		echo "	Headless mode:"
+		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+	elif [[ "$DOCKER_MODE" == "compose" ]]; then
 		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
 			-f docker-compose.yml \
@@ -806,8 +847,15 @@ function build_docker_image {
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
+		echo "Docker image ready! to run your docker: "
+		echo "Docker Compose:"
+		echo "	GUI mode:"
+		echo "	DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
+		echo "	Headless mode:"
+		echo "  DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	else
-		echo "--> Using docker build"
+		echo "--> Using docker buildx"
+		docker buildx use default
 		docker buildx build \
 			--no-cache \
 			--progress plain \
@@ -820,31 +868,17 @@ function build_docker_image {
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
+		echo "Docker image ready! to run your docker: "
+		echo "	GUI mode:"
+		echo "	docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" ${cmd_options}--rm -it -p 7860:7860 $DOCKER_IMG_NAME"
+		echo "	Headless mode:"
+		echo "	docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options}--rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	fi
-	if [[ -n "$cmd_options" ]]; then
-		cmd_extra="$cmd_options "
-	fi
-	echo "Docker image ready! to run your docker: "
-	echo "	GUI mode:"
-	echo "		docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" ${cmd_extra}--rm -it -p 7860:7860 $DOCKER_IMG_NAME"
-	echo "	Headless mode:"
-	echo "		docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_extra}--rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
-	echo "Docker Compose:"
-	echo "	GUI mode:"
-	echo "		DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
-	echo "	Headless mode:"
-	echo "  	DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
-	echo "Podman Compose:"
-	echo "	GUI mode:"
-	echo "		DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up"
-	echo "	Headless mode:"
-	echo "  	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 }
 
 ######################################## END of functions
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
-	
 	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
@@ -864,7 +898,7 @@ else
 				exit 1
 			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
-		elif [[ "$DOCKER_DEVICE_STR" != "" ]];then
+		else
 			install_python_packages || return 1
 			install_device_packages "$DOCKER_DEVICE_STR" || exit 1
 			check_sitecustomized || exit 1

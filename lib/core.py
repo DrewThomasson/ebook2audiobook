@@ -6,9 +6,10 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
-import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
+import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
-import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, importlib, queue
+import ebooklib, psutil, requests, stanza, importlib, queue
+import regex as re, gradio as gr
 
 from typing import Any, Generator, Dict
 from PIL import Image, ImageSequence
@@ -57,8 +58,18 @@ from lib import *
 context = None
 context_tracker = None
 active_sessions = None
+progress_bar = None
+
+status_tags = {
+    "BLOCKS": "blocks",
+    "OVERRIDE": "override",
+    "DELETION": "deletion",
+    "READY": "ready",
+    "CONVERTING": "converting"
+}
 
 class DependencyError(Exception):
+
     def __init__(self, message:str|None):
         super().__init__(message)
         print(message)
@@ -73,6 +84,7 @@ class DependencyError(Exception):
         print(error)
 
 class SessionTracker:
+
     def __init__(self):
         self.lock = threading.Lock()
 
@@ -80,7 +92,7 @@ class SessionTracker:
         with self.lock:
             session = context.get_session(session_id)
             if session['status'] is None:
-                session['status'] = 'ready'
+                session['status'] = status_tags['READY']
                 return True
         return False
 
@@ -90,6 +102,7 @@ class SessionTracker:
             context.sessions.pop(session_id, None)
 
 class SessionContext:
+
     def __init__(self):
         self.manager:Manager = Manager()
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
@@ -118,15 +131,14 @@ class SessionContext:
     def set_session(self, session_id:str)->Any:
         self.sessions[session_id] = self._recursive_proxy({
             "id": session_id,
+            "session_dir": None,
             "script_mode": NATIVE,
             "tab_id": None,
             "is_gui_process": False,
             "free_vram_gb": 0,
             "process_id": None,
             "status": None,
-            "event": None,
             "ticker": 0,
-            "heartbeat": time.time(),
             "cancellation_requested": False,
             "device": default_device,
             "tts_engine": default_tts_engine,
@@ -144,7 +156,7 @@ class SessionContext:
             "ebook": None,
             "ebook_list": None,
             "ebook_mode": "single",
-            "chapters_preview": default_chapters_preview,
+            "blocks_preview": default_blocks_preview,
             "chapters_dir": None,
             "sentences_dir": None,
             "epub_path": None,
@@ -168,6 +180,7 @@ class SessionContext:
             "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
             "final_name": None,
+            "output_dir": None,
             "output_format": default_output_format,
             "output_channel": default_output_channel,
             "output_split": default_output_split,
@@ -190,7 +203,8 @@ class SessionContext:
                 "Source": None,
                 "Modified": None,
             },
-            "blocks": [],
+            "blocks_orig": [],
+            "blocks_edit": [],
             "chapters": [],
             "cover": None,
             "duration": 0,
@@ -211,6 +225,7 @@ class SessionContext:
         return None
 
 class JSONDictProxyEncoder(json.JSONEncoder):
+
     def default(self, o:Any)->Any:
         if isinstance(o, DictProxy):
             return dict(o)
@@ -297,14 +312,11 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
 def extract_custom_model(session_id)->str|None:
     session = context.get_session(session_id)
     if session and session.get('id', False):
-        progress_bar = None
         file_src = session['custom_model']
         required_files = default_engine_settings[session['tts_engine']]['files']
         model_path = None
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
         model_name = get_sanitized(model_name)
-        if session['is_gui_process']:
-            progress_bar = gr.Progress(track_tqdm=False)
         try:
             with zipfile.ZipFile(file_src, 'r') as zip_ref:
                 files = zip_ref.namelist()
@@ -367,28 +379,35 @@ def hash_proxy_dict(proxy_dict)->str:
     data_str = json.dumps(data, sort_keys=True, default=str)
     return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
-def compare_checksums(src_path:str, checksum_path:str, hash_algorithm:str='sha256')->tuple[bool, str|None]:
+def compare_checksums(session_id:str)->str|None:
     try:
-        hash_func = hashlib.new(hash_algorithm)
-        with open(src_path, 'rb') as f:
-            while chunk := f.read(8192):
-                hash_func.update(chunk)
-        new_checksum = hash_func.hexdigest()
-        if not os.path.exists(checksum_path):
-            with open(checksum_path, 'w', encoding='utf-8') as f:
-                f.write(new_checksum)
-            return False, None
-        else:
-            with open(checksum_path, 'r', encoding='utf-8') as f:
-                saved_checksum = f.read().strip()
-            if saved_checksum == new_checksum:
-                return True, None
-            else:
+        session = context.get_session(session_id)
+        if session and session.get('id', False):
+            hash_algorithm:str = 'sha256'
+            checksum_path = os.path.join(session['process_dir'], 'checksum')
+            hash_func = hashlib.new(hash_algorithm)
+            with open(session['ebook'], 'rb') as f:
+                while chunk := f.read(8192):
+                    hash_func.update(chunk)
+            new_checksum = hash_func.hexdigest()
+            if not os.path.exists(checksum_path):
                 with open(checksum_path, 'w', encoding='utf-8') as f:
                     f.write(new_checksum)
-                    return False, None
+                return False, None
+            else:
+                with open(checksum_path, 'r', encoding='utf-8') as f:
+                    saved_checksum = f.read().strip()
+                if saved_checksum == new_checksum:
+                    return True, None
+                else:
+                    with open(checksum_path, 'w', encoding='utf-8') as f:
+                        f.write(new_checksum)
+                        return False, None
+        error = f'compare_checksums() error: session does not exist'
+        return False, error
     except Exception as e:
-        return False, f'compare_checksums() error: {e}'
+        error = f'compare_checksums() error: {e}'
+        return False, error
 
 def compare_dict_keys(d1, d2):
     if not isinstance(d1, Mapping) or not isinstance(d2, Mapping):
@@ -506,7 +525,7 @@ def ocr2xhtml(img: Image.Image, lang: str)->str:
         print(error)
         return False
 
-def load_json_blocks(filepath:str)->list:
+def load_json_blocks(filepath:str)->list[dict]:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -514,14 +533,14 @@ def load_json_blocks(filepath:str)->list:
         print(f"load_json_blocks() error: {e}")
         return []
 
-def save_json_blocks(session_id:str, filepath:str)->bool:
+def save_json_blocks(session_id:str, file_path:str, key:str)->bool:
     try:
         session = context.get_session(session_id)
         if not session:
             print(f"save_json_blocks error: session not found ({session_id})")
             return False
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(session['blocks'], f, ensure_ascii=False, indent=2)
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(session[key], f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
         print(f"save_json_blocks() error: {e}")
@@ -738,9 +757,10 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
 NOTE:
 The warning "Character xx not found in the vocabulary."
 MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE
-(AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL,
-IT NEEDS TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL.
-YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
+(AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION. THE BEST SOLUTION IS
+TO MANUALLY REMOVE ALL UNRECOGNIZED CHARS AND WRONG PUNCTUATIONS FROM YOUR EBOOK
+AND RESTART THE CONVERSION. TO IMPROVE THIS MODEL, IT NEEDS TO ADD THIS CHARACTER
+INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 *******************************************************************************
         '''
         print(msg)
@@ -802,12 +822,15 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     print(error)
                     return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
-            for doc_idx, doc in enumerate(all_docs):
-                text = filter_blocks(doc_idx, doc, session_id, stanza_nlp, is_num2words_compat)
-                if text is None:
-                    break
-                elif text:
-                    bloks.append(text)
+            with zipfile.ZipFile(session['epub_path'], 'r') as zf:
+                zip_names = set(zf.namelist())
+                zip_basenames = {os.path.basename(n): n for n in zip_names}
+                for doc_idx, doc in enumerate(all_docs):
+                    text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
+                    if text is None:
+                        break
+                    elif text:
+                        bloks.append(text)
             if len(bloks) == 0:
                 error = 'No bloks found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
@@ -819,7 +842,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return []
 
-def filter_blocks(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -904,7 +927,7 @@ def filter_blocks(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is
             raw_html = doc_body.decode('utf-8') if isinstance(doc_body, bytes) else doc_body
             soup = BeautifulSoup(raw_html, 'html.parser')
             body = soup.body
-            if not body or not body.get_text(strip=True):
+            if not body:
                 msg = 'No body found. Skip to next doc…'
                 print(msg)
                 return ''
@@ -926,11 +949,44 @@ def filter_blocks(idx:int, doc:EpubHtml, session_id:str, stanza_nlp:Pipeline, is
             # remove scripts/styles
             for tag in soup(['script', 'style']):
                 tag.decompose()
+            if not body.get_text(strip=True):
+                images = body.find_all('img') + body.find_all('image')
+                if images and zf:
+                    msg = f'Doc {idx}: no text but {len(images)} image(s) detected. Running OCR…'
+                    print(msg)
+                    if session['is_gui_process']:
+                        show_alert({"type": "warning", "msg": msg})
+                    ocr_parts = []
+                    doc_dir = os.path.dirname(doc.get_name())
+                    for img_tag in images:
+                        img_ref = (
+                            img_tag.get('src')
+                            or img_tag.get('href')
+                            or img_tag.get('{http://www.w3.org/1999/xlink}href')
+                            or img_tag.get('xlink:href')
+                        )
+                        if not img_ref:
+                            continue
+                        img_zip_path = os.path.normpath(os.path.join(doc_dir, img_ref)).replace('\\', '/')
+                        if img_zip_path not in zip_names:
+                            img_zip_path = zip_basenames.get(os.path.basename(img_ref))
+                        if not img_zip_path:
+                            print(f'Could not resolve image in EPUB: {img_ref}')
+                            continue
+                        try:
+                            img_data = zf.read(img_zip_path)
+                            img = Image.open(io.BytesIO(img_data))
+                            img = img.convert('RGB')
+                            xhtml_content = ocr2xhtml(img, lang)
+                            if xhtml_content:
+                                ocr_parts.append(xhtml_content)
+                        except Exception as ocr_err:
+                            print(f'OCR error on {img_zip_path}: {ocr_err}')
             tuples_list = list(_tuple_row(body))
             if not tuples_list:
-                error = 'No tuples_list from body created!'
-                print(error)
-                return None
+                msg = 'No body text and no images found. Skip to next doc…'
+                print(msg)
+                return ''
             msg = f'Parsing xhtml markers…'
             print(msg)
             text_list = []
@@ -1546,6 +1602,7 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
     return time_rx.sub(repl_num, text)
 
 def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
+
     def repl_ambiguous(match:re.Match)->str:
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
@@ -1877,11 +1934,6 @@ def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         try:
-            progress_bar = None
-            if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
-                return False
             tts_manager = TTSManager(session)
             resume_chapter = 0
             missing_chapters = []
@@ -1889,6 +1941,10 @@ def convert_chapters2audio(session_id:str)->bool:
             chapter_re = re.compile(r'^(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
             existing_chapters = [f for f in os.listdir(session['chapters_dir']) if chapter_re.match(f)]
             existing_numbers = sorted(int(chapter_re.match(f).group(1)) for f in existing_chapters)
+            if session['cancellation_requested']:
+                msg = 'Cancel requested'
+                print(msg)
+                return False
             if existing_numbers:
                 expected = set(range(0, max(existing_numbers) + 1))
                 missing_chapters = sorted(expected - set(existing_numbers))
@@ -1919,13 +1975,15 @@ def convert_chapters2audio(session_id:str)->bool:
                 return False
             msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
             print(msg)
-            if session['is_gui_process']:
-                progress_bar = gr.Progress(track_tqdm=False)
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     idx_target = 0
                     for c in range(0, total_chapters):
+                        if session['cancellation_requested']:
+                            msg = 'Cancel requested'
+                            print(msg)
+                            return False
                         chapter_idx = c
                         sentences = session['chapters'][c]
                         start = idx_target
@@ -2094,7 +2152,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             print(error)
             return False
 
-    def export_audio(ffmpeg_combined_audio:str, ffmpeg_metadata_file:str, ffmpeg_final_file:str)->bool:
+    def export_audio(combined_audio:str, metadata_file:str, final_file:str)->bool:
+        
+        def on_progress(p:float)->None:
+            if is_gui_process:
+                progress_bar(p / 100.0, desc='Export')
+        
         try:
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
@@ -2104,13 +2167,13 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             ffprobe_cmd = [
                 shutil.which('ffprobe'), '-v', 'error', '-threads', '0', '-select_streams', 'a:0',
                 '-show_entries', 'stream=codec_name,sample_rate,sample_fmt',
-                '-of', 'default=nokey=1:noprint_wrappers=1', ffmpeg_combined_audio
+                '-of', 'default=nokey=1:noprint_wrappers=1', combined_audio
             ]
             probe = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
             codec_info = probe.stdout.strip().splitlines()
             input_codec = codec_info[0] if len(codec_info) > 0 else None
             input_rate = codec_info[1] if len(codec_info) > 1 else None
-            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
+            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', combined_audio]
             target_codec, target_rate = None, None
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
@@ -2125,7 +2188,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 target_rate = '44100'
                 cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', target_rate]
             else:
-                cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
+                cmd += ['-f', 'ffmetadata', '-i', metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
                     target_codec = 'aac'
                     target_rate = '44100'
@@ -2149,11 +2212,11 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cmd += ['-ac', '1']
             if input_codec == target_codec and input_rate == target_rate:
                 cmd = [
-                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio,
-                    '-threads', '0', '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', combined_audio,
+                    '-threads', '0', '-f', 'ffmetadata', '-i', metadata_file,
                     '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
                     '-progress', 'pipe:2',
-                    '-y', ffmpeg_final_file
+                    '-y', final_file
                 ]
             else:
                 cmd += [
@@ -2162,12 +2225,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
                     '-threads', '0',
                     '-progress', 'pipe:2',
-                    '-y', ffmpeg_final_file
+                    '-y', final_file
                 ]
             is_gui_process = session['is_gui_process']
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export')
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=on_progress)
             if proc_pipe.result:
-                if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
+                if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                         if session['cover'] is not None:
                             cover_path = session['cover']
@@ -2176,7 +2239,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             if session['output_format'] == 'mp3':
                                 from mutagen.mp3 import MP3
                                 from mutagen.id3 import ID3, APIC, error
-                                audio = MP3(ffmpeg_final_file, ID3=ID3)
+                                audio = MP3(final_file, ID3=ID3)
                                 try:
                                     audio.add_tags()
                                 except error:
@@ -2185,19 +2248,19 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                     audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=img.read()))
                             elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
                                 from mutagen.mp4 import MP4, MP4Cover
-                                audio = MP4(ffmpeg_final_file)
+                                audio = MP4(final_file)
                                 with open(cover_path, 'rb') as f:
                                     cover_data = f.read()
                                 audio['covr'] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
                             if audio:
                                 audio.save()
-                    final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
+                    final_vtt = f"{Path(final_file).stem}.vtt"
                     proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
                     final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
                     shutil.move(proc_vtt_path, final_vtt_path)
                     return True
                 else:
-                    error = f"{Path(ffmpeg_final_file).name} is corrupted or does not exist"
+                    error = f"{Path(final_file).name} is corrupted or does not exist"
                     print(error)
         except Exception as e:
             error = f'Export failed: {e}'
@@ -2288,8 +2351,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             return None
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
-                if is_gui_process:
-                    progress_bar = gr.Progress(track_tqdm=False)
                 result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
                 if not result:
                     print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
@@ -2315,7 +2376,6 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
     try:
         total_duration = 0.0
         filepaths = []
-        progress_bar = None
         try:
             with open(txt_file, 'r') as f:
                 for line in f:
@@ -2340,8 +2400,6 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             error = 'ffmpeg not found'
             print(error)
             return False
-        if is_gui_process:
-            progress_bar = gr.Progress(track_tqdm=False)
         cmd = [
             ffmpeg,
             '-hide_banner',
@@ -2404,11 +2462,12 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(sml_token('pause'), '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
-def delete_proc_audio_files(dir:str)->None:
+def delete_proc_audio_files(dir:str, files:list)->None:
     base = Path(dir)
     for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
         if file.stem.isdigit():
-            file.unlink()
+            if file in files:
+                file.unlink()
 
 def clear_folder(folder_path:str)->None:
     for name in os.listdir(folder_path):
@@ -2418,20 +2477,21 @@ def clear_folder(folder_path:str)->None:
         else:
             shutil.rmtree(path)
 
-def delete_unused_tmp_dirs(web_dir:str, days:int, session_id:str)->None:
+def delete_unused_tmp_dirs(session_id:str, output_dir:str, days:int)->None:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         dir_array = [
             tmp_dir,
-            web_dir,
+            output_dir,
             os.path.join(models_dir, '__sessions'),
             os.path.join(voices_dir, '__sessions')
         ]
         current_user_dirs = {
-            f"proc-{session['id']}",
-            f"web-{session['id']}",
-            f"voice-{session['id']}",
-            f"model-{session['id']}"
+            f'proc-{session_id}',
+            f'web-{session_id}',
+            f'cli-{session_id}',
+            f'voice-{session_id}',
+            f'model-{session_id}'
         }
         current_time = time.time()
         threshold_time = current_time - (days * 24 * 60 * 60)  # Convert days to seconds
@@ -2483,89 +2543,107 @@ def convert_ebook_batch(args:dict)->tuple:
 
 def convert_ebook(args:dict)->tuple:
     try:
-        if args.get('event') == 'blocks_confirmed':
-            if args.get('id', False):
-                progress_status, passed = finalize_audiobook(args['id'])
-                return progress_status, passed
-            else:
-                error = f"convert_ebook() error: args['id'] is False"
+        global context        
+        error = None
+        session_id = None
+        info_session = None
+        if args['language'] is not None:
+            if not os.path.splitext(args['ebook'])[1]:
+                error = f"{args['ebook']} needs a format extension."
                 print(error)
                 return error, False
-        else:
-            global context        
-            error = None
-            session_id = None
-            info_session = None
-            if args['language'] is not None:
-                if not os.path.splitext(args['ebook'])[1]:
-                    error = f"{args['ebook']} needs a format extension."
-                    print(error)
-                    return error, False
-                if not os.path.exists(args['ebook']):
-                    error = 'File does not exist or Directory empty.'
-                    print(error)
-                    return error, False
-                try:
-                    if len(args['language']) in (2, 3):
-                        lang_dict = Lang(args['language'])
-                        if lang_dict:
-                            args['language'] = lang_dict.pt3
-                            args['language_iso1'] = lang_dict.pt1
-                    else:
-                        args['language_iso1'] = None
-                except Exception as e:
-                    pass
-                if args['language'] not in language_mapping.keys():
-                    error = 'The language you provided is not (yet) supported'
-                    print(error)
-                    return error, False
-                if args['id'] is not None:
-                    session_id = str(args['id'])
-                    session = context.get_session(session_id)
-                    if not session:
-                        session = context.set_session(session_id)
+            if not os.path.exists(args['ebook']):
+                error = 'File does not exist or Directory empty.'
+                print(error)
+                return error, False
+            try:
+                if len(args['language']) in (2, 3):
+                    lang_dict = Lang(args['language'])
+                    if lang_dict:
+                        args['language'] = lang_dict.pt3
+                        args['language_iso1'] = lang_dict.pt1
                 else:
-                    session_id = str(uuid.uuid4())
+                    args['language_iso1'] = None
+            except Exception as e:
+                pass
+            if args['language'] not in language_mapping.keys():
+                error = 'The language you provided is not (yet) supported'
+                print(error)
+                return error, False
+            if args['id'] is not None:
+                session_id = str(args['id'])
+                session = context.get_session(session_id)
+                if not session:
                     session = context.set_session(session_id)
-                    if not context_tracker.start_session(session_id):
-                        error = 'convert_ebook() error: Session initialization failed!'
-                        print(error)
-                        return error, False
-                session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
-                session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
-                session['is_gui_process'] = bool(args['is_gui_process'])
-                session['ebook'] = str(args['ebook']) if args['ebook'] else None
-                session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
-                session['chapters_preview'] = bool(args['chapters_preview']) if args.get('chapters_preview') else False
-                session['device'] = str(args['device'])
-                session['language'] = str(args['language'])
-                session['language_iso1'] = str(args['language_iso1'])
-                session['tts_engine'] = str(args['tts_engine']) if args['tts_engine'] is not None else str(get_compatible_tts_engines(args['language'])[0])
-                session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if args['custom_model'] is not None else None
-                session['fine_tuned'] = str(args['fine_tuned'])
-                session['voice'] = str(args['voice']) if args['voice'] is not None else None
-                session['xtts_temperature'] =  float(args['xtts_temperature'])
-                session['xtts_length_penalty'] = float(args['xtts_length_penalty'])
-                session['xtts_num_beams'] = int(args['xtts_num_beams'])
-                session['xtts_repetition_penalty'] = float(args['xtts_repetition_penalty'])
-                session['xtts_top_k'] =  int(args['xtts_top_k'])
-                session['xtts_top_p'] = float(args['xtts_top_p'])
-                session['xtts_speed'] = float(args['xtts_speed'])
-                session['xtts_enable_text_splitting'] = bool(args['xtts_enable_text_splitting'])
-                session['bark_text_temp'] =  float(args['bark_text_temp'])
-                session['bark_waveform_temp'] =  float(args['bark_waveform_temp'])
-                session['audiobooks_dir'] = str(args['audiobooks_dir']) if args['audiobooks_dir'] else None
-                session['output_format'] = str(args['output_format'])
-                session['output_channel'] = str(args['output_channel'])
-                session['output_split'] = bool(args['output_split'])
-                session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
-                session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
-                cleanup_models_cache()
-                if not session['is_gui_process']:
-                    session['system'] = sys.platform
-                    session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
-                    session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
-                    os.makedirs(session['voice_dir'], exist_ok=True)
+            else:
+                session_id = str(uuid.uuid4())
+                session = context.set_session(session_id)
+                if not context_tracker.start_session(session_id):
+                    error = 'convert_ebook() error: Session initialization failed!'
+                    print(error)
+                    return error, False
+            msg = f'*********** Session: {session_id} **************\n{session_info}'
+            print(msg)
+            session['status'] = status_tags['CONVERTING']
+            session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
+            session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
+            session['is_gui_process'] = bool(args['is_gui_process'])
+            session['ebook'] = str(args['ebook']) if args.get('ebook') is not None else None
+            session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
+            session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
+            session['device'] = str(args['device'])
+            session['language'] = str(args['language'])
+            session['language_iso1'] = str(args['language_iso1'])
+            session['tts_engine'] = str(args['tts_engine']) if args.get('tts_engine') is not None else str(get_compatible_tts_engines(args['language'])[0])
+            session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if args['custom_model'] is not None else None
+            session['fine_tuned'] = str(args['fine_tuned'])
+            session['voice'] = str(args['voice']) if args.get('voice') is not None else None
+            session['xtts_temperature'] =  float(args['xtts_temperature'])
+            session['xtts_length_penalty'] = float(args['xtts_length_penalty'])
+            session['xtts_num_beams'] = int(args['xtts_num_beams'])
+            session['xtts_repetition_penalty'] = float(args['xtts_repetition_penalty'])
+            session['xtts_top_k'] =  int(args['xtts_top_k'])
+            session['xtts_top_p'] = float(args['xtts_top_p'])
+            session['xtts_speed'] = float(args['xtts_speed'])
+            session['xtts_enable_text_splitting'] = bool(args['xtts_enable_text_splitting'])
+            session['bark_text_temp'] =  float(args['bark_text_temp'])
+            session['bark_waveform_temp'] =  float(args['bark_waveform_temp'])
+            session['output_format'] = str(args['output_format'])
+            session['output_channel'] = str(args['output_channel'])
+            session['output_split'] = bool(args['output_split'])
+            session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
+            session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
+            ebook_name = get_sanitized(Path(session['ebook']).stem)
+            cleanup_models_cache()
+            if session['is_gui_process']:
+                session['final_name'] = ebook_name + '.' + session['output_format']
+                session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+            else:
+                session['system'] = DEVICE_SYSTEM
+                session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
+                session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
+                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
+                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
+                session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+                os.makedirs(session['voice_dir'], exist_ok=True)
+                audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{default_audio_proc_format}")
+                if os.path.exists(session['final_name']) or audio_sentences_exist:
+                    msg = f"Warning! The final file {Path(session['final_name']).name} already exists or some sentences are already converted. Continue? WARNING! The whole previous conversion will be deleted!"
+                    print(msg)
+                    while True:
+                        choice = input("[s]kip / [y]es: ").strip().lower()
+                        if choice in ('s', 'y'):
+                            break
+                        print("Please enter 's', or 'y'.")
+                    if choice == 'y':
+                        shutil.rmtree(session['process_dir'], ignore_errors=True)
+                    elif choice == 's':
+                        error = 'Conversion skipped.'
+                if error is None:
+                    #delete_unused_tmp_dirs(audiobooks_cli_dir, 180, session_id)
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
@@ -2583,7 +2661,6 @@ def convert_ebook(args:dict)->tuple:
                                     error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                             except ModuleNotFoundError as e:
                                 error = f"No presets module for TTS engine '{session['tts_engine']}': {e}"
-                                print(error)
                     if session['voice'] is not None:
                         voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
                         voice_name = get_sanitized(voice_name)
@@ -2595,144 +2672,143 @@ def convert_ebook(args:dict)->tuple:
                                 session['voice'] = final_voice_file
                             else:
                                 error = f'VoiceExtractor.extract_voice() failed! {msg}'
-                                print(error)
+            if error is None:
+                if session['script_mode'] == NATIVE:
+                    is_installed = check_programs('Calibre', 'ebook-convert', '--version')
+                    if not is_installed:
+                        error = f'check_programs() Calibre failed: {e}'
+                    is_installed = check_programs('FFmpeg', 'ffmpeg', '-version')
+                    if not is_installed:
+                        error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
-                    if session['script_mode'] == NATIVE:
-                        is_installed = check_programs('Calibre', 'ebook-convert', '--version')
-                        if not is_installed:
-                            error = f'check_programs() Calibre failed: {e}'
-                        is_installed = check_programs('FFmpeg', 'ffmpeg', '-version')
-                        if not is_installed:
-                            error = f'check_programs() FFMPEG failed: {e}'
-                    if error is None:
-                        old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
-                        if os.path.isdir(old_session_dir):
-                            os.rename(old_session_dir, session['session_dir'])
-                        session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
-                        session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
-                        session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                        session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
-                        if prepare_dirs(session['ebook'], session_id):
-                            session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
-                            msg = ''
-                            msg_extra = ''
-                            vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
-                            print(f'vram_dict: {vram_dict}')
-                            total_vram_gb = vram_dict.get('total_vram_gb', 0)
-                            session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-                            if session['free_vram_gb'] == 0:
-                                session['free_vram_gb'] = 1.0
-                                msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
-                            else:
-                                msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
-                                if session['free_vram_gb'] > 4.0:
-                                    if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                        os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
-                            if session['device'] == devices['CUDA']['proc'] or session['device'] == devices['JETSON']['proc']:
-                                if not devices['CUDA']['found']:
-                                    session['device'] = devices['CPU']['proc']
-                                    msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
-                            elif session['device'] == devices['MPS']['proc']:
-                                if not devices['MPS']['found']:
-                                    session['device'] = devices['CPU']['proc']
-                                    msg += f'MPS not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
-                            elif session['device'] == devices['ROCM']['proc']:
-                                if not devices['ROCM']['found']:
-                                    session['device'] = devices['CPU']['proc']
-                                    msg += f'ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
-                            elif session['device'] == devices['XPU']['proc']:
-                                if not devices['XPU']['found']:
-                                    session['device'] = devices['CPU']['proc']
-                                    msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
-                            if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                if session['free_vram_gb'] < 12.0:
-                                    os.environ['SUNO_OFFLOAD_CPU'] = "True"
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = "True"
-                                    msg_extra += f"<br/>Switching BARK to SMALL models"  
-                                else:
-                                    os.environ['SUNO_OFFLOAD_CPU'] = "False"
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = "False"
-                            if msg == '':
-                                msg = f"Using {session['device'].upper()}"
-                            msg += msg_extra;
-                            device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
-                            if float(total_vram_gb) >= float(device_vram_required):
-                                if session['is_gui_process']:
-                                    show_alert({"type": "warning", "msg": msg})
-                                print(msg.replace('<br/>','\n'))
-                                session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
-                                checksum_path = os.path.join(session['process_dir'], 'checksum')
-                                checksum, error = compare_checksums(session['ebook'], checksum_path)
-                                if error is None:
-                                    if not checksum:
-                                        session['blocks'] = []
-                                        session['chapters'] = []
-                                        result_epub = convert2epub(session_id)
-                                        if not result_epub:
-                                            error = 'convert2epub() failed!'
-                                    else:
-                                        json_blocks_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                                        if os.path.exists(json_blocks_file):
-                                            session['blocks'] = load_json_blocks(json_blocks_file)
-                                        else:
-                                            checksum = False
-                                    if error is None:
-                                        epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
-                                        if epubBook:
-                                            metadata = dict(session['metadata'])
-                                            for key, value in metadata.items():
-                                                data = epubBook.get_metadata('DC', key)
-                                                if data:
-                                                    for value, attributes in data:
-                                                        metadata[key] = value
-                                            metadata['language'] = session['language']
-                                            metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
-                                            metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
-                                            session['metadata'] = metadata                  
-                                            try:
-                                                if len(session['metadata']['language']) == 2:
-                                                    lang_dict = Lang(session['language'])
-                                                    if lang_dict:
-                                                        session['metadata']['language'] = lang_dict.pt3
-                                            except Exception as e:
-                                                pass                         
-                                            if session['metadata']['language'] != session['language']:
-                                                error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                                print(error)
-                                                if session['is_gui_process']:
-                                                    show_alert({"type": "warning", "msg": error})
-                                            is_lang_in_tts_engine = (
-                                                session.get('tts_engine') in default_engine_settings and
-                                                session.get('language') in default_engine_settings[session['tts_engine']].get('languages', {})
-                                            )
-                                            if is_lang_in_tts_engine:
-                                                session['cover'] = get_cover(epubBook, session_id)
-                                                if session['cover']:
-                                                    if not checksum:
-                                                        session['blocks'] = get_blocks(session_id, epubBook)
-                                                    if session['blocks']:
-                                                        #if session['chapters_preview']:
-                                                        #   return 'confirm_blocks', True
-                                                        #else:
-                                                        progress_status, passed = finalize_audiobook(session_id)
-                                                        return progress_status, passed
-                                                    else:
-                                                        error = f"get_blocks() failed! {session['blocks']}"
-                                                else:
-                                                    error = 'get_cover() failed!'
-                                            else:
-                                                 error = f"language {session['language']} not supported by {session['tts_engine']}!"
-                                        else:
-                                            error = 'epubBook.read_epub failed!'
-                            else:
-                                error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
+                    if prepare_dirs(session['ebook'], session_id):
+                        session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
+                        msg = ''
+                        msg_extra = ''
+                        vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
+                        print(f'vram_dict: {vram_dict}')
+                        total_vram_gb = vram_dict.get('total_vram_gb', 0)
+                        session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                        if session['free_vram_gb'] == 0:
+                            session['free_vram_gb'] = 1.0
+                            msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
                         else:
-                            error = f"Temporary directory {session['process_dir']} not removed due to failure."
-            else:
-                error = f"Language {args['language']} is not supported."
+                            msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
+                            if session['free_vram_gb'] > 4.0:
+                                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
+                        if session['device'] == devices['CUDA']['proc']:
+                            if not devices['CUDA']['found']:
+                                session['device'] = devices['CPU']['proc']
+                                msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                        elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
+                            if not devices['JETSON']['found']:
+                                session['device'] = devices['CPU']['proc']
+                                msg += f'JETSON CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                        elif session['device'] == devices['MPS']['proc']:
+                            if not devices['MPS']['found']:
+                                session['device'] = devices['CPU']['proc']
+                                msg += f'MPS not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                        elif session['device'] == devices['ROCM']['proc']:
+                            if not devices['ROCM']['found']:
+                                session['device'] = devices['CPU']['proc']
+                                msg += f'ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                        elif session['device'] == devices['XPU']['proc']:
+                            if not devices['XPU']['found']:
+                                session['device'] = devices['CPU']['proc']
+                                msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
+                        if session['tts_engine'] == TTS_ENGINES['BARK']:
+                            if session['free_vram_gb'] < 12.0:
+                                os.environ['SUNO_OFFLOAD_CPU'] = "True"
+                                os.environ['SUNO_USE_SMALL_MODELS'] = "True"
+                                msg_extra += f"<br/>Switching BARK to SMALL models"  
+                            else:
+                                os.environ['SUNO_OFFLOAD_CPU'] = "False"
+                                os.environ['SUNO_USE_SMALL_MODELS'] = "False"
+                        if msg == '':
+                            msg = f"Using {session['device'].upper()}"
+                        msg += msg_extra;
+                        device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
+                        if float(total_vram_gb) >= float(device_vram_required):
+                            if session['is_gui_process']:
+                                show_alert({"type": "warning", "msg": msg})
+                            print(msg.replace('<br/>','\n'))
+                            session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
+                            checksum, error = compare_checksums(session_id)
+                            if not checksum:
+                                result_epub = convert2epub(session_id)
+                                if not result_epub:
+                                    error = 'convert2epub() failed!'
+                            if error is None:
+                                json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
+                                json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+                                missing_json = True
+                                if os.path.exists(json_blocks_orig_file):
+                                    session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
+                                    if os.path.exists(json_blocks_edit_file):
+                                        session['blocks_edit'] = load_json_blocks(json_blocks_edit_file)
+                                    missing_json = False
+                                epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
+                                if epubBook:
+                                    metadata = dict(session['metadata'])
+                                    for key, value in metadata.items():
+                                        data = epubBook.get_metadata('DC', key)
+                                        if data:
+                                            for value, attributes in data:
+                                                metadata[key] = value
+                                    metadata['language'] = session['language']
+                                    metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
+                                    metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                    session['metadata'] = metadata                  
+                                    try:
+                                        if len(session['metadata']['language']) == 2:
+                                            lang_dict = Lang(session['language'])
+                                            if lang_dict:
+                                                session['metadata']['language'] = lang_dict.pt3
+                                    except Exception as e:
+                                        pass                         
+                                    if session['metadata']['language'] != session['language']:
+                                        error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                        print(error)
+                                        if session['is_gui_process']:
+                                            show_alert({"type": "warning", "msg": error})
+                                    is_lang_in_tts_engine = (
+                                        session.get('tts_engine') in default_engine_settings and
+                                        session.get('language') in default_engine_settings[session['tts_engine']].get('languages', {})
+                                    )
+                                    if is_lang_in_tts_engine:
+                                        session['cover'] = get_cover(epubBook, session_id)
+                                        if session.get('cover', False):
+                                            if missing_json:
+                                                session['blocks_orig'] = get_blocks(session_id, epubBook)
+                                                raw_blocks = get_blocks(session_id, epubBook)
+                                                if raw_blocks:
+                                                    session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
+                                                if session.get('blocks_orig', []):
+                                                    save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
+                                            if not session.get('blocks_edit', []):
+                                                session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
+                                                save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
+                                            if session.get('blocks_orig', []) and session.get('blocks_edit', []):
+                                                #if session['blocks_preview']:
+                                                #    return status_tags['BLOCKS'], True
+                                                #else:
+                                                progress_status, passed = finalize_audiobook(session_id)
+                                                return progress_status, passed
+                                            else:
+                                                error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
+                                        else:
+                                            error = 'get_cover() failed!'
+                                    else:
+                                         error = f"language {session['language']} not supported by {session['tts_engine']}!"
+                                else:
+                                    error = 'epubBook.read_epub failed!'
+                        else:
+                            error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
+                    else:
+                        error = f"Temporary directory {session['process_dir']} not removed due to failure."
         if session['cancellation_requested']:
             error = 'Cancelled' if error is None else error + '. Cancelled'
-        print(error)
         if session['is_gui_process']:
             show_alert({"type": "warning", "msg": error})
         return error, False
@@ -2740,24 +2816,35 @@ def convert_ebook(args:dict)->tuple:
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
+def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
-        if session['blocks']:
-            if blocks and blocks != session['blocks']:
-                delete_proc_audio_files(session['sentences_dir'])
-                delete_proc_audio_files(session['chapters_dir'])
-                json_blocks = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                save_json_blocks(session_id, json_blocks)
+        if session['cancellation_requested']:
+            error = 'Conversion cancelled'
+            session['status'] = status_tags['READY']
+            return error, False
+        if session['status'] in [status_tags['BLOCKS']]:
+            error = 'No blocks have been selected for the conversion!'
+            return error, False
+        if session.get('blocks_edit', []):
+            json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+            save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
             chapters = []
             msg = f'Get sentences…'
             print(msg)
-            for text in session['blocks']:
+            for block in session['blocks_edit']:
+                if session['cancellation_requested']:
+                    error = 'Conversion cancelled'
+                    session['status'] = status_tags['READY']
+                    return error, False
+                if not block['keep']:
+                    continue
+                text = block['text']
                 if text:
                     sentences_list = get_sentences(text, session_id)
                     if sentences_list is None:
                         error = 'No sentences found!'
-                        print(error)
+                        session['status'] = status_tags['READY']
                         return error, False
                     if sentences_list:
                         chapters.append(sentences_list)
@@ -2765,15 +2852,17 @@ def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
-                exported_files = combine_audio_chapters(session['id'])               
+                exported_files = combine_audio_chapters(session_id)               
                 if exported_files is not None:
                     progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                     session['audiobook'] = exported_files[-1]
-                    if not session['is_gui_process']:
-                        process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['audiobook']).encode()).hexdigest()}")
-                        shutil.rmtree(process_dir, ignore_errors=True)
-                    info_session = f"\n*********** Session: {session_id} **************\nIn headless mode, store it in case of interruption, crash, or reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option."
-                    print(info_session)
+                    msg = f'*********** Session: {session_id} **************\n{session_info}'
+                    print(msg)
+                    session['status'] = status_tags['READY']
+                    if session['blocks_preview']:
+                        reset_session(session_id)
+                        session['ebook'] = None
+                        show_alert({"type": "success", "msg": progress_status})
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
@@ -2781,6 +2870,7 @@ def finalize_audiobook(session_id:str, blocks:list[str]=[])->tuple:
                 error = 'convert_chapters2audio() failed!'
         else:
             error = 'finalize_audiobook() failed!'
+        session['status'] = status_tags['READY']
     return error, False
 
 def restore_session_from_data(data:dict, session:dict)->None:
@@ -2806,7 +2896,6 @@ def reset_session(session_id:str)->None:
     session = context.get_session(session_id)
     data = {
         "process_id": None,
-        "event": None,
         "ticker": 0,
         "process_dir": None,
         "ebook": None,
@@ -2832,11 +2921,12 @@ def reset_session(session_id:str)->None:
             "Source": None,
             "Modified": None,
         },
+        "blocks_orig": [],
+        "blocks_edit": [],
         "chapters": [],
         "cover": None,
         "duration": 0,
-        "playback_time": 0,
-        "playback_volume": 0
+        "playback_time": 0
     }
     restore_session_from_data(data, session)
 
@@ -2872,7 +2962,7 @@ def alert_exception(error:str, session_id:str|None)->None:
     if session_id is not None:
         session = context.get_session(session_id)
         if session and session.get('id', False):
-            session['status'] = 'ready'
+            session['status'] = status_tags['READY']
     print(error)
     gr.Error(error)
     DependencyError(error)

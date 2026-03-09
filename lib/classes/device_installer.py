@@ -1,4 +1,4 @@
-import os, re, sys, platform, shutil, subprocess, json, importlib
+import os, re, sys, platform, shutil, subprocess, importlib, json
 
 from functools import cached_property
 from typing import Union
@@ -35,22 +35,17 @@ class DeviceInstaller():
         else:
             if mode == BUILD_DOCKER:
                 name, tag, msg = self.check_hardware
-                arch = self.check_arch
+                os_env = 'manylinux_2_28'
                 pyvenv = list(sys.version_info[:2])
-                os_env = 'linux' if name == devices['JETSON']['proc'] else 'manylinux_2_28'
-                pyvenv = [3, 10] if tag in ['jetson60', 'jetson61'] else pyvenv
-                device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg.replace('!', '')}
+                pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
+                arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
+                tag = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else tag
+                device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
                 with open('.device_info.json', 'w', encoding='utf-8') as f:
                     json.dump(device_info, f)
                 return json.dumps(device_info)
-            elif mode == FULL_DOCKER:
-                try:
-                    with open('.device_info.json', 'r', encoding='utf-8') as f:
-                        return json.dumps(json.load(f))
-                except FileNotFoundError:
-                    return ''
         if all([name, tag, os_env, arch, pyvenv]):
-            device_info = {"name":name,"os":os_env,"arch":arch,"pyvenv":pyvenv,"tag":tag,"note":msg}
+            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
             return json.dumps(device_info)
         return ''
         
@@ -78,7 +73,6 @@ class DeviceInstaller():
         return 'unknown'
 
     def detect_device(self)->str:
-        import re
 
         def has_cmd(cmd:str)->bool:
             return shutil.which(cmd) is not None
@@ -100,7 +94,6 @@ class DeviceInstaller():
             text = text.strip()
             if text.startswith('{'):
                 try:
-                    import json
                     obj = json.loads(text)
 
                     if isinstance(obj, dict):
@@ -247,26 +240,24 @@ class DeviceInstaller():
                 return False
             return False
 
-        def has_working_rocm():
-            # ROCm does not exist on macOS or Windows (runtime)
-            if self.system != systems['LINUX']:
-                return False
-            # /dev/kfd is required but not sufficient
-            if not os.path.exists("/dev/kfd"):
-                return False
-            # rocminfo is the authoritative runtime check
-            if not has_cmd("rocminfo"):
-                return False
-            out = try_cmd("rocminfo").lower()
-            if not out:
-                return False
-            # Must enumerate agents
-            if "agent" not in out or "gpu" not in out:
-                return False
-            # Guard against broken installs
-            if "error" in out or "failed" in out:
-                return False
-            return True
+        def has_rocm():
+            if self.system == systems['LINUX']:
+                rocm_paths = [
+                    '/opt/rocm',
+                    '/opt/rocm/bin/rocminfo',
+                ]
+                if any(os.path.exists(p) for p in rocm_paths):
+                    return True
+                return has_cmd('rocminfo')
+            elif self.system == systems['WINDOWS']:
+                hip_path = os.environ.get('HIP_PATH')
+                if hip_path and os.path.isdir(hip_path):
+                    return True
+                program_files = os.environ.get('ProgramFiles', '')
+                if program_files and glob(os.path.join(program_files, 'AMD', 'ROCm', '*')):
+                    return True
+                return has_cmd('rocminfo')
+            return False
 
         def has_nvidia_gpu_pci():
             # macOS: NVIDIA GPUs are unsupported → always False
@@ -319,7 +310,7 @@ class DeviceInstaller():
             except Exception:
                 return False
 
-        def has_working_cuda():
+        def has_cuda():
             if self.system == systems['MACOS']:
                 return False
             if not has_cmd("nvidia-smi"):
@@ -371,7 +362,7 @@ class DeviceInstaller():
                 return False
             return False
 
-        def has_working_xpu():
+        def has_xpu():
             # No XPU on macOS
             if self.system == systems['MACOS']:
                 return False
@@ -439,110 +430,240 @@ class DeviceInstaller():
                     out = try_cmd('uname -a')
                     if 'tegra' in out:
                         msg = 'Jetson GPU detected but not(?) compatible'
-                    
+
             # ============================================================
             # ROCm
             # ============================================================
-            elif has_working_rocm() and has_amd_gpu_pci():
-                version = ''
-                msg = ''
-                def _normalize_version(v:str)->str:
-                    import re
+            elif has_rocm() and has_amd_gpu_pci():
+
+                def _normalize_version(v: str) -> str:
                     m = re.search(r'\d+\.\d+(?:\.\d+)?', v or '')
                     return m.group(0) if m else ''
-                if not version and has_cmd("hipcc"):
-                    out = try_cmd("hipcc --version")
-                    if out:
-                        import re
-                        m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
-                        if m:
-                            version = _normalize_version(m.group(1))
+
+                version = ''
+                msg = ''
+                hip_device_count = 0
+
+                # 1) HIP RUNTIME detection via ctypes (primary)
+                try:
+                    import ctypes
+                    libhip = None
+
+                    if os.name == "nt":
+                        # Windows: try amdhip64.dll
+                        hip_path = os.environ.get('HIP_PATH', '')
+                        candidates = ["amdhip64.dll"]
+                        if hip_path:
+                            candidates.insert(0, os.path.join(hip_path, 'bin', 'amdhip64.dll'))
+                        for lib_name in candidates:
+                            try:
+                                libhip = ctypes.CDLL(lib_name)
+                                break
+                            except OSError:
+                                continue
+                    else:
+                        # Linux / WSL2: try multiple library name patterns
+                        candidates = ["libamdhip64.so"]
+
+                        min_major, _ = rocm_version_range["min"]
+                        max_major, _ = rocm_version_range["max"]
+                        for major in range(max_major, min_major - 1, -1):
+                            candidates.append(f"libamdhip64.so.{major}")
+
+                        hip_lib_dirs = [
+                            "/opt/rocm/lib",
+                            "/opt/rocm/lib64",
+                            "/usr/lib/x86_64-linux-gnu",
+                            "/usr/lib64",
+                        ]
+                        # Also check versioned rocm installs
+                        for p in sorted(glob('/opt/rocm-*/lib'), reverse=True):
+                            hip_lib_dirs.append(p)
+
+                        for d in hip_lib_dirs:
+                            if os.path.isdir(d):
+                                try:
+                                    for f in sorted(os.listdir(d), reverse=True):
+                                        if f.startswith("libamdhip64.so."):
+                                            candidates.append(os.path.join(d, f))
+                                except OSError:
+                                    pass
+
+                        for lib_name in candidates:
+                            try:
+                                libhip = ctypes.CDLL(lib_name)
+                                break
+                            except OSError:
+                                continue
+
+                    if libhip:
+                        device_count = ctypes.c_int()
+                        # hipGetDeviceCount returns 0 on success
+                        if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
+                            hip_device_count = device_count.value
+
+                        # hipRuntimeGetVersion returns version int
+                        v_int = ctypes.c_int()
+                        if libhip.hipRuntimeGetVersion(ctypes.byref(v_int)) == 0:
+                            v = v_int.value
+                            # ROCm 5+: version = major * 10000000 + minor * 100000 + patch
+                            if v >= 10000000:
+                                major = v // 10000000
+                                minor = (v % 10000000) // 100000
+                            # Older encoding: major * 100 + minor * 10 + patch
+                            elif v >= 100:
+                                major = v // 100
+                                minor = (v % 100) // 10
+                            else:
+                                major = v
+                                minor = 0
+
+                            if hip_device_count > 0:
+                                version = f'{major}.{minor}'
+                            else:
+                                msg = f'HIP runtime present ({major}.{minor}) but no devices.'
+                except (OSError, AttributeError):
+                    pass
+
+                # 2) hipcc detection (fallback)
+                if not version:
+                    if os.name == 'posix':
+                        if has_cmd('hipcc'):
+                            out = try_cmd('hipcc --version')
+                            if out:
+                                m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
+                                if m:
+                                    version = _normalize_version(m.group(1))
+                    elif os.name == 'nt':
+                        hip_path = os.environ.get('HIP_PATH', '')
+                        hipcc = os.path.join(hip_path, 'bin', 'hipcc') if hip_path else ''
+                        if hipcc and os.path.isfile(hipcc):
+                            out = try_cmd(f'"{hipcc}" --version')
+                            if out:
+                                m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
+                                if m:
+                                    version = _normalize_version(m.group(1))
+                        if not version and has_cmd('hipcc'):
+                            out = try_cmd('hipcc --version')
+                            if out:
+                                m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
+                                if m:
+                                    version = _normalize_version(m.group(1))
+
+                # 3) PyTorch torch.version.hip (fallback)
                 if not version:
                     try:
                         import torch
-                        if getattr(torch.version, "hip", None):
+                        if getattr(torch.version, 'hip', None):
                             version = _normalize_version(torch.version.hip)
                     except Exception:
                         pass
-                if not version and os.name == 'posix':
-                    import glob
-                    for p in sorted(glob.glob('/opt/rocm-*'), reverse=True):
-                        base = os.path.basename(p).replace('rocm-', '')
-                        v = _normalize_version(base)
-                        if v:
-                            version = v
-                            break
+
+                # 4) ROCm directory / version file detection (fallback)
                 if not version:
                     if os.name == 'posix':
-                        for p in (
-                            '/opt/rocm/.info/version',
-                            '/opt/rocm/version',
-                        ):
-                            if os.path.exists(p):
-                                try:
-                                    with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                        v = f.read()
-                                        version = _normalize_version(lib_version_parse(v))
-                                    break
-                                except Exception:
-                                    pass
-                    elif os.name == 'nt':
-                        for env in ('ROCM_PATH', 'HIP_PATH'):
-                            base = os.environ.get(env)
-                            if base:
-                                for p in (
-                                    os.path.join(base, 'version'),
-                                    os.path.join(base, '.info', 'version'),
-                                ):
-                                    if os.path.exists(p):
-                                        try:
-                                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                                v = f.read()
-                                                version = _normalize_version(lib_version_parse(v))
-                                            break
-                                        except Exception:
-                                            pass
-                            if version:
+                        for p in sorted(glob('/opt/rocm-*'), reverse=True):
+                            base = os.path.basename(p).replace('rocm-', '')
+                            v = _normalize_version(base)
+                            if v:
+                                version = v
                                 break
+                        if not version:
+                            for p in (
+                                '/opt/rocm/.info/version',
+                                '/opt/rocm/version',
+                            ):
+                                if os.path.exists(p):
+                                    try:
+                                        with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                            v = f.read()
+                                            version = _normalize_version(lib_version_parse(v))
+                                        break
+                                    except Exception:
+                                        pass
+                    elif os.name == 'nt':
+                        program_files = os.environ.get('ProgramFiles', '')
+                        if program_files:
+                            for p in sorted(glob(os.path.join(program_files, 'AMD', 'ROCm', '*')), reverse=True):
+                                v = _normalize_version(os.path.basename(p))
+                                if v:
+                                    version = v
+                                    break
+                        if not version:
+                            for env in ('ROCM_PATH', 'HIP_PATH'):
+                                base = os.environ.get(env)
+                                if base:
+                                    for p in (
+                                        os.path.join(base, 'version'),
+                                        os.path.join(base, '.info', 'version'),
+                                    ):
+                                        if os.path.exists(p):
+                                            try:
+                                                with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                                    v = f.read()
+                                                    version = _normalize_version(lib_version_parse(v))
+                                                break
+                                            except Exception:
+                                                pass
+                                if version:
+                                    break
+
+                # Version comparison and tag assignment
                 if version:
                     cmp = toolkit_version_compare(version, rocm_version_range)
-                    min_version = rocm_version_range["min"]
-                    max_version = rocm_version_range["max"]
+                    min_version = rocm_version_range['min']
+                    max_version = rocm_version_range['max']
 
-                    min_version_str = ".".join(map(str, min_version)) if isinstance(min_version, (tuple, list)) else str(min_version)
-                    max_version_str = ".".join(map(str, max_version)) if isinstance(max_version, (tuple, list)) else str(max_version)
+                    min_version_str = '.'.join(map(str, min_version)) if isinstance(min_version, (tuple, list)) else str(min_version)
+                    max_version_str = '.'.join(map(str, max_version)) if isinstance(max_version, (tuple, list)) else str(max_version)
 
                     if cmp == -1:
                         msg = f'ROCm {version} < min {min_version_str}. Please upgrade.'
-
                     elif cmp == 1:
                         msg = f'ROCm {version} > max {max_version_str}. Falling back to CPU.'
-
                     elif cmp == 0:
                         devices['ROCM']['found'] = True
-                        parts = version.split(".")
+                        parts = version.split('.')
                         major = parts[0]
                         minor = parts[1] if len(parts) > 1 else 0
                         name = devices['ROCM']['proc']
                         tag = f'rocm{major}{minor}'
-
                     else:
                         msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
-
                 else:
                     msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
+
+                # 5) PyTorch last-resort fallback — if nothing above found ROCm
+                if not devices['ROCM']['found']:
+                    try:
+                        import torch
+                        if torch.cuda.is_available() and hasattr(torch.version, 'hip') and torch.version.hip:
+                            devices['ROCM']['found'] = True
+                            torch_hip_ver = _normalize_version(torch.version.hip)
+                            if torch_hip_ver:
+                                version = torch_hip_ver
+                                parts = version.split('.')
+                                major = parts[0]
+                                minor = parts[1] if len(parts) > 1 else 0
+                                tag = f'rocm{major}{minor}'
+                            msg = ''
+                    except Exception:
+                        pass
 
             # ============================================================
             # CUDA
             # ============================================================
-            elif has_working_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
+            elif has_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
                 version = ''
                 msg = ''
+
                 # 1) CUDA RUNTIME detection
                 try:
                     import ctypes
                     libcudart = None
+
                     if os.name == "nt":
+                        # Windows: scan for cudart64_XX.dll
                         min_major, min_minor = cuda_version_range["min"]
                         max_major, max_minor = cuda_version_range["max"]
                         for major in range(min_major, max_major + 1):
@@ -558,8 +679,37 @@ class DeviceInstaller():
                             if libcudart:
                                 break
                     else:
-                        # Linux + WSL2
-                        libcudart = ctypes.CDLL("libcudart.so")
+                        # Linux / WSL2: try multiple library name patterns
+                        candidates = ["libcudart.so"]  # unversioned (dev installs)
+
+                        # Add versioned names: libcudart.so.12, libcudart.so.11, etc.
+                        min_major, _ = cuda_version_range["min"]
+                        max_major, _ = cuda_version_range["max"]
+                        for major in range(max_major, min_major - 1, -1):  # newest first
+                            candidates.append(f"libcudart.so.{major}")
+
+                        # Also check common install paths directly
+                        cuda_lib_dirs = [
+                            "/usr/local/cuda/lib64",
+                            "/usr/lib/x86_64-linux-gnu",
+                            "/usr/lib64",
+                        ]
+                        for d in cuda_lib_dirs:
+                            if os.path.isdir(d):
+                                try:
+                                    for f in sorted(os.listdir(d), reverse=True):
+                                        if f.startswith("libcudart.so."):
+                                            candidates.append(os.path.join(d, f))
+                                except OSError:
+                                    pass
+
+                        for lib_name in candidates:
+                            try:
+                                libcudart = ctypes.CDLL(lib_name)
+                                break
+                            except OSError:
+                                continue
+
                     if libcudart:
                         v_int = ctypes.c_int()
                         if libcudart.cudaRuntimeGetVersion(ctypes.byref(v_int)) == 0:
@@ -572,9 +722,16 @@ class DeviceInstaller():
                                     version = f'{major}.{minor}'
                                 else:
                                     msg = f'Runtime present ({major}.{minor}) but no devices.'
+                            else:
+                                # cudaGetDeviceCount failed — driver issue?
+                                v = v_int.value
+                                major = v // 1000
+                                minor = (v % 1000) // 10
+                                msg = f'Runtime present ({major}.{minor}) but cudaGetDeviceCount failed.'
                 except (OSError, AttributeError):
                     pass
-                # CUDA TOOLKIT detection (fallback only)
+
+                # 2) CUDA TOOLKIT detection (fallback)
                 if not version:
                     if os.name == 'posix':
                         for p in (
@@ -598,6 +755,7 @@ class DeviceInstaller():
                                         v = f.read()
                                         version = lib_version_parse(v)
                                     break
+
                 if version:
                     cmp = toolkit_version_compare(version, cuda_version_range)
                     min_ver = ".".join(str(part) for part in cuda_version_range["min"])
@@ -618,47 +776,147 @@ class DeviceInstaller():
                 else:
                     msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
 
+                if not devices['CUDA']['found']:
+                    try:
+                        import torch
+                        if torch.cuda.is_available():
+                            devices['CUDA']['found'] = True
+                            torch_cuda_ver = torch.version.cuda  # e.g. "12.8"
+                            if torch_cuda_ver:
+                                version = torch_cuda_ver
+                                parts = version.split(".")
+                                major = parts[0]
+                                minor = parts[1] if len(parts) > 1 else 0
+                                tag = f'cu{major}{minor}'
+                            msg = ''
+                    except Exception:
+                        pass
+
             # ============================================================
             # INTEL XPU
             # ============================================================
-            elif has_working_xpu() and has_intel_gpu_pci():
+            elif has_xpu() and has_intel_gpu_pci():
                 version = ''
                 msg = ''
-                if os.name == 'posix':
-                    for p in (
-                        '/opt/intel/oneapi/version.txt',
-                        '/opt/intel/oneapi/compiler/latest/version.txt',
-                        '/opt/intel/oneapi/runtime/latest/version.txt',
-                    ):
-                        if os.path.exists(p):
-                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                v = f.read()
-                                version = lib_version_parse(v)
-                            break
-                elif os.name == 'nt':
-                    oneapi_root = os.environ.get('ONEAPI_ROOT')
-                    if oneapi_root:
+                xpu_device_count = 0
+
+                # 1) Level Zero / SYCL runtime detection via ctypes (primary)
+                try:
+                    import ctypes
+                    libze = None
+
+                    if os.name == "nt":
+                        candidates = ["ze_loader.dll"]
+                        oneapi_root = os.environ.get('ONEAPI_ROOT', '')
+                        if oneapi_root:
+                            candidates.insert(0, os.path.join(oneapi_root, 'bin', 'ze_loader.dll'))
+                        for lib_name in candidates:
+                            try:
+                                libze = ctypes.CDLL(lib_name)
+                                break
+                            except OSError:
+                                continue
+                    else:
+                        candidates = [
+                            "libze_loader.so",
+                            "libze_loader.so.1",
+                        ]
+
+                        ze_lib_dirs = [
+                            "/usr/lib/x86_64-linux-gnu",
+                            "/usr/lib64",
+                            "/opt/intel/oneapi/lib",
+                        ]
+                        for d in ze_lib_dirs:
+                            if os.path.isdir(d):
+                                try:
+                                    for f in sorted(os.listdir(d), reverse=True):
+                                        if f.startswith("libze_loader.so."):
+                                            candidates.append(os.path.join(d, f))
+                                except OSError:
+                                    pass
+
+                        for lib_name in candidates:
+                            try:
+                                libze = ctypes.CDLL(lib_name)
+                                break
+                            except OSError:
+                                continue
+
+                    if libze:
+                        # zeInit(0) — 0 = ZE_INIT_FLAG_GPU_ONLY
+                        if libze.zeInit(ctypes.c_uint(0)) == 0:  # ZE_RESULT_SUCCESS
+                            driver_count = ctypes.c_uint(0)
+                            if libze.zeDriverGet(ctypes.byref(driver_count), None) == 0 and driver_count.value > 0:
+                                xpu_device_count = driver_count.value
+                except (OSError, AttributeError):
+                    pass
+
+                # 2) sycl-ls detection (gets device count + oneAPI presence)
+                if not version:
+                    if os.name == 'posix':
+                        if has_cmd('sycl-ls'):
+                            out = try_cmd('sycl-ls')
+                            if out:
+                                # Count GPU devices in sycl-ls output
+                                gpu_lines = [l for l in out.splitlines() if 'gpu' in l.lower()]
+                                if gpu_lines and xpu_device_count == 0:
+                                    xpu_device_count = len(gpu_lines)
+                    elif os.name == 'nt':
+                        oneapi_root = os.environ.get('ONEAPI_ROOT', '')
+                        sycl_ls = os.path.join(oneapi_root, 'bin', 'sycl-ls') if oneapi_root else ''
+                        if sycl_ls and os.path.isfile(sycl_ls):
+                            out = try_cmd(f'"{sycl_ls}"')
+                            if out:
+                                gpu_lines = [l for l in out.splitlines() if 'gpu' in l.lower()]
+                                if gpu_lines and xpu_device_count == 0:
+                                    xpu_device_count = len(gpu_lines)
+                        if xpu_device_count == 0 and has_cmd('sycl-ls'):
+                            out = try_cmd('sycl-ls')
+                            if out:
+                                gpu_lines = [l for l in out.splitlines() if 'gpu' in l.lower()]
+                                if gpu_lines:
+                                    xpu_device_count = len(gpu_lines)
+
+                # 3) oneAPI version file detection
+                if not version:
+                    if os.name == 'posix':
                         for p in (
-                            os.path.join(oneapi_root, 'version.txt'),
-                            os.path.join(oneapi_root, 'compiler', 'latest', 'version.txt'),
-                            os.path.join(oneapi_root, 'runtime', 'latest', 'version.txt'),
+                            '/opt/intel/oneapi/version.txt',
+                            '/opt/intel/oneapi/compiler/latest/version.txt',
+                            '/opt/intel/oneapi/runtime/latest/version.txt',
                         ):
                             if os.path.exists(p):
                                 with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                                     v = f.read()
                                     version = lib_version_parse(v)
                                 break
+                    elif os.name == 'nt':
+                        oneapi_root = os.environ.get('ONEAPI_ROOT')
+                        if oneapi_root:
+                            for p in (
+                                os.path.join(oneapi_root, 'version.txt'),
+                                os.path.join(oneapi_root, 'compiler', 'latest', 'version.txt'),
+                                os.path.join(oneapi_root, 'runtime', 'latest', 'version.txt'),
+                            ):
+                                if os.path.exists(p):
+                                    with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                        v = f.read()
+                                        version = lib_version_parse(v)
+                                    break
+
+                # Version comparison and tag assignment
                 if version:
                     cmp = toolkit_version_compare(version, xpu_version_range)
-                    if cmp == -1 or cmp == 1:
-                        range_display = (
-                            f"{xpu_version_range.get('min')} to {xpu_version_range.get('max')}"
-                            if isinstance(xpu_version_range, dict)
-                            and 'min' in xpu_version_range
-                            and 'max' in xpu_version_range
-                            else str(xpu_version_range)
-                        )
-                        msg = f'XPU {version} out of supported range {range_display}. Falling back to CPU.'
+                    min_ver = xpu_version_range.get('min', '')
+                    max_ver = xpu_version_range.get('max', '')
+                    min_ver_str = '.'.join(map(str, min_ver)) if isinstance(min_ver, (tuple, list)) else str(min_ver)
+                    max_ver_str = '.'.join(map(str, max_ver)) if isinstance(max_ver, (tuple, list)) else str(max_ver)
+
+                    if cmp == -1:
+                        msg = f'XPU oneAPI {version} < min {min_ver_str}. Please upgrade.'
+                    elif cmp == 1:
+                        msg = f'XPU oneAPI {version} > max {max_ver_str}. Falling back to CPU.'
                     elif cmp == 0:
                         devices['XPU']['found'] = True
                         name = devices['XPU']['proc']
@@ -667,6 +925,21 @@ class DeviceInstaller():
                         msg = 'Intel GPU detected but Intel oneAPI Base Toolkit not installed.'
                 else:
                     msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
+
+                # 4) PyTorch last-resort fallback
+                if not devices['XPU']['found']:
+                    try:
+                        import torch
+                        if hasattr(torch, 'xpu') and torch.xpu.is_available():
+                            devices['XPU']['found'] = True
+                            # PyTorch doesn't expose a oneAPI version directly,
+                            # but we can confirm device presence
+                            xpu_device_count = torch.xpu.device_count()
+                            name = devices['XPU']['proc']
+                            tag = devices['XPU']['proc']
+                            msg = 'XPU detected via PyTorch fallback.'
+                    except Exception:
+                        pass
 
             # ============================================================
             # APPLE MPS
