@@ -2703,7 +2703,12 @@ def convert_ebook(args:dict)->tuple:
                                 session['device'] = devices['CPU']['proc']
                                 msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
                         elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
-                            if not devices['JETSON']['found']:
+                            if devices['JETSON']['found']:
+                                os.environ['PYTORCH_NO_CUDA_MEMORY_CACHING'] = '1'
+                                os.environ['TORCH_CUDA_ENABLE_CUDA_GRAPH'] = '0'
+                                os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+                                os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128,garbage_collection_threshold:0.6,expandable_segments:True'
+                            else:
                                 session['device'] = devices['CPU']['proc']
                                 msg += f'JETSON CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
                         elif session['device'] == devices['MPS']['proc']:
