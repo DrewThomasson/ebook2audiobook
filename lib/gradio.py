@@ -388,9 +388,9 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 #gr_blocks_nav .nav-header {
                     overflow:hidden !important;
-                    display:flex; !important;
-                    align-items:center !important;;
-                    justify-content:center !important;;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
                     padding-bottom: 10px !important;
                 }
                 #gr_blocks_nav .nav-header p {
@@ -540,7 +540,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
-                                        gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
+                                        gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, visible=False, scale=1)
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                     gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
@@ -1687,7 +1687,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         return gr.update(value=msg)
                         if error is not None:
                             show_alert({"type": "warning", "msg": error})
-                        return gr.update(error)
+                        return gr.update(value=error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
                     alert_exception(error, session_id)
@@ -1875,11 +1875,11 @@ def build_interface(args:dict)->gr.Blocks:
                     if is_gui_shared:
                         msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
                         session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
-                        delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session['id'])
+                        delete_unused_tmp_dirs(session['id'], audiobooks_gradio_dir, interface_shared_tmp_expire)
                     else:
                         msg = f' Note: if no activity is detected after {tmp_expire} days, your session will be cleaned up. '
                         session['audiobooks_dir'] = os.path.join(audiobooks_host_dir, f"web-{session['id']}")
-                        delete_unused_tmp_dirs(audiobooks_host_dir, tmp_expire, session['id'])
+                        delete_unused_tmp_dirs(session['id'], audiobooks_host_dir, tmp_expire)
                     msg += 'Your browser needs cookies enabled to resume the conversions.'
                     if not os.path.exists(session['audiobooks_dir']):
                         os.makedirs(session['audiobooks_dir'], exist_ok=True)
