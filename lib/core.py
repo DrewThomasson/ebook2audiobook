@@ -2807,8 +2807,6 @@ def convert_ebook(args:dict)->tuple:
                             error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
                     else:
                         error = f"Temporary directory {session['process_dir']} not removed due to failure."
-            else:
-                error = f"Language {args['language']} is not supported."
         if session['cancellation_requested']:
             error = 'Cancelled' if error is None else error + '. Cancelled'
         print(error)
