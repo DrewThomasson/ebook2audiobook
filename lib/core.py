@@ -2781,7 +2781,6 @@ def convert_ebook(args:dict)->tuple:
                                         session['cover'] = get_cover(epubBook, session_id)
                                         if session.get('cover', False):
                                             if missing_json:
-                                                session['blocks_orig'] = get_blocks(session_id, epubBook)
                                                 raw_blocks = get_blocks(session_id, epubBook)
                                                 if raw_blocks:
                                                     session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
