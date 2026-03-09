@@ -2613,10 +2613,10 @@ def convert_ebook(args:dict)->tuple:
             session['output_split'] = bool(args['output_split'])
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
-            ebook_name = get_sanitized(Path(session['ebook']).stem
+            ebook_name = get_sanitized(Path(session['ebook']).stem)
             cleanup_models_cache()
             if session['is_gui_process']:
-                session['final_name'] = ebook_name + '.' + session['output_format'])
+                session['final_name'] = ebook_name + '.' + session['output_format']
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
