@@ -388,14 +388,16 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 #gr_blocks_nav .nav-header {
                     overflow:hidden !important;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
+                    display:flex; !important;
+                    align-items:center !important;;
+                    justify-content:center !important;;
+                    padding-bottom: 20px !important;
                 }
                 #gr_blocks_nav .nav-header p {
                     margin:0 !important;
                     white-space:nowrap !important;
                     overflow:hidden !important;
+                    font-size: 16px !important;
                 }
                 #gr_row_buttons {
                     justify-content: center !important;
@@ -407,6 +409,8 @@ def build_interface(args:dict)->gr.Blocks:
                     justify-content: center !important;
                     align-items: center !important;
                     padding-bottom: 20px !important;
+                }
+                #gr_blocks_markdown p {
                     font-size: 16px !important;
                     font-weight: bold !important;
                 }
