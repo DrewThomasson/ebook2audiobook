@@ -68,6 +68,11 @@ status_tags = {
     "CONVERTING": "converting"
 }
 
+save_session_keys_except = [
+    'blocks_orig',
+    'blocks_edit'
+]
+
 class DependencyError(Exception):
 
     def __init__(self, message:str|None):
@@ -2883,7 +2888,7 @@ def restore_session_from_data(data:dict, session:dict)->None:
     try:
         for key, value in data.items():
             if key in session:
-                if key not in ['blocks_orig', 'blocks_edit']:
+                if key not in save_session_keys_except:
                     if isinstance(value, dict) and isinstance(session[key], dict):
                         restore_session_from_data(value, session[key])
                     else:
