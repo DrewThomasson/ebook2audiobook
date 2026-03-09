@@ -2671,7 +2671,6 @@ def convert_ebook(args:dict)->tuple:
                                 session['voice'] = final_voice_file
                             else:
                                 error = f'VoiceExtractor.extract_voice() failed! {msg}'
-                                
             if error is None:
                 if session['script_mode'] == NATIVE:
                     is_installed = check_programs('Calibre', 'ebook-convert', '--version')
@@ -2809,7 +2808,6 @@ def convert_ebook(args:dict)->tuple:
                         error = f"Temporary directory {session['process_dir']} not removed due to failure."
         if session['cancellation_requested']:
             error = 'Cancelled' if error is None else error + '. Cancelled'
-        print(error)
         if session['is_gui_process']:
             show_alert({"type": "warning", "msg": error})
         return error, False
