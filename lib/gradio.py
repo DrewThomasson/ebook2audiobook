@@ -1789,7 +1789,7 @@ def build_interface(args:dict)->gr.Blocks:
                 end = min(start + page_size, len(blocks))
                 return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
 
-            def preview_blocks(session_id:str)->tuple:
+            def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session['status'] in [status_tags['BLOCKS']]:
                     visible_main = False
@@ -1963,7 +1963,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list
             ]
-            outputs_preview_blocks = [
+            outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
                 gr_blocks_data, gr_blocks_page,
                 gr_blocks_previous_btn, gr_blocks_next_btn,
@@ -2315,9 +2315,9 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=inputs_start_conversion,
                 outputs=[gr_progress]
             ).then(
-                fn=preview_blocks,
+                fn=edit_blocks,
                 inputs=[gr_session],
-                outputs=outputs_preview_blocks
+                outputs=outputs_edit_blocks
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
