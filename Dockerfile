@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG APP_VERSION=26.3.9
 ARG DEVICE_TAG=cu128
 ARG DOCKER_DEVICE_STR='{"name": "cu128", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "default device"}'
-ARG DOCKER_PROGRAMS_STR="curl ffmpeg nodejs npm espeak-ng sox tesseract-ocr"
+ARG DOCKER_PROGRAMS="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
 ARG INSTALL_RUST=1
@@ -37,7 +37,7 @@ RUN set -eux; \
 		gcc g++ make pkg-config cmake curl wget git bash xz-utils \
 		fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
 		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libxcb-cursor0 \
-		libgomp1 libsndfile1 python3-dev ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
+		libgomp1 libsndfile1 python3-dev ${DOCKER_PROGRAMS} tesseract-ocr-${ISO3_LANG}; \
 	rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------
@@ -109,7 +109,7 @@ RUN set -eux; \
 		/tmp/* \
 		$HOME/.cargo \
 		$HOME/.rustup || true; \
-	apt-mark manual ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
+	apt-mark manual ${DOCKER_PROGRAMS} tesseract-ocr-${ISO3_LANG}; \
 	apt-get purge -y --auto-remove gcc g++ make pkg-config python3-dev git; \
 	apt-get clean; \
 	rm -rf /var/lib/apt/lists/*

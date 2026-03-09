@@ -46,7 +46,7 @@ SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "xcb-util-cursor" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-DOCKER_PROGRAMS=("ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+DOCKER_PROGRAMS=("curl ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_MODE=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
 DEVICE_INFO_STR=""
@@ -819,7 +819,7 @@ function build_docker_image {
 			--build-arg APP_VERSION="$APP_VERSION"
 			--build-arg DEVICE_TAG="$DEVICE_TAG"
 			--build-arg DOCKER_DEVICE_STR="$ARG"
-			--build-arg DOCKER_PROGRAMS_STR="$DOCKER_PROGRAMS"
+			--build-arg DOCKER_PROGRAMS="$DOCKER_PROGRAMS"
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL"
 			--build-arg ISO3_LANG="$ISO3_LANG"
 		)
@@ -843,7 +843,7 @@ function build_docker_image {
 			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$DEVICE_TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
-			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
+			--build-arg DOCKER_PROGRAMS="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
@@ -863,7 +863,7 @@ function build_docker_image {
 			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$DEVICE_TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
-			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
+			--build-arg DOCKER_PROGRAMS="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			-t "$DOCKER_IMG_NAME" \
