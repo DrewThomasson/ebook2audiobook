@@ -540,7 +540,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
-                                        gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
+                                        gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, visible=False, scale=1)
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                     gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
