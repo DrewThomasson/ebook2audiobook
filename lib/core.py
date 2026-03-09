@@ -2618,6 +2618,7 @@ def convert_ebook(args:dict)->tuple:
             session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             cleanup_models_cache()
             if not session['is_gui_process']:
+                print(f"============== {args['output_dir']}")
                 session['system'] = DEVICE_SYSTEM
                 session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
