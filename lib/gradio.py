@@ -391,7 +391,7 @@ def build_interface(args:dict)->gr.Blocks:
                     display:flex; !important;
                     align-items:center !important;;
                     justify-content:center !important;;
-                    padding-bottom: 20px !important;
+                    padding-bottom: 10px !important;
                 }
                 #gr_blocks_nav .nav-header p {
                     margin:0 !important;
