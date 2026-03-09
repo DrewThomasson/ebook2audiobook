@@ -412,6 +412,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding-bottom: 20px !important;
                 }
                 #gr_blocks_markdown p {
+                    width: 100% !important;
                     font-size: 16px !important;
                     font-weight: bold !important;
                 }
