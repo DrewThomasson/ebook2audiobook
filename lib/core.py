@@ -2791,10 +2791,10 @@ def convert_ebook(args:dict)->tuple:
                                                 session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
                                                 save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                             if session.get('blocks_orig', []) and session.get('blocks_edit', []):
-                                                #if session['blocks_preview']:
-                                                #    return status_tags['BLOCKS'], True
-                                                #else:
-                                                progress_status, passed = finalize_audiobook(session_id)
+                                                if session['blocks_preview']:
+                                                    return status_tags['BLOCKS'], True
+                                                else:
+                                                    progress_status, passed = finalize_audiobook(session_id)
                                                 return progress_status, passed
                                             else:
                                                 error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
