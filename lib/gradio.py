@@ -1,7 +1,7 @@
 from lib.core import *
-from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
 def build_interface(args:dict)->gr.Blocks:
+    from lib.classes.tts_engines.common.preset_loader import load_engine_presets
     try:
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
@@ -25,7 +25,6 @@ def build_interface(args:dict)->gr.Blocks:
         options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
         src_label_file = 'Upload File'
         src_label_dir = 'Select a Directory'
-        confirm_blocks = 'confirm_blocks'
         page_size = 15
         visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
@@ -244,6 +243,23 @@ def build_interface(args:dict)->gr.Blocks:
                 .gr-convert-btn {
                     font-size: 30px !important;
                 }
+                .gr-convert-btn:hover { background-color: #34d058 !important; }
+                .gr-convert-btn:active, .button-red:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
+                }
+                [id^="block_"]:has(input[type="checkbox"]:checked) {
+                    border-left: 3px solid #22c55e !important;
+                }
+                [id^="block_"]:has(input[type="checkbox"]:checked) > div {
+                    background-color: rgba(34, 197, 94, 0.08) !important;
+                }
+                [id^="block_"]:has(input[type="checkbox"]:not(:checked)) {
+                    border-left: 3px solid #ef4444 !important;
+                }
+                [id^="block_"]:has(input[type="checkbox"]:not(:checked)) > div {
+                    background-color: rgba(239, 68, 68, 0.08) !important;
+                }
                 ////////////////////
                 #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                     height: 100px !important;
@@ -315,7 +331,7 @@ def build_interface(args:dict)->gr.Blocks:
                     display: none !important;
                 }
                 #gr_row_ebook_mode { align-items: center !important; }
-                #gr_chapters_preview {
+                #gr_blocks_preview {
                     align-self: center !important; 
                     overflow: visible !important;
                     padding: 20px 0 20px 10px !important;
@@ -372,14 +388,31 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 #gr_blocks_nav .nav-header {
                     overflow:hidden !important;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
+                    display:flex; !important;
+                    align-items:center !important;;
+                    justify-content:center !important;;
+                    padding-bottom: 10px !important;
                 }
                 #gr_blocks_nav .nav-header p {
                     margin:0 !important;
                     white-space:nowrap !important;
                     overflow:hidden !important;
+                    font-size: 16px !important;
+                }
+                #gr_row_buttons {
+                    justify-content: center !important;
+                    gap: 100px !important;
+                }
+                #gr_blocks_markdown {
+                    text-align: center !important;
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                    padding-bottom: 20px !important;
+                }
+                #gr_blocks_markdown p {
+                    font-size: 16px !important;
+                    font-weight: bold !important;
                 }
                 ///////////
                 .fade-in {
@@ -432,6 +465,7 @@ def build_interface(args:dict)->gr.Blocks:
                     border-radius: 9px !important;
                     text-align: center !important;
                     max-width: 300px !important;
+                    height: auto !important;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
                     border: 2px solid #FFA500 !important;
                     color: white !important;
@@ -448,6 +482,24 @@ def build_interface(args:dict)->gr.Blocks:
                     border-radius: 6px !important;
                     font-size: 16px !important;
                     cursor: pointer !important;
+                }
+                .gr-blocks-buttons {
+                    display: flex !important;
+                    justify-content: space-evenly !important;
+                    margin-top: 12px !important;
+                    margin-bottom: 12px !important;
+                }
+                .gr-blocks-buttons button {
+                    padding: 12px !important;
+                    border: none !important;
+                    border-radius: 9px !important;
+                    font-size: 16px !important;
+                    cursor: pointer !important;
+                }
+                .gr-blocks-buttons:hover { background-color: #34d058 !important; }
+                .gr-blocks-buttons:active, .button-red:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
                 }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
@@ -479,18 +531,16 @@ def build_interface(args:dict)->gr.Blocks:
         
         with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(604800, 86400)) as app:
             with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
-                with gr.Tabs(elem_id='gr_tabs'):
-                    gr_tab_main = gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab')
-                    with gr_tab_main:
+                with gr.Tabs(elem_id='gr_tabs') as gr_tabs:
+                    with gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab') as gr_tab_main:
                         with gr.Row(elem_id='gr_row_tab_main'):
                             with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_ebook_file', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
                                     gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
-                                    gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
-                                    with gr_row_ebook_mode:
+                                    with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
-                                        gr_chapters_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_preview', value=False, interactive=True, scale=1)
+                                        gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                     gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
@@ -498,8 +548,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr_group_voice_file:
                                     gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
                                     gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
-                                    gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
-                                    with gr_row_voice_player:
+                                    with gr.Row(elem_id='gr_row_voice_player') as gr_row_voice_player:
                                         gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
                                         gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                         gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
@@ -536,9 +585,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_session', elem_classes=['gr-group']):
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                     gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
-                            
-                    gr_tab_xtts_params = gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=visible_gr_tab_xtts_params)           
-                    with gr_tab_xtts_params:
+    
+                    with gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
                                 label='Temperature',
@@ -611,9 +659,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 elem_id='gr_xtts_enable_text_splitting',
                                 info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                                 visible=False
-                            )
-                    gr_tab_bark_params = gr.Tab('Bark Settings', elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=visible_gr_tab_bark_params)           
-                    with gr_tab_bark_params:
+                            )      
+                    with gr.Tab('Bark Settings', elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=False) as gr_tab_bark_params:
                         gr.Markdown(
                             elem_id='gr_markdown_tab_bark_params',
                             value='''
@@ -640,25 +687,65 @@ def build_interface(args:dict)->gr.Blocks:
                                 elem_id='gr_bark_waveform_temp',
                                 info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                             )
+                
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                     gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
                     gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
-                gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True)
-                with gr_group_audiobook_list:
+
+                with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True) as gr_group_audiobook_list:
                     gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                     gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
                     gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
                     gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, lines=3, max_lines=3)
                     gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
-                    gr_row_audiobook_list = gr.Row(elem_id='gr_row_audiobook_list', visible=True)
-                    with gr_row_audiobook_list:
+                    with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
                         gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                         gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
                         gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
                     gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
                     gr_audiobook_files_toggled = gr.State(False)
-                with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
+                with gr.Group(elem_id='gr_group_convert_btn', elem_classes=['gr-group-convert-btn']) as gr_group_convert_btn:
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
+
+            gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
+            gr_blocks_data = gr.State([])
+
+            with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
+                gr_blocks_markdown = gr.Markdown(elem_id='gr_blocks_markdown', elem_classes=['gr-markdown'], value='')
+                with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
+                    gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
+                    gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
+                    gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
+
+                block_components = []
+                with gr.Column(elem_id='gr_column_blocks'):
+                    for i in range(page_size):
+                        with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=False, open=False) as acc:
+                            keep = gr.Checkbox(
+                                elem_id=f'block_keep_{i}',
+                                value=True,
+                                label='',
+                                interactive=True,
+                                visible=True,
+                                scale=0
+                            )
+                            txt = gr.Textbox(
+                                elem_id=f'block_text_{i}',
+                                lines=18,
+                                max_lines=18,
+                                show_label=False,
+                                container=False,
+                                interactive=True
+                            )
+                            block_components.append((acc, keep, txt))
+
+                with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
+                    gr_blocks_cancel_btn = gr.Button('🡄', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
+                    gr_blocks_confirm_btn = gr.Button('🡆', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
+
+            blocks_components_flat = [comp for triplet in block_components for comp in triplet]
+            blocks_keeps = [c[1] for c in block_components]
+            blocks_texts = [c[2] for c in block_components]
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
@@ -668,29 +755,24 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
             )
 
-            gr_blocks_page = gr.State(0)
-            gr_blocks_data = gr.State([])
-            gr_blocks_keep = gr.State({})
-            gr_blocks_text = gr.State({})
-            gr_blocks_open = gr.State({})
-            gr_blocks_panel = gr.Column(visible=False)
-            with gr_blocks_panel:
-                gr_blocks_nav = gr.Row(elem_id='gr_blocks_nav')
-                with gr_blocks_nav:
-                    gr_blocks_prev = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
-                    gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
-                    gr_blocks_next = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
-                gr_blocks_cancel = gr.Button('✖', variant='stop')
-                gr_blocks_continue = gr.Button('✔', variant='primary')
-
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
-            gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-            gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='✖', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
-            gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='✔', variant='primary', visible=True, scale=0, size='sm', min_width=0)
-            gr_session_update = gr.State(value={'hash': None})
+            gr_data_field_hidden = gr.Textbox(elem_id='gr_data_field_hidden', visible=False)
+            
+            gr_deletion_cancel_btn = gr.Button(elem_id='gr_deletion_cancel_btn', elem_classes=['hide-elem'], value='🡄', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
+            gr_deletion_confirm_btn = gr.Button(elem_id='gr_deletion_confirm_btn', elem_classes=['hide-elem'], value='🡆', variant='primary', visible=True, scale=0, size='sm', min_width=0)
+            
+            gr_override_cancel_btn = gr.Button(elem_id='gr_override_cancel_btn', elem_classes=['hide-elem'], value='🡄', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
+            gr_override_confirm_btn = gr.Button(elem_id='gr_override_confirm_btn', elem_classes=['hide-elem'], value='🡆', variant='primary', visible=True, scale=0, size='sm', min_width=0)
+            
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
+            gr_session_update = gr.State({'hash': None})
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
+            
+            gr_override_event = gr.Number(value=0, visible=False, precision=0)
+            gr_blocks_event = gr.Number(value=0, visible=False, precision=0)
+            
+            ############## End of Gradio Components creation
 
             def disable_components()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(12)])
@@ -699,8 +781,9 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    outputs = tuple([gr.update(interactive=True) for _ in range(12)])
-                    return outputs
+                    if session['status'] not in [status_tags['BLOCKS']]:
+                        outputs = tuple([gr.update(interactive=True) for _ in range(12)])
+                        return outputs
                 outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
                 
@@ -748,20 +831,20 @@ def build_interface(args:dict)->gr.Blocks:
                 return f'''
                 <div id="custom-gr_modal" class="gr-modal">
                     <div class="gr-modal-content">
-                        <p style="color:#ffffff">{msg[:70]}...</p>            
-                        {show_confirm_buttons(type)}
+                        <p style="color:#ffffff">{msg}</p>            
+                        {show_gr_modal_buttons(type)}
                     </div>
                 </div>
                 '''
 
-            def show_confirm_buttons(mode:str)->str:
-                if mode in ['confirm_deletion']:
-                    button_yes = f'#gr_{mode}_yes_btn'
-                    button_no = f'#gr_{mode}_no_btn'
+            def show_gr_modal_buttons(type:str)->str:
+                if type in [status_tags['DELETION'], status_tags['OVERRIDE']]:
+                    cancel_btn = f'#gr_{type}_cancel_btn'
+                    confirm_btn = f'#gr_{type}_confirm_btn'
                     return f'''
                     <div class="confirm-buttons">
-                        <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{button_no}').click()">⨉</button>
-                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{button_yes}').click()">✔</button>
+                        <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{cancel_btn}').click()">✖</button>
+                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{confirm_btn}').click()">✔</button>
                     </div>
                     '''
                 else:
@@ -814,13 +897,12 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
 
             def is_valid_gradio_cache(path):
-                gradio_cache_root = os.path.normpath(os.path.join(tmp_dir, 'gradio'))
                 if not path or not os.path.isfile(path):
                     return False
                 path = os.path.normpath(path)
                 parent = os.path.dirname(path)
                 return (
-                    parent.startswith(gradio_cache_root) and
+                    parent.startswith(gradio_cache_dir) and
                     len(os.path.basename(parent)) >= 32
                 )
 
@@ -860,7 +942,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return (
                             gr.update(value=session['ebook']),
                             gr.update(value=session['ebook_mode']),
-                            gr.update(value=bool(session['chapters_preview'])),
+                            gr.update(value=bool(session['blocks_preview'])),
                             gr.update(value=session['device']),
                             gr.update(value=session['language']),
                             update_gr_voice_list(session_id),
@@ -894,11 +976,23 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    return (
-                        gr.update(interactive=False), gr.update(value=session['ebook']), gr.update(value=session['device']), update_gr_audiobook_list(session_id), 
-                        gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(session_id), gr.update(value='')
-                    )
-                outputs = tuple([gr.update() for _ in range(8)])
+                    if session['status'] not in [status_tags['BLOCKS']]:
+                        visible_main = True
+                        visible_xtts = False
+                        visible_bark = False
+                        interactive_convert_btn = True if session['ebook'] else False
+                        if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                            visible_xtts = visible_gr_tab_xtts_params
+                        elif session['tts_engine'] == TTS_ENGINES['BARK']:
+                            visible_bark = visible_gr_tab_bark_params
+                        return (
+                            gr.update(value='', visible=False), gr.update(visible=visible_main),
+                            gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
+                            gr.update(interactive=interactive_convert_btn), gr.update(value=session['ebook']), gr.update(value=session['device']), 
+                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
+                            update_gr_voice_list(session_id), gr.update(value='')
+                        )
+                outputs = tuple([gr.update() for _ in range(11)])
                 return outputs
 
             def change_gr_audiobook_list(selected:str|None, session_id:str)->dict:
@@ -960,17 +1054,17 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, None)
                     gr.update()
 
-            def change_gr_ebook_file(data:str|None, session_id:str)->tuple:
+            def change_gr_ebook_file(data:any, session_id:str)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['ebook'] = None
                         session['ebook_list'] = None
                         if data is None:
-                            if session.get("status") == "converting":
+                            if session.get('status', None) == status_tags['CONVERTING']:
                                 session['cancellation_requested'] = True
-                                msg = "Cancellation requested, please wait..."
-                                yield gr.update(value=show_gr_modal("wait", msg), visible=True)
+                                msg = 'Cancellation requested, please wait...'
+                                yield gr.update(value=show_gr_modal('wait', msg), visible=True)
                                 return
                         if isinstance(data, list):
                             ebook_list = []
@@ -981,11 +1075,10 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ebook'] = data
                         session['cancellation_requested'] = False
-                        return gr.update(value='', visible=False)
                 except Exception as e:
                     error = f'change_gr_ebook_file(): {e}'
                     alert_exception(error, session_id)
-                return gr.update(value='', visible=False)
+                return gr.update()
 
             def change_gr_ebook_mode(val:str, session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -1063,34 +1156,34 @@ def build_interface(args:dict)->gr.Blocks:
                             if is_builtin and is_in_builtin:
                                 error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                                 show_alert({"type": "warning", "msg": error})
-                                return gr.update(), gr.update(visible=False)
+                                return gr.update(visible=False), gr.update()
                             if is_in_models:
                                 error = f'Voice file {speaker} is a voice of one of your custom model and cannot be deleted.'
                                 show_alert({"type": "warning", "msg": error})
-                                return gr.update(), gr.update(visible=False)                          
+                                return gr.update(visible=False), gr.update()                          
                             try:
                                 selected_path = Path(selected).resolve()
                                 parent_path = Path(session['voice_dir']).parent.resolve()
                                 if parent_path in selected_path.parents:
                                     msg = f'Are you sure to delete {speaker}...'
                                     return (
-                                        gr.update(value='confirm_voice_del'),
-                                        gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                                        gr.update(value=show_gr_modal(status_tags['DELETION'], msg), visible=True),
+                                        gr.update(value='confirm_voice_del')
                                     )
                                 else:
                                     error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
                                     show_alert({"type": "warning", "msg": error})
-                                    return gr.update(), gr.update(visible=False)
+                                    return gr.update(visible=False), gr.update()
                             except Exception as e:
                                 error = f'Could not delete the voice file {selected}!\n{e}'
                                 alert_exception(error, session_id)
-                                return gr.update(), gr.update(visible=False)
+                                return gr.update(visible=False), gr.update()
                     # Fallback/default return if not selected or after errors
-                    return gr.update(), gr.update(visible=False)
+                    return gr.update(visible=False), gr.update()
                 except Exception as e:
                     error = f'click_gr_voice_del_btn(): {e}'
                     alert_exception(error, session_id)
-                    return gr.update(), gr.update(visible=False)
+                    return gr.update(visible=False), gr.update()
 
             def click_gr_custom_model_del_btn(selected:str, session_id:str)->tuple:
                 try:
@@ -1099,11 +1192,11 @@ def build_interface(args:dict)->gr.Blocks:
                         if session and session.get('id', False):
                             selected_name = os.path.basename(selected)
                             msg = f'Are you sure to delete {selected_name}...'
-                            return gr.update(value='confirm_custom_model_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                            return gr.update(value=show_gr_modal(status_tags['DELETION'], msg), visible=True), gr.update(value='confirm_custom_model_del')
                 except Exception as e:
                     error = f'Could not delete the custom model {selected_name}!'
                     alert_exception(error, session_id)
-                return gr.update(), gr.update(visible=False)
+                return gr.update(visible=False), gr.update()
 
             def click_gr_audiobook_del_btn(selected:str, session_id:str)->tuple:
                 try:
@@ -1112,13 +1205,13 @@ def build_interface(args:dict)->gr.Blocks:
                         if session and session.get('id', False):
                             selected_name = Path(selected).stem
                             msg = f'Are you sure to delete {selected_name}...'
-                            return gr.update(value='confirm_audiobook_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
+                            return gr.update(value=show_gr_modal(status_tags['DELETION'], msg), visible=True), gr.update(value='confirm_audiobook_del')
                 except Exception as e:
                     error = f'Could not delete the audiobook {selected_name}!'
                     alert_exception(error, session_id)
-                return gr.update(), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(visible=False), gr.update()
 
-            def confirm_deletion(voice_path:str, custom_model:str, audiobook:str, session_id:str, method:str|None=None)->tuple:
+            def click_gr_deletion(session_id:str, voice_path:str, custom_model:str, audiobook:str, method:str|None=None)->tuple:
                 try:
                     nonlocal models
                     if method is not None:
@@ -1135,7 +1228,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                                 session['voice'] = None
                                 show_alert({"type": "warning", "msg": msg})
-                                return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(session_id)
+                                return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                             elif method == 'confirm_custom_model_del':
                                 selected_name = os.path.basename(custom_model)
                                 shutil.rmtree(custom_model, ignore_errors=True)                           
@@ -1145,7 +1238,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         session['voice'] = models[session['fine_tuned']]['voice']
                                 session['custom_model'] = None
                                 show_alert({"type": "warning", "msg": msg})
-                                return update_gr_custom_model_list(session_id), gr.update(), gr.update(value='', visible=False), gr.update()
+                                return gr.update(value='', visible=False), update_gr_custom_model_list(session_id), gr.update(),  gr.update()
                             elif method == 'confirm_audiobook_del':
                                 selected_name = Path(audiobook).stem
                                 if os.path.isdir(audiobook):
@@ -1160,11 +1253,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 msg = f'Audiobook {selected_name} deleted!'
                                 session['audiobook'] = None
                                 show_alert({"type": "warning", "msg": msg})
-                                return gr.update(), update_gr_audiobook_list(session_id), gr.update(value='', visible=False), gr.update()
+                                return gr.update(value='', visible=False), gr.update(), update_gr_audiobook_list(session_id), gr.update()
                 except Exception as e:
-                    error = f'confirm_deletion(): {e}!'
+                    error = f'click_gr_deletion(): {e}!'
                     alert_exception(error, session_id)
-                return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
+                return  gr.update(value='', visible=False), gr.update(), gr.update(), gr.update()
 
             def update_gr_voice_list(session_id:str)->dict:
                 try:
@@ -1204,7 +1297,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
                                 ]
                         voice_options = builtin_options + eng_options + bark_options
-                        session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                        session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
                         os.makedirs(session['voice_dir'], exist_ok=True)
                         if session['voice_dir'] is not None:
                             session_voice_dir = Path(session['voice_dir'])
@@ -1483,7 +1576,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session[key] = val
                     state = {}
-                    if key == "chapters_preview":
+                    if key == "blocks_preview":
                         msg = 'Chapters preview feature will be available to the next version'   
                         state['type'] = 'info'
                         state['msg'] = msg
@@ -1503,8 +1596,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 state['msg'] = error
                                 show_alert(state)
 
-            def submit_convert_btn(
-                    session_id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
+            def start_conversion(
+                    session_id:str, device:str, ebook_file:str, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
@@ -1515,12 +1608,11 @@ def build_interface(args:dict)->gr.Blocks:
                             "id": session_id,
                             "is_gui_process": session['is_gui_process'],
                             "script_mode": script_mode,
-                            "chapters_preview": chapters_preview,
+                            "blocks_preview": blocks_preview,
                             "device": device,
                             "tts_engine": tts_engine,
                             "ebook": ebook_file if isinstance(ebook_file, str) else None,
                             "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
-                            "audiobooks_dir": session['audiobooks_dir'],
                             "voice": voice,
                             "language": language,
                             "custom_model": custom_model,
@@ -1539,7 +1631,6 @@ def build_interface(args:dict)->gr.Blocks:
                             "bark_waveform_temp": float(bark_waveform_temp),
                             "output_split": bool(output_split),
                             "output_split_hours": output_split_hours,
-                            "event": None
                         }
                         error = None
                         if args['ebook'] is None and args['ebook_list'] is None:
@@ -1549,10 +1640,9 @@ def build_interface(args:dict)->gr.Blocks:
                             error = 'Error: num beams must be greater or equal than length penalty.'
                             show_alert({"type": "warning", "msg": error})                   
                         else:
-                            session['status'] = 'converting'
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
-                                args['chapters_preview'] = None
+                                args['blocks_preview'] = None
                                 ebook_list = args['ebook_list'][:]
                                 for file in ebook_list:
                                     if any(file.endswith(ext) for ext in ebook_formats):
@@ -1560,7 +1650,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         args['ebook'] = file
                                         progress_status, passed = convert_ebook(args)
                                         if passed is False:
-                                            if session['status'] == 'converting':
+                                            if session['status'] == status_tags['CONVERTING']:
                                                 error = 'Conversion cancelled.'
                                                 break
                                             else:
@@ -1578,41 +1668,34 @@ def build_interface(args:dict)->gr.Blocks:
                                                 msg = 'Conversion successful!'
                                                 session['ebook'] = None
                                                 session['ebook_list'] = None
-                                                session['status'] = 'ready'
                                                 return gr.update(value=msg)
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                                 progress_status, passed = convert_ebook(args)
                                 if passed is False:
-                                    if session['status'] == 'converting':
-                                        error = 'Conversion cancelled.'
-                                    else:
-                                        error = 'Conversion failed.'
+                                    error = progress_status
                                 else:
-                                    if progress_status == confirm_blocks:
+                                    if progress_status == status_tags['BLOCKS']:
                                         session['status'] = progress_status
-                                        msg = 'Select the blocks to convert'
-                                        print(msg)
-                                        return gr.update(value=msg)
+                                        return gr.update(value=session['status'])
                                     else:
-                                        show_alert({"type": "success", "msg": progress_status})
+                                        msg = progress_status
+                                        print(msg)
                                         reset_session(args['id'])
                                         session['ebook'] = None
-                                        session['status'] = 'ready'
-                                        msg = 'Conversion successful!'
+                                        show_alert({"type": "success", "msg": msg})
                                         return gr.update(value=msg)
                         if error is not None:
                             show_alert({"type": "warning", "msg": error})
-                        session['status'] = 'ready'
+                        return gr.update(error)
                 except Exception as e:
-                    error = f'submit_convert_btn(): {e}'
+                    error = f'start_conversion(): {e}'
                     alert_exception(error, session_id)
-                    session['status'] = 'ready'
                 return gr.update()
 
             def update_gr_audiobook_list(session_id:str)->dict:
+                nonlocal audiobook_options
                 try:
-                    nonlocal audiobook_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session['audiobooks_dir'] is not None:
@@ -1642,81 +1725,103 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)              
                 return gr.update()
 
-            @gr.render(inputs=[gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text, gr_blocks_open])
-            def render_blocks(blocks:list[str], page:int, keep_map:dict[int,bool], text_map:dict[int,str], open_map:dict[int,bool])->None:
-                start = page * page_size
+            def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
+                    audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{session['output_format']}")
+                    if os.path.exists(final_file) or audio_sentences_exist:
+                        msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
+                        return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
+                return gr.update(), event + 1
+
+            def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    new_blocks = collect_page(page, blocks, *args)
+                    session['blocks_edit'] = new_blocks
+                    session['status'] = status_tags['READY']
+                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
+
+            def populate_page(page:int, blocks:list[dict])->tuple:
+                start = int(page) * page_size
+                updates = []
+                for i in range(page_size):
+                    idx = start + i
+                    if idx < len(blocks):
+                        b = blocks[idx]
+                        updates.append(gr.update(label=f'Block {idx}', visible=True, open=b['expand']))
+                        updates.append(gr.update(value=b['keep']))
+                        updates.append(gr.update(value=b['text']))
+                    else:
+                        updates.append(gr.update(visible=False))
+                        updates.append(gr.update())
+                        updates.append(gr.update())
                 end = min(start + page_size, len(blocks))
-                with gr.Column():
-                    for i in range(start, end):
-                        with gr.Accordion(f'Block {i}', open=open_map.get(i, False)) as acc:
-                            acc.expand(
-                                lambda idx=i, m=open_map: {**m, idx: True},
-                                outputs=gr_blocks_open
-                            )
-                            acc.collapse(
-                                lambda idx=i, m=open_map: {**m, idx: False},
-                                outputs=gr_blocks_open
-                            )
-                            keep = gr.Checkbox(
-                                value=keep_map.get(i, True),
-                                label='Keep block',
-                                interactive=True
-                            )
-                            txt = gr.Textbox(
-                                value=text_map.get(i, blocks[i]),
-                                lines=18,
-                                max_lines=18,
-                                show_label=False,
-                                container=False,
-                                interactive=True
-                            )
+                header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
+                return (*updates, header)
 
-            def save_page_state(blocks:list[str], page:int, keep_map:bool, text_map:str, *values):
-                start = page * page_size
-                index = 0
-                for i in range(start, min(start + page_size, len(blocks))):
-                    keep_map[i] = values[index]
-                    text_map[i] = values[index + 1]
-                    index += 2
-                return keep_map, text_map
+            def collect_page(page:int, blocks:list[dict], *args)->list[dict]:
+                keeps = args[:page_size]
+                texts = args[page_size:]
+                new_blocks = [dict(b) for b in blocks]
+                start = int(page) * page_size
+                for i in range(page_size):
+                    idx = start + i
+                    if idx < len(new_blocks):
+                        new_blocks[idx] = {"expand": new_blocks[idx]['expand'], "keep": keeps[i], "text": texts[i]}
+                return new_blocks
 
-            def prev_page(page:int)->int:
-                new_page = max(page - 1, 0)
-                return new_page, gr.update(visible=new_page > 0), gr.update(visible=True)
+            def navigate(page:int, blocks:list[dict], direction:int, *args)->tuple:
+                new_blocks = collect_page(page, blocks, *args)
+                max_page = max((len(new_blocks) - 1) // page_size, 0)
+                new_page = max(0, min(int(page) + direction, max_page))
+                return (
+                    new_blocks, new_page,
+                    gr.update(visible=new_page > 0),
+                    gr.update(visible=new_page < max_page)
+                )
 
-            def next_page(page:int, blocks:list[str])->int:
-                max_page = (len(blocks) - 1) // page_size
-                new_page = min(page + 1, max_page)
-                return new_page, gr.update(visible=new_page < max_page), gr.update(visible=True)
-
-            def update_blocks_header(page:int, blocks:list[str])->str:
-                start = page * page_size
+            def update_blocks_header(page:int, blocks:list[dict])->str:
+                start = int(page) * page_size
                 end = min(start + page_size, len(blocks))
-                if not blocks:
-                    return ''
-                return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks) - 1}')
+                return gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
 
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
-                if session and session['status'] == confirm_blocks:
-                    return (
-                        gr.update(visible=True), update_blocks_header(0, session['blocks']), session['blocks'], 0, {}, {},
-                        gr.update(visible=False), gr.update(visible=len(session['blocks']) > page_size)
+                if session and session['status'] in [status_tags['BLOCKS']]:
+                    visible_main = False
+                    visible_blocks = True
+                    if session['cancellation_requested']:
+                        visible_main = True
+                        visible_blocks = False
+                    ebook_name = Path(session['ebook']).stem
+                    blocks = session['blocks_edit']
+                    page = 0
+                    page_updates = list(populate_page(page, blocks))
+                    result = (
+                        gr.update(value=ebook_name),
+                        gr.update(visible=visible_main), gr.update(visible=visible_blocks),
+                        blocks, page,
+                        gr.update(visible=False),
+                        gr.update(visible=len(blocks) > page_size),
+                        *page_updates
                     )
-                return tuple(gr.update(visible=False) for _ in range(8))
+                    return result
+                n = len(blocks_components_flat) + 1
+                return tuple(gr.update() for _ in range(7 + n))
 
-            def cancel_blocks(session_id:str)->tuple:
+            def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session["status"] = 'ready'
-                return gr.update(visible=False), [], 0, {}, {}
-
-            def continue_blocks(blocks:list[str], keep_map:dict[int,bool], text_map:dict[int,str])->list[str]:
-                new_blocks = []
-                for i, block in enumerate(blocks):
-                    if keep_map.get(i, True):
-                        new_blocks.append(text_map.get(i, block))
-                return new_blocks
+                    kept = [b['text'].strip() for b in blocks if b['keep'] and b['text'].strip()]
+                    if not kept:
+                        gr.Warning('At least one block must be kept.')
+                        return gr.update(), gr.update(), gr.update()
+                    session['blocks_edit'] = [{"expand": False, "keep": True, "text": t} for t in kept]
+                    session['status'] = status_tags['CONVERTING']
+                    return gr.update(visible=True), gr.update(visible=False), event + 1
+                return gr.update(), gr.update(), gr.update()
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -1758,10 +1863,10 @@ def build_interface(args:dict)->gr.Blocks:
                     if isinstance(session.get('audiobook'), str):
                         if not os.path.exists(session['audiobook']):
                             session['audiobook'] = None
-                    if session['status'] == 'converting':
-                        session['status'] = 'ready'
+                    if session['status'] == status_tags['CONVERTING']:
+                        session['status'] = status_tags['READY']
                     session['is_gui_process'] = is_gui_process
-                    session['system'] = sys.platform
+                    session['system'] = DEVICE_SYSTEM
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -1795,7 +1900,7 @@ def build_interface(args:dict)->gr.Blocks:
                         yield gr.update(), gr.update(), gr.update()
                         return
                     previous_hash = state.get("hash")
-                    if session.get("status") == "converting":
+                    if session.get('status', None) == status_tags['CONVERTING']:
                         try:
                             if session.get('ticker') != len(audiobook_options):
                                 session['ticker'] = len(audiobook_options)
@@ -1834,13 +1939,50 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'update_gr_save_session(): {e}!'
                     alert_exception(error, session_id)
                     yield gr.update(), gr.update(value=e), gr.update()
-            
-            def clear_event(session_id:str)->None:
-                if session_id:
-                    session = context.get_session(session_id)
-                    if session and session.get('id', False):
-                        session['event'] = None
 
+            ################## Events
+
+            inputs_start_conversion = [
+                gr_session, gr_device, gr_ebook_file, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
+                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
+                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
+                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
+            ]
+            outputs_enable_components = [
+                gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+            ]
+            outputs_disable_components = [
+                gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+            ]
+            outputs_edit_blocks = [
+                gr_blocks_markdown, gr_group_main, gr_group_blocks,
+                gr_blocks_data, gr_blocks_page,
+                gr_blocks_previous_btn, gr_blocks_next_btn,
+                *blocks_components_flat, gr_blocks_header
+            ]
+            outputs_restore_interface = [
+                gr_ebook_file, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
+                gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
+                gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model
+            ]
+            outputs_refresh_interface = [
+                gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
+                gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player,
+                gr_voice_list, gr_progress
+            ]
+            outputs_on_voice_upload = [
+                gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list,
+                gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list,
+                gr_convert_btn, gr_voice_play, gr_voice_del_btn
+            ]
+            outputs_on_custom_upload = [
+                gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list,
+                gr_fine_tuned_list, gr_voice_file, gr_convert_btn, gr_custom_model_del_btn
+            ]
             gr_ebook_file.change(
                 fn=change_convert_btn,
                 inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
@@ -1853,17 +1995,17 @@ def build_interface(args:dict)->gr.Blocks:
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
                 inputs=[gr_ebook_mode, gr_session],
-                outputs=[gr_ebook_file, gr_chapters_preview]
+                outputs=[gr_ebook_file, gr_blocks_preview]
             )
-            gr_chapters_preview.select(
-                fn=lambda val, session_id: change_param('chapters_preview', bool(val), session_id),
-                inputs=[gr_chapters_preview, gr_session],
+            gr_blocks_preview.select(
+                fn=lambda val, session_id: change_param('blocks_preview', bool(val), session_id),
+                inputs=[gr_blocks_preview, gr_session],
                 outputs=None
             )
             gr_voice_file.upload(
                 fn=disable_on_voice_upload,
                 inputs=None,
-                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_convert_btn, gr_voice_play, gr_voice_del_btn]
+                outputs=outputs_on_voice_upload
             ).then(
                 fn=change_gr_voice_file,
                 inputs=[gr_voice_file, gr_session],
@@ -1875,7 +2017,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_on_voice_upload,
                 inputs=[gr_session],
-                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_convert_btn, gr_voice_play, gr_voice_del_btn]
+                outputs=outputs_on_voice_upload
             )
             gr_voice_list.change(
                 fn=change_gr_voice_list,
@@ -1885,7 +2027,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_voice_del_btn.click(
                 fn=click_gr_voice_del_btn,
                 inputs=[gr_voice_list, gr_session],
-                outputs=[gr_confirm_deletion_field_hidden, gr_modal]
+                outputs=[gr_modal, gr_data_field_hidden]
             )
             gr_device.change(
                 fn=change_gr_device,
@@ -1922,7 +2064,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_file.upload(
                 fn=disable_on_custom_upload,
                 inputs=None,
-                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_voice_file, gr_convert_btn, gr_custom_model_del_btn]
+                outputs=outputs_on_custom_upload
             ).then(
                 fn=change_gr_custom_model_file,
                 inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
@@ -1935,7 +2077,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_on_custom_upload,
                 inputs=[gr_session],
-                outputs=[gr_ebook_file, gr_ebook_mode, gr_language, gr_tts_engine_list, gr_fine_tuned_list, gr_voice_file, gr_convert_btn, gr_custom_model_del_btn]
+                outputs=outputs_on_custom_upload
             )
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
@@ -1945,7 +2087,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_del_btn.click(
                 fn=click_gr_custom_model_del_btn,
                 inputs=[gr_custom_model_list, gr_session],
-                outputs=[gr_confirm_deletion_field_hidden, gr_modal]
+                outputs=[gr_modal, gr_data_field_hidden]
             )
             gr_output_format_list.change(
                 fn=change_gr_output_format_list,
@@ -2041,7 +2183,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_audiobook_del_btn.click(
                 fn=click_gr_audiobook_del_btn,
                 inputs=[gr_audiobook_list, gr_session],
-                outputs=[gr_confirm_deletion_field_hidden, gr_modal]
+                outputs=[gr_modal, gr_data_field_hidden]
             )
             ########### XTTSv2 Params
             gr_tab_xtts_params.select(
@@ -2139,43 +2281,95 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_save_session,
                 inputs=[gr_session, gr_session_update],
                 outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
-            ).then(
-                fn=clear_event,
-                inputs=[gr_session],
-                outputs=None
             )
             gr_convert_btn.click(
-                fn=change_convert_btn,
+                fn=check_override_audiobook,
+                inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
+                outputs=[gr_modal, gr_override_event]
+            )
+            gr_override_confirm_btn.click(
+                fn=lambda event: (gr.update(value='', visible=False), event + 1),
+                inputs=[gr_override_event],
+                outputs=[gr_modal, gr_override_event]
+            )
+            gr_override_cancel_btn.click(
+                fn=lambda: gr.update(value='', visible=False),
                 inputs=None,
+                outputs=[gr_modal]
+            )
+            gr_override_event.change(
+                fn=lambda event: gr.update(interactive=False),
+                inputs=[gr_override_event],
                 outputs=[gr_convert_btn]
             ).then(
                 fn=disable_components,
                 inputs=None,
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=outputs_disable_components
             ).then(
-                fn=submit_convert_btn,
-                inputs=[
-                    gr_session, gr_device, gr_ebook_file, gr_chapters_preview, gr_tts_engine_list, gr_language, gr_voice_list,
-                    gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                    gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                    gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
-                ],
+                fn=start_conversion,
+                inputs=inputs_start_conversion,
                 outputs=[gr_progress]
             ).then(
                 fn=edit_blocks,
                 inputs=[gr_session],
-                outputs=[
-                    gr_blocks_panel, gr_blocks_header, gr_blocks_data, gr_blocks_page, gr_blocks_keep,
-                    gr_blocks_text, gr_blocks_prev, gr_blocks_next
-                ]
+                outputs=outputs_edit_blocks
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
+                outputs=outputs_enable_components
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+                outputs=outputs_refresh_interface
+            )
+            gr_blocks_previous_btn.click(
+                fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
+            ).then(
+                fn=populate_page,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[*blocks_components_flat, gr_blocks_header]
+            )
+            gr_blocks_next_btn.click(
+                fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
+            ).then(
+                fn=populate_page,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=[*blocks_components_flat, gr_blocks_header]
+            )
+            gr_blocks_cancel_btn.click(
+                fn=click_gr_blocks_cancel_btn,
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data]
+            ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=outputs_enable_components
+            )
+            gr_blocks_confirm_btn.click(
+                fn=lambda page, blocks, *args: collect_page(page, blocks, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data]
+            ).then(
+                fn=click_gr_blocks_confirm_btn,
+                inputs=[gr_session, gr_blocks_data, gr_blocks_event],
+                outputs=[gr_group_main, gr_group_blocks, gr_blocks_event]
+            )
+            gr_blocks_event.change(
+                fn=finalize_audiobook,
+                inputs=[gr_session],
+                outputs=[gr_progress]
+            ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=outputs_enable_components          
+            ).then(
+                fn=refresh_interface,
+                inputs=[gr_session],
+                outputs=outputs_refresh_interface
             )
             gr_save_session.change(
                 fn=None,
@@ -2202,11 +2396,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=restore_interface,
                 inputs=[gr_session],
-                outputs=[
-                    gr_ebook_file, gr_ebook_mode, gr_chapters_preview, gr_device, gr_language, gr_voice_list,
-                    gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                    gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model
-                ]
+                outputs=outputs_restore_interface
             ).then(
                 fn=restore_audiobook_player,
                 inputs=[gr_audiobook_list],
@@ -2222,55 +2412,15 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 js='()=>{init_interface();}'
             )
-            gr_confirm_deletion_yes_btn.click(
-                fn=confirm_deletion,
-                inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_deletion_field_hidden],
-                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+            gr_deletion_confirm_btn.click(
+                fn=click_gr_deletion,
+                inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_data_field_hidden],
+                outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
             )
-            gr_confirm_deletion_no_btn.click(
-                fn=confirm_deletion,
-                inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-                outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
-            )
-            gr_blocks_prev.click(
-                fn=prev_page,
-                inputs=[gr_blocks_page],
-                outputs=[gr_blocks_page, gr_blocks_prev, gr_blocks_next]
-            ).then(
-                fn=update_blocks_header,
-                inputs=[gr_blocks_page, gr_blocks_data],
-                outputs=[gr_blocks_header]
-            )
-            gr_blocks_next.click(
-                fn=next_page,
-                inputs=[gr_blocks_page,gr_blocks_data],
-                outputs=[gr_blocks_page, gr_blocks_next, gr_blocks_prev]
-            ).then(
-                fn=update_blocks_header,
-                inputs=[gr_blocks_page, gr_blocks_data],
-                outputs=[gr_blocks_header]
-            )
-            gr_blocks_cancel.click(
-                fn=cancel_blocks,
-                inputs=[gr_session],
-                outputs=[gr_blocks_panel, gr_blocks_data, gr_blocks_page, gr_blocks_keep, gr_blocks_text]
-            )
-            gr_blocks_continue.click(
-                fn=continue_blocks,
-                inputs=[gr_blocks_data, gr_blocks_keep, gr_blocks_text],
-                outputs=[gr_blocks_data]
-            ).then(
-                fn=finalize_audiobook,
-                inputs=[gr_session, gr_blocks_data],
-                outputs=[gr_progress]
-            ).then(
-                fn=enable_components,
-                inputs=[gr_session],
-                outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list, gr_output_channel_list]
-            ).then(
-                fn=refresh_interface,
-                inputs=[gr_session],
-                outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+            gr_deletion_cancel_btn.click(
+                fn=click_gr_deletion,
+                inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list],
+                outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
             )
             ############
             app.load(
@@ -2385,37 +2535,33 @@ def build_interface(args:dict)->gr.Blocks:
                                     }
                                 };
                             }
+                            if(typeof(window._restoreSlider) !== "function"){
+                                window._restoreSlider = (slider, parseFn = parseFloat)=>{
+                                    if(!slider) return;
+                                    const container = slider.closest("div[id]");
+                                    if(!container) return;
+                                    const key = container.id.replace(/^gr_/, "");
+                                    const saved = window.session_storage?.[key];
+                                    if(saved === undefined || saved === null || saved === ""){
+                                        return;
+                                    }
+                                    const parsed = parseFn(saved);
+                                    if(!Number.isFinite(parsed)){
+                                        return;
+                                    }
+                                    slider.value = parsed;
+                                    slider.dispatchEvent(new Event("input", { bubbles: true }));
+                                };
+                            }
                             if(typeof(window.init_xtts_sliders) !== "function"){
                                 window.init_xtts_sliders = ()=>{
                                     try{
-                                        const gr_xtts_temperature           = gr_root.querySelector("#gr_xtts_temperature input[type=number]");
-                                        const gr_xtts_repetition_penalty    = gr_root.querySelector("#gr_xtts_repetition_penalty input[type=number]");
-                                        const gr_xtts_top_k                 = gr_root.querySelector("#gr_xtts_top_k input[type=number]");
-                                        const gr_xtts_top_p                 = gr_root.querySelector("#gr_xtts_top_p input[type=number]");
-                                        const gr_xtts_speed                 = gr_root.querySelector("#gr_xtts_speed input[type=number]");
-                                        const sliders = [
-                                            gr_xtts_temperature,
-                                            gr_xtts_repetition_penalty,
-                                            gr_xtts_top_k,
-                                            gr_xtts_top_p,
-                                            gr_xtts_speed
-                                        ];
-                                        sliders.forEach(slider => {
-                                            if(!slider) return;
-                                            const container = slider.closest("div[id]");
-                                            if(!container) return;
-                                            const key = container.id.replace(/^gr_/, "");
-                                            const saved = window.session_storage?.[key];
-                                            if(saved === undefined || saved === null || saved === ""){
-                                                return;
-                                            }
-                                            const parsed = (slider === gr_xtts_top_k) ? parseInt(saved, 10) : parseFloat(saved);
-                                            if(!Number.isFinite(parsed)){
-                                                return;
-                                            }
-                                            slider.value = parsed;
-                                            slider.dispatchEvent(new Event("input", { bubbles: true }));
-                                        });
+                                        const q = (id) => gr_root.querySelector(`#gr_${id} input[type=number]`);
+                                        window._restoreSlider(q("xtts_temperature"));
+                                        window._restoreSlider(q("xtts_repetition_penalty"));
+                                        window._restoreSlider(q("xtts_top_k"), (v) => parseInt(v, 10));
+                                        window._restoreSlider(q("xtts_top_p"));
+                                        window._restoreSlider(q("xtts_speed"));
                                     }catch(e){
                                         console.warn("init_xtts_sliders error:", e);
                                     }
@@ -2424,28 +2570,9 @@ def build_interface(args:dict)->gr.Blocks:
                             if(typeof(window.init_bark_sliders) !== "function"){
                                 window.init_bark_sliders = ()=>{
                                     try{
-                                        const gr_bark_text_temp_slider       = gr_root.querySelector("#gr_bark_text_temp input[type=number]");
-                                        const gr_bark_waveform_temp_slider   = gr_root.querySelector("#gr_bark_waveform_temp input[type=number]");
-                                        const sliders = [
-                                            gr_bark_text_temp_slider,
-                                            gr_bark_waveform_temp_slider
-                                        ];
-                                        sliders.forEach(slider => {
-                                            if(!slider) return;
-                                            const container = slider.closest("div[id]");
-                                            if(!container) return;
-                                            const key = container.id.replace(/^gr_/, "");
-                                            const saved = window.session_storage?.[key];
-                                            if(saved === undefined || saved === null || saved === ""){
-                                                return;
-                                            }
-                                            const parsed = parseFloat(saved);
-                                            if(!Number.isFinite(parsed)){
-                                                return;
-                                            }
-                                            slider.value = parsed;
-                                            slider.dispatchEvent(new Event("input", { bubbles: true }));
-                                        });
+                                        const q = (id) => gr_root.querySelector(`#gr_${id} input[type=number]`);
+                                        window._restoreSlider(q("bark_text_temp"));
+                                        window._restoreSlider(q("bark_waveform_temp"));
                                     }catch(e){
                                         console.warn("init_bark_sliders error:", e);
                                     }

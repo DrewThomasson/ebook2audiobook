@@ -1,5 +1,13 @@
 import os, tempfile, sys, re
 
+DEVICE_SYSTEM = sys.platform
+
+systems = {
+    "LINUX": "linux",
+    "MACOS": "darwin",
+    "WINDOWS": "win32"
+}
+
 # ---------------------------------------------------------------------
 # Global configuration
 # ---------------------------------------------------------------------
@@ -8,14 +16,17 @@ max_python_version = (3,12)
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 tmp_dir = os.path.abspath('tmp')
-tempfile.tempdir = tmp_dir
-tmp_expire = 7 # days
+run_dir = os.path.abspath('run')
+gradio_cache_dir = os.path.normpath(os.path.join(run_dir, 'gradio'))
 
 models_dir = os.path.abspath('models')
 ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
+
+tempfile.tempdir = run_dir
+tmp_expire = 7 # days
 
 # ---------------------------------------------------------------------
 # Environment setup
@@ -25,10 +36,10 @@ os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['COQUI_TOS_AGREED'] = '1'
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
-os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
-os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir
-os.environ['CALIBRE_CONFIG_DIRECTORY'] = tmp_dir
-os.environ['TMPDIR'] = tmp_dir
+os.environ['CALIBRE_TEMP_DIR'] = run_dir
+os.environ['CALIBRE_CACHE_DIRECTORY'] = run_dir
+os.environ['CALIBRE_CONFIG_DIRECTORY'] = run_dir
+os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
 os.environ['DO_NOT_TRACK'] = 'True'
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
@@ -46,15 +57,16 @@ os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
-os.environ['PYTORCH_NO_CUDA_MEMORY_CACHING'] = '1'
-os.environ['TORCH_CUDA_ENABLE_CUDA_GRAPH'] = '0'
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128,garbage_collection_threshold:0.6,expandable_segments:True'
+#os.environ['PYTORCH_NO_CUDA_MEMORY_CACHING'] = '1'
+#os.environ['TORCH_CUDA_ENABLE_CUDA_GRAPH'] = '0'
+#os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128,garbage_collection_threshold:0.6,expandable_segments:True'
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'garbage_collection_threshold:0.6,expandable_segments:True'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+#os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
-if sys.platform == 'win32':
+if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
 
 # ---------------------------------------------------------------------
@@ -67,6 +79,7 @@ NATIVE = 'native'
 FULL_DOCKER = 'full_docker'
 BUILD_DOCKER = 'build_docker'
 
+workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
 debug_mode = False
 
 # ---------------------------------------------------------------------
@@ -80,12 +93,6 @@ requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 # Hardware mappings
 # ---------------------------------------------------------------------
 
-systems = {
-    "LINUX": "linux",
-    "MACOS": "darwin",
-    "WINDOWS": "win32"
-}
-
 devices = {
     "CPU": {"proc": "cpu", "found": True},
     "CUDA": {"proc": "cuda", "found": False},
@@ -96,7 +103,7 @@ devices = {
 }
 
 default_device = devices['CPU']['proc']
-default_chapters_preview = False
+default_blocks_preview = False
 
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
 

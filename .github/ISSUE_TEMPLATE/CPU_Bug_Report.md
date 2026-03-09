@@ -10,6 +10,8 @@ assignees: ''
 **BEFORE TO OPEN AN ISSUE, MAKE SURE THAT IT HASN'T ALREADY BEEN SOLVED OR REPORTED. :)**
 **Check it with the issue search field**
 
+**IMPORTANT: DON'T COPY/PASTE ANY A.I. SOLUTION OR YOUR ISSUE WILL BE IMMEDIATELY CLOSED WITHOUT NOTICE**
+
 **Operating System:**
  - Windows, Linux, MacOS
 
