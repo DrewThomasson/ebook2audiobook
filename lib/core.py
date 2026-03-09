@@ -2623,7 +2623,7 @@ def convert_ebook(args:dict)->tuple:
                 session['system'] = DEVICE_SYSTEM
                 session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
-                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format']))
+                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
