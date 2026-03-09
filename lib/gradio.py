@@ -1,9 +1,8 @@
 from lib.core import *
 
-import trace
-
-tracer = trace.Trace(count=False, trace=True)
-tracer.run('convert_ebook()')
+def tracer(frame, event, arg):
+    print(f"{event:10s} | {frame.f_code.co_name}:{frame.f_lineno}")
+    return tracer
 
 def build_interface(args:dict)->gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
@@ -1673,7 +1672,9 @@ def build_interface(args:dict)->gr.Blocks:
                                                 return gr.update(value=msg)
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
+                                sys.settrace(tracer)
                                 progress_status, passed = convert_ebook(args)
+                                sys.settrace(None)
                                 if passed is False:
                                     error = progress_status
                                 else:
