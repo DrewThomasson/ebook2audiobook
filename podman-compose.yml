@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.3.9}
+        APP_VERSION: ${APP_VERSION:-26.3.10}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
         BUILDAH_FORMAT: docker
       x-podman:
