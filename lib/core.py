@@ -379,7 +379,7 @@ def hash_proxy_dict(proxy_dict)->str:
     data_str = json.dumps(data, sort_keys=True, default=str)
     return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
-def compare_checksums(session_id:str)->str|None:
+def compare_checksums(session_id:str)->tuple[bool, str|None]:
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
@@ -2613,15 +2613,16 @@ def convert_ebook(args:dict)->tuple:
             session['output_split'] = bool(args['output_split'])
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
+            session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             ebook_name = get_sanitized(Path(session['ebook']).stem)
             cleanup_models_cache()
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + '.' + session['output_format']
+                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
                 session['system'] = DEVICE_SYSTEM
-                session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
