@@ -282,7 +282,7 @@ SML tags available:
             if args['custom_model'] is not None:
                 if os.path.exists(args['custom_model']):
                     args['custom_model'] = os.path.abspath(args['custom_model'])
-            if args['output_dir'] and not os.path.exists(args['output_dir']):
+            if args['output_dir'] is not None and not os.path.exists(args['output_dir']):
                 error = 'Error: --output_dir path does not exist.'
                 print(error)
                 sys.exit(1)                
