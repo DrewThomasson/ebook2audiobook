@@ -379,7 +379,7 @@ def hash_proxy_dict(proxy_dict)->str:
     data_str = json.dumps(data, sort_keys=True, default=str)
     return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
-def compare_checksums(session_id:str)->tuple[bool, str|None]):
+def compare_checksums(session_id:str)->tuple[bool, str|None]:
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
