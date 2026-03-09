@@ -2910,6 +2910,8 @@ def reset_session(session_id:str)->None:
         "process_id": None,
         "ticker": 0,
         "process_dir": None,
+        "chapters_dir": None,
+        "sentences_dir": None,
         "ebook": None,
         "ebook_list": None,
         "epub_path": None,
