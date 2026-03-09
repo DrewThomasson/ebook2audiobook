@@ -135,6 +135,7 @@ class SessionContext:
 
     def set_session(self, session_id:str)->Any:
         self.sessions[session_id] = self._recursive_proxy({
+            ####### Global settings
             "id": session_id,
             "session_dir": None,
             "script_mode": NATIVE,
@@ -145,6 +146,8 @@ class SessionContext:
             "status": None,
             "ticker": 0,
             "cancellation_requested": False,
+            "ebook_mode": "single",
+            "blocks_preview": default_blocks_preview,
             "device": default_device,
             "tts_engine": default_tts_engine,
             "fine_tuned": default_fine_tuned,
@@ -155,21 +158,16 @@ class SessionContext:
             "client": None,
             "language": default_language_code,
             "language_iso1": None,
-            "audiobook": None,
-            "audiobooks_dir": None,
-            "process_dir": None,
-            "ebook": None,
-            "ebook_list": None,
-            "ebook_mode": "single",
-            "blocks_preview": default_blocks_preview,
-            "chapters_dir": None,
-            "sentences_dir": None,
-            "epub_path": None,
-            "filename_noext": None,
             "voice": None,
             "voice_dir": None,
             "custom_model": None,
             "custom_model_dir": None,
+            "output_dir": None,
+            "output_format": default_output_format,
+            "output_channel": default_output_channel,
+            "output_split": default_output_split,
+            "output_split_hours": default_output_split_hours,
+            ####### Xtts settings
             "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
             #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['codec_temperature'],
             "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
@@ -182,14 +180,28 @@ class SessionContext:
             #"xtts_gpt_cond_len": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_cond_len'],
             #"xtts_gpt_batch_size": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_batch_size'],
             "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+            ####### Bark settings
             "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
+            ####### Audiobook editor
+            "audiobook": None,
+            "audiobooks_dir": None,
+            ####### Ebook conversion
+            "ebook": None,
+            "ebook_list": None,
+            "process_dir": None,
+            "chapters_dir": None,
+            "sentences_dir": None,
+            "epub_path": None,
+            "filename_noext": None,
             "final_name": None,
-            "output_dir": None,
-            "output_format": default_output_format,
-            "output_channel": default_output_channel,
-            "output_split": default_output_split,
-            "output_split_hours": default_output_split_hours,
+            "cover": None,
+            "blocks_orig": [],
+            "blocks_edit": [],
+            "chapters": [],
+            "duration": 0,
+            "playback_time": 0,
+            "playback_volume": 0,
             "metadata": {
                 "title": None, 
                 "creator": None,
@@ -207,14 +219,7 @@ class SessionContext:
                 "relation": None,
                 "Source": None,
                 "Modified": None,
-            },
-            "blocks_orig": [],
-            "blocks_edit": [],
-            "chapters": [],
-            "cover": None,
-            "duration": 0,
-            "playback_time": 0,
-            "playback_volume": 0
+            }
         }, manager=self.manager)
         return self.sessions[session_id]
 
@@ -2539,7 +2544,6 @@ def convert_ebook_batch(args:dict)->tuple:
                     if not args['is_gui_process']:
                         sys.exit(1)
                 args['ebook_list'].remove(file) 
-        reset_session(args['id'])
         return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'
@@ -2871,8 +2875,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     print(msg)
                     session['status'] = status_tags['READY']
                     if session['blocks_preview']:
-                        reset_session(session_id)
-                        session['ebook'] = None
+                        reset_ebook_session(session_id)
                         show_alert({"type": "success", "msg": progress_status})
                     return progress_status, True
                 else:
@@ -2904,19 +2907,24 @@ def cleanup_session(req:gr.Request)->None:
         session_id = context.find_id_by_hash(socket_hash)
         context_tracker.end_session(session_id, socket_hash)
 
-def reset_session(session_id:str)->None:
+def reset_ebook_session(session_id:str)->None:
     session = context.get_session(session_id)
     data = {
-        "process_id": None,
-        "ticker": 0,
+        "ebook": None,
+        "ebook_list": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
-        "ebook": None,
-        "ebook_list": None,
         "epub_path": None,
         "filename_noext": None,
         "final_name": None,
+        "cover": None,
+        "blocks_orig": [],
+        "blocks_edit": [],
+        "chapters": [],
+        "duration": 0,
+        "playback_time": 0,
+        "playback_volume": 0,
         "metadata": {
             "title": None, 
             "creator": None,
@@ -2934,13 +2942,7 @@ def reset_session(session_id:str)->None:
             "relation": None,
             "Source": None,
             "Modified": None,
-        },
-        "blocks_orig": [],
-        "blocks_edit": [],
-        "chapters": [],
-        "cover": None,
-        "duration": 0,
-        "playback_time": 0
+        }
     }
     restore_session_from_data(data, session)
 

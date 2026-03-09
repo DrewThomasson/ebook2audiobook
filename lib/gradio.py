@@ -1058,7 +1058,6 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_ebook_file(data:any, session_id:str)->tuple:
                 try:
-                    reset_session(session_id)
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['ebook'] = None
@@ -1662,7 +1661,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         else:
                                             show_alert({"type": "success", "msg": progress_status})
                                             args['ebook_list'].remove(file)
-                                            reset_session(session_id)
+                                            reset_ebook_session(session_id)
                                             count_file = len(args['ebook_list'])
                                             if count_file > 0:
                                                 msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
@@ -1684,7 +1683,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         msg = progress_status
                                         print(msg)
-                                        reset_session(session_id)
+                                        reset_ebook_session(session_id)
                                         session['ebook'] = None
                                         show_alert({"type": "success", "msg": msg})
                                         return gr.update(value=msg)
