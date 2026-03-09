@@ -485,6 +485,12 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
+                .block-even > .label-wrap {
+                    background-color: #2a2a3e !important;
+                }
+                .block-odd > .label-wrap {
+                    background-color: #1e1e2e !important;
+                }
                 .gr-blocks-buttons {
                     display: flex !important;
                     justify-content: space-evenly !important;
@@ -722,7 +728,14 @@ def build_interface(args:dict)->gr.Blocks:
                 block_components = []
                 with gr.Column(elem_id='gr_column_blocks'):
                     for i in range(page_size):
-                        with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=False, open=False) as acc:
+                        row_class = 'block-even' if i % 2 == 0 else 'block-odd'
+                        with gr.Accordion(
+                            f'Block {i}',
+                            elem_id=f'block_{i}',
+                            elem_classes=row_class,
+                            visible=False,
+                            open=False
+                        ) as acc:
                             keep = gr.Checkbox(
                                 elem_id=f'block_keep_{i}',
                                 value=True,
