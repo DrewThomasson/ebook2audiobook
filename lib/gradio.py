@@ -1075,11 +1075,10 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ebook'] = data
                         session['cancellation_requested'] = False
-                        return gr.update(value='', visible=False)
                 except Exception as e:
                     error = f'change_gr_ebook_file(): {e}'
                     alert_exception(error, session_id)
-                return gr.update(value='', visible=False)
+                return gr.update()
 
             def change_gr_ebook_mode(val:str, session_id:str)->tuple:
                 session = context.get_session(session_id)
