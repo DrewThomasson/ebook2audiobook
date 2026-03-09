@@ -2588,16 +2588,16 @@ def convert_ebook(args:dict)->tuple:
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
-            session['ebook'] = str(args['ebook']) if args['ebook'] else None
+            session['ebook'] = str(args['ebook']) if args.get('ebook') is not None else None
             session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
             session['language_iso1'] = str(args['language_iso1'])
-            session['tts_engine'] = str(args['tts_engine']) if args['tts_engine'] is not None else str(get_compatible_tts_engines(args['language'])[0])
+            session['tts_engine'] = str(args['tts_engine']) if args.get('tts_engine') is not None else str(get_compatible_tts_engines(args['language'])[0])
             session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if args['custom_model'] is not None else None
             session['fine_tuned'] = str(args['fine_tuned'])
-            session['voice'] = str(args['voice']) if args['voice'] is not None else None
+            session['voice'] = str(args['voice']) if args.get('voice') is not None else None
             session['xtts_temperature'] =  float(args['xtts_temperature'])
             session['xtts_length_penalty'] = float(args['xtts_length_penalty'])
             session['xtts_num_beams'] = int(args['xtts_num_beams'])
@@ -2620,8 +2620,8 @@ def convert_ebook(args:dict)->tuple:
             if not session['is_gui_process']:
                 session['system'] = DEVICE_SYSTEM
                 session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
-                #session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
-                #session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
+                session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
+                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
