@@ -14,7 +14,6 @@ ext
 ebook2audiobook.egg-info
 dockerfiles
 Notebooks
-components
 assets
 legacy
 audiobooks/cli/*
