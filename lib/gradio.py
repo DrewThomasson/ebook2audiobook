@@ -404,6 +404,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gap: 100px !important;
                 }
                 #gr_blocks_markdown {
+                    width: 100% !important;
                     text-align: center !important;
                     display: flex !important;
                     justify-content: center !important;
