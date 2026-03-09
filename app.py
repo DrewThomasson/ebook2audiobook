@@ -299,7 +299,7 @@ SML tags available:
                         args['ebook_list'].append(full_path)
                 progress_status, passed = c.convert_ebook_batch(args)
                 if passed is False:
-                    error = f'Conversion failed: {progress_status}'
+                    error = progress_status
                     print(error)
                     sys.exit(1)
             elif args['ebook']:
