@@ -131,7 +131,7 @@ class DeviceInstaller():
             )
             if m:
                 parts = m.group(1).split('.')
-                return f"{parts[0]}.{parts[1] if len(parts) > 1 else 0}"
+                return f'{parts[0]}.{parts[1] if len(parts) > 1 else 0}'
 
             m = re.search(
                 r'hip\s*version\s*([0-9]+(?:\.[0-9]+){0,2})',
@@ -140,7 +140,7 @@ class DeviceInstaller():
             )
             if m:
                 parts = m.group(1).split('.')
-                return f"{parts[0]}.{parts[1] if len(parts) > 1 else 0}"
+                return f'{parts[0]}.{parts[1] if len(parts) > 1 else 0}'
             m = re.search(
                 r'(oneapi|xpu)\s*(toolkit\s*)?version\s*([0-9]+(?:\.[0-9]+)?)',
                 text,
@@ -205,38 +205,38 @@ class DeviceInstaller():
             if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
-            if os.name == "posix":
-                sysfs = "/sys/bus/pci/devices"
+            if os.name == 'posix':
+                sysfs = '/sys/bus/pci/devices'
                 if os.path.isdir(sysfs):
                     for d in os.listdir(sysfs):
                         dev = os.path.join(sysfs, d)
                         try:
-                            with open(f"{dev}/vendor") as f:
-                                if f.read().strip() not in ("0x1002", "0x1022"):
+                            with open(f'{dev}/vendor') as f:
+                                if f.read().strip() not in ('0x1002', '0x1022'):
                                     continue
-                            with open(f"{dev}/class") as f:
+                            with open(f'{dev}/class') as f:
                                 cls = f.read().strip()
-                                if cls.startswith("0x0300") or cls.startswith("0x0302"):
+                                if cls.startswith('0x0300') or cls.startswith('0x0302'):
                                     return True
                         except Exception:
                             pass
-                if has_cmd("lspci"):
-                    out = try_cmd("lspci -nn").lower()
+                if has_cmd('lspci'):
+                    out = try_cmd('lspci -nn').lower()
                     return (
-                        ("1002:" in out or "1022:" in out) and
-                        (" vga " in out or " 3d " in out)
+                        ('1002:' in out or '1022:' in out) and
+                        (' vga ' in out or ' 3d ' in out)
                     )
                 return False
             # ---------- Windows ----------
             # Hardware may exist, but ROCm will still be disabled
-            if os.name == "nt":
-                if has_cmd("wmic"):
-                    out = try_cmd("wmic path win32_VideoController get Name,PNPDeviceID").lower()
-                    return "ven_1002" in out
-                if has_cmd("powershell"):
+            if os.name == 'nt':
+                if has_cmd('wmic'):
+                    out = try_cmd('wmic path win32_VideoController get Name,PNPDeviceID').lower()
+                    return 'ven_1002' in out
+                if has_cmd('powershell'):
                     out = try_cmd('powershell -Command "Get-PnpDevice -Class Display | Select-Object -ExpandProperty InstanceId"'
                     ).lower()
-                    return "ven_1002" in out
+                    return 'ven_1002' in out
                 return False
             return False
 
@@ -264,101 +264,101 @@ class DeviceInstaller():
             if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
-            if os.name == "posix":
-                sysfs = "/sys/bus/pci/devices"
+            if os.name == 'posix':
+                sysfs = '/sys/bus/pci/devices'
                 if os.path.isdir(sysfs):
                     for d in os.listdir(sysfs):
                         dev = os.path.join(sysfs, d)
                         try:
-                            with open(f"{dev}/vendor") as f:
-                                if f.read().strip() != "0x10de":
+                            with open(f'{dev}/vendor') as f:
+                                if f.read().strip() != '0x10de':
                                     continue
-                            with open(f"{dev}/class") as f:
+                            with open(f'{dev}/class') as f:
                                 cls = f.read().strip()
-                                if cls.startswith("0x0300") or cls.startswith("0x0302"):
+                                if cls.startswith('0x0300') or cls.startswith('0x0302'):
                                     return True
                         except Exception:
                             pass
-                if has_cmd("lspci"):
-                    out = try_cmd("lspci -nn").lower()
-                    return "10de:" in out and (" vga " in out or " 3d " in out)
+                if has_cmd('lspci'):
+                    out = try_cmd('lspci -nn').lower()
+                    return '10de:' in out and (' vga ' in out or ' 3d ' in out)
                 return False
             # ---------- Windows ----------
-            if os.name == "nt":
-                if has_cmd("nvidia-smi"):
+            if os.name == 'nt':
+                if has_cmd('nvidia-smi'):
                     return True
-                if has_cmd("wmic"):
+                if has_cmd('wmic'):
                     out = try_cmd(
-                        "wmic path win32_VideoController get Name,PNPDeviceID"
+                        'wmic path win32_VideoController get Name,PNPDeviceID'
                     ).lower()
-                    return "ven_10de" in out and "display" in out
-                if has_cmd("powershell"):
+                    return 'ven_10de' in out and 'display' in out
+                if has_cmd('powershell'):
                     out = try_cmd(
                         'powershell -Command "Get-PnpDevice -Class Display | '
                         'Select-Object -ExpandProperty InstanceId"'
                     ).lower()
-                    return "ven_10de" in out
+                    return 'ven_10de' in out
                 return False
             return False
 
         def is_wsl2():
-            if os.name != "posix":
+            if os.name != 'posix':
                 return False
             try:
-                with open("/proc/version", "r", encoding="utf-8", errors="ignore") as f:
-                    return "microsoft" in f.read().lower()
+                with open('/proc/version', 'r', encoding='utf-8', errors='ignore') as f:
+                    return 'microsoft' in f.read().lower()
             except Exception:
                 return False
 
         def has_cuda():
             if self.system == systems['MACOS']:
                 return False
-            if not has_cmd("nvidia-smi"):
+            if not has_cmd('nvidia-smi'):
                 return False
-            out = try_cmd("nvidia-smi -L").lower()
+            out = try_cmd('nvidia-smi -L').lower()
             if not out:
                 return False
-            if "failed" in out or "error" in out or "no devices were found" in out:
+            if 'failed' in out or 'error' in out or 'no devices were found' in out:
                 return False
-            return "gpu" in out
+            return 'gpu' in out
 
         def has_intel_gpu_pci():
             # macOS: Intel GPUs exist but XPU runtime is not supported
             if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
-            if os.name == "posix":
-                sysfs = "/sys/bus/pci/devices"
+            if os.name == 'posix':
+                sysfs = '/sys/bus/pci/devices'
                 if os.path.isdir(sysfs):
                     for d in os.listdir(sysfs):
                         dev = os.path.join(sysfs, d)
                         try:
-                            with open(f"{dev}/vendor") as f:
-                                if f.read().strip() != "0x8086":
+                            with open(f'{dev}/vendor') as f:
+                                if f.read().strip() != '0x8086':
                                     continue
-                            with open(f"{dev}/class") as f:
+                            with open(f'{dev}/class') as f:
                                 cls = f.read().strip()
-                                if cls.startswith("0x0300") or cls.startswith("0x0302"):
+                                if cls.startswith('0x0300') or cls.startswith('0x0302'):
                                     return True
                         except Exception:
                             pass
-                if has_cmd("lspci"):
-                    out = try_cmd("lspci -nn").lower()
-                    return "8086:" in out and (" vga " in out or " 3d " in out)
+                if has_cmd('lspci'):
+                    out = try_cmd('lspci -nn').lower()
+                    return '8086:' in out and (' vga ' in out or ' 3d ' in out)
                 return False
             # ---------- Windows ----------
-            if os.name == "nt":
-                if has_cmd("wmic"):
+            if os.name == 'nt':
+                if has_cmd('wmic'):
                     out = try_cmd(
-                        "wmic path win32_VideoController get Name,PNPDeviceID"
+                        'wmic path win32_VideoController get Name,PNPDeviceID'
                     ).lower()
-                    return "ven_8086" in out
-                if has_cmd("powershell"):
+                    return 'ven_8086' in out
+                if has_cmd('powershell'):
                     out = try_cmd(
                         'powershell -Command "Get-PnpDevice -Class Display | '
                         'Select-Object -ExpandProperty InstanceId"'
                     ).lower()
-                    return "ven_8086" in out
+                    return 'ven_8086' in out
                 return False
             return False
 
@@ -367,27 +367,27 @@ class DeviceInstaller():
             if self.system == systems['MACOS']:
                 return False
             # ---------- Linux ----------
-            if os.name == "posix":
+            if os.name == 'posix':
                 # Must have render node
-                if not os.path.exists("/dev/dri/renderD128"):
+                if not os.path.exists('/dev/dri/renderD128'):
                     return False
                 # Prefer Level Zero runtime check
-                if has_cmd("sycl-ls"):
-                    out = try_cmd("sycl-ls").lower()
-                    if "level-zero" in out and "gpu" in out:
+                if has_cmd('sycl-ls'):
+                    out = try_cmd('sycl-ls').lower()
+                    if 'level-zero' in out and 'gpu' in out:
                         return True
-                if has_cmd("clinfo"):
-                    out = try_cmd("clinfo").lower()
-                    if "intel" in out and "gpu" in out:
+                if has_cmd('clinfo'):
+                    out = try_cmd('clinfo').lower()
+                    if 'intel' in out and 'gpu' in out:
                         return True
                 return False
             # ---------- Windows ----------
-            if os.name == "nt":
+            if os.name == 'nt':
                 # XPU runtime is exposed via Intel GPU drivers + PyTorch
                 # Best signal: oneAPI / Level Zero tooling
-                if has_cmd("sycl-ls"):
-                    out = try_cmd("sycl-ls").lower()
-                    return "gpu" in out
+                if has_cmd('sycl-ls'):
+                    out = try_cmd('sycl-ls').lower()
+                    return 'gpu' in out
                 return False
             return False
 
@@ -395,10 +395,10 @@ class DeviceInstaller():
         tag = None
         msg = ''
         arch = platform.machine().lower()
-        forced_tag = os.environ.get("DEVICE_TAG")
+        forced_tag = os.environ.get('DEVICE_TAG')
 
         if forced_tag:
-            tag_letters = re.match(r"[a-zA-Z]+", forced_tag)
+            tag_letters = re.match(r'[a-zA-Z]+', forced_tag)
             if tag_letters:
                 tag_letters = tag_letters.group(0).lower()
                 name = devices['CUDA']['proc'] if tag_letters == 'cu' else devices['ROCM']['proc'] if tag_letters == devices['ROCM']['proc'] else devices['JETSON']['proc'] if tag_letters == devices['JETSON']['proc'] else devices['XPU']['proc'] if tag_letters == devices['XPU']['proc'] else devices['MPS']['proc'] if tag_letters == devices['MPS']['proc'] else devices['CPU']['proc']
@@ -430,6 +430,10 @@ class DeviceInstaller():
                     out = try_cmd('uname -a')
                     if 'tegra' in out:
                         msg = 'Jetson GPU detected but not(?) compatible'
+                if devices['JETSON']['found']:
+                    os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
+                    os.environ['TORCH_CUDA_ENABLE_CUDA_GRAPH'] = '0'
+                    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128,garbage_collection_threshold:0.6,expandable_segments:True'
 
             # ============================================================
             # ROCm
@@ -449,10 +453,10 @@ class DeviceInstaller():
                     import ctypes
                     libhip = None
 
-                    if os.name == "nt":
+                    if os.name == 'nt':
                         # Windows: try amdhip64.dll
                         hip_path = os.environ.get('HIP_PATH', '')
-                        candidates = ["amdhip64.dll"]
+                        candidates = ['amdhip64.dll']
                         if hip_path:
                             candidates.insert(0, os.path.join(hip_path, 'bin', 'amdhip64.dll'))
                         for lib_name in candidates:
@@ -463,18 +467,18 @@ class DeviceInstaller():
                                 continue
                     else:
                         # Linux / WSL2: try multiple library name patterns
-                        candidates = ["libamdhip64.so"]
+                        candidates = ['libamdhip64.so']
 
-                        min_major, _ = rocm_version_range["min"]
-                        max_major, _ = rocm_version_range["max"]
+                        min_major, _ = rocm_version_range['min']
+                        max_major, _ = rocm_version_range['max']
                         for major in range(max_major, min_major - 1, -1):
-                            candidates.append(f"libamdhip64.so.{major}")
+                            candidates.append(f'libamdhip64.so.{major}')
 
                         hip_lib_dirs = [
-                            "/opt/rocm/lib",
-                            "/opt/rocm/lib64",
-                            "/usr/lib/x86_64-linux-gnu",
-                            "/usr/lib64",
+                            '/opt/rocm/lib',
+                            '/opt/rocm/lib64',
+                            '/usr/lib/x86_64-linux-gnu',
+                            '/usr/lib64',
                         ]
                         # Also check versioned rocm installs
                         for p in sorted(glob('/opt/rocm-*/lib'), reverse=True):
@@ -484,7 +488,7 @@ class DeviceInstaller():
                             if os.path.isdir(d):
                                 try:
                                     for f in sorted(os.listdir(d), reverse=True):
-                                        if f.startswith("libamdhip64.so."):
+                                        if f.startswith('libamdhip64.so.'):
                                             candidates.append(os.path.join(d, f))
                                 except OSError:
                                     pass
@@ -662,15 +666,15 @@ class DeviceInstaller():
                     import ctypes
                     libcudart = None
 
-                    if os.name == "nt":
+                    if os.name == 'nt':
                         # Windows: scan for cudart64_XX.dll
-                        min_major, min_minor = cuda_version_range["min"]
-                        max_major, max_minor = cuda_version_range["max"]
+                        min_major, min_minor = cuda_version_range['min']
+                        max_major, max_minor = cuda_version_range['max']
                         for major in range(min_major, max_major + 1):
                             start_minor = min_minor if major == min_major else 0
                             end_minor = max_minor if major == max_major else 9
                             for minor in range(start_minor, end_minor + 1):
-                                dll = f"cudart64_{major}{minor}.dll"
+                                dll = f'cudart64_{major}{minor}.dll'
                                 try:
                                     libcudart = ctypes.CDLL(dll)
                                     break
@@ -680,25 +684,25 @@ class DeviceInstaller():
                                 break
                     else:
                         # Linux / WSL2: try multiple library name patterns
-                        candidates = ["libcudart.so"]  # unversioned (dev installs)
+                        candidates = ['libcudart.so']  # unversioned (dev installs)
 
                         # Add versioned names: libcudart.so.12, libcudart.so.11, etc.
-                        min_major, _ = cuda_version_range["min"]
-                        max_major, _ = cuda_version_range["max"]
+                        min_major, _ = cuda_version_range['min']
+                        max_major, _ = cuda_version_range['max']
                         for major in range(max_major, min_major - 1, -1):  # newest first
-                            candidates.append(f"libcudart.so.{major}")
+                            candidates.append(f'libcudart.so.{major}')
 
                         # Also check common install paths directly
                         cuda_lib_dirs = [
-                            "/usr/local/cuda/lib64",
-                            "/usr/lib/x86_64-linux-gnu",
-                            "/usr/lib64",
+                            '/usr/local/cuda/lib64',
+                            '/usr/lib/x86_64-linux-gnu',
+                            '/usr/lib64',
                         ]
                         for d in cuda_lib_dirs:
                             if os.path.isdir(d):
                                 try:
                                     for f in sorted(os.listdir(d), reverse=True):
-                                        if f.startswith("libcudart.so."):
+                                        if f.startswith('libcudart.so.'):
                                             candidates.append(os.path.join(d, f))
                                 except OSError:
                                     pass
@@ -758,15 +762,15 @@ class DeviceInstaller():
 
                 if version:
                     cmp = toolkit_version_compare(version, cuda_version_range)
-                    min_ver = ".".join(str(part) for part in cuda_version_range["min"])
-                    max_ver = ".".join(str(part) for part in cuda_version_range["max"])
+                    min_ver = '.'.join(str(part) for part in cuda_version_range['min'])
+                    max_ver = '.'.join(str(part) for part in cuda_version_range['max'])
                     if cmp == -1:
                         msg = f'CUDA {version} < min {min_ver}. Please upgrade.'
                     elif cmp == 1:
                         msg = f'CUDA {version} > max {max_ver}. Falling back to CPU.'
                     elif cmp == 0:
                         devices['CUDA']['found'] = True
-                        parts = version.split(".")
+                        parts = version.split('.')
                         major = parts[0]
                         minor = parts[1] if len(parts) > 1 else 0
                         name = devices['CUDA']['proc']
@@ -781,10 +785,10 @@ class DeviceInstaller():
                         import torch
                         if torch.cuda.is_available():
                             devices['CUDA']['found'] = True
-                            torch_cuda_ver = torch.version.cuda  # e.g. "12.8"
+                            torch_cuda_ver = torch.version.cuda  # e.g. '12.8'
                             if torch_cuda_ver:
                                 version = torch_cuda_ver
-                                parts = version.split(".")
+                                parts = version.split('.')
                                 major = parts[0]
                                 minor = parts[1] if len(parts) > 1 else 0
                                 tag = f'cu{major}{minor}'
@@ -805,8 +809,8 @@ class DeviceInstaller():
                     import ctypes
                     libze = None
 
-                    if os.name == "nt":
-                        candidates = ["ze_loader.dll"]
+                    if os.name == 'nt':
+                        candidates = ['ze_loader.dll']
                         oneapi_root = os.environ.get('ONEAPI_ROOT', '')
                         if oneapi_root:
                             candidates.insert(0, os.path.join(oneapi_root, 'bin', 'ze_loader.dll'))
@@ -818,20 +822,20 @@ class DeviceInstaller():
                                 continue
                     else:
                         candidates = [
-                            "libze_loader.so",
-                            "libze_loader.so.1",
+                            'libze_loader.so',
+                            'libze_loader.so.1',
                         ]
 
                         ze_lib_dirs = [
-                            "/usr/lib/x86_64-linux-gnu",
-                            "/usr/lib64",
-                            "/opt/intel/oneapi/lib",
+                            '/usr/lib/x86_64-linux-gnu',
+                            '/usr/lib64',
+                            '/opt/intel/oneapi/lib',
                         ]
                         for d in ze_lib_dirs:
                             if os.path.isdir(d):
                                 try:
                                     for f in sorted(os.listdir(d), reverse=True):
-                                        if f.startswith("libze_loader.so."):
+                                        if f.startswith('libze_loader.so.'):
                                             candidates.append(os.path.join(d, f))
                                 except OSError:
                                     pass
@@ -967,44 +971,44 @@ class DeviceInstaller():
                 pass
         if not local_path or not os.path.isdir(local_path):
             return None
-        version_file = os.path.join(local_path, "version.txt")
+        version_file = os.path.join(local_path, 'version.txt')
         if os.path.exists(version_file):
             try:
-                with open(version_file, "r", encoding = "utf-8") as f:
+                with open(version_file, 'r', encoding = 'utf-8') as f:
                     return f.read().strip()
             except Exception:
                 pass
         return None
 
     def version_tuple(self, v:str, max_parts:int=3)->tuple:
-        m = re.search(r"\d+(?:\.\d+)*", v)
+        m = re.search(r'\d+(?:\.\d+)*', v)
         if not m:
             return (0,) * max_parts
-        nums = [int(n) for n in m.group(0).split(".")[:max_parts]]
+        nums = [int(n) for n in m.group(0).split('.')[:max_parts]]
         return tuple(nums + [0] * (max_parts - len(nums)))
 
     def eval_marker(self, marker_part:str)->tuple|bool:
         env = {
-            "python_version": ".".join(map(str, sys.version_info[:2])),
-            "sys_platform": sys.platform,
-            "platform_system": platform.system(),
-            "platform_machine": platform.machine()
+            'python_version': '.'.join(map(str, sys.version_info[:2])),
+            'sys_platform': sys.platform,
+            'platform_system': platform.system(),
+            'platform_machine': platform.machine()
         }
         m = re.match(r'(\w+)\s*(==|!=|>=|<=|>|<)\s*["\']([^"\']+)["\']', marker_part)
         if not m:
-            raise ValueError(f"Unsupported marker: {marker_part}")
+            raise ValueError(f'Unsupported marker: {marker_part}')
         key, op, value = m.groups()
         if key not in env:
-            raise ValueError(f"Unknown marker variable: {key}")
-        def vt(v): return tuple(map(int, v.split("."))) if v[0].isdigit() else v
+            raise ValueError(f'Unknown marker variable: {key}')
+        def vt(v): return tuple(map(int, v.split('.'))) if v[0].isdigit() else v
         left = vt(env[key])
         right = vt(value)
-        if op == "==": return left == right
-        if op == "!=": return left != right
-        if op == ">=": return left >= right
-        if op == "<=": return left <= right
-        if op == ">": return left > right
-        if op == "<": return left < right
+        if op == '==': return left == right
+        if op == '!=': return left != right
+        if op == '>=': return left >= right
+        if op == '<=': return left <= right
+        if op == '>': return left > right
+        if op == '<': return left < right
         return False
 
     def install_python_packages(self)->int:
@@ -1187,7 +1191,7 @@ class DeviceInstaller():
                                 os_env = device_info['os']
                                 arch = device_info['arch']
                                 url = torch_matrix[tag]['url']
-                                toolkit_version = "".join(c for c in tag if c.isdigit())
+                                toolkit_version = ''.join(c for c in tag if c.isdigit())
                                 if device_info['name'] == devices['JETSON']['proc']:
                                     py_major, py_minor = device_info['pyvenv']
                                     tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
