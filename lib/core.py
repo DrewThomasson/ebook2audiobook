@@ -379,7 +379,7 @@ def hash_proxy_dict(proxy_dict)->str:
     data_str = json.dumps(data, sort_keys=True, default=str)
     return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
-def compare_checksums(session_id:str)->str|None:
+def compare_checksums(session_id:str)->tuple[bool, str|None]):
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
@@ -2790,10 +2790,10 @@ def convert_ebook(args:dict)->tuple:
                                                 session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
                                                 save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                             if session.get('blocks_orig', []) and session.get('blocks_edit', []):
-                                                #if session['blocks_preview']:
-                                                #    return status_tags['BLOCKS'], True
-                                                #else:
-                                                progress_status, passed = finalize_audiobook(session_id)
+                                                if session['blocks_preview']:
+                                                    return status_tags['BLOCKS'], True
+                                                else:
+                                                    progress_status, passed = finalize_audiobook(session_id)
                                                 return progress_status, passed
                                             else:
                                                 error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
