@@ -388,9 +388,9 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 #gr_blocks_nav .nav-header {
                     overflow:hidden !important;
-                    display:flex; !important;
-                    align-items:center !important;;
-                    justify-content:center !important;;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
                     padding-bottom: 10px !important;
                 }
                 #gr_blocks_nav .nav-header p {
