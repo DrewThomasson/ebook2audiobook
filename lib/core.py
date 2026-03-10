@@ -2806,7 +2806,8 @@ def convert_ebook(args:dict)->tuple:
                                                 save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                             if session.get('blocks_orig', []) and session.get('blocks_edit', []):
                                                 if session['blocks_preview']:
-                                                    return status_tags['BLOCKS'], True
+                                                    session['status'] = status_tags['BLOCKS']
+                                                    return session['status'], True
                                                 else:
                                                     progress_status, passed = finalize_audiobook(session_id)
                                                 return progress_status, passed
@@ -2842,7 +2843,7 @@ def finalize_audiobook(session_id:str)->tuple:
             else:
                 error = 'Conversion cancelled'
             return error, False
-        if session['status'] != status_tags['BLOCKS']:
+        if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             error = 'No blocks have been selected for the conversion!'
             return error, False
         if session.get('blocks_edit', []):

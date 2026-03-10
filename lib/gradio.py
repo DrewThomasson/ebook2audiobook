@@ -1654,7 +1654,6 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
-                                args['blocks_preview'] = None
                                 ebook_list = args['ebook_list'][:]
                                 for file in ebook_list:
                                     if any(file.endswith(ext) for ext in ebook_formats):
