@@ -1,6 +1,6 @@
 services:
   ebook2audiobook:
-    image: docker.io/athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}  # or ebook2audiobook:${DEVICE_TAG:-cu128} if you run your own local docker
+    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}  # or ebook2audiobook:${DEVICE_TAG:-cu128} if you run your own local docker
     build:
       context: .
       dockerfile: Dockerfile
@@ -23,6 +23,7 @@ services:
       - ./audiobooks:/app/audiobooks:rw
       - ./models:/app/models:rw
       - ./voices:/app/voices:rw
+      - ./tmp:/app/tmp:rw
     restart: unless-stopped
 
     # All are optional and harmless if the device/backend is not present

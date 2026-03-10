@@ -18,6 +18,7 @@ services:
       - ./audiobooks:/app/audiobooks:rw
       - ./models:/app/models:rw
       - ./voices:/app/voices:rw
+      - ./tmp:/app/tmp:rw
     restart: unless-stopped
     profiles: [cpu]
 
@@ -40,6 +41,7 @@ services:
       - ./audiobooks:/app/audiobooks:rw
       - ./models:/app/models:rw
       - ./voices:/app/voices:rw
+      - ./tmp:/app/tmp:rw
     restart: unless-stopped
     profiles: [gpu]
     deploy:
