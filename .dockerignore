@@ -10,7 +10,6 @@ python_env
 venv
 env
 node_modules
-ext
 ebook2audiobook.egg-info
 dockerfiles
 Notebooks

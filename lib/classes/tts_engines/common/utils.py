@@ -96,18 +96,28 @@ class TTSUtils:
             # Memory pressure handling
             if hasattr(torch.cuda, 'set_per_process_memory_fraction'):
                 try:
-                    torch.cuda.set_per_process_memory_fraction(0.95 if quality_mode else 0.70)
+                    torch.cuda.set_per_process_memory_fraction(0.90 if quality_mode else 0.80)
                 except Exception:
                     pass
             # cuDNN base config
             if hasattr(torch.backends, 'cudnn'):
                 torch.backends.cudnn.enabled = True
-                torch.backends.cudnn.deterministic = True
+                torch.backends.cudnn.deterministic = not quality_mode
                 torch.backends.cudnn.benchmark = bool(quality_mode)
+            
+            # SDP attention optimization
+            if hasattr(torch.backends, 'cuda'):
+                try:
+                    cc = torch.cuda.get_device_capability(0)
+                    torch.backends.cuda.enable_flash_sdp(cc >= (8, 0))
+                    torch.backends.cuda.enable_mem_efficient_sdp(cc >= (7, 0))
+                except Exception:
+                    pass
             # Detect Jetson (ARM + CUDA)
             is_jetson = False
             try:
-                is_jetson = is_cuda and torch.cuda.get_device_properties(0).multi_processor_count < 32
+                import platform
+                is_jetson = is_cuda and platform.machine() in ('aarch64', 'arm64')
             except Exception:
                 is_jetson = False
             # TF32 handling

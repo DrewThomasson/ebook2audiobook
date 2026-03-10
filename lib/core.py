@@ -65,8 +65,14 @@ status_tags = {
     "OVERRIDE": "override",
     "DELETION": "deletion",
     "READY": "ready",
-    "CONVERTING": "converting"
+    "CONVERTING": "converting",
+    "DISCONNECTED": "disconnected"
 }
+
+save_session_keys_except = [
+    'blocks_orig',
+    'blocks_edit'
+]
 
 class DependencyError(Exception):
 
@@ -130,16 +136,19 @@ class SessionContext:
 
     def set_session(self, session_id:str)->Any:
         self.sessions[session_id] = self._recursive_proxy({
+            ####### Global settings
             "id": session_id,
-            "session_dir": None,
             "script_mode": NATIVE,
             "tab_id": None,
+            "socket_hash": None,
+            "session_dir": None,
             "is_gui_process": False,
             "free_vram_gb": 0,
-            "process_id": None,
             "status": None,
             "ticker": 0,
             "cancellation_requested": False,
+            "ebook_mode": "single",
+            "blocks_preview": default_blocks_preview,
             "device": default_device,
             "tts_engine": default_tts_engine,
             "fine_tuned": default_fine_tuned,
@@ -150,21 +159,16 @@ class SessionContext:
             "client": None,
             "language": default_language_code,
             "language_iso1": None,
-            "audiobook": None,
-            "audiobooks_dir": None,
-            "process_dir": None,
-            "ebook": None,
-            "ebook_list": None,
-            "ebook_mode": "single",
-            "blocks_preview": default_blocks_preview,
-            "chapters_dir": None,
-            "sentences_dir": None,
-            "epub_path": None,
-            "filename_noext": None,
             "voice": None,
             "voice_dir": None,
             "custom_model": None,
             "custom_model_dir": None,
+            "output_dir": None,
+            "output_format": default_output_format,
+            "output_channel": default_output_channel,
+            "output_split": default_output_split,
+            "output_split_hours": default_output_split_hours,
+            ####### Xtts settings
             "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
             #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['codec_temperature'],
             "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
@@ -177,14 +181,28 @@ class SessionContext:
             #"xtts_gpt_cond_len": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_cond_len'],
             #"xtts_gpt_batch_size": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_batch_size'],
             "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+            ####### Bark settings
             "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
+            ####### Audiobook editor
+            "audiobook": None,
+            "audiobooks_dir": None,
+            ####### Ebook conversion
+            "ebook": None,
+            "ebook_list": None,
+            "process_dir": None,
+            "chapters_dir": None,
+            "sentences_dir": None,
+            "epub_path": None,
+            "filename_noext": None,
             "final_name": None,
-            "output_dir": None,
-            "output_format": default_output_format,
-            "output_channel": default_output_channel,
-            "output_split": default_output_split,
-            "output_split_hours": default_output_split_hours,
+            "cover": None,
+            "blocks_orig": [],
+            "blocks_edit": [],
+            "chapters": [],
+            "duration": 0,
+            "playback_time": 0,
+            "playback_volume": 0,
             "metadata": {
                 "title": None, 
                 "creator": None,
@@ -202,14 +220,7 @@ class SessionContext:
                 "relation": None,
                 "Source": None,
                 "Modified": None,
-            },
-            "blocks_orig": [],
-            "blocks_edit": [],
-            "chapters": [],
-            "cover": None,
-            "duration": 0,
-            "playback_time": 0,
-            "playback_volume": 0
+            }
         }, manager=self.manager)
         return self.sessions[session_id]
 
@@ -803,9 +814,10 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                         print(msg)
                     else:
                         use_gpu = True if (
-                            (session['device'] == devices['CUDA']['proc'] and not devices['JETSON']['found'] and devices['CUDA']['found']) or
+                            (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or
                             (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or
-                            (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])
+                            (session['device'] == devices['XPU']['proc'] and devices['XPU']['found']) or
+                            (session['device'] == devices['JETSON']['proc'] and devices['JETSON']['found'])
                         ) else False
                         stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
                         if stanza_nlp:
@@ -2046,47 +2058,50 @@ def convert_chapters2audio(session_id:str)->bool:
 def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
     try:
         session = context.get_session(session_id)
-        if session and session.get('id', False):
-            base = session['sentences_dir']
-            ext = f".{default_audio_proc_format}"
-            exists = os.path.exists
-            join = os.path.join
-            missing = []
-            selected_files = []
-            for i in range(start, end + 1):
-                path = join(base, f"{i}{ext}")
-                if exists(path):
-                    selected_files.append(path)
-                else:
-                    missing.append(i)
-            if missing:
-                error = f"Missing sentence files: {missing}"
-                print(error)
-                return False
-            if not selected_files:
-                error = 'No audio files found in the specified range.'
-                print(error)
-                return False
-            concat_dir = session['process_dir']
-            concat_list = os.path.join(concat_dir, 'concat_list_sentences.txt')
-            with open(concat_list, 'w') as f:
-                for path in selected_files:
-                    if session['cancellation_requested']:
-                        msg = 'Cancel requested'
-                        print(msg)
-                        return False
-                    f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunks(concat_list, file, session['is_gui_process'])
-            if not result:
-                error = 'combine_audio_sentences() FFmpeg concat failed.'
-                print(error)
-                return False
-            msg = f'********* Combined block audio file saved in {file}'
-            print(msg)
-            return True
+        if not session or not session.get('id', False):
+            error = 'Session expired!'
+            print(error)
+            return False
+        base = session['sentences_dir']
+        ext = f".{default_audio_proc_format}"
+        exists = os.path.exists
+        join = os.path.join
+        missing = []
+        selected_files = []
+        for i in range(start, end + 1):
+            path = join(base, f"{i}{ext}")
+            if exists(path):
+                selected_files.append(path)
+            else:
+                missing.append(i)
+        if missing:
+            error = f"Missing sentence files: {missing}"
+            print(error)
+            return False
+        if not selected_files:
+            error = 'No audio files found in the specified range.'
+            print(error)
+            return False
+        concat_dir = session['process_dir']
+        concat_list = os.path.join(concat_dir, 'concat_list_sentences.txt')
+        with open(concat_list, 'w') as f:
+            for path in selected_files:
+                if session['cancellation_requested']:
+                    msg = 'Cancel requested'
+                    print(msg)
+                    return False
+                f.write(f"file '{path.replace(os.sep, '/')}'\n")
+        result = assemble_audio_chunks(concat_list, file, session['is_gui_process'])
+        if not result:
+            error = 'combine_audio_sentences() FFmpeg concat failed.'
+            print(error)
+            return False
+        msg = f'********* Combined block audio file saved in {file}'
+        print(msg)
+        return True
     except Exception as e:
         DependencyError(e)
-    return False
+        return False
 
 def combine_audio_chapters(session_id:str)->list[str]|None:
 
@@ -2533,7 +2548,6 @@ def convert_ebook_batch(args:dict)->tuple:
                     if not args['is_gui_process']:
                         sys.exit(1)
                 args['ebook_list'].remove(file) 
-        reset_session(args['id'])
         return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'
@@ -2668,8 +2682,8 @@ def convert_ebook(args:dict)->tuple:
                         final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
                         if not os.path.exists(final_voice_file):
                             extractor = VoiceExtractor(session, session['voice'], voice_name)
-                            status, msg = extractor.extract_voice()
-                            if status:
+                            voice_status, msg = extractor.extract_voice()
+                            if voice_status:
                                 session['voice'] = final_voice_file
                             else:
                                 error = f'VoiceExtractor.extract_voice() failed! {msg}'
@@ -2781,7 +2795,7 @@ def convert_ebook(args:dict)->tuple:
                                         session['cover'] = get_cover(epubBook, session_id)
                                         if session.get('cover', False):
                                             if missing_json:
-                                                session['blocks_orig'] = get_blocks(session_id, epubBook)
+                                                session['blocks_edit'] = []
                                                 raw_blocks = get_blocks(session_id, epubBook)
                                                 if raw_blocks:
                                                     session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
@@ -2791,10 +2805,11 @@ def convert_ebook(args:dict)->tuple:
                                                 session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
                                                 save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                             if session.get('blocks_orig', []) and session.get('blocks_edit', []):
-                                                #if session['blocks_preview']:
-                                                #    return status_tags['BLOCKS'], True
-                                                #else:
-                                                progress_status, passed = finalize_audiobook(session_id)
+                                                if session['blocks_preview']:
+                                                    session['status'] = status_tags['BLOCKS']
+                                                    return session['status'], True
+                                                else:
+                                                    progress_status, passed = finalize_audiobook(session_id)
                                                 return progress_status, passed
                                             else:
                                                 error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
@@ -2821,10 +2836,14 @@ def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
-            error = 'Conversion cancelled'
-            session['status'] = status_tags['READY']
+            if session['status'] == status_tags['DISCONNECTED']:
+                session['status'] = None
+                context_tracker.end_session(session_id, session['socket_hash'])
+                error = 'Frontend disconnected!'
+            else:
+                error = 'Conversion cancelled'
             return error, False
-        if session['status'] in [status_tags['BLOCKS']]:
+        if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             error = 'No blocks have been selected for the conversion!'
             return error, False
         if session.get('blocks_edit', []):
@@ -2836,7 +2855,6 @@ def finalize_audiobook(session_id:str)->tuple:
             for block in session['blocks_edit']:
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
-                    session['status'] = status_tags['READY']
                     return error, False
                 if not block['keep']:
                     continue
@@ -2845,7 +2863,6 @@ def finalize_audiobook(session_id:str)->tuple:
                     sentences_list = get_sentences(text, session_id)
                     if sentences_list is None:
                         error = 'No sentences found!'
-                        session['status'] = status_tags['READY']
                         return error, False
                     if sentences_list:
                         chapters.append(sentences_list)
@@ -2859,10 +2876,8 @@ def finalize_audiobook(session_id:str)->tuple:
                     session['audiobook'] = exported_files[-1]
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
-                    session['status'] = status_tags['READY']
                     if session['blocks_preview']:
-                        reset_session(session_id)
-                        session['ebook'] = None
+                        reset_ebook_session(session_id)
                         show_alert({"type": "success", "msg": progress_status})
                     return progress_status, True
                 else:
@@ -2871,39 +2886,53 @@ def finalize_audiobook(session_id:str)->tuple:
                 error = 'convert_chapters2audio() failed!'
         else:
             error = 'finalize_audiobook() failed!'
-        session['status'] = status_tags['READY']
     return error, False
 
 def restore_session_from_data(data:dict, session:dict)->None:
     try:
         for key, value in data.items():
             if key in session:
-                if isinstance(value, dict) and isinstance(session[key], dict):
-                    restore_session_from_data(value, session[key])
-                else:
-                    if value is None and session[key] is not None:
-                        continue
-                    session[key] = value
+                if key not in save_session_keys_except:
+                    if isinstance(value, dict) and isinstance(session[key], dict):
+                        restore_session_from_data(value, session[key])
+                    else:
+                        if value is None and session[key] is not None:
+                            continue
+                        session[key] = value
     except Exception as e:
         DependencyError(e)
 
-def cleanup_session(req:gr.Request)->None:
+def on_unload(req:gr.Request)->None:
     socket_hash = req.session_hash
     if any(socket_hash in session for session in context.sessions.values()):
         session_id = context.find_id_by_hash(socket_hash)
-        context_tracker.end_session(session_id, socket_hash)
+        if session_id:
+            session = context.get_session(session_id)
+            if session['status'] == status_tags['CONVERTING']:
+                session['cancellation_requested'] = True
+                session['status'] = status_tags['DISCONNECTED']
+                session['socket_hash'] = socket_hash
+            else:
+                context_tracker.end_session(session_id, socket_hash)
 
-def reset_session(session_id:str)->None:
+def reset_ebook_session(session_id:str)->None:
     session = context.get_session(session_id)
     data = {
-        "process_id": None,
-        "ticker": 0,
-        "process_dir": None,
         "ebook": None,
         "ebook_list": None,
+        "process_dir": None,
+        "chapters_dir": None,
+        "sentences_dir": None,
         "epub_path": None,
         "filename_noext": None,
         "final_name": None,
+        "cover": None,
+        "blocks_orig": [],
+        "blocks_edit": [],
+        "chapters": [],
+        "duration": 0,
+        "playback_time": 0,
+        "playback_volume": 0,
         "metadata": {
             "title": None, 
             "creator": None,
@@ -2921,13 +2950,7 @@ def reset_session(session_id:str)->None:
             "relation": None,
             "Source": None,
             "Modified": None,
-        },
-        "blocks_orig": [],
-        "blocks_edit": [],
-        "chapters": [],
-        "cover": None,
-        "duration": 0,
-        "playback_time": 0
+        }
     }
     restore_session_from_data(data, session)
 
