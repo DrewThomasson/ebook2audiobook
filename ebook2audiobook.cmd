@@ -821,7 +821,7 @@ if defined arguments.help (
 		if not errorlevel 1 (
 			set DOCKER_IN_WSL=1
 		)
-        call python "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
+        call python -u "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
         goto :eof
     )
 ) else (
@@ -862,7 +862,7 @@ if defined arguments.help (
         ) else (
 			echo The Docker image is only available with a Linux container
         )
-    ) else (
+    ) else if "%SCRIPT_MODE%"=="%NATIVE%" (
 		call :check_scoop
 		if errorlevel 1 goto :install_scoop
 		call :check_scoop_buckets
@@ -876,9 +876,13 @@ if defined arguments.help (
         call :check_sitecustomized
         if errorlevel 1 goto :failed
         call :build_gui
-        call python.exe "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+        call python.exe -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 		call conda deactivate >nul && call conda deactivate >nul
-    )
+    ) else if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
+        call :check_sitecustomized
+        if errorlevel 1 goto :failed
+        call python.exe -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+	)
 )
 goto :eof
 
