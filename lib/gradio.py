@@ -1704,6 +1704,8 @@ def build_interface(args:dict)->gr.Blocks:
                                         return gr.update(value=msg)
                         if error is not None:
                             show_alert({"type": "warning", "msg": error})
+                            if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
+                                context_tracker.end_session(session_id, session['socket_hash'])
                         return gr.update(value=error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
@@ -2961,7 +2963,7 @@ def build_interface(args:dict)->gr.Blocks:
                 ''',
                 outputs=[gr_restore_session],
             )
-            app.unload(cleanup_session)
+            app.unload(on_unload)
             all_ips = get_all_ip_addresses()
             msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
             show_alert({"type": "info", "msg": msg})

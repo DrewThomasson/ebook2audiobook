@@ -65,7 +65,8 @@ status_tags = {
     "OVERRIDE": "override",
     "DELETION": "deletion",
     "READY": "ready",
-    "CONVERTING": "converting"
+    "CONVERTING": "converting",
+    "DISCONNECTED": "disconnected"
 }
 
 save_session_keys_except = [
@@ -137,12 +138,12 @@ class SessionContext:
         self.sessions[session_id] = self._recursive_proxy({
             ####### Global settings
             "id": session_id,
-            "session_dir": None,
             "script_mode": NATIVE,
             "tab_id": None,
+            "socket_hash": None,
+            "session_dir": None,
             "is_gui_process": False,
             "free_vram_gb": 0,
-            "process_id": None,
             "status": None,
             "ticker": 0,
             "cancellation_requested": False,
@@ -2057,47 +2058,47 @@ def convert_chapters2audio(session_id:str)->bool:
 def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
     try:
         session = context.get_session(session_id)
-        if session and session.get('id', False):
-            base = session['sentences_dir']
-            ext = f".{default_audio_proc_format}"
-            exists = os.path.exists
-            join = os.path.join
-            missing = []
-            selected_files = []
-            for i in range(start, end + 1):
-                path = join(base, f"{i}{ext}")
-                if exists(path):
-                    selected_files.append(path)
-                else:
-                    missing.append(i)
-            if missing:
-                error = f"Missing sentence files: {missing}"
-                print(error)
-                return False
-            if not selected_files:
-                error = 'No audio files found in the specified range.'
-                print(error)
-                return False
-            concat_dir = session['process_dir']
-            concat_list = os.path.join(concat_dir, 'concat_list_sentences.txt')
-            with open(concat_list, 'w') as f:
-                for path in selected_files:
-                    if session['cancellation_requested']:
-                        msg = 'Cancel requested'
-                        print(msg)
-                        return False
-                    f.write(f"file '{path.replace(os.sep, '/')}'\n")
-            result = assemble_audio_chunks(concat_list, file, session['is_gui_process'])
-            if not result:
-                error = 'combine_audio_sentences() FFmpeg concat failed.'
-                print(error)
-                return False
-            msg = f'********* Combined block audio file saved in {file}'
-            print(msg)
-            return True
-        error = 'Session expired!'
-        print(error)
-        return False
+        if not session or not session.get('id', False):
+            error = 'Session expired!'
+            print(error)
+            return False
+        base = session['sentences_dir']
+        ext = f".{default_audio_proc_format}"
+        exists = os.path.exists
+        join = os.path.join
+        missing = []
+        selected_files = []
+        for i in range(start, end + 1):
+            path = join(base, f"{i}{ext}")
+            if exists(path):
+                selected_files.append(path)
+            else:
+                missing.append(i)
+        if missing:
+            error = f"Missing sentence files: {missing}"
+            print(error)
+            return False
+        if not selected_files:
+            error = 'No audio files found in the specified range.'
+            print(error)
+            return False
+        concat_dir = session['process_dir']
+        concat_list = os.path.join(concat_dir, 'concat_list_sentences.txt')
+        with open(concat_list, 'w') as f:
+            for path in selected_files:
+                if session['cancellation_requested']:
+                    msg = 'Cancel requested'
+                    print(msg)
+                    return False
+                f.write(f"file '{path.replace(os.sep, '/')}'\n")
+        result = assemble_audio_chunks(concat_list, file, session['is_gui_process'])
+        if not result:
+            error = 'combine_audio_sentences() FFmpeg concat failed.'
+            print(error)
+            return False
+        msg = f'********* Combined block audio file saved in {file}'
+        print(msg)
+        return True
     except Exception as e:
         DependencyError(e)
         return False
@@ -2834,10 +2835,12 @@ def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
-            error = 'Conversion cancelled'
-            session['status'] = status_tags['READY']
+            if session['status'] == status_tags['DISCONNECTED']:
+                error = 'Frontend disconnected!'
+            else:
+                error = 'Conversion cancelled'
             return error, False
-        if session['status'] in [status_tags['BLOCKS']]:
+        if session['status'] != status_tags['BLOCKS']:
             error = 'No blocks have been selected for the conversion!'
             return error, False
         if session.get('blocks_edit', []):
@@ -2849,7 +2852,6 @@ def finalize_audiobook(session_id:str)->tuple:
             for block in session['blocks_edit']:
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
-                    session['status'] = status_tags['READY']
                     return error, False
                 if not block['keep']:
                     continue
@@ -2858,7 +2860,6 @@ def finalize_audiobook(session_id:str)->tuple:
                     sentences_list = get_sentences(text, session_id)
                     if sentences_list is None:
                         error = 'No sentences found!'
-                        session['status'] = status_tags['READY']
                         return error, False
                     if sentences_list:
                         chapters.append(sentences_list)
@@ -2872,7 +2873,6 @@ def finalize_audiobook(session_id:str)->tuple:
                     session['audiobook'] = exported_files[-1]
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
-                    session['status'] = status_tags['READY']
                     if session['blocks_preview']:
                         reset_ebook_session(session_id)
                         show_alert({"type": "success", "msg": progress_status})
@@ -2883,7 +2883,6 @@ def finalize_audiobook(session_id:str)->tuple:
                 error = 'convert_chapters2audio() failed!'
         else:
             error = 'finalize_audiobook() failed!'
-        session['status'] = status_tags['READY']
     return error, False
 
 def restore_session_from_data(data:dict, session:dict)->None:
@@ -2900,11 +2899,17 @@ def restore_session_from_data(data:dict, session:dict)->None:
     except Exception as e:
         DependencyError(e)
 
-def cleanup_session(req:gr.Request)->None:
+def on_unload(req:gr.Request)->None:
     socket_hash = req.session_hash
     if any(socket_hash in session for session in context.sessions.values()):
         session_id = context.find_id_by_hash(socket_hash)
-        context_tracker.end_session(session_id, socket_hash)
+        if session_id:
+            if session['status'] in [status_tags['CONVERTING']]:
+                session['cancellation_requested'] = True
+                session['status'] = status_tags['DISCONNECTED']
+                session['socket_hash'] = socket_hash
+            else:
+                context_tracker.end_session(session_id, socket_hash)
 
 def reset_ebook_session(session_id:str)->None:
     session = context.get_session(session_id)
