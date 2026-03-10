@@ -46,7 +46,6 @@ def wrapped_check_torch_load_is_safe(*args: Any, **kwargs: Any) -> None:
     return None
 
 def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
-    print(f'mod: {mod}')
     if hasattr(mod, attr):
         setattr(mod, attr, wrapped_check_torch_load_is_safe)
         warn(f'patched {mod.__name__}.{attr}')
