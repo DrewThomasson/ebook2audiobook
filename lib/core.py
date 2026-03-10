@@ -2906,6 +2906,7 @@ def on_unload(req:gr.Request)->None:
     if any(socket_hash in session for session in context.sessions.values()):
         session_id = context.find_id_by_hash(socket_hash)
         if session_id:
+            session = context.get_session(session_id)
             if session['status'] in [status_tags['CONVERTING']]:
                 session['cancellation_requested'] = True
                 session['status'] = status_tags['DISCONNECTED']
