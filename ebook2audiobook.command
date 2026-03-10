@@ -49,6 +49,7 @@ HOST_PROGRAMS=("cmake" "curl" "pkg-config" "xcb-util-cursor" "calibre" "ffmpeg" 
 DOCKER_PROGRAMS=("curl ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_MODE=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
+DOCKER_DEVICE_STR=""
 DEVICE_INFO_STR=""
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 BREW_INSTALLER_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
