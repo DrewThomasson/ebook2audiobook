@@ -2682,8 +2682,8 @@ def convert_ebook(args:dict)->tuple:
                         final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
                         if not os.path.exists(final_voice_file):
                             extractor = VoiceExtractor(session, session['voice'], voice_name)
-                            status, msg = extractor.extract_voice()
-                            if status:
+                            voice_status, msg = extractor.extract_voice()
+                            if voice_status:
                                 session['voice'] = final_voice_file
                             else:
                                 error = f'VoiceExtractor.extract_voice() failed! {msg}'
@@ -2843,6 +2843,7 @@ def finalize_audiobook(session_id:str)->tuple:
             else:
                 error = 'Conversion cancelled'
             return error, False
+        print(f"status: {session['status']}")
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             error = 'No blocks have been selected for the conversion!'
             return error, False
@@ -2908,7 +2909,7 @@ def on_unload(req:gr.Request)->None:
         session_id = context.find_id_by_hash(socket_hash)
         if session_id:
             session = context.get_session(session_id)
-            if session['status'] in [status_tags['CONVERTING']]:
+            if session['status'] == status_tags['CONVERTING']:
                 session['cancellation_requested'] = True
                 session['status'] = status_tags['DISCONNECTED']
                 session['socket_hash'] = socket_hash
