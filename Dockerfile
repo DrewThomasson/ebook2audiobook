@@ -92,5 +92,5 @@ VOLUME \
 
 EXPOSE 7860
 
-ENTRYPOINT ["ebook2audiobook.sh"]
+ENTRYPOINT ["bash", "ebook2audiobook.sh"]
 CMD ["--script_mode", "full_docker"]
