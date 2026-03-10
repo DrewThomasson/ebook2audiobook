@@ -1593,12 +1593,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session[key] = val
                     state = {}
-                    if key == "blocks_preview":
-                        msg = 'Chapters preview feature will be available to the next version'   
-                        state['type'] = 'info'
-                        state['msg'] = msg
-                        show_alert(state)
-                    elif key == 'xtts_length_penalty':
+                    if key == 'xtts_length_penalty':
                         if val2 is not None:
                             if float(val) > float(val2):
                                 error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
