@@ -2836,6 +2836,8 @@ def finalize_audiobook(session_id:str)->tuple:
     if session and session.get('id', False):
         if session['cancellation_requested']:
             if session['status'] == status_tags['DISCONNECTED']:
+                session['status'] = None
+                context_tracker.end_session(session_id, session['socket_hash'])
                 error = 'Frontend disconnected!'
             else:
                 error = 'Conversion cancelled'
