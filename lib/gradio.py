@@ -486,10 +486,10 @@ def build_interface(args:dict)->gr.Blocks:
                     cursor: pointer !important;
                 }
                 .accordion-block-even > .label-wrap {
-                    background-color: --background-fill-primary;
+                    background-color: var(--background-fill-primary);
                 }
                 .accordion-block-odd > .label-wrap {
-                    background-color: --background-fill-secondary;
+                    background-color: var(--background-fill-secondary);
                 }
                 .gr-blocks-buttons {
                     display: flex !important;
