@@ -58,12 +58,14 @@ def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
 
     # Rewrite use_auth_token → token for newer huggingface_hub
     if mod.__name__ == 'huggingface_hub':
+        print('patch_module called')
         for fn_name in dir(mod):
             fn = getattr(mod, fn_name, None)
             if not callable(fn) or fn_name.startswith('_'):
                 continue
 
             def _make_wrapper(fn):
+
                 def wrapper(*args, **kwargs):
                     if 'use_auth_token' in kwargs:
                         kwargs['token'] = kwargs.pop('use_auth_token')
