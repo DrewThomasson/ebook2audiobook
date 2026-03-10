@@ -7,7 +7,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ARG APP_VERSION=26.3.10
+ARG APP_VERSION=26.3.11
 ARG DEVICE_TAG=cu128
 ARG DOCKER_DEVICE_STR='{"name": "cu128", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
@@ -88,6 +88,7 @@ VOLUME \
 	/app/audiobooks \
 	/app/models \
 	/app/voices \
+	/app/run \
 	/app/tmp
 
 EXPOSE 7860

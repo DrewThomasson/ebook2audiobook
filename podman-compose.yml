@@ -5,13 +5,13 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.3.10}
+        APP_VERSION: ${APP_VERSION:-26.3.11}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
         BUILDAH_FORMAT: docker
       x-podman:
         format: docker
     working_dir: /app
-    entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
+    entrypoint: ["bash", "ebook2audiobook.sh", "--script_mode", "full_docker"]
     tty: true
     stdin_open: true
     ports:
