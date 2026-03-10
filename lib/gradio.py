@@ -404,6 +404,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gap: 100px !important;
                 }
                 #gr_blocks_markdown {
+                    width: 100% !important;
                     text-align: center !important;
                     display: flex !important;
                     justify-content: center !important;
@@ -411,6 +412,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding-bottom: 20px !important;
                 }
                 #gr_blocks_markdown p {
+                    width: 100% !important;
                     font-size: 16px !important;
                     font-weight: bold !important;
                 }
@@ -483,6 +485,14 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
+                .accordion-block-even,
+                .accordion-block-even * {
+                    background-color: var(-table-even-background-fill) !important;
+                }
+                .accordion-block-odd,
+                .accordion-block-odd * {
+                    background-color: var(--table-odd-background-fill) !important;
+                }
                 .gr-blocks-buttons {
                     display: flex !important;
                     justify-content: space-evenly !important;
@@ -540,7 +550,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
-                                        gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, visible=False, scale=1)
+                                        gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, visible=False, interactive=True, scale=1)
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                     gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
@@ -720,7 +730,14 @@ def build_interface(args:dict)->gr.Blocks:
                 block_components = []
                 with gr.Column(elem_id='gr_column_blocks'):
                     for i in range(page_size):
-                        with gr.Accordion(f'Block {i}', elem_id=f'block_{i}', visible=False, open=False) as acc:
+                        row_class = 'accordion-block-even' if i % 2 == 0 else 'accordion-block-odd'
+                        with gr.Accordion(
+                            f'Block {i}',
+                            elem_id=f'block_{i}',
+                            elem_classes=row_class,
+                            visible=False,
+                            open=False
+                        ) as acc:
                             keep = gr.Checkbox(
                                 elem_id=f'block_keep_{i}',
                                 value=True,
@@ -981,6 +998,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_xtts = False
                         visible_bark = False
                         interactive_convert_btn = True if session['ebook'] else False
+                        session['status'] = status_tags['READY']
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -1576,12 +1594,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session[key] = val
                     state = {}
-                    if key == "blocks_preview":
-                        msg = 'Chapters preview feature will be available to the next version'   
-                        state['type'] = 'info'
-                        state['msg'] = msg
-                        show_alert(state)
-                    elif key == 'xtts_length_penalty':
+                    if key == 'xtts_length_penalty':
                         if val2 is not None:
                             if float(val) > float(val2):
                                 error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
@@ -1642,7 +1655,6 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
-                                args['blocks_preview'] = None
                                 ebook_list = args['ebook_list'][:]
                                 for file in ebook_list:
                                     if any(file.endswith(ext) for ext in ebook_formats):
@@ -1659,7 +1671,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         else:
                                             show_alert({"type": "success", "msg": progress_status})
                                             args['ebook_list'].remove(file)
-                                            reset_session(args['id'])
+                                            reset_ebook_session(session_id)
                                             count_file = len(args['ebook_list'])
                                             if count_file > 0:
                                                 msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
@@ -1681,12 +1693,14 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         msg = progress_status
                                         print(msg)
-                                        reset_session(args['id'])
+                                        reset_ebook_session(session_id)
                                         session['ebook'] = None
                                         show_alert({"type": "success", "msg": msg})
                                         return gr.update(value=msg)
                         if error is not None:
                             show_alert({"type": "warning", "msg": error})
+                            if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
+                                context_tracker.end_session(session_id, session['socket_hash'])
                         return gr.update(value=error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
@@ -1792,12 +1806,15 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session['status'] in [status_tags['BLOCKS']]:
                     visible_main = False
                     visible_blocks = True
+                    ebook_name = ''
+                    blocks = []
+                    page = 0
                     if session['cancellation_requested']:
                         visible_main = True
                         visible_blocks = False
-                    ebook_name = Path(session['ebook']).stem
-                    blocks = session['blocks_edit']
-                    page = 0
+                    else:
+                        ebook_name = Path(session['ebook']).stem
+                        blocks = session['blocks_edit']
                     page_updates = list(populate_page(page, blocks))
                     result = (
                         gr.update(value=ebook_name),
@@ -1906,7 +1923,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['ticker'] = len(audiobook_options)
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
                                 state['hash'] = new_hash
-                                session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                                session_filtered = {k: v for k, v in session.items() if k not in save_session_keys_except}
+                                session_dict = json.dumps(session_filtered, cls=JSONDictProxyEncoder)
                                 yield (
                                     gr.update(value=session_dict),
                                     gr.update(value=state),
@@ -1917,7 +1935,8 @@ def build_interface(args:dict)->gr.Blocks:
                         except NameError:
                             new_hash = hash_proxy_dict(MappingProxyType(session))
                             state['hash'] = new_hash
-                            session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                            session_filtered = {k: v for k, v in session.items() if k not in save_session_keys_except}
+                            session_dict = json.dumps(session_filtered, cls=JSONDictProxyEncoder)
                             yield (
                                 gr.update(value=session_dict),
                                 gr.update(value=state),
@@ -1929,7 +1948,8 @@ def build_interface(args:dict)->gr.Blocks:
                             yield gr.update(), gr.update(), gr.update()
                         else:
                             state['hash'] = new_hash
-                            session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
+                            session_filtered = {k: v for k, v in session.items() if k not in save_session_keys_except}
+                            session_dict = json.dumps(session_filtered, cls=JSONDictProxyEncoder)
                             yield (
                                 gr.update(value=session_dict),
                                 gr.update(value=state),
@@ -2941,7 +2961,7 @@ def build_interface(args:dict)->gr.Blocks:
                 ''',
                 outputs=[gr_restore_session],
             )
-            app.unload(cleanup_session)
+            app.unload(on_unload)
             all_ips = get_all_ip_addresses()
             msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
             show_alert({"type": "info", "msg": msg})
