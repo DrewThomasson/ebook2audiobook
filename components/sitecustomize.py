@@ -46,6 +46,7 @@ def wrapped_check_torch_load_is_safe(*args: Any, **kwargs: Any) -> None:
     return None
 
 def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
+    print(f'mod: {mod}')
     if hasattr(mod, attr):
         setattr(mod, attr, wrapped_check_torch_load_is_safe)
         warn(f'patched {mod.__name__}.{attr}')
@@ -58,7 +59,6 @@ def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
 
     # Rewrite use_auth_token → token for newer huggingface_hub
     if mod.__name__ == 'huggingface_hub':
-        print('patch_module called')
         for fn_name in dir(mod):
             fn = getattr(mod, fn_name, None)
             if not callable(fn) or fn_name.startswith('_'):
