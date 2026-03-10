@@ -56,16 +56,34 @@ def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
         mod.isin_mps_friendly = torch.isin
         warn(f'patched {mod.__name__}.isin_mps_friendly')
 
+    # Rewrite use_auth_token → token for newer huggingface_hub
+    if mod.__name__ == 'huggingface_hub':
+        for fn_name in dir(mod):
+            fn = getattr(mod, fn_name, None)
+            if not callable(fn) or fn_name.startswith('_'):
+                continue
+
+            def _make_wrapper(fn):
+                def wrapper(*args, **kwargs):
+                    if 'use_auth_token' in kwargs:
+                        kwargs['token'] = kwargs.pop('use_auth_token')
+                        warn(f'rewrote use_auth_token → token in {fn.__name__}()')
+                    return fn(*args, **kwargs)
+                return wrapper
+
+            setattr(mod, fn_name, _make_wrapper(fn))
+        warn(f'patched all callables in {mod.__name__} (use_auth_token compat)')
+
 
 # ─────────────────────────────────────────────────────
 # IMPORT HOOK (activates only when transformers loads)
 # ─────────────────────────────────────────────────────
 if patch_enabled:
 
-	class TransformersHook:
-		def find_spec(self, fullname, path, target=None):
-			if not fullname.startswith("transformers"):
-				return None
+    class TransformersHook:
+        def find_spec(self, fullname, path, target=None):
+            if not fullname.startswith(('transformers', 'huggingface_hub')):
+                return None
 
 			spec = importlib.machinery.PathFinder.find_spec(fullname, path)
 			if not spec or not spec.loader:
