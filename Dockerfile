@@ -10,7 +10,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG APP_VERSION=26.3.10
 ARG DEVICE_TAG=cu128
 ARG DOCKER_DEVICE_STR='{"name": "cu128", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "default device"}'
-ARG DOCKER_PROGRAMS="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
+ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
 ARG INSTALL_RUST=1
@@ -30,7 +30,7 @@ RUN set -eux; \
 		fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
 		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libxcb-cursor0 \
 		libgomp1 libsndfile1 \
-		${DOCKER_PROGRAMS} tesseract-ocr-${ISO3_LANG}; \
+		${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
 	rm -rf /var/lib/apt/lists/*
 
 # Optional Rust toolchain
@@ -78,7 +78,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG APP_VERSION=26.3.9
 ARG DEVICE_TAG=cu128
 ARG DOCKER_DEVICE_STR='{"name": "cu128", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "default device"}'
-ARG DOCKER_PROGRAMS="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
+ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
 ARG ISO3_LANG=eng
 
 ENV DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR}
@@ -105,7 +105,7 @@ RUN set -eux; \
 		fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
 		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libxcb-cursor0 \
 		libgomp1 libsndfile1 \
-		${DOCKER_PROGRAMS} tesseract-ocr-${ISO3_LANG}; \
+		${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
 	rm -rf /var/lib/apt/lists/*
 
 # Copy Calibre from builder

@@ -819,7 +819,7 @@ function build_docker_image {
 			--build-arg APP_VERSION="$APP_VERSION"
 			--build-arg DEVICE_TAG="$DEVICE_TAG"
 			--build-arg DOCKER_DEVICE_STR="$ARG"
-			--build-arg DOCKER_PROGRAMS="$DOCKER_PROGRAMS"
+			--build-arg DOCKER_PROGRAMS_STR="$DOCKER_PROGRAMS"
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL"
 			--build-arg ISO3_LANG="$ISO3_LANG"
 		)
@@ -843,7 +843,7 @@ function build_docker_image {
 			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$DEVICE_TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
-			--build-arg DOCKER_PROGRAMS="${DOCKER_PROGRAMS[*]}" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			|| return 1
@@ -863,7 +863,7 @@ function build_docker_image {
 			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$DEVICE_TAG" \
 			--build-arg DOCKER_DEVICE_STR="$ARG" \
-			--build-arg DOCKER_PROGRAMS="${DOCKER_PROGRAMS[*]}" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
 			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			-t "$DOCKER_IMG_NAME" \
