@@ -2095,9 +2095,12 @@ def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
             msg = f'********* Combined block audio file saved in {file}'
             print(msg)
             return True
+        error = 'Session expired!'
+        print(error)
+        return False
     except Exception as e:
         DependencyError(e)
-    return False
+        return False
 
 def combine_audio_chapters(session_id:str)->list[str]|None:
 
