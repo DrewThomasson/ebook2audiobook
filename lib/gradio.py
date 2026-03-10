@@ -485,11 +485,13 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
-                .accordion-block-even > .label-wrap {
-                    background-color: var(--table-even-background-fill);
+                .accordion-block-even,
+                .accordion-block-even * {
+                    background-color: var(-table-even-background-fill) !important;
                 }
-                .accordion-block-odd > .label-wrap {
-                    background-color: var(--table-odd-background-fill);
+                .accordion-block-odd,
+                .accordion-block-odd * {
+                    background-color: var(--table-odd-background-fill) !important;
                 }
                 .gr-blocks-buttons {
                     display: flex !important;
