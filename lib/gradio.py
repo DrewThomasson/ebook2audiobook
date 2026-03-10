@@ -485,11 +485,11 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
-                .block-even > .label-wrap {
-                    background-color: #2a2a3e !important;
+                .accordion-block-even > .label-wrap {
+                    background-color: --background-fill-primary;
                 }
-                .block-odd > .label-wrap {
-                    background-color: #1e1e2e !important;
+                .accordion-block-odd > .label-wrap {
+                    background-color: --background-fill-secondary;
                 }
                 .gr-blocks-buttons {
                     display: flex !important;
@@ -728,7 +728,7 @@ def build_interface(args:dict)->gr.Blocks:
                 block_components = []
                 with gr.Column(elem_id='gr_column_blocks'):
                     for i in range(page_size):
-                        row_class = 'block-even' if i % 2 == 0 else 'block-odd'
+                        row_class = 'accordion-block-even' if i % 2 == 0 else 'accordion-block-odd'
                         with gr.Accordion(
                             f'Block {i}',
                             elem_id=f'block_{i}',
