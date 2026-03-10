@@ -487,7 +487,7 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .accordion-block-even,
                 .accordion-block-even * {
-                    background-color: var(-table-even-background-fill) !important;
+                    background-color: var(--table-even-background-fill) !important;
                 }
                 .accordion-block-odd,
                 .accordion-block-odd * {
