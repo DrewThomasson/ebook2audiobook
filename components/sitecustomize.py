@@ -45,10 +45,16 @@ def wrapped_check_torch_load_is_safe(*args: Any, **kwargs: Any) -> None:
 	warn("patched transformers check_torch_load_is_safe")
 	return None
 
-def patch_module(mod: ModuleType, attr="check_torch_load_is_safe") -> None:
-	if hasattr(mod, attr):
-		setattr(mod, attr, wrapped_check_torch_load_is_safe)
-		warn(f"patched {mod.__name__}.{attr}")
+def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
+    if hasattr(mod, attr):
+        setattr(mod, attr, wrapped_check_torch_load_is_safe)
+        warn(f'patched {mod.__name__}.{attr}')
+
+    # Patch missing isin_mps_friendly for newer transformers
+    if mod.__name__ == 'transformers.pytorch_utils' and not hasattr(mod, 'isin_mps_friendly'):
+        import torch
+        mod.isin_mps_friendly = torch.isin
+        warn(f'patched {mod.__name__}.isin_mps_friendly')
 
 
 # ─────────────────────────────────────────────────────
