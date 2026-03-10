@@ -96,7 +96,7 @@ if patch_enabled:
             class WrappedLoader(orig_loader.__class__):
                 def exec_module(self_inner, module):
                     orig_loader.exec_module(module)  # real import
-                    if module.__name__.startswith("transformers"):
+                    if module.__name__.startswith(('transformers', 'huggingface_hub')):
                         patch_module(module)
 
             # pass correct args so loader doesn't break import
