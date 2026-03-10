@@ -92,5 +92,5 @@ VOLUME \
 
 EXPOSE 7860
 
-ENTRYPOINT ["python3", "-u", "app.py"]
+ENTRYPOINT ["ebook2audiobook.sh"]
 CMD ["--script_mode", "full_docker"]
