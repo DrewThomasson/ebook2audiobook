@@ -998,6 +998,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_xtts = False
                         visible_bark = False
                         interactive_convert_btn = True if session['ebook'] else False
+                        session['status'] = status_tags['READY']
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
