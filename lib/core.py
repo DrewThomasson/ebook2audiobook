@@ -2843,7 +2843,6 @@ def finalize_audiobook(session_id:str)->tuple:
             else:
                 error = 'Conversion cancelled'
             return error, False
-        print(f"status: {session['status']}")
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             error = 'No blocks have been selected for the conversion!'
             return error, False

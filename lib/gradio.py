@@ -1805,13 +1805,17 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session['status'] in [status_tags['BLOCKS']]:
                     visible_main = False
                     visible_blocks = True
+                    ebook_name = ''
+                    blocks = []
+                    page = 0
+                    page_updates = []
                     if session['cancellation_requested']:
                         visible_main = True
                         visible_blocks = False
-                    ebook_name = Path(session['ebook']).stem
-                    blocks = session['blocks_edit']
-                    page = 0
-                    page_updates = list(populate_page(page, blocks))
+                    else:
+                        ebook_name = Path(session['ebook']).stem
+                        blocks = session['blocks_edit']
+                        page_updates = list(populate_page(page, blocks))
                     result = (
                         gr.update(value=ebook_name),
                         gr.update(visible=visible_main), gr.update(visible=visible_blocks),
