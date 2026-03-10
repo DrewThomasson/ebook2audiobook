@@ -58,9 +58,10 @@ def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
 
     # Rewrite use_auth_token → token for newer huggingface_hub
     if mod.__name__ == 'huggingface_hub':
+        import inspect
         for fn_name in dir(mod):
             fn = getattr(mod, fn_name, None)
-            if not callable(fn) or fn_name.startswith('_'):
+            if not inspect.isfunction(fn) or fn_name.startswith('_'):
                 continue
 
             def _make_wrapper(fn):
@@ -96,7 +97,7 @@ if patch_enabled:
             class WrappedLoader(orig_loader.__class__):
                 def exec_module(self_inner, module):
                     orig_loader.exec_module(module)  # real import
-                    if module.__name__.startswith("transformers"):
+                    if module.__name__.startswith(('transformers', 'huggingface_hub')):
                         patch_module(module)
 
             # pass correct args so loader doesn't break import
