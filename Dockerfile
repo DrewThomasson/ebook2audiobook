@@ -64,7 +64,9 @@ RUN set -eux; \
 	ln -sf /usr/lib/*-linux-gnu/libXext.so.6 /usr/lib/libXext.so.6; \
 	ln -sf /usr/lib/*-linux-gnu/libXrender.so.1 /usr/lib/libXrender.so.1
 
-RUN pip install --no-cache-dir --force-reinstall pip setuptools wheel
+RUN rm -rf /usr/local/lib/python3.12/site-packages/pip* && \
+    python3 -m ensurepip --upgrade && \
+    pip install --no-cache-dir --upgrade pip setuptools wheel
 
 COPY . /app
 
