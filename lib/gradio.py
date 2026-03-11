@@ -1183,7 +1183,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 selected_path = Path(selected).resolve()
                                 parent_path = Path(session['voice_dir']).parent.resolve()
                                 if parent_path in selected_path.parents:
-                                    msg = f'Are you sure to delete {speaker}...'
+                                    msg = f'Are you sure to delete {speaker}?'
                                     return (
                                         gr.update(value=show_gr_modal(status_tags['DELETION'], msg), visible=True),
                                         gr.update(value='confirm_voice_del')
@@ -1209,7 +1209,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
                             selected_name = os.path.basename(selected)
-                            msg = f'Are you sure to delete {selected_name}...'
+                            msg = f'Are you sure to delete {selected_name}?'
                             return gr.update(value=show_gr_modal(status_tags['DELETION'], msg), visible=True), gr.update(value='confirm_custom_model_del')
                 except Exception as e:
                     error = f'Could not delete the custom model {selected_name}!'
@@ -1222,7 +1222,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
                             selected_name = Path(selected).stem
-                            msg = f'Are you sure to delete {selected_name}...'
+                            msg = f'Are you sure to delete {selected_name}?'
                             return gr.update(value=show_gr_modal(status_tags['DELETION'], msg), visible=True), gr.update(value='confirm_audiobook_del')
                 except Exception as e:
                     error = f'Could not delete the audiobook {selected_name}!'
