@@ -125,20 +125,22 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 		echo "Error: --script_mode requires a value"
 		exit 1
 	fi
-	if [[ -n "${ZSH_VERSION:-}" ]]; then
-		for key in ${(k)arguments}; do
-			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-				echo "Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --$key"
-				exit 1
-			fi
-		done
-	else
-		for key in "${!arguments[@]}"; do
-			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-				echo "Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --$key"
-				exit 1
-			fi
-		done
+	if [[ "${arguments[script_mode]^^}" != "FULL_DOCKER" ]]; then
+		if [[ -n "${ZSH_VERSION:-}" ]]; then
+			for key in ${(k)arguments}; do
+				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+					echo "Error: when --script_mode is not FULL_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+					exit 1
+				fi
+			done
+		else
+			for key in "${!arguments[@]}"; do
+				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+					echo "Error: when --script_mode is not FULL_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+					exit 1
+				fi
+			done
+		fi
 	fi
 fi
 

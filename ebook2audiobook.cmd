@@ -183,22 +183,24 @@ if defined arguments.script_mode (
         echo Error: --script_mode requires a value
         goto :failed
     )
-    setlocal enabledelayedexpansion
-    for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
-        set "argname=%%A"
-        set "argname=!argname:arguments.=!"
-        if not "!argname!"=="" (
-            if /i not "!argname!"=="script_mode" (
-                if /i not "!argname!"=="docker_device" (
-                    if /i not "!argname!"=="docker_mode" (
-                        echo Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --!argname!
-                        goto :failed
+    if /i not "%arguments.script_mode%"=="FULL_DOCKER" (
+        setlocal enabledelayedexpansion
+        for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
+            set "argname=%%A"
+            set "argname=!argname:arguments.=!"
+            if not "!argname!"=="" (
+                if /i not "!argname!"=="script_mode" (
+                    if /i not "!argname!"=="docker_device" (
+                        if /i not "!argname!"=="docker_mode" (
+                            echo Error: when --script_mode is not FULL_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --!argname!
+                            goto :failed
+                        )
                     )
                 )
             )
         )
+        endlocal
     )
-    endlocal
 )
 goto :main
 
