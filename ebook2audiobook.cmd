@@ -737,6 +737,7 @@ set "ISO3_LANG=!ISO3_LANG!"
 if "%DOCKER_MODE%"=="podman" (
     echo Using podman-compose
     set "PODMAN_BUILD_ARGS=--format docker --no-cache --network=host"
+	set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg BUILDAH_FORMAT=docker"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg PYTHON_VERSION=%py_vers%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg APP_VERSION=%APP_VERSION%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg DEVICE_TAG=%DEVICE_TAG%"
