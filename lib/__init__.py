@@ -13,7 +13,7 @@ from .conf import (
 
 from .conf_lang import (
     abbreviations_mapping, chapter_word_mapping, default_language_code,
-    roman_numbers_tuples, emojis_list, install_info, session_info, language_mapping,
+    roman_numbers_tuples, emojis_list, install_info, session_info, ipa_mapping, language_mapping,
     language_math_phonemes, language_clock, os, punctuation_list, 
     punctuation_list_set, punctuation_split_hard, punctuation_split_hard_set,
     punctuation_split_soft, punctuation_split_soft_set, punctuation_switch,
@@ -21,7 +21,7 @@ from .conf_lang import (
 )
 
 from .conf_models import (
-    TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, SML_TAG_PATTERN, sml_escape_tag, default_fine_tuned, default_tts_engine, 
+    TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, SML_TAG_PATTERN, IPA_REMAINING_PATTERN, sml_escape_tag, default_fine_tuned, default_tts_engine, 
     default_engine_settings, default_vc_model, default_voice_detection_model,
     loaded_tts, xtts_builtin_speakers_list,
     max_custom_model, max_custom_voices, voices_dir
@@ -43,14 +43,14 @@ __all__ = [
 
     # from conf_lang
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code",
-    "roman_numbers_tuples", "emojis_list", "install_info", "session_info", "language_mapping",
+    "roman_numbers_tuples", "emojis_list", "install_info", "session_info", "ipa_mapping", "language_mapping",
     "language_math_phonemes", "language_clock", "os", "punctuation_list", 
     "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
     "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
     "specialchars_mapping", "chars_remove", "year_to_decades_languages",
     
     # from conf_models
-    "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "SML_TAG_PATTERN", "sml_escape_tag", "default_fine_tuned", "default_tts_engine",
+    "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "SML_TAG_PATTERN", "IPA_REMAINING_PATTERN", "sml_escape_tag", "default_fine_tuned", "default_tts_engine",
     "default_engine_settings", "default_vc_model", "default_voice_detection_model",
     "loaded_tts", "xtts_builtin_speakers_list", "max_custom_model",
     "max_custom_voices", "voices_dir"

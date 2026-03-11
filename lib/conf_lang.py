@@ -907,19 +907,6 @@ ipa_mapping = [
     ('.', ''), ('|', ''), ('‖', ''),
 ]
 
-ipa_remaining_pattern = re.compile(
-    r'['
-    r'\u0250-\u02AF'  # IPA Extensions
-    r'\u1D00-\u1D7F'  # Phonetic Extensions
-    r'\u1D80-\u1DBF'  # Phonetic Extensions Supplement
-    r'\u0300-\u036F'  # Combining Diacritical Marks
-    r'\u02B0-\u02FF'  # Spacing Modifier Letters
-    r'\u2070-\u209F'  # Superscripts (ⁿ etc.)
-    r'\u0278\u0281'   # specific IPA symbols
-    r'ʼ'
-    r']+'
-)
-
 language_mapping = {
     "ara": {"name": "Arabic", "native_name": "العربية", "max_chars": 166, "script": "arabic"},
     "ben": {"name": "Bengali", "native_name": "বাংলা", "max_chars": 142, "script": "bengali"},

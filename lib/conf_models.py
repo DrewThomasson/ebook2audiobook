@@ -45,6 +45,19 @@ SML_TAG_PATTERN = re.compile(
     re.VERBOSE | re.DOTALL
 )
 
+IPA_REMAINING_PATTERN = re.compile(
+    r'['
+    r'\u0250-\u02AF'  # IPA Extensions
+    r'\u1D00-\u1D7F'  # Phonetic Extensions
+    r'\u1D80-\u1DBF'  # Phonetic Extensions Supplement
+    r'\u0300-\u036F'  # Combining Diacritical Marks
+    r'\u02B0-\u02FF'  # Spacing Modifier Letters
+    r'\u2070-\u209F'  # Superscripts (ⁿ etc.)
+    r'\u0278\u0281'   # specific IPA symbols
+    r'ʼ'
+    r']+'
+)
+
 default_tts_engine = TTS_ENGINES['XTTSv2']
 default_fine_tuned = 'internal'
 default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
