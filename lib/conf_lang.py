@@ -824,6 +824,102 @@ specialchars_mapping = {
     }
 }
 
+ipa_mapping = [
+    # ── Affricates (must be before their components) ──
+    ('t͡ʃ', 'ch'), ('tʃ', 'ch'),
+    ('d͡ʒ', 'j'), ('dʒ', 'j'),
+    ('t͡s', 'ts'), ('ts', 'ts'),
+    ('d͡z', 'dz'), ('dz', 'dz'),
+    ('t͡ɕ', 'ch'), ('tɕ', 'ch'),
+    ('d͡ʑ', 'j'), ('dʑ', 'j'),
+    ('p͡f', 'pf'), ('pf', 'pf'),
+
+    # ── Diphthongs / vowel combos ──
+    ('aɪ', 'ai'), ('eɪ', 'ay'), ('ɔɪ', 'oy'),
+    ('aʊ', 'ow'), ('əʊ', 'oh'), ('oʊ', 'oh'),
+    ('ɪə', 'eer'), ('ɛə', 'air'), ('ʊə', 'oor'),
+    ('ɔʏ', 'oy'), ('aɪ̯', 'ai'), ('aʊ̯', 'ow'),
+
+    # ── Long vowels ──
+    ('iː', 'ee'), ('uː', 'oo'), ('ɑː', 'ah'),
+    ('ɔː', 'aw'), ('ɜː', 'ur'), ('eː', 'ay'),
+    ('oː', 'oh'), ('aː', 'ah'), ('øː', 'eu'),
+    ('yː', 'ue'), ('ɛː', 'eh'), ('œː', 'eu'),
+    ('ɐː', 'ar'), ('ʉː', 'oo'),
+
+    # ── Nasal vowels ──
+    ('ɛ̃', 'an'), ('ɑ̃', 'on'), ('ɔ̃', 'on'),
+    ('œ̃', 'un'), ('ã', 'an'), ('õ', 'on'),
+    ('ĩ', 'in'), ('ũ', 'oon'),
+
+    # ── Rhotics ──
+    ('ɹ', 'r'), ('ɾ', 'r'), ('ʁ', 'r'),
+    ('ɽ', 'r'), ('ɻ', 'r'), ('ʀ', 'r'),
+    ('r', 'r'),
+
+    # ── Laterals ──
+    ('ɫ', 'l'), ('ɭ', 'l'), ('ʎ', 'ly'),
+    ('ɬ', 'hl'), ('ɮ', 'zhl'),
+
+    # ── Nasals ──
+    ('ŋ', 'ng'), ('ɲ', 'ny'), ('ɳ', 'n'),
+    ('ɴ', 'ng'), ('ɱ', 'm'),
+
+    # ── Fricatives ──
+    ('ʃ', 'sh'), ('ʒ', 'zh'), ('θ', 'th'), ('ð', 'th'),
+    ('ɕ', 'sh'), ('ʑ', 'zh'), ('ç', 'h'), ('ʝ', 'y'),
+    ('x', 'kh'), ('ɣ', 'gh'), ('χ', 'kh'), ('ʁ', 'r'),
+    ('ħ', 'h'), ('ʕ', 'ah'), ('ɦ', 'h'), ('ʜ', 'h'),
+    ('β', 'v'), ('ɸ', 'f'), ('ʋ', 'v'),
+
+    # ── Stops ──
+    ('ʔ', ''), ('ɖ', 'd'), ('ʈ', 't'),
+    ('ɟ', 'j'), ('ɡ', 'g'), ('ɢ', 'g'),
+
+    # ── Approximants / glides ──
+    ('ɥ', 'w'), ('ɰ', 'w'), ('j', 'y'), ('w', 'w'),
+
+    # ── Short vowels ──
+    ('ɛ', 'e'), ('æ', 'a'), ('ɪ', 'i'), ('ʊ', 'oo'),
+    ('ə', 'uh'), ('ʌ', 'u'), ('ɒ', 'o'), ('ɑ', 'ah'),
+    ('ɔ', 'aw'), ('ɜ', 'ur'), ('ɐ', 'ah'), ('ɨ', 'i'),
+    ('ʉ', 'oo'), ('ɵ', 'o'), ('ɘ', 'uh'), ('ɤ', 'uh'),
+    ('ø', 'eu'), ('œ', 'eu'), ('y', 'ue'), ('ʏ', 'u'),
+    ('ɶ', 'a'), ('ɯ', 'oo'), ('ɞ', 'ur'),
+    ('e', 'e'), ('o', 'o'), ('a', 'a'), ('i', 'i'), ('u', 'oo'),
+
+    # ── Clicks (rare, best effort) ──
+    ('ʘ', 'p'), ('ǀ', 't'), ('ǃ', 'k'),
+    ('ǂ', 'k'), ('ǁ', 'l'),
+
+    # ── Implosives ──
+    ('ɓ', 'b'), ('ɗ', 'd'), ('ɠ', 'g'),
+    ('ʄ', 'j'), ('ʛ', 'g'),
+
+    # ── Suprasegmentals (strip) ──
+    ('ˈ', ''), ('ˌ', ''), ('ː', ''), ('ˑ', ''),
+    ('̩', ''), ('̯', ''), ('̃', ''), ('̥', ''),
+    ('̊', ''), ('̤', ''), ('̰', ''), ('̹', ''),
+    ('̜', ''), ('̟', ''), ('̠', ''), ('̈', ''),
+    ('̽', ''), ('͡', ''), ('͜', ''),
+    ('ˡ', ''), ('ʰ', 'h'), ('ʷ', 'w'),
+    ('ʲ', 'y'), ('ˤ', ''), ('ⁿ', 'n'),
+    ('.', ''), ('|', ''), ('‖', ''),
+]
+
+ipa_remaining_pattern = re.compile(
+    r'['
+    r'\u0250-\u02AF'  # IPA Extensions
+    r'\u1D00-\u1D7F'  # Phonetic Extensions
+    r'\u1D80-\u1DBF'  # Phonetic Extensions Supplement
+    r'\u0300-\u036F'  # Combining Diacritical Marks
+    r'\u02B0-\u02FF'  # Spacing Modifier Letters
+    r'\u2070-\u209F'  # Superscripts (ⁿ etc.)
+    r'\u0278\u0281'   # specific IPA symbols
+    r'ʼ'
+    r']+'
+)
+
 language_mapping = {
     "ara": {"name": "Arabic", "native_name": "العربية", "max_chars": 166, "script": "arabic"},
     "ben": {"name": "Bengali", "native_name": "বাংলা", "max_chars": 142, "script": "bengali"},

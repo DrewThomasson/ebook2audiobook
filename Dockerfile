@@ -67,8 +67,6 @@ RUN set -eux; \
 
 RUN pip install --upgrade pip setuptools wheel
 
-COPY ebook2audiobook.command /app/ebook2audiobook.sh
-RUN chmod 755 /app/ebook2audiobook.sh
 COPY . /app
 
 # Ensure Unix line endings
@@ -93,5 +91,5 @@ VOLUME \
 
 EXPOSE 7860
 
-ENTRYPOINT ["bash", "ebook2audiobook.sh"]
+ENTRYPOINT ["bash", "ebook2audiobook.command"]
 CMD ["--script_mode", "full_docker"]
