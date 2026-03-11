@@ -5,7 +5,7 @@ ARG PYTHON_VERSION=3.12
 # ============================================================
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+#SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ARG APP_VERSION=26.3.11
 ARG DEVICE_TAG=cu128
@@ -44,11 +44,12 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 # Optional Rust toolchain
-RUN if [ "${INSTALL_RUST}" = "1" ]; then \
+RUN bash -o pipefail -c '\
+	if [ "${INSTALL_RUST}" = "1" ]; then \
 		curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable; \
 	else \
 		echo "Skipping Rust toolchain"; \
-	fi
+	fi'
 
 # Calibre (CLI)
 RUN set -eux; \
