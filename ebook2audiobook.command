@@ -830,7 +830,7 @@ function build_docker_image {
 		echo "	GUI mode:"
 		echo "	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES up"
 		echo "	Headless mode:"
-		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --profile $COMPOSE_PROFILES --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	elif [[ "$DOCKER_MODE" == "compose" ]]; then
 		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
