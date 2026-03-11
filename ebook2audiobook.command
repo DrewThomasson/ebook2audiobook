@@ -810,7 +810,7 @@ function build_docker_image {
 	fi
 	if [[ "$DOCKER_MODE" == "podman" ]]; then
 		echo "--> Using podman-compose"
-		export PODMAN_BUILD_ARGS=(
+		PODMAN_BUILD_ARGS=(
 			--format docker
 			--no-cache
 			--network=host
