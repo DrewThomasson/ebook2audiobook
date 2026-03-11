@@ -63,6 +63,10 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
+hf_token = os.getenv('HF_TOKEN')
+if not hf_token:
+    print('No HF_TOKEN found. Set one for higher rate limits: https://huggingface.co/settings/tokens')
+os.environ['HF_TOKEN'] = hf_token
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
 
