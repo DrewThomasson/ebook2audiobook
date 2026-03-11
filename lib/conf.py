@@ -43,6 +43,7 @@ os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
 os.environ['DO_NOT_TRACK'] = 'True'
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
+os.environ['HF_TOKEN'] = '' # Set a Hugging Face token for higher rate limits! Get one at https://huggingface.co/settings/tokens
 os.environ['HF_HOME'] = tts_dir
 os.environ['HF_DATASETS_CACHE'] = tts_dir
 os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
