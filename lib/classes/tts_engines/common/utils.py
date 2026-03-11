@@ -491,6 +491,10 @@ class TTSUtils:
                 return False, error
             self.params['current_voice'] = os.path.abspath(current_voice)
             return True, ''
+        elif tag == 'ipa':
+            if close:
+                value = '' # TODO: get the value between tag [ipa] and close [/ipa]
+            return True, ''
         else:
             error = 'This SML is not recognized'
             return False, error

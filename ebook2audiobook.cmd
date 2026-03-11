@@ -146,12 +146,17 @@ endlocal & (
     for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
 )
 if defined arguments.script_mode (
-    if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" (
-        set "SCRIPT_MODE=%arguments.script_mode%"
-    ) else (
-        echo Error: Invalid script mode argument: %arguments.script_mode%
-        goto :failed
-    )
+    set "script_mode_valid=0"
+    if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" set "script_mode_valid=1"
+    if /i "%arguments.script_mode%"=="%FULL_DOCKER%" set "script_mode_valid=1"
+)
+
+if defined arguments.script_mode if "%script_mode_valid%"=="1" (
+    set "SCRIPT_MODE=%arguments.script_mode%"
+)
+if defined arguments.script_mode if "%script_mode_valid%"=="0" (
+    echo Error: Invalid script mode argument: %arguments.script_mode%
+    goto :failed
 )
 if defined arguments.docker_device (
     if /i "%arguments.docker_device%"=="true" (

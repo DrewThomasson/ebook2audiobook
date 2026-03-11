@@ -25,7 +25,7 @@ TTS_VOICE_CONVERSION = {
 TTS_SML = {
     "break": {"static": "[break]", "paired": False},
     "pause": {"static": "[pause]", "paired": False},
-    "voice": {"paired": True},
+    "voice": {"paired": True
 }
 
 sml_escape_tag = 0xE000

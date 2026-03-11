@@ -93,13 +93,11 @@ while (( $# > 0 )); do
 	esac
 done
 
-if [[ -n "${arguments[script_mode]+exists}" ]]; then
-	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
-		SCRIPT_MODE="${arguments[script_mode]}"
-	else
-		echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
-		exit 1
-	fi
+if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" || "${arguments[script_mode]}" == "$FULL_DOCKER" ]]; then
+    SCRIPT_MODE="${arguments[script_mode]}"
+else
+    echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
+    exit 1
 fi
 
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
