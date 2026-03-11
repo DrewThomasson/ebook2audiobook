@@ -8,7 +8,7 @@ services:
         APP_VERSION: ${APP_VERSION:-26.3.11}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
     working_dir: /app
-    entrypoint: ["bash", "ebook2audiobook.sh", "--script_mode", "full_docker"]
+    entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
     tty: true
     stdin_open: true
     ports:
@@ -31,7 +31,7 @@ services:
         APP_VERSION: ${APP_VERSION:-26.3.11}
         DEVICE_TAG: ${DEVICE_TAG:-cu128}
     working_dir: /app
-    entrypoint: ["bash", "ebook2audiobook.sh", "--script_mode", "full_docker"]
+    entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
     tty: true
     stdin_open: true
     ports:
