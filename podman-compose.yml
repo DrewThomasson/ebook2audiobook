@@ -1,6 +1,6 @@
 services:
   ebook2audiobook:
-    image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cpu}
+    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cpu}
     build:
       context: .
       dockerfile: Dockerfile
