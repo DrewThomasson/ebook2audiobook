@@ -745,7 +745,7 @@ if "%DOCKER_MODE%"=="podman" (
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
     cd /d "%SAFE_SCRIPT_DIR%"
-    podman-compose -f podman-compose.yml build
+    podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% build
 	if errorlevel 1 (
 		echo Build failed
 		endlocal 

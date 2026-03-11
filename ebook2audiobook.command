@@ -824,7 +824,7 @@ function build_docker_image {
 		)
 		PODMAN_BUILD_ARGS_STR=$(printf ' %q' "${PODMAN_BUILD_ARGS[@]}")
 		export PODMAN_BUILD_ARGS="$PODMAN_BUILD_ARGS_STR"
-		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose -f podman-compose.yml build || return 1
+		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES build || return 1
 		echo "Docker image ready! to run your docker: "
 		echo "Podman Compose:"
 		echo "	GUI mode:"
