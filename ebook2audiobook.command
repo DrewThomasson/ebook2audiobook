@@ -810,20 +810,18 @@ function build_docker_image {
 	fi
 	if [[ "$DOCKER_MODE" == "podman" ]]; then
 		echo "--> Using podman-compose"
-		PODMAN_BUILD_ARGS=(
-			--format docker
-			--no-cache
-			--network=host
-			--build-arg PYTHON_VERSION="$py_vers"
-			--build-arg APP_VERSION="$APP_VERSION"
-			--build-arg DEVICE_TAG="$DEVICE_TAG"
-			--build-arg DOCKER_DEVICE_STR="$ARG"
-			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}"
-			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL"
-			--build-arg ISO3_LANG="$ISO3_LANG"
+		export PODMAN_BUILD_ARGS=$(printf ' %q' \
+			--format docker \
+			--no-cache \
+			--network=host \
+			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg APP_VERSION="$APP_VERSION" \
+			--build-arg DEVICE_TAG="$DEVICE_TAG" \
+			--build-arg DOCKER_DEVICE_STR="$ARG" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
+			--build-arg ISO3_LANG="$ISO3_LANG" \
 		)
-		PODMAN_BUILD_ARGS_STR=$(printf ' %q' "${PODMAN_BUILD_ARGS[@]}")
-		export PODMAN_BUILD_ARGS="$PODMAN_BUILD_ARGS_STR"
 		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES build || return 1
 		echo "Docker image ready! to run your docker: "
 		echo "Podman Compose:"
