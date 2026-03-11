@@ -814,7 +814,6 @@ function build_docker_image {
 			--format docker
 			--no-cache
 			--network=host
-			--build-arg BUILDAH_FORMAT="docker"
 			--build-arg PYTHON_VERSION="$py_vers"
 			--build-arg APP_VERSION="$APP_VERSION"
 			--build-arg DEVICE_TAG="$DEVICE_TAG"
