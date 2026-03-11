@@ -132,9 +132,9 @@ Docker Compose (i.e. cuda 12.8:
              {wsl_cmd}  DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 Podman Compose (i.e. cuda 12.8:
         Run Gradio GUI:
-             {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml up
+             {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu up
         Run Headless mode:
-             {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+             {wsl_cmd}  DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 SML tags available:
         [break] — silence (random range **0.3–0.6 sec.**)
         [pause] — silence (random range **1.0–1.6 sec.**)
