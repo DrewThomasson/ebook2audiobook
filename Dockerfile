@@ -64,10 +64,9 @@ RUN set -eux; \
 	ln -sf /usr/lib/*-linux-gnu/libXext.so.6 /usr/lib/libXext.so.6; \
 	ln -sf /usr/lib/*-linux-gnu/libXrender.so.1 /usr/lib/libXrender.so.1
 
-COPY . /app
-
-RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install --no-cache-dir setuptools wheel
+
+COPY . /app
 
 # Ensure Unix line endings
 RUN find /app -type f \( -name "*.sh" -o -name "*.command" \) -exec sed -i 's/\r$//' {} \;
