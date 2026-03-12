@@ -92,6 +92,7 @@ set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 set "WSL_VERSION="
 set "DOCKER_DESKTOP=0"
+set "PODMAN_DESKTOP=0"
 
 IF NOT DEFINED DEVICE_TAG SET "DEVICE_TAG="
 
@@ -567,6 +568,15 @@ for /f "delims=" %%a in ('wsl echo $WSL_DISTRO_NAME') do set "DOCKER_WSL_CONTAIN
 exit /b 0
 
 :check_docker
+where.exe /Q podman-compose.exe
+if not errorlevel 1 (
+    podman-compose version >nul 2>&1
+    if not errorlevel 1 (
+        echo Podman Desktop detected.
+        set "PODMAN_DESKTOP=1"
+        exit /b 0
+    )
+)
 where.exe /Q docker.exe
 if not errorlevel 1 (
     docker version >nul 2>&1
@@ -581,8 +591,6 @@ if errorlevel 1 (
     echo Docker is not installed inside WSL2.
     exit /b 1
 )
-:: Docker Desktop not found, using WSL Docker
-set "DOCKER_DESKTOP=0"
 exit /b 0
 
 :check_docker_daemon
@@ -684,21 +692,14 @@ if defined ARG (
     set "ARG_ESCAPED="
 )
 if "%DOCKER_MODE%"=="podman" (
-	where.exe podman-compose >nul 2>&1
-	if errorlevel 1 (
-		echo podman-compose is not installed.
+	if "%PODMAN_DESKTOP%"=="0" (
+		echo podman-compose is not running.
 		endlocal 
 		exit /b 1
 	)
-)
-if "%DOCKER_MODE%"=="compose" (
-	if "%DOCKER_DESKTOP%"=="1" (
-		docker compose version >nul 2>&1
-	) else (
-		wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker compose version >nul 2>&1
-	)
-	if errorlevel 1 (
-		echo docker compose is not installed.
+) else if "%DOCKER_MODE%"=="compose" (
+	if "%DOCKER_DESKTOP%"=="0" (
+		echo docker compose is not running.
 		endlocal 
 		exit /b 1
 	)
@@ -756,9 +757,9 @@ if "%DOCKER_MODE%"=="podman" (
 	echo Docker image ready. To run your docker:
 	echo Podman Compose:
 	echo 	GUI mode:
-	echo 		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% up
+	echo 		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% up
 	echo 	Headless mode:
-	echo   		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
     if "%DOCKER_DESKTOP%"=="1" (
 		echo Using docker compose
@@ -849,7 +850,9 @@ if defined arguments.help (
                 call :json_get tag
                 if errorlevel 1 goto :failed
             )
-			if "%DOCKER_DESKTOP%"=="1" (
+			if "%PODMAN_DESKTOP%"=="1" (
+				podman image exists "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
+			) else if "%DOCKER_DESKTOP%"=="1" (
 				docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
 			) else (
 				wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
