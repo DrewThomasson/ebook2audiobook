@@ -37,7 +37,7 @@ RUN set -eux; \
 		gcc g++ make pkg-config cmake curl wget git bash xz-utils python3-dev \
 		fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
 		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libxcb-cursor0 \
-		libgomp1 libsndfile1 \
+		libgomp1 libsndfile1 pip \
 		${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
 	rm -rf /var/lib/apt/lists/*
 
