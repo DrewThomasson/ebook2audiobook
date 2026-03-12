@@ -66,7 +66,7 @@ RUN set -eux; \
 
 COPY . /app
 
-RUN python3 -m ensurepip --upgrade && pip install --no-cache-dir --upgrade pip
+RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install --no-cache-dir setuptools wheel
 
 # Ensure Unix line endings
