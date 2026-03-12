@@ -125,7 +125,7 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 		echo "Error: --script_mode requires a value"
 		exit 1
 	fi
-	if [[ "${arguments[script_mode]^^}" != "FULL_DOCKER" ]]; then
+	if [[ "$(echo "${arguments[script_mode]}" | tr '[:lower:]' '[:upper:]')" != "FULL_DOCKER" ]]; then
 		if [[ -n "${ZSH_VERSION:-}" ]]; then
 			for key in ${(k)arguments}; do
 				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
