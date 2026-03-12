@@ -13,8 +13,6 @@ ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh
 ARG ISO3_LANG=eng
 ARG INSTALL_RUST=1
 
-ENV DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR}
-
 LABEL org.opencontainers.image.title="ebook2audiobook" \
 	org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
 	org.opencontainers.image.version="${APP_VERSION}" \
@@ -26,6 +24,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	PYTHONDONTWRITEBYTECODE=1 \
 	PYTHONUNBUFFERED=1 \
 	PIP_NO_CACHE_DIR=1 \
+	DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR} \
+	PIP_BREAK_SYSTEM_PACKAGES=1 \
 	PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /app
