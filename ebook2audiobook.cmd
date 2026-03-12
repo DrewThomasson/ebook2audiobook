@@ -594,6 +594,7 @@ if errorlevel 1 (
 exit /b 0
 
 :check_docker_daemon
+if "%PODMAN_DESKTOP%"=="1" exit /b 0
 if "%DOCKER_DESKTOP%"=="1" (
     docker info >nul 2>&1
     if not errorlevel 1 exit /b 0
