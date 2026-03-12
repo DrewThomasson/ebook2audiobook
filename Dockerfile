@@ -41,7 +41,9 @@ RUN set -eux; \
 		${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
 	rm -rf /var/lib/apt/lists/*
 
-# Optional Rust toolchain
+RUN python3 -m ensurepip --upgrade && pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Rust toolchain
 RUN bash -o pipefail -c '\
 	if [ "${INSTALL_RUST}" = "1" ]; then \
 		curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable; \
@@ -63,8 +65,6 @@ RUN set -eux; \
 	ln -sf /usr/lib/*-linux-gnu/libX11.so.6 /usr/lib/libX11.so.6; \
 	ln -sf /usr/lib/*-linux-gnu/libXext.so.6 /usr/lib/libXext.so.6; \
 	ln -sf /usr/lib/*-linux-gnu/libXrender.so.1 /usr/lib/libXrender.so.1
-
-RUN python3 -m ensurepip --upgrade && pip install --no-cache-dir --upgrade pip setuptools wheel
 
 COPY . /app
 
