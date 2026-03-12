@@ -46,6 +46,8 @@ SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "xcb-util-cursor" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
+PODMAN_DESKTOP="0"
+DOCKER_DESKTOP="0"
 DOCKER_PROGRAMS=("curl" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_MODE=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
@@ -697,6 +699,10 @@ function check_conda {
 }
 
 function check_docker {
+	if ! command -v docker &> /dev/null; then
+		echo -e "\e[31m=============== Docker is not installed.\e[0m"
+		return 1
+	fi
 	if ! command -v docker &> /dev/null; then
 		echo -e "\e[31m=============== Docker is not installed.\e[0m"
 		return 1

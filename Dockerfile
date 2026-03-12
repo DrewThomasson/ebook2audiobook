@@ -65,7 +65,7 @@ RUN set -eux; \
 	ln -sf /usr/lib/*-linux-gnu/libXext.so.6 /usr/lib/libXext.so.6; \
 	ln -sf /usr/lib/*-linux-gnu/libXrender.so.1 /usr/lib/libXrender.so.1
 
-RUN python3 -m pip install --no-cache-dir setuptools wheel
+RUN /usr/bin/python3 -m pip install --no-cache-dir setuptools wheel
 
 COPY . /app
 
