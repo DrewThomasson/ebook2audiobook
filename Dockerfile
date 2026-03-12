@@ -39,8 +39,8 @@ RUN set -eux; \
 		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libxcb-cursor0 \
 		libgomp1 libsndfile1 pip \
 		${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
-	rm mv /usr/local/lib/python3.12/site-packages/pip /usr/local/lib/python3.12/site-packages/pip.bak || true && \
-		-rf /var/lib/apt/lists/*
+	mv /usr/local/lib/python3.12/site-packages/pip /usr/local/lib/python3.12/site-packages/pip.bak || true && \
+	rm -rf /var/lib/apt/lists/*
 
 # Rust toolchain
 RUN bash -o pipefail -c '\
