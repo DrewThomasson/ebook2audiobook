@@ -11,6 +11,7 @@ from lib.conf import tts_dir, devices, default_audio_proc_format
 from lib.conf_models import TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, SML_TAG_PATTERN, loaded_tts, default_vc_model, default_engine_settings
 
 __all__ = [
+    "sys",
     "os",
     "shutil",
     "random",
