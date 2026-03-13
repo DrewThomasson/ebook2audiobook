@@ -578,7 +578,7 @@ if "%DOCKER_MODE%"=="podman" (
 			exit /b 0
 		)
 	)
-	echo -e "\e[31m=============== Docker is not installed.\e[0m"
+	echo Podman is not installed.
 	exit /b 1
 )
 where.exe /Q docker.exe
