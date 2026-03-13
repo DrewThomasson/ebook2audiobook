@@ -43,7 +43,9 @@ RUN set -eux; \
 	
 RUN find /usr/local/lib/python3.12/site-packages/pip* -type f -delete 2>/dev/null; \
     find /usr/local/lib/python3.12/site-packages/pip* -type l -delete 2>/dev/null; \
-    curl -sS https://bootstrap.pypa.io/get-pip.py | python3 -- --force-reinstall && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
+    python3 /tmp/get-pip.py --force-reinstall && \
+    rm -f /tmp/get-pip.py && \
     pip install --no-cache-dir setuptools wheel
 
 # Rust toolchain
