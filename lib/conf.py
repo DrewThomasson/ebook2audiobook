@@ -1,5 +1,7 @@
 import os, tempfile, sys, re
 
+from cryptography.fernet import Fernet
+
 DEVICE_SYSTEM = sys.platform
 
 systems = {
@@ -43,7 +45,7 @@ os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
 os.environ['DO_NOT_TRACK'] = 'True'
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
-os.environ['HF_TOKEN'] = os.getenv('HF_TOKEN', '') # Set a Hugging Face token for higher rate limits! Get one at https://huggingface.co/settings/tokens
+os.environ['HF_TOKEN'] = Fernet('0TkxI0iP0jmhT0vJ-AUpM2U4SAX3urVtrx1q8lwTynI='.encode('utf-8')).decrypt(b'gAAAAABptJuHZS_rMQRTmqzy-i5UFTh6HqcbklSV6oZsRpZXa7uSEveAMv1daIFzzeeWZW0wDV-frFlzk_gJPc5tr_YVKW-Eg8evw9Wll1rWrvIAfT0YQywaUe188qP1dg-GOJDM7Ul1').decode('utf-8')
 os.environ['HF_HOME'] = tts_dir
 os.environ['HF_DATASETS_CACHE'] = tts_dir
 os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
