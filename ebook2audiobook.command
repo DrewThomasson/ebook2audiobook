@@ -699,15 +699,15 @@ function check_conda {
 }
 
 function check_docker {
-	if ! command -v docker &> /dev/null; then
-		echo -e "\e[31m=============== Docker is not installed.\e[0m"
-		return 1
+	if command -v podman-compose &> /dev/null; then
+		PODMAN_DESKTOP="1"
+		return 0
+	elif command -v docker &> /dev/null; then
+		DOCKER_DESKTOP="1"
+		return 0
 	fi
-	if ! command -v docker &> /dev/null; then
-		echo -e "\e[31m=============== Docker is not installed.\e[0m"
-		return 1
-	fi
-	return 0
+	echo -e "\e[31m=============== Docker is not installed.\e[0m"
+	return 1
 }
 
 function install_python_packages {
@@ -900,11 +900,18 @@ else
 			if [[ "$DEVICE_TAG" == "" ]]; then
                 DEVICE_TAG=$(json_get "tag")
 			fi
-			if docker image inspect "${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
-				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
-				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
-				exit 1
-			fi
+			if [[ "PODMAN_DESKTOP" == "1" ]]; then
+				if podman image exists "localhost/%DOCKER_IMG_NAME%:!DEVICE_TAG!" >/dev/null 2>&1; then
+					echo "[STOP] Podman image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
+					echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
+					exit 1
+				fi
+			elif [[ "$DOCKER_DESKTOP" == "1" ]]; then
+				if docker image inspect "${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
+					echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
+					echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
+					exit 1
+				fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		else
 			install_python_packages || return 1
