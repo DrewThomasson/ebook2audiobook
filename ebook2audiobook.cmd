@@ -569,22 +569,28 @@ exit /b 0
 
 :check_docker
 where.exe /Q podman-compose.exe
-if not errorlevel 1 (
-    podman-compose version >nul 2>&1
-    if not errorlevel 1 (
-        echo Podman Desktop detected.
-        set "PODMAN_DESKTOP=1"
-        exit /b 0
-    )
+if "%DOCKER_MODE%"=="podman" (
+	if not errorlevel 1 (
+		podman-compose version >nul 2>&1
+		if not errorlevel 1 (
+			echo Podman Desktop detected.
+			set "PODMAN_DESKTOP=1"
+			exit /b 0
+		)
+	)
+	exit /b 1
 )
-where.exe /Q docker.exe
-if not errorlevel 1 (
-    docker version >nul 2>&1
-    if not errorlevel 1 (
-        echo Docker Desktop detected.
-        set "DOCKER_DESKTOP=1"
-        exit /b 0
-    )
+if "%DOCKER_MODE%"=="compose" (
+	where.exe /Q docker.exe
+	if not errorlevel 1 (
+		docker version >nul 2>&1
+		if not errorlevel 1 (
+			echo Docker Desktop detected.
+			set "DOCKER_DESKTOP=1"
+			exit /b 0
+		)
+	)
+	exit /b 1
 )
 wsl --user root -d %DOCKER_WSL_CONTAINER% -- which docker >nul 2>&1
 if errorlevel 1 (
