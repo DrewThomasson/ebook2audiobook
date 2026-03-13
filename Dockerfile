@@ -36,11 +36,14 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends --allow-change-held-packages \
 		gcc g++ make pkg-config cmake curl wget git bash xz-utils python3-dev \
 		fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
-		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 libxcb-xfixes0 libxcb-cursor0 \
-		libgomp1 libsndfile1 pip \
+		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 \
+		libxcb-xfixes0 libxcb-cursor0 libgomp1 libsndfile1 \
 		${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
-	mv /usr/local/lib/python3.12/site-packages/pip /usr/local/lib/python3.12/site-packages/pip.bak || true && \
 	rm -rf /var/lib/apt/lists/*
+	
+RUN find /usr/local/lib/python3.12/site-packages/pip* -type f -delete 2>/dev/null; \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3 && \
+    pip install --no-cache-dir setuptools wheel
 
 # Rust toolchain
 RUN bash -o pipefail -c '\
@@ -64,8 +67,6 @@ RUN set -eux; \
 	ln -sf /usr/lib/*-linux-gnu/libX11.so.6 /usr/lib/libX11.so.6; \
 	ln -sf /usr/lib/*-linux-gnu/libXext.so.6 /usr/lib/libXext.so.6; \
 	ln -sf /usr/lib/*-linux-gnu/libXrender.so.1 /usr/lib/libXrender.so.1
-
-RUN /usr/bin/python3 -m pip install --no-cache-dir setuptools wheel
 
 COPY . /app
 
