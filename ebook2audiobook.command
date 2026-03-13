@@ -699,10 +699,15 @@ function check_conda {
 }
 
 function check_docker {
-	if command -v podman-compose &> /dev/null; then
-		PODMAN_DESKTOP="1"
-		return 0
-	elif command -v docker &> /dev/null; then
+	if [[ "$DOCKER_MODE" == "podman" ]]; then
+		if command -v podman-compose &> /dev/null; then
+			PODMAN_DESKTOP="1"
+			return 0
+		fi
+		echo -e "\e[31m=============== Podman is not installed.\e[0m"
+		return 1
+	fi
+	if command -v docker &> /dev/null; then
 		DOCKER_DESKTOP="1"
 		return 0
 	fi
