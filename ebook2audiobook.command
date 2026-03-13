@@ -900,7 +900,7 @@ else
 			if [[ "$DEVICE_TAG" == "" ]]; then
                 DEVICE_TAG=$(json_get "tag")
 			fi
-			if [[ "PODMAN_DESKTOP" == "1" ]]; then
+			if [[ "$PODMAN_DESKTOP" == "1" ]]; then
 				if podman image exists "localhost/%DOCKER_IMG_NAME%:!DEVICE_TAG!" >/dev/null 2>&1; then
 					echo "[STOP] Podman image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
 					echo "Delete it using: podman rmi -f localhost/%DOCKER_IMG_NAME%:!DEVICE_TAG!"
