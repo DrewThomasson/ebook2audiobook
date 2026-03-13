@@ -1,6 +1,8 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
+sys.stderr = StderrFilter(sys.stderr)
+
 class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
 
     def __init__(self, session:DictProxy):
