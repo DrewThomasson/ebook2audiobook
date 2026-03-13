@@ -568,9 +568,9 @@ for /f "delims=" %%a in ('wsl echo $WSL_DISTRO_NAME') do set "DOCKER_WSL_CONTAIN
 exit /b 0
 
 :check_docker
-where.exe /Q podman-compose.exe
-if not errorlevel 1 (
-	if "%DOCKER_MODE%"=="podman" (
+if "%DOCKER_MODE%"=="podman" (
+	where.exe /Q podman-compose.exe
+	if not errorlevel 1 (
 		podman-compose version >nul 2>&1
 		if not errorlevel 1 (
 			echo Podman Desktop detected.
