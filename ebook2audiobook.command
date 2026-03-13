@@ -903,7 +903,7 @@ else
 			if [[ "PODMAN_DESKTOP" == "1" ]]; then
 				if podman image exists "localhost/%DOCKER_IMG_NAME%:!DEVICE_TAG!" >/dev/null 2>&1; then
 					echo "[STOP] Podman image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
-					echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
+					echo "Delete it using: podman rmi -f localhost/%DOCKER_IMG_NAME%:!DEVICE_TAG!"
 					exit 1
 				fi
 			elif [[ "$DOCKER_DESKTOP" == "1" ]]; then
