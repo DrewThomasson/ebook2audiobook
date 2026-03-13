@@ -81,9 +81,10 @@ RUN ./ebook2audiobook.command --script_mode build_docker --docker_device "$DOCKE
 
 # Cleanup build-only packages and Rust toolchain to shrink the image
 RUN set -eux; \
-	apt-get update; \
-	apt-get purge -y --auto-remove gcc g++ make pkg-config cmake wget git xz-utils python3-dev; \
-	rm -rf /var/lib/apt/lists/* /root/.cargo /root/.rustup /tmp/*
+    rustup self uninstall -y 2>/dev/null || true; \
+    apt-get update; \
+    apt-get purge -y --auto-remove gcc g++ make pkg-config cmake wget git xz-utils python3-dev; \
+    rm -rf /var/lib/apt/lists/* /root/.cargo /root/.rustup /tmp/* || true
 
 VOLUME \
 	/app/ebooks \
