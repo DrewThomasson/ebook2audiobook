@@ -20,6 +20,7 @@ __all__ = [
     "Any",
     "Path",
     "DictProxy",
+    "StderrFilter",
     "TTSRegistry",
     "TTSUtils",
     "tts_dir",
