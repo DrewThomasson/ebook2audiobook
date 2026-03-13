@@ -912,6 +912,7 @@ else
 					echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
 					exit 1
 				fi
+			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		else
 			install_python_packages || return 1
