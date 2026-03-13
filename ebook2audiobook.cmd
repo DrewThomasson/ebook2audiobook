@@ -568,7 +568,6 @@ for /f "delims=" %%a in ('wsl echo $WSL_DISTRO_NAME') do set "DOCKER_WSL_CONTAIN
 exit /b 0
 
 :check_docker
-echo %DOCKER_MODE%
 if "%DOCKER_MODE%"=="podman" (
 	where.exe /Q podman-compose.exe
 	if not errorlevel 1 (
@@ -847,8 +846,14 @@ if defined arguments.help (
 			call :check_wsl
 			if errorlevel 1 goto :install_wsl
             call :check_docker
-            if errorlevel 1	goto :install_docker
-            call :check_docker_daemon
+            if errorlevel 1	(
+				if not "%DOCKER_MODE%"=="podman" (
+					goto :install_docker
+				) else (
+					goto :failed
+				)
+            )
+			call :check_docker_daemon
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
             if errorlevel 1 goto :failed
