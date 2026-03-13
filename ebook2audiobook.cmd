@@ -569,8 +569,8 @@ exit /b 0
 
 :check_docker
 where.exe /Q podman-compose.exe
-if "%DOCKER_MODE%"=="podman" (
-	if not errorlevel 1 (
+if not errorlevel 1 (
+	if "%DOCKER_MODE%"=="podman" (
 		podman-compose version >nul 2>&1
 		if not errorlevel 1 (
 			echo Podman Desktop detected.
