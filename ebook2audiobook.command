@@ -72,7 +72,7 @@ ISO3_LANG="eng"
 SUDO="sudo"
 
 # Validate command arguments against conf.py
-if [ $# -gt 0 ]; then
+if [ $# > 0 ]; then
     VALID_ARGS=$(python3 -c 'from lib.conf import command_options; print(" ".join(command_options))')
     for arg in "$@"; do
         if [ "${arg:0:2}" = "--" ]; then
