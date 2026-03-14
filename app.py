@@ -143,7 +143,7 @@ SML tags available:
         ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
-    options = [
+    command_options = [
         '--script_mode', '--docker_mode', '--session', '--share', '--headless', 
         '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
         '--custom_model', '--fine_tuned', '--output_format', '--output_channel',

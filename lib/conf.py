@@ -10,73 +10,23 @@ systems = {
     "WINDOWS": "win32"
 }
 
+command_options = [
+    '--script_mode', '--docker_mode', '--session', '--share', '--headless', 
+    '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
+    '--custom_model', '--fine_tuned', '--output_format', '--output_channel',
+    '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', 
+    '--top_k', '--top_p', '--speed', '--enable_text_splitting',
+    '--text_temp', '--waveform_temp', '--output_dir', '--version', '--workflow', '--help'
+]
+
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
 fernet_key = '0TkxI0iP0jmhT0vJ-AUpM2U4SAX3urVtrx1q8lwTynI='
 fernet_data = b'gAAAAABptJuHZS_rMQRTmqzy-i5UFTh6HqcbklSV6oZsRpZXa7uSEveAMv1daIFzzeeWZW0wDV-frFlzk_gJPc5tr_YVKW-Eg8evw9Wll1rWrvIAfT0YQywaUe188qP1dg-GOJDM7Ul1'
 
 # ---------------------------------------------------------------------
-# Global configuration
-# ---------------------------------------------------------------------
-min_python_version = (3,10)
-max_python_version = (3,12)
-
-root_dir = os.path.dirname(os.path.abspath(__file__))
-tmp_dir = os.path.abspath('tmp')
-run_dir = os.path.abspath('run')
-gradio_cache_dir = os.path.normpath(os.path.join(run_dir, 'gradio'))
-
-models_dir = os.path.abspath('models')
-ebooks_dir = os.path.abspath('ebooks')
-voices_dir = os.path.abspath('voices')
-tts_dir = os.path.join(models_dir, 'tts')
-components_dir = os.path.abspath('components')
-
-tempfile.tempdir = run_dir
-tmp_expire = 7 # days
-
-# ---------------------------------------------------------------------
-# Environment setup
-# ---------------------------------------------------------------------
-os.environ['PYTHONUTF8'] = '1'
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-os.environ['COQUI_TOS_AGREED'] = '1'
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
-os.environ['CALIBRE_TEMP_DIR'] = run_dir
-os.environ['CALIBRE_CACHE_DIRECTORY'] = run_dir
-os.environ['CALIBRE_CONFIG_DIRECTORY'] = run_dir
-os.environ['TMPDIR'] = run_dir
-os.environ['GRADIO_DEBUG'] = '0'
-os.environ['DO_NOT_TRACK'] = 'True'
-os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
-os.environ['HF_HOME'] = tts_dir
-os.environ['HF_DATASETS_CACHE'] = tts_dir
-os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
-os.environ['BARK_CACHE_DIR'] = tts_dir
-os.environ['TTS_CACHE'] = tts_dir
-os.environ['TORCH_HOME'] = tts_dir
-os.environ['TTS_HOME'] = models_dir
-os.environ['XDG_CACHE_HOME'] = models_dir
-os.environ['MPLCONFIGDIR'] = f'{models_dir}/matplotlib'
-os.environ['TESSDATA_PREFIX'] = f'{models_dir}/tessdata'
-os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
-os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
-os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
-os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
-os.environ["CUDA_MODULE_LOADING"] = "LAZY"
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
-os.environ['SUNO_OFFLOAD_CPU'] = 'False'
-os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
-if DEVICE_SYSTEM == systems['WINDOWS']:
-    os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
-
-# ---------------------------------------------------------------------
 # Version and runtime config
 # ---------------------------------------------------------------------
 prog_version = (lambda: open('VERSION.txt').read().strip())()
-max_upload_size = '6GB'
 
 NATIVE = 'native'
 FULL_DOCKER = 'full_docker'
@@ -86,6 +36,8 @@ BUILD_DOCKER = 'build_docker'
 # Python environment references
 # ---------------------------------------------------------------------
 
+min_python_version = (3,10)
+max_python_version = (3,12)
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 
@@ -144,6 +96,68 @@ rocm_version_range = {"min": (5,7), "max": (6,3)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
 jetson_version_range = {"min": (5,1), "max": (6,1)}
+
+############### SETTINGS BELOW CAN BE MODIFIED ###############
+
+# ---------------------------------------------------------------------
+# Global paths
+# ---------------------------------------------------------------------
+
+root_dir = os.path.dirname(os.path.abspath(__file__))
+tmp_dir = os.path.abspath('tmp')
+run_dir = os.path.abspath('run')
+gradio_cache_dir = os.path.normpath(os.path.join(run_dir, 'gradio'))
+models_dir = os.path.abspath('models')
+ebooks_dir = os.path.abspath('ebooks')
+voices_dir = os.path.abspath('voices')
+tts_dir = os.path.join(models_dir, 'tts')
+components_dir = os.path.abspath('components')
+tempfile.tempdir = run_dir
+
+# ---------------------------------------------------------------------
+# Environment setup
+# ---------------------------------------------------------------------
+os.environ['PYTHONUTF8'] = '1'
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+os.environ['COQUI_TOS_AGREED'] = '1'
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
+os.environ['CALIBRE_TEMP_DIR'] = run_dir
+os.environ['CALIBRE_CACHE_DIRECTORY'] = run_dir
+os.environ['CALIBRE_CONFIG_DIRECTORY'] = run_dir
+os.environ['TMPDIR'] = run_dir
+os.environ['GRADIO_DEBUG'] = '0'
+os.environ['DO_NOT_TRACK'] = 'True'
+os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
+os.environ['HF_HOME'] = tts_dir
+os.environ['HF_DATASETS_CACHE'] = tts_dir
+os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
+os.environ['BARK_CACHE_DIR'] = tts_dir
+os.environ['TTS_CACHE'] = tts_dir
+os.environ['TORCH_HOME'] = tts_dir
+os.environ['TTS_HOME'] = models_dir
+os.environ['XDG_CACHE_HOME'] = models_dir
+os.environ['MPLCONFIGDIR'] = f'{models_dir}/matplotlib'
+os.environ['TESSDATA_PREFIX'] = f'{models_dir}/tessdata'
+os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
+os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
+os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+os.environ["CUDA_MODULE_LOADING"] = "LAZY"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
+os.environ['SUNO_OFFLOAD_CPU'] = 'False'
+os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
+if DEVICE_SYSTEM == systems['WINDOWS']:
+    os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
+
+# ---------------------------------------------------------------------
+# Global settings
+# ---------------------------------------------------------------------
+
+max_upload_size = '6GB'
+tmp_expire = 7 # days
 
 # ---------------------------------------------------------------------
 # Interface configuration
