@@ -1,11 +1,14 @@
 import os, threading, gc, shutil, tempfile, regex as re
 
 from typing import Any, Union, Dict, TYPE_CHECKING
+from cryptography.fernet import Fernet
 from pathlib import Path
 
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
 from lib import *
+
+os.environ['HF_TOKEN'] = Fernet(fernet_key.encode('utf-8')).decrypt(fernet_data).decode('utf-8')
 
 _lock = threading.Lock()
 

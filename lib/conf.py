@@ -1,6 +1,6 @@
 import os, tempfile, sys, re
 
-from cryptography.fernet import Fernet
+debug_mode = False
 
 DEVICE_SYSTEM = sys.platform
 
@@ -9,6 +9,10 @@ systems = {
     "MACOS": "darwin",
     "WINDOWS": "win32"
 }
+
+workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
+fernet_key = '0TkxI0iP0jmhT0vJ-AUpM2U4SAX3urVtrx1q8lwTynI='
+fernet_data = b'gAAAAABptJuHZS_rMQRTmqzy-i5UFTh6HqcbklSV6oZsRpZXa7uSEveAMv1daIFzzeeWZW0wDV-frFlzk_gJPc5tr_YVKW-Eg8evw9Wll1rWrvIAfT0YQywaUe188qP1dg-GOJDM7Ul1'
 
 # ---------------------------------------------------------------------
 # Global configuration
@@ -45,7 +49,6 @@ os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
 os.environ['DO_NOT_TRACK'] = 'True'
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
-os.environ['HF_TOKEN'] = Fernet('0TkxI0iP0jmhT0vJ-AUpM2U4SAX3urVtrx1q8lwTynI='.encode('utf-8')).decrypt(b'gAAAAABptJuHZS_rMQRTmqzy-i5UFTh6HqcbklSV6oZsRpZXa7uSEveAMv1daIFzzeeWZW0wDV-frFlzk_gJPc5tr_YVKW-Eg8evw9Wll1rWrvIAfT0YQywaUe188qP1dg-GOJDM7Ul1').decode('utf-8')
 os.environ['HF_HOME'] = tts_dir
 os.environ['HF_DATASETS_CACHE'] = tts_dir
 os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
@@ -78,9 +81,6 @@ max_upload_size = '6GB'
 NATIVE = 'native'
 FULL_DOCKER = 'full_docker'
 BUILD_DOCKER = 'build_docker'
-
-workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
-debug_mode = False
 
 # ---------------------------------------------------------------------
 # Python environment references
