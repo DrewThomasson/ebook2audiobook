@@ -1,5 +1,4 @@
 @echo off
-
 setlocal EnableExtensions DisableDelayedExpansion
 
 set "SAFE_USERPROFILE=%USERPROFILE%"
@@ -118,6 +117,25 @@ cd /d "%SAFE_SCRIPT_DIR%"
 for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 
 ::::::::::::::::::::::::::::::: CORE FUNCTIONS
+
+if not "%~1"=="" (
+    setlocal EnableDelayedExpansion
+    for /f "delims=" %%V in ('python -c "from lib.conf import command_options; print(' '.join(command_options))"') do set "VALID_ARGS=%%V"
+    for %%A in (%*) do (
+        set "ARG=%%~A"
+        if "!ARG:~0,2!"=="--" (
+            set "FOUND=0"
+            for %%V in (!VALID_ARGS!) do (
+                if /i "!ARG!"=="%%V" set "FOUND=1"
+            )
+            if !FOUND! equ 0 (
+                echo ERROR: Unknown option "!ARG!"
+                exit /b 1
+            )
+        )
+    )
+    endlocal
+)
 
 :parse_args
 setlocal EnableDelayedExpansion
