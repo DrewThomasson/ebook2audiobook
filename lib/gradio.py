@@ -998,7 +998,6 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_xtts = False
                         visible_bark = False
                         interactive_convert_btn = True if session['ebook'] else False
-                        session['status'] = status_tags['READY']
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -1880,8 +1879,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if isinstance(session.get('audiobook'), str):
                         if not os.path.exists(session['audiobook']):
                             session['audiobook'] = None
-                    if session['status'] == status_tags['CONVERTING']:
-                        session['status'] = status_tags['READY']
+                    session['status'] = status_tags['READY']
                     session['is_gui_process'] = is_gui_process
                     session['system'] = DEVICE_SYSTEM
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")

@@ -5,8 +5,7 @@ class StdoutFilter:
         self._original = original
 
     def write(self, msg):
-        if 'NNPACK' not in msg:
-            self._original.write(msg)
+        self._original.write(msg)
 
     def flush(self):
         self._original.flush()

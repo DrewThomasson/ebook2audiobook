@@ -2874,10 +2874,11 @@ def finalize_audiobook(session_id:str)->tuple:
                 if exported_files is not None:
                     progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                     session['audiobook'] = exported_files[-1]
+                    session['status'] = status_tags['READY']
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
+                    reset_ebook_session(session_id)
                     if session['blocks_preview']:
-                        reset_ebook_session(session_id)
                         show_alert({"type": "success", "msg": progress_status})
                     return progress_status, True
                 else:
