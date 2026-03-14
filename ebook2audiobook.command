@@ -72,18 +72,11 @@ ISO3_LANG="eng"
 SUDO="sudo"
 
 # Validate command arguments against conf.py
-if [ $# > 0 ]; then
+if [ $# -gt 0 ]; then
     VALID_ARGS=$(python3 -c 'from lib.conf import command_options; print(" ".join(command_options))')
     for arg in "$@"; do
         if [ "${arg:0:2}" = "--" ]; then
-            found=0
-            for valid in $VALID_ARGS; do
-                if [ "$arg" = "$valid" ]; then
-                    found=1
-                    break
-                fi
-            done
-            if [ $found -eq 0 ]; then
+            if ! echo " $VALID_ARGS " | grep -q " $arg "; then
                 echo "ERROR: Unknown option \"$arg\""
                 exit 1
             fi
