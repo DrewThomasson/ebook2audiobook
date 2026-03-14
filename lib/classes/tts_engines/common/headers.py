@@ -4,6 +4,7 @@ from typing import Any
 from pathlib import Path
 from multiprocessing.managers import DictProxy
 
+from lib.classes.std_filter import StderrFilter
 from lib.classes.std_filter import StdoutFilter
 from lib.classes.tts_registry import TTSRegistry
 from lib.classes.tts_engines.common.utils import TTSUtils
@@ -21,6 +22,7 @@ __all__ = [
     "Any",
     "Path",
     "DictProxy",
+    "StderrFilter",
     "StdoutFilter",
     "TTSRegistry",
     "TTSUtils",
