@@ -567,8 +567,8 @@ def convert2epub(session_id:str)-> bool:
         try:
             title = False
             author = False
-            calibre_cli = shutil.which('ebook-convert')
-            if not calibre_cli:
+            ebook_convert = shutil.which('ebook-convert')
+            if not ebook_convert:
                 error = 'ebook-convert utility is not installed or not found.'
                 print(error)
                 return False
@@ -665,10 +665,10 @@ def convert2epub(session_id:str)-> bool:
                     print(f'OCR completed for {page_count} image page(s).')
                 else:
                     return False
-            msg = f"Running command: {calibre_cli} {file_input} {session['epub_path']}"
+            msg = f"Running command: {ebook_convert} {file_input} {session['epub_path']}"
             print(msg)
             cmd = [
-                    calibre_cli, file_input, session['epub_path'],
+                    ebook_convert, file_input, session['epub_path'],
                     '--input-encoding=utf-8',
                     '--output-profile=generic_eink',
                     '--epub-version=3',
@@ -678,8 +678,7 @@ def convert2epub(session_id:str)-> bool:
                     "//*[name()='h1' or name()='h2' or name()='h3' or name()='h4' or name()='h5']",
                     '--disable-font-rescaling',
                     '--pretty-print',
-                    '--smarten-punctuation',
-                    '--verbose'
+                    '--smarten-punctuation'
                 ]
             if title:
                 cmd += ['--title', title]
