@@ -5,6 +5,7 @@ class StdoutFilter:
         self._original = original
 
     def write(self, msg):
+        print('coucoucouc')
         if 'NNPACK' not in msg:
             self._original.write(msg)
 
@@ -16,6 +17,7 @@ class StderrFilter:
         self._original = original
 
     def write(self, msg):
+        print('ccacacacaacacacaca')
         self._original.write(msg)
 
     def flush(self):
