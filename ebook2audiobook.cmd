@@ -796,12 +796,17 @@ if "%DOCKER_MODE%"=="podman" (
 		endlocal 
 		exit /b 1
 	)
+	if defined wsl_cmd (
+		set "env_prefix=DEVICE_TAG=%DEVICE_TAG%"
+	) else (
+		set "env_prefix=set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
+	)
 	echo Docker image ready. To run your docker:
 	echo Docker Compose:
 	echo 	GUI mode:
-	echo 		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
+	echo 		%env_prefix% docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
 	echo 	Headless mode:
-	echo   		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		%env_prefix% docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else (
 	if "%DOCKER_DESKTOP%"=="1" (
 		:: echo Using docker buildx
