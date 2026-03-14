@@ -17,6 +17,7 @@ authors = [
     { name = "Drew Thomasson" }
 ]
 dependencies = [
+	"cryptography",
 	"tqdm",
 	"torchvggish",
 	"regex",
