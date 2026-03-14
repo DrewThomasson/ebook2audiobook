@@ -143,15 +143,7 @@ SML tags available:
         ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
-    command_options = [
-        '--script_mode', '--docker_mode', '--session', '--share', '--headless', 
-        '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
-        '--custom_model', '--fine_tuned', '--output_format', '--output_channel',
-        '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', 
-        '--top_k', '--top_p', '--speed', '--enable_text_splitting',
-        '--text_temp', '--waveform_temp',
-        '--output_dir', '--version', '--workflow', '--help'
-    ]
+    options = command_options
     tts_engine_list_keys = [k for k in TTS_ENGINES.keys()]
     tts_engine_list_values = [k for k in TTS_ENGINES.values()]
     all_group = parser.add_argument_group('**** The following options are for container only', 'Optional')
