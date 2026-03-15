@@ -73,7 +73,7 @@ SUDO="sudo"
 
 # Validate command arguments against conf.py
 if [ $# -gt 0 ]; then
-    VALID_ARGS=$(python3 -c 'from lib.conf import command_options; print(" ".join(command_options))')
+    VALID_ARGS=$(python3 -c 'from lib.conf import cli_options; print(" ".join(cli_options))')
     for arg in "$@"; do
         if [ "${arg:0:2}" = "--" ]; then
             if ! echo " $VALID_ARGS " | grep -q " $arg "; then

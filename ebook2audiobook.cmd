@@ -120,7 +120,7 @@ for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 
 if not "%~1"=="" (
     setlocal EnableDelayedExpansion
-    for /f "delims=" %%V in ('python -c "from lib.conf import command_options; print(' '.join(command_options))"') do set "VALID_ARGS=%%V"
+    for /f "delims=" %%V in ('python -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
     for %%A in (%*) do (
         set "ARG=%%~A"
         if "!ARG:~0,2!"=="--" (
