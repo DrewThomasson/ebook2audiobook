@@ -89,6 +89,7 @@ set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 set "WSL_VERSION="
+set "DOCKER_IN_WSL=0"
 set "DOCKER_DESKTOP=0"
 set "PODMAN_DESKTOP=0"
 
