@@ -857,9 +857,14 @@ if defined arguments.help (
     if /i "%arguments.help%"=="true" (
 		call :check_python
 		if errorlevel 1 goto :install_python
-		wsl --user root -d %DOCKER_WSL_CONTAINER% -- which docker >nul 2>&1
-		if not errorlevel 1 (
-			set DOCKER_IN_WSL=1
+		call :check_docker
+		if "%DOCKER_DESKTOP%"=="0" (
+			ifi "%PODMAN_DESKTOP"=="0" (
+				wsl --user root -d %DOCKER_WSL_CONTAINER% -- which docker >nul 2>&1
+				if not errorlevel 1 (
+					set DOCKER_IN_WSL=1
+				)
+			)
 		)
         call python -u "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
         goto :eof
