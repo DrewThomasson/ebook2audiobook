@@ -200,7 +200,6 @@ SML tags available:
     headless_optional_group.add_argument(cli_options[26], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
     headless_optional_group.add_argument(cli_options[27], action='store_true', help=argparse.SUPPRESS)
     headless_optional_group.add_argument(cli_options[28], action='store_true', help=argparse.SUPPRESS)
-    headless_optional_group.add_argument(cli_options[29], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
         if arg.startswith('--') and arg not in cli_options:
