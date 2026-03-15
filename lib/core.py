@@ -2709,6 +2709,8 @@ def convert_ebook(args:dict)->tuple:
                             msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
                         else:
                             msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
+                            if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
+                                msg_extra += f"<br/>Your Free Memory is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']} required!<br/>It will probably crash your conversion!"
                             if session['free_vram_gb'] > 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
