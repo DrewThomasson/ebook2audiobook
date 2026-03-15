@@ -2877,7 +2877,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     session['status'] = status_tags['READY']
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
-                    reset_ebook_session(session_id)
+                    reset_ebook_session(session_id, True)
                     if session['blocks_preview']:
                         show_alert({"type": "success", "msg": progress_status})
                     return progress_status, True
@@ -2889,16 +2889,17 @@ def finalize_audiobook(session_id:str)->tuple:
             error = 'finalize_audiobook() failed!'
     return error, False
 
-def restore_session_from_data(data:dict, session:dict)->None:
+def restore_session_from_data(data:dict, session:dict, force:bool)->None:
     try:
         for key, value in data.items():
             if key in session:
                 if key not in save_session_keys_except:
                     if isinstance(value, dict) and isinstance(session[key], dict):
-                        restore_session_from_data(value, session[key])
+                        restore_session_from_data(value, session[key], force)
                     else:
-                        if value is None and session[key] is not None:
-                            continue
+                        if not force:
+                            if value is None and session[key] is not None:
+                                continue
                         session[key] = value
     except Exception as e:
         DependencyError(e)
@@ -2916,11 +2917,10 @@ def on_unload(req:gr.Request)->None:
             else:
                 context_tracker.end_session(session_id, socket_hash)
 
-def reset_ebook_session(session_id:str)->None:
+def reset_ebook_session(session_id:str, force:bool=False)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
-        "ebook_list": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
@@ -2953,7 +2953,7 @@ def reset_ebook_session(session_id:str)->None:
             "Modified": None,
         }
     }
-    restore_session_from_data(data, session)
+    restore_session_from_data(data, session, force)
 
 def cleanup_models_cache()->None:
     try:
