@@ -71,7 +71,7 @@ def kill_previous_instances(script_name: str):
 def main()->None:
     wsl_cmd = ''
     env_prefix = ''
-    if os.environ.get('DOCKER_IN_WSL', '0') == "1":
+    if os.environ.get('DOCKER_IN_WSL', '0') == "1" && os.environ.get('DOCKER_DESKTOP', '0') == "0" && os.environ.get('PODMAN_DESKTOP', '0') == "0":
         wsl_cmd = 'wsl --user root --'
     if wsl_cmd:
         env_prefix = 'DEVICE_TAG=cu128'
