@@ -150,7 +150,7 @@ SML tags available:
     )
     tts_engine_list_keys = [k for k in TTS_ENGINES.keys()]
     tts_engine_list_values = [k for k in TTS_ENGINES.values()]
-    all_group = parser.add_argument_group('**** The following cli_options are for container only', 'Optional')
+    all_group = parser.add_argument_group('**** The following options are for container only', 'Optional')
     all_group.add_argument(cli_options[0], type=str, help='Mandatory to build a container. The only value is: build_docker.')
     all_group.add_argument(cli_options[1], type=str, help='Optional. The only values are: podman and compose. without this option standard docker buildx is used.')
     parser.add_argument(cli_options[2], type=str, help='Session to resume the conversion in case of interruption, crash, or reuse of custom models and custom cloning voices.')
@@ -198,9 +198,7 @@ SML tags available:
     Default to config.json model.""")
     headless_optional_group.add_argument(cli_options[25], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
     headless_optional_group.add_argument(cli_options[26], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
-    headless_optional_group.add_argument(cli_options[27], type=str, help=argparse.SUPPRESS)
-    headless_optional_group.add_argument(cli_options[28], action='store_true', help=argparse.SUPPRESS)
-    headless_optional_group.add_argument(cli_options[29], type=str, help=argparse.SUPPRESS)
+    headless_optional_group.add_argument(cli_options[27], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
         if arg.startswith('--') and arg not in cli_options:
