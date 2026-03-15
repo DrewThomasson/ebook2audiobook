@@ -33,6 +33,8 @@ export CONDA_HOME="$HOME/Miniforge3"
 export CONDA_BIN_PATH="$CONDA_HOME/bin"
 export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
 export PATH="$CONDA_BIN_PATH:${PATH-}"
+export PODMAN_DESKTOP="0"
+export DOCKER_DESKTOP="0"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
@@ -46,8 +48,6 @@ SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "xcb-util-cursor" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-PODMAN_DESKTOP="0"
-DOCKER_DESKTOP="0"
 DOCKER_PROGRAMS=("curl" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 DOCKER_MODE=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
