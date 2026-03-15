@@ -87,7 +87,6 @@ set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%"
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
-set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 set "WSL_VERSION="
 set "DOCKER_DESKTOP=0"
@@ -220,6 +219,10 @@ if defined arguments.script_mode (
         )
         endlocal
     )
+)
+if defined arguments.version (
+	echo v%APP_VERSION%
+	goto :eof
 )
 goto :main
 

@@ -195,6 +195,11 @@ if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exist
 	fi
 fi
 
+if [[ -n "${arguments[version]+exists}" ]]; then
+	echo "v${APP_VERSION}"
+	exit 0
+fi
+
 ############### FUNCTIONS ##############
 
 ###### DESKTOP APP
