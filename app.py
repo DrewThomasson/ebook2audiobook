@@ -199,6 +199,7 @@ SML tags available:
     headless_optional_group.add_argument(cli_options[25], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
     headless_optional_group.add_argument(cli_options[26], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
     headless_optional_group.add_argument(cli_options[27], action='store_true', help=argparse.SUPPRESS)
+    headless_optional_group.add_argument(cli_options[28], type=str, default=None, help=argparse.SUPPRESS)
     
     for arg in sys.argv:
         if arg.startswith('--') and arg not in cli_options:
