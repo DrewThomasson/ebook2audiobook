@@ -71,9 +71,6 @@ def kill_previous_instances(script_name: str):
 def main()->None:
     wsl_cmd = ''
     env_prefix = ''
-    print(f"DOCKER_IN_WSL: {os.environ.get('DOCKER_IN_WSL', '0')}")
-    print(f"DOCKER_DESKTOP: {os.environ.get('DOCKER_DESKTOP', '0')}")
-    print(f"PODMAN_DESKTOP: {os.environ.get('PODMAN_DESKTOP', '0')}")
     if os.environ.get('DOCKER_IN_WSL', '0') == '1' and os.environ.get('DOCKER_DESKTOP', '0') == '0' and os.environ.get('PODMAN_DESKTOP', '0') == '0':
         wsl_cmd = 'wsl --user root --'
     if wsl_cmd:
