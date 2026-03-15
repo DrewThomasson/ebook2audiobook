@@ -678,7 +678,8 @@ def convert2epub(session_id:str)-> bool:
                     "//*[name()='h1' or name()='h2' or name()='h3' or name()='h4' or name()='h5']",
                     '--disable-font-rescaling',
                     '--pretty-print',
-                    '--smarten-punctuation'
+                    '--smarten-punctuation',
+                    '--verbose'
                 ]
             if title:
                 cmd += ['--title', title]
