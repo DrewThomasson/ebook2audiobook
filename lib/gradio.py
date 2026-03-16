@@ -738,7 +738,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible=False,
                             open=False
                         ) as acc:
-                            with gr.Row(elem_id=f'block_row_{i}'):
+                            with gr.Row():
                                 keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=True,
@@ -764,8 +764,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 interactive=True
                             )
                             reset.click(
-                                fn=click_reset_block,
-                                inputs=[gr_session, reset],
+                                fn=lambda session, _i=i: click_reset_block(session, _i),
+                                inputs=[gr_session],
                                 outputs=[txt]
                             )
                             block_components.append((acc, keep, txt))
@@ -1748,6 +1748,12 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)              
                 return gr.update()
 
+            def click_reset_block(session_id:str, block_id:int):
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    text = session['blocks_edit'][block_id]['text']
+                return gr.update()
+                
             def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
