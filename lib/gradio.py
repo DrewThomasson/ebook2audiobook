@@ -750,7 +750,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 reset = gr.Button(
                                     '↺',
                                     elem_id=f'block_reset_{i}',
-                                    variant='secondary'
+                                    variant='secondary',
                                     interactive=True,
                                     scale=0,
                                     min_width=40
