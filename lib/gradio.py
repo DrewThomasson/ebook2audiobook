@@ -1492,7 +1492,6 @@ def build_interface(args:dict)->gr.Blocks:
                     models = load_engine_presets(engine)
                     session['tts_engine'] = engine
                     session['fine_tuned'] = default_fine_tuned
-                    session['voice'] = None if engine not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']] else session['voice']
                     visible_bark = False
                     visible_xtts = False
                     if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
