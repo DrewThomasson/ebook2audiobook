@@ -1490,6 +1490,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     models = load_engine_presets(engine)
+                    session['voice'] = None if session['voice'] == default_engine_settings[session['tts_engine']]['voice'] else session['voice']
                     session['tts_engine'] = engine
                     session['fine_tuned'] = default_fine_tuned
                     visible_bark = False
