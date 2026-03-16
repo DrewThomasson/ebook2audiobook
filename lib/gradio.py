@@ -738,14 +738,23 @@ def build_interface(args:dict)->gr.Blocks:
                             visible=False,
                             open=False
                         ) as acc:
-                            keep = gr.Checkbox(
-                                elem_id=f'block_keep_{i}',
-                                value=True,
-                                label='',
-                                interactive=True,
-                                visible=True,
-                                scale=0
-                            )
+                            with gr.Row(elem_id=f'block_row_{i}'):
+                                keep = gr.Checkbox(
+                                    elem_id=f'block_keep_{i}',
+                                    value=True,
+                                    label='',
+                                    interactive=True,
+                                    visible=True,
+                                    scale=0
+                                )
+                                reset = gr.Button(
+                                    '↺',
+                                    elem_id=f'block_reset_{i}',
+                                    variant='secondary'
+                                    interactive=True,
+                                    scale=0,
+                                    min_width=40
+                                )
                             txt = gr.Textbox(
                                 elem_id=f'block_text_{i}',
                                 lines=18,
@@ -753,6 +762,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 show_label=False,
                                 container=False,
                                 interactive=True
+                            )
+                            reset.click(
+                                fn=click_reset_block,
+                                inputs=[gr_session, reset],
+                                outputs=[txt]
                             )
                             block_components.append((acc, keep, txt))
 
