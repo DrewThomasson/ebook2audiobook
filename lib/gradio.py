@@ -1810,16 +1810,16 @@ def build_interface(args:dict)->gr.Blocks:
                 return (*updates, header)
 
             def collect_page(page: int, blocks: list[dict], *args) -> list[dict]:
-                expands = args[:page_size]
-                keeps = args[page_size:page_size * 2]
-                texts = args[page_size * 2:]
+                expands = args[0]  # single list from gr.State
+                keeps = args[1:page_size + 1]
+                texts = args[page_size + 1:]
                 new_blocks = [dict(b) for b in blocks]
                 start = int(page) * page_size
                 for i in range(page_size):
                     idx = start + i
                     if idx < len(new_blocks):
                         new_blocks[idx] = {
-                            'expand': expands[i],
+                            'expand': expands[i] if i < len(expands) else False,
                             'keep': keeps[i],
                             'text': texts[i]
                         }
