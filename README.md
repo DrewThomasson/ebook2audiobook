@@ -101,7 +101,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ## Features
-- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
+- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`, `MiniMax`
 - 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`
 - 🔍 **OCR scanning** for files with text pages as images
 - 🔊 **High-quality text-to-speech** from near realtime to near real voice
@@ -124,6 +124,21 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - MPS (Apple Silicon CPU)
 
 *<i> Modern TTS engines are very slow on CPU, so use lower quality TTS like YourTTS, Tacotron2 etc..</i>
+
+### MiniMax Cloud TTS
+
+[MiniMax](https://platform.minimax.io) is a cloud-based TTS engine that requires no GPU and produces high-quality speech.
+
+- **API Key**: Set `MINIMAX_API_KEY` environment variable
+- **Base URL**: `https://api.minimax.io` (global) / `https://api.minimaxi.com` (China)
+- **Models**: `speech-2.8-hd` (default, highest quality), `speech-2.8-turbo` (faster)
+- **Voices**: Graceful Lady, Insightful Speaker, Radiant Girl, Persuasive Man, Lucky Robot, Expressive Narrator
+
+```bash
+# Example usage with MiniMax TTS
+export MINIMAX_API_KEY="your-api-key"
+python app.py --headless --ebook mybook.epub --tts_engine MINIMAX --fine_tuned speech-2.8-hd
+```
 
 ## Supported Languages
 | **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |

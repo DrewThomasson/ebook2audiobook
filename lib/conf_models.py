@@ -12,7 +12,8 @@ TTS_ENGINES = {
     "FAIRSEQ": "fairseq",
     "GLOWTTS": "glowtts",
     "TACOTRON2": "tacotron",
-    "YOURTTS": "yourtts"
+    "YOURTTS": "yourtts",
+    "MINIMAX": "minimax"
 }
 
 TTS_VOICE_CONVERSION = {
@@ -190,5 +191,18 @@ default_engine_settings = {
         "files": ['config.json', 'model_file.pth'],
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
+    },
+    TTS_ENGINES['MINIMAX']: {
+        "languages": {"eng": "en", "zho": "zh-cn", "jpn": "ja", "kor": "ko", "fra": "fr", "deu": "de", "spa": "es", "ita": "it", "por": "pt", "rus": "ru", "tur": "tr", "ara": "ar", "hin": "hi"},
+        "samplerate": 32000,
+        "voices": {
+            "English_Graceful_Lady": "Graceful Lady",
+            "English_Insightful_Speaker": "Insightful Speaker",
+            "English_radiant_girl": "Radiant Girl",
+            "English_Persuasive_Man": "Persuasive Man",
+            "English_Lucky_Robot": "Lucky Robot",
+            "English_expressive_narrator": "Expressive Narrator",
+        },
+        "rating": {"VRAM": 0, "CPU": 1, "RAM": 1, "Realism": 5}
     }
 }
