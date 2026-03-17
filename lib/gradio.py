@@ -1753,6 +1753,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     text = session['blocks_edit'][block_id]['text']
+                    print(session['blocks_edit'])
                     return gr.update(value=text)
                 return gr.update()
                 
