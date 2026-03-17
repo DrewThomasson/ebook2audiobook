@@ -1,4 +1,4 @@
-import os, threading, gc, shutil, tempfile, regex as re
+import os, sys, threading, gc, ctypes, shutil, tempfile, regex as re
 
 from typing import Any, Union, Dict, TYPE_CHECKING
 from cryptography.fernet import Fernet
@@ -23,10 +23,29 @@ class TTSUtils:
     def cleanup_memory(self)->None:
         import torch
         gc.collect()
+        torch.clear_autocast_cache()
+        if sys.platform == systems['LINUX']:
+            try:
+                libc = ctypes.CDLL('libc.so.6')
+                libc.malloc_trim(0)
+            except Exception:
+                pass
+        elif sys.platform == systems['WINDOWS']:
+            try:
+                kernel32 = ctypes.windll.kernel32
+                handle = kernel32.GetCurrentProcess()
+                kernel32.SetProcessWorkingSetSize(
+                    handle, ctypes.c_size_t(-1), ctypes.c_size_t(-1)
+                )
+            except Exception:
+                pass
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
             torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+        if hasattr(torch, 'xpu') and torch.xpu.is_available():
+            torch.xpu.synchronize()
+            torch.xpu.empty_cache()
 
     def _model_size_bytes(self, model:Any)->int:
         total = 0
