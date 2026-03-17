@@ -59,7 +59,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
         try:
             msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
-            self._cleanup_memory()
+            self.cleanup_memory()
             engine = loaded_tts.get(self.tts_key)
             if not engine:
                 if self.session['custom_model'] is not None:
@@ -235,7 +235,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
                     del segment_tensor
-                    self._cleanup_memory()
+                    self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(final_sentence_file):
                         error = f"Cannot create {final_sentence_file}"
@@ -247,6 +247,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 print(error)
                 return False
         except Exception as e:
+            self.cleanup_memory()
             error = f'Vits.convert(): {e}'
             print(error)
             return False

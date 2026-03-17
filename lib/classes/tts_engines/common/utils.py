@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class TTSUtils:
 
-    def _cleanup_memory(self)->None:
+    def cleanup_memory(self)->None:
         import torch
         gc.collect()
         if torch.cuda.is_available():
@@ -253,7 +253,7 @@ class TTSUtils:
         try:
             msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
-            self._cleanup_memory()
+            self.cleanup_memory()
             engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not engine_zs:
                 engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
@@ -284,7 +284,7 @@ class TTSUtils:
                     print(msg)
                     key = f'{xtts}-internal'
                     default_text = Path(default_text_file).read_text(encoding='utf-8')
-                    self._cleanup_memory()
+                    self.cleanup_memory()
                     engine = loaded_tts.get(key, False)
                     if not engine:
                         vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])

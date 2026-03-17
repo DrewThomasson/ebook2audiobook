@@ -44,7 +44,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             from huggingface_hub import hf_hub_download
             msg = f'Loading TTS {self.tts_key} model, it takes a while, please be patient…'
             print(msg)
-            self._cleanup_memory()
+            self.cleanup_memory()
             engine = loaded_tts.get(self.tts_key)
             if not engine:
                 if self.session['custom_model'] is not None:
@@ -173,12 +173,10 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                     part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
                                 del part_tensor
-                                """
                                 if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
                                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                                     break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
                                     self.audio_segments.append(break_tensor.clone())
-                                """
                             else:
                                 error = f"part_tensor not valid"
                                 print(error)
@@ -191,7 +189,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
                     del segment_tensor
-                    self._cleanup_memory()
+                    self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(final_sentence_file):
                         error = f"Cannot create {final_sentence_file}"
@@ -203,6 +201,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                 print(error)
                 return False
         except Exception as e:
+            self.cleanup_memory()
             error = f'Xttsv2.convert(): {e}'
             print(error)
             return False
