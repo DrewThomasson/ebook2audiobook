@@ -2754,7 +2754,10 @@ def convert_ebook(args:dict)->tuple:
                             checksum, error = compare_checksums(session_id)
                             if not checksum:
                                 result_epub = convert2epub(session_id)
-                                if not result_epub:
+                                if result_epub:
+                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing todo with the final conversion."
+                                    print(msg)
+                                else:
                                     error = 'convert2epub() failed!'
                             if error is None:
                                 json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
