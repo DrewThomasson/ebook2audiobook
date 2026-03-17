@@ -433,7 +433,7 @@ class DeviceInstaller():
                 if devices['JETSON']['found']:
                     os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
                     os.environ['TORCH_CUDA_ENABLE_CUDA_GRAPH'] = '0'
-                    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128,garbage_collection_threshold:0.6,expandable_segments:True'
+                    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128,garbage_collection_threshold:0.6,expandable_segments:False'
 
             # ============================================================
             # ROCm
