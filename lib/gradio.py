@@ -719,6 +719,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
             gr_blocks_data = gr.State([])
+            gr_blocks_expands = gr.State([False] * page_size)
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 gr_blocks_markdown = gr.Markdown(elem_id='gr_blocks_markdown', elem_classes=['gr-markdown'], value='')
@@ -779,6 +780,16 @@ def build_interface(args:dict)->gr.Blocks:
             blocks_accs  = [c[0] for c in block_components]
             blocks_keeps = [c[1] for c in block_components]
             blocks_texts = [c[2] for c in block_components]
+
+            for i, acc in enumerate(blocks_accs):
+                acc.change(
+                    fn=lambda is_open, expands, _i=i: [
+                        expands[j] if j != _i else bool(is_open)
+                        for j in range(page_size)
+                    ],
+                    inputs=[acc, gr_blocks_expands],
+                    outputs=[gr_blocks_expands]
+                )
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
@@ -2384,7 +2395,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_cancel_btn.click(
                 fn=click_gr_blocks_cancel_btn,
-                inputs=[gr_session, gr_blocks_page, gr_blocks_data, *blocks_accs, *blocks_keeps, *blocks_texts],
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data]
             ).then(
                 fn=enable_components,
@@ -2392,8 +2403,8 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_enable_components
             )
             gr_blocks_confirm_btn.click(
-                fn=lambda page, blocks, *args: collect_page(page, blocks, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_blocks_data]
             ).then(
                 fn=click_gr_blocks_confirm_btn,
