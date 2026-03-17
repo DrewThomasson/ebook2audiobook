@@ -1753,7 +1753,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     text = session['blocks_edit'][block_id]['text']
-                    return gr.update(text)
+                    return gr.update(value=text)
                 return gr.update()
                 
             def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
