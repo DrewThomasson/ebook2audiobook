@@ -1783,10 +1783,10 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
                 return gr.update(), event + 1
 
-            def click_gr_blocks_cancel_btn(session_id: str, page: int, blocks: list[dict], expands: list[bool], *args) -> tuple:
+            def click_gr_blocks_cancel_btn(session_id: str, page: int, blocks: list[dict], *args) -> tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    new_blocks = collect_page(page, blocks, expands, *args)
+                    new_blocks = collect_page(page, blocks, *args)
                     session['blocks_edit'] = new_blocks
                     session['status'] = status_tags['READY']
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
