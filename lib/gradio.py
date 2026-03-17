@@ -747,7 +747,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     visible=True,
                                     scale=0
                                 )
-                                gr.HTML(value='', scale=1)
+                                gr.Column(scale=1)
                                 reset = gr.Button(
                                     '↺',
                                     elem_id=f'block_reset_{i}',
