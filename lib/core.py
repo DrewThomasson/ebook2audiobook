@@ -2811,6 +2811,8 @@ def convert_ebook(args:dict)->tuple:
                                                 save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                             if session.get('blocks_orig', []) and session.get('blocks_edit', []):
                                                 if session['blocks_preview']:
+                                                    msg = f'Chapters preview requested. Select which block to convert:'
+                                                    print(msg)
                                                     session['status'] = status_tags['BLOCKS']
                                                     return session['status'], True
                                                 else:
