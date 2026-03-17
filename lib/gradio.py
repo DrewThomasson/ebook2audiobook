@@ -770,7 +770,23 @@ def build_interface(args:dict)->gr.Blocks:
                                 inputs=[gr_session],
                                 outputs=[txt]
                             )
-                            block_components.append((acc, keep, txt))
+                        acc.expand(
+                            fn=lambda expands, _i=i: [
+                                expands[j] if j != _i else True
+                                for j in range(page_size)
+                            ],
+                            inputs=[gr_blocks_expands],
+                            outputs=[gr_blocks_expands]
+                        )
+                        acc.collapse(
+                            fn=lambda expands, _i=i: [
+                                expands[j] if j != _i else False
+                                for j in range(page_size)
+                            ],
+                            inputs=[gr_blocks_expands],
+                            outputs=[gr_blocks_expands]
+                        )
+                        block_components.append((acc, keep, txt))
 
                 with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
                     gr_blocks_cancel_btn = gr.Button('🡄', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
