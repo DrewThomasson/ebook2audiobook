@@ -776,6 +776,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_blocks_confirm_btn = gr.Button('🡆', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
 
             blocks_components_flat = [comp for triplet in block_components for comp in triplet]
+            blocks_accs  = [c[0] for c in block_components]
             blocks_keeps = [c[1] for c in block_components]
             blocks_texts = [c[2] for c in block_components]
 
@@ -1793,15 +1794,20 @@ def build_interface(args:dict)->gr.Blocks:
                 header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
                 return (*updates, header)
 
-            def collect_page(page:int, blocks:list[dict], *args)->list[dict]:
-                keeps = args[:page_size]
-                texts = args[page_size:]
+            def collect_page(page: int, blocks: list[dict], *args) -> list[dict]:
+                expands = args[:page_size]
+                keeps = args[page_size:page_size * 2]
+                texts = args[page_size * 2:]
                 new_blocks = [dict(b) for b in blocks]
                 start = int(page) * page_size
                 for i in range(page_size):
                     idx = start + i
                     if idx < len(new_blocks):
-                        new_blocks[idx] = {"expand": new_blocks[idx]['expand'], "keep": keeps[i], "text": texts[i]}
+                        new_blocks[idx] = {
+                            'expand': expands[i],
+                            'keep': keeps[i],
+                            'text': texts[i]
+                        }
                 return new_blocks
 
             def navigate(page:int, blocks:list[dict], direction:int, *args)->tuple:
@@ -2379,7 +2385,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_cancel_btn.click(
                 fn=click_gr_blocks_cancel_btn,
-                inputs=[gr_session, gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data, *blocks_accs, *blocks_keeps, *blocks_texts],
                 outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data]
             ).then(
                 fn=enable_components,
