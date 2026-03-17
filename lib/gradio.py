@@ -793,19 +793,8 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_blocks_confirm_btn = gr.Button('🡆', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
 
             blocks_components_flat = [comp for triplet in block_components for comp in triplet]
-            blocks_accs  = [c[0] for c in block_components]
             blocks_keeps = [c[1] for c in block_components]
             blocks_texts = [c[2] for c in block_components]
-
-            for i, acc in enumerate(blocks_accs):
-                acc.change(
-                    fn=lambda is_open, expands, _i=i: [
-                        expands[j] if j != _i else bool(is_open)
-                        for j in range(page_size)
-                    ],
-                    inputs=[acc, gr_blocks_expands],
-                    outputs=[gr_blocks_expands]
-                )
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
