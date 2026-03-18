@@ -2855,7 +2855,6 @@ def finalize_audiobook(session_id:str)->tuple:
             return error, False
         if session.get('blocks_edit', []):
             json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
-            print(session['blocks_edit'])
             save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
             chapters = []
             msg = f'Get sentences…'
