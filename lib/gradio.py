@@ -744,9 +744,9 @@ def build_interface(args:dict)->gr.Blocks:
                             elem_classes=row_class,
                             visible=False,
                             open=False
-                        ) as gr_block_accordion:
+                        ) as acc:
                             with gr.Row(elem_classes=['no-wrap']):
-                                gr_block_keep = gr.Checkbox(
+                                keep_cbx = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=True,
                                     label='',
@@ -755,16 +755,16 @@ def build_interface(args:dict)->gr.Blocks:
                                     scale=0
                                 )
                                 gr.Column(scale=1)
-                                gr_block_reset = gr.Button(
+                                acc_reset_btn = gr.Button(
                                     '↺',
-                                    elem_id=f'gr_block_reset_{i}',
+                                    elem_id=f'block_reset_{i}',
                                     elem_classes=['gr-block-reset'],
                                     variant='secondary',
                                     interactive=True,
                                     scale=0,
                                     min_width=40
                                 )
-                            gr_block_text = gr.Textbox(
+                            acc_tbx = gr.Textbox(
                                 elem_id=f'block_text_{i}',
                                 lines=18,
                                 max_lines=18,
@@ -772,12 +772,12 @@ def build_interface(args:dict)->gr.Blocks:
                                 container=False,
                                 interactive=True
                             )
-                            gr_block_reset.click(
+                            acc_reset_btn.click(
                                 fn=lambda session, _i=i: click_reset_block(session, _i),
                                 inputs=[gr_session],
-                                outputs=[gr_block_text]
+                                outputs=[acc_tbx]
                             )
-                        gr_block_accordion.expand(
+                        acc.expand(
                             fn=lambda expands, _i=i: [
                                 expands[j] if j != _i else True
                                 for j in range(page_size)
@@ -785,7 +785,7 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_blocks_expands],
                             outputs=[gr_blocks_expands]
                         )
-                        gr_block_accordion.collapse(
+                        acc.collapse(
                             fn=lambda expands, _i=i: [
                                 expands[j] if j != _i else False
                                 for j in range(page_size)
@@ -793,7 +793,7 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_blocks_expands],
                             outputs=[gr_blocks_expands]
                         )
-                        block_components.append((gr_block_accordion, gr_block_keep, gr_block_text))
+                        block_components.append((acc, keep_cbx, acc_tbx))
 
                 with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
                     gr_blocks_cancel_btn = gr.Button('🡄', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
