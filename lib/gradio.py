@@ -1876,17 +1876,16 @@ def build_interface(args:dict)->gr.Blocks:
                 n = len(blocks_components_flat) + 1
                 return tuple(gr.update() for _ in range(7 + n))
 
-            def click_gr_blocks_confirm_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
+            def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    blocks = collect_page(page, blocks, *args)
                     if not any(b['keep'] and b['text'].strip() for b in blocks):
                         gr.Warning('At least one block must be kept.')
-                        return blocks, gr.update(), gr.update(), gr.update()
+                        return gr.update(), gr.update(), gr.update()
                     session['blocks_edit'] = blocks
                     session['status'] = status_tags['CONVERTING']
-                    return blocks, gr.update(visible=True), gr.update(visible=False), event + 1
-                return blocks, gr.update(), gr.update(), gr.update()
+                    return gr.update(visible=True), gr.update(visible=False), event + 1
+                return gr.update(), gr.update(), gr.update()
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
