@@ -2634,8 +2634,6 @@ def convert_ebook(args:dict)->tuple:
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
-                msg = f'*********** Session: {session_id} **************\n{session_info}'
-                print(msg)
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
@@ -2850,6 +2848,8 @@ def finalize_audiobook(session_id:str)->tuple:
             else:
                 error = 'Conversion cancelled'
             return error, False
+        msg = f'*********** Session: {session_id} **************\n{session_info}'
+        print(msg)
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             error = 'No blocks have been selected for the conversion!'
             return error, False
