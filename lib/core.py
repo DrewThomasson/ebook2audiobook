@@ -2596,8 +2596,6 @@ def convert_ebook(args:dict)->tuple:
                     error = 'convert_ebook() error: Session initialization failed!'
                     print(error)
                     return error, False
-            msg = f'*********** Session: {session_id} **************\n{session_info}'
-            print(msg)
             session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
@@ -2636,6 +2634,8 @@ def convert_ebook(args:dict)->tuple:
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
+                msg = f'*********** Session: {session_id} **************\n{session_info}'
+                print(msg)
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
