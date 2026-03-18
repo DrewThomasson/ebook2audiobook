@@ -2764,7 +2764,8 @@ def convert_ebook(args:dict)->tuple:
                                 if os.path.exists(json_blocks_orig_file):
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
                                     if os.path.exists(json_blocks_edit_file):
-                                        session['blocks_edit'] = load_json_blocks(json_blocks_edit_file)
+                                        if not session.get('blocks_edit', []):
+                                            session['blocks_edit'] = load_json_blocks(json_blocks_edit_file)
                                     missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
@@ -2798,7 +2799,6 @@ def convert_ebook(args:dict)->tuple:
                                         session['cover'] = get_cover(epubBook, session_id)
                                         if session.get('cover', False):
                                             if missing_json:
-                                                session['blocks_edit'] = []
                                                 raw_blocks = get_blocks(session_id, epubBook)
                                                 if raw_blocks:
                                                     session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
