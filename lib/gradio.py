@@ -515,7 +515,7 @@ def build_interface(args:dict)->gr.Blocks:
                     color: var(--body-background-fill) !important;
                 }
                 .gr-block-reset {
-                    margin-right: 60px !important;
+                    margin-right: 30px !important;
                 }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
