@@ -512,7 +512,7 @@ def build_interface(args:dict)->gr.Blocks:
                     color: var(--body-background-fill) !important;
                 }
                 .gr-block-reset {
-                    padding-right: 30px !important;
+                    margin-right: 60px !important;
                 }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
@@ -752,7 +752,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     scale=0
                                 )
                                 gr.Column(scale=1)
-                                gr.Markdown('Reload original text')
+                                gr.Markdown('Reload original text', scale=0, min_width=100)
                                 gr_block_reset = gr.Button(
                                     '↺',
                                     elem_id=f'gr_block_reset_{i}',
