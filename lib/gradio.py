@@ -85,6 +85,9 @@ def build_interface(args:dict)->gr.Blocks:
                 .wrap-inner {
                     border: 1px solid #666666;
                 }
+                .no-wrap {
+                    flex-wrap: nowrap !important;
+                }
                 .selected {
                     color: var(--secondary-500) !important;
                     text-shadow: 0.3px 0.3px 0.3px #303030;
@@ -742,7 +745,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible=False,
                             open=False
                         ) as gr_block_accordion:
-                            with gr.Row():
+                            with gr.Row(elem_classes=['no-wrap']):
                                 gr_block_keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=True,
