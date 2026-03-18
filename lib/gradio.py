@@ -563,7 +563,12 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                         gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                         gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                                with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
+                                gr_group_voice_id = gr.Group(elem_id='gr_group_voice_id', elem_classes=['gr-group'], visible=False)
+                                with gr_group_voice_id:
+                                    gr_voice_id_markdown = gr.Markdown(elem_id='gr_voice_id_markdown', elem_classes=['gr-markdown'], value='Voice ID')
+                                    gr_voice_id = gr.Number(label='Camb AI Voice ID', elem_id='gr_voice_id', value=147320, precision=0, interactive=True)
+                                gr_group_device = gr.Group(elem_id='gr_group_device', elem_classes=['gr-group'])
+                                with gr_group_device:
                                     gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
                                     gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[(k, v['proc']) for k, v in devices.items()], type='value', value=default_device, interactive=True)
                             with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
@@ -1284,6 +1289,9 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         models = load_engine_presets(session['tts_engine'])
+                        if session['tts_engine'] == TTS_ENGINES['CAMBAI']:
+                            voice_options = []
+                            return gr.update(choices=[], value=None)
                         lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
                         file_pattern = "*.wav"
                         eng_options = []
@@ -1356,7 +1364,7 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             if voice_options and voice_options[0][1] is not None:
                                 new_voice_path = models[session['fine_tuned']]['voice']
-                                if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
+                                if new_voice_path and os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
                                     session['voice'] = new_voice_path
                                 else:
                                     session['voice'] = voice_options[0][1]
@@ -1415,8 +1423,10 @@ def build_interface(args:dict)->gr.Blocks:
                         ]
                         if session['fine_tuned'] in fine_tuned_options:
                             fine_tuned = session['fine_tuned']
-                        else:
+                        elif default_fine_tuned in fine_tuned_options:
                             fine_tuned = default_fine_tuned
+                        else:
+                            fine_tuned = fine_tuned_options[0] if fine_tuned_options else default_fine_tuned
                         session['fine_tuned'] = fine_tuned
                         return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
                 except Exception as e:
@@ -1428,6 +1438,11 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session['device'] = selected
+
+            def change_gr_voice_id(value, session_id:str)->None:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    session['voice_id'] = int(value) if value else 147320
 
             def change_gr_language(selected:str, session_id:str)->tuple:
                 if selected:
@@ -1494,19 +1509,25 @@ def build_interface(args:dict)->gr.Blocks:
                     session['tts_engine'] = engine
                     session['fine_tuned'] = default_fine_tuned
                     session['voice'] = None if engine not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']] else session['voice']
+                    is_cloud = engine == TTS_ENGINES['CAMBAI']
+                    visible_voice = not is_cloud
+                    visible_device = not is_cloud
                     visible_bark = False
                     visible_xtts = False
                     if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         visible_custom_model = True if session['fine_tuned'] == 'internal' else False
                         visible_xtts = visible_gr_tab_xtts_params
                         return (
-                            gr.update(value=show_rating(session['tts_engine'])), 
+                            gr.update(value=show_rating(session['tts_engine'])),
                             gr.update(visible=visible_xtts),
                             gr.update(visible=False),
                             gr.update(visible=visible_custom_model),
                             update_gr_fine_tuned_list(session_id),
                             gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"),
-                            gr.update(value=f"My {session['tts_engine']} Custom Models")
+                            gr.update(value=f"My {session['tts_engine']} Custom Models"),
+                            gr.update(visible=visible_voice),
+                            gr.update(visible=visible_device),
+                            gr.update(visible=is_cloud)
                         )
                     else:
                         if session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -1514,13 +1535,16 @@ def build_interface(args:dict)->gr.Blocks:
                         return (
                             gr.update(value=show_rating(session['tts_engine'])),
                             gr.update(visible=False),
-                            gr.update(visible=visible_bark), 
+                            gr.update(visible=visible_bark),
                             gr.update(visible=False),
                             update_gr_fine_tuned_list(session_id),
                             gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
-                            gr.update(value='')
+                            gr.update(value=''),
+                            gr.update(visible=visible_voice),
+                            gr.update(visible=visible_device),
+                            gr.update(visible=is_cloud)
                         )
-                outputs = tuple([gr.update(interactive=False) for _ in range(7)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(10)])
                 return outputs
 
             def change_gr_fine_tuned_list(selected:str, session_id:str)->tuple:
@@ -2054,6 +2078,11 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_device, gr_session],
                 outputs=None
             )
+            gr_voice_id.change(
+                fn=change_gr_voice_id,
+                inputs=[gr_voice_id, gr_session],
+                outputs=None
+            )
             gr_language.change(
                 fn=change_gr_language,
                 inputs=[gr_language, gr_session],
@@ -2066,7 +2095,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_tts_engine_list.change(
                 fn=change_gr_tts_engine_list,
                 inputs=[gr_tts_engine_list, gr_session],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_label]
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_label, gr_group_voice_file, gr_group_device, gr_group_voice_id]
             ).then(
                 fn=update_gr_voice_list,
                 inputs=[gr_session],

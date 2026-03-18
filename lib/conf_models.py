@@ -12,7 +12,8 @@ TTS_ENGINES = {
     "FAIRSEQ": "fairseq",
     "GLOWTTS": "glowtts",
     "TACOTRON2": "tacotron",
-    "YOURTTS": "yourtts"
+    "YOURTTS": "yourtts",
+    "CAMBAI": "cambai"
 }
 
 TTS_VOICE_CONVERSION = {
@@ -190,5 +191,18 @@ default_engine_settings = {
         "files": ['config.json', 'model_file.pth'],
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
+    },
+    TTS_ENGINES['CAMBAI']: {
+        "repo": None,
+        "languages": {
+            "eng": "en-us", "spa": "es-es", "fra": "fr-fr", "deu": "de-de",
+            "ita": "it-it", "por": "pt-br", "zho": "zh-cn", "jpn": "ja-jp",
+            "kor": "ko-kr", "ara": "ar-sa", "hin": "hi-in", "rus": "ru-ru",
+            "nld": "nl-nl", "pol": "pl-pl", "tur": "tr-tr", "swe": "sv-se"
+        },
+        "samplerate": 22050,
+        "files": [],
+        "voices": {},
+        "rating": {"VRAM": 0, "CPU": 1, "RAM": 1, "Realism": 5}
     }
 }
