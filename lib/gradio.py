@@ -752,7 +752,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     scale=0
                                 )
                                 gr.Column(scale=1)
-                                gr.Markdown('Reload original text', min_width=100)
+                                gr.Label(value='Reload original text', scale=0, min_width=100)
                                 gr_block_reset = gr.Button(
                                     '↺',
                                     elem_id=f'gr_block_reset_{i}',
