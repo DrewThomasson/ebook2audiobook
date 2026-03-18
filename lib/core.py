@@ -229,7 +229,7 @@ class SessionContext:
             return self.sessions[session_id]
         return {}
 
-    def find_id_by_hash(self, socket_hash: str) -> str | None:
+    def find_id_by_hash(self, socket_hash: str)->str|None:
         for session_id, session in list(self.sessions.items()):
             if socket_hash in session:
                 return session_id
@@ -2855,6 +2855,7 @@ def finalize_audiobook(session_id:str)->tuple:
             return error, False
         if session.get('blocks_edit', []):
             json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+            print(session['blocks_edit'])
             save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
             chapters = []
             msg = f'Get sentences…'

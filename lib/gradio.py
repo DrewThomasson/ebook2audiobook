@@ -851,7 +851,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gr.update(visible='hidden')
                 )
             
-            def enable_on_voice_upload(session_id: str) -> tuple:
+            def enable_on_voice_upload(session_id: str)->tuple:
                 session = context.get_session(session_id)
                 outputs = tuple([gr.update(interactive=False) for _ in range(10)])
                 if session and session.get('id', False):
@@ -1792,7 +1792,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
                 return gr.update(), event + 1
 
-            def click_gr_blocks_cancel_btn(session_id: str, page: int, blocks: list[dict], *args) -> tuple:
+            def click_gr_blocks_cancel_btn(session_id: str, page: int, blocks: list[dict], *args)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     new_blocks = collect_page(page, blocks, *args)
@@ -1818,8 +1818,8 @@ def build_interface(args:dict)->gr.Blocks:
                 header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
                 return (*updates, header)
 
-            def collect_page(page: int, blocks: list[dict], *args) -> list[dict]:
-                expands = args[0]  # single list from gr.State
+            def collect_page(page: int, blocks: list[dict], *args)->list[dict]:
+                expands = args[0]
                 keeps = args[1:page_size + 1]
                 texts = args[page_size + 1:]
                 new_blocks = [dict(b) for b in blocks]
