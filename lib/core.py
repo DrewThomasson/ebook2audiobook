@@ -1950,6 +1950,7 @@ def convert_chapters2audio(session_id: str) -> bool:
         try:
             tts_manager = TTSManager(session)
             blocks = session['blocks_edit']
+            print(blocks[0]['sentences'])
             blocks_prev = session.get('blocks_previous', [])
             resume_block = session.get('resume_block', -1)
             resume_sentence = session.get('resume_sentence', 0)
@@ -1958,7 +1959,6 @@ def convert_chapters2audio(session_id: str) -> bool:
                 print(msg)
                 return False
             kept_blocks = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
-            print(kept_blocks)
             total_chapters = len(kept_blocks)
             if total_chapters == 0:
                 error = 'No chapters found!'
@@ -2909,7 +2909,6 @@ def finalize_audiobook(session_id: str) -> tuple:
                     error = 'No sentences found!'
                     return error, False
                 block['sentences'] = sentences_list if sentences_list else []
-            print(sentences_list)
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
