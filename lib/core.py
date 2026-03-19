@@ -3025,7 +3025,7 @@ def show_alert(session_id:str|None, state:dict)->None:
                         gr.Success(state['msg'])
 
 def exception_alert(session_id:str|None, error:str)->None:
-    print(errorreplace('<br/>', '\n'))
+    print(error.replace('<br/>', '\n'))
     if session_id is not None:
         session = context.get_session(session_id)
         if session and session.get('id', False):
