@@ -1961,7 +1961,8 @@ def convert_chapters2audio(session_id: str) -> bool:
             total_chapters = len(kept_blocks)
             if total_chapters == 0:
                 error = 'No chapters found!'
-                print(error)
+                if session['is_gui_process']:
+                    alert_exception(session_id, error)
                 return False
             total_sentences = sum(len(b['sentences']) for _, b in kept_blocks)
             if total_sentences == 0:
@@ -2031,9 +2032,9 @@ def convert_chapters2audio(session_id: str) -> bool:
                                 if j == start_sentence and start_sentence > 0:
                                     msg = f'********* Resuming from sentence {global_sent} ********'
                                     print(msg)
-                                    block_sent_dir = os.path.join(session['sentences_dir'], str(block_idx))
-                                    os.makedirs(block_sent_dir, exist_ok=True)
-                                    sentence_file = os.path.join(block_sent_dir, f'{j}.{default_audio_proc_format}')
+                                    block_dir = os.path.join(session['sentences_dir'], str(block_idx))
+                                    os.makedirs(block_dir, exist_ok=True)
+                                    sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if not success:
                                         return False
@@ -2074,12 +2075,12 @@ def combine_audio_sentences(session_id: str, file: str, block_idx: int, sentence
             error = 'Session expired!'
             print(error)
             return False
-        block_sent_dir = os.path.join(session['sentences_dir'], str(block_idx))
+        block_dir = os.path.join(session['sentences_dir'], str(block_idx))
         ext = f'.{default_audio_proc_format}'
         missing = []
         selected_files = []
         for i in range(sentence_count):
-            path = os.path.join(block_sent_dir, f'{i}{ext}')
+            path = os.path.join(block_dir, f'{i}{ext}')
             if os.path.exists(path):
                 selected_files.append(path)
             else:
@@ -3028,14 +3029,14 @@ def show_alert(state:dict)->None:
             elif state['type'] == 'success':
                 gr.Success(state['msg'])
 
-def alert_exception(error:str, session_id:str|None)->None:
+def alert_exception(session_id:str|None, error:str)->None:
     if session_id is not None:
         session = context.get_session(session_id)
         if session and session.get('id', False):
             session['status'] = status_tags['READY']
+            if session['is_gui_process']:
+                gr.Error(error)
     print(error)
-    gr.Error(error)
-    DependencyError(error)
 
 def get_all_ip_addresses()->list:
     ip_addresses = []
