@@ -1964,12 +1964,12 @@ def convert_chapters2audio(session_id: str) -> bool:
                 show_alert(session_id, {"type": "warning", "msg": error})
                 return False
             total_iterations = total_sentences
-            msg = f'--------------------------------------------------\n'
-            msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
-            msg += f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
-            msg += f'\n--------------------------------------------------'
-            show_alert(session_id, {"type": "warning", "msg": msg})
             if session['ebook']:
+                msg = f'-----------<br/>'
+                msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
+                msg += f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
+                msg += f'<br/>-----------'
+                show_alert(session_id, {"type": "warning", "msg": msg})
                 ebook_name = Path(session['ebook']).name
                 final_sentences = []
                 global_sent = 0
