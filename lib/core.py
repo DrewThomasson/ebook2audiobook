@@ -2018,7 +2018,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                 print(msg)
                                 return False
                             sentence = sentences[j].strip()
-                            print(f'sentence: {sentence}')
                             if any(c.isalnum() for c in sentence):
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
@@ -3009,7 +3008,7 @@ def cleanup_models_cache()->None:
         print(error)
 
 def show_alert(session_id:str|None, state:dict)->None:
-    print(state['msg'])
+    print(state['msg'].replace('<br/>', '\n'))
     if session_id is not None:
         session = context.get_session(session_id)
         if session['is_gui_process']:
@@ -3025,7 +3024,7 @@ def show_alert(session_id:str|None, state:dict)->None:
                         gr.Success(state['msg'])
 
 def exception_alert(session_id:str|None, error:str)->None:
-    print(error)
+    print(errorreplace('<br/>', '\n'))
     if session_id is not None:
         session = context.get_session(session_id)
         if session and session.get('id', False):
