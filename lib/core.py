@@ -2911,7 +2911,6 @@ def finalize_audiobook(session_id: str) -> tuple:
                     error = 'No sentences found!'
                     return error, False
                 block['sentences'] = sentences_list if sentences_list else []
-            # Reassign to trigger proxy update
             session['blocks_edit'] = blocks
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
