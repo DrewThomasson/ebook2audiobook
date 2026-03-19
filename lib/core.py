@@ -2022,7 +2022,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
                                     final_sentences.append(sentence)
-                                if j == start_sentence:
+                                if j >= start_sentence:
                                     if start_sentence > 0:
                                         msg = f'********* Resuming from sentence {global_sent} ********'
                                         print(msg)
