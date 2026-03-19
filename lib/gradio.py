@@ -1713,7 +1713,8 @@ def build_interface(args:dict)->gr.Blocks:
                                             if count_file > 0:
                                                 if progress_status == status_tags['BLOCKS']:
                                                     session['status'] = progress_status
-                                                    return gr.update(value=session['status'])
+                                                    yield gr.update(value=session['status'])
+                                                    return
                                                 else:
                                                     msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
                                                     show_alert(session_id, {"type": "warning", "msg": msg})
