@@ -1613,14 +1613,14 @@ def build_interface(args:dict)->gr.Blocks:
             def toggle_audiobook_files(session_id:str, audiobook:str, is_visible:bool)->tuple:
                 if not audiobook:
                     error = 'No audiobook selected.'
-                    exception_alert(session_id, error)
+                    show_alert(session_id, {"type": "error", "msg": error})
                     return gr.update(), False
                 if is_visible:
                     return gr.update(visible=False, value=None), False
                 p = Path(audiobook)
                 if not p.exists():
                     error = f'Audio not found: {p}'
-                    exception_alert(session_id, error)
+                    show_alert(session_id, {"type": "error", "msg": error})
                     return gr.update(), False
                 files = [str(p)]
                 vtt = p.with_suffix(".vtt")

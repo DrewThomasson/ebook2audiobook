@@ -231,7 +231,7 @@ class SessionContext:
             return self.sessions[session_id]
         return {}
 
-    def find_id_by_hash(self, socket_hash: str)->str|None:
+    def find_id_by_hash(self, socket_hash:str)->str|None:
         for session_id, session in list(self.sessions.items()):
             if socket_hash in session:
                 return session_id
@@ -440,7 +440,7 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def ocr2xhtml(img: Image.Image, lang: str)->str:
+def ocr2xhtml(img: Image.Image, lang:str)->str:
     try:
         debug = True
         try:
@@ -1657,12 +1657,12 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
-def roman2number(text: str)->str:
+def roman2number(text:str)->str:
 
-    def is_valid_roman(s: str)->bool:
+    def is_valid_roman(s:str)->bool:
         return bool(valid_roman.fullmatch(s))
 
-    def to_int(s: str)->str:
+    def to_int(s:str)->str:
         s = s.upper()
         i = 0
         result = 0
@@ -1784,13 +1784,13 @@ def foreign2latin(text:str, base_lang:str)->str:
             return unidecode(word)
 
     # Protect ALL SML tags using the global grammar
-    protected: Dict[str, str] = {}
+    protected:dict[str, str] = {}
     for i, m in enumerate(SML_TAG_PATTERN.finditer(text)):
-        key: str = f'__TTS_MARKER_{i}__'
+        key:str = f'__TTS_MARKER_{i}__'
         protected[key] = m.group(0)
         text = text.replace(m.group(0), key)
-    tokens: list[str] = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
-    buf: list[str] = []
+    tokens:list[str] = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+    buf:list[str] = []
     for t in tokens:
         if t in protected:
             buf.append(t)
@@ -1798,7 +1798,7 @@ def foreign2latin(text:str, base_lang:str)->str:
             buf.append(romanize(t))
         else:
             buf.append(t)
-    out: str = ''
+    out:str = ''
     for i, t in enumerate(buf):
         if i == 0:
             out += t
@@ -1938,7 +1938,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = ' '.join(text.split())
     return text
 
-def convert_chapters2audio(session_id: str) -> bool:
+def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         try:
@@ -1955,20 +1955,19 @@ def convert_chapters2audio(session_id: str) -> bool:
             total_chapters = len(kept_blocks)
             if total_chapters == 0:
                 error = 'No chapters found!'
-                if session['is_gui_process']:
-                    exception_alert(session_id, error)
+                show_alert(session_id, {"type": "error", "msg": error})
                 return False
             total_sentences = sum(len(b['sentences']) for _, b in kept_blocks)
             if total_sentences == 0:
                 error = 'No sentences found!'
-                show_alert(session_id, {"type": "warning", "msg": error})
+                show_alert(session_id, {"type": "error", "msg": error})
                 return False
             total_iterations = total_sentences
             if session['ebook']:
-                msg = f'-----------<br/>'
+                msg = f'---------------<br/>'
                 msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
                 msg += f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
-                msg += f'<br/>-----------'
+                msg += f'<br/>---------------'
                 show_alert(session_id, {"type": "warning", "msg": msg})
                 ebook_name = Path(session['ebook']).name
                 final_sentences = []
@@ -2050,19 +2049,20 @@ def convert_chapters2audio(session_id: str) -> bool:
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{block_idx}.{default_audio_proc_format}')
                             combine_result = combine_audio_sentences(session_id, chapter_audio_file, block_idx, len(sentences))
                             if not combine_result:
-                                msg = 'combine_audio_sentences() failed!'
-                                print(msg)
+                                error = 'combine_audio_sentences() failed!'
+                                show_alert(session_id, {"type": "error", "msg": error})
                                 return False
                         session['resume_block'] = block_idx
                         session['resume_sentence'] = len(sentences)
-                return tts_manager.create_sentences2vtt(final_sentences)
+                write_vtt = tts_manager.create_sentences2vtt(final_sentences)
+                return write_vtt
         except Exception as e:
             DependencyError(e)
             error = f'convert_chapters2audio() error: {e}'
-            print(error)
+            exception_alert(session_id, error)
             return False
 
-def combine_audio_sentences(session_id: str, file: str, block_idx: int, sentence_count: int) -> bool:
+def combine_audio_sentences(session_id:str, file:str, block_idx: int, sentence_count: int)->bool:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
@@ -2492,7 +2492,7 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(sml_token('pause'), '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
-def delete_proc_audio_files(dir: str, files: list) -> None:
+def delete_proc_audio_files(dir:str, files:list)->None:
     base = Path(dir)
     for file in base.rglob(f'[0-9]*.{default_audio_proc_format}'):
         if file.stem.isdigit() and file in files:
@@ -2860,7 +2860,7 @@ def convert_ebook(args:dict)->tuple:
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def finalize_audiobook(session_id: str) -> tuple:
+def finalize_audiobook(session_id:str)->tuple:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
