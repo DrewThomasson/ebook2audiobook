@@ -2810,9 +2810,9 @@ def convert_ebook(args:dict)->tuple:
                                                         'expand': False,
                                                         'keep': b['keep'],
                                                         'text': b['text'],
-                                                        'voice': '',
-                                                        'tts_engine': '',
-                                                        'fine_tuned': '',
+                                                        'voice': session['voice'],
+                                                        'tts_engine': session['tts_engine'],
+                                                        'fine_tuned': session['fine_tuned'],
                                                         'sentences': []
                                                     }
                                                     for b in session['blocks_orig']
