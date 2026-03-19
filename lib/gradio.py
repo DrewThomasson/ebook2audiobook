@@ -407,6 +407,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gap: 100px !important;
                 }
                 #gr_blocks_markdown {
+                    background-color: var(--body-background-fill) !important;
                     width: 100% !important;
                     text-align: center !important;
                     display: flex !important;
@@ -415,7 +416,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding-bottom: 20px !important;
                 }
                 #gr_blocks_markdown p {
-                    background-color: var(--fill-panel-background) !important;
+                    background-color: var(--body-background-fill) !important;
                     width: 100% !important;
                     font-size: 18px !important;
                     font-weight: bold !important;
