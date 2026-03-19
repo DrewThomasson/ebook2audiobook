@@ -2050,7 +2050,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             combine_result = combine_audio_sentences(session_id, chapter_audio_file, block_idx, len(sentences))
                             if not combine_result:
                                 error = 'combine_audio_sentences() failed!'
-                                show_alert(session_id, {"type": "warning", "msg": error})
+                                show_alert(session_id, {"type": "error", "msg": error})
                                 return False
                         session['resume_block'] = block_idx
                         session['resume_sentence'] = len(sentences)
@@ -3008,29 +3008,29 @@ def cleanup_models_cache()->None:
         print(error)
 
 def show_alert(session_id:str|None, state:dict)->None:
+    print(state['msg'])
     if session_id is not None:
         session = context.get_session(session_id)
         if session['is_gui_process']:
             if isinstance(state, dict):
                 if state['type'] is not None:
                     if state['type'] == 'error':
-                        gr.Error(state['msg'])
+                        raise gr.Error(state['msg'])
                     elif state['type'] == 'warning':
                         gr.Warning(state['msg'])
                     elif state['type'] == 'info':
                         gr.Info(state['msg'])
                     elif state['type'] == 'success':
                         gr.Success(state['msg'])
-    print(state['msg'])
 
 def exception_alert(session_id:str|None, error:str)->None:
+    print(error)
     if session_id is not None:
         session = context.get_session(session_id)
         if session and session.get('id', False):
             session['status'] = status_tags['READY']
             if session['is_gui_process']:
-                gr.Error(error)
-    print(error)
+                raise gr.Error(error)
 
 def get_all_ip_addresses()->list:
     ip_addresses = []
