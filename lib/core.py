@@ -1151,7 +1151,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         DependencyError(error)
         return None
 
-def get_sentences(text:str, session_id:str)->list|None:
+def get_sentences(session_id:str, text:str)->list|None:
 
     def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
@@ -2904,12 +2904,12 @@ def finalize_audiobook(session_id: str) -> tuple:
                 if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
                     print(f'Block {block_idx} — unchanged, keeping existing sentences')
                     continue
-                sentences_list = get_sentences(block['text'], session_id)
+                sentences_list = get_sentences(session_id, block['text'])
                 if sentences_list is None:
                     error = 'No sentences found!'
                     return error, False
                 block['sentences'] = sentences_list if sentences_list else []
-                
+            print(sentences_list)
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
