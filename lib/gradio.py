@@ -1785,7 +1785,7 @@ def build_interface(args:dict)->gr.Blocks:
                     source = data[0] if isinstance(data, list) else data
                     final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
                     final_file = os.path.join(session['audiobooks_dir'], final_name)
-                    process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], sfinal_name).encode()).hexdigest()}")
+                    process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
                     chapters_dir = os.path.join(process_dir, "chapters")
                     sentences_dir = os.path.join(chapters_dir, 'sentences')
                     audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
