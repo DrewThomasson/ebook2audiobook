@@ -1783,8 +1783,12 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     source = data[0] if isinstance(data, list) else data
-                    final_file = os.path.join(session['audiobooks_dir'], get_sanitized(f"{Path(source).stem}.{session['output_format']}"))
-                    audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
+                    final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
+                    final_file = os.path.join(session['audiobooks_dir'], final_name)
+                    process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], sfinal_name).encode()).hexdigest()}")
+                    chapters_dir = os.path.join(process_dir, "chapters")
+                    sentences_dir = os.path.join(chapters_dir, 'sentences')
+                    audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
                     if os.path.exists(final_file) or audio_sentences_exist:
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
@@ -1969,10 +1973,6 @@ def build_interface(args:dict)->gr.Blocks:
                     previous_hash = state['hash']
                     new_hash = hash_proxy_dict(MappingProxyType(session))
                     state['hash'] = new_hash
-                    session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
-                    session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
-                    session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                    session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                     show_alert(session['id'], {"type": "info", "msg": msg})
                     return gr.update(value=json.dumps(session, cls=JSONDictProxyEncoder)), gr.update(value=state), gr.update(value=session['id']), gr.update()
                 except Exception as e:

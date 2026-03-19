@@ -2640,10 +2640,15 @@ def convert_ebook(args:dict)->tuple:
             session['output_split'] = bool(args['output_split'])
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
+            session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             ebook_name = get_sanitized(Path(session['ebook']).stem)
             cleanup_models_cache()
-            if not session['is_gui_process']:
-                session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
+            if session['is_gui_process']:
+                session['final_name'] = ebook_name + '.' + session['output_format']
+                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
+                session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+            else:
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
@@ -2697,8 +2702,6 @@ def convert_ebook(args:dict)->tuple:
                                 session['voice'] = final_voice_file
                             else:
                                 error = f'VoiceExtractor.extract_voice() failed! {msg}'
-            else:
-                session['final_name'] = ebook_name + '.' + session['output_format']
             if error is None:
                 if session['script_mode'] == NATIVE:
                     is_installed = check_programs('Calibre', 'ebook-convert', '--version')
