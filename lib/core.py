@@ -2049,7 +2049,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{block_idx}.{default_audio_proc_format}')
                             combine_result = combine_audio_sentences(session_id, chapter_audio_file, block_idx, len(sentences))
                             if not combine_result:
-                                error = "combine_audio_sentences() failed!"
+                                error = 'combine_audio_sentences() failed!'
                                 show_alert(session_id, {"type": "error", "msg": error})
                                 return False
                         session['resume_block'] = block_idx
