@@ -62,14 +62,13 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
         error = 'load_engine(): engine is None'
         raise RuntimeError(error)
 
-    def convert(self, sentence_index:int, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str)->bool:
         try:
             import torch
             import torchaudio
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
-                final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r"[.:—]")
@@ -209,12 +208,12 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                             return False
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
-                    torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
+                    torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
                     del segment_tensor
                     self.cleanup_memory()
                     self.audio_segments = []
-                    if not os.path.exists(final_sentence_file):
-                        error = f"Cannot create {final_sentence_file}"
+                    if not os.path.exists(sentence_file):
+                        error = f"Cannot create {sentence_file}"
                         print(error)
                         return False
                 return True

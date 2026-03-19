@@ -2032,7 +2032,10 @@ def convert_chapters2audio(session_id: str) -> bool:
                                     if j == start_sentence and start_sentence > 0:
                                         msg = f'********* Resuming from sentence {global_sent} ********'
                                         print(msg)
-                                    success = tts_manager.convert_sentence2audio(global_sent, sentence) if sentence else True
+                                        block_sent_dir = os.path.join(session['sentences_dir'], str(block_idx))
+                                        os.makedirs(block_sent_dir, exist_ok=True)
+                                        sentence_file = os.path.join(block_sent_dir, f'{j}.{default_audio_proc_format}')
+                                        success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if not success:
                                         return False
                                 global_sent += 1
@@ -2051,7 +2054,7 @@ def convert_chapters2audio(session_id: str) -> bool:
                             msg = f'Combining chapter {ch_num} (block {block_idx}) to audio, sentence {sent_start} to {sent_end}'
                             print(msg)
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{block_idx}.{default_audio_proc_format}')
-                            combine_result = combine_audio_sentences(session_id, chapter_audio_file, int(sent_start), int(sent_end))
+                            combine_result = combine_audio_sentences(session_id, chapter_audio_file, block_idx, len(sentences))
                             if not combine_result:
                                 msg = 'combine_audio_sentences() failed!'
                                 print(msg)
@@ -2065,31 +2068,29 @@ def convert_chapters2audio(session_id: str) -> bool:
             print(error)
             return False
 
-def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
+def combine_audio_sentences(session_id: str, file: str, block_idx: int, sentence_count: int) -> bool:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
             error = 'Session expired!'
             print(error)
             return False
-        base = session['sentences_dir']
-        ext = f".{default_audio_proc_format}"
-        exists = os.path.exists
-        join = os.path.join
+        block_sent_dir = os.path.join(session['sentences_dir'], str(block_idx))
+        ext = f'.{default_audio_proc_format}'
         missing = []
         selected_files = []
-        for i in range(start, end + 1):
-            path = join(base, f"{i}{ext}")
-            if exists(path):
+        for i in range(sentence_count):
+            path = os.path.join(block_sent_dir, f'{i}{ext}')
+            if os.path.exists(path):
                 selected_files.append(path)
             else:
                 missing.append(i)
         if missing:
-            error = f"Missing sentence files: {missing}"
+            error = f'Missing sentence files in block {block_idx}: {missing}'
             print(error)
             return False
         if not selected_files:
-            error = 'No audio files found in the specified range.'
+            error = f'No audio files found for block {block_idx}.'
             print(error)
             return False
         concat_dir = session['process_dir']

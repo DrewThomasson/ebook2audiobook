@@ -526,26 +526,28 @@ class TTSUtils:
         h, m = divmod(m, 60)
         return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
-    def _build_vtt_file(self, all_sentences:list, audio_dir:str, vtt_path:str)->bool:
+    def _build_vtt_file(self, all_sentences: list, audio_dir: str, vtt_path: str) -> bool:
         try:
             import gradio as gr
             from tqdm import tqdm
+
             msg = 'VTT file creation started…'
             print(msg)
             audio_sentences_dir = Path(audio_dir)
-            audio_files = sorted(
-                audio_sentences_dir.glob(f'*.{default_audio_proc_format}'),
-                key=lambda p: int(p.stem)
+            # Collect audio files from per-block subdirs in order
+            block_dirs = sorted(
+                [d for d in audio_sentences_dir.iterdir() if d.is_dir()],
+                key=lambda p: int(p.name)
             )
+            audio_files = []
+            for block_dir in block_dirs:
+                block_files = sorted(
+                    block_dir.glob(f'*.{default_audio_proc_format}'),
+                    key=lambda p: int(p.stem)
+                )
+                audio_files.extend(block_files)
             all_sentences_length = len(all_sentences)
             audio_files_length = len(audio_files)
-            expected_indices = list(range(audio_files_length))
-            actual_indices = [int(p.stem) for p in audio_files]
-            if actual_indices != expected_indices:
-                missing = sorted(set(expected_indices) - set(actual_indices))
-                error = f'Missing audio sentence files: {missing}'
-                print(error)
-                return False
             if audio_files_length != all_sentences_length:
                 error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {all_sentences_length} sentences'
                 print(error)
