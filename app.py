@@ -294,8 +294,8 @@ SML tags available:
                     if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                         args['ebook_list'].append(full_path)
-                progress_status, passed = c.convert_ebook_batch(args)
-                if passed is False:
+                progress_status, passed = c.convert_ebook_directory(args)
+                if not passed:
                     error = progress_status
                     print(error)
                     sys.exit(1)
@@ -306,7 +306,7 @@ SML tags available:
                     print(error)
                     sys.exit(1) 
                 progress_status, passed = c.convert_ebook(args)
-                if passed is False:
+                if not passed:
                     error = progress_status
                     print(error)
                     sys.exit(1)

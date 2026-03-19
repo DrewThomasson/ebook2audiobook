@@ -2549,7 +2549,8 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
-def convert_ebook_batch(args:dict)->tuple:
+def convert_ebook_directory(args:dict)->tuple:
+    error = ''
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
@@ -2557,19 +2558,14 @@ def convert_ebook_batch(args:dict)->tuple:
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
                 progress_status, passed = convert_ebook(args)
-                if passed is False:
-                    msg = f'Conversion failed: {progress_status}'
-                    print(msg)
-                    if not args['is_gui_process']:
-                        sys.exit(1)
-                args['ebook_list'].remove(file) 
+                if not passed:
+                    break
+                yield progress_status, passed
         return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'
-        print(error)
-        if not args['is_gui_process']:
-            sys.exit(1)       
-
+        print(error)    
+    return error, False
 def convert_ebook(args:dict)->tuple:
     try:
         global context        
