@@ -2023,7 +2023,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 if (not is_sml) or (j == len(sentences) - 1):
                                     final_sentences.append(sentence)
                                 if j >= start_sentence:
-                                    if j == start_session and start_sentence > 0:
+                                    if j == start_sentence and start_sentence > 0:
                                         msg = f'********* Resuming from sentence {global_sent} ********'
                                         print(msg)
                                     block_dir = os.path.join(session['sentences_dir'], str(block_idx))
