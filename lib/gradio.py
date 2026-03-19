@@ -1783,13 +1783,6 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)              
                 return gr.update()
 
-            def click_reset_block(session_id:str, block_id:int)->dict:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    text = session['blocks_orig'][block_id]['text']
-                    return gr.update(value=text)
-                return gr.update()
-                
             def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
@@ -1799,14 +1792,6 @@ def build_interface(args:dict)->gr.Blocks:
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
                 return gr.update(), event + 1
-
-            def click_gr_blocks_cancel_btn(session_id: str, page: int, blocks: list[dict], *args)->tuple:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    new_blocks = collect_page(page, blocks, *args)
-                    session['blocks_edit'] = new_blocks
-                    session['status'] = status_tags['READY']
-                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
 
             def populate_page(page:int, blocks:list[dict])->tuple:
                 start = int(page) * page_size
@@ -1825,20 +1810,6 @@ def build_interface(args:dict)->gr.Blocks:
                 end = min(start + page_size, len(blocks))
                 header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
                 return (*updates, header)
-
-            def collect_page(page: int, blocks: list[dict], *args) -> list[dict]:
-                expands = args[0]
-                keeps = args[1:page_size + 1]
-                texts = args[page_size + 1:]
-                new_blocks = [dict(b) for b in blocks]
-                start = int(page) * page_size
-                for i in range(page_size):
-                    idx = start + i
-                    if idx < len(new_blocks):
-                        new_blocks[idx]['expand'] = expands[i] if i < len(expands) else False
-                        new_blocks[idx]['keep'] = keeps[i]
-                        new_blocks[idx]['text'] = texts[i]
-                return new_blocks
 
             def navigate(page:int, blocks:list[dict], direction:int, *args)->tuple:
                 new_blocks = collect_page(page, blocks, *args)
@@ -1882,13 +1853,58 @@ def build_interface(args:dict)->gr.Blocks:
                 n = len(blocks_components_flat) + 1
                 return tuple(gr.update() for _ in range(7 + n))
 
-            def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
+            def click_reset_block(session_id:str, block_id:int)->dict:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    text = session['blocks_orig'][block_id]['text']
+                    return gr.update(value=text)
+                return gr.update()
+
+            def collect_page(page:int, blocks:list[dict], *args)->list[dict]:
+                expands = args[0]
+                keeps = args[1:page_size + 1]
+                texts = args[page_size + 1:]
+                new_blocks = [dict(b) for b in blocks]
+                start = int(page) * page_size
+                for i in range(page_size):
+                    idx = start + i
+                    if idx < len(new_blocks):
+                        new_blocks[idx]['expand'] = expands[i] if i < len(expands) else False
+                        new_blocks[idx]['keep'] = keeps[i]
+                        new_blocks[idx]['text'] = texts[i]
+                return new_blocks
+
+            def click_gr_blocks_cancel_btn(session_id: str, page: int, blocks: list[dict], *args) -> tuple:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    new_blocks = collect_page(page, blocks, *args)
+                    for b in new_blocks:
+                        if not b.get('voice'):
+                            b['voice'] = session.get('voice', '')
+                        if not b.get('tts_engine'):
+                            b['tts_engine'] = session.get('tts_engine', '')
+                        if not b.get('fine_tuned'):
+                            b['fine_tuned'] = session.get('fine_tuned', '')
+                    session['blocks_edit'] = new_blocks
+                    json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+                    save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
+                    session['status'] = status_tags['READY']
+                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
+
+            def click_gr_blocks_confirm_btn(session_id: str, blocks: list[dict], event: int) -> tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if not any(b['keep'] and b['text'].strip() for b in blocks):
                         error = 'At least one block must be kept.'
                         show_alert({"type": "warning", "msg": error})
                         return gr.update(), gr.update(), gr.update()
+                    for b in blocks:
+                        if not b.get('voice'):
+                            b['voice'] = session.get('voice', '')
+                        if not b.get('tts_engine'):
+                            b['tts_engine'] = session.get('tts_engine', '')
+                        if not b.get('fine_tuned'):
+                            b['fine_tuned'] = session.get('fine_tuned', '')
                     session['blocks_edit'] = blocks
                     session['status'] = status_tags['CONVERTING']
                     return gr.update(visible=True), gr.update(visible=False), event + 1
@@ -2397,7 +2413,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_previous_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
             ).then(
                 fn=populate_page,
@@ -2406,7 +2422,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_next_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, *blocks_keeps, *blocks_texts],
+                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
             ).then(
                 fn=populate_page,
