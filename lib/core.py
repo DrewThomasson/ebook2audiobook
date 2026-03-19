@@ -2908,7 +2908,7 @@ def finalize_audiobook(session_id: str) -> tuple:
                     error = 'No sentences found!'
                     return error, False
                 block['sentences'] = sentences_list
-            print(f"sentences: ----- {session.get('blocks_edit'][0]['sentences']} ---")
+            print(f"sentences: ----- {session['blocks_edit'][0]['sentences']} ---")
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
