@@ -856,7 +856,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gr.update(visible='hidden')
                 )
             
-            def enable_on_voice_upload(session_id: str)->tuple:
+            def enable_on_voice_upload(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 outputs = tuple([gr.update(interactive=False) for _ in range(10)])
                 if session and session.get('id', False):
@@ -1673,15 +1673,15 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_channel": output_channel,
                             "xtts_temperature": float(xtts_temperature),
                             "xtts_length_penalty": float(xtts_length_penalty),
-                            "xtts_num_beams": int(session['xtts_num_beams']),
+                            "xtts_num_beams":int(session['xtts_num_beams']),
                             "xtts_repetition_penalty": float(xtts_repetition_penalty),
-                            "xtts_top_k": int(xtts_top_k),
+                            "xtts_top_k":int(xtts_top_k),
                             "xtts_top_p": float(xtts_top_p),
                             "xtts_speed": float(xtts_speed),
-                            "xtts_enable_text_splitting": bool(xtts_enable_text_splitting),
+                            "xtts_enable_text_splitting":bool(xtts_enable_text_splitting),
                             "bark_text_temp": float(bark_text_temp),
                             "bark_waveform_temp": float(bark_waveform_temp),
-                            "output_split": bool(output_split),
+                            "output_split":bool(output_split),
                             "output_split_hours": output_split_hours,
                         }
                         error = None
@@ -1779,13 +1779,12 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)              
                 return gr.update()
 
-            def check_override_audiobook(session_id: str, data: any, blocks_preview: bool, event: int) -> tuple:
+            def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
-                    audio_sentences_exist = any(
-                        Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}')
-                    )
+                    source = data[0] if isinstance(data, list) else data
+                    final_file = os.path.join(session['audiobooks_dir'], get_sanitized(f"{Path(source).stem}.{session['output_format']}"))
+                    audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
                     if os.path.exists(final_file) or audio_sentences_exist:
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
@@ -1872,7 +1871,7 @@ def build_interface(args:dict)->gr.Blocks:
                         new_blocks[idx]['text'] = texts[i]
                 return new_blocks
 
-            def click_gr_blocks_cancel_btn(session_id: str, page: int, blocks: list[dict], *args) -> tuple:
+            def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks: list[dict], *args)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     new_blocks = collect_page(page, blocks, *args)
@@ -1889,7 +1888,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['status'] = status_tags['READY']
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
 
-            def click_gr_blocks_confirm_btn(session_id: str, blocks: list[dict], event: int) -> tuple:
+            def click_gr_blocks_confirm_btn(session_id:str, blocks: list[dict], event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if not any(b['keep'] and b['text'].strip() for b in blocks):
