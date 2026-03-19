@@ -1142,9 +1142,9 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session['ebook_mode'] = val
                     if val == 'single':
-                        return gr.update(label=src_label_file, file_count='single'), gr.update(visible=True)
+                        return gr.update(label=src_label_file, file_count='single')
                     else:
-                        return gr.update(label=src_label_dir, file_count='directory'), gr.update(visible=False)
+                        return gr.update(label=src_label_dir, file_count='directory')
                 return gr.update(), gr.update()
 
             def change_gr_voice_file(session_id:str, f:str|None)->tuple:
@@ -2082,7 +2082,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
                 inputs=[gr_session, gr_ebook_mode],
-                outputs=[gr_ebook_file, gr_blocks_preview]
+                outputs=[gr_ebook_file]
             )
             gr_blocks_preview.select(
                 fn=lambda session_id, val: change_param('blocks_preview', session_id, bool(val)),
