@@ -1953,6 +1953,10 @@ def build_interface(args:dict)->gr.Blocks:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                    session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
+                    session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
+                    session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                    session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                     os.makedirs(session['custom_model_dir'], exist_ok=True)
                     os.makedirs(session['voice_dir'], exist_ok=True)     
                     if is_gui_shared:
