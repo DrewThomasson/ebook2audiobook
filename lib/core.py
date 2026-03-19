@@ -2805,7 +2805,18 @@ def convert_ebook(args:dict)->tuple:
                                                 if session.get('blocks_orig', []):
                                                     save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
                                             if not session.get('blocks_edit', []):
-                                                session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
+                                                session['blocks_edit'] = [
+                                                    {
+                                                        'expand': False,
+                                                        'keep': b['keep'],
+                                                        'text': b['text'],
+                                                        'voice': '',
+                                                        'tts_engine': '',
+                                                        'fine_tuned': '',
+                                                        'sentences': []
+                                                    }
+                                                    for b in session['blocks_orig']
+                                                ]
                                                 save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
                                             if session.get('blocks_orig', []) and session.get('blocks_edit', []):
                                                 if session['blocks_preview']:
@@ -2873,7 +2884,8 @@ def finalize_audiobook(session_id:str)->tuple:
                         return error, False
                     if sentences_list:
                         chapters.append(sentences_list)
-            session['chapters'] = chapters
+            session['chapters'] = update_chapters(session_id, chapters)
+            session['chapters_previous'] = session['chapters']
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})

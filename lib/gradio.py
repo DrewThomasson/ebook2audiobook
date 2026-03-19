@@ -1709,12 +1709,18 @@ def build_interface(args:dict)->gr.Blocks:
                                                 error = 'Conversion failed.'
                                                 break
                                         else:
-                                            show_alert({"type": "success", "msg": progress_status})
                                             args['ebook_list'].remove(file)
                                             count_file = len(args['ebook_list'])
+                                            msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                            print(msg)
                                             if count_file > 0:
-                                                msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
-                                                yield gr.update(value=msg)
+                                                show_alert({"type": "warning", "msg": msg})
+                                                if progress_status == status_tags['BLOCKS']:
+                                                    session['status'] = progress_status
+                                                    yield gr.update(value=session['status'])
+                                                else:
+                                                    show_alert({"type": "success", "msg": progress_status})
+                                                    yield gr.update(value=msg)
                                             else:
                                                 msg = 'Conversion successful!'
                                                 session['ebook_list'] = None
@@ -1818,7 +1824,7 @@ def build_interface(args:dict)->gr.Blocks:
                 header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
                 return (*updates, header)
 
-            def collect_page(page: int, blocks: list[dict], *args)->list[dict]:
+            def collect_page(page: int, blocks: list[dict], *args) -> list[dict]:
                 expands = args[0]
                 keeps = args[1:page_size + 1]
                 texts = args[page_size + 1:]
@@ -1827,11 +1833,9 @@ def build_interface(args:dict)->gr.Blocks:
                 for i in range(page_size):
                     idx = start + i
                     if idx < len(new_blocks):
-                        new_blocks[idx] = {
-                            'expand': expands[i] if i < len(expands) else False,
-                            'keep': keeps[i],
-                            'text': texts[i]
-                        }
+                        new_blocks[idx]['expand'] = expands[i] if i < len(expands) else False
+                        new_blocks[idx]['keep'] = keeps[i]
+                        new_blocks[idx]['text'] = texts[i]
                 return new_blocks
 
             def navigate(page:int, blocks:list[dict], direction:int, *args)->tuple:
@@ -1880,7 +1884,8 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if not any(b['keep'] and b['text'].strip() for b in blocks):
-                        gr.Warning('At least one block must be kept.')
+                        error = 'At least one block must be kept.'
+                        show_alert({"type": "warning", "msg": error})
                         return gr.update(), gr.update(), gr.update()
                     session['blocks_edit'] = blocks
                     session['status'] = status_tags['CONVERTING']
