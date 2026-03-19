@@ -1957,7 +1957,7 @@ def convert_chapters2audio(session_id: str) -> bool:
                 msg = 'Cancel requested'
                 print(msg)
                 return False
-            kept_blocks = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip() and b.get('sentences')]
+            kept_blocks = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
             print(kept_blocks)
             total_chapters = len(kept_blocks)
             if total_chapters == 0:
@@ -2904,13 +2904,12 @@ def finalize_audiobook(session_id: str) -> tuple:
                 if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
                     print(f'Block {block_idx} — unchanged, keeping existing sentences')
                     continue
-                print(f'Block {block_idx} — generating sentences…')
                 sentences_list = get_sentences(block['text'], session_id)
-                print(f'Block {block_idx} — got {len(sentences_list) if sentences_list else 0} sentences')
                 if sentences_list is None:
                     error = 'No sentences found!'
                     return error, False
                 block['sentences'] = sentences_list if sentences_list else []
+                
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
