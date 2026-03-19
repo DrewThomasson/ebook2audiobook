@@ -1962,7 +1962,7 @@ def convert_chapters2audio(session_id: str) -> bool:
             if total_chapters == 0:
                 error = 'No chapters found!'
                 if session['is_gui_process']:
-                    alert_exception(session_id, error)
+                    exception_alert(session_id, error)
                 return False
             total_sentences = sum(len(b['sentences']) for _, b in kept_blocks)
             if total_sentences == 0:
@@ -3029,7 +3029,7 @@ def show_alert(state:dict)->None:
             elif state['type'] == 'success':
                 gr.Success(state['msg'])
 
-def alert_exception(session_id:str|None, error:str)->None:
+def exception_alert(session_id:str|None, error:str)->None:
     if session_id is not None:
         session = context.get_session(session_id)
         if session and session.get('id', False):
