@@ -2022,9 +2022,10 @@ def convert_chapters2audio(session_id:str)->bool:
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
                                     final_sentences.append(sentence)
-                                if j == start_sentence and start_sentence > 0:
-                                    msg = f'********* Resuming from sentence {global_sent} ********'
-                                    print(msg)
+                                if j == start_sentence:
+                                    if start_sentence > 0:
+                                        msg = f'********* Resuming from sentence {global_sent} ********'
+                                        print(msg)
                                     block_dir = os.path.join(session['sentences_dir'], str(block_idx))
                                     os.makedirs(block_dir, exist_ok=True)
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
