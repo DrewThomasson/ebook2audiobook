@@ -65,6 +65,9 @@ def build_interface(args:dict)->gr.Blocks:
                     scrollbar-width: thin !important;
                     scrollbar-color: #c09340 none !important;
                 }
+                button:disabled {
+                    pointer-events: none;
+                }
                 button div.wrap span {
                     display: none !important;
                 }
