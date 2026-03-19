@@ -2904,9 +2904,8 @@ def finalize_audiobook(session_id: str) -> tuple:
                 if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
                     print(f'Block {block_idx} — unchanged, keeping existing sentences')
                     continue
-                print(f'Block {block_idx} — generating sentences…')
+                print(block['text'])
                 sentences_list = get_sentences(block['text'], session_id)
-                print(f'Block {block_idx} — got {len(sentences_list) if sentences_list else 0} sentences')
                 if sentences_list is None:
                     error = 'No sentences found!'
                     return error, False
