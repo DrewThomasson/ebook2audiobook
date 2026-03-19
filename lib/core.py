@@ -2018,6 +2018,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 print(msg)
                                 return False
                             sentence = sentences[j].strip()
+                            print(f'sentence: {sentence}')
                             if any(c.isalnum() for c in sentence):
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
@@ -2062,7 +2063,7 @@ def convert_chapters2audio(session_id:str)->bool:
             exception_alert(session_id, error)
             return False
 
-def combine_audio_sentences(session_id:str, file:str, block_idx: int, sentence_count: int)->bool:
+def combine_audio_sentences(session_id:str, file:str, block_idx:int, sentence_count:int)->bool:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
