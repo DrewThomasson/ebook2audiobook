@@ -1171,13 +1171,13 @@ def build_interface(args:dict)->gr.Blocks:
                                 msg = f'Voice {voice_name} added to the voices list'
                                 state['type'] = 'success'
                                 state['msg'] = msg
-                                show_alert(state)
+                                show_alert(session_id, state)
                                 return update_gr_voice_list(session_id)
                             else:
                                 error = 'failed! Check if you audio file is compatible.'
                                 state['type'] = 'warning'
                                 state['msg'] = error
-                    show_alert(state)
+                    show_alert(session_id, state)
                 return gr.update()
 
             def change_gr_voice_list(session_id:str, selected:str|None)->tuple:
@@ -1212,11 +1212,11 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                             if is_builtin and is_in_builtin:
                                 error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
-                                show_alert({"type": "warning", "msg": error})
+                                show_alert(session_id, {"type": "warning", "msg": error})
                                 return gr.update(visible=False), gr.update()
                             if is_in_models:
                                 error = f'Voice file {speaker} is a voice of one of your custom model and cannot be deleted.'
-                                show_alert({"type": "warning", "msg": error})
+                                show_alert(session_id, {"type": "warning", "msg": error})
                                 return gr.update(visible=False), gr.update()                          
                             try:
                                 selected_path = Path(selected).resolve()
@@ -1229,7 +1229,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     )
                                 else:
                                     error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
-                                    show_alert({"type": "warning", "msg": error})
+                                    show_alert(session_id, {"type": "warning", "msg": error})
                                     return gr.update(visible=False), gr.update()
                             except Exception as e:
                                 error = f'Could not delete the voice file {selected}!\n{e}'
@@ -1284,7 +1284,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
                                 msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                                 session['voice'] = None
-                                show_alert({"type": "warning", "msg": msg})
+                                show_alert(session_id, {"type": "warning", "msg": msg})
                                 return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                             elif method == 'confirm_custom_model_del':
                                 selected_name = os.path.basename(custom_model)
@@ -1294,7 +1294,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if session['custom_model'] in session['voice']:
                                         session['voice'] = models[session['fine_tuned']]['voice']
                                 session['custom_model'] = None
-                                show_alert({"type": "warning", "msg": msg})
+                                show_alert(session_id, {"type": "warning", "msg": msg})
                                 return gr.update(value='', visible=False), update_gr_custom_model_list(session_id), gr.update(),  gr.update()
                             elif method == 'confirm_audiobook_del':
                                 selected_name = Path(audiobook).stem
@@ -1309,7 +1309,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 shutil.rmtree(process_dir, ignore_errors=True)
                                 msg = f'Audiobook {selected_name} deleted!'
                                 session['audiobook'] = None
-                                show_alert({"type": "warning", "msg": msg})
+                                show_alert(session_id, {"type": "warning", "msg": msg})
                                 return gr.update(value='', visible=False), gr.update(), update_gr_audiobook_list(session_id), gr.update()
                 except Exception as e:
                     error = f'click_gr_deletion(): {e}!'
@@ -1512,7 +1512,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     msg = f'{os.path.basename(model)} added to the custom models list'
                                     state['type'] = 'success'
                                     state['msg'] = msg
-                                    show_alert(state)
+                                    show_alert(session_id, state)
                                     return gr.update(value=None), update_gr_custom_model_list(session_id)
                                 else:
                                     error = f'Cannot extract custom model zip file {os.path.basename(custom_file)}'
@@ -1522,7 +1522,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 error = f'{os.path.basename(custom_file)} is not a valid model or some required files are missing'
                                 state['type'] = 'warning'
                                 state['msg'] = error
-                    show_alert(state)
+                    show_alert(session_id, state)
                 return gr.update(value=None), gr.update()
 
             def change_gr_tts_engine_list(session_id:str, engine:str)->tuple:
@@ -1639,14 +1639,14 @@ def build_interface(args:dict)->gr.Blocks:
                                 error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
                                 state['type'] = 'warning'
                                 state['msg'] = error
-                                show_alert(state)
+                                show_alert(session_id, state)
                     elif key == 'xtts_num_beams':
                         if val2 is not None:
                             if float(val) < float(val2):
                                 error = 'Num beams must be always higher than length penalty or equal if its value is 1.0'   
                                 state['type'] = 'warning'
                                 state['msg'] = error
-                                show_alert(state)
+                                show_alert(session_id, state)
 
             def start_conversion(
                     session_id:str, device:str, ebook_file:str, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
@@ -1687,10 +1687,10 @@ def build_interface(args:dict)->gr.Blocks:
                         error = None
                         if args['ebook'] is None and args['ebook_list'] is None:
                             error = 'Error: a file or directory is required.'
-                            show_alert({"type": "warning", "msg": error})
+                            show_alert(session_id, {"type": "warning", "msg": error})
                         elif args['xtts_num_beams'] < args['xtts_length_penalty']:
                             error = 'Error: num beams must be greater or equal than length penalty.'
-                            show_alert({"type": "warning", "msg": error})                   
+                            show_alert(session_id, {"type": "warning", "msg": error})                   
                         else:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
@@ -1713,12 +1713,12 @@ def build_interface(args:dict)->gr.Blocks:
                                             msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
                                             print(msg)
                                             if count_file > 0:
-                                                show_alert({"type": "warning", "msg": msg})
+                                                show_alert(session_id, {"type": "warning", "msg": msg})
                                                 if progress_status == status_tags['BLOCKS']:
                                                     session['status'] = progress_status
                                                     yield gr.update(value=session['status'])
                                                 else:
-                                                    show_alert({"type": "success", "msg": progress_status})
+                                                    show_alert(session_id, {"type": "success", "msg": progress_status})
                                                     yield gr.update(value=msg)
                                             else:
                                                 msg = 'Conversion successful!'
@@ -1735,11 +1735,10 @@ def build_interface(args:dict)->gr.Blocks:
                                         return gr.update(value=session['status'])
                                     else:
                                         msg = progress_status
-                                        print(msg)
-                                        show_alert({"type": "success", "msg": msg})
+                                        show_alert(session_id, {"type": "success", "msg": msg})
                                         return gr.update(value=msg)
                         if error is not None:
-                            show_alert({"type": "warning", "msg": error})
+                            show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
                         return gr.update(value=error)
@@ -1895,7 +1894,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     if not any(b['keep'] and b['text'].strip() for b in blocks):
                         error = 'At least one block must be kept.'
-                        show_alert({"type": "warning", "msg": error})
+                        show_alert(session_id, {"type": "warning", "msg": error})
                         return gr.update(), gr.update(), gr.update()
                     for b in blocks:
                         if not b.get('voice'):
@@ -1971,7 +1970,7 @@ def build_interface(args:dict)->gr.Blocks:
                     previous_hash = state['hash']
                     new_hash = hash_proxy_dict(MappingProxyType(session))
                     state['hash'] = new_hash
-                    show_alert({"type": "info", "msg": msg})
+                    show_alert(session['id'], {"type": "info", "msg": msg})
                     return gr.update(value=json.dumps(session, cls=JSONDictProxyEncoder)), gr.update(value=state), gr.update(value=session['id']), gr.update()
                 except Exception as e:
                     error = f'change_gr_restore_session(): {e}'
@@ -3030,7 +3029,7 @@ def build_interface(args:dict)->gr.Blocks:
             app.unload(on_unload)
             all_ips = get_all_ip_addresses()
             msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
-            show_alert({"type": "info", "msg": msg})
+            show_alert(None, {"type": "info", "msg": msg})
             os.environ['no_proxy'] = ' ,'.join(all_ips)
             return app
     except Exception as e:

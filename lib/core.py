@@ -608,9 +608,7 @@ def convert2epub(session_id:str)-> bool:
                         text = ''
                     if not text:
                         msg = f'The page {i+1} seems to be image-based. Using OCR…'
-                        print(msg)
-                        if session['is_gui_process']:
-                            show_alert({"type": "warning", "msg": msg})
+                        show_alert(session_id, {"type": "warning", "msg": msg})
                         pix = page.get_pixmap(dpi=300)
                         img = Image.open(io.BytesIO(pix.tobytes('png')))
                         xhtml_content = ocr2xhtml(img, session['language'])
@@ -792,7 +790,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 ]
             except Exception as toc_error:
                 error = f'Error extracting Table of Content: {toc_error}'
-                show_alert({"type": "warning", "msg": error})
+                show_alert(session_id, {"type": "warning", "msg": error})
             # Get spine item IDs
             spine_ids = [item[0] for item in epubBook.spine]
             # Filter only spine documents (i.e., reading order)
@@ -967,9 +965,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 images = body.find_all('img') + body.find_all('image')
                 if images and zf:
                     msg = f'Doc {idx}: no text but {len(images)} image(s) detected. Running OCR…'
-                    print(msg)
-                    if session['is_gui_process']:
-                        show_alert({"type": "warning", "msg": msg})
+                    show_alert(session_id, {"type": "warning", "msg": msg})
                     ocr_parts = []
                     doc_dir = os.path.dirname(doc.get_name())
                     for img_tag in images:
@@ -1064,9 +1060,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             # clean SML tags badly coded
             res, text = normalize_sml_tags(text)
             if res is False:
-                print(text)
-                if session['is_gui_process']:
-                    show_alert({"type": "warning", "msg": text})
+                show_alert(session_id, {"type": "warning", "msg": text})
                 return None
             # remove any [break] between words or cutting words
             break_token = re.escape(sml_token('break'))
@@ -1967,14 +1961,14 @@ def convert_chapters2audio(session_id: str) -> bool:
             total_sentences = sum(len(b['sentences']) for _, b in kept_blocks)
             if total_sentences == 0:
                 error = 'No sentences found!'
-                print(error)
+                show_alert(session_id, {"type": "warning", "msg": error})
                 return False
             total_iterations = total_sentences
             msg = f'--------------------------------------------------\n'
             msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
             msg += f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
             msg += f'\n--------------------------------------------------'
-            print(msg)
+            show_alert(session_id, {"type": "warning", "msg": msg})
             if session['ebook']:
                 ebook_name = Path(session['ebook']).name
                 final_sentences = []
@@ -2767,8 +2761,7 @@ def convert_ebook(args:dict)->tuple:
                         msg += msg_extra;
                         device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
                         if float(total_vram_gb) >= float(device_vram_required):
-                            if session['is_gui_process']:
-                                show_alert({"type": "warning", "msg": msg})
+                            show_alert(session_id, {"type": "warning", "msg": msg})
                             print(msg.replace('<br/>','\n'))
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             checksum, error = compare_checksums(session_id)
@@ -2810,9 +2803,7 @@ def convert_ebook(args:dict)->tuple:
                                         pass                         
                                     if session['metadata']['language'] != session['language']:
                                         error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                        print(error)
-                                        if session['is_gui_process']:
-                                            show_alert({"type": "warning", "msg": error})
+                                        show_alert(session_id, {"type": "warning", "msg": error})
                                     is_lang_in_tts_engine = (
                                         session.get('tts_engine') in default_engine_settings and
                                         session.get('language') in default_engine_settings[session['tts_engine']].get('languages', {})
@@ -2863,8 +2854,7 @@ def convert_ebook(args:dict)->tuple:
                         error = f"Temporary directory {session['process_dir']} not removed due to failure."
         if session['cancellation_requested']:
             error = 'Cancelled' if error is None else error + '. Cancelled'
-        if session['is_gui_process']:
-            show_alert({"type": "warning", "msg": error})
+        show_alert(session_id, {"type": "warning", "msg": error})
         return error, False
     except Exception as e:
         print(f'convert_ebook() Exception: {e}')
@@ -2912,7 +2902,7 @@ def finalize_audiobook(session_id: str) -> tuple:
             session['blocks_edit'] = blocks
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
-                show_alert({"type": "info", "msg": msg})
+                show_alert(session_id, {"type": "info", "msg": msg})
                 exported_files = combine_audio_chapters(session_id)
                 if exported_files is not None:
                     progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
@@ -2923,7 +2913,7 @@ def finalize_audiobook(session_id: str) -> tuple:
                     session['blocks_previous'] = copy.deepcopy(session['blocks_edit'])
                     reset_ebook_session(session_id, True)
                     if session['blocks_preview']:
-                        show_alert({"type": "success", "msg": progress_status})
+                        show_alert(session_id, {"type": "success", "msg": progress_status})
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
@@ -3017,17 +3007,21 @@ def cleanup_models_cache()->None:
         error = f"cleanup_models_cache() error: {e}"
         print(error)
 
-def show_alert(state:dict)->None:
-    if isinstance(state, dict):
-        if state['type'] is not None:
-            if state['type'] == 'error':
-                gr.Error(state['msg'])
-            elif state['type'] == 'warning':
-                gr.Warning(state['msg'])
-            elif state['type'] == 'info':
-                gr.Info(state['msg'])
-            elif state['type'] == 'success':
-                gr.Success(state['msg'])
+def show_alert(session_id:str|None, state:dict)->None:
+    if session_id is not None:
+        session = context.get_session(session_id)
+        if session['is_gui_process']:
+            if isinstance(state, dict):
+                if state['type'] is not None:
+                    if state['type'] == 'error':
+                        gr.Error(state['msg'])
+                    elif state['type'] == 'warning':
+                        gr.Warning(state['msg'])
+                    elif state['type'] == 'info':
+                        gr.Info(state['msg'])
+                    elif state['type'] == 'success':
+                        gr.Success(state['msg'])
+    print(state['msg'])
 
 def exception_alert(session_id:str|None, error:str)->None:
     if session_id is not None:
