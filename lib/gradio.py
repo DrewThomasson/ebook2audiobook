@@ -1716,7 +1716,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 show_alert(session_id, {"type": "warning", "msg": msg})
                                                 if progress_status == status_tags['BLOCKS']:
                                                     session['status'] = progress_status
-                                                    yield gr.update(value=session['status'])
+                                                    return gr.update(value=session['status'])
                                                 else:
                                                     show_alert(session_id, {"type": "success", "msg": progress_status})
                                                     yield gr.update(value=msg)
