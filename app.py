@@ -337,16 +337,16 @@ SML tags available:
                         )
                 except OSError as e:
                     error = f'Connection error: {e}'
-                    c.alert_exception(error, None)
+                    c.alert_exception(None, error)
                 except socket.error as e:
                     error = f'Socket error: {e}'
-                    c.alert_exception(error, None)
+                    c.alert_exception(None, error)
                 except KeyboardInterrupt:
                     error = 'Server interrupted by user. Shutting down...'
-                    c.alert_exception(error, None)
+                    c.alert_exception(None, error)
                 except Exception as e:
                     error = f'An unexpected error occurred: {e}'
-                    c.alert_exception(error, None)
+                    c.alert_exception(None, error)
             else:
                 error = 'Error: In GUI mode, no option or only --share can be passed'
                 print(error)
