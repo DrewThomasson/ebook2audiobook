@@ -2028,14 +2028,13 @@ def convert_chapters2audio(session_id: str) -> bool:
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
                                     final_sentences.append(sentence)
-                                if j >= start_sentence:
-                                    if j == start_sentence and start_sentence > 0:
-                                        msg = f'********* Resuming from sentence {global_sent} ********'
-                                        print(msg)
-                                        block_sent_dir = os.path.join(session['sentences_dir'], str(block_idx))
-                                        os.makedirs(block_sent_dir, exist_ok=True)
-                                        sentence_file = os.path.join(block_sent_dir, f'{j}.{default_audio_proc_format}')
-                                        success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
+                                if j == start_sentence and start_sentence > 0:
+                                    msg = f'********* Resuming from sentence {global_sent} ********'
+                                    print(msg)
+                                    block_sent_dir = os.path.join(session['sentences_dir'], str(block_idx))
+                                    os.makedirs(block_sent_dir, exist_ok=True)
+                                    sentence_file = os.path.join(block_sent_dir, f'{j}.{default_audio_proc_format}')
+                                    success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if not success:
                                         return False
                                 global_sent += 1
