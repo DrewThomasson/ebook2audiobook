@@ -2890,21 +2890,23 @@ def finalize_audiobook(session_id: str) -> tuple:
         if session.get('blocks_edit', []):
             json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
             save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
+            blocks_prev = session.get('blocks_previous', [])
             msg = 'Get sentences…'
             print(msg)
-            for block in session['blocks_edit']:
+            for block_idx, block in enumerate(session['blocks_edit']):
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
                     return error, False
                 if not block['keep'] or not block['text'].strip():
                     block['sentences'] = []
                     continue
-                prev = session.get('blocks_previous', [{}])
-                block_idx = session['blocks_edit'].index(block)
-                prev_block = prev[block_idx] if block_idx < len(prev) else None
+                prev_block = blocks_prev[block_idx] if block_idx < len(blocks_prev) else None
                 if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
+                    print(f'Block {block_idx} — unchanged, keeping existing sentences')
                     continue
+                print(f'Block {block_idx} — generating sentences…')
                 sentences_list = get_sentences(block['text'], session_id)
+                print(f'Block {block_idx} — got {len(sentences_list) if sentences_list else 0} sentences')
                 if sentences_list is None:
                     error = 'No sentences found!'
                     return error, False
