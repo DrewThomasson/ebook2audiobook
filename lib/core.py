@@ -2892,7 +2892,8 @@ def finalize_audiobook(session_id: str) -> tuple:
             blocks_prev = session.get('blocks_previous', [])
             msg = 'Get sentences…'
             print(msg)
-            for block_idx, block in enumerate(session['blocks_edit']):
+            blocks = session['blocks_edit']
+            for block_idx, block in enumerate(blocks):
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
                     return error, False
@@ -2903,12 +2904,15 @@ def finalize_audiobook(session_id: str) -> tuple:
                 if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
                     print(f'Block {block_idx} — unchanged, keeping existing sentences')
                     continue
-                sentences_list = get_sentences(session_id, block['text'])
+                print(f'Block {block_idx} — generating sentences…')
+                sentences_list = get_sentences(block['text'], session_id)
+                print(f'Block {block_idx} — got {len(sentences_list) if sentences_list else 0} sentences')
                 if sentences_list is None:
                     error = 'No sentences found!'
                     return error, False
-                block['sentences'] = sentences_list
-            print(f"sentences: ----- {session['blocks_edit'][0]['sentences']} ---")
+                block['sentences'] = sentences_list if sentences_list else []
+            # Reassign to trigger proxy update
+            session['blocks_edit'] = blocks
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert({"type": "info", "msg": msg})
