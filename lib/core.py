@@ -1958,6 +1958,7 @@ def convert_chapters2audio(session_id: str) -> bool:
                 print(msg)
                 return False
             kept_blocks = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip() and b.get('sentences')]
+            print(kept_blocks)
             total_chapters = len(kept_blocks)
             if total_chapters == 0:
                 error = 'No chapters found!'
