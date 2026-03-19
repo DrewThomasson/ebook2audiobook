@@ -2498,12 +2498,11 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(sml_token('pause'), '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
-def delete_proc_audio_files(dir:str, files:list)->None:
+def delete_proc_audio_files(dir: str, files: list) -> None:
     base = Path(dir)
-    for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
-        if file.stem.isdigit():
-            if file in files:
-                file.unlink()
+    for file in base.rglob(f'[0-9]*.{default_audio_proc_format}'):
+        if file.stem.isdigit() and file in files:
+            file.unlink()
 
 def clear_folder(folder_path:str)->None:
     for name in os.listdir(folder_path):
@@ -2663,7 +2662,9 @@ def convert_ebook(args:dict)->tuple:
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                 os.makedirs(session['voice_dir'], exist_ok=True)
-                audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{default_audio_proc_format}")
+                audio_sentences_exist = any(
+                    Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}')
+                )
                 if os.path.exists(session['final_name']) or audio_sentences_exist:
                     msg = f"Warning! The final file {Path(session['final_name']).name} already exists or some sentences are already converted. Continue? WARNING! The whole previous conversion will be deleted!"
                     print(msg)

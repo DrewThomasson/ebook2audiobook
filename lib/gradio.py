@@ -1783,11 +1783,13 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, session_id)              
                 return gr.update()
 
-            def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
+            def check_override_audiobook(session_id: str, data: any, blocks_preview: bool, event: int) -> tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     final_file = os.path.join(session['audiobooks_dir'], get_sanitized(Path(data).stem + '.' + session['output_format']))
-                    audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{session['output_format']}")
+                    audio_sentences_exist = any(
+                        Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}')
+                    )
                     if os.path.exists(final_file) or audio_sentences_exist:
                         msg = f"Warning! the final file {session['final_name']} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                         return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
