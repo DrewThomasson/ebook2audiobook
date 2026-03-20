@@ -2677,7 +2677,9 @@ def convert_ebook(args:dict)->tuple:
                     if choice == 'y':
                         shutil.rmtree(session['process_dir'], ignore_errors=True)
                     elif choice == 's':
-                        error = 'Conversion skipped.'
+                        msg = 'Conversion skipped.'
+                        print(msg)
+                        return msg, True
                 if error is None:
                     #delete_unused_tmp_dirs(audiobooks_cli_dir, 180, session_id)
                     if session['custom_model'] is not None:
