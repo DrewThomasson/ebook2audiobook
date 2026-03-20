@@ -2029,7 +2029,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                 return False
                             sentence = sentences[j].strip()
                             if any(c.isalnum() for c in sentence):
-                                print(f'KKKKKKKKKKKKKKKKKKKKKKK')
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
                                     final_sentences.append(sentence)
@@ -2063,7 +2062,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 show_alert(session_id, {"type": "error", "msg": error})
                                 return False
                         session['resume_block'] = block_idx
-                        session['resume_sentence'] = len(sentences)
+                        session['resume_sentence'] = 0
                 write_vtt = tts_manager.create_sentences2vtt(final_sentences)
                 return write_vtt
         except Exception as e:
