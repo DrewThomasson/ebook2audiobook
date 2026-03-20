@@ -2561,13 +2561,12 @@ def convert_ebook_directory(args:dict)->tuple:
                 progress_status, passed = convert_ebook(args)
                 if not passed:
                     break
-                if progress_status != status_tags['BLOCKS']:
-                    progress_status = file
+                if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
+                    progress_status = args['ebook']
                 yield progress_status, passed
         return progress_status, passed
     else:
-        error = f'the ebooks source is not a list!'
-        print(error)    
+        error = f'the ebooks source is not a list!'   
     return error, False
 def convert_ebook(args:dict)->tuple:
     try:
