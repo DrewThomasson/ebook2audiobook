@@ -177,8 +177,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             print(error)
             return False
 
-    def create_vtt(self, all_sentences:list)->bool:
-        audio_dir = self.session['sentences_dir']
+    def create_vtt(self, all_sentences:list, audio_dir:str)->bool:
         vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
         if self._build_vtt_file(all_sentences, audio_dir, vtt_path):
             return True

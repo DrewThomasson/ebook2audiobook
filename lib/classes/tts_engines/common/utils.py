@@ -526,7 +526,7 @@ class TTSUtils:
         h, m = divmod(m, 60)
         return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
-    def _build_vtt_file(self, all_sentences: list, audio_dir: str, vtt_path: str) -> bool:
+    def _build_vtt_file(self, all_sentences:list, audio_dir:str, vtt_path:str)->bool:
         try:
             import gradio as gr
             from tqdm import tqdm
