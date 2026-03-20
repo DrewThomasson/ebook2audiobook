@@ -268,22 +268,22 @@ SML tags available:
                     renamed_args[f"{args['tts_engine']}_{key}"] = args.pop(key)
             args.update(renamed_args)
             # Condition to stop if both --ebook and --ebooks_dir are provided
-            if args['ebook'] and args['ebooks_dir']:
+            if args.get('ebook', False) and args.get('ebooks_dir', False):
                 error = 'Error: You cannot specify both --ebook and --ebooks_dir in headless mode.'
                 print(error)
                 sys.exit(1)
             # convert in absolute path voice, custom_model if any
-            if args['voice']:
+            if args.get('voice', False):
                 if os.path.exists(args['voice']):
                     args['voice'] = os.path.abspath(args['voice'])
-            if args['custom_model'] is not None:
+            if args.get('custom_model', None) is not None:
                 if os.path.exists(args['custom_model']):
                     args['custom_model'] = os.path.abspath(args['custom_model'])
-            if args['output_dir'] is not None and not os.path.exists(args['output_dir']):
+            if args.get('output_dir', None) is not None and not os.path.exists(args['output_dir']):
                 error = 'Error: --output_dir path does not exist.'
                 print(error)
                 sys.exit(1)                
-            if args['ebooks_dir']:
+            if args.get('ebooks_dir', False):
                 args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
                 if not os.path.exists(args['ebooks_dir']):
                     error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."
@@ -299,7 +299,7 @@ SML tags available:
                     error = progress_status
                     print(error)
                     sys.exit(1)
-            elif args['ebook']:
+            elif args.get('ebook', False):
                 args['ebook'] = os.path.abspath(args['ebook'])
                 if not os.path.exists(args['ebook']):
                     error = f"Error: The provided --ebook {args['ebook']} does not exist."
