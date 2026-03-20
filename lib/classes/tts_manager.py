@@ -20,5 +20,5 @@ class TTSManager:
     def convert_sentence2audio(self, sentence_file:str, sentence:str)->bool:
         return self.engine.convert(sentence_file, sentence)
         
-    def create_sentences2vtt(self, all_sentences:list, audio_dir:str)->bool:
-        return self.engine.create_vtt(all_sentences, audio_dir)
+    def create_sentences2vtt(self, all_sentences:list)->bool:
+        return self.engine.create_vtt(all_sentences)

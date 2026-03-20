@@ -2063,7 +2063,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 return False
                         session['resume_block'] = block_idx
                         session['resume_sentence'] = len(sentences)
-                write_vtt = tts_manager.create_sentences2vtt(final_sentences, session['sentences_dir'])
+                write_vtt = tts_manager.create_sentences2vtt(final_sentences)
                 return write_vtt
         except Exception as e:
             DependencyError(e)
