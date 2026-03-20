@@ -2753,7 +2753,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 gr_audiobook_player.addEventListener("loadeddata", ()=>{
                                                     gr_audiobook_player.style.transition = "filter 1s ease";
                                                     gr_audiobook_player.style.filter = audio_filter;
-                                                    gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
+                                                    gr_audiobook_player.currentTime = parseFloat(window.session_storage?.playback_time) || 0;
                                                     gr_audiobook_player.volume = window.session_storage.playback_volume;
                                                 });
                                                 gr_audiobook_player.addEventListener("play", ()=>{
