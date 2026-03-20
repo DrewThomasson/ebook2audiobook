@@ -1694,29 +1694,31 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
-                                progress_status, passed = convert_ebook_directory(args)
-                                if passed:
-                                    count_file = len(args['ebook_list'])
-                                    if count_file > 0:
-                                        if progress_status == status_tags['BLOCKS']:
-                                            session['status'] = progress_status
-                                            yield gr.update(value=session['status'])
+                                for progress_status, passed in convert_ebook_directory(args):
+                                    if passed:
+                                        count_file = len(args['ebook_list'])
+                                        if count_file > 0:
+                                            if progress_status == status_tags['BLOCKS']:
+                                                session['status'] = progress_status
+                                                yield gr.update(value=session['status'])
+                                                return
+                                            else:
+                                                file = progress_status
+                                                args['ebook_list'].remove(file)
+                                                msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                                show_alert(session_id, {'type': 'warning', 'msg': msg})
+                                                yield gr.update(value=file)
                                         else:
                                             file = progress_status
-                                            args['ebook_list'].remove(file)
-                                            msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
-                                            show_alert(session_id, {"type": "warning", "msg": msg})
-                                            yield gr.update(value=file)
+                                            msg = 'Conversion successful!'
+                                            args['ebook_list'] = None
+                                            return gr.update(value=file)
                                     else:
-                                        file = progress_status
-                                        msg = 'Conversion successful!'
-                                        args['ebook_list'] = None
-                                        return gr.update(value=file) 
-                                else:
-                                    if session['status'] == status_tags['CONVERTING']:
-                                        error = 'Conversion cancelled.'
-                                    else:
-                                        error = 'Conversion failed.'
+                                        if session['status'] == status_tags['CONVERTING']:
+                                            error = 'Conversion cancelled.'
+                                        else:
+                                            error = 'Conversion failed.'
+                                        break
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                                 progress_status, passed = convert_ebook(args)

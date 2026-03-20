@@ -2852,7 +2852,7 @@ def convert_ebook(args:dict)->tuple:
                                                     return session['status'], True
                                                 else:
                                                     progress_status, passed = finalize_audiobook(session_id)
-                                                return progress_status, passed
+                                                    return progress_status, passed
                                             else:
                                                 error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
                                         else:
