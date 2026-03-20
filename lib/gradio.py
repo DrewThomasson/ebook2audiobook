@@ -1703,9 +1703,10 @@ def build_interface(args:dict)->gr.Blocks:
                                                 yield gr.update(value=session['status']),
                                             else:
                                                 args['ebook_list'].remove(progress_status)
-                                                msg = f"{os.path.basename(progress_status)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                                filename = os.path.basename(progress_status)
+                                                msg = f"{filename} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
                                                 show_alert(session_id, {'type': 'warning', 'msg': msg})
-                                                yield gr.update(value=progress_status)
+                                                yield gr.update(value=filename)
                                         else:
                                             args['ebook_list'] = None
                                             msg = 'Conversion successful!'
