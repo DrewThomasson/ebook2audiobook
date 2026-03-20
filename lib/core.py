@@ -2918,7 +2918,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                     session['audiobook'] = exported_files[-1]
                     session['blocks_saved'] = copy.deepcopy(session['blocks_current'])
-                    json_blocks_saved_file = os.path.join(session['process_dir'], f"{saved_prefix}{session['filename_noext']}.json")
+                    json_blocks_saved_file = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     reset_ebook_session(session_id, True)
                     if session['blocks_preview']:
