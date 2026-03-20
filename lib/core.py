@@ -2664,9 +2664,8 @@ def convert_ebook(args:dict)->tuple:
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                 os.makedirs(session['voice_dir'], exist_ok=True)
-                audio_sentences_exist = any(
-                    Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}')
-                )
+                audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
+                print(f'audio_sentences_exist: {audio_sentences_exist}')
                 if os.path.exists(session['final_name']) or audio_sentences_exist:
                     msg = f"Warning! The final file {Path(session['final_name']).name} already exists or some sentences are already converted. Continue? WARNING! The whole previous conversion will be deleted!"
                     print(msg)
