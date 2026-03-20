@@ -2570,6 +2570,7 @@ def convert_ebook_directory(args:dict)->tuple:
                 if passed:
                     if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
                         progress_status = args['ebook']
+                    print(f"================= {progress_status} {passed} =========")
                     yield progress_status, passed
                 else:
                     return progress_status, passed
