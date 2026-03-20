@@ -2006,6 +2006,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(),
                             )
                     else:
+                        blocks_previous_hash = hash_proxy_dict(MappingProxyType(session['blocks_saved']))
+                        blocks_new_hash = hash_proxy_dict(MappingProxyType(session['blocks_current']))
+                        if blocks_previous_hash != blocks_new_hash:
+                            json_blocks_current_file = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
+                            save_json_blocks(session_id, json_blocks_current_file, 'blocks_current')
                         new_hash = hash_proxy_dict(MappingProxyType(session))
                         if previous_hash == new_hash:
                             yield gr.update(), gr.update(), gr.update()

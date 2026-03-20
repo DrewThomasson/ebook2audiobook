@@ -75,6 +75,12 @@ save_session_keys_except = [
     'blocks_current'
 ]
 
+file_prefixes = {
+    "clone": "__",
+    "saved": "__saved_",
+    "current": "__current_"
+}
+
 class DependencyError(Exception):
 
     def __init__(self, message:str|None):
@@ -387,11 +393,11 @@ def extract_custom_model(session_id)->str|None:
         
 def hash_proxy_dict(proxy_dict)->str:
     try:
-        data = dict(proxy_dict)
+        data = {k: v for k, v in dict(proxy_dict).items() if k not in save_session_keys_except}
     except Exception:
         data = {}
     data_str = json.dumps(data, sort_keys=True, default=str)
-    return hashlib.md5(data_str.encode("utf-8")).hexdigest()
+    return hashlib.md5(data_str.encode('utf-8')).hexdigest()
 
 def compare_checksums(session_id:str)->tuple[bool, str|None]:
     try:
@@ -2772,14 +2778,18 @@ def convert_ebook(args:dict)->tuple:
                                 else:
                                     error = 'convert2epub() failed!'
                             if error is None:
-                                json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                                json_blocks_saved_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+                                json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
+                                json_blocks_saved_file = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
+                                json_blocks_current_file = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
                                 missing_json = True
                                 if os.path.exists(json_blocks_orig_file):
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
                                     if os.path.exists(json_blocks_saved_file):
                                         if not session.get('blocks_saved', []):
                                             session['blocks_saved'] = load_json_blocks(json_blocks_saved_file)
+                                    if os.path.exists(json_blocks_current_file):
+                                        if not session.get('blocks_current', []):
+                                            session['blocks_current'] = load_json_blocks(json_blocks_current_file)                                   
                                     missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
@@ -2830,8 +2840,9 @@ def convert_ebook(args:dict)->tuple:
                                                     for b in session['blocks_orig']
                                                 ]
                                                 save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
-                                            if session.get('blocks_orig', []) and session.get('blocks_saved', []):
+                                            if not session.get('blocks_current', []):
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
+                                            if session.get('blocks_orig', []) and session.get('blocks_saved', []):
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
@@ -2906,7 +2917,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                     session['audiobook'] = exported_files[-1]
                     session['blocks_saved'] = copy.deepcopy(session['blocks_current'])
-                    json_blocks_saved_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+                    json_blocks_saved_file = os.path.join(session['process_dir'], f"{saved_prefix}{session['filename_noext']}.json")
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     reset_ebook_session(session_id, True)
                     if session['blocks_preview']:
