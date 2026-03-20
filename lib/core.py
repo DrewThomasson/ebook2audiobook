@@ -2028,6 +2028,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 print(msg)
                                 return False
                             sentence = sentences[j].strip()
+                            print(f'sentence: {sentence}')
                             if any(c.isalnum() for c in sentence):
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
@@ -2037,7 +2038,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                         msg = f'********* Resuming from sentence {global_sent} ********'
                                         print(msg)
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                                    print(f'sentence_file: {sentence_file}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if not success:
                                         return False
