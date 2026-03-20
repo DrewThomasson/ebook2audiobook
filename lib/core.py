@@ -71,7 +71,8 @@ status_tags = {
 
 save_session_keys_except = [
     'blocks_orig',
-    'blocks_edit'
+    'blocks_edit',
+    'blocks_previous'
 ]
 
 class DependencyError(Exception):
@@ -148,7 +149,6 @@ class SessionContext:
             "ticker": 0,
             "cancellation_requested": False,
             "ebook_mode": "single",
-            "blocks_preview": default_blocks_preview,
             "device": default_device,
             "tts_engine": default_tts_engine,
             "fine_tuned": default_fine_tuned,
@@ -2560,7 +2560,8 @@ def convert_ebook_directory(args:dict)->tuple:
                 progress_status, passed = convert_ebook(args)
                 if not passed:
                     break
-                yield progress_status, passed
+                if progress_status != 
+                yield file, passed
         return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'
