@@ -2558,6 +2558,7 @@ def get_compatible_tts_engines(language:str)->list[str]:
 
 def convert_ebook_directory(args:dict)->tuple:
     error = ''
+    passed = False
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
@@ -2565,15 +2566,15 @@ def convert_ebook_directory(args:dict)->tuple:
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
                 progress_status, passed = convert_ebook(args)
-                if not passed:
-                    break
-                if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
-                    progress_status = args['ebook']
-                yield progress_status, passed
-        return progress_status, passed
+                if passed:
+                    if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
+                        progress_status = args['ebook']
+                    yield progress_status, passed
+                else:
+                    return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'   
-    return error, False
+        return error, False
 def convert_ebook(args:dict)->tuple:
     try:
         global context        
