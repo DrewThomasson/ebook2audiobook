@@ -2020,6 +2020,8 @@ def convert_chapters2audio(session_id:str)->bool:
                             start_sentence = 0
                         msg = f'Chapter {ch_num} (block {block_idx}) containing {len(sentences)} sentences…'
                         print(msg)
+                        block_dir = os.path.join(session['sentences_dir'], str(block_idx))
+                        os.makedirs(block_dir, exist_ok=True)
                         for j in range(len(sentences)):
                             if session['cancellation_requested']:
                                 msg = 'Cancel requested'
@@ -2034,9 +2036,8 @@ def convert_chapters2audio(session_id:str)->bool:
                                     if j == start_sentence and start_sentence > 0:
                                         msg = f'********* Resuming from sentence {global_sent} ********'
                                         print(msg)
-                                    block_dir = os.path.join(session['sentences_dir'], str(block_idx))
-                                    os.makedirs(block_dir, exist_ok=True)
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
+                                    print(f'sentence_file: {sentence_file}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if not success:
                                         return False
@@ -2563,7 +2564,6 @@ def convert_ebook_directory(args:dict)->tuple:
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
-            print(f'============= {file} ===========')
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
