@@ -184,6 +184,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             return False
 
     def create_vtt(self, all_sentences:list)->bool:
-        if self._build_vtt_file(all_sentences, audio_dir):
+        if self._build_vtt_file(all_sentences):
             return True
         return False

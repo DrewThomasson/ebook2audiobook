@@ -251,8 +251,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             print(error)
             return False
 
-    def create_vtt(self, all_sentences:list, audio_dir:str)->bool:
-        vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
-        if self._build_vtt_file(all_sentences, audio_dir, vtt_path):
+    def create_vtt(self, all_sentences:list)->bool:
+        if self._build_vtt_file(all_sentences):
             return True
         return False
