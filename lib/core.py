@@ -71,8 +71,8 @@ status_tags = {
 
 save_session_keys_except = [
     'blocks_orig',
-    'blocks_edit',
-    'blocks_previous'
+    'blocks_saved',
+    'blocks_current'
 ]
 
 class DependencyError(Exception):
@@ -199,8 +199,8 @@ class SessionContext:
             "final_name": None,
             "cover": None,
             "blocks_orig": [],
-            "blocks_edit": [],
-            "blocks_previous": [],
+            "blocks_saved": [],
+            "blocks_current": [],
             "resume_block": -1,
             "resume_sentence": 0,
             "duration": 0,
@@ -1944,8 +1944,8 @@ def convert_chapters2audio(session_id:str)->bool:
     if session and session.get('id', False):
         try:
             tts_manager = TTSManager(session)
-            blocks = session['blocks_edit']
-            blocks_prev = session.get('blocks_previous', [])
+            blocks = session['blocks_saved']
+            blocks_saved = session.get('blocks_saved', [])
             resume_block = session.get('resume_block', -1)
             resume_sentence = session.get('resume_sentence', 0)
             if session['cancellation_requested']:
@@ -1984,7 +1984,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         sentences = block['sentences']
                         sent_start = global_sent
                         # Determine if block needs conversion
-                        prev_block = blocks_prev[block_idx] if block_idx < len(blocks_prev) else None
+                        prev_block = blocks_saved[block_idx] if block_idx < len(blocks_saved) else None
                         block_changed = (
                             prev_block is None
                             or prev_block.get('text', '').strip() != block['text'].strip()
@@ -2292,9 +2292,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
-            # Build chapter list from blocks_edit
+            # Build chapter list from blocks_saved
             kept_blocks = [
-                (i, b) for i, b in enumerate(session['blocks_edit'])
+                (i, b) for i, b in enumerate(session['blocks_saved'])
                 if b['keep'] and b['text'].strip() and b.get('sentences')
             ]
             chapter_files = []
@@ -2773,13 +2773,13 @@ def convert_ebook(args:dict)->tuple:
                                     error = 'convert2epub() failed!'
                             if error is None:
                                 json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                                json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+                                json_blocks_saved_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
                                 missing_json = True
                                 if os.path.exists(json_blocks_orig_file):
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
-                                    if os.path.exists(json_blocks_edit_file):
-                                        if not session.get('blocks_edit', []):
-                                            session['blocks_edit'] = load_json_blocks(json_blocks_edit_file)
+                                    if os.path.exists(json_blocks_saved_file):
+                                        if not session.get('blocks_saved', []):
+                                            session['blocks_saved'] = load_json_blocks(json_blocks_saved_file)
                                     missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
@@ -2816,8 +2816,8 @@ def convert_ebook(args:dict)->tuple:
                                                     session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
                                                 if session.get('blocks_orig', []):
                                                     save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
-                                            if not session.get('blocks_edit', []):
-                                                session['blocks_edit'] = [
+                                            if not session.get('blocks_saved', []):
+                                                session['blocks_saved'] = [
                                                     {
                                                         'expand': False,
                                                         'keep': b['keep'],
@@ -2829,8 +2829,9 @@ def convert_ebook(args:dict)->tuple:
                                                     }
                                                     for b in session['blocks_orig']
                                                 ]
-                                                save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
-                                            if session.get('blocks_orig', []) and session.get('blocks_edit', []):
+                                                save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
+                                            if session.get('blocks_orig', []) and session.get('blocks_saved', []):
+                                                session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
@@ -2875,30 +2876,28 @@ def finalize_audiobook(session_id:str)->tuple:
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             error = 'No blocks have been selected for the conversion!'
             return error, False
-        if session.get('blocks_edit', []):
-            json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
-            save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
-            blocks_prev = session.get('blocks_previous', [])
+        if session.get('blocks_current', []):
             msg = 'Get sentences…'
             print(msg)
-            blocks = session['blocks_edit']
-            for block_idx, block in enumerate(blocks):
+            blocks_saved = session.get('blocks_saved', [])
+            blocks = session['blocks_current']
+            for idx, block in enumerate(blocks):
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
                     return error, False
                 if not block['keep'] or not block['text'].strip():
                     block['sentences'] = []
                     continue
-                prev_block = blocks_prev[block_idx] if block_idx < len(blocks_prev) else None
+                prev_block = blocks_saved[idx] if idx < len(blocks_saved) else None
                 if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
-                    print(f'Block {block_idx} — unchanged, keeping existing sentences')
+                    print(f'Block {idx} — unchanged, keeping existing sentences')
                     continue
                 sentences_list = get_sentences(session_id, block['text'])
                 if sentences_list is None:
                     error = 'No sentences found!'
                     return error, False
                 block['sentences'] = sentences_list if sentences_list else []
-            session['blocks_edit'] = blocks
+            session['blocks_saved'] = blocks
             if convert_chapters2audio(session_id):
                 msg = 'Conversion successful. Combining sentences and chapters…'
                 show_alert(session_id, {"type": "info", "msg": msg})
@@ -2906,13 +2905,15 @@ def finalize_audiobook(session_id:str)->tuple:
                 if exported_files is not None:
                     progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                     session['audiobook'] = exported_files[-1]
-                    session['status'] = status_tags['READY']
-                    msg = f'*********** Session: {session_id} **************\n{session_info}'
-                    print(msg)
-                    session['blocks_previous'] = copy.deepcopy(session['blocks_edit'])
+                    session['blocks_saved'] = copy.deepcopy(session['blocks_current'])
+                    json_blocks_saved_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+                    save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     reset_ebook_session(session_id, True)
                     if session['blocks_preview']:
                         show_alert(session_id, {"type": "success", "msg": progress_status})
+                    session['status'] = status_tags['READY']
+                    msg = f'*********** Session: {session_id} **************\n{session_info}'
+                    print(msg)
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
@@ -2962,8 +2963,8 @@ def reset_ebook_session(session_id:str, force:bool=False)->None:
         "final_name": None,
         "cover": None,
         "blocks_orig": [],
-        "blocks_edit": [],
-        "blocks_previous": [],
+        "blocks_saved": [],
+        "blocks_current": [],
         "resume_block": -1,
         "resume_sentence": 0,
         "duration": 0,

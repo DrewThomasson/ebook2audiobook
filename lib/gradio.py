@@ -735,7 +735,7 @@ def build_interface(args:dict)->gr.Blocks:
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 gr_blocks_markdown = gr.Markdown(elem_id='gr_blocks_markdown', elem_classes=['gr-markdown'], value='')
                 with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
-                    gr_blocks_previous_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
+                    gr_blocks_back_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
                     gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
                     gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
 
@@ -1710,9 +1710,10 @@ def build_interface(args:dict)->gr.Blocks:
                                             yield gr.update(value=file)
                                             return
                                     else:
+                                        file = progress_status
                                         msg = 'Conversion successful!'
                                         args['ebook_list'] = None
-                                        return gr.update(value=msg) 
+                                        return gr.update(value=file) 
                                 else:
                                     if session['status'] == status_tags['CONVERTING']:
                                         error = 'Conversion cancelled.'
@@ -1834,7 +1835,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_blocks = False
                     else:
                         ebook_name = Path(session['ebook']).stem
-                        blocks = session['blocks_edit']
+                        blocks = session['blocks_current']
                     page_updates = list(populate_page(page, blocks))
                     result = (
                         gr.update(value=ebook_name),
@@ -1880,9 +1881,7 @@ def build_interface(args:dict)->gr.Blocks:
                             b['tts_engine'] = session.get('tts_engine', '')
                         if not b.get('fine_tuned'):
                             b['fine_tuned'] = session.get('fine_tuned', '')
-                    session['blocks_edit'] = new_blocks
-                    json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
-                    save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
+                    session['blocks_current'] = new_blocks
                     session['status'] = status_tags['READY']
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
 
@@ -1900,7 +1899,7 @@ def build_interface(args:dict)->gr.Blocks:
                             b['tts_engine'] = session.get('tts_engine', '')
                         if not b.get('fine_tuned'):
                             b['fine_tuned'] = session.get('fine_tuned', '')
-                    session['blocks_edit'] = blocks
+                    session['blocks_current'] = blocks
                     session['status'] = status_tags['CONVERTING']
                     return gr.update(visible=True), gr.update(visible=False), event + 1
                 return gr.update(), gr.update(), gr.update()
@@ -2045,7 +2044,7 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
                 gr_blocks_data, gr_blocks_page,
-                gr_blocks_previous_btn, gr_blocks_next_btn,
+                gr_blocks_back_btn, gr_blocks_next_btn,
                 *blocks_components_flat, gr_blocks_header
             ]
             outputs_restore_interface = [
@@ -2406,10 +2405,10 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
             )
-            gr_blocks_previous_btn.click(
+            gr_blocks_back_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
                 inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
             ).then(
                 fn=populate_page,
                 inputs=[gr_blocks_page, gr_blocks_data],
@@ -2418,7 +2417,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_next_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
                 inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_previous_btn, gr_blocks_next_btn]
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
             ).then(
                 fn=populate_page,
                 inputs=[gr_blocks_page, gr_blocks_data],
