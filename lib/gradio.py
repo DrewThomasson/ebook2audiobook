@@ -2394,7 +2394,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=start_conversion,
                 inputs=inputs_start_conversion,
-                outputs=[gr_progress]
+                outputs=[gr_progress, gr_ebook_file]
             ).then(
                 fn=edit_blocks,
                 inputs=[gr_session],
