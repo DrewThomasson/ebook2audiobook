@@ -603,8 +603,8 @@ def convert2epub(session_id:str)-> bool:
                 print(msg)
                 doc = fitz.open(file_input)
                 file_meta = doc.metadata
-                filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
-                title = file_meta.get('title') or filename_no_ext
+                filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
+                title = file_meta.get('title') or filename_noext
                 author = file_meta.get('author') or False
                 xhtml_pages = []
                 for i, page in enumerate(doc):
@@ -636,13 +636,13 @@ def convert2epub(session_id:str)-> bool:
                         '</body>\n'
                         '</html>\n'
                     )
-                    file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+                    file_input = os.path.join(session['process_dir'], f'{filename_noext}.xhtml')
                     with open(file_input, 'w', encoding='utf-8') as html_file:
                         html_file.write(xhtml_text)
                 else:
                     return False
             elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
-                filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
+                filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 msg = f'File input is an image ({file_ext}). Running OCR…'
                 print(msg)
                 img = Image.open(file_input)
@@ -659,14 +659,14 @@ def convert2epub(session_id:str)-> bool:
                         '<?xml version="1.0" encoding="utf-8"?>\n'
                         '<html xmlns="http://www.w3.org/1999/xhtml">\n'
                         '<head>\n'
-                        f'<meta charset="utf-8"/>\n<title>{filename_no_ext}</title>\n'
+                        f'<meta charset="utf-8"/>\n<title>{filename_noext}</title>\n'
                         '</head>\n'
                         '<body>\n'
                         f'{xhtml_body}\n'
                         '</body>\n'
                         '</html>\n'
                     )
-                    file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+                    file_input = os.path.join(session['process_dir'], f'{filename_noext}.xhtml')
                     with open(file_input, 'w', encoding='utf-8') as html_file:
                         html_file.write(xhtml_text)
                     print(f'OCR completed for {page_count} image page(s).')
@@ -1971,10 +1971,11 @@ def convert_chapters2audio(session_id:str)->bool:
                 return False
             total_iterations = total_sentences
             if session['ebook']:
-                msg = f'---------------<br/>'
+                msg = f'---------<br/>'
+                msg += f"{session['filename_noext']}"
                 msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
                 msg += f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
-                msg += f'<br/>---------------'
+                msg += f'<br/>---------'
                 show_alert(session_id, {"type": "warning", "msg": msg})
                 ebook_name = Path(session['ebook']).name
                 final_sentences = []
