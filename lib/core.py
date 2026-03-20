@@ -2566,10 +2566,8 @@ def convert_ebook_directory(args:dict)->tuple:
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
-for progress_status, passed in c.convert_ebook_directory(args):
-    if not passed:
-        break
-    print(f'{os.path.basename(progress_status)} converted.')
+                progress_status, passed = convert_ebook(args)
+                if passed:
                     if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
                         progress_status = args['ebook']
                     yield progress_status, passed
