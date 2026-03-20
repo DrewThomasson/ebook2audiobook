@@ -534,7 +534,7 @@ class TTSUtils:
                 print(msg)
                 vtt_path = os.path.join(self.session['process_dir'], Path(self.session['final_name']).stem + '.vtt')
                 audio_sentences_dir = Path(self.session['sentences_dir'])
-                blocks = self.session['blocks_edit']
+                blocks = self.session['blocks_current']
                 kept_indices = {
                     str(i) for i, b in enumerate(blocks)
                     if b['keep'] and b['text'].strip()
