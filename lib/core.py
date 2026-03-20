@@ -1972,7 +1972,7 @@ def convert_chapters2audio(session_id:str)->bool:
             total_iterations = total_sentences
             if session['ebook']:
                 msg = f'---------<br/>'
-                msg += f"{session['filename_noext']}"
+                msg += f"{session['filename_noext']}<br/>"
                 msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
                 msg += f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
                 msg += f'<br/>---------'
