@@ -2201,6 +2201,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=None,
                 inputs=[gr_progress],
                 js=r'''
+                    console.log('td rows:', filename);
                     (filename)=>{
                         const gr_root = (window.gradioApp && window.gradioApp()) || document;
                         const gr_ebook_file = gr_root.querySelector("#gr_ebook_file");
@@ -2223,7 +2224,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 .trim();
                         }
                         const rows = gr_ebook_file.querySelectorAll("table.file-preview tr.file");
-                        console.log('td rows:', rows)
                         rows.forEach((row, idx) => {
                             const filenameCell = row.querySelector("td.filename");
                             if (filenameCell) {
