@@ -2563,6 +2563,7 @@ def convert_ebook_directory(args:dict)->tuple:
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
+            print(f'============= {file} ===========')
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
