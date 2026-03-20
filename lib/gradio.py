@@ -1700,19 +1700,16 @@ def build_interface(args:dict)->gr.Blocks:
                                         if count_file > 0:
                                             if progress_status == status_tags['BLOCKS']:
                                                 session['status'] = progress_status
-                                                yield gr.update(value=session['status'])
-                                                return
+                                                yield gr.update(value=session['status']), gr.update()
                                             else:
-                                                file = progress_status
                                                 args['ebook_list'].remove(file)
                                                 msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
                                                 show_alert(session_id, {'type': 'warning', 'msg': msg})
-                                                yield gr.update(value=file)
+                                                yield gr.update(value=progress_status), gr.update(value=args['ebook_list'])
                                         else:
-                                            file = progress_status
-                                            msg = 'Conversion successful!'
                                             args['ebook_list'] = None
-                                            return gr.update(value=file)
+                                            msg = 'Conversion successful!'
+                                            return gr.update(value=msg), gr.update(value=args['ebook_list'])
                                     else:
                                         if session['status'] == status_tags['CONVERTING']:
                                             error = 'Conversion cancelled.'
@@ -1725,22 +1722,23 @@ def build_interface(args:dict)->gr.Blocks:
                                 if passed:
                                     if progress_status == status_tags['BLOCKS']:
                                         session['status'] = progress_status
-                                        return gr.update(value=session['status'])
+                                        return gr.update(value=session['status']), gr.update()
                                     else:
+                                        args['ebook'] = None
                                         msg = progress_status
                                         show_alert(session_id, {"type": "success", "msg": msg})
-                                        return gr.update(value=msg)
+                                        return gr.update(value=msg), gr.update(value=args['ebook'])
                                 else:
                                     error = progress_status
                         if error is not None:
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
-                        return gr.update(value=error)
+                        return gr.update(value=error), gr.update()
                 except Exception as e:
                     error = f'start_conversion(): {e}'
                     exception_alert(session_id, error)
-                return gr.update()
+                return gr.update(), gr.update()
 
             def update_gr_audiobook_list(session_id:str)->dict:
                 nonlocal audiobook_options
