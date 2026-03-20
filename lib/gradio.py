@@ -711,7 +711,7 @@ def build_interface(args:dict)->gr.Blocks:
                 
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                     gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
-                    gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
+                    gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=True, visible=True)
 
                 with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True) as gr_group_audiobook_list:
                     gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
