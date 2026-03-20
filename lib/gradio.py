@@ -2223,6 +2223,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 .trim();
                         }
                         const rows = gr_ebook_file.querySelectorAll("table.file-preview tr.file");
+                        console.log('td rows:', rows)
                         rows.forEach((row, idx) => {
                             const filenameCell = row.querySelector("td.filename");
                             if (filenameCell) {
