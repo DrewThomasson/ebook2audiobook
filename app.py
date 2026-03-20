@@ -292,11 +292,12 @@ SML tags available:
                     if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                         args['ebook_list'].append(full_path)
-                progress_status, passed = c.convert_ebook_directory(args)
-                if not passed:
-                    error = progress_status
-                    print(error)
-                    sys.exit(1)
+                error = None
+                for progress_status, passed in c.convert_ebook_directory(args):
+                    if not passed:
+                        error = progress_status
+                        print(error)
+                        sys.exit(1)
             elif args.get('ebook', None) is not None:
                 args['ebook'] = os.path.abspath(args['ebook'])
                 if not os.path.exists(args['ebook']):
