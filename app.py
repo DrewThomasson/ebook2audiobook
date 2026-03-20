@@ -267,13 +267,11 @@ SML tags available:
                 if key in args:
                     renamed_args[f"{args['tts_engine']}_{key}"] = args.pop(key)
             args.update(renamed_args)
-            # Condition to stop if both --ebook and --ebooks_dir are provided
-            if args.get('ebook', False) and args.get('ebooks_dir', False):
+            if args.get('ebook', None) is not None and args.get('ebooks_dir', None) is not None:
                 error = 'Error: You cannot specify both --ebook and --ebooks_dir in headless mode.'
                 print(error)
                 sys.exit(1)
-            # convert in absolute path voice, custom_model if any
-            if args.get('voice', False):
+            if args.get('voice', None) is not None:
                 if os.path.exists(args['voice']):
                     args['voice'] = os.path.abspath(args['voice'])
             if args.get('custom_model', None) is not None:
@@ -283,7 +281,7 @@ SML tags available:
                 error = 'Error: --output_dir path does not exist.'
                 print(error)
                 sys.exit(1)                
-            if args.get('ebooks_dir', False):
+            if args.get('ebooks_dir', None) is not None:
                 args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
                 if not os.path.exists(args['ebooks_dir']):
                     error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."
@@ -299,7 +297,7 @@ SML tags available:
                     error = progress_status
                     print(error)
                     sys.exit(1)
-            elif args.get('ebook', False):
+            elif args.get('ebook', None) is not None:
                 args['ebook'] = os.path.abspath(args['ebook'])
                 if not os.path.exists(args['ebook']):
                     error = f"Error: The provided --ebook {args['ebook']} does not exist."
