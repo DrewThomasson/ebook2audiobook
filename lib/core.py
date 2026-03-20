@@ -149,6 +149,7 @@ class SessionContext:
             "ticker": 0,
             "cancellation_requested": False,
             "ebook_mode": "single",
+            "blocks_preview": False,
             "device": default_device,
             "tts_engine": default_tts_engine,
             "fine_tuned": default_fine_tuned,
