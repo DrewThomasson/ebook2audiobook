@@ -2560,8 +2560,9 @@ def convert_ebook_directory(args:dict)->tuple:
                 progress_status, passed = convert_ebook(args)
                 if not passed:
                     break
-                if progress_status != 
-                yield file, passed
+                if progress_status != status_tags['BLOCKS']:
+                    progress_status = file
+                yield progress_status, passed
         return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'
