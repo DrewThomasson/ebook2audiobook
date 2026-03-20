@@ -2028,8 +2028,8 @@ def convert_chapters2audio(session_id:str)->bool:
                                 print(msg)
                                 return False
                             sentence = sentences[j].strip()
-                            print(f'sentence: {sentence}')
                             if any(c.isalnum() for c in sentence):
+                                print(f'KKKKKKKKKKKKKKKKKKKKKKK')
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
                                     final_sentences.append(sentence)
