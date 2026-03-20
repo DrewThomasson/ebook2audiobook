@@ -1711,7 +1711,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             return
                                     else:
                                         msg = 'Conversion successful!'
-                                        session['ebook_list'] = None
+                                        args['ebook_list'] = None
                                         return gr.update(value=msg) 
                                 else:
                                     if session['status'] == status_tags['CONVERTING']:
