@@ -2201,8 +2201,8 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=None,
                 inputs=[gr_progress],
                 js=r'''
-                    console.log('td rows:', filename);
                     (filename)=>{
+                        console.log('td rows:', filename);
                         const gr_root = (window.gradioApp && window.gradioApp()) || document;
                         const gr_ebook_file = gr_root.querySelector("#gr_ebook_file");
                         if(!gr_ebook_file){
