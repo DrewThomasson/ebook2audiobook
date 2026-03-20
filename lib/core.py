@@ -2570,7 +2570,6 @@ def convert_ebook_directory(args:dict)->tuple:
                 if passed:
                     if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
                         progress_status = args['ebook']
-                    print(f"================= {progress_status} {passed} =========")
                     yield progress_status, passed
                 else:
                     return progress_status, passed
@@ -2770,7 +2769,6 @@ def convert_ebook(args:dict)->tuple:
                         device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
                         if float(total_vram_gb) >= float(device_vram_required):
                             show_alert(session_id, {"type": "warning", "msg": msg})
-                            print(msg.replace('<br/>','\n'))
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             checksum, error = compare_checksums(session_id)
                             if not checksum:
