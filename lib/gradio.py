@@ -1694,7 +1694,22 @@ def build_interface(args:dict)->gr.Blocks:
                             if isinstance(args['ebook_list'], list):
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
-                                        print('coucou')
+                                        count_file = len(args['ebook_list'])
+                                        if count_file > 0:
+                                            if progress_status == status_tags['BLOCKS']:
+                                                session['status'] = progress_status
+                                                return gr.update(value=session['status']),
+                                            else:
+                                                args['ebook_list'].remove(progress_status)
+                                                filename = os.path.basename(progress_status)
+                                                msg = f"{filename} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                                show_alert(session_id, {'type': 'warning', 'msg': msg})
+                                                yield gr.update(value=filename)
+                                        else:
+                                            msg = 'Conversion successful!'
+                                            show_alert(session_id, {"type": "success", "msg": msg})
+                                            reset_ebook_session(session_id, True)
+                                            return gr.update(value=msg)
                                     else:
                                         if session['status'] == status_tags['CONVERTING']:
                                             error = 'Conversion cancelled.'
