@@ -1653,8 +1653,44 @@ def build_interface(args:dict)->gr.Blocks:
                 )->tuple:
                 try:
                     session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        args = {
+                            "id": session_id,
+                            "is_gui_process": session['is_gui_process'],
+                            "script_mode": script_mode,
+                            "blocks_preview": blocks_preview,
+                            "device": device,
+                            "tts_engine": tts_engine,
+                            "ebook": ebook_file if isinstance(ebook_file, str) else None,
+                            "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
+                            "voice": voice,
+                            "language": language,
+                            "custom_model": custom_model,
+                            "fine_tuned": fine_tuned,
+                            "output_format": output_format,
+                            "output_channel": output_channel,
+                            "xtts_temperature": float(xtts_temperature),
+                            "xtts_length_penalty": float(xtts_length_penalty),
+                            "xtts_num_beams":int(session['xtts_num_beams']),
+                            "xtts_repetition_penalty": float(xtts_repetition_penalty),
+                            "xtts_top_k":int(xtts_top_k),
+                            "xtts_top_p": float(xtts_top_p),
+                            "xtts_speed": float(xtts_speed),
+                            "xtts_enable_text_splitting":bool(xtts_enable_text_splitting),
+                            "bark_text_temp": float(bark_text_temp),
+                            "bark_waveform_temp": float(bark_waveform_temp),
+                            "output_split":bool(output_split),
+                            "output_split_hours": output_split_hours,
+                        }
+                        error = None
+                        if args['ebook'] is None and args['ebook_list'] is None:
+                            error = 'Error: a file or directory is required.'
+                            show_alert(session_id, {"type": "warning", "msg": error})
+                        elif args['xtts_num_beams'] < args['xtts_length_penalty']:
+                            error = 'Error: num beams must be greater or equal than length penalty.'
+                            show_alert(session_id, {"type": "warning", "msg": error})                   
 
-                    return gr.update()
+                        return gr.update(value=error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
                     exception_alert(session_id, error)
