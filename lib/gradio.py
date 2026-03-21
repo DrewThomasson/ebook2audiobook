@@ -1708,7 +1708,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 yield gr.update(value=filename)
                                         else:
                                             msg = 'Conversion successful!'
-                                            show_alert(session_id, {"type": "success", "msg": msg})s
+                                            show_alert(session_id, {"type": "success", "msg": msg})
                                             return gr.update(value=msg)
                                     else:
                                         if session['status'] == status_tags['CONVERTING']:
