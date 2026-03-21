@@ -1689,7 +1689,27 @@ def build_interface(args:dict)->gr.Blocks:
                         elif args['xtts_num_beams'] < args['xtts_length_penalty']:
                             error = 'Error: num beams must be greater or equal than length penalty.'
                             show_alert(session_id, {"type": "warning", "msg": error})                   
-
+                        else:
+                            session['ticker'] = len(audiobook_options)
+                            if isinstance(args['ebook_list'], list):
+                                print('ok')
+                            else:
+                                print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
+                                progress_status, passed = convert_ebook(args)
+                                if passed:
+                                    if progress_status == status_tags['BLOCKS']:
+                                        session['status'] = progress_status
+                                        return gr.update(value=session['status'])
+                                    else:
+                                        show_alert(session_id, {"type": "success", "msg": progress_status})
+                                        reset_ebook_session(session_id, True)
+                                        return gr.update(value=progress_status)
+                                else:
+                                    error = progress_status
+                        if error is not None:
+                            show_alert(session_id, {"type": "warning", "msg": error})
+                            if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
+                                context_tracker.end_session(session_id, session['socket_hash'])
                         return gr.update(value=error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
