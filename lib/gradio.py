@@ -1731,12 +1731,12 @@ def build_interface(args:dict)->gr.Blocks:
                                     error = progress_status
                         if error is not None:
                             show_alert(session_id, {"type": "warning", "msg": error})
-                            if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
-                                context_tracker.end_session(session_id, session['socket_hash'])
+                            #if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
+                                #context_tracker.end_session(session_id, session['socket_hash'])
                         return gr.update(value=error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
-                    exception_alert(None, error)
+                    exception_alert(session_id, error)
                 return gr.update()
 
             def update_gr_audiobook_list(session_id:str)->dict:
