@@ -2927,7 +2927,7 @@ def finalize_audiobook(session_id:str)->tuple:
                         if session['ebook_list'] is not None:
                             session['ebook_list'].remove(session['audiobook'])
                             filename = os.path.basename(session['audiobook'])
-                            msg = f"{filename} / converted. {len(arsession['audiobook']gs['ebook_list'])} ebook(s) conversion remaining..."
+                            msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
                             show_alert(session_id, {'type': 'warning', 'msg': msg})
                         else:
                             show_alert(session_id, {"type": "success", "msg": progress_status})
