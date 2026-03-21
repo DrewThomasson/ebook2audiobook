@@ -1789,7 +1789,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                                 return gr.update(value=show_gr_modal(status_tags['OVERRIDE'], msg), visible=True), gr.update()
                         return gr.update(), event + 1
-                return gr.update(), event
+                return gr.update(), gr.update()
 
             def populate_page(page:int, blocks:list[dict])->tuple:
                 start = int(page) * page_size
