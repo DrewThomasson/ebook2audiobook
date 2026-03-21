@@ -2938,10 +2938,10 @@ def finalize_audiobook(session_id:str)->tuple:
                         else:
                             show_alert(session_id, {"type": "success", "msg": progress_status})
                     else:
+                        session['status'] = status_tags['READY']
                         show_alert(session_id, {"type": "success", "msg": progress_status})
                         msg = f'*********** Session: {session_id} **************\n{session_info}'
-                        print(msg)
-                    session['status'] = status_tags['READY']
+                        print(msg) 
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
