@@ -1652,6 +1652,7 @@ def build_interface(args:dict)->gr.Blocks:
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
+                print(f'session_id: {session_id}')
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
