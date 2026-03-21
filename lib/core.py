@@ -2923,7 +2923,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     json_blocks_saved_file = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     if session['blocks_preview']:
-                        if session['ebook_list'] is not None:
+                        if session['ebook_list'] and session['ebook_list'] is not None:
                             session['ebook_list'].remove(session['ebook'])
                             filename = os.path.basename(session['ebook'])
                             msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."

@@ -1707,8 +1707,9 @@ def build_interface(args:dict)->gr.Blocks:
                                                 show_alert(session_id, {'type': 'warning', 'msg': msg})
                                                 yield gr.update(value=filename)
                                         else:
-                                            args['ebook_list'] = None
                                             msg = 'Conversion successful!'
+                                            show_alert(session_id, {"type": "success", "msg": msg})
+                                            reset_ebook_session(session_id, True)
                                             return gr.update(value=msg)
                                     else:
                                         if session['status'] == status_tags['CONVERTING']:
@@ -1724,10 +1725,9 @@ def build_interface(args:dict)->gr.Blocks:
                                         session['status'] = progress_status
                                         return gr.update(value=session['status'])
                                     else:
-                                        args['ebook'] = None
-                                        msg = progress_status
-                                        show_alert(session_id, {"type": "success", "msg": msg})
-                                        return gr.update(value=msg)
+                                        show_alert(session_id, {"type": "success", "msg": progress_status})
+                                        reset_ebook_session(session_id, True)
+                                        return gr.update(value=progress_status)
                                 else:
                                     error = progress_status
                         if error is not None:
