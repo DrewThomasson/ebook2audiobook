@@ -1736,7 +1736,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(value=error)
                 except Exception as e:
                     error = f'start_conversion(): {e}'
-                    exception_alert(session_id, error)
+                    exception_alert(None, error)
                 return gr.update()
 
             def update_gr_audiobook_list(session_id:str)->dict:
