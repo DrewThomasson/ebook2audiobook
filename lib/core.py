@@ -2924,8 +2924,6 @@ def finalize_audiobook(session_id:str)->tuple:
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     if session['blocks_preview']:
                         if session['ebook_list'] is not None:
-                            print(f"ebook_list: {session['ebook_list']}")
-                            print(f"ebook: {session['ebook']}")
                             session['ebook_list'].remove(session['ebook'])
                             filename = os.path.basename(session['ebook'])
                             msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
