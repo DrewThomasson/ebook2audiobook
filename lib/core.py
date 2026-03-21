@@ -2933,6 +2933,7 @@ def finalize_audiobook(session_id:str)->tuple:
                         else:
                             show_alert(session_id, {"type": "success", "msg": progress_status})
                     else:
+                        show_alert(session_id, {"type": "success", "msg": progress_status})
                         msg = f'*********** Session: {session_id} **************\n{session_info}'
                         print(msg)
                     session['status'] = status_tags['READY']
