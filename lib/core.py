@@ -2561,18 +2561,20 @@ def convert_ebook_directory(args:dict)->tuple:
     error = ''
     passed = False
     if isinstance(args['ebook_list'], list):
-        ebook_list = args['ebook_list'][:] # Use a shallow copy
-        for file in ebook_list:
-            if any(file.endswith(ext) for ext in ebook_formats):
-                args['ebook'] = file
-                print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, passed = convert_ebook(args)
-                if passed:
-                    if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
-                        progress_status = args['ebook']
-                    yield progress_status, passed
-                else:
-                    return progress_status, passed
+        session = context.get_session(session_id)
+        if session and session.get('id', False):
+            ebook_list = args['ebook_list'][:] # Use a shallow copy
+            for file in ebook_list:
+                if any(file.endswith(ext) for ext in ebook_formats):
+                    args['ebook'] = file
+                    print(f'Processing eBook file: {os.path.basename(file)}')
+                    progress_status, passed = convert_ebook(args)
+                    if passed:
+                        if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
+                            progress_status = file
+                        yield progress_status, passed
+                    else:
+                        return progress_status, passed
     else:
         error = f'the ebooks source is not a list!'   
         return error, False
