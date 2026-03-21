@@ -1692,7 +1692,15 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
-                                print('ok')
+                                for progress_status, passed in convert_ebook_directory(args):
+                                    if passed:
+                                        print('coucou')
+                                    else:
+                                        if session['status'] == status_tags['CONVERTING']:
+                                            error = 'Conversion cancelled.'
+                                        else:
+                                            error = 'Conversion failed.'
+                                        break
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                                 progress_status, passed = convert_ebook(args)
