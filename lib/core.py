@@ -2561,8 +2561,8 @@ def convert_ebook_directory(args:dict)->tuple:
     error = ''
     passed = False
     if isinstance(args['ebook_list'], list):
-        ebook_list = args['ebook_list'][:]
-        for file in ebook_list: # Use a shallow copy
+        ebook_list = args['ebook_list'][:] # Use a shallow copy
+        for file in ebook_list:
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
@@ -2924,10 +2924,17 @@ def finalize_audiobook(session_id:str)->tuple:
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     reset_ebook_session(session_id, True)
                     if session['blocks_preview']:
-                        show_alert(session_id, {"type": "success", "msg": progress_status})
-                    session['status'] = status_tags['READY']
-                    msg = f'*********** Session: {session_id} **************\n{session_info}'
-                    print(msg)
+                        if session['ebook_list'] is not None:
+                            session['ebook_list'].remove(session['audiobook'])
+                            filename = os.path.basename(session['audiobook'])
+                            msg = f"{filename} / converted. {len(arsession['audiobook']gs['ebook_list'])} ebook(s) conversion remaining..."
+                            show_alert(session_id, {'type': 'warning', 'msg': msg})
+                        else:
+                            show_alert(session_id, {"type": "success", "msg": progress_status})
+                    else:
+                        session['status'] = status_tags['READY']
+                        msg = f'*********** Session: {session_id} **************\n{session_info}'
+                        print(msg)
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
