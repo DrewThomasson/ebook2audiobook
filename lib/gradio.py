@@ -1654,7 +1654,7 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
 
-                    return gr.update(value=error)
+                    return gr.update()
                 except Exception as e:
                     error = f'start_conversion(): {e}'
                     exception_alert(session_id, error)
