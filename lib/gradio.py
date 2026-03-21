@@ -1700,7 +1700,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         if count_file > 0:
                                             if progress_status == status_tags['BLOCKS']:
                                                 session['status'] = progress_status
-                                                yield gr.update(value=session['status']),
+                                                return gr.update(value=session['status']),
                                             else:
                                                 args['ebook_list'].remove(progress_status)
                                                 filename = os.path.basename(progress_status)
