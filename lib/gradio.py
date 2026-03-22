@@ -1696,7 +1696,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
                                 if session['status'] == status_tags['LOOP']:
-                                    session['status'] = status_tags['READY']:
+                                    session['status'] = status_tags['READY']
                                     args['ebook_list'] = session['ebook_list']
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
