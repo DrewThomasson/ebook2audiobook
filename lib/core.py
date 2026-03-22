@@ -2933,7 +2933,7 @@ def finalize_audiobook(session_id:str)->tuple:
                         if isinstance(session['ebook_list'], list)
                             if session.get('ebook'):
                                 session['ebook_list'].remove(session['ebook'])
-                                if len(session['ebook_list') > 0:
+                                if len(session['ebook_list']) > 0:
                                     session['ebook'] = nONE
                                     session['status'] = status_tags['OVERRIDE']
                                     filename = os.path.basename(session['ebook'])
