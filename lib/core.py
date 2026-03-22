@@ -2936,10 +2936,12 @@ def finalize_audiobook(session_id:str)->tuple:
                             if len(ebook_list) > 0:
                                 filename = os.path.basename(session['ebook'])
                                 session['status'] = status_tags['LOOP']
-                                if filepath in ebook_list:
-                                    ebook_list.remove(filepath)
-                                    session['ebook_list'] = ebook_list
-                                    session['ebook'] = None
+                                for filepath in ebook_list:
+                                    if filename == Path(filepath).name:
+                                        ebook_list.remove(filepath)
+                                        session['ebook_list'] = ebook_list
+                                        session['ebook'] = None
+                                        break
                                 msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
                                 show_alert(session_id, {'type': 'warning', 'msg': msg})
                                 return filename, True
