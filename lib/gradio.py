@@ -1686,6 +1686,8 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split_hours": output_split_hours,
                         }
                         error = None
+                        if session['status'] == status_tags['LOOP']:
+                            args['ebook_list'] = session['ebook_list']
                         if args['ebook'] is None and args['ebook_list'] is None:
                             error = 'Error: a file or directory is required.'
                             show_alert(session_id, {"type": "warning", "msg": error})
@@ -1776,7 +1778,6 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] == status_tags['LOOP']:
-                        session['status'] = status_tags['READY']
                         sources = session['ebook_list'] if isinstance(session['ebook_list'], list) else []
                     else:
                         sources = data if isinstance(data, list) else [data] if data else []
