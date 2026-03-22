@@ -1695,6 +1695,9 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
+                                if session['status'] == status_tags['LOOP']:
+                                    session['status'] = status_tags['READY']:
+                                    args['ebook_list'] = session['ebook_list']
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
                                         count_file = len(args['ebook_list'])
@@ -2465,9 +2468,9 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
             ).then(
-                fn=check_override_audiobook,
-                inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
-                outputs=[gr_modal, gr_override_event]
+                fn=start_conversion,
+                inputs=inputs_start_conversion,
+                outputs=[gr_progress]
             )
             gr_save_session.change(
                 fn=None,
