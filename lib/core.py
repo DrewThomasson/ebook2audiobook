@@ -2933,10 +2933,12 @@ def finalize_audiobook(session_id:str)->tuple:
                         if isinstance(session['ebook_list'], list):
                             if len(session['ebook_list']) > 0:
                                 session['status'] = status_tags['OVERRIDE']
+                                print(f"ebook_list: ------------------ {session['ebook_list']}")
+                                print(f"ebook: ------------------ {session['ebook']}")
+                                session['ebook_list'].remove(session['ebook'])
                                 filename = os.path.basename(session['ebook'])
                                 msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
                                 show_alert(session_id, {'type': 'warning', 'msg': msg})
-                                session['ebook'] = session['ebook_list'][-1]
                                 return progress_status, True
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})

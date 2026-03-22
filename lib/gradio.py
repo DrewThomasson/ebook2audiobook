@@ -1775,9 +1775,9 @@ def build_interface(args:dict)->gr.Blocks:
             def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if data and data is not None:
+                    if data is not None:
                         if session['status'] == status_tags['OVERRIDE']:
-                            sources = session['ebook_list'] if isinstance(session['ebook_list'], list) else [session['ebook']]
+                            sources = session['ebook_list'] if isinstance(session['ebook_list'], list) else []
                             if not sources:
                                 return gr.update(), gr.update()
                         else:
