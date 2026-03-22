@@ -2936,6 +2936,7 @@ def finalize_audiobook(session_id:str)->tuple:
                                 session['status'] = status_tags['OVERRIDE']
                                 for filepath in session['ebook_list']:
                                     if filename in filepath:
+                                        print(f"filepath: ---------------------------{filepath}")
                                         session['ebook_list'].remove(filepath)
                                         session['ebook'] = None
                                         break
