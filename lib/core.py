@@ -2931,17 +2931,16 @@ def finalize_audiobook(session_id:str)->tuple:
                     json_blocks_saved_file = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     if session.get('blocks_preview'):
-                        if isinstance(session['ebook_list'], list):
-                            if len(session['ebook_list']) > 0:
+                        ebook_list = session['ebook_list']
+                        if isinstance(ebook_list, list):
+                            if len(ebook_list) > 0:
                                 filename = os.path.basename(session['ebook'])
                                 session['status'] = status_tags['LOOP']
-                                for filepath in session['ebook_list']:
-                                    print(f'filename: {filename}')
-                                    print(f'filepath: {filepath}')
-                                    if filename in filepath:
-                                        session['ebook_list'].remove(filepath)
-                                        session['ebook'] = None
-                                        break
+                                if filepath in ebook_list:
+                                    ebook_list.remove(filepath)
+                                    session['ebook_list'] = ebook_list
+                                    session['ebook'] = None
+                                    break
                                 msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
                                 show_alert(session_id, {'type': 'warning', 'msg': msg})
                                 return filename, True
