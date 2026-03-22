@@ -2934,7 +2934,7 @@ def finalize_audiobook(session_id:str)->tuple:
                         if isinstance(session['ebook_list'], list):
                             if len(session['ebook_list']) > 0:
                                 filename = os.path.basename(session['ebook'])
-                                session['status'] = status_tags['OVERRIDE']
+                                session['status'] = status_tags['LOOP']
                                 for filepath in session['ebook_list']:
                                     if filename in filepath:
                                         session['ebook_list'].remove(filepath)
