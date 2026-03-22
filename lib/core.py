@@ -2931,23 +2931,19 @@ def finalize_audiobook(session_id:str)->tuple:
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     if session['blocks_preview']:
                         if session['ebook_list'] and session['ebook_list'] is not None:
-                            session['status'] = status_tags['OVERRIDE']
                             session['ebook_list'].remove(session['ebook'])
-                            filename = os.path.basename(session['ebook'])
-                            msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
-                            show_alert(session_id, {'type': 'warning', 'msg': msg})
-                        else:
-                            session['status'] = status_tags['READY']
-                            show_alert(session_id, {"type": "success", "msg": progress_status})
-                            reset_ebook_session(session_id, True)
-                            msg = f'*********** Session: {session_id} **************\n{session_info}'
-                            print(msg)
-                    else:
-                        session['status'] = status_tags['READY']
-                        show_alert(session_id, {"type": "success", "msg": progress_status})
-                        msg = f'*********** Session: {session_id} **************\n{session_info}'
-                        reset_ebook_session(session_id, True)
-                        print(msg) 
+                            if session['ebook_list']:
+                                session['ebook'] = nONE
+                                session['status'] = status_tags['OVERRIDE']
+                                filename = os.path.basename(session['ebook'])
+                                msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
+                                show_alert(session_id, {'type': 'warning', 'msg': msg})
+                                return progress_status, True
+                    session['status'] = status_tags['READY']
+                    show_alert(session_id, {"type": "success", "msg": progress_status})
+                    msg = f'*********** Session: {session_id} **************\n{session_info}'
+                    reset_ebook_session(session_id, True)
+                    print(msg) 
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
