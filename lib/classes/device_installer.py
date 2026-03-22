@@ -1145,7 +1145,7 @@ class DeviceInstaller():
             min_cpu_baseline = self.cpu_baseline
             if torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force', 'numpy<2'])
-            elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0')::
+            elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force', 'numpy<2.4.0'])
             return True
         except subprocess.CalledProcessError as e:
