@@ -842,7 +842,7 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] not in [status_tags['BLOCKS']]:
+                    if session['status'] not in [status_tags['BLOCKS'], status_tags['LOOP']]:
                         outputs = tuple([gr.update(interactive=True) for _ in range(12)])
                         return outputs
                 outputs = tuple([gr.update() for _ in range(12)])
@@ -1039,7 +1039,7 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] not in [status_tags['BLOCKS']]:
+                    if session['status'] not in [status_tags['BLOCKS'], status_tags['LOOP']]:
                         visible_main = True
                         visible_xtts = False
                         visible_bark = False
