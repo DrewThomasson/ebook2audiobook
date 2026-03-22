@@ -1140,6 +1140,8 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session['ebook_mode'] = val
+                    session['ebook'] = None
+                    session['ebook_list'] = None
                     if val == 'single':
                         return gr.update(label=src_label_file, value=None, file_count='single')
                     else:
