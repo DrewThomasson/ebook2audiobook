@@ -266,9 +266,8 @@ def prepare_dirs(src:str, session_id:str)->bool:
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
-            #session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
-            #shutil.copy(src, session['ebook'])
-            session['ebook'] = src
+            session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
+            shutil.copy(src, session['ebook'])
             return True
     except Exception as e:
         DependencyError(e)
@@ -2933,9 +2932,13 @@ def finalize_audiobook(session_id:str)->tuple:
                     if session.get('blocks_preview'):
                         if isinstance(session['ebook_list'], list):
                             if len(session['ebook_list']) > 0:
-                                session['status'] = status_tags['OVERRIDE']
-                                session['ebook_list'].remove(session['ebook'])
                                 filename = os.path.basename(session['ebook'])
+                                session['status'] = status_tags['OVERRIDE']
+                                for filepath in session['ebook_list']:
+                                    if filename in filepath
+                                        session['ebook_list'].remove(filepath)
+                                        session['ebook'] = None
+                                        break
                                 msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
                                 show_alert(session_id, {'type': 'warning', 'msg': msg})
                                 return progress_status, True
