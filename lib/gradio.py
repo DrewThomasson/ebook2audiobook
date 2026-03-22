@@ -1145,7 +1145,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if val == 'single':
                         return gr.update(label=src_label_file, value=None, file_count='single')
                     else:
-                        return gr.update(label=src_label_dir, alue=None, file_count='directory')
+                        return gr.update(label=src_label_dir, value=None, file_count='directory')
                 return gr.update(), gr.update()
 
             def change_gr_voice_file(session_id:str, f:str|None)->tuple:
