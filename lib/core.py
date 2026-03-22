@@ -2930,7 +2930,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     json_blocks_saved_file = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     if session['blocks_preview']:
-                        if session['ebook_list'] and session['ebook_list'] is not None:
+                        if session['ebook_list'] and session['ebook_list'] is not None and session['ebook'] and session['ebook'] is not None:
                             session['ebook_list'].remove(session['ebook'])
                             if session['ebook_list']:
                                 session['ebook'] = nONE
