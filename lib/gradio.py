@@ -1776,7 +1776,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] == status_tags['LOOP']:
-                        session['status'] = status_tags]'READY']:
+                        session['status'] = status_tags['READY']
                         sources = session['ebook_list'] if isinstance(session['ebook_list'], list) else []
                     else:
                         sources = data if isinstance(data, list) else [data] if data else []
