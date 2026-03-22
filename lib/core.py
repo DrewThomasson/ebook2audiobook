@@ -2931,15 +2931,13 @@ def finalize_audiobook(session_id:str)->tuple:
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     if session.get('blocks_preview'):
                         if isinstance(session['ebook_list'], list):
-                            if session.get('ebook'):
-                                session['ebook_list'].remove(session['ebook'])
-                                if len(session['ebook_list']) > 0:
-                                    session['ebook'] = nONE
-                                    session['status'] = status_tags['OVERRIDE']
-                                    filename = os.path.basename(session['ebook'])
-                                    msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
-                                    show_alert(session_id, {'type': 'warning', 'msg': msg})
-                                    return progress_status, True
+                            if len(session['ebook_list']) > 0:
+                                session['status'] = status_tags['OVERRIDE']
+                                filename = os.path.basename(session['ebook'])
+                                msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
+                                show_alert(session_id, {'type': 'warning', 'msg': msg})
+                                session['ebook'] = session['ebook_list'][-1]
+                                return progress_status, True
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
