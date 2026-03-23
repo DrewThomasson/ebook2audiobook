@@ -2951,6 +2951,8 @@ def finalize_audiobook(session_id:str)->tuple:
                                     session['status'] = status_tags['READY']
                                     session['ebook'] = None
                                     session['ebook_list'] = None
+                        else:
+                            session['status'] = status_tags['READY']
                     else:
                         session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
