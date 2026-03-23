@@ -1711,12 +1711,12 @@ def build_interface(args:dict)->gr.Blocks:
                                                 return gr.update(value=session['status'])
                                             else:
                                                 filename = os.path.basename(args['ebook'])
-                                                ebook_list = session['ebook_list'][:]
+                                                ebook_list = args['ebook_list'][:]
                                                 for filepath in ebook_list:
                                                     if filename == Path(filepath).name:
                                                         ebook_list.remove(filepath)
-                                                        session['ebook_list'] = ebook_list
-                                                        session['ebook'] = None
+                                                        args['ebook_list'] = ebook_list
+                                                        args['ebook'] = None
                                                         break
                                                 count_file = len(ebook_list)
                                                 if count_file > 0:
