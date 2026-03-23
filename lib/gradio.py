@@ -1673,8 +1673,8 @@ def build_interface(args:dict)->gr.Blocks:
                             "blocks_preview": blocks_preview,
                             "device": device,
                             "tts_engine": tts_engine,
-                            "ebook": ebook_file if isinstance(ebook_file, str) else None,
-                            "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
+                            "ebook": session['ebook_list'][0] if session['status'] == status_tags['LOOP'] else ebook_file if isinstance(ebook_file, str) else None,
+                            "ebook_list": session['ebook_list'] if session['status'] == status_tags['LOOP'] else ebook_file if isinstance(ebook_file, list) else None,
                             "voice": voice,
                             "language": language,
                             "custom_model": custom_model,
@@ -1695,8 +1695,6 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split_hours": output_split_hours,
                         }
                         error = None
-                        if session['status'] == status_tags['LOOP']:
-                            args['ebook_list'] = session['ebook_list']
                         if args['ebook'] is None and args['ebook_list'] is None:
                             error = 'Error: a file or directory is required.'
                             show_alert(session_id, {"type": "warning", "msg": error})
