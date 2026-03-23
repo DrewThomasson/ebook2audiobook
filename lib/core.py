@@ -2626,6 +2626,7 @@ def convert_ebook(args:dict)->tuple:
                     error = 'convert_ebook() error: Session initialization failed!'
                     print(error)
                     return error, False
+            reset_ebook_session(session_id, True)
             session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
