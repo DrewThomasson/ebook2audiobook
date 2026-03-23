@@ -2568,7 +2568,6 @@ def convert_ebook_directory(args:dict)->tuple:
                 ebook_list = args['ebook_list'][:] # Use a shallow copy
                 for file in ebook_list:
                     if any(file.endswith(ext) for ext in ebook_formats):
-                        reset_ebook_session(session_id, True)
                         args['ebook'] = file
                         print(f'Processing eBook file: {os.path.basename(file)}')
                         progress_status, passed = convert_ebook(args)
@@ -2617,6 +2616,7 @@ def convert_ebook(args:dict)->tuple:
                 return error, False
             if args['id'] is not None:
                 session_id = str(args['id'])
+                reset_ebook_session(session_id, True)
                 session = context.get_session(session_id)
                 if not session:
                     session = context.set_session(session_id)
