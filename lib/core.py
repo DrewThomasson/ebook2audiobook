@@ -2614,7 +2614,7 @@ def convert_ebook(args:dict)->tuple:
                 error = 'The language you provided is not (yet) supported'
                 print(error)
                 return error, False
-            if args['id'] is not None:
+            if args.get('id'):
                 session_id = str(args['id'])
                 reset_ebook_session(session_id, True)
                 session = context.get_session(session_id)
