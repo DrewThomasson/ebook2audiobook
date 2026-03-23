@@ -392,7 +392,7 @@ def extract_custom_model(session_id)->str|None:
         session['custom_model'] = None
     return None
         
-def hash_proxy_dict(proxy_dict)->str:
+def hash_proxy_dict(proxy_dict:Any)->str:
     try:
         data = {k: v for k, v in dict(proxy_dict).items() if k not in save_session_keys_except}
     except Exception:
@@ -2961,7 +2961,7 @@ def finalize_audiobook(session_id:str)->tuple:
             error = 'finalize_audiobook() failed!'
     return error, False
 
-def restore_session_from_data(data:dict, session:dict, force:bool)->None:
+def restore_session_from_data(data:dict, session:DictProxy, force:bool)->DictProxy:   
     try:
         for key, value in data.items():
             if key in session:
@@ -2973,8 +2973,12 @@ def restore_session_from_data(data:dict, session:dict, force:bool)->None:
                             if value is None and session[key] is not None:
                                 continue
                         session[key] = value
+        context.get_session(session['id']) = session
+        return session
     except Exception as e:
         DependencyError(e)
+        exception_alert(session_id, error)
+        return session
 
 def on_unload(req:gr.Request)->None:
     socket_hash = req.session_hash
@@ -2989,7 +2993,7 @@ def on_unload(req:gr.Request)->None:
             else:
                 context_tracker.end_session(session_id, socket_hash)
 
-def reset_ebook_session(session_id:str, force:bool=False)->None:
+def reset_ebook_session(session_id:str, force:bool=False)->DictProxy:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
@@ -3027,7 +3031,8 @@ def reset_ebook_session(session_id:str, force:bool=False)->None:
             "Modified": None,
         }
     }
-    restore_session_from_data(data, session, force)
+    session = restore_session_from_data(data, session, force)
+    return session
 
 def cleanup_models_cache()->None:
     try:
