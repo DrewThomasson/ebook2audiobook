@@ -2929,8 +2929,8 @@ def finalize_audiobook(session_id:str)->tuple:
                     session['blocks_saved'] = copy.deepcopy(session['blocks_current'])
                     json_blocks_saved_file = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
-                    if session.get('blocks_preview'):
-                        if isinstance(session['ebook_list'], list):
+                    if isinstance(session['ebook_list'], list):
+                        if session.get('blocks_preview'):
                             if len(session['ebook_list']) > 0:
                                 filename = os.path.basename(session['ebook'])
                                 session['status'] = status_tags['LOOP']
@@ -2948,9 +2948,11 @@ def finalize_audiobook(session_id:str)->tuple:
                                     reset_ebook_session(session_id, force=True, filter_keys=False)
                                     return filename, True
                                 else:
+                                    session['status'] = status_tags['READY']
                                     session['ebook'] = None
                                     session['ebook_list'] = None
-                    session['status'] = status_tags['READY']
+                    else:
+                        session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
                     msg = 'Conversion successful!'
                     show_alert(session_id, {"type": "success", "msg": msg})
