@@ -2932,10 +2932,9 @@ def finalize_audiobook(session_id:str)->tuple:
                     filename = os.path.basename(session['ebook'])
                     if isinstance(session['ebook_list'], list) and len(session['ebook_list']) > 0:
                         ebook_name = Path(session['ebook']).name
-                        ebook_list = session['ebook_list']
-                        for path in ebook_list:
+                        ebook_list = session['ebook_list'][:]
+                        for path in session['ebook_list']:
                             if Path(path).name == ebook_name:
-                                print(f"==========================session['ebook_list']: {ebook_name}====================================")
                                 ebook_list.remove(path)
                                 break
                         session['ebook_list'] = ebook_list
