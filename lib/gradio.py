@@ -1061,7 +1061,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return (
                             gr.update(), gr.update(), gr.update(),
                             gr.update(), gr.update(), gr.update(value=session['ebook_list']),
-                            gr.update(), gr.update(), , gr.update(),
+                            gr.update(), gr.update(), gr.update(),
                             gr.update(), gr.update()
                         )  
                 outputs = tuple([gr.update() for _ in range(11)])
