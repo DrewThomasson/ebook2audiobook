@@ -202,8 +202,8 @@ class SessionContext:
             "chapters_dir": None,
             "sentences_dir": None,
             "epub_path": None,
-            "filename_noext": None,
             "final_name": None,
+            "filename_noext": None,
             "cover": None,
             "blocks_orig": [],
             "blocks_saved": [],
@@ -2568,6 +2568,7 @@ def convert_ebook_directory(args:dict)->tuple:
                 ebook_list = args['ebook_list'][:] # Use a shallow copy
                 for file in ebook_list:
                     if any(file.endswith(ext) for ext in ebook_formats):
+                        reset_ebook_session(session_id, True)
                         args['ebook'] = file
                         print(f'Processing eBook file: {os.path.basename(file)}')
                         progress_status, passed = convert_ebook(args)
@@ -2951,7 +2952,6 @@ def finalize_audiobook(session_id:str)->tuple:
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
-                    reset_ebook_session(session_id, True)
                     print(msg) 
                     return progress_status, True
                 else:
@@ -2994,13 +2994,12 @@ def reset_ebook_session(session_id:str, force:bool=False)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
-        "ebook_list": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
         "epub_path": None,
-        "filename_noext": None,
         "final_name": None,
+        "filename_noext": None,
         "cover": None,
         "blocks_orig": [],
         "blocks_saved": [],
