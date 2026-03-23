@@ -2937,14 +2937,13 @@ def finalize_audiobook(session_id:str)->tuple:
                                 ebook_list = session['ebook_list'][:]
                                 for filepath in ebook_list:
                                     if filename == Path(filepath).name:
-                                        print(f"--------------------------------- REMOVING: {filepath}")
                                         ebook_list.remove(filepath)
                                         session['ebook_list'] = ebook_list
                                         session['ebook'] = None
                                         break
-                                ebook_list_length = len(ebook_list)
-                                if ebook_list_length > 0:
-                                    msg = f"{filename} / converted. {ebook_list_length} ebook(s) conversion remaining..."
+                                count_file = len(ebook_list)
+                                if count_file > 0:
+                                    msg = f"{filename} / converted. {count_file} ebook(s) conversion remaining..."
                                     show_alert(session_id, {'type': 'warning', 'msg': msg})
                                     reset_ebook_session(session_id, force=True, filter_keys=False)
                                     return filename, True
