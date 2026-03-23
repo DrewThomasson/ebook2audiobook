@@ -2939,6 +2939,7 @@ def finalize_audiobook(session_id:str)->tuple:
                                     if filename == Path(filepath).name:
                                         ebook_list.remove(filepath)
                                         session['ebook_list'] = ebook_list
+                                        session['ebook'] = None
                                         break
                                 count_file = len(ebook_list)
                                 if count_file > 0:
@@ -2947,6 +2948,7 @@ def finalize_audiobook(session_id:str)->tuple:
                                     reset_ebook_session(session_id, force=True, filter_keys=False)
                                     return filename, True
                                 else:
+                                    session['ebook'] = None
                                     session['ebook_list'] = None
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})

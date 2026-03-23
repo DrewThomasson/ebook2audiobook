@@ -1710,7 +1710,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 session['status'] = progress_status
                                                 return gr.update(value=session['status'])
                                             else:
-                                                filename = os.path.basename(session['ebook'])
+                                                filename = os.path.basename(args['ebook'])
                                                 ebook_list = session['ebook_list'][:]
                                                 for filepath in ebook_list:
                                                     if filename == Path(filepath).name:
