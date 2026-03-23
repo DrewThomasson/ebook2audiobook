@@ -2946,7 +2946,6 @@ def finalize_audiobook(session_id:str)->tuple:
                                 if ebook_list_length > 0:
                                     msg = f"{filename} / converted. {ebook_list_length} ebook(s) conversion remaining..."
                                     show_alert(session_id, {'type': 'warning', 'msg': msg})
-                                    reset_ebook_session(session_id, True)
                                     return filename, True
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
@@ -2994,6 +2993,7 @@ def reset_ebook_session(session_id:str, force:bool=False)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
+        "ebook_list": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
