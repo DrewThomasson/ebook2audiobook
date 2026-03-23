@@ -2389,7 +2389,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal, gr_override_event]
             )
             gr_override_cancel_btn.click(
-                fn=lambda s: (context.session[s].__setitem__('status', status_tags['READY']), gr.update(value='', visible=False))[1],
+                fn=lambda s: (context.sessions[s].__setitem__('status', status_tags['READY']), gr.update(value='', visible=False))[1],
                 inputs=[gr_session],
                 outputs=[gr_modal]
             ).then(
