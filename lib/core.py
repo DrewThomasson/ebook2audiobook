@@ -2944,22 +2944,18 @@ def finalize_audiobook(session_id:str)->tuple:
                                 count_file = len(ebook_list)
                                 if count_file > 0:
                                     msg = f"{filename} / converted. {count_file} ebook(s) conversion remaining..."
-                                    show_alert(session_id, {'type': 'warning', 'msg': msg})
+                                    show_alert(session_id, {'type': 'success', 'msg': msg})
                                     reset_ebook_session(session_id, force=True, filter_keys=False)
                                     return filename, True
                                 else:
-                                    session['status'] = status_tags['READY']
                                     session['ebook'] = None
                                     session['ebook_list'] = None
-                        else:
-                            session['status'] = status_tags['READY']
-                    else:
-                        session['status'] = status_tags['READY']
-                        show_alert(session_id, {"type": "success", "msg": progress_status})
-                        msg = 'Conversion successful!'
-                        show_alert(session_id, {"type": "success", "msg": msg})
-                        msg = f'*********** Session: {session_id} **************\n{session_info}'
-                        print(msg)
+                    session['status'] = status_tags['READY']
+                    show_alert(session_id, {"type": "success", "msg": progress_status})
+                    msg = 'Conversion successful!'
+                    show_alert(session_id, {"type": "success", "msg": msg})
+                    msg = f'*********** Session: {session_id} **************\n{session_info}'
+                    print(msg)
                     reset_ebook_session(session_id, force=True, filter_keys=False)
                     return progress_status, True
                 else:
