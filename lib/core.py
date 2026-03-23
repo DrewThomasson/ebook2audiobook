@@ -2931,9 +2931,11 @@ def finalize_audiobook(session_id:str)->tuple:
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     filename = os.path.basename(session['ebook'])
                     if isinstance(session['ebook_list'], list) and len(session['ebook_list']) > 0:
-                        ebook_list = session['ebook_list'][:] if session.get('ebook_list') else []
+                        ebook_list = session['ebook_list'][:]
                         for filepath in ebook_list:
                             if filename == Path(filepath).name:
+                                print(f"================================ filename: {filename} ======================")
+                                print(f"================================ Path(filepath).name: {Path(filepath).name} ======================")
                                 ebook_list.remove(filepath)
                                 session['ebook_list'] = ebook_list
                                 session['ebook'] = None
