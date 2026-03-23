@@ -2956,7 +2956,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
                     reset_ebook_session(session_id, force=True, filter_keys=False)
-                    return result(progress_status, True)
+                    return result(filename, True)
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
             else:
