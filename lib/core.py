@@ -2616,18 +2616,17 @@ def convert_ebook(args:dict)->tuple:
                 return error, False
             if args.get('id'):
                 session_id = str(args['id'])
-                reset_ebook_session(session_id, True)
                 session = context.get_session(session_id)
                 if not session:
                     session = context.set_session(session_id)
             else:
                 session_id = str(uuid.uuid4())
-                reset_ebook_session(session_id, True)
                 session = context.set_session(session_id)
                 if not context_tracker.start_session(session_id):
                     error = 'convert_ebook() error: Session initialization failed!'
                     print(error)
                     return error, False
+            session = reset_ebook_session(session_id, True)
             session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
@@ -2946,7 +2945,7 @@ def finalize_audiobook(session_id:str)->tuple:
                                 if ebook_list_length > 0:
                                     msg = f"{filename} / converted. {ebook_list_length} ebook(s) conversion remaining..."
                                     show_alert(session_id, {'type': 'warning', 'msg': msg})
-                                    reset_ebook_session(session_id, True)
+                                    session = reset_ebook_session(session_id, True)
                                     return filename, True
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
