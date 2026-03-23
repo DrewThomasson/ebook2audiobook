@@ -2631,7 +2631,7 @@ def convert_ebook(args:dict)->tuple:
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
-            session['ebook'] = str(args['ebook']) if args.get('ebook') is not None else None
+            session['ebook'] = str(args['ebook']) if args.get('ebook') else None
             session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['device'] = str(args['device'])
