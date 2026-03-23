@@ -2955,11 +2955,11 @@ def finalize_audiobook(session_id:str)->tuple:
                             session['status'] = status_tags['READY']
                     else:
                         session['status'] = status_tags['READY']
-                    show_alert(session_id, {"type": "success", "msg": progress_status})
-                    msg = 'Conversion successful!'
-                    show_alert(session_id, {"type": "success", "msg": msg})
-                    msg = f'*********** Session: {session_id} **************\n{session_info}'
-                    print(msg)
+                        show_alert(session_id, {"type": "success", "msg": progress_status})
+                        msg = 'Conversion successful!'
+                        show_alert(session_id, {"type": "success", "msg": msg})
+                        msg = f'*********** Session: {session_id} **************\n{session_info}'
+                        print(msg)
                     reset_ebook_session(session_id, force=True, filter_keys=False)
                     return progress_status, True
                 else:
