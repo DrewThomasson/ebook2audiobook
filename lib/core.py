@@ -2947,6 +2947,8 @@ def finalize_audiobook(session_id:str)->tuple:
                                     show_alert(session_id, {'type': 'warning', 'msg': msg})
                                     reset_ebook_session(session_id, True)
                                     return filename, True
+                                else:
+                                    session['ebook_list'] = None
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
