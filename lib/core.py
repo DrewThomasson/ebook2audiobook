@@ -2935,11 +2935,11 @@ def finalize_audiobook(session_id:str)->tuple:
                         ebook_list = session['ebook_list']
                         for path in ebook_list:
                             if Path(path).name == ebook_name:
+                                print(f"==========================session['ebook_list']: {ebook_name}====================================")
                                 ebook_list.remove(path)
                                 break
                         session['ebook_list'] = ebook_list
                         session['ebook'] = None
-                        print(f"==========================session['ebook_list']: {session['ebook_list']}====================================")
                         count_file = len(session['ebook_list'])
                         if count_file > 0:
                             session['status'] = status_tags['LOOP']
