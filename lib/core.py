@@ -2626,7 +2626,7 @@ def convert_ebook(args:dict)->tuple:
                     error = 'convert_ebook() error: Session initialization failed!'
                     print(error)
                     return error, False
-            session = reset_ebook_session(session_id, True)
+            reset_ebook_session(session_id, True)
             session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
@@ -2945,7 +2945,7 @@ def finalize_audiobook(session_id:str)->tuple:
                                 if ebook_list_length > 0:
                                     msg = f"{filename} / converted. {ebook_list_length} ebook(s) conversion remaining..."
                                     show_alert(session_id, {'type': 'warning', 'msg': msg})
-                                    session = reset_ebook_session(session_id, True)
+                                    reset_ebook_session(session_id, True)
                                     return filename, True
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
@@ -2960,24 +2960,23 @@ def finalize_audiobook(session_id:str)->tuple:
             error = 'finalize_audiobook() failed!'
     return error, False
 
-def restore_session_from_data(data:dict, session:DictProxy, force:bool)->DictProxy:   
+def restore_session_from_data(data:dict, session:DictProxy, force:bool)->None:
     try:
         for key, value in data.items():
             if key in session:
                 if key not in save_session_keys_except:
                     if isinstance(value, dict) and isinstance(session[key], dict):
-                        restore_session_from_data(value, session[key], force)
+                        nested = session[key]
+                        restore_session_from_data(value, nested, force)
+                        session[key] = nested   # only line that matters
                     else:
                         if not force:
                             if value is None and session[key] is not None:
                                 continue
                         session[key] = value
-        context.get_session(session['id']) = session
-        return session
     except Exception as e:
         DependencyError(e)
         exception_alert(session_id, error)
-        return session
 
 def on_unload(req:gr.Request)->None:
     socket_hash = req.session_hash
@@ -2992,7 +2991,7 @@ def on_unload(req:gr.Request)->None:
             else:
                 context_tracker.end_session(session_id, socket_hash)
 
-def reset_ebook_session(session_id:str, force:bool=False)->DictProxy:
+def reset_ebook_session(session_id:str, force:bool=False)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
@@ -3030,8 +3029,7 @@ def reset_ebook_session(session_id:str, force:bool=False)->DictProxy:
             "Modified": None,
         }
     }
-    session = restore_session_from_data(data, session, force)
-    return session
+    restore_session_from_data(data, session, force)
 
 def cleanup_models_cache()->None:
     try:

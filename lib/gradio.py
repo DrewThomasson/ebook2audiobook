@@ -1124,7 +1124,7 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        session = reset_ebook_session(session_id, True)
+                        reset_ebook_session(session_id, True)
                         if data is None:
                             if session.get('status', None) == status_tags['CONVERTING']:
                                 session['cancellation_requested'] = True
@@ -1926,7 +1926,7 @@ def build_interface(args:dict)->gr.Blocks:
                     else:
                         session = context.set_session(data.get('id'))
                     if len(active_sessions) == 0 or (data and data.get('status', None) is None):
-                        session = restore_session_from_data(data, session, False)
+                        restore_session_from_data(data, session, False)
                         session['status'] = None
                     if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
