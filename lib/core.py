@@ -2622,7 +2622,7 @@ def convert_ebook(args:dict)->tuple:
                     session = context.set_session(session_id)
             else:
                 session_id = str(uuid.uuid4())
-                reset_ebook_session(session_id, True
+                reset_ebook_session(session_id, True)
                 session = context.set_session(session_id)
                 if not context_tracker.start_session(session_id):
                     error = 'convert_ebook() error: Session initialization failed!'
