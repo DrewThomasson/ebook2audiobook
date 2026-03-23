@@ -2943,7 +2943,7 @@ def finalize_audiobook(session_id:str)->tuple:
                                         session['ebook'] = None
                                         break
                                 ebook_list_length = len(session['ebook_list'])
-                                if ebook_list_length > 0
+                                if ebook_list_length > 0:
                                     msg = f"{filename} / converted. {ebook_list_length} ebook(s) conversion remaining..."
                                     show_alert(session_id, {'type': 'warning', 'msg': msg})
                                     return filename, True
