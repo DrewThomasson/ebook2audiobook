@@ -833,6 +833,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_override_event = gr.Number(value=0, visible=False, precision=0)
             gr_blocks_event = gr.Number(value=0, visible=False, precision=0)
             
+            gr_dummy_bool = gr.State(value=False)
+            
             ############## End of Gradio Components creation
 
             def disable_components()->tuple:
@@ -2455,7 +2457,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_event.change(
                 fn=finalize_audiobook,
                 inputs=[gr_session],
-                outputs=[gr_progress]
+                outputs=[gr_progress, gr_dummy_bool]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
