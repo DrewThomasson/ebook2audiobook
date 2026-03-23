@@ -2626,8 +2626,7 @@ def convert_ebook(args:dict)->tuple:
                     error = 'convert_ebook() error: Session initialization failed!'
                     print(error)
                     return error, False
-            reset_ebook_session(session_id, True)
-            print(f"block_current: {session.get('blocks_current')}")
+            reset_ebook_session(session_id, force=True, filter_keys=False)
             session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
@@ -2940,13 +2939,13 @@ def finalize_audiobook(session_id:str)->tuple:
                                     if filename == Path(filepath).name:
                                         ebook_list.remove(filepath)
                                         session['ebook_list'] = ebook_list
-                                        session['ebook'] = ebook_list[0]
+                                        session['ebook'] = None
                                         break
                                 ebook_list_length = len(ebook_list)
                                 if ebook_list_length > 0:
                                     msg = f"{filename} / converted. {ebook_list_length} ebook(s) conversion remaining..."
                                     show_alert(session_id, {'type': 'warning', 'msg': msg})
-                                    reset_ebook_session(session_id, True)
+                                    reset_ebook_session(session_id, force=True, filter_keys=False)
                                     return filename, True
                                 else:
                                     session['ebook'] = None
@@ -2955,7 +2954,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     show_alert(session_id, {"type": "success", "msg": progress_status})
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
-                    reset_ebook_session(session_id, True)
+                    reset_ebook_session(session_id, force=True, filter_keys=False)
                     return progress_status, True
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
@@ -2965,20 +2964,21 @@ def finalize_audiobook(session_id:str)->tuple:
             error = 'finalize_audiobook() failed!'
     return error, False
 
-def restore_session_from_data(data:dict, session:DictProxy, force:bool)->None:
+def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool=False)->None:
     try:
         for key, value in data.items():
             if key in session:
-                if key not in save_session_keys_except:
-                    if isinstance(value, dict) and isinstance(session[key], dict):
-                        nested = session[key]
-                        restore_session_from_data(value, nested, force)
-                        session[key] = nested   # only line that matters
-                    else:
-                        if not force:
-                            if value is None and session[key] is not None:
-                                continue
-                        session[key] = value
+                if filter_keys and key in save_session_keys_except:
+                    continue
+                if isinstance(value, dict) and isinstance(session[key], dict):
+                    nested = session[key]
+                    restore_session_from_data(value, nested, force, filter_keys)
+                    session[key] = nested
+                else:
+                    if not force:
+                        if value is None and session[key] is not None:
+                            continue
+                    session[key] = value
     except Exception as e:
         DependencyError(e)
         exception_alert(session_id, error)
@@ -2996,7 +2996,7 @@ def on_unload(req:gr.Request)->None:
             else:
                 context_tracker.end_session(session_id, socket_hash)
 
-def reset_ebook_session(session_id:str, force:bool=False)->None:
+def reset_ebook_session(session_id:str, force:bool=False, filter_keys=True)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
@@ -3034,7 +3034,7 @@ def reset_ebook_session(session_id:str, force:bool=False)->None:
             "Modified": None,
         }
     }
-    restore_session_from_data(data, session, force)
+    restore_session_from_data(data, session, force, filter_keys=filter_keys)
 
 def cleanup_models_cache()->None:
     try:
