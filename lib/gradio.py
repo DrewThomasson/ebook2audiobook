@@ -1709,20 +1709,13 @@ def build_interface(args:dict)->gr.Blocks:
                                             if progress_status == status_tags['BLOCKS']:
                                                 session['status'] = progress_status
                                                 return gr.update(value=session['status'])
+                                            filename = os.path.basename(args['ebook'])
+                                            ebook_list = args['ebook_list'][:]
+                                            count_file = len(ebook_list)
+                                            if count_file > 0:
+                                                yield gr.update(value=filename)
                                             else:
-                                                filename = os.path.basename(args['ebook'])
-                                                ebook_list = args['ebook_list'][:]
-                                                for filepath in ebook_list:
-                                                    if filename == Path(filepath).name:
-                                                        ebook_list.remove(filepath)
-                                                        args['ebook_list'] = ebook_list
-                                                        args['ebook'] = None
-                                                        break
-                                                count_file = len(ebook_list)
-                                                if count_file > 0:
-                                                    yield gr.update(value=filename)
-                                                else:
-                                                    return gr.update(value=msg)
+                                                return gr.update(value=msg)
                                     else:
                                         if session['status'] == status_tags['CONVERTING']:
                                             error = 'Conversion cancelled.'

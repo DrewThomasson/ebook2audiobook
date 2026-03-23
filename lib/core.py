@@ -2930,26 +2930,25 @@ def finalize_audiobook(session_id:str)->tuple:
                     json_blocks_saved_file = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                     save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                     if isinstance(session['ebook_list'], list):
-                        if session.get('blocks_preview'):
-                            if len(session['ebook_list']) > 0:
-                                filename = os.path.basename(session['ebook'])
-                                session['status'] = status_tags['LOOP']
-                                ebook_list = session['ebook_list'][:]
-                                for filepath in ebook_list:
-                                    if filename == Path(filepath).name:
-                                        ebook_list.remove(filepath)
-                                        session['ebook_list'] = ebook_list
-                                        session['ebook'] = None
-                                        break
-                                count_file = len(ebook_list)
-                                if count_file > 0:
-                                    msg = f"{filename} / converted. {count_file} ebook(s) conversion remaining..."
-                                    show_alert(session_id, {'type': 'success', 'msg': msg})
-                                    reset_ebook_session(session_id, force=True, filter_keys=False)
-                                    return filename, True
-                                else:
+                        if len(session['ebook_list']) > 0:
+                            filename = os.path.basename(session['ebook'])
+                            session['status'] = status_tags['LOOP']
+                            ebook_list = session['ebook_list'][:]
+                            for filepath in ebook_list:
+                                if filename == Path(filepath).name:
+                                    ebook_list.remove(filepath)
+                                    session['ebook_list'] = ebook_list
                                     session['ebook'] = None
-                                    session['ebook_list'] = None
+                                    break
+                            count_file = len(ebook_list)
+                            if count_file > 0:
+                                msg = f"{filename} / converted. {count_file} ebook(s) conversion remaining..."
+                                show_alert(session_id, {'type': 'success', 'msg': msg})
+                                reset_ebook_session(session_id, force=True, filter_keys=False)
+                                return filename, True
+                            else:
+                                session['ebook'] = None
+                                session['ebook_list'] = None
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
                     msg = 'Conversion successful!'
