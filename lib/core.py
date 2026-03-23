@@ -2942,9 +2942,11 @@ def finalize_audiobook(session_id:str)->tuple:
                                         session['ebook_list'] = ebook_list
                                         session['ebook'] = None
                                         break
-                                msg = f"{filename} / converted. {len(session['ebook_list'])} ebook(s) conversion remaining..."
-                                show_alert(session_id, {'type': 'warning', 'msg': msg})
-                                return filename, True
+                                ebook_list_length = len(session['ebook_list'])
+                                if ebook_list_length > 0
+                                    msg = f"{filename} / converted. {ebook_list_length} ebook(s) conversion remaining..."
+                                    show_alert(session_id, {'type': 'warning', 'msg': msg})
+                                    return filename, True
                     session['status'] = status_tags['READY']
                     show_alert(session_id, {"type": "success", "msg": progress_status})
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
