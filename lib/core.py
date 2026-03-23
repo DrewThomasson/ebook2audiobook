@@ -2626,7 +2626,6 @@ def convert_ebook(args:dict)->tuple:
                     error = 'convert_ebook() error: Session initialization failed!'
                     print(error)
                     return error, False
-            reset_ebook_session(session_id, True)
             session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
@@ -2790,6 +2789,9 @@ def convert_ebook(args:dict)->tuple:
                                 else:
                                     error = 'convert2epub() failed!'
                             if error is None:
+                                session['blocks_orig'] = []
+                                session['blocks_saved'] = []
+                                session['blocks_current'] = []
                                 json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                                 json_blocks_saved_file = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                                 json_blocks_current_file = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
@@ -2797,11 +2799,9 @@ def convert_ebook(args:dict)->tuple:
                                 if os.path.exists(json_blocks_orig_file):
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
                                     if os.path.exists(json_blocks_saved_file):
-                                        if not session.get('blocks_saved', []):
-                                            session['blocks_saved'] = load_json_blocks(json_blocks_saved_file)
+                                        session['blocks_saved'] = load_json_blocks(json_blocks_saved_file)
                                     if os.path.exists(json_blocks_current_file):
-                                        if not session.get('blocks_current', []):
-                                            session['blocks_current'] = load_json_blocks(json_blocks_current_file)                                   
+                                        session['blocks_current'] = load_json_blocks(json_blocks_current_file)                                   
                                     missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
