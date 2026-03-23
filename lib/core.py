@@ -2937,6 +2937,7 @@ def finalize_audiobook(session_id:str)->tuple:
                                 ebook_list = session['ebook_list'][:]
                                 for filepath in ebook_list:
                                     if filename == Path(filepath).name:
+                                        print(f"--------------------------------- REMOVING: {filepath}")
                                         ebook_list.remove(filepath)
                                         session['ebook_list'] = ebook_list
                                         session['ebook'] = None
