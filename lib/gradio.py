@@ -1727,6 +1727,8 @@ def build_interface(args:dict)->gr.Blocks:
                                                 else:
                                                     msg = 'Conversion successful!'
                                                     show_alert(session_id, {"type": "success", "msg": msg})
+                                                    msg = f'*********** Session: {session_id} **************\n{session_info}'
+                                                    print(msg)
                                                     return gr.update(value=msg)
                                     else:
                                         if session['status'] == status_tags['CONVERTING']:
