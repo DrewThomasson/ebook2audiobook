@@ -2790,9 +2790,6 @@ def convert_ebook(args:dict)->tuple:
                                 else:
                                     error = 'convert2epub() failed!'
                             if error is None:
-                                session['blocks_orig'] = []
-                                session['blocks_saved'] = []
-                                session['blocks_current'] = []
                                 json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                                 json_blocks_saved_file = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                                 json_blocks_current_file = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
