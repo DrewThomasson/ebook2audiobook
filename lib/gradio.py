@@ -1057,6 +1057,13 @@ def build_interface(args:dict)->gr.Blocks:
                             update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
                             update_gr_voice_list(session_id), gr.update(value='')
                         )
+                    elif session['status'] == status_tags['LOOP']:
+                        return (
+                            gr.update(), gr.update(), gr.update(),
+                            gr.update(), gr.update(), gr.update(value=session['ebook_list']),
+                            gr.update(), gr.update(), , gr.update(),
+                            gr.update(), gr.update()
+                        )  
                 outputs = tuple([gr.update() for _ in range(11)])
                 return outputs
 
