@@ -2967,6 +2967,7 @@ def finalize_audiobook(session_id:str)->tuple:
         else:
             error = 'finalize_audiobook() failed!'
         session['status'] = status_tags['READY']
+        session['ebook'] = None
     return result(error, False)
 
 def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool=False)->None:
