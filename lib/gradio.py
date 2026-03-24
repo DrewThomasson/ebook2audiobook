@@ -2206,38 +2206,39 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_progress],
                 js=r'''
                     (filename)=>{
-                        console.log("filename", filename);
-                        const gr_root = (window.gradioApp && window.gradioApp()) || document;
-                        const gr_ebook_file = gr_root.querySelector("#gr_ebook_file");
-                        if(!gr_ebook_file){
-                            return;
-                        }
-                        function normalizeForGradio(name){
-                            return name
-                                .normalize("NFC")
-                                // Remove chars not supported by OS paths
-                                .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
-                                // Remove Gradio-sanitized odd punctuation (including quotes)
-                                .replace(/[!(){}\[\]']/g, "")
-                                // Collapse multiple dots/spaces before extension
-                                .replace(/\s+\./g, ".")
-                                // Strip trailing spaces/dots (Windows forbids)
-                                .replace(/[. ]+$/, "")
-                                // Remove Arabic tatweel/harakat
-                                .replace(/[\u0640\u0651\u064B-\u065F]/g, "")
-                                .trim();
-                        }
-                        const rows = gr_ebook_file.querySelectorAll("table.file-preview tr.file");
-                        rows.forEach((row, idx) => {
-                            const filenameCell = row.querySelector("td.filename");
-                            if (filenameCell) {
-                                const rowName = normalizeForGradio(filenameCell.getAttribute("aria-label"));
-                                filename = filename.split("/")[0].trim();
-                                if (rowName === filename) {
-                                    row.style.display = "none";
-                                }
+                        if(filename){
+                            const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                            const gr_ebook_file = gr_root.querySelector("#gr_ebook_file");
+                            if(!gr_ebook_file){
+                                return;
                             }
-                        });
+                            function normalizeForGradio(name){
+                                return name
+                                    .normalize("NFC")
+                                    // Remove chars not supported by OS paths
+                                    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+                                    // Remove Gradio-sanitized odd punctuation (including quotes)
+                                    .replace(/[!(){}\[\]']/g, "")
+                                    // Collapse multiple dots/spaces before extension
+                                    .replace(/\s+\./g, ".")
+                                    // Strip trailing spaces/dots (Windows forbids)
+                                    .replace(/[. ]+$/, "")
+                                    // Remove Arabic tatweel/harakat
+                                    .replace(/[\u0640\u0651\u064B-\u065F]/g, "")
+                                    .trim();
+                            }
+                            const rows = gr_ebook_file.querySelectorAll("table.file-preview tr.file");
+                            rows.forEach((row, idx) => {
+                                const filenameCell = row.querySelector("td.filename");
+                                if (filenameCell) {
+                                    const rowName = normalizeForGradio(filenameCell.getAttribute("aria-label"));
+                                    filename = filename.split("/")[0].trim();
+                                    if (rowName === filename) {
+                                        row.style.display = "none";
+                                    }
+                                }
+                            });
+                        }
                     }
                 '''
             )
