@@ -2912,7 +2912,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     error = 'Conversion cancelled'
                     return result(error, False)
                 if not block['keep'] or not block['text'].strip():
-                    block['sentences'] = []
+                    blocks_current[idx]['sentences'] = []
                     continue
                 prev_block = blocks_saved[idx] if idx < len(blocks_saved) else None
                 if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
@@ -2922,9 +2922,8 @@ def finalize_audiobook(session_id:str)->tuple:
                 if sentences_list is None:
                     error = 'No sentences found!'
                     return result(error, False)
-                block['sentences'] = sentences_list
+                blocks_current[idx]['sentences'] = sentences_list
             session['blocks_current']['blocks'] = blocks_current
-            print(session['blocks_current']['blocks'])
             conversion = convert_chapters2audio(session_id)
             if conversion:
                 msg = 'Combining sentences and chapters…'
