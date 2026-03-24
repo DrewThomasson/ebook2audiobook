@@ -1732,7 +1732,10 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         return gr.update(value=progress_status)
                                 else:
-                                    error = progress_status
+                                    if session['cancellation_requested']:
+                                        error = 'Conversion cancelled.'
+                                    else:
+                                        error = progress_status
                         if error is not None:
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
