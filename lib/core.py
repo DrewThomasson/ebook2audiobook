@@ -2923,8 +2923,8 @@ def finalize_audiobook(session_id:str)->tuple:
                     error = 'No sentences found!'
                     return result(error, False)
                 blocks_current[idx]['sentences'] = sentences_list
-            print(blocks_current)
             session['blocks_current']['blocks'] = blocks_current
+            print(session['blocks_current']['blocks'])
             conversion = convert_chapters2audio(session_id)
             if conversion:
                 msg = 'Combining sentences and chapters…'
