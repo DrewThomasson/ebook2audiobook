@@ -1957,7 +1957,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 print(msg)
                 return False
             kept_blocks = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
-            print(kept_blocks)
             total_chapters = len(kept_blocks)
             if total_chapters == 0:
                 error = 'No chapters found!'
@@ -2923,7 +2922,8 @@ def finalize_audiobook(session_id:str)->tuple:
                 if sentences_list is None:
                     error = 'No sentences found!'
                     return result(error, False)
-                block['sentences'] = sentences_list if sentences_list else []
+                block['sentences'] = sentences_list
+            print(f'blocks_current: {blocks_current}')
             session['blocks_saved']['blocks'] = copy.deepcopy(blocks_current)
             conversion = convert_chapters2audio(session_id)
             if conversion:
