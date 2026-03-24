@@ -2861,8 +2861,7 @@ def convert_ebook(args:dict)->tuple:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
                                                     session['status'] = status_tags['BLOCKS']
-                                                    yield session['status'], True
-                                                    return
+                                                    return session['status'], True
                                                 else:
                                                     progress_status, passed = finalize_audiobook(session_id)
                                                     return progress_status, passed

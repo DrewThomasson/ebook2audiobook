@@ -1708,12 +1708,14 @@ def build_interface(args:dict)->gr.Blocks:
                                         if len(session['ebook_list']) > 0:
                                             if progress_status == status_tags['BLOCKS']:
                                                 session['status'] = progress_status
-                                                return gr.update(value=session['status'])
+                                                yield gr.update(value=session['status'])
+                                                return
                                             filename = os.path.basename(args['ebook'])
                                             ebook_list = args['ebook_list'][:]
                                             count_file = len(ebook_list)
                                             if count_file > 0:
                                                 yield gr.update(value=filename)
+                                                return
                                             else:
                                                 return gr.update(value=msg)
                                     else:
