@@ -205,9 +205,9 @@ class SessionContext:
             "final_name": None,
             "filename_noext": None,
             "cover": None,
-            "blocks_orig": [],
-            "blocks_saved": [],
-            "blocks_current": [],
+            "blocks_orig": {},
+            "blocks_saved": {},
+            "blocks_current": {},
             "duration": 0,
             "playback_time": 0,
             "playback_volume": 0,
@@ -2831,30 +2831,30 @@ def convert_ebook(args:dict)->tuple:
                                             if missing_json:
                                                 raw_blocks = get_blocks(session_id, epubBook)
                                                 if raw_blocks:
-                                                    session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
-                                                if session.get('blocks_orig', []):
+                                                    session['blocks_orig'] = {
+                                                        'block_resume': 0,
+                                                        'sentence_resume': 0,
+                                                        'blocks': [
+                                                            {
+                                                                'expand': False,
+                                                                'keep': True,
+                                                                'text': t,
+                                                                'voice': session['voice'],
+                                                                'tts_engine': session['tts_engine'],
+                                                                'fine_tuned': session['fine_tuned'],
+                                                                'sentences': []
+                                                            }
+                                                            for t in raw_blocks
+                                                        ]
+                                                    }
+                                                if session.get('blocks_orig', {}):
                                                     save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
-                                            if not session.get('blocks_saved', []):
-                                                session['blocks_saved'] = {
-                                                    'block_resume': 0,
-                                                    'sentence_resume': 0,
-                                                    'blocks': [
-                                                        {
-                                                            'expand': False,
-                                                            'keep': b['keep'],
-                                                            'text': b['text'],
-                                                            'voice': session['voice'],
-                                                            'tts_engine': session['tts_engine'],
-                                                            'fine_tuned': session['fine_tuned'],
-                                                            'sentences': []
-                                                        }
-                                                        for b in session['blocks_orig']
-                                                    ]
-                                                }
+                                            if not session.get('blocks_saved', {}):
+                                                session['blocks_saved'] = copy.deepcopy(session['blocks_orig'])
                                                 save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
-                                            if not session.get('blocks_current', []):
+                                            if not session.get('blocks_current', {}):
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
-                                            if session.get('blocks_orig', []) and session.get('blocks_saved', []) and session.get('blocks_current', []):
+                                            if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
@@ -2902,7 +2902,7 @@ def finalize_audiobook(session_id:str)->tuple:
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             error = 'No blocks have been selected for the conversion!'
             return result(error, False)
-        if session.get('blocks_current', []):
+        if session.get('blocks_current', {}):
             msg = 'Get sentences…'
             print(msg)
             blocks_saved = session['blocks_saved']['blocks']
@@ -3017,9 +3017,9 @@ def reset_ebook_session(session_id:str, force:bool=False, filter_keys=True)->Non
         "final_name": None,
         "filename_noext": None,
         "cover": None,
-        "blocks_orig": [],
-        "blocks_saved": [],
-        "blocks_current": [],
+        "blocks_orig": {},
+        "blocks_saved": {},
+        "blocks_current": {},
         "metadata": {
             "title": None, 
             "creator": None,
