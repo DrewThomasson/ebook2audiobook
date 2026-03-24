@@ -1960,12 +1960,12 @@ def convert_chapters2audio(session_id:str)->bool:
             total_chapters = len(kept_blocks)
             if total_chapters == 0:
                 error = 'No chapters found!'
-                show_alert(session_id, {"type": "error", "msg": error})
+                show_alert(session_id, {"type": "warning", "msg": error})
                 return False
             total_sentences = sum(len(b['sentences']) for _, b in kept_blocks)
             if total_sentences == 0:
                 error = 'No sentences found!'
-                show_alert(session_id, {"type": "error", "msg": error})
+                show_alert(session_id, {"type": "warning", "msg": error})
                 return False
             total_iterations = total_sentences
             if session['ebook']:
