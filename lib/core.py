@@ -2962,12 +2962,16 @@ def finalize_audiobook(session_id:str)->tuple:
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
             else:
-                if not session['cancellation_requested']:
+                if session['cancellation_requested']:
+                    error = 'Conversion cancelled'
+                else:
                     error = 'convert_chapters2audio() failed!'
         else:
             error = 'finalize_audiobook() failed!'
         session['status'] = status_tags['READY']
         session['ebook'] = None
+        if session['blocks_preview']:
+            show_alert(session_id, {'type': 'warning', 'msg': error})
     return result(error, False)
 
 def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool=False)->None:

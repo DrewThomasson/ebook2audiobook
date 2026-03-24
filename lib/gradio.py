@@ -1717,10 +1717,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             else:
                                                 return gr.update(value=msg)
                                     else:
-                                        if session['cancellation_requested']:
-                                            error = 'Conversion cancelled.'
-                                        else:
-                                            error = 'Conversion failed.'
+                                        error = progress_status
                                         break
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
@@ -1732,10 +1729,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         return gr.update(value=progress_status)
                                 else:
-                                    if session['cancellation_requested']:
-                                        error = 'Conversion cancelled.'
-                                    else:
-                                        error = progress_status
+                                    error = progress_status
                         if error is not None:
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
