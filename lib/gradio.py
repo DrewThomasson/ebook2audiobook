@@ -1704,6 +1704,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
                                 for progress_status, passed in convert_ebook_directory(args):
+                                    reset_ebook_session(session_id, force=True, filter_keys=False)
                                     if passed:
                                         if len(session['ebook_list']) > 0:
                                             if progress_status == status_tags['BLOCKS']:
@@ -1724,6 +1725,7 @@ def build_interface(args:dict)->gr.Blocks:
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                                 progress_status, passed = convert_ebook(args)
+                                reset_ebook_session(session_id, force=True, filter_keys=False)
                                 if passed:
                                     if progress_status == status_tags['BLOCKS']:
                                         session['status'] = progress_status

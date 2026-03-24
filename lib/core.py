@@ -2898,13 +2898,11 @@ def finalize_audiobook(session_id:str)->tuple:
                 error = 'Frontend disconnected!'
             else:
                 error = 'Conversion cancelled'
-            reset_ebook_session(session_id, force=True, filter_keys=False)
             return result(error, False)
         msg = f'*********** Session: {session_id} **************\n{session_info}'
         print(msg)
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             error = 'No blocks have been selected for the conversion!'
-            reset_ebook_session(session_id, force=True, filter_keys=False)
             return result(error, False)
         if session.get('blocks_current', []):
             msg = 'Get sentences…'
@@ -2914,7 +2912,6 @@ def finalize_audiobook(session_id:str)->tuple:
             for idx, block in enumerate(blocks):
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
-                    reset_ebook_session(session_id, force=True, filter_keys=False)
                     return result(error, False)
                 if not block['keep'] or not block['text'].strip():
                     block['sentences'] = []
@@ -2926,7 +2923,6 @@ def finalize_audiobook(session_id:str)->tuple:
                 sentences_list = get_sentences(session_id, block['text'])
                 if sentences_list is None:
                     error = 'No sentences found!'
-                    reset_ebook_session(session_id, force=True, filter_keys=False)
                     return result(error, False)
                 block['sentences'] = sentences_list if sentences_list else []
             session['blocks_saved'] = blocks
@@ -2956,7 +2952,6 @@ def finalize_audiobook(session_id:str)->tuple:
                             session['status'] = status_tags['LOOP']
                             msg = f"{filename} / converted. {count_file} ebook(s) conversion remaining..."
                             show_alert(session_id, {'type': 'success', 'msg': msg})
-                            reset_ebook_session(session_id, force=True, filter_keys=False)
                             return result(filename, True)
                     session['status'] = status_tags['READY']
                     session['ebook_list'] = None
@@ -2965,7 +2960,6 @@ def finalize_audiobook(session_id:str)->tuple:
                     show_alert(session_id, {"type": "success", "msg": msg})
                     msg = f'*********** Session: {session_id} **************\n{session_info}'
                     print(msg)
-                    reset_ebook_session(session_id, force=True, filter_keys=False)
                     return result(filename, True)
                 else:
                     error = 'combine_audio_chapters() error: exported_files not created!'
@@ -2980,7 +2974,6 @@ def finalize_audiobook(session_id:str)->tuple:
         session['ebook'] = None
         if session['blocks_preview']:
             show_alert(session_id, {'type': 'warning', 'msg': error})
-        reset_ebook_session(session_id, force=True, filter_keys=False)
     return result(error, False)
 
 def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool=False)->None:
