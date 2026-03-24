@@ -2966,6 +2966,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     error = 'convert_chapters2audio() failed!'
         else:
             error = 'finalize_audiobook() failed!'
+        session['status'] = status_tags['READY']
     return result(error, False)
 
 def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool=False)->None:
