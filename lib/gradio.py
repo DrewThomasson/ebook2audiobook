@@ -1843,7 +1843,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_blocks = False
                     else:
                         ebook_name = Path(session['ebook']).stem
-                        blocks = session['blocks_current']
+                        blocks = session['blocks_current']['blocks']
                     page_updates = list(populate_page(page, blocks))
                     result = (
                         gr.update(value=ebook_name),
@@ -1889,7 +1889,7 @@ def build_interface(args:dict)->gr.Blocks:
                             b['tts_engine'] = session.get('tts_engine', '')
                         if not b.get('fine_tuned'):
                             b['fine_tuned'] = session.get('fine_tuned', '')
-                    session['blocks_current'] = new_blocks
+                    session['blocks_current']['blocks'] = new_blocks
                     session['status'] = status_tags['READY']
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
 
@@ -1907,7 +1907,7 @@ def build_interface(args:dict)->gr.Blocks:
                             b['tts_engine'] = session.get('tts_engine', '')
                         if not b.get('fine_tuned'):
                             b['fine_tuned'] = session.get('fine_tuned', '')
-                    session['blocks_current'] = blocks
+                    session['blocks_current']['blocks'] = blocks
                     session['status'] = status_tags['CONVERTING']
                     return gr.update(visible=True), gr.update(visible=False), event + 1
                 return gr.update(), gr.update(), gr.update()

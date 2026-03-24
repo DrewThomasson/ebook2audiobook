@@ -208,8 +208,6 @@ class SessionContext:
             "blocks_orig": [],
             "blocks_saved": [],
             "blocks_current": [],
-            "block_resume": 0,
-            "sentence_resume": 0,
             "duration": 0,
             "playback_time": 0,
             "playback_volume": 0,
@@ -1951,12 +1949,9 @@ def convert_chapters2audio(session_id:str)->bool:
     if session and session.get('id', False):
         try:
             tts_manager = TTSManager(session)
-            blocks = session['blocks_saved']
-            blocks_saved = session.get('blocks_saved', [])
-            block_resume = session.get('block_resume', 0)
-            sentence_resume = session.get('sentence_resume', 0)
-            print(f'block_resume: {block_resume}')
-            print(f'sentence_resume: {sentence_resume}')
+            blocks = session['blocks_current']['blocks']
+            block_resume = session['blocks_current']['block_resume']
+            sentence_resume = session['blocks_current']['sentence_resume']
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 print(msg)
@@ -1994,7 +1989,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         sentences = block['sentences']
                         sent_start = global_sent
                         # Determine if block needs conversion
-                        prev_block = blocks_saved[block_idx] if block_idx < len(blocks_saved) else None
+                        prev_block = blocks[block_idx] if block_idx < len(blocks) else None
                         block_changed = (
                             prev_block is None
                             or prev_block.get('text', '').strip() != block['text'].strip()
@@ -2042,7 +2037,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if success:
-                                        session['sentence_resume'] = j
+                                        session['blocks_current']['sentence_resume'] = j
                                     else:
                                         return False
                                 global_sent += 1
@@ -2055,7 +2050,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             print(msg)
                             t.update(1)
                         sent_end = global_sent - 1
-                        session['block_resume'] = block_idx
+                        session['blocks_current']['block_resume'] = block_idx
                         msg = f'End of Chapter {ch_num} (block {block_idx})'
                         print(msg)
                         if j >= start_sentence or block_changed:
@@ -2067,7 +2062,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 error = 'combine_audio_sentences() failed!'
                                 show_alert(session_id, {"type": "error", "msg": error})
                                 return False
-                        session['sentence_resume'] = 0
+                        session['blocks_current']['sentence_resume'] = 0
                 write_vtt = tts_manager.create_sentences2vtt(final_sentences)
                 return write_vtt
         except Exception as e:
@@ -2304,9 +2299,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
-            # Build chapter list from blocks_saved
             kept_blocks = [
-                (i, b) for i, b in enumerate(session['blocks_saved'])
+                (i, b) for i, b in enumerate(session['blocks_current']['blocks'])
                 if b['keep'] and b['text'].strip() and b.get('sentences')
             ]
             chapter_files = []
@@ -2841,22 +2835,26 @@ def convert_ebook(args:dict)->tuple:
                                                 if session.get('blocks_orig', []):
                                                     save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
                                             if not session.get('blocks_saved', []):
-                                                session['blocks_saved'] = [
-                                                    {
-                                                        "expand": False,
-                                                        "keep": b['keep'],
-                                                        "text": b['text'],
-                                                        "voice": session['voice'],
-                                                        "tts_engine": session['tts_engine'],
-                                                        "fine_tuned": session['fine_tuned'],
-                                                        "sentences": []
-                                                    }
-                                                    for b in session['blocks_orig']
-                                                ]
+                                                session['blocks_saved'] = {
+                                                    'block_resume': 0,
+                                                    'sentence_resume': 0,
+                                                    'blocks': [
+                                                        {
+                                                            'expand': False,
+                                                            'keep': b['keep'],
+                                                            'text': b['text'],
+                                                            'voice': session['voice'],
+                                                            'tts_engine': session['tts_engine'],
+                                                            'fine_tuned': session['fine_tuned'],
+                                                            'sentences': []
+                                                        }
+                                                        for b in session['blocks_orig']
+                                                    ]
+                                                }
                                                 save_json_blocks(session_id, json_blocks_saved_file, 'blocks_saved')
                                             if not session.get('blocks_current', []):
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
-                                            if session.get('blocks_orig', []) and session.get('blocks_saved', []):
+                                            if session.get('blocks_orig', []) and session.get('blocks_saved', []) and session.get('blocks_current', []):
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
@@ -2907,9 +2905,9 @@ def finalize_audiobook(session_id:str)->tuple:
         if session.get('blocks_current', []):
             msg = 'Get sentences…'
             print(msg)
-            blocks_saved = session.get('blocks_saved', [])
-            blocks = session['blocks_current']
-            for idx, block in enumerate(blocks):
+            blocks_saved = session['blocks_saved']['blocks']
+            blocks_current = session['blocks_current']['blocks']
+            for idx, block in enumerate(blocks_current):
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
                     return result(error, False)
@@ -2925,7 +2923,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     error = 'No sentences found!'
                     return result(error, False)
                 block['sentences'] = sentences_list if sentences_list else []
-            session['blocks_saved'] = blocks
+            session['blocks_saved']['blocks'] = copy.deepcopy(blocks_current)
             conversion = convert_chapters2audio(session_id)
             if conversion:
                 msg = 'Combining sentences and chapters…'
@@ -3022,8 +3020,6 @@ def reset_ebook_session(session_id:str, force:bool=False, filter_keys=True)->Non
         "blocks_orig": [],
         "blocks_saved": [],
         "blocks_current": [],
-        "block_resume": 0,
-        "block_sentence": 0,
         "metadata": {
             "title": None, 
             "creator": None,
