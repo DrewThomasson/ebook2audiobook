@@ -2976,6 +2976,7 @@ def finalize_audiobook(session_id:str)->tuple:
         session['ebook'] = None
         if session['blocks_preview']:
             show_alert(session_id, {'type': 'warning', 'msg': error})
+        reset_ebook_session(session_id, force=True, filter_keys=False)
     return result(error, False)
 
 def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool=False)->None:
