@@ -1953,7 +1953,7 @@ def convert_chapters2audio(session_id:str)->bool:
             tts_manager = TTSManager(session)
             blocks = session['blocks_saved']
             blocks_saved = session.get('blocks_saved', [])
-            block_resume = 0
+            block_resume = session.get('block_resume', 0)
             sentence_resume = session.get('sentence_resume', 0)
             print(f'block_resume: {block_resume}')
             print(f'sentence_resume: {sentence_resume}')
@@ -2042,7 +2042,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if success:
-                                        session['sentence_resume'] = j + 1
+                                        session['sentence_resume'] = j
                                     else:
                                         return False
                                 global_sent += 1
@@ -2055,6 +2055,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             print(msg)
                             t.update(1)
                         sent_end = global_sent - 1
+                        session['block_resume'] = block_idx
                         msg = f'End of Chapter {ch_num} (block {block_idx})'
                         print(msg)
                         if j >= start_sentence or block_changed:
@@ -2066,7 +2067,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                 error = 'combine_audio_sentences() failed!'
                                 show_alert(session_id, {"type": "error", "msg": error})
                                 return False
-                        session['block_resume'] = block_idx + 1
                         session['sentence_resume'] = 0
                 write_vtt = tts_manager.create_sentences2vtt(final_sentences)
                 return write_vtt
