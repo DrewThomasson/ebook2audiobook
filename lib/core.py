@@ -208,8 +208,8 @@ class SessionContext:
             "blocks_orig": [],
             "blocks_saved": [],
             "blocks_current": [],
-            "resume_block": -1,
-            "resume_sentence": 0,
+            "block_resume": -1,
+            "sentence_resume": 0,
             "duration": 0,
             "playback_time": 0,
             "playback_volume": 0,
@@ -1953,8 +1953,8 @@ def convert_chapters2audio(session_id:str)->bool:
             tts_manager = TTSManager(session)
             blocks = session['blocks_saved']
             blocks_saved = session.get('blocks_saved', [])
-            resume_block = session.get('resume_block', -1)
-            resume_sentence = session.get('resume_sentence', 0)
+            block_resume = session.get('block_resume', -1)
+            sentence_resume = session.get('sentence_resume', 0)
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 print(msg)
@@ -2000,23 +2000,23 @@ def convert_chapters2audio(session_id:str)->bool:
                             or prev_block.get('tts_engine', '') != block.get('tts_engine', '')
                             or prev_block.get('fine_tuned', '') != block.get('fine_tuned', '')
                         )
-                        if block_idx < resume_block and not block_changed:
+                        if block_idx < block_resume and not block_changed:
                             msg = f'Chapter {ch_num} (block {block_idx}) — unchanged, skipping'
                             print(msg)
                             global_sent += len(sentences)
                             t.update(len(sentences))
                             continue
-                        if block_changed and block_idx <= resume_block:
+                        if block_changed and block_idx <= block_resume:
                             msg = f'Chapter {ch_num} (block {block_idx}) — changed, reconverting'
                             print(msg)
                             ch_file = os.path.join(session['chapters_dir'], f'{block_idx}.{default_audio_proc_format}')
                             if os.path.exists(ch_file):
                                 os.unlink(ch_file)
                             start_sentence = 0
-                        elif block_idx == resume_block:
-                            msg = f'Chapter {ch_num} (block {block_idx}) — resuming from sentence {resume_sentence}'
+                        elif block_idx == block_resume:
+                            msg = f'Chapter {ch_num} (block {block_idx}) — resuming from sentence {sentence_resume}'
                             print(msg)
-                            start_sentence = resume_sentence
+                            start_sentence = sentence_resume
                         else:
                             start_sentence = 0
                         msg = f'Chapter {ch_num} (block {block_idx}) containing {len(sentences)} sentences…'
@@ -2039,7 +2039,9 @@ def convert_chapters2audio(session_id:str)->bool:
                                         print(msg)
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
-                                    if not success:
+                                    if success:
+                                        session['sentence_resume'] = j + 1
+                                    else:
                                         return False
                                 global_sent += 1
                             total_progress = (t.n + 1) / total_iterations
@@ -2062,8 +2064,8 @@ def convert_chapters2audio(session_id:str)->bool:
                                 error = 'combine_audio_sentences() failed!'
                                 show_alert(session_id, {"type": "error", "msg": error})
                                 return False
-                        session['resume_block'] = block_idx
-                        session['resume_sentence'] = 0
+                        session['block_resume'] = block_idx + 1
+                        session['sentence_resume'] = 0
                 write_vtt = tts_manager.create_sentences2vtt(final_sentences)
                 return write_vtt
         except Exception as e:
