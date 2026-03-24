@@ -2924,6 +2924,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     return result(error, False)
                 block['sentences'] = sentences_list
             session['blocks_current']['blocks'] = blocks_current
+            print(session['blocks_current']['blocks'])
             conversion = convert_chapters2audio(session_id)
             if conversion:
                 msg = 'Combining sentences and chapters…'
