@@ -1717,7 +1717,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             else:
                                                 return gr.update(value=msg)
                                     else:
-                                        if session['status'] == status_tags['CONVERTING']:
+                                        if session['cancellation_requested']:
                                             error = 'Conversion cancelled.'
                                         else:
                                             error = 'Conversion failed.'
