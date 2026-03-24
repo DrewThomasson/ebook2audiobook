@@ -3020,11 +3020,7 @@ def reset_ebook_session(session_id:str, force:bool=False, filter_keys=True)->Non
         "blocks_orig": [],
         "blocks_saved": [],
         "blocks_current": [],
-        "resume_block": -1,
-        "resume_sentence": 0,
-        "duration": 0,
         "playback_time": 0,
-        "playback_volume": 0,
         "metadata": {
             "title": None, 
             "creator": None,
