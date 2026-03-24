@@ -1953,7 +1953,7 @@ def convert_chapters2audio(session_id:str)->bool:
             tts_manager = TTSManager(session)
             blocks = session['blocks_saved']
             blocks_saved = session.get('blocks_saved', [])
-            block_resume = session.get('block_resume', 0)
+            block_resume = 0
             sentence_resume = session.get('sentence_resume', 0)
             print(f'block_resume: {block_resume}')
             print(f'sentence_resume: {sentence_resume}')
