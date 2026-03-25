@@ -2927,9 +2927,8 @@ def finalize_audiobook(session_id:str)->tuple:
             sentences_list = get_sentences(session_id, block['text'])
             if sentences_list is None:
                 return result('No sentences found!', False)
-            print(f'---------------------sentences_list: {sentences_list}---------------')
             session['blocks_current']['blocks'][idx]['sentences'] = sentences_list
-        print(session['blocks_current']['blocks'][0]['sentences'])
+            print(f"---------------------session['blocks_current']['blocks'][idx]['sentences']: {session['blocks_current']['blocks'][idx]['sentences']}---------------")
         conversion = convert_chapters2audio(session_id)
         if not conversion:
             error = 'Conversion cancelled' if session['cancellation_requested'] else 'convert_chapters2audio() failed!'
