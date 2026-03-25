@@ -526,7 +526,7 @@ class TTSUtils:
         h, m = divmod(m, 60)
         return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
-    def _build_vtt_file(self, all_sentences:list)->bool:
+    def _build_vtt_file(self, sentences:list)->bool:
             try:
                 import gradio as gr
                 from tqdm import tqdm
@@ -534,7 +534,7 @@ class TTSUtils:
                 print(msg)
                 vtt_path = os.path.join(self.session['process_dir'], Path(self.session['final_name']).stem + '.vtt')
                 audio_sentences_dir = Path(self.session['sentences_dir'])
-                blocks = self.session['blocks_current']
+                blocks = self.session['blocks_current']['blocks']
                 kept_indices = {
                     str(i) for i, b in enumerate(blocks)
                     if b['keep'] and b['text'].strip()
@@ -550,10 +550,10 @@ class TTSUtils:
                         key=lambda p: int(p.stem)
                     )
                     audio_files.extend(block_files)
-                all_sentences_length = len(all_sentences)
+                sentences_length = len(sentences)
                 audio_files_length = len(audio_files)
-                if audio_files_length != all_sentences_length:
-                    error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {all_sentences_length} sentences'
+                if audio_files_length != sentences_length:
+                    error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {sentences_length} sentences'
                     print(error)
                     return False
                 sentences_total_time = 0.0
@@ -576,7 +576,7 @@ class TTSUtils:
                         text = re.sub(
                             r'\s+',
                             ' ',
-                            SML_TAG_PATTERN.sub('', str(all_sentences[idx]))
+                            SML_TAG_PATTERN.sub('', str(sentences[idx]))
                         ).strip()
                         vtt_blocks.append(f'{start} --> {end}\n{text}\n')
                         if self.session['is_gui_process']:
