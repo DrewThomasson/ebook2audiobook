@@ -1984,6 +1984,8 @@ def convert_chapters2audio(session_id:str)->bool:
                             print('Cancel requested')
                             session['blocks_current'] = blocks_current
                             return False
+                        blocks_current['block_resume'] = x
+                        blocks_current['sentence_resume'] = 0
                         ch_num += 1
                         sentences = block['sentences']
                         sent_start = global_sent
@@ -2043,7 +2045,6 @@ def convert_chapters2audio(session_id:str)->bool:
                             print(f' : {sentence}')
                             t.update(1)
                         sent_end = global_sent - 1
-                        blocks_current['block_resume'] = x
                         print(f'End of Chapter {ch_num} (block {x})')
                         if j >= start_sentence or block_changed:
                             print(f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}')
@@ -2053,7 +2054,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                 show_alert(session_id, {"type": "error", "msg": 'combine_audio_sentences() failed!'})
                                 session['blocks_current'] = blocks_current
                                 return False
-                        blocks_current['sentence_resume'] = 0
                 session['blocks_current'] = blocks_current
                 write_vtt = tts_manager.create_sentences2vtt(final_sentences)
                 return write_vtt
