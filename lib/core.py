@@ -2970,7 +2970,7 @@ def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_k
                     if not force:
                         if value is None and session[key] is not None:
                             continue
-                    session[key] = value
+                    session[key] = context._recursive_proxy(value, context.manager) if isinstance(value, (dict, list)) else value
     except Exception as e:
         DependencyError(e)
         exception_alert(session_id, error)
