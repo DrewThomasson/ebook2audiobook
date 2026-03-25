@@ -2972,6 +2972,7 @@ def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_k
                             continue
                     print(f'restore: setting {key} = {value}')
                     session[key] = value
+                    print(f'restore: verify {key} = {session[key]}')
             else:
                 print(f'restore: {key} not in session')
     except Exception as e:
