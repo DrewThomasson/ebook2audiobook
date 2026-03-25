@@ -2055,6 +2055,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 session['blocks_current'] = blocks_current
                                 return False
                 session['blocks_current'] = blocks_current
+                print(f"final_sentences: {final_sentences}")
                 write_vtt = tts_manager.create_sentences2vtt(final_sentences)
                 return write_vtt
         except Exception as e:
