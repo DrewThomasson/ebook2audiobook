@@ -108,12 +108,12 @@ class SessionTracker:
             session = context.get_session(session_id)
             if session['status'] is None:
                 session['status'] = status_tags['READY']
-                register_blocks_autosave(session_id)
+                blocks_autosave.register(session_id)
                 return True
         return False
 
     def end_session(self, session_id:str, socket_hash:str)->None:
-        unregister_blocks_autosave(session_id)
+        blocks_autosave.unregister(session_id)
         active_sessions.discard(socket_hash)
         with self.lock:
             context.sessions.pop(session_id, None)
