@@ -1949,14 +1949,15 @@ def convert_chapters2audio(session_id:str)->bool:
     if session and session.get('id', False):
         try:
             tts_manager = TTSManager(session)
-            blocks = session['blocks_current']['blocks']
+            blocks_current = session['blocks_current']['blocks']
+            blocks_saved = session['blocks_saved']['blocks']
             block_resume = session['blocks_current']['block_resume']
             sentence_resume = session['blocks_current']['sentence_resume']
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 print(msg)
                 return False
-            kept_blocks = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
+            kept_blocks = [(i, b) for i, b in enumerate(blocks_current) if b['keep'] and b['text'].strip()]
             total_chapters = len(kept_blocks)
             if total_chapters == 0:
                 error = 'No chapters found!'
@@ -1980,7 +1981,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 global_sent = 0
                 ch_num = 0
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                    for block_idx, block in kept_blocks:
+                    for x, block in kept_blocks:
                         if session['cancellation_requested']:
                             msg = 'Cancel requested'
                             print(msg)
@@ -1989,7 +1990,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         sentences = block['sentences']
                         sent_start = global_sent
                         # Determine if block needs conversion
-                        prev_block = blocks[block_idx] if block_idx < len(blocks) else None
+                        prev_block = blocks_saved[x] if x < len(blocks_saved) else None
                         block_changed = (
                             prev_block is None
                             or prev_block.get('text', '').strip() != block['text'].strip()
@@ -1997,28 +1998,28 @@ def convert_chapters2audio(session_id:str)->bool:
                             or prev_block.get('tts_engine', '') != block.get('tts_engine', '')
                             or prev_block.get('fine_tuned', '') != block.get('fine_tuned', '')
                         )
-                        if block_idx < block_resume and not block_changed:
-                            msg = f'Chapter {ch_num} (block {block_idx}) — unchanged, skipping'
+                        if x < block_resume and not block_changed:
+                            msg = f'Chapter {ch_num} (block {x}) — unchanged, skipping'
                             print(msg)
                             global_sent += len(sentences)
                             t.update(len(sentences))
                             continue
-                        if block_changed and block_idx <= block_resume:
-                            msg = f'Chapter {ch_num} (block {block_idx}) — changed, reconverting'
+                        if block_changed and x <= block_resume:
+                            msg = f'Chapter {ch_num} (block {x}) — changed, reconverting'
                             print(msg)
-                            ch_file = os.path.join(session['chapters_dir'], f'{block_idx}.{default_audio_proc_format}')
+                            ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if os.path.exists(ch_file):
                                 os.unlink(ch_file)
                             start_sentence = 0
-                        elif block_idx == block_resume:
-                            msg = f'Chapter {ch_num} (block {block_idx}) — resuming from sentence {sentence_resume}'
+                        elif x == block_resume:
+                            msg = f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}'
                             print(msg)
                             start_sentence = sentence_resume
                         else:
                             start_sentence = 0
-                        msg = f'Chapter {ch_num} (block {block_idx}) containing {len(sentences)} sentences…'
+                        msg = f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…'
                         print(msg)
-                        block_dir = os.path.join(session['sentences_dir'], str(block_idx))
+                        block_dir = os.path.join(session['sentences_dir'], str(x))
                         os.makedirs(block_dir, exist_ok=True)
                         for j in range(len(sentences)):
                             if session['cancellation_requested']:
@@ -2050,14 +2051,14 @@ def convert_chapters2audio(session_id:str)->bool:
                             print(msg)
                             t.update(1)
                         sent_end = global_sent - 1
-                        session['blocks_current']['block_resume'] = block_idx
-                        msg = f'End of Chapter {ch_num} (block {block_idx})'
+                        session['blocks_current']['block_resume'] = x
+                        msg = f'End of Chapter {ch_num} (block {x})'
                         print(msg)
                         if j >= start_sentence or block_changed:
-                            msg = f'Combining chapter {ch_num} (block {block_idx}) to audio, sentence {sent_start} to {sent_end}'
+                            msg = f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'
                             print(msg)
-                            chapter_audio_file = os.path.join(session['chapters_dir'], f'{block_idx}.{default_audio_proc_format}')
-                            combine_result = combine_audio_sentences(session_id, chapter_audio_file, block_idx, len(sentences))
+                            chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                            combine_result = combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences))
                             if not combine_result:
                                 error = 'combine_audio_sentences() failed!'
                                 show_alert(session_id, {"type": "error", "msg": error})
@@ -2924,7 +2925,6 @@ def finalize_audiobook(session_id:str)->tuple:
                     return result(error, False)
                 blocks_current[idx]['sentences'] = sentences_list
             session['blocks_current']['blocks'] = blocks_current
-            print(session['blocks_current']['blocks'])
             conversion = convert_chapters2audio(session_id)
             if conversion:
                 msg = 'Combining sentences and chapters…'
