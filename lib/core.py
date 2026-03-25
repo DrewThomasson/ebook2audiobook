@@ -2617,6 +2617,7 @@ def convert_ebook(args:dict)->tuple:
                     print(error)
                     return error, False
             reset_ebook_session(session_id, force=True, filter_keys=False)
+            session = context.get_session(session_id)
             session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
@@ -2961,15 +2962,16 @@ def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_k
             if key in session:
                 if filter_keys and key in save_session_keys_except:
                     continue
-                if isinstance(value, dict) and isinstance(session[key], dict):
+                if isinstance(value, dict):
                     nested = session[key]
-                    restore_session_from_data(value, nested, force, filter_keys)
-                    session[key] = nested
-                else:
-                    if not force:
-                        if value is None and session[key] is not None:
-                            continue
-                    session[key] = value
+                    if isinstance(nested, dict):
+                        restore_session_from_data(value, nested, force, filter_keys)
+                        session[key] = nested
+                        continue
+                if not force:
+                    if value is None and session[key] is not None:
+                        continue
+                session[key] = value
     except Exception as e:
         DependencyError(e)
         exception_alert(session_id, error)
