@@ -1949,24 +1949,22 @@ def convert_chapters2audio(session_id:str)->bool:
     if session and session.get('id', False):
         try:
             tts_manager = TTSManager(session)
-            blocks_current = session['blocks_current']['blocks']
+            blocks_current = session['blocks_current']
+            blocks = blocks_current['blocks']
             blocks_saved = session['blocks_saved']['blocks']
-            block_resume = session['blocks_current']['block_resume']
-            sentence_resume = session['blocks_current']['sentence_resume']
+            block_resume = blocks_current['block_resume']
+            sentence_resume = blocks_current['sentence_resume']
             if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
+                print('Cancel requested')
                 return False
-            kept_blocks = [(i, b) for i, b in enumerate(blocks_current) if b['keep'] and b['text'].strip()]
-            total_chapters = len(kept_blocks)
+            blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
+            total_chapters = len(blocks_kept)
             if total_chapters == 0:
-                error = 'No chapters found!'
-                show_alert(session_id, {"type": "warning", "msg": error})
+                show_alert(session_id, {"type": "warning", "msg": 'No chapters found!'})
                 return False
-            total_sentences = sum(len(b['sentences']) for _, b in kept_blocks)
+            total_sentences = sum(len(b['sentences']) for _, b in blocks_kept)
             if total_sentences == 0:
-                error = 'No sentences found!'
-                show_alert(session_id, {"type": "warning", "msg": error})
+                show_alert(session_id, {"type": "warning", "msg": 'No sentences found!'})
                 return False
             total_iterations = total_sentences
             if session['ebook']:
@@ -1981,15 +1979,14 @@ def convert_chapters2audio(session_id:str)->bool:
                 global_sent = 0
                 ch_num = 0
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                    for x, block in kept_blocks:
+                    for x, block in blocks_kept:
                         if session['cancellation_requested']:
-                            msg = 'Cancel requested'
-                            print(msg)
+                            print('Cancel requested')
+                            session['blocks_current'] = blocks_current
                             return False
                         ch_num += 1
                         sentences = block['sentences']
                         sent_start = global_sent
-                        # Determine if block needs conversion
                         prev_block = blocks_saved[x] if x < len(blocks_saved) else None
                         block_changed = (
                             prev_block is None
@@ -1999,32 +1996,28 @@ def convert_chapters2audio(session_id:str)->bool:
                             or prev_block.get('fine_tuned', '') != block.get('fine_tuned', '')
                         )
                         if x < block_resume and not block_changed:
-                            msg = f'Chapter {ch_num} (block {x}) — unchanged, skipping'
-                            print(msg)
+                            print(f'Chapter {ch_num} (block {x}) — unchanged, skipping')
                             global_sent += len(sentences)
                             t.update(len(sentences))
                             continue
                         if block_changed and x <= block_resume:
-                            msg = f'Chapter {ch_num} (block {x}) — changed, reconverting'
-                            print(msg)
+                            print(f'Chapter {ch_num} (block {x}) — changed, reconverting')
                             ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if os.path.exists(ch_file):
                                 os.unlink(ch_file)
                             start_sentence = 0
                         elif x == block_resume:
-                            msg = f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}'
-                            print(msg)
+                            print(f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}')
                             start_sentence = sentence_resume
                         else:
                             start_sentence = 0
-                        msg = f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…'
-                        print(msg)
+                        print(f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…')
                         block_dir = os.path.join(session['sentences_dir'], str(x))
                         os.makedirs(block_dir, exist_ok=True)
                         for j in range(len(sentences)):
                             if session['cancellation_requested']:
-                                msg = 'Cancel requested'
-                                print(msg)
+                                print('Cancel requested')
+                                session['blocks_current'] = blocks_current
                                 return False
                             sentence = sentences[j].strip()
                             if any(c.isalnum() for c in sentence):
@@ -2033,13 +2026,13 @@ def convert_chapters2audio(session_id:str)->bool:
                                     final_sentences.append(sentence)
                                 if j >= start_sentence:
                                     if j == start_sentence and start_sentence > 0:
-                                        msg = f'********* Resuming from sentence {global_sent} ********'
-                                        print(msg)
+                                        print(f'********* Resuming from sentence {global_sent} ********')
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if success:
-                                        session['blocks_current']['sentence_resume'] = j
+                                        blocks_current['sentence_resume'] = j
                                     else:
+                                        session['blocks_current'] = blocks_current
                                         return False
                                 global_sent += 1
                             total_progress = (t.n + 1) / total_iterations
@@ -2047,23 +2040,21 @@ def convert_chapters2audio(session_id:str)->bool:
                                 progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
                             percent = total_progress * 100
                             t.set_description(f'{percent:.2f}%')
-                            msg = f' : {sentence}'
-                            print(msg)
+                            print(f' : {sentence}')
                             t.update(1)
                         sent_end = global_sent - 1
-                        session['blocks_current']['block_resume'] = x
-                        msg = f'End of Chapter {ch_num} (block {x})'
-                        print(msg)
+                        blocks_current['block_resume'] = x
+                        print(f'End of Chapter {ch_num} (block {x})')
                         if j >= start_sentence or block_changed:
-                            msg = f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'
-                            print(msg)
+                            print(f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}')
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             combine_result = combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences))
                             if not combine_result:
-                                error = 'combine_audio_sentences() failed!'
-                                show_alert(session_id, {"type": "error", "msg": error})
+                                show_alert(session_id, {"type": "error", "msg": 'combine_audio_sentences() failed!'})
+                                session['blocks_current'] = blocks_current
                                 return False
-                        session['blocks_current']['sentence_resume'] = 0
+                        blocks_current['sentence_resume'] = 0
+                session['blocks_current'] = blocks_current
                 write_vtt = tts_manager.create_sentences2vtt(final_sentences)
                 return write_vtt
         except Exception as e:
