@@ -2885,77 +2885,83 @@ def convert_ebook(args:dict)->tuple:
         return e, False
 
 def finalize_audiobook(session_id:str)->tuple:
-    session = context.get_session(session_id)
-    is_preview = session.get('blocks_preview', False) if session else False
-    result = lambda msg, ok: (gr.update(value=msg), gr.update(value=ok)) if is_preview else (msg, ok)
+    try:
+        session = context.get_session(session_id)
+        is_preview = session.get('blocks_preview', False) if session else False
+        result = lambda msg, ok: (gr.update(value=msg), gr.update(value=ok)) if is_preview else (msg, ok)
 
-    def fail(error):
-        session['status'] = status_tags['READY']
-        session['ebook'] = None
-        if session['blocks_preview']:
-            show_alert(session_id, {"type": "warning", "msg": error})
-        return result(error, False)
+        def fail(error):
+            session['status'] = status_tags['READY']
+            session['ebook'] = None
+            if session['blocks_preview']:
+                show_alert(session_id, {"type": "warning", "msg": error})
+            return result(error, False)
 
-    if not session or not session.get('id', False):
-        return result('', False)
-    if session['cancellation_requested']:
-        if session['status'] == status_tags['DISCONNECTED']:
-            session['status'] = None
-            context_tracker.end_session(session_id, session['socket_hash'])
-            return result('Frontend disconnected!', False)
-        return result('Conversion cancelled', False)
-    print(f'*********** Session: {session_id} **************\n{session_info}')
-    if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
-        return result('No blocks have been selected for the conversion!', False)
-    if not session.get('blocks_current', {}):
-        return fail('finalize_audiobook() failed!')
-    print('Get sentences…')
-    blocks_current = session['blocks_current']['blocks']
-    blocks_saved = session['blocks_saved']['blocks']
-    for idx, block in enumerate(blocks_current):
+        if not session or not session.get('id', False):
+            return result('', False)
         if session['cancellation_requested']:
+            if session['status'] == status_tags['DISCONNECTED']:
+                session['status'] = None
+                context_tracker.end_session(session_id, session['socket_hash'])
+                return result('Frontend disconnected!', False)
             return result('Conversion cancelled', False)
-        if not block['keep'] or not block['text'].strip():
-            block['sentences'] = []
-            continue
-        prev_block = blocks_saved[idx] if idx < len(blocks_saved) else None
-        if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
-            print(f'Block {idx} — unchanged, keeping existing sentences')
-            continue
-        sentences_list = get_sentences(session_id, block['text'])
-        if sentences_list is None:
-            return result('No sentences found!', False)
-        block['sentences'] = sentences_list
-    print(f"block['sentences']: {block['sentences']}")
-    print(f"session['blocks_current']['blocks']: {session['blocks_current']['blocks']}")
-    conversion = convert_chapters2audio(session_id)
-    if not conversion:
-        error = 'Conversion cancelled' if session['cancellation_requested'] else 'convert_chapters2audio() failed!'
-        return fail(error)
-    show_alert(session_id, {"type": "info", "msg": 'Combining sentences and chapters…'})
-    exported_files = combine_audio_chapters(session_id)
-    if exported_files is None:
-        return fail('combine_audio_chapters() error: exported_files not created!')
-    session['audiobook'] = exported_files[-1]
-    session['blocks_saved'] = copy.deepcopy(session['blocks_current'])
-    json_path = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
-    save_json_blocks(session_id, json_path, 'blocks_saved')
-    filename = os.path.basename(session['ebook'])
-    if isinstance(session['ebook_list'], list) and session['ebook_list']:
-        ebook_name = Path(session['ebook']).name
-        session['ebook_list'] = [p for p in session['ebook_list'] if Path(p).name != ebook_name]
+        print(f'*********** Session: {session_id} **************\n{session_info}')
+        if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
+            return result('No blocks have been selected for the conversion!', False)
+        if not session.get('blocks_current', {}):
+            return fail('finalize_audiobook() failed!')
+        print('Get sentences…')
+        blocks_current = session['blocks_current']['blocks']
+        blocks_saved = session['blocks_saved']['blocks']
+        for idx, block in enumerate(blocks_current):
+            if session['cancellation_requested']:
+                return result('Conversion cancelled', False)
+            if not block['keep'] or not block['text'].strip():
+                block['sentences'] = []
+                continue
+            prev_block = blocks_saved[idx] if idx < len(blocks_saved) else None
+            if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
+                print(f'Block {idx} — unchanged, keeping existing sentences')
+                continue
+            sentences_list = get_sentences(session_id, block['text'])
+            if sentences_list is None:
+                return result('No sentences found!', False)
+            block['sentences'] = sentences_list
+        print(f"block['sentences']: {block['sentences']}")
+        print(f"session['blocks_current']['blocks']: {session['blocks_current']['blocks']}")
+        conversion = convert_chapters2audio(session_id)
+        if not conversion:
+            error = 'Conversion cancelled' if session['cancellation_requested'] else 'convert_chapters2audio() failed!'
+            return fail(error)
+        show_alert(session_id, {"type": "info", "msg": 'Combining sentences and chapters…'})
+        exported_files = combine_audio_chapters(session_id)
+        if exported_files is None:
+            return fail('combine_audio_chapters() error: exported_files not created!')
+        session['audiobook'] = exported_files[-1]
+        session['blocks_saved'] = copy.deepcopy(session['blocks_current'])
+        json_path = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
+        save_json_blocks(session_id, json_path, 'blocks_saved')
+        filename = os.path.basename(session['ebook'])
+        if isinstance(session['ebook_list'], list) and session['ebook_list']:
+            ebook_name = Path(session['ebook']).name
+            session['ebook_list'] = [p for p in session['ebook_list'] if Path(p).name != ebook_name]
+            session['ebook'] = None
+            remaining = len(session['ebook_list'])
+            if remaining > 0:
+                session['status'] = status_tags['LOOP']
+                show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {remaining} ebook(s) conversion remaining..."})
+                return result(filename, True)
+        session['status'] = status_tags['READY']
+        session['ebook_list'] = None
         session['ebook'] = None
-        remaining = len(session['ebook_list'])
-        if remaining > 0:
-            session['status'] = status_tags['LOOP']
-            show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {remaining} ebook(s) conversion remaining..."})
-            return result(filename, True)
-    session['status'] = status_tags['READY']
-    session['ebook_list'] = None
-    session['ebook'] = None
-    show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
-    print(f'*********** Session: {session_id} **************\n{session_info}')
-    return result(filename, True)
+        show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
+        print(f'*********** Session: {session_id} **************\n{session_info}')
+        return result(filename, True)
+    except Exception as e:
+        DependencyError(e)
+        exception_alert(session_id, error)
+        error = f'finalize_audiobook(): e'
+        return result(error, False)
 
 def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool=False)->None:
     try:
