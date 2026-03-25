@@ -2911,27 +2911,25 @@ def finalize_audiobook(session_id:str)->tuple:
         if not session.get('blocks_current', {}):
             return fail('finalize_audiobook() failed!')
         print('Get sentences…')
-        blocks_current = session['blocks_current']['blocks']
         blocks_saved = session['blocks_saved']['blocks']
-        a = session['blocks_current']
-        b = session['blocks_current']
-        print(f'same object: {a is b}')
-        for idx, block in enumerate(blocks_current):
+        blocks_current = session['blocks_current']
+        blocks = blocks_current['blocks']
+        for idx, block in enumerate(blocks):
             if session['cancellation_requested']:
                 return result('Conversion cancelled', False)
             if not block['keep'] or not block['text'].strip():
-                session['blocks_current']['blocks'][idx]['sentences'] = []
+                block['sentences'] = []
                 continue
             prev_block = blocks_saved[idx] if idx < len(blocks_saved) else None
-            current_block = session['blocks_current']['blocks'][idx]
-            if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and current_block.get('sentences', []):
+            if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
                 print(f'Block {idx} — unchanged, keeping existing sentences')
                 continue
             sentences_list = get_sentences(session_id, block['text'])
             if sentences_list is None:
                 return result('No sentences found!', False)
-            session['blocks_current']['blocks'][idx]['sentences'] = sentences_list
-            print(f"---------------------session['blocks_current']['blocks'][idx]['sentences']: {session['blocks_current']['blocks'][idx]['sentences']}---------------")
+            block['sentences'] = sentences_list
+        blocks_current['blocks'] = blocks
+        session['blocks_current'] = blocks_current
         conversion = convert_chapters2audio(session_id)
         if not conversion:
             error = 'Conversion cancelled' if session['cancellation_requested'] else 'convert_chapters2audio() failed!'
