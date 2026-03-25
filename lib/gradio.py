@@ -1878,7 +1878,7 @@ def build_interface(args:dict)->gr.Blocks:
                         new_blocks[idx]['text'] = texts[i]
                 return new_blocks
 
-            def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks: list[dict], *args)->tuple:
+            def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     new_blocks = collect_page(page, blocks, *args)
@@ -1889,11 +1889,13 @@ def build_interface(args:dict)->gr.Blocks:
                             b['tts_engine'] = session.get('tts_engine', '')
                         if not b.get('fine_tuned'):
                             b['fine_tuned'] = session.get('fine_tuned', '')
-                    session['blocks_current']['blocks'] = new_blocks
+                    blocks_current = session['blocks_current']
+                    blocks_current['blocks'] = new_blocks
+                    session['blocks_current'] = blocks_current
                     session['status'] = status_tags['READY']
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
 
-            def click_gr_blocks_confirm_btn(session_id:str, blocks: list[dict], event:int)->tuple:
+            def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if not any(b['keep'] and b['text'].strip() for b in blocks):
@@ -1907,7 +1909,9 @@ def build_interface(args:dict)->gr.Blocks:
                             b['tts_engine'] = session.get('tts_engine', '')
                         if not b.get('fine_tuned'):
                             b['fine_tuned'] = session.get('fine_tuned', '')
-                    session['blocks_current']['blocks'] = blocks
+                    blocks_current = session['blocks_current']
+                    blocks_current['blocks'] = blocks
+                    session['blocks_current'] = blocks_current
                     session['status'] = status_tags['CONVERTING']
                     return gr.update(visible=True), gr.update(visible=False), event + 1
                 return gr.update(), gr.update(), gr.update()
