@@ -240,6 +240,7 @@ SML tags available:
                     sys.exit(1)
         import lib.core as c
         c.context = c.SessionContext() if c.context is None else c.context
+        c.blocks_autosave = c.BlocksAutosave() if c.blocks_autosave is None else c.blocks_autosave
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         if args['headless']:

@@ -57,6 +57,7 @@ from lib import *
 
 context = None
 context_tracker = None
+blocks_autosave = None
 active_sessions = None
 progress_bar = None
 
@@ -82,6 +83,8 @@ file_prefixes = {
     "current": "__current_"
 }
 
+########### Classes
+
 class DependencyError(Exception):
 
     def __init__(self, message:str|None):
@@ -97,8 +100,52 @@ class DependencyError(Exception):
         error = f'Caught DependencyError: {self}'
         print(error)
 
-class SessionTracker:
+class BlocksAutosave:
+    def __init__(self, interval:float=30.0):
+        self._interval = interval
+        self._sessions: set[str] = set()
+        self._lock = threading.Lock()
+        self._started = False
 
+    def start(self)->None:
+        if self._started:
+            return
+        self._started = True
+        t = threading.Thread(target=self._timer, daemon=True)
+        t.start()
+
+    def register(self, session_id:str)->None:
+        with self._lock:
+            self._sessions.add(session_id)
+
+    def unregister(self, session_id:str)->None:
+        with self._lock:
+            self._sessions.discard(session_id)
+
+    def _timer(self)->None:
+        while True:
+            time.sleep(self._interval)
+            with self._lock:
+                session_ids = set(self._sessions)
+            for session_id in session_ids:
+                try:
+                    session = context.get_session(session_id)
+                    if not session or not session.get('id', False):
+                        with self._lock:
+                            self._sessions.discard(session_id)
+                        continue
+                    previous_hash = hash_proxy_dict(MappingProxyType(session['blocks_saved']))
+                    current_hash = hash_proxy_dict(MappingProxyType(session['blocks_current']))
+                    if previous_hash != current_hash:
+                        json_blocks_current_file = os.path.join(
+                            session['process_dir'],
+                            f"{file_prefixes['current']}{session['filename_noext']}.json"
+                        )
+                        save_json_blocks(session_id, json_blocks_current_file, 'blocks_current')
+                except Exception as e:
+                    logger.error(f'BlocksAutosave._timer({session_id}): {e}!')
+
+class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
 
@@ -107,10 +154,12 @@ class SessionTracker:
             session = context.get_session(session_id)
             if session['status'] is None:
                 session['status'] = status_tags['READY']
+                register_blocks_autosave(session_id)
                 return True
         return False
 
     def end_session(self, session_id:str, socket_hash:str)->None:
+        unregister_blocks_autosave(session_id)
         active_sessions.discard(socket_hash)
         with self.lock:
             context.sessions.pop(session_id, None)
@@ -251,6 +300,8 @@ class JSONDictProxyEncoder(json.JSONEncoder):
         elif isinstance(o, ListProxy):
             return list(o)
         return super().default(o)
+        
+############# End classes
 
 def prepare_dirs(src:str, session_id:str)->bool:
     try:
