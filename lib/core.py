@@ -2618,7 +2618,6 @@ def convert_ebook(args:dict)->tuple:
                     return error, False
             reset_ebook_session(session_id, force=True, filter_keys=False)
             session = context.get_session(session_id)
-            print(session)
             session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
@@ -2957,22 +2956,21 @@ def finalize_audiobook(session_id:str)->tuple:
         error = f'finalize_audiobook(): e'
         return result(error, False)
 
-def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool=False)->None:
+def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool)->None:
     try:
         for key, value in data.items():
             if key in session:
                 if filter_keys and key in save_session_keys_except:
                     continue
-                if isinstance(value, dict):
+                if isinstance(value, dict) and value and isinstance(session[key], dict):
                     nested = session[key]
-                    if isinstance(nested, dict):
-                        restore_session_from_data(value, nested, force, filter_keys)
-                        session[key] = nested
-                        continue
-                if not force:
-                    if value is None and session[key] is not None:
-                        continue
-                session[key] = value
+                    restore_session_from_data(value, nested, force, filter_keys)
+                    session[key] = nested
+                else:
+                    if not force:
+                        if value is None and session[key] is not None:
+                            continue
+                    session[key] = value
     except Exception as e:
         DependencyError(e)
         exception_alert(session_id, error)
@@ -2990,7 +2988,7 @@ def on_unload(req:gr.Request)->None:
             else:
                 context_tracker.end_session(session_id, socket_hash)
 
-def reset_ebook_session(session_id:str, force:bool=False, filter_keys=True)->None:
+def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
