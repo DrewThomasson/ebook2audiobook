@@ -2913,6 +2913,9 @@ def finalize_audiobook(session_id:str)->tuple:
         print('Get sentences…')
         blocks_current = session['blocks_current']['blocks']
         blocks_saved = session['blocks_saved']['blocks']
+        a = session['blocks_current']
+        b = session['blocks_current']
+        print(f'same object: {a is b}')
         for idx, block in enumerate(blocks_current):
             if session['cancellation_requested']:
                 return result('Conversion cancelled', False)
