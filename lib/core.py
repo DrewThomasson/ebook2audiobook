@@ -57,7 +57,6 @@ from lib import *
 
 context = None
 context_tracker = None
-blocks_autosave = None
 active_sessions = None
 progress_bar = None
 
@@ -102,18 +101,20 @@ class DependencyError(Exception):
 class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
+        self.blocks_autosave = BlocksAutosave()
+        self.blocks_autosave.start()
 
     def start_session(self, session_id:str)->bool:
         with self.lock:
             session = context.get_session(session_id)
             if session['status'] is None:
                 session['status'] = status_tags['READY']
-                blocks_autosave.register(session_id)
+                self.blocks_autosave.register(session_id)
                 return True
         return False
 
     def end_session(self, session_id:str, socket_hash:str)->None:
-        blocks_autosave.unregister(session_id)
+        self.blocks_autosave.unregister(session_id)
         active_sessions.discard(socket_hash)
         with self.lock:
             context.sessions.pop(session_id, None)
@@ -269,8 +270,8 @@ class BlocksAutosave:
 
     def _timer(self)->None:
         while True:
-            time.sleep(self._interval)
             print('TIME CALLED')
+            time.sleep(self._interval)
             with self._lock:
                 session_ids = set(self._sessions)
             for session_id in session_ids:
