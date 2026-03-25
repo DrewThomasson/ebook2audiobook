@@ -2919,17 +2919,15 @@ def finalize_audiobook(session_id:str)->tuple:
             block['sentences'] = []
             continue
         prev_block = blocks_saved[idx] if idx < len(blocks_saved) else None
-        if (
-            prev_block
-            and prev_block.get('text', '').strip() == block['text'].strip()
-            and block.get('sentences', [])
-        ):
+        if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
             print(f'Block {idx} — unchanged, keeping existing sentences')
             continue
         sentences_list = get_sentences(session_id, block['text'])
         if sentences_list is None:
             return result('No sentences found!', False)
         block['sentences'] = sentences_list
+    print(f"block['sentences']: {block['sentences']}")
+    print(f"session['blocks_current']['blocks']: {session['blocks_current']['blocks']}")
     conversion = convert_chapters2audio(session_id)
     if not conversion:
         error = 'Conversion cancelled' if session['cancellation_requested'] else 'convert_chapters2audio() failed!'
