@@ -86,7 +86,6 @@ file_prefixes = {
 ########### Classes
 
 class DependencyError(Exception):
-
     def __init__(self, message:str|None):
         super().__init__(message)
         print(message)
@@ -99,51 +98,6 @@ class DependencyError(Exception):
         # Print the exception message
         error = f'Caught DependencyError: {self}'
         print(error)
-
-class BlocksAutosave:
-    def __init__(self, interval:float=30.0):
-        self._interval = interval
-        self._sessions: set[str] = set()
-        self._lock = threading.Lock()
-        self._started = False
-
-    def start(self)->None:
-        if self._started:
-            return
-        self._started = True
-        t = threading.Thread(target=self._timer, daemon=True)
-        t.start()
-
-    def register(self, session_id:str)->None:
-        with self._lock:
-            self._sessions.add(session_id)
-
-    def unregister(self, session_id:str)->None:
-        with self._lock:
-            self._sessions.discard(session_id)
-
-    def _timer(self)->None:
-        while True:
-            time.sleep(self._interval)
-            with self._lock:
-                session_ids = set(self._sessions)
-            for session_id in session_ids:
-                try:
-                    session = context.get_session(session_id)
-                    if not session or not session.get('id', False):
-                        with self._lock:
-                            self._sessions.discard(session_id)
-                        continue
-                    previous_hash = hash_proxy_dict(MappingProxyType(session['blocks_saved']))
-                    current_hash = hash_proxy_dict(MappingProxyType(session['blocks_current']))
-                    if previous_hash != current_hash:
-                        json_blocks_current_file = os.path.join(
-                            session['process_dir'],
-                            f"{file_prefixes['current']}{session['filename_noext']}.json"
-                        )
-                        save_json_blocks(session_id, json_blocks_current_file, 'blocks_current')
-                except Exception as e:
-                    logger.error(f'BlocksAutosave._timer({session_id}): {e}!')
 
 class SessionTracker:
     def __init__(self):
@@ -165,7 +119,6 @@ class SessionTracker:
             context.sessions.pop(session_id, None)
 
 class SessionContext:
-
     def __init__(self):
         self.manager:Manager = Manager()
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
@@ -292,8 +245,53 @@ class SessionContext:
                 return session_id
         return None
 
-class JSONDictProxyEncoder(json.JSONEncoder):
+class BlocksAutosave:
+    def __init__(self, interval:float=30.0):
+        self._interval = interval
+        self._sessions: set[str] = set()
+        self._lock = threading.Lock()
+        self._started = False
 
+    def start(self)->None:
+        if self._started:
+            return
+        self._started = True
+        t = threading.Thread(target=self._timer, daemon=True)
+        t.start()
+
+    def register(self, session_id:str)->None:
+        with self._lock:
+            self._sessions.add(session_id)
+
+    def unregister(self, session_id:str)->None:
+        with self._lock:
+            self._sessions.discard(session_id)
+
+    def _timer(self)->None:
+        while True:
+            time.sleep(self._interval)
+            print('TIME CALLED')
+            with self._lock:
+                session_ids = set(self._sessions)
+            for session_id in session_ids:
+                try:
+                    session = context.get_session(session_id)
+                    if not session or not session.get('id', False):
+                        with self._lock:
+                            self._sessions.discard(session_id)
+                        continue
+                    previous_hash = hash_proxy_dict(MappingProxyType(session['blocks_saved']))
+                    current_hash = hash_proxy_dict(MappingProxyType(session['blocks_current']))
+                    if previous_hash != current_hash:
+                        json_blocks_current_file = os.path.join(
+                            session['process_dir'],
+                            f"{file_prefixes['current']}{session['filename_noext']}.json"
+                        )
+                        save_json_blocks(session_id, json_blocks_current_file, 'blocks_current')
+                except Exception as e:
+                    logger.error(f'BlocksAutosave._timer({session_id}): {e}!')
+
+class JSONDictProxyEncoder(json.JSONEncoder):
     def default(self, o:Any)->Any:
         if isinstance(o, DictProxy):
             return dict(o)
