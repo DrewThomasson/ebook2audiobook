@@ -247,7 +247,7 @@ class SessionContext:
         return None
 
 class BlocksAutosave:
-    def __init__(self, interval:float=30.0):
+    def __init__(self, interval:float=15.0):
         self._interval = interval
         self._sessions: set[str] = set()
         self._lock = threading.Lock()
@@ -270,7 +270,6 @@ class BlocksAutosave:
 
     def _timer(self)->None:
         while True:
-            print('TIME CALLED')
             time.sleep(self._interval)
             with self._lock:
                 session_ids = set(self._sessions)
