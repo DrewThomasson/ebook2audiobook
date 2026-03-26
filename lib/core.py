@@ -2031,6 +2031,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             return False
                         blocks_current['block_resume'] = x
                         blocks_current['sentence_resume'] = 0
+                        session['blocks_current'] = blocks_current
                         save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                         last_save_time = time.monotonic()
                         ch_num += 1
@@ -2080,6 +2081,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if success:
                                         blocks_current['sentence_resume'] = j
+                                        session['blocks_current'] = blocks_current
                                         now = time.monotonic()
                                         if now - last_save_time >= 5:
                                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
