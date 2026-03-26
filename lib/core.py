@@ -2896,8 +2896,8 @@ def convert_ebook(args:dict)->tuple:
                                                     save_json_blocks(session, json_blocks_orig_file, 'blocks_orig')
                                             if not session.get('blocks_saved', {}):
                                                 session['blocks_saved'] = copy.deepcopy(session['blocks_orig'])
+                                                session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
                                                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
-                                                session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                             if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
