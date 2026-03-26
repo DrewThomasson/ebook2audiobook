@@ -2954,7 +2954,7 @@ def finalize_audiobook(session_id:str)->tuple:
         if not session.get('blocks_current', {}):
             return fail('finalize_audiobook() failed!')
         print('Get sentences…')
-        blocks_saved = session['blocks_saved']['blocks']
+        blocks_saved = session['blocks_saved']
         blocks_prev = blocks_saved['blocks']
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
