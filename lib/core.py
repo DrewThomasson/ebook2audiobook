@@ -2553,7 +2553,7 @@ def delete_proc_audio_files(dir:str, files:list)->None:
         if file.stem.isdigit() and file in files:
             file.unlink()
 
-def clear_folder(folder_path:str)->None:
+def delete_folder(folder_path:str)->None:
     for name in os.listdir(folder_path):
         path = os.path.join(folder_path, name)
         if os.path.isfile(path) or os.path.islink(path):
@@ -2905,7 +2905,6 @@ def convert_ebook(args:dict)->tuple:
                                                     session['status'] = status_tags['BLOCKS']
                                                     return session['status'], True
                                                 else:
-                                                    print(f"------------------------sentence_resume: {session['blocks_current']['sentence_resume']}")
                                                     progress_status, passed = finalize_audiobook(session_id)
                                                     return progress_status, passed
                                             else:
@@ -2956,6 +2955,7 @@ def finalize_audiobook(session_id:str)->tuple:
             return fail('finalize_audiobook() failed!')
         print('Get sentences…')
         blocks_saved = session['blocks_saved']['blocks']
+        blocks_prev = blocks_saved['blocks']
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
         for idx, block in enumerate(blocks):
@@ -2964,7 +2964,7 @@ def finalize_audiobook(session_id:str)->tuple:
             if not block['keep'] or not block['text'].strip():
                 block['sentences'] = []
                 continue
-            prev_block = blocks_saved[idx] if idx < len(blocks_saved) else None
+            prev_block = blocks_prev[idx] if idx < len(blocks_prev) else None
             if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
                 print(f'Block {idx} — unchanged, keeping existing sentences')
                 continue
