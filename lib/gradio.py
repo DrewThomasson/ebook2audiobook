@@ -1906,7 +1906,6 @@ def build_interface(args:dict)->gr.Blocks:
                         error = 'At least one block must be kept.'
                         show_alert(session_id, {"type": "warning", "msg": error})
                         return gr.update(), gr.update(), gr.update()
-                    session['status'] = status_tags['CONVERTING']
                     change_saved_blocks(session, page, blocks, *args)
                     return gr.update(visible=True), gr.update(visible=False), event + 1
                 return gr.update(), gr.update(), gr.update()

@@ -2904,7 +2904,6 @@ def convert_ebook(args:dict)->tuple:
                                                     print(msg)
                                                     return session['status'], True
                                                 else:
-                                                    session['status'] = status_tags['CONVERTING']
                                                     progress_status, passed = finalize_audiobook(session_id)
                                                     return progress_status, passed
                                             else:
@@ -2948,6 +2947,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 context_tracker.end_session(session_id, session['socket_hash'])
                 return result('Frontend disconnected!', False)
             return result('Conversion cancelled', False)
+        session['status'] = status_tags['CONVERTING']
         print(f'*********** Session: {session_id} **************\n{session_info}')
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             return result('No blocks have been selected for the conversion!', False)
@@ -3005,6 +3005,19 @@ def finalize_audiobook(session_id:str)->tuple:
         error = f'finalize_audiobook(): e'
         return result(error, False)
 
+def on_unload(req:gr.Request)->None:
+    socket_hash = req.session_hash
+    if any(socket_hash in session for session in context.sessions.values()):
+        session_id = context.find_id_by_hash(socket_hash)
+        if session_id:
+            session = context.get_session(session_id)
+            if session['status'] == status_tags['CONVERTING']:
+                session['cancellation_requested'] = True
+                session['status'] = status_tags['DISCONNECTED']
+                session['socket_hash'] = socket_hash
+            else:
+                context_tracker.end_session(session_id, socket_hash)
+
 def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool)->None:
     try:
         for key, value in data.items():
@@ -3023,19 +3036,6 @@ def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_k
     except Exception as e:
         DependencyError(e)
         exception_alert(session['id'], error)
-
-def on_unload(req:gr.Request)->None:
-    socket_hash = req.session_hash
-    if any(socket_hash in session for session in context.sessions.values()):
-        session_id = context.find_id_by_hash(socket_hash)
-        if session_id:
-            session = context.get_session(session_id)
-            if session['status'] == status_tags['CONVERTING']:
-                session['cancellation_requested'] = True
-                session['status'] = status_tags['DISCONNECTED']
-                session['socket_hash'] = socket_hash
-            else:
-                context_tracker.end_session(session_id, socket_hash)
 
 def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
