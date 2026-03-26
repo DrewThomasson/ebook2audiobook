@@ -2841,7 +2841,8 @@ def convert_ebook(args:dict)->tuple:
                                 if os.path.exists(json_blocks_orig_file):
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
                                     if os.path.exists(session['blocks_saved_json']):
-                                        session['blocks_saved'] = load_json_blocks(session['blocks_saved_json'])                                 
+                                        session['blocks_saved'] = load_json_blocks(session['blocks_saved_json']) 
+                                        session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                     missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
@@ -2894,8 +2895,9 @@ def convert_ebook(args:dict)->tuple:
                                                 if session.get('blocks_orig', {}):
                                                     save_json_blocks(session, json_blocks_orig_file, 'blocks_orig')
                                             if not session.get('blocks_saved', {}):
-                                                session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
+                                                session['blocks_saved'] = copy.deepcopy(session['blocks_orig'])
                                                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                                                session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                             if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
