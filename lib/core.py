@@ -100,20 +100,20 @@ class DependencyError(Exception):
 class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
-        self.blocks_autosave = BlocksAutosave()
-        self.blocks_autosave.start()
+        #self.blocks_autosave = AppAutosave()
+        #self.blocks_autosave.start()
 
     def start_session(self, session_id:str)->bool:
         with self.lock:
             session = context.get_session(session_id)
             if session['status'] is None:
                 session['status'] = status_tags['READY']
-                self.blocks_autosave.register(session_id)
+                #self.blocks_autosave.register(session_id)
                 return True
         return False
 
     def end_session(self, session_id:str, socket_hash:str)->None:
-        self.blocks_autosave.unregister(session_id)
+        #self.blocks_autosave.unregister(session_id)
         active_sessions.discard(socket_hash)
         with self.lock:
             context.sessions.pop(session_id, None)
@@ -245,8 +245,8 @@ class SessionContext:
             if socket_hash in session:
                 return session_id
         return None
-
-class BlocksAutosave:
+"""
+class AppAutosave:
     def __init__(self, interval:float=15.0):
         self._interval = interval
         self._sessions: set[str] = set()
@@ -280,11 +280,9 @@ class BlocksAutosave:
                         with self._lock:
                             self._sessions.discard(session_id)
                         continue
-                    if not session['is_gui_process']:
-                        save_json_blocks(session_id, session['blocks_saved_json'], 'blocks_current')
                 except Exception as e:
-                    logger.error(f'BlocksAutosave._timer({session_id}): {e}!')
-
+                    logger.error(f'AppAutosave._timer({session_id}): {e}!')
+"""
 class JSONDictProxyEncoder(json.JSONEncoder):
     def default(self, o:Any)->Any:
         if isinstance(o, DictProxy):
@@ -595,12 +593,8 @@ def load_json_blocks(filepath:str)->list[dict]:
         print(f"load_json_blocks() error: {e}")
         return []
 
-def save_json_blocks(session_id:str, file_path:str, key:str)->None:
+def save_json_blocks(session:DictProxy, file_path:str, key:str)->None:
     try:
-        session = context.get_session(session_id)
-        if not session:
-            print(f"save_json_blocks error: session not found ({session_id})")
-            return
         if key == 'blocks_current':
             blocks_previous_hash = hash_proxy_dict(MappingProxyType(session['blocks_saved']))
             blocks_new_hash = hash_proxy_dict(MappingProxyType(session['blocks_current']))
@@ -2028,6 +2022,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 final_sentences = []
                 global_sent = 0
                 ch_num = 0
+                last_save_time = time.monotonic()
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     for x, block in blocks_kept:
                         if session['cancellation_requested']:
@@ -2036,6 +2031,8 @@ def convert_chapters2audio(session_id:str)->bool:
                             return False
                         blocks_current['block_resume'] = x
                         blocks_current['sentence_resume'] = 0
+                        save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                        last_save_time = time.monotonic()
                         ch_num += 1
                         sentences = block['sentences']
                         sent_start = global_sent
@@ -2083,6 +2080,10 @@ def convert_chapters2audio(session_id:str)->bool:
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if success:
                                         blocks_current['sentence_resume'] = j
+                                        now = time.monotonic()
+                                        if now - last_save_time >= 5:
+                                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                                            last_save_time = now
                                     else:
                                         session['blocks_current'] = blocks_current
                                         return False
@@ -2099,6 +2100,8 @@ def convert_chapters2audio(session_id:str)->bool:
                         if j >= start_sentence or block_changed:
                             print(f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}')
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                            last_save_time = time.monotonic()
                             combine_result = combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences))
                             if not combine_result:
                                 show_alert(session_id, {"type": "error", "msg": 'combine_audio_sentences() failed!'})
@@ -2887,10 +2890,10 @@ def convert_ebook(args:dict)->tuple:
                                                         ]
                                                     }
                                                 if session.get('blocks_orig', {}):
-                                                    save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
+                                                    save_json_blocks(session, json_blocks_orig_file, 'blocks_orig')
                                             if not session.get('blocks_saved', {}):
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
-                                                save_json_blocks(session_id, session['blocks_saved_json'], 'blocks_current')
+                                                save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'

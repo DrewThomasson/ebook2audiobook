@@ -1864,6 +1864,20 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(value=text)
                 return gr.update()
 
+            def change_saved_blocks(session:DictProxy, page:int, blocks:list[dict], *args)->None:
+                new_blocks = collect_page(page, blocks, *args)
+                for b in new_blocks:
+                    if not b.get('voice'):
+                        b['voice'] = session.get('voice', '')
+                    if not b.get('tts_engine'):
+                        b['tts_engine'] = session.get('tts_engine', '')
+                    if not b.get('fine_tuned'):
+                        b['fine_tuned'] = session.get('fine_tuned', '')
+                blocks_current = session['blocks_current']
+                blocks_current['blocks'] = new_blocks
+                session['blocks_current'] = blocks_current
+                save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+
             def collect_page(page:int, blocks:list[dict], *args)->list[dict]:
                 expands = args[0]
                 keeps = args[1:page_size + 1]
@@ -1881,38 +1895,19 @@ def build_interface(args:dict)->gr.Blocks:
             def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    new_blocks = collect_page(page, blocks, *args)
-                    for b in new_blocks:
-                        if not b.get('voice'):
-                            b['voice'] = session.get('voice', '')
-                        if not b.get('tts_engine'):
-                            b['tts_engine'] = session.get('tts_engine', '')
-                        if not b.get('fine_tuned'):
-                            b['fine_tuned'] = session.get('fine_tuned', '')
-                    blocks_current = session['blocks_current']
-                    blocks_current['blocks'] = new_blocks
-                    session['blocks_current'] = blocks_current
                     session['status'] = status_tags['READY']
+                    change_saved_blocks(session, page, blocks, *args)
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
 
-            def click_gr_blocks_confirm_btn(session_id:str, blocks:list[dict], event:int)->tuple:
+            def click_gr_blocks_confirm_btn(session_id:str, page:int, blocks:list[dict], *args, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if not any(b['keep'] and b['text'].strip() for b in blocks):
                         error = 'At least one block must be kept.'
                         show_alert(session_id, {"type": "warning", "msg": error})
                         return gr.update(), gr.update(), gr.update()
-                    for b in blocks:
-                        if not b.get('voice'):
-                            b['voice'] = session.get('voice', '')
-                        if not b.get('tts_engine'):
-                            b['tts_engine'] = session.get('tts_engine', '')
-                        if not b.get('fine_tuned'):
-                            b['fine_tuned'] = session.get('fine_tuned', '')
-                    blocks_current = session['blocks_current']
-                    blocks_current['blocks'] = blocks
-                    session['blocks_current'] = blocks_current
                     session['status'] = status_tags['CONVERTING']
+                    change_saved_blocks(session, page, blocks, *args)
                     return gr.update(visible=True), gr.update(visible=False), event + 1
                 return gr.update(), gr.update(), gr.update()
 
@@ -1994,7 +1989,6 @@ def build_interface(args:dict)->gr.Blocks:
                     previous_hash = state.get("hash")
                     if session.get('status', None) == status_tags['CONVERTING']:
                         try:
-                            save_json_blocks(session_id, session['blocks_saved_json'], 'blocks_current')
                             if session.get('ticker') != len(audiobook_options):
                                 session['ticker'] = len(audiobook_options)
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
@@ -2020,7 +2014,7 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                     else:
                         if session.get('status', None) == status_tags['BLOCKS']:
-                            save_json_blocks(session_id, session['blocks_saved_json'], 'blocks_current')
+                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                         new_hash = hash_proxy_dict(MappingProxyType(session))
                         if previous_hash == new_hash:
                             yield gr.update(), gr.update(), gr.update()
@@ -2454,12 +2448,8 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_enable_components
             )
             gr_blocks_confirm_btn.click(
-                fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
-                outputs=[gr_blocks_data]
-            ).then(
                 fn=click_gr_blocks_confirm_btn,
-                inputs=[gr_session, gr_blocks_data, gr_blocks_event],
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts, gr_blocks_event],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_event]
             )
             gr_blocks_event.change(
