@@ -2734,7 +2734,7 @@ def convert_ebook(args:dict)->tuple:
                         print(msg)
                         return msg, True
                 if error is None:
-                    #delete_unused_tmp_dirs(audiobooks_cli_dir, 180, session_id)
+                    #delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
@@ -2843,6 +2843,7 @@ def convert_ebook(args:dict)->tuple:
                                         session['blocks_saved'] = load_json_blocks(session['blocks_saved_json']) 
                                         session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                     missing_json = False
+                                print(f"session['blocks_current']: {session['blocks_current']}")
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
                                     metadata = dict(session['metadata'])
