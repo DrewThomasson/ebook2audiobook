@@ -2029,10 +2029,6 @@ def convert_chapters2audio(session_id:str)->bool:
                             print('Cancel requested')
                             session['blocks_current'] = blocks_current
                             return False
-                        blocks_current['block_resume'] = x
-                        blocks_current['sentence_resume'] = 0
-                        session['blocks_current'] = blocks_current
-                        save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                         last_save_time = time.monotonic()
                         ch_num += 1
                         sentences = block['sentences']
@@ -2064,6 +2060,10 @@ def convert_chapters2audio(session_id:str)->bool:
                         print(f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…')
                         block_dir = os.path.join(session['sentences_dir'], str(x))
                         os.makedirs(block_dir, exist_ok=True)
+                        blocks_current['block_resume'] = x
+                        blocks_current['sentence_resume'] = start_sentence
+                        session['blocks_current'] = blocks_current
+                        save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                         for j in range(len(sentences)):
                             if session['cancellation_requested']:
                                 print('Cancel requested')
