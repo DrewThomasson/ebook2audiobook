@@ -1994,6 +1994,7 @@ def build_interface(args:dict)->gr.Blocks:
                     previous_hash = state.get("hash")
                     if session.get('status', None) == status_tags['CONVERTING']:
                         try:
+                            save_json_blocks(session_id, session['blocks_saved_json'], 'blocks_current')
                             if session.get('ticker') != len(audiobook_options):
                                 session['ticker'] = len(audiobook_options)
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
@@ -2018,6 +2019,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(),
                             )
                     else:
+                        if session.get('status', None) == status_tags['BLOCKS']:
+                            save_json_blocks(session_id, session['blocks_saved_json'], 'blocks_current')
                         new_hash = hash_proxy_dict(MappingProxyType(session))
                         if previous_hash == new_hash:
                             yield gr.update(), gr.update(), gr.update()
