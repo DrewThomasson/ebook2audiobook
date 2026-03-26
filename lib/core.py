@@ -2905,6 +2905,7 @@ def convert_ebook(args:dict)->tuple:
                                                     session['status'] = status_tags['BLOCKS']
                                                     return session['status'], True
                                                 else:
+                                                    print(f"------------------------sentence_resume: {session['sentence_resume']}")
                                                     progress_status, passed = finalize_audiobook(session_id)
                                                     return progress_status, passed
                                             else:
