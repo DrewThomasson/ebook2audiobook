@@ -1716,7 +1716,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 session['status'] = progress_status
                                                 return gr.update(value=session['status'])
                                             else:
-                                                filename = os.path.basename(sessioin['ebook'])
+                                                filename = os.path.basename(session['ebook'])
                                                 yield gr.update(value=filename)
                                         else:
                                             session['ebook_list'] = None
