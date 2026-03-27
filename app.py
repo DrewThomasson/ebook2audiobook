@@ -260,6 +260,9 @@ SML tags available:
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
+            if args['id'] is None:
+                args['id'] = str(uuid.uuid4())
+                c.context.set_session(args['id'])
             engine_setting_keys = {engine: list(settings.keys()) for engine, settings in default_engine_settings.items()}
             valid_model_keys = engine_setting_keys.get(args['tts_engine'], [])
             renamed_args = {}
