@@ -2609,13 +2609,15 @@ def convert_ebook_directory(args:dict)->tuple:
         if isinstance(args['ebook_list'], list):
             session = context.get_session(args['id'])
             if session and session.get('id', False):
-                ebook_list = args['ebook_list'][:] # Use a shallow copy
+                ebook_list = session['ebook_list'][:] # Use a shallow copy
                 for file in ebook_list:
                     if any(file.endswith(ext) for ext in ebook_formats):
                         args['ebook'] = file
                         print(f'Processing eBook file: {os.path.basename(file)}')
                         progress_status, passed = convert_ebook(args)
                         if passed:
+                            args['ebook_list'].remove(file)
+                            session['ebook_list'] = args['ebook_list']
                             if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
                                 progress_status = file
                             yield progress_status, passed

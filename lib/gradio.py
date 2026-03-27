@@ -481,6 +481,11 @@ def build_interface(args:dict)->gr.Blocks:
                     color: white !important;
                     position: relative !important;
                 }
+                .gr-modal-content p {
+                    overflow-wrap: break-word;
+                    word-break: break-word;
+                    white-space: normal;
+                }
                 .confirm-buttons {
                     display: flex !important;
                     justify-content: space-evenly !important;
