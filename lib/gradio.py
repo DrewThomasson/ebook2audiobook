@@ -1899,7 +1899,7 @@ def build_interface(args:dict)->gr.Blocks:
                     change_saved_blocks(session, page, blocks, *args)
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), session['blocks_current']['blocks']
 
-            def click_gr_blocks_confirm_btn(session_id:str, page:int, blocks:list[dict], *args, event:int)->tuple:
+            def click_gr_blocks_confirm_btn(session_id:str, event:int, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if not any(b['keep'] and b['text'].strip() for b in blocks):
@@ -2448,7 +2448,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_confirm_btn.click(
                 fn=click_gr_blocks_confirm_btn,
-                inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts, gr_blocks_event],
+                inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_event]
             )
             gr_blocks_event.change(
