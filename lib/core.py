@@ -2605,12 +2605,12 @@ def get_compatible_tts_engines(language:str)->list[str]:
 
 def convert_ebook_directory(args:dict)->tuple:
     try:
+        print('convert_ebook_directory called')
         passed = False
         if isinstance(args['ebook_list'], list):
             session = context.get_session(args['id'])
             if session and session.get('id', False):
                 ebook_list = args['ebook_list'][:] # Use a shallow copy
-                print(ebook_list)
                 for file in ebook_list:
                     if any(file.endswith(ext) for ext in ebook_formats):
                         args['ebook'] = file
