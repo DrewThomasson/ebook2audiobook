@@ -33,6 +33,6 @@ pydantic==1.10.14
 
 # --- Utilities ---
 tqdm==4.66.4
-requests==2.32.3
+requests==2.33.0
 urllib3==2.6.3
 packaging==24.1
