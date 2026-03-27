@@ -1864,20 +1864,6 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(value=text)
                 return gr.update()
 
-            def change_saved_blocks(session:DictProxy, page:int, blocks:list[dict], *args)->None:
-                new_blocks = collect_page(page, blocks, *args)
-                for b in new_blocks:
-                    if not b.get('voice'):
-                        b['voice'] = session.get('voice', '')
-                    if not b.get('tts_engine'):
-                        b['tts_engine'] = session.get('tts_engine', '')
-                    if not b.get('fine_tuned'):
-                        b['fine_tuned'] = session.get('fine_tuned', '')
-                blocks_current = session['blocks_current']
-                blocks_current['blocks'] = new_blocks
-                session['blocks_current'] = blocks_current
-                save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
-
             def collect_page(page:int, blocks:list[dict], *args)->list[dict]:
                 expands = args[0]
                 keeps = args[1:page_size + 1]
@@ -1891,6 +1877,20 @@ def build_interface(args:dict)->gr.Blocks:
                         new_blocks[idx]['keep'] = keeps[i]
                         new_blocks[idx]['text'] = texts[i]
                 return new_blocks
+
+            def change_saved_blocks(session:DictProxy, page:int, blocks:list[dict], *args)->None:
+                new_blocks = collect_page(page, blocks, *args)
+                for b in new_blocks:
+                    if not b.get('voice'):
+                        b['voice'] = session.get('voice', '')
+                    if not b.get('tts_engine'):
+                        b['tts_engine'] = session.get('tts_engine', '')
+                    if not b.get('fine_tuned'):
+                        b['fine_tuned'] = session.get('fine_tuned', '')
+                blocks_current = session['blocks_current']
+                blocks_current['blocks'] = new_blocks
+                session['blocks_current'] = blocks_current
+                save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
 
             def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
@@ -2447,10 +2447,6 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_enable_components
             )
             gr_blocks_confirm_btn.click(
-                fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
-                outputs=[gr_blocks_data]
-            ).then(
                 fn=click_gr_blocks_confirm_btn,
                 inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_event]
