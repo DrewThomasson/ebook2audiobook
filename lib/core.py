@@ -2717,10 +2717,10 @@ def convert_ebook(args:dict)->tuple:
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                 os.makedirs(session['voice_dir'], exist_ok=True)
+                audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
-                print(f'audio_sentences_exist: {audio_sentences_exist}')
-                if os.path.exists(session['final_name']) or audio_sentences_exist:
-                    msg = f"Warning! The final file {Path(session['final_name']).name} already exists or some sentences are already converted. Continue? WARNING! The whole previous conversion will be deleted!"
+                if audio_pre_final_exist or audio_sentences_exist:
+                    msg = f"Warning! The final file {Path(session['final_name']).name} already exists. Continue? WARNING! The whole previous conversion will be deleted!" if audio_pre_final_exist else f"Warning! Some sentences are already converted. Resume?"
                     print(msg)
                     while True:
                         choice = input("[s]kip / [y]es: ").strip().lower()
@@ -2728,7 +2728,8 @@ def convert_ebook(args:dict)->tuple:
                             break
                         print("Please enter 's', or 'y'.")
                     if choice == 'y':
-                        shutil.rmtree(session['process_dir'], ignore_errors=True)
+                        if audio_pre_final_exist:
+                            delete_folder(session['process_dir'])
                     elif choice == 's':
                         msg = 'Conversion skipped.'
                         print(msg)
@@ -2843,7 +2844,6 @@ def convert_ebook(args:dict)->tuple:
                                         session['blocks_saved'] = load_json_blocks(session['blocks_saved_json']) 
                                         session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                     missing_json = False
-                                print(f"session['blocks_current']: {session['blocks_current']}")
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
                                     metadata = dict(session['metadata'])
