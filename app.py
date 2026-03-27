@@ -1,4 +1,4 @@
-import argparse, socket, multiprocessing, sys, warnings
+import argparse, socket, multiprocessing, sys, uuid, warnings
 
 from lib.conf import *
 from lib.conf_lang import default_language_code
