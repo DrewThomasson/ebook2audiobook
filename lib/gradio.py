@@ -1860,7 +1860,7 @@ def build_interface(args:dict)->gr.Blocks:
             def click_reset_block(session_id:str, block_id:int)->dict:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    text = session['blocks_orig'][block_id]['text']
+                    text = session['blocks_orig']['blocks'][block_id]['text']
                     return gr.update(value=text)
                 return gr.update()
 
