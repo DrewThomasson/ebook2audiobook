@@ -2622,7 +2622,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             subtree: true
                                         });
                                         // Keep your progress observer too
-                                        new MutationObserver(tab_progress).observe(gr_progress, {
+                                        new MutationObserver(tab_progress).observe(gr_progress.parentElement, {
                                             attributes: true,
                                             childList: true,
                                             subtree: true,
@@ -2817,28 +2817,24 @@ def build_interface(args:dict)->gr.Blocks:
                                 };
                             }
                             if(typeof(window.tab_progress) !== "function"){
-                                window.tab_progress = ()=>{
-                                    try{
-                                        const val = gr_progress?.value || gr_progress?.textContent || "";
-                                        const valArray = splitAtLastDash(val);
-                                        if(valArray[1]){
-                                            const title = valArray[0].trim().split(/ (.*)/)[1].trim();
-                                            const percentage = valArray[1].trim();
-                                            const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
-                                            document.title = titleShort + ": " + percentage;
-                                        }else{
-                                            document.title = "Ebook2Audiobook";
-                                        }
-                                    }catch(e){
-                                        console.warn("tab_progress error:", e);
-                                    }
-                                };
-                            }
-                            if(!window._tab_progress_observer && gr_progress){
-                                window._tab_progress_observer = new MutationObserver(window.tab_progress);
-                                window._tab_progress_observer.observe(gr_progress, {
-                                    childList: true, subtree: true, characterData: true
-                                });
+								window.tab_progress = ()=>{
+									try{
+										const gr_root = (window.gradioApp && window.gradioApp()) || document;
+										const el = gr_root.querySelector("#gr_progress");
+										const val = el?.value || el?.textContent || "";
+										const valArray = splitAtLastDash(val);
+										if(valArray[1]){
+											const title = valArray[0].trim().split(/ (.*)/)[1].trim();
+											const percentage = valArray[1].trim();
+											const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
+											document.title = titleShort + ": " + percentage;
+										}else{
+											document.title = "Ebook2Audiobook";
+										}
+									}catch(e){
+										console.warn("tab_progress error:", e);
+									}
+								};
                             }
                             if(typeof(splitAtLastDash) !== "function"){
                                 function splitAtLastDash(s){
