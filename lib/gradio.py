@@ -1709,15 +1709,15 @@ def build_interface(args:dict)->gr.Blocks:
                                             if progress_status == status_tags['BLOCKS']:
                                                 session['status'] = progress_status
                                                 return gr.update(value=session['status'])
-                                            filename = os.path.basename(args['ebook'])
-                                            ebook_list = args['ebook_list'][:]
-                                            count_file = len(ebook_list)
-                                            reset_ebook_session(session_id, force=True, filter_keys=False)
-                                            if count_file > 0:
-                                                yield gr.update(value=filename)
-                                            else:
-                                                session['ebook_list'] = None
-                                                return gr.update(value=msg)
+                                        filename = os.path.basename(args['ebook'])
+                                        ebook_list = args['ebook_list'][:]
+                                        count_file = len(ebook_list)
+                                        reset_ebook_session(session_id, force=True, filter_keys=False)
+                                        if count_file > 0:
+                                            yield gr.update(value=filename)
+                                        else:
+                                            session['ebook_list'] = None
+                                            return gr.update(value=msg)
                                     else:
                                         error = progress_status
                                         break
