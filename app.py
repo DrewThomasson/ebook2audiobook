@@ -302,9 +302,9 @@ SML tags available:
                         print(error)
                         sys.exit(1)
             elif args.get('ebook', None) is not None:
-                args['ebook'] = os.path.abspath(args['ebook'])
-                if not os.path.exists(args['ebook']):
-                    error = f"Error: The provided --ebook {args['ebook']} does not exist."
+                args['ebook_src'] = os.path.abspath(args['ebook'])
+                if not os.path.exists(args['ebook_src']):
+                    error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
                     print(error)
                     sys.exit(1) 
                 progress_status, passed = c.convert_ebook(args)

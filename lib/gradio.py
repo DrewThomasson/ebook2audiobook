@@ -1677,7 +1677,7 @@ def build_interface(args:dict)->gr.Blocks:
                             "blocks_preview": blocks_preview,
                             "device": device,
                             "tts_engine": tts_engine,
-                            "ebook": session['ebook_list'][0] if session.get('ebook_list') and session['status'] == status_tags['LOOP'] else ebook_file if isinstance(ebook_file, str) else None,
+                            "ebook_src": session['ebook_list'][0] if session.get('ebook_list') and session['status'] == status_tags['LOOP'] else ebook_file if isinstance(ebook_file, str) else None,
                             "ebook_list": session['ebook_list'] if session.get('ebook_list') and session['status'] == status_tags['LOOP'] else ebook_file if isinstance(ebook_file, list) else None,
                             "voice": voice,
                             "language": language,
@@ -1699,7 +1699,7 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split_hours": output_split_hours,
                         }
                         error = None
-                        if args['ebook'] is None and args['ebook_list'] is None:
+                        if args['ebook_src'] is None and args['ebook_list'] is None:
                             error = 'Error: a file or directory is required.'
                             show_alert(session_id, {"type": "warning", "msg": error})
                         elif args['xtts_num_beams'] < args['xtts_length_penalty']:
@@ -1716,8 +1716,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 session['status'] = progress_status
                                                 return gr.update(value=session['status'])
                                             else:
-                                                filename = progress_status
-                                                yield gr.update(value=filename)
+                                                yield gr.update(value=progress_status)
                                         else:
                                             session['ebook_list'] = None
                                             reset_ebook_session(session_id, force=True, filter_keys=False)
@@ -1726,7 +1725,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         error = progress_status
                                         break
                             else:
-                                print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
+                                print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
                                     if progress_status == status_tags['BLOCKS']:

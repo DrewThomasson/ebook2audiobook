@@ -199,6 +199,7 @@ class SessionContext:
             "audiobooks_dir": None,
             ####### Ebook conversion
             "ebook": None,
+            "ebook_src": None,
             "ebook_list": None,
             "process_dir": None,
             "chapters_dir": None,
@@ -293,7 +294,7 @@ class JSONDictProxyEncoder(json.JSONEncoder):
         
 ############# End classes
 
-def prepare_dirs(src:str, session_id:str)->bool:
+def prepare_dirs(session_id:str)->bool:
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
@@ -306,8 +307,6 @@ def prepare_dirs(src:str, session_id:str)->bool:
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
-            session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
-            shutil.copy(src, session['ebook'])
             return True
     except Exception as e:
         DependencyError(e)
@@ -2616,10 +2615,6 @@ def convert_ebook_directory(args:dict)->tuple:
                         print(f'Processing eBook file: {os.path.basename(file)}')
                         progress_status, passed = convert_ebook(args)
                         if passed:
-                            args['ebook_list'].remove(file)
-                            session['ebook_list'] = args['ebook_list']
-                            if args['is_gui_process'] and progress_status != status_tags['BLOCKS']:
-                                progress_status = file
                             yield progress_status, passed
                         else:
                             return progress_status, passed
@@ -2676,7 +2671,7 @@ def convert_ebook(args:dict)->tuple:
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
-            session['ebook'] = str(args['ebook']) if args.get('ebook') else None
+            session['ebook_src'] = str(args['ebook_src']) if args.get('ebook_src') else None
             session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['device'] = str(args['device'])
@@ -2702,7 +2697,7 @@ def convert_ebook(args:dict)->tuple:
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
-            ebook_name = get_sanitized(Path(session['ebook']).stem)
+            ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             cleanup_models_cache()
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + '.' + session['output_format']
@@ -2774,7 +2769,9 @@ def convert_ebook(args:dict)->tuple:
                     if not is_installed:
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
-                    if prepare_dirs(session['ebook'], session_id):
+                    if prepare_dirs(session_id):
+                        session['ebook'] = os.path.join(session['process_dir'], os.path.basename(session['ebook_src']))
+                        shutil.copy(src, session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
                         msg_extra = ''
@@ -2936,7 +2933,6 @@ def finalize_audiobook(session_id:str)->tuple:
 
         def fail(error):
             session['status'] = status_tags['READY']
-            session['ebook'] = None
             if session['blocks_preview']:
                 show_alert(session_id, {"type": "warning", "msg": error})
             return result(error, False)
@@ -2987,19 +2983,17 @@ def finalize_audiobook(session_id:str)->tuple:
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         if isinstance(session['ebook_list'], list) and session['ebook_list']:
-            ebook_name = Path(session['ebook']).name
-            session['ebook_list'] = [p for p in session['ebook_list'] if Path(p).name != ebook_name]
-            session['ebook'] = None
-            remaining = len(session['ebook_list'])
-            if remaining > 0:
+            session['ebook_list'].remove(session['ebook_src'])
+            files_remaining = len(session['ebook_list'])
+            if files_remaining > 0:
                 session['status'] = status_tags['LOOP']
-                show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {remaining} ebook(s) conversion remaining…"})
+                show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {files_remaining} ebook(s) conversion remaining…"})
                 return result(filename, True)
         session['status'] = status_tags['READY']
         session['ebook_list'] = None
-        session['ebook'] = None
         show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
         print(f'*********** Session: {session_id} **************\n{session_info}')
+        reset_ebook_session(session_id, force=True, filter_keys=False)
         return result(filename, True)
     except Exception as e:
         DependencyError(e)
@@ -3043,6 +3037,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
+        "ebook_src": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
