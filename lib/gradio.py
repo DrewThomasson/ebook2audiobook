@@ -7,7 +7,7 @@ def build_interface(args:dict)->gr.Blocks:
         is_gui_process = args['is_gui_process']
         is_gui_shared = args['share']
         title = 'Ebook2Audiobook'
-        gr_glassmask_msg = 'Initialization, please wait...'
+        gr_glassmask_msg = 'Initialization, please wait…'
         models = None
         ebook_src = None
         language_options = [
@@ -717,7 +717,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                     gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
                     gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
-                    gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, lines=3, max_lines=3)
+                    gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
                     gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
                     with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
                         gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
@@ -1127,7 +1127,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if data is None:
                             if session.get('status', None) == status_tags['CONVERTING']:
                                 session['cancellation_requested'] = True
-                                msg = 'Cancellation requested, please wait...'
+                                msg = 'Cancellation requested, please wait…'
                                 yield gr.update(value=show_gr_modal('wait', msg), visible=True)
                                 return
                         if isinstance(data, list):
@@ -1716,7 +1716,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             reset_ebook_session(session_id, force=True, filter_keys=False)
                                             if count_file > 0:
                                                 yield gr.update(value=filename)
-                                                return
                                             else:
                                                 return gr.update(value=msg)
                                     else:
@@ -2594,7 +2593,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_progress = gr_root.querySelector("#gr_progress");
                                         if(!gr_root || !gr_progress){
                                             clearTimeout(init_elements_timeout);
-                                            console.warn("Components not ready... retrying");
+                                            console.warn("Components not ready… retrying");
                                             init_elements_timeout = setTimeout(init_interface, 1000);
                                             return;
                                         }
@@ -2710,7 +2709,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             });
                                             return true;
                                         }else{
-                                            console.warn("Voice player not found yet, retrying...");
+                                            console.warn("Voice player not found yet, retrying…");
                                             setTimeout(window.init_voice_player_hidden, 500);
                                         }
                                     }catch(e){
@@ -2779,7 +2778,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                     requestAnimationFrame(trackPlayback);
                                                 });
                                                 gr_audiobook_player.addEventListener("ended", ()=>{
-                                                    gr_audiobook_sentence.value = "...";
+                                                    gr_audiobook_sentence.value = "…";
                                                     window.session_storage.playback_time = 0;
                                                     lastCue = null;
                                                 });
@@ -2861,7 +2860,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             gr_audiobook_sentence.style.lineHeight = "14px";
                                             const txt = gr_audiobook_vtt.value;
                                             if(txt == ""){
-                                                gr_audiobook_sentence.value = "...";
+                                                gr_audiobook_sentence.value = "…";
                                             }else{
                                                 parseVTT(txt);
                                             }

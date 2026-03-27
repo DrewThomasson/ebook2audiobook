@@ -385,7 +385,7 @@ def extract_custom_model(session_id)->str|None:
                 model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
                 os.makedirs(model_path, exist_ok=True)
                 required_files_lc = set(x.lower() for x in required_files)
-                msg = f'Extracting files to {model_path}...'
+                msg = f'Extracting files to {model_path}…'
                 with tqdm(total=files_length, unit='files') as t:
                     for f in files:
                         base_f = os.path.basename(f).lower()
@@ -2991,7 +2991,7 @@ def finalize_audiobook(session_id:str)->tuple:
             remaining = len(session['ebook_list'])
             if remaining > 0:
                 session['status'] = status_tags['LOOP']
-                show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {remaining} ebook(s) conversion remaining..."})
+                show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {remaining} ebook(s) conversion remaining…"})
                 return result(filename, True)
         session['status'] = status_tags['READY']
         session['ebook_list'] = None
