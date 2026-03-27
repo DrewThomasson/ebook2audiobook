@@ -1897,7 +1897,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session['status'] = status_tags['READY']
                     change_saved_blocks(session, page, blocks, *args)
-                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), new_blocks
+                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), session['blocks_current']['blocks']
 
             def click_gr_blocks_confirm_btn(session_id:str, page:int, blocks:list[dict], *args, event:int)->tuple:
                 session = context.get_session(session_id)
