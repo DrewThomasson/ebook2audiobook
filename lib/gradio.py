@@ -1716,6 +1716,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             if count_file > 0:
                                                 yield gr.update(value=filename)
                                             else:
+                                                session['ebook_list'] = None
                                                 return gr.update(value=msg)
                                     else:
                                         error = progress_status
