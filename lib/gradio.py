@@ -1705,18 +1705,18 @@ def build_interface(args:dict)->gr.Blocks:
                             if isinstance(args['ebook_list'], list):
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
-                                        if len(session['ebook_list']) > 0:
+                                        ebook_list = args['ebook_list'][:]
+                                        count_file = len(ebook_list)
+                                        if count_file > 0:
                                             if progress_status == status_tags['BLOCKS']:
                                                 session['status'] = progress_status
                                                 return gr.update(value=session['status'])
-                                        filename = os.path.basename(args['ebook'])
-                                        ebook_list = args['ebook_list'][:]
-                                        count_file = len(ebook_list)
-                                        reset_ebook_session(session_id, force=True, filter_keys=False)
-                                        if count_file > 0:
-                                            yield gr.update(value=filename)
+                                            else:
+                                                filename = os.path.basename(args['ebook'])
+                                                yield gr.update(value=filename)
                                         else:
                                             session['ebook_list'] = None
+                                            reset_ebook_session(session_id, force=True, filter_keys=False)
                                             return gr.update(value=msg)
                                     else:
                                         error = progress_status
