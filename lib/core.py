@@ -2720,7 +2720,7 @@ def convert_ebook(args:dict)->tuple:
                 audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
                 if audio_pre_final_exist or audio_sentences_exist:
-                    msg = f"Warning! The final file {Path(session['final_name']).name} already exists. Continue? WARNING! The whole previous conversion will be deleted!" if audio_pre_final_exist else f"Warning! Some sentences are already converted. Resume?"
+                    msg = f"Warning! This conversion already exists. Continue? WARNING! The whole previous conversion will be deleted!" if audio_pre_final_exist else f"Warning! Some sentences are already converted. Resume?"
                     print(msg)
                     while True:
                         choice = input("[s]kip / [y]es: ").strip().lower()
