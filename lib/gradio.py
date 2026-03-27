@@ -2834,6 +2834,12 @@ def build_interface(args:dict)->gr.Blocks:
                                     }
                                 };
                             }
+                            if(!window._tab_progress_observer && gr_progress){
+                                window._tab_progress_observer = new MutationObserver(window.tab_progress);
+                                window._tab_progress_observer.observe(gr_progress, {
+                                    childList: true, subtree: true, characterData: true
+                                });
+                            }
                             if(typeof(splitAtLastDash) !== "function"){
                                 function splitAtLastDash(s){
                                     const idx = s.lastIndexOf("-");
