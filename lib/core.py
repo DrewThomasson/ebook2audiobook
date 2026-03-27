@@ -2604,7 +2604,7 @@ def get_compatible_tts_engines(language:str)->list[str]:
     ]
 
 def convert_ebook_directory(args:dict)->tuple:
-    error = ''
+    error = 'unknown error!'
     passed = False
     try:
         if isinstance(args['ebook_list'], list):
