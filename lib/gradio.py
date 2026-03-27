@@ -2451,6 +2451,15 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_group_main, gr_group_blocks, gr_blocks_event]
             )
+            gr_blocks_confirm_btn.click(
+                fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data]
+            ).then(
+                fn=click_gr_blocks_confirm_btn,
+                inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
+                outputs=[gr_group_main, gr_group_blocks, gr_blocks_event]
+            )
             gr_blocks_event.change(
                 fn=finalize_audiobook,
                 inputs=[gr_session],
