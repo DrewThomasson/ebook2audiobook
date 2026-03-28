@@ -297,7 +297,11 @@ SML tags available:
                         args['ebook_list'].append(full_path)
                 error = None
                 for progress_status, passed in c.convert_ebook_directory(args):
-                    if not passed:
+                    if passed:
+                        c.reset_ebook_session(args['id'], force=True, filter_keys=False)
+                        c.context.sessions[args['id']]['ebook_list'] = None
+                        c.context.sessions[args['id']]['status'] = c.status_tags['READY']
+                    else:
                         error = progress_status
                         print(error)
                         sys.exit(1)
