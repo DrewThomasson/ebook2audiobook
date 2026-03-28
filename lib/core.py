@@ -2616,7 +2616,6 @@ def convert_ebook_directory(args:dict)->tuple:
                             remaining = total - (i + 1)
                             session['ebook_list'] = ebook_list[i + 1:]
                             if remaining > 0:
-                                show_alert(args['id'], {"type": "success", "msg": f"{progress_status} / converted. {remaining} ebook(s) conversion remaining…"})
                                 yield progress_status, passed
                             else:
                                 reset_ebook_session(args['id'], force=True, filter_keys=False)
@@ -2990,11 +2989,14 @@ def finalize_audiobook(session_id:str)->tuple:
             return fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
-        show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
-        if session['ebook_list'] is None or len(session['ebook_list']) == 0:
+        count_ebook = len(session['ebook_list']) if session['ebook_list'] is not None else 0
+        if session['ebook_list'] is None or count_ebook == 0:
+            show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
             reset_ebook_session(session_id, force=True, filter_keys=False)
             session['status'] = status_tags['READY']
+        else:
+            show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         return result(filename, True)
     except Exception as e:
         DependencyError(e)
