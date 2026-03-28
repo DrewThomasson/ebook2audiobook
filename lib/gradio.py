@@ -1134,8 +1134,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if session.get('status', None) == status_tags['CONVERTING']:
                                 session['cancellation_requested'] = True
                                 msg = 'Cancellation requested, please wait…'
-                                yield gr.update(value=show_gr_modal('wait', msg), visible=True)
-                                return
+                                return gr.update(value=show_gr_modal('wait', msg), visible=True)
                         if isinstance(data, list):
                             ebook_list = []
                             for f in data:
