@@ -66,7 +66,6 @@ status_tags = {
     "DELETION": "deletion",
     "READY": "ready",
     "CONVERTING": "converting",
-    "LOOP": "loop",
     "DISCONNECTED": "disconnected"
 }
 
@@ -106,10 +105,9 @@ class SessionTracker:
     def start_session(self, session_id:str)->bool:
         with self.lock:
             session = context.get_session(session_id)
-            if session['status'] is None:
-                session['status'] = status_tags['READY']
-                #self.blocks_autosave.register(session_id)
-                return True
+            session['status'] = status_tags['READY']
+            #self.blocks_autosave.register(session_id)
+            return True
         return False
 
     def end_session(self, session_id:str, socket_hash:str)->None:
@@ -2605,6 +2603,7 @@ def get_compatible_tts_engines(language:str)->list[str]:
 def convert_ebook_directory(args:dict)->tuple:
     try:
         passed = False
+        session['status'] = status_tags['READY']
         if isinstance(args['ebook_list'], list):
             session = context.get_session(args['id'])
             if session and session.get('id', False):
@@ -2618,14 +2617,15 @@ def convert_ebook_directory(args:dict)->tuple:
                             remaining = total - (i + 1)
                             session['ebook_list'] = ebook_list[i + 1:]
                             if remaining > 0:
-                                session['status'] = status_tags['LOOP']
                                 show_alert(args['id'], {"type": "success", "msg": f"{progress_status} / converted. {remaining} ebook(s) conversion remaining…"})
                                 yield progress_status, passed
                             else:
+                                session['status'] = status_tags['READY']
                                 reset_ebook_session(args['id'], force=True, filter_keys=False)
                                 session['ebook_list'] = None
                                 return progress_status, passed
                         else:
+                            session['status'] = status_tags['READY']
                             return progress_status, passed
         else:
             error = 'the ebooks source is not a list!'
@@ -2677,6 +2677,7 @@ def convert_ebook(args:dict)->tuple:
                     print(error)
                     return error, False
             reset_ebook_session(session_id, force=True, filter_keys=False)
+            session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
@@ -2955,12 +2956,11 @@ def finalize_audiobook(session_id:str)->tuple:
                 context_tracker.end_session(session_id, session['socket_hash'])
                 return result('Frontend disconnected!', False)
             return result('Conversion cancelled', False)
-        session['status'] = status_tags['CONVERTING']
         print(f'*********** Session: {session_id} **************\n{session_info}')
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             return result('No blocks have been selected for the conversion!', False)
         if not session.get('blocks_current', {}):
-            return fail('finalize_audiobook() failed!')
+            return fail('finalize_audiobook() failed! blocks_current empty!')
         print('Get sentences…')
         blocks_saved = session['blocks_saved']
         blocks_prev = blocks_saved['blocks']
@@ -2993,8 +2993,7 @@ def finalize_audiobook(session_id:str)->tuple:
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
-        if session['ebook_list'] is None and len(session['ebook_list']) == 0:
-            session['status'] = status_tags['READY']
+        if session['ebook_list'] is None or len(session['ebook_list']) == 0:
             print(f'*********** Session: {session_id} **************\n{session_info}')
             reset_ebook_session(session_id, force=True, filter_keys=False)
         return result(filename, True)

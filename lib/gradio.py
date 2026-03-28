@@ -849,7 +849,7 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] not in [status_tags['BLOCKS'], status_tags['LOOP']]:
+                    if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
                         outputs = tuple([gr.update(interactive=True) for _ in range(12)])
                         return outputs
                 outputs = tuple([gr.update() for _ in range(12)])
@@ -1046,11 +1046,12 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] not in [status_tags['BLOCKS'], status_tags['LOOP']]:
+                    if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
                         visible_main = True
                         visible_xtts = False
                         visible_bark = False
-                        interactive_convert_btn = True if session['ebook'] else False
+                        ebook_data = session['ebook_list'] if session['ebook_list'] is not None else session['ebook']
+                        interactive_convert_btn = True if ebook_data is not None else False
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -1059,10 +1060,10 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
                             gr.update(interactive=interactive_convert_btn), gr.update(value=session['ebook']), gr.update(value=session['device']), 
-                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
+                            update_gr_audiobook_list(session_id), gr.update(value=ebook_data),
                             update_gr_voice_list(session_id), gr.update(value='')
                         )
-                    elif session['status'] == status_tags['LOOP']:
+                    elif session['status'] == status_tags['CONVERTING']:
                         return (
                             gr.update(), gr.update(), gr.update(),
                             gr.update(), gr.update(), gr.update(value=session['ebook_list']),
@@ -1671,8 +1672,8 @@ def build_interface(args:dict)->gr.Blocks:
                             "blocks_preview": blocks_preview,
                             "device": device,
                             "tts_engine": tts_engine,
-                            "ebook_src": session['ebook_list'][0] if session.get('ebook_list') and session['status'] == status_tags['LOOP'] else ebook_file if isinstance(ebook_file, str) else None,
-                            "ebook_list": session['ebook_list'] if session.get('ebook_list') and session['status'] == status_tags['LOOP'] else ebook_file if isinstance(ebook_file, list) else None,
+                            "ebook_src": ebook_file[0] if isinstance(ebook_file, list) else ebook_file,
+                            "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
                             "voice": voice,
                             "language": language,
                             "custom_model": custom_model,
@@ -1705,7 +1706,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
                                         if progress_status == status_tags['BLOCKS']:
-                                            session['status'] = progress_status
                                             return gr.update(value=session['status'])
                                         else:
                                             yield gr.update(value=progress_status)
@@ -1769,7 +1769,7 @@ def build_interface(args:dict)->gr.Blocks:
             def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] == status_tags['LOOP']:
+                    if session['status'] == status_tags['CONVERTING']:
                         sources = session['ebook_list'] if isinstance(session['ebook_list'], list) else []
                     else:
                         sources = data if isinstance(data, list) else [data] if data else []
@@ -1910,7 +1910,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.set_session(data.get('id'))
                     if len(active_sessions) == 0 or (data and data.get('status', None) is None):
                         restore_session_from_data(data, session, force=False, filter_keys=True)
-                        session['status'] = None
                     if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                         return gr.update(), gr.update(), gr.update(value=''), update_gr_glassmask(str=error)

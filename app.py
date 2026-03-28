@@ -306,7 +306,7 @@ SML tags available:
                 if not os.path.exists(args['ebook_src']):
                     error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
                     print(error)
-                    sys.exit(1) 
+                    sys.exit(1)
                 progress_status, passed = c.convert_ebook(args)
                 if not passed:
                     error = progress_status
