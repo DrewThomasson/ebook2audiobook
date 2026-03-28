@@ -1129,7 +1129,7 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['status'] != status_tags['CONVERTING']:
+                        if not status_tags['CONVERTING']:
                             if data is None:
                                 if session.get('status', None):
                                     session['cancellation_requested'] = True
@@ -1929,7 +1929,7 @@ def build_interface(args:dict)->gr.Blocks:
                     else:
                         active_sessions.add(req.session_hash)
                         session[req.session_hash] = req.session_hash
-                    session['cancellation_requested'] = False
+                        session['cancellation_requested'] = False
                     if isinstance(session.get('ebook'), str):
                         if not os.path.exists(session['ebook']):
                             session['ebook'] = session['ebook_src'] = None
