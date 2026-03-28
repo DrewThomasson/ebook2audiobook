@@ -2982,8 +2982,9 @@ def finalize_audiobook(session_id:str)->tuple:
             return fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
-        if isinstance(session['ebook_list'], list) and session['ebook_list']:
+        if session.get('ebook_list', None) is not None:
             session['ebook_list'].remove(session['ebook_src'])
+            print(f"----------------------{session['ebook_list']}---------------")
             files_remaining = len(session['ebook_list'])
             if files_remaining > 0:
                 session['status'] = status_tags['LOOP']
