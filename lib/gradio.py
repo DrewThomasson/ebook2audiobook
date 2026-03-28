@@ -1721,8 +1721,8 @@ def build_interface(args:dict)->gr.Blocks:
                                             else:
                                                 yield gr.update(value=progress_status)
                                     else:
+                                        print('FFFFFFFFFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA')
                                         reset_ebook_session(args['id'], force=True, filter_keys=False)
-                                        session['status'] = status_tags['READY']
                                         error = progress_status
                                         break
                             else:
