@@ -2822,11 +2822,13 @@ def convert_ebook(args:dict)->tuple:
                                 os.environ['SUNO_OFFLOAD_CPU'] = "False"
                                 os.environ['SUNO_USE_SMALL_MODELS'] = "False"
                         if msg == '':
-                            msg = f"Using {session['device'].upper()}"
-                        msg += msg_extra;
+                            msg_extra = f"Using {session['device'].upper()}" + msg_extra
                         device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
                         if float(total_vram_gb) >= float(device_vram_required):
-                            show_alert(session_id, {"type": "info", "msg": msg})
+                            if msg:
+                                show_alert(session_id, {"type": "warning", "msg": msg + msg_extra})
+                            else:
+                                show_alert(session_id, {"type": "info", "msg": msg_extra})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             checksum, error = compare_checksums(session_id)
                             if not checksum:
