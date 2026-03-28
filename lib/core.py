@@ -2950,8 +2950,10 @@ def finalize_audiobook(session_id:str)->tuple:
             if session['status'] == status_tags['DISCONNECTED']:
                 session['status'] = None
                 context_tracker.end_session(session_id, session['socket_hash'])
-                return result('Frontend disconnected!', False)
-            return result('Conversion cancelled', False)
+                msg = 'Frontend disconnected!'
+                return result(msg, False)
+            msg = 'Conversion cancelled'
+            return result(msg, False)
         print(f'*********** Session: {session_id} **************\n{session_info}')
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             return result('No blocks have been selected for the conversion!', False)

@@ -1722,6 +1722,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 yield gr.update(value=progress_status)
                                     else:
                                         error = progress_status
+                                        break
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
                                 progress_status, passed = convert_ebook(args)
@@ -1740,7 +1741,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
                         session['status'] = status_tags['READY']
-                        return gr.update(value=error)
+                        return gr.update()
                 except Exception as e:
                     error = f'start_conversion(): {e}'
                     exception_alert(session_id, error)
