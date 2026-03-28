@@ -1129,7 +1129,7 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if not status_tags['CONVERTING']:
+                        if session['status'] != status_tags['CONVERTING']:
                             if data is None:
                                 if session.get('status', None):
                                     session['cancellation_requested'] = True
