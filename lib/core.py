@@ -2985,7 +2985,6 @@ def finalize_audiobook(session_id:str)->tuple:
         if session.get('ebook_list', None) is not None:
             if session['ebook_src'] in session['ebook_list']:
                 session['ebook_list'].remove(session['ebook_src'])
-                print(f"----------------------{session['ebook_list']}---------------")
                 files_remaining = len(session['ebook_list'])
                 if files_remaining > 0:
                     session['status'] = status_tags['LOOP']
