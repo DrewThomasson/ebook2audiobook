@@ -2627,7 +2627,7 @@ def convert_ebook_directory(args:dict)->tuple:
 
 def convert_ebook(args:dict)->tuple:
     try:
-        global context        
+        global context
         error = None
         session_id = None
         info_session = None
@@ -2771,7 +2771,7 @@ def convert_ebook(args:dict)->tuple:
                 if error is None:
                     if prepare_dirs(session_id):
                         session['ebook'] = os.path.join(session['process_dir'], os.path.basename(session['ebook_src']))
-                        shutil.copy(src, session['ebook'])
+                        shutil.copy(session['ebook_src'], session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
                         msg_extra = ''
