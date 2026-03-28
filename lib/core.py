@@ -2620,7 +2620,10 @@ def convert_ebook_directory(args:dict)->tuple:
                             if remaining > 0:
                                 session['status'] = status_tags['LOOP']
                                 yield progress_status, passed
-                        return progress_status, passed
+                            else:
+                                return progress_status, passed
+                        else:
+                            return progress_status, passed
         else:
             error = 'the ebooks source is not a list!'
             return error, False
@@ -2990,7 +2993,7 @@ def finalize_audiobook(session_id:str)->tuple:
         if ebook_list is not None and len(ebook_list) > 1:
             session['status'] = status_tags['LOOP']
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {len(ebook_list) - 1} ebook(s) conversion remaining…"})
-            yield result(filename, True)
+            return result(filename, True)
         session['status'] = status_tags['READY']
         session['ebook_list'] = None
         show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
