@@ -2608,17 +2608,22 @@ def convert_ebook_directory(args:dict)->tuple:
         if isinstance(args['ebook_list'], list):
             session = context.get_session(args['id'])
             if session and session.get('id', False):
-                ebook_list = session['ebook_list'][:] # Use a shallow copy
-                for file in ebook_list:
+                ebook_list = session['ebook_list'][:]
+                total = len(ebook_list)
+                for i, file in enumerate(ebook_list):
                     if any(file.endswith(ext) for ext in ebook_formats):
                         args['ebook_src'] = file
                         progress_status, passed = convert_ebook(args)
                         if passed:
+                            remaining = total - (i + 1)
+                            session['ebook_list'] = ebook_list[i + 1:]
+                            if remaining > 0:
+                                session['status'] = status_tags['LOOP']
                             yield progress_status, passed
                         else:
                             return progress_status, passed
         else:
-            error = f'the ebooks source is not a list!'   
+            error = 'the ebooks source is not a list!'
             return error, False
     except Exception as e:
         error = f'Error convert_ebook_directory(): {e}'
@@ -2982,16 +2987,11 @@ def finalize_audiobook(session_id:str)->tuple:
             return fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
-        if session.get('ebook_list', None) is not None:
-            ebook_list = session['ebook_list']
-            ebook_src = session['ebook_src']
-            if ebook_src in ebook_list:
-                ebook_list.remove(ebook_src)
-                session['ebook_list'] = ebook_list
-            if len(ebook_list) > 0:
-                session['status'] = status_tags['LOOP']
-                show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {len(ebook_list)} ebook(s) conversion remaining…"})
-                return result(filename, True)
+        ebook_list = session.get('ebook_list', None)
+        if ebook_list is not None and len(ebook_list) > 1:
+            session['status'] = status_tags['LOOP']
+            show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {len(ebook_list) - 1} ebook(s) conversion remaining…"})
+            return result(filename, True)
         session['status'] = status_tags['READY']
         session['ebook_list'] = None
         show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
