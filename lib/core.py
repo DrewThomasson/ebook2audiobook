@@ -2604,7 +2604,7 @@ def convert_ebook_directory(args:dict)->tuple:
     try:
         passed = False
         if isinstance(args['ebook_list'], list):
-            ebook_list = args['ebook_list'][:]
+            ebook_list = copy.deepcopy(args['ebook_list'])
             total = len(ebook_list)
             for i, file in enumerate(ebook_list):
                 if any(file.endswith(ext) for ext in ebook_formats):
