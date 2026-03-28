@@ -2014,7 +2014,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
                 msg += f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
                 msg += f'<br/>---------'
-                show_alert(session_id, {"type": "warning", "msg": msg})
+                show_alert(session_id, {"type": "info", "msg": msg})
                 ebook_name = Path(session['ebook']).name
                 final_sentences = []
                 global_sent = 0
@@ -2826,7 +2826,7 @@ def convert_ebook(args:dict)->tuple:
                         msg += msg_extra;
                         device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
                         if float(total_vram_gb) >= float(device_vram_required):
-                            show_alert(session_id, {"type": "warning", "msg": msg})
+                            show_alert(session_id, {"type": "info", "msg": msg})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             checksum, error = compare_checksums(session_id)
                             if not checksum:

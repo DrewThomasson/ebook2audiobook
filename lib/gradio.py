@@ -1293,7 +1293,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
                                 msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                                 session['voice'] = None
-                                show_alert(session_id, {"type": "warning", "msg": msg})
+                                show_alert(session_id, {"type": "info", "msg": msg})
                                 return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                             elif method == 'confirm_custom_model_del':
                                 selected_name = os.path.basename(custom_model)
@@ -1303,7 +1303,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if session['custom_model'] in session['voice']:
                                         session['voice'] = models[session['fine_tuned']]['voice']
                                 session['custom_model'] = None
-                                show_alert(session_id, {"type": "warning", "msg": msg})
+                                show_alert(session_id, {"type": "info", "msg": msg})
                                 return gr.update(value='', visible=False), update_gr_custom_model_list(session_id), gr.update(),  gr.update()
                             elif method == 'confirm_audiobook_del':
                                 selected_name = Path(audiobook).stem
@@ -1318,7 +1318,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 shutil.rmtree(process_dir, ignore_errors=True)
                                 msg = f'Audiobook {selected_name} deleted!'
                                 session['audiobook'] = None
-                                show_alert(session_id, {"type": "warning", "msg": msg})
+                                show_alert(session_id, {"type": "info", "msg": msg})
                                 return gr.update(value='', visible=False), gr.update(), update_gr_audiobook_list(session_id), gr.update()
                 except Exception as e:
                     error = f'click_gr_deletion(): {e}!'
