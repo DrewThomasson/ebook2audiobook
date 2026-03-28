@@ -2992,13 +2992,11 @@ def finalize_audiobook(session_id:str)->tuple:
             return fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
-        ebook_list = session.get('ebook_list', None)
-        if ebook_list is not None and len(ebook_list) > 0:
-            return result(filename, True)
-        session['status'] = status_tags['READY']
         show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
-        print(f'*********** Session: {session_id} **************\n{session_info}')
-        reset_ebook_session(session_id, force=True, filter_keys=False)
+        if session['ebook_list'] is None and len(session['ebook_list']) == 0:
+            session['status'] = status_tags['READY']
+            print(f'*********** Session: {session_id} **************\n{session_info}')
+            reset_ebook_session(session_id, force=True, filter_keys=False)
         return result(filename, True)
     except Exception as e:
         DependencyError(e)
