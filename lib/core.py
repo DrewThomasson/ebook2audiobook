@@ -2995,7 +2995,7 @@ def finalize_audiobook(session_id:str)->tuple:
             print(f'*********** Session: {session_id} **************\n{session_info}')
             reset_ebook_session(session_id, force=True, filter_keys=False)
             session['status'] = status_tags['READY']
-        else:
+        elif count_ebook > 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         return result(filename, True)
     except Exception as e:
