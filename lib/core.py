@@ -2617,7 +2617,7 @@ def convert_ebook_directory(args:dict)->tuple:
                         if passed:
                             remaining = total - (i + 1)
                             session['ebook_list'] = ebook_list[i + 1:]
-                            if remaining > 1:
+                            if remaining > 0:
                                 session['status'] = status_tags['LOOP']
                                 show_alert(args['id'], {"type": "success", "msg": f"{progress_status} / converted. {remaining} ebook(s) conversion remaining…"})
                                 yield progress_status, passed
