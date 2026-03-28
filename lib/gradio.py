@@ -1722,7 +1722,6 @@ def build_interface(args:dict)->gr.Blocks:
                                                 yield gr.update(value=progress_status)
                                     else:
                                         error = progress_status
-                                        break
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
                                 progress_status, passed = convert_ebook(args)
