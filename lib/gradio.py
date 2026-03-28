@@ -1710,7 +1710,6 @@ def build_interface(args:dict)->gr.Blocks:
                                         elif progress_status:
                                             yield gr.update(value=progress_status)
                                         else:
-                                            session['ebook_list'] = None
                                             reset_ebook_session(session_id, force=True, filter_keys=False)
                                             return gr.update(value=msg)
                                     else:
