@@ -2983,13 +2983,14 @@ def finalize_audiobook(session_id:str)->tuple:
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         if session.get('ebook_list', []):
-            session['ebook_list'].remove(session['ebook_src'])
-            print(f"----------------------{session['ebook_src']}---------------")
-            files_remaining = len(session['ebook_list'])
-            if files_remaining > 0:
-                session['status'] = status_tags['LOOP']
-                show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {files_remaining} ebook(s) conversion remaining…"})
-                return result(filename, True)
+            if session['ebook_src'] in session['ebook_list']:
+                session['ebook_list'].remove(session['ebook_src'])
+                print(f"----------------------{session['ebook_src']}---------------")
+                files_remaining = len(session['ebook_list'])
+                if files_remaining > 0:
+                    session['status'] = status_tags['LOOP']
+                    show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {files_remaining} ebook(s) conversion remaining…"})
+                    return result(filename, True)
         session['status'] = status_tags['READY']
         session['ebook_list'] = None
         show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
