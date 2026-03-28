@@ -2611,8 +2611,8 @@ def convert_ebook_directory(args:dict)->tuple:
                     args['ebook_src'] = file
                     progress_status, passed = convert_ebook(args)
                     if passed:
-                        remaining = total - (i + 1)
-                        args['ebook_list'] = ebook_list[i + 1:]
+                        args['ebook_list'].remove(file)
+                        remaining = len(args['ebook_list'])
                         if remaining > 0:
                             yield progress_status, passed
                         else:
