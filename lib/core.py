@@ -2618,7 +2618,6 @@ def convert_ebook_directory(args:dict)->tuple:
                             remaining = total - (i + 1)
                             session['ebook_list'] = ebook_list[i + 1:]
                             if remaining > 1:
-                                session['status'] = status_tags['LOOP']
                                 yield progress_status, passed
                             else:
                                 return progress_status, passed
