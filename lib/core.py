@@ -2608,25 +2608,18 @@ def convert_ebook_directory(args:dict)->tuple:
             total = len(ebook_list)
             for i, file in enumerate(ebook_list):
                 if any(file.endswith(ext) for ext in ebook_formats):
-                    session = context.get_session(args['id'])
-                    if session and session.get('id', False):
-                        args['ebook_src'] = session['ebook_src'] = file
-                        progress_status, passed = convert_ebook(args)
-                        if passed:
-                            remaining = total - (i + 1)
-                            session['ebook_list'] = ebook_list[i + 1:]
-                            if remaining > 0:
-                                yield progress_status, passed
-                            else:
-                                reset_ebook_session(session['id'], force=True, filter_keys=False)
-                                session['ebook_list'] = None
-                                session['status'] = status_tags['READY']
-                                return progress_status, passed
+                    args['ebook_src'] = file
+                    progress_status, passed = convert_ebook(args)
+                    if passed:
+                        remaining = total - (i + 1)
+                        args['ebook_list'] = ebook_list[i + 1:]
+                        if remaining > 0:
+                            yield progress_status, passed
                         else:
+                            reset_ebook_session(args['id'], force=True, filter_keys=False)
                             return progress_status, passed
                     else:
-                        error = 'session expired or not exists!'
-                        return error, False
+                        return progress_status, passed
         else:
             error = 'the ebooks source is not a list!'
             return error, False

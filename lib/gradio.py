@@ -1709,7 +1709,13 @@ def build_interface(args:dict)->gr.Blocks:
                                             session['status'] = progress_status
                                             return gr.update(value=session['status'])
                                         else:
-                                            yield gr.update(value=progress_status)
+                                            if len(session['ebook_list']) == 0:
+                                                reset_ebook_session(session_id, force=True, filter_keys=False)
+                                                session['ebook_list'] = None
+                                                session['status'] = status_tags['READY']
+                                                return gr.update(value=progress_status)
+                                            else:
+                                                yield gr.update(value=progress_status)
                                     else:
                                         error = progress_status
                                         break
