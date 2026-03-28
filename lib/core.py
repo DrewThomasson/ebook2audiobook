@@ -2982,7 +2982,7 @@ def finalize_audiobook(session_id:str)->tuple:
             return fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
-        if session.get('ebook_list', []):
+        if session.get('ebook_list', None) is not None:
             if session['ebook_src'] in session['ebook_list']:
                 session['ebook_list'].remove(session['ebook_src'])
                 print(f"----------------------{session['ebook_src']}---------------")
