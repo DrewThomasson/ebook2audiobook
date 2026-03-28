@@ -2603,7 +2603,6 @@ def get_compatible_tts_engines(language:str)->list[str]:
 def convert_ebook_directory(args:dict)->tuple:
     try:
         passed = False
-        session['status'] = status_tags['READY']
         if isinstance(args['ebook_list'], list):
             session = context.get_session(args['id'])
             if session and session.get('id', False):
@@ -2620,12 +2619,11 @@ def convert_ebook_directory(args:dict)->tuple:
                                 show_alert(args['id'], {"type": "success", "msg": f"{progress_status} / converted. {remaining} ebook(s) conversion remaining…"})
                                 yield progress_status, passed
                             else:
-                                session['status'] = status_tags['READY']
                                 reset_ebook_session(args['id'], force=True, filter_keys=False)
                                 session['ebook_list'] = None
+                                session['status'] = status_tags['READY']
                                 return progress_status, passed
                         else:
-                            session['status'] = status_tags['READY']
                             return progress_status, passed
         else:
             error = 'the ebooks source is not a list!'
@@ -2996,6 +2994,7 @@ def finalize_audiobook(session_id:str)->tuple:
         if session['ebook_list'] is None or len(session['ebook_list']) == 0:
             print(f'*********** Session: {session_id} **************\n{session_info}')
             reset_ebook_session(session_id, force=True, filter_keys=False)
+            session['status'] = status_tags['READY']
         return result(filename, True)
     except Exception as e:
         DependencyError(e)

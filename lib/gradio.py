@@ -1706,6 +1706,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
                                         if progress_status == status_tags['BLOCKS']:
+                                            session['status'] = progress_status
                                             return gr.update(value=session['status'])
                                         else:
                                             yield gr.update(value=progress_status)
@@ -1721,6 +1722,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         return gr.update(value=session['status'])
                                     else:
                                         reset_ebook_session(session_id, force=True, filter_keys=False)
+                                        session['status'] = status_tags['READY']
                                         return gr.update(value=progress_status)
                                 else:
                                     error = progress_status
