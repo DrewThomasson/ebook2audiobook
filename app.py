@@ -300,7 +300,7 @@ SML tags available:
                     c.context.sessions[args['id']]['status'] = c.status_tags['READY']
                     c.reset_ebook_session(args['id'], force=True, filter_keys=False)
                     if passed:
-                        if len(c.context.sessions[args['id']]['ebook_list']) == 0
+                        if len(c.context.sessions[args['id']]['ebook_list']) == 0:
                             c.context.sessions[args['id']]['ebook_list'] = None
                         print(progress_status)
                     else:
