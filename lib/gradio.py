@@ -1707,10 +1707,8 @@ def build_interface(args:dict)->gr.Blocks:
                                         if progress_status == status_tags['BLOCKS']:
                                             session['status'] = progress_status
                                             return gr.update(value=session['status'])
-                                        elif progress_status:
-                                            yield gr.update(value=progress_status)
                                         else:
-                                            return gr.update(value=msg)
+                                            yield gr.update(value=progress_status)
                                     else:
                                         error = progress_status
                                         break

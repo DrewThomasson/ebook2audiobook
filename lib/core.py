@@ -2622,11 +2622,11 @@ def convert_ebook_directory(args:dict)->tuple:
                                 show_alert(args['id'], {"type": "success", "msg": f"{progress_status} / converted. {remaining} ebook(s) conversion remaining…"})
                                 yield progress_status, passed
                             else:
-                                reset_ebook_session(rgs['id'], force=True, filter_keys=False)
+                                reset_ebook_session(args['id'], force=True, filter_keys=False)
                                 session['ebook_list'] = None
                                 return progress_status, passed
                         else:
-                            return '', passed
+                            return progress_status, passed
         else:
             error = 'the ebooks source is not a list!'
             return error, False
