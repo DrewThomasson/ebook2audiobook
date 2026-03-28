@@ -2611,6 +2611,7 @@ def convert_ebook_directory(args:dict)->tuple:
                 ebook_list = session['ebook_list'][:] # Use a shallow copy
                 for file in ebook_list:
                     if any(file.endswith(ext) for ext in ebook_formats):
+                        args['ebook_src'] = file
                         progress_status, passed = convert_ebook(args)
                         if passed:
                             yield progress_status, passed
@@ -2631,11 +2632,11 @@ def convert_ebook(args:dict)->tuple:
         session_id = None
         info_session = None
         if args['language'] is not None:
-            if not os.path.splitext(args['ebook'])[1]:
-                error = f"{args['ebook']} needs a format extension."
+            if not os.path.splitext(args['ebook_src'])[1]:
+                error = f"{args['ebook_src']} needs a format extension."
                 print(error)
                 return error, False
-            if not os.path.exists(args['ebook']):
+            if not os.path.exists(args['ebook_src']):
                 error = 'File does not exist or Directory empty.'
                 print(error)
                 return error, False
@@ -2669,7 +2670,7 @@ def convert_ebook(args:dict)->tuple:
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
-            session['ebook_src'] = str(args['ebook_src']) if args.get('ebook_src') else None
+            session['ebook_src'] = str(args['ebook_src'])
             session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['device'] = str(args['device'])
