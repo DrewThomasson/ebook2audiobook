@@ -2604,13 +2604,13 @@ def convert_ebook_directory(args:dict)->tuple:
     try:
         passed = False
         if isinstance(args['ebook_list'], list):
-            session = context.get_session(args['id'])
-            if session and session.get('id', False):
-                ebook_list = session['ebook_list'][:]
-                total = len(ebook_list)
-                for i, file in enumerate(ebook_list):
-                    if any(file.endswith(ext) for ext in ebook_formats):
-                        args['ebook_src'] = file
+            ebook_list = args['ebook_list'][:]
+            total = len(ebook_list)
+            for i, file in enumerate(ebook_list):
+                if any(file.endswith(ext) for ext in ebook_formats):
+                    session = context.get_session(args['id'])
+                    if session and session.get('id', False):
+                        args['ebook_src'] = session['ebook_src'] = file
                         progress_status, passed = convert_ebook(args)
                         if passed:
                             remaining = total - (i + 1)
@@ -2618,12 +2618,15 @@ def convert_ebook_directory(args:dict)->tuple:
                             if remaining > 0:
                                 yield progress_status, passed
                             else:
-                                reset_ebook_session(args['id'], force=True, filter_keys=False)
+                                reset_ebook_session(session['id'], force=True, filter_keys=False)
                                 session['ebook_list'] = None
                                 session['status'] = status_tags['READY']
                                 return progress_status, passed
                         else:
                             return progress_status, passed
+                    else:
+                        error = 'session expired or not exists!'
+                        return error, False
         else:
             error = 'the ebooks source is not a list!'
             return error, False
