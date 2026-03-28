@@ -2829,6 +2829,9 @@ def convert_ebook(args:dict)->tuple:
                                 show_alert(session_id, {"type": "warning", "msg": msg + msg_extra})
                             else:
                                 show_alert(session_id, {"type": "info", "msg": msg_extra})
+                            if session['cancellation_requested']:
+                                msg = 'Cancel requested'
+                                return msg, False
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             checksum, error = compare_checksums(session_id)
                             if not checksum:
