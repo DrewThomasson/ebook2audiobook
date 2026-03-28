@@ -298,9 +298,11 @@ SML tags available:
                 error = None
                 for progress_status, passed in c.convert_ebook_directory(args):
                     c.context.sessions[args['id']]['status'] = c.status_tags['READY']
+                    c.reset_ebook_session(args['id'], force=True, filter_keys=False)
                     if passed:
-                        c.reset_ebook_session(args['id'], force=True, filter_keys=False)
-                        c.context.sessions[args['id']]['ebook_list'] = None
+                        if len(c.context.sessions[args['id']]['ebook_list']) == 0
+                            c.context.sessions[args['id']]['ebook_list'] = None
+                        print(progress_status)
                     else:
                         error = progress_status
                         print(error)
@@ -313,8 +315,9 @@ SML tags available:
                     sys.exit(1)
                 progress_status, passed = c.convert_ebook(args)
                 c.context.sessions[args['id']]['status'] = c.status_tags['READY']
+                c.reset_ebook_session(args['id'], force=True, filter_keys=False)
                 if passed:
-                    c.reset_ebook_session(args['id'], force=True, filter_keys=False)
+                    print(progress_status)
                 else:
                     error = progress_status
                     print(error)
