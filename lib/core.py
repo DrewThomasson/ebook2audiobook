@@ -2619,9 +2619,8 @@ def convert_ebook_directory(args:dict)->tuple:
                             session['ebook_list'] = ebook_list[i + 1:]
                             if remaining > 0:
                                 session['status'] = status_tags['LOOP']
-                            yield progress_status, passed
-                        else:
-                            return progress_status, passed
+                                yield progress_status, passed
+                        return progress_status, passed
         else:
             error = 'the ebooks source is not a list!'
             return error, False
