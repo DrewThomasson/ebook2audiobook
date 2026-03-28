@@ -1130,16 +1130,15 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['status'] != status_tags['CONVERTING']:
-                            if isinstance(data, list):
-                                ebook_list = []
-                                for f in data:
-                                    path = f.get("path") if isinstance(f, dict) else str(f)
-                                    ebook_list.append(path)
-                                session['ebook_list'] = ebook_list
-                            else:
-                                session['ebook_src'] = data
-                            session['cancellation_requested'] = False
+                        if isinstance(data, list):
+                            ebook_list = []
+                            for f in data:
+                                path = f.get("path") if isinstance(f, dict) else str(f)
+                                ebook_list.append(path)
+                            session['ebook_list'] = ebook_list
+                        else:
+                            session['ebook_src'] = data
+                        session['cancellation_requested'] = False
                 except Exception as e:
                     error = f'change_gr_ebook_file(): {e}'
                     exception_alert(session_id, error)
