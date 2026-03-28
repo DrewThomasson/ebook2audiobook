@@ -985,7 +985,7 @@ def build_interface(args:dict)->gr.Blocks:
                         ebook_data = None
                         file_count = session['ebook_mode']
                         if session['ebook_list'] is not None and file_count == 'directory':
-                            session['ebook'] = None
+                            session['ebook'] = session['ebook_src'] = None
                             ebook_data = [f for f in session['ebook_list'] if os.path.exists(f)]
                             if not ebook_data:
                                 ebook_data = None
@@ -993,9 +993,9 @@ def build_interface(args:dict)->gr.Blocks:
                             if os.path.exists(session['ebook']):
                                 ebook_data = session['ebook']
                             else:
-                                ebook_data = session['ebook'] = None
+                                ebook_data = session['ebook'] = session['ebook_src'] = None
                         else:
-                            ebook_data = session['ebook'] = None
+                            ebook_data = session['ebook'] = session['ebook_src'] = None
                         if ebook_data is not None:
                             if isinstance(ebook_data, list):
                                 ebook_data = [f for f in ebook_data if is_valid_gradio_cache(f)]
@@ -1129,21 +1129,22 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if data is None:
-                            if session.get('status', None) == status_tags['CONVERTING']:
-                                session['cancellation_requested'] = True
-                                msg = 'Cancellation requested, please wait…'
-                                yield gr.update(value=show_gr_modal('wait', msg), visible=True)
-                                return
-                        if isinstance(data, list):
-                            ebook_list = []
-                            for f in data:
-                                path = f.get("path") if isinstance(f, dict) else str(f)
-                                ebook_list.append(path)
-                            session['ebook_list'] = ebook_list
-                        else:
-                            session['ebook'] = data
-                        session['cancellation_requested'] = False
+                        if not status_tags['CONVERTING']:
+                            if data is None:
+                                if session.get('status', None):
+                                    session['cancellation_requested'] = True
+                                    msg = 'Cancellation requested, please wait…'
+                                    yield gr.update(value=show_gr_modal('wait', msg), visible=True)
+                                    return
+                            if isinstance(data, list):
+                                ebook_list = []
+                                for f in data:
+                                    path = f.get("path") if isinstance(f, dict) else str(f)
+                                    ebook_list.append(path)
+                                session['ebook_list'] = ebook_list
+                            else:
+                                session['ebook_src'] = data
+                            session['cancellation_requested'] = False
                 except Exception as e:
                     error = f'change_gr_ebook_file(): {e}'
                     exception_alert(session_id, error)
@@ -1153,8 +1154,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session['ebook_mode'] = val
-                    session['ebook'] = None
-                    session['ebook_list'] = None
+                    reset_ebook_session(session_id, force=True, filter_keys=False)
                     if val == 'single':
                         return gr.update(label=src_label_file, value=None, file_count='single')
                     else:
@@ -1932,10 +1932,10 @@ def build_interface(args:dict)->gr.Blocks:
                         session['cancellation_requested'] = False
                     if isinstance(session.get('ebook'), str):
                         if not os.path.exists(session['ebook']):
-                            session['ebook'] = None
+                            session['ebook'] = session['ebook_src'] = None
                     if isinstance(session.get('voice'), str):
                         if not os.path.exists(session['voice']):
-                            session['voice'] = None
+                            session['voice'] = session['ebook_src'] = None
                     if isinstance(session.get('custom_model'), str):
                         custom_model_dir = session.get('custom_model_dir')
                         if isinstance(custom_model_dir, str) and not os.path.exists(custom_model_dir):
