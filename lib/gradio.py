@@ -1059,8 +1059,8 @@ def build_interface(args:dict)->gr.Blocks:
                         return (
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
-                            gr.update(interactive=interactive_convert_btn), gr.update(value=session['ebook']), gr.update(value=session['device']), 
-                            update_gr_audiobook_list(session_id), gr.update(value=ebook_data),
+                            gr.update(interactive=interactive_convert_btn), gr.update(value=ebook_data), gr.update(value=session['device']), 
+                            update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
                             update_gr_voice_list(session_id), gr.update(value='')
                         )
                     elif session['status'] == status_tags['CONVERTING']:
@@ -1721,7 +1721,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             else:
                                                 yield gr.update(value=progress_status)
                                     else:
-                                        print('FFFFFFFFFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA')
                                         reset_ebook_session(args['id'], force=True, filter_keys=False)
                                         error = progress_status
                                         break
