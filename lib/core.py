@@ -2611,8 +2611,6 @@ def convert_ebook_directory(args:dict)->tuple:
                 ebook_list = session['ebook_list'][:] # Use a shallow copy
                 for file in ebook_list:
                     if any(file.endswith(ext) for ext in ebook_formats):
-                        args['ebook'] = file
-                        print(f'Processing eBook file: {os.path.basename(file)}')
                         progress_status, passed = convert_ebook(args)
                         if passed:
                             yield progress_status, passed
@@ -2699,6 +2697,7 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             cleanup_models_cache()
+            print(f'Processing eBook file: {os.path.basename(session['ebook_src'])}')
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + '.' + session['output_format']
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
