@@ -2697,7 +2697,7 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             cleanup_models_cache()
-            print(f'Processing eBook file: {os.path.basename(session['ebook_src'])}')
+            print(f"Processing eBook file: {os.path.basename(session['ebook_src'])}")
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + '.' + session['output_format']
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
