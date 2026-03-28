@@ -2620,6 +2620,7 @@ def convert_ebook_directory(args:dict)->tuple:
                             if remaining > 1:
                                 yield progress_status, passed
                             else:
+                                session['ebook_list'] = None
                                 return progress_status, passed
                         else:
                             return '', passed
@@ -2994,7 +2995,6 @@ def finalize_audiobook(session_id:str)->tuple:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {len(ebook_list) - 1} ebook(s) conversion remaining…"})
             return result(filename, True)
         session['status'] = status_tags['READY']
-        session['ebook_list'] = None
         show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
         print(f'*********** Session: {session_id} **************\n{session_info}')
         reset_ebook_session(session_id, force=True, filter_keys=False)
