@@ -312,7 +312,10 @@ SML tags available:
                     print(error)
                     sys.exit(1)
                 progress_status, passed = c.convert_ebook(args)
-                if not passed:
+                if passed:
+                    c.reset_ebook_session(args['id'], force=True, filter_keys=False)
+                    c.context.sessions[args['id']]['status'] = c.status_tags['READY']
+                else:
                     error = progress_status
                     print(error)
                     sys.exit(1)
