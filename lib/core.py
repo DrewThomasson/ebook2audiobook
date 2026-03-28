@@ -2623,7 +2623,7 @@ def convert_ebook_directory(args:dict)->tuple:
                             else:
                                 return progress_status, passed
                         else:
-                            return progress_status, passed
+                            return '', passed
         else:
             error = 'the ebooks source is not a list!'
             return error, False
