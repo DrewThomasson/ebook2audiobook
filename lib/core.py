@@ -2990,7 +2990,7 @@ def finalize_audiobook(session_id:str)->tuple:
         if ebook_list is not None and len(ebook_list) > 1:
             session['status'] = status_tags['LOOP']
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {len(ebook_list) - 1} ebook(s) conversion remaining…"})
-            return result(filename, True)
+            yield result(filename, True)
         session['status'] = status_tags['READY']
         session['ebook_list'] = None
         show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
