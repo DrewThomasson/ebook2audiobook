@@ -66,6 +66,7 @@ status_tags = {
     "DELETION": "deletion",
     "READY": "ready",
     "CONVERTING": "converting",
+    "END": "end",
     "DISCONNECTED": "disconnected"
 }
 
@@ -2981,18 +2982,22 @@ def finalize_audiobook(session_id:str)->tuple:
             return fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
-        if session['ebook_list'] is not None and session['status'] == status_tags['BLOCKS']:
-            ebook_list = session['ebook_list']
-            if len(session['ebook_list']) > 0:
-                if session['ebook_src'] in session['ebook_list']:
-                    ebook_list.remove(session['ebook_src'])
-                    session['ebook_list'] = ebook_list
+        if session['status'] == status_tags['BLOCKS']:
+            if session['ebook_list'] is not None:
+                ebook_list = session['ebook_list']
+                if len(session['ebook_list']) > 0:
+                    if session['ebook_src'] in session['ebook_list']:
+                        ebook_list.remove(session['ebook_src'])
+                        session['ebook_list'] = ebook_list
         count_ebook = len(session['ebook_list']) - 1 if session['ebook_list'] is not None else 0
         if session['ebook_list'] is None or count_ebook == 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
             reset_ebook_session(session_id, force=True, filter_keys=False)
-            session['status'] = status_tags['READY']
+            if session['status'] == status_tags['BLOCKS']:
+                session['status'] = status_tags['END']
+            else:
+                session['status'] = status_tags['READY']
         elif count_ebook > 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         return result(filename, True)
