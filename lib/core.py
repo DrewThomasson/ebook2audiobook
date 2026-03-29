@@ -3026,6 +3026,7 @@ def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_k
                     session[key] = value
     except Exception as e:
         DependencyError(e)
+        error = f'restore_session_from_data(): {e}'
         exception_alert(session['id'], error)
 
 def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
