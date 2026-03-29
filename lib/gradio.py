@@ -2627,8 +2627,8 @@ def build_interface(args:dict)->gr.Blocks:
                                             childList: true,
                                             subtree: true
                                         });
-                                        // Keep your progress observer too
-                                        new MutationObserver(tab_progress).observe(gr_progress.parentElement, {
+                                        // Keep your progress observer
+                                        new MutationObserver(tab_progress).observe(gr_progress, {
                                             attributes: true,
                                             childList: true,
                                             subtree: true,
