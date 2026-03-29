@@ -2612,7 +2612,7 @@ def convert_ebook_directory(args:dict)->tuple:
                     progress_status, passed = convert_ebook(args)
                     if passed:
                         args['ebook_list'].remove(file)
-                        context.session[args['id']]['ebook_list'] = args['ebook_list']
+                        context.sessions[args['id']]['ebook_list'] = args['ebook_list']
                         yield progress_status, passed
                     else:
                         return progress_status, passed
