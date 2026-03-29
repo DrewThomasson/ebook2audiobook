@@ -2728,7 +2728,6 @@ def convert_ebook(args:dict)->tuple:
                             delete_folder(session['process_dir'])
                     elif choice == 's':
                         msg = 'Conversion skipped.'
-                        print(msg)
                         return msg, True
                 if error is None:
                     #delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
