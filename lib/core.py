@@ -2982,7 +2982,10 @@ def finalize_audiobook(session_id:str)->tuple:
             return fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
-        count_ebook = len(session['ebook_list']) - 1 if session['ebook_list'] is not None else 0
+        if session['status'] == status_tags['BLOCKS']:
+            count_ebook = len(session['ebook_list'])
+        else:
+            count_ebook = len(session['ebook_list']) - 1 if session['ebook_list'] is not None else 0
         if session['ebook_list'] is None or count_ebook == 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
