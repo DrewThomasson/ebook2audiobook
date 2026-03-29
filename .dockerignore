@@ -1,5 +1,7 @@
 .git
 .cache
+*.pyc
+__pycache__
 python_env
 ebook2audiobook.egg-info
 dockerfiles

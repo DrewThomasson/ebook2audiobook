@@ -2992,8 +2992,8 @@ def finalize_audiobook(session_id:str)->tuple:
         return result(filename, True)
     except Exception as e:
         DependencyError(e)
+        error = f'finalize_audiobook(): {e}'
         exception_alert(session_id, error)
-        error = f'finalize_audiobook(): e'
         return result(error, False)
 
 def on_unload(req:gr.Request)->None:
@@ -3085,7 +3085,7 @@ def show_alert(session_id:str|None, state:dict)->None:
     print(state['msg'].replace('<br/>', '\n'))
     if session_id is not None:
         session = context.get_session(session_id)
-        if session['is_gui_process']:
+        if session.get('is_gui_process'):
             if isinstance(state, dict):
                 if state['type'] is not None:
                     if state['type'] == 'error':
