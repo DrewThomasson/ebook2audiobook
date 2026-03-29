@@ -2983,12 +2983,6 @@ def finalize_audiobook(session_id:str)->tuple:
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         if session['status'] == status_tags['BLOCKS']:
-            if session['ebook_list'] is not None:
-                ebook_list = session['ebook_list']
-                if len(ebook_list) > 0:
-                    if session['ebook_src'] in ebook_list:
-                        ebook_list.remove(session['ebook_src'])
-                        session['ebook_list'] = ebook_list
             count_ebook = len(session['ebook_list'])
         else:
             count_ebook = len(session['ebook_list']) - 1 if session['ebook_list'] is not None else 0
