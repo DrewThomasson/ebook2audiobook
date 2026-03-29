@@ -2616,8 +2616,7 @@ def convert_ebook_directory(args:dict)->tuple:
                         if remaining > 0:
                             yield progress_status, passed
                         else:
-                            args['ebook_list'] = None
-                            return progress_status, passed
+                            return '0', passed
                     else:
                         return progress_status, passed
         else:
