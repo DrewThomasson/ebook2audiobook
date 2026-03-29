@@ -2989,7 +2989,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     if session['ebook_src'] in session['ebook_list']:
                         ebook_list.remove(session['ebook_src'])
                         session['ebook_list'] = ebook_list
-                count_ebook = len(session['ebook_list'])
+            count_ebook = len(session['ebook_list'])
         else:
             count_ebook = len(session['ebook_list']) - 1 if session['ebook_list'] is not None else 0
         if session['ebook_list'] is None or count_ebook == 0:
