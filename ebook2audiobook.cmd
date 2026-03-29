@@ -360,8 +360,14 @@ goto :restart_script
 
 :install_scoop
 echo Installing Scoop…
-call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
-if errorlevel 1 goto :failed
+call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "iex \"& {$(irm get.scoop.sh)} -RunAsAdmin\""
+if errorlevel 1 (
+    net session >nul 2>&1
+    if not errorlevel 1 (
+        goto :restart_script
+    )
+    goto :failed
+)
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
