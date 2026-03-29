@@ -2982,7 +2982,7 @@ def finalize_audiobook(session_id:str)->tuple:
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         if session['ebook_list'] is not None and session['status'] == status_tags['BLOCKS']:
-            ebook_list = session['ebook_list'])
+            ebook_list = session['ebook_list']
             if len(session['ebook_list']) > 0:
                 ebook_list.remove(session['ebook_src'])
             session['ebook_list']) = ebook_list
