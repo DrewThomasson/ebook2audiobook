@@ -1712,8 +1712,9 @@ def build_interface(args:dict)->gr.Blocks:
                                         if progress_status == status_tags['BLOCKS']:
                                             session['status'] = progress_status
                                             return gr.update(value=session['status'])
-                                        else:
-                                            if progress_status == '0':
+                                        else
+                                            print(f"--------------------------------- len(session['ebook_list']) : {len(session['ebook_list'])} ---------------------------")
+                                            if len(session['ebook_list']) == 0:
                                                 reset_ebook_session(session_id, force=True, filter_keys=False)
                                                 session['ebook_list'] = None
                                                 session['status'] = status_tags['READY']
