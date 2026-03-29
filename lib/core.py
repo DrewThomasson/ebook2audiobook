@@ -2633,11 +2633,9 @@ def convert_ebook(args:dict)->tuple:
         if args['language'] is not None:
             if not os.path.splitext(args['ebook_src'])[1]:
                 error = f"{args['ebook_src']} needs a format extension."
-                print(error)
                 return error, False
             if not os.path.exists(args['ebook_src']):
                 error = 'File does not exist or Directory empty.'
-                print(error)
                 return error, False
             try:
                 if len(args['language']) in (2, 3):
@@ -2651,7 +2649,6 @@ def convert_ebook(args:dict)->tuple:
                 pass
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
-                print(error)
                 return error, False
             if args.get('id'):
                 session_id = str(args['id'])
@@ -2663,7 +2660,6 @@ def convert_ebook(args:dict)->tuple:
                 session = context.set_session(session_id)
                 if not context_tracker.start_session(session_id):
                     error = 'convert_ebook() error: Session initialization failed!'
-                    print(error)
                     return error, False
             reset_ebook_session(session_id, force=True, filter_keys=False)
             session['status'] = status_tags['CONVERTING']
@@ -2924,8 +2920,8 @@ def convert_ebook(args:dict)->tuple:
             show_alert(session_id, {"type": "warning", "msg": error})
         return error, False
     except Exception as e:
-        print(f'convert_ebook() Exception: {e}')
-        return e, False
+        error = f'convert_ebook() Exception: {e}'
+        return error, False
 
 def finalize_audiobook(session_id:str)->tuple:
     try:
