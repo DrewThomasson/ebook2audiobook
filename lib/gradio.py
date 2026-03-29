@@ -1063,7 +1063,7 @@ def build_interface(args:dict)->gr.Blocks:
                             update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
                             update_gr_voice_list(session_id), gr.update(value='')
                         )
-                    elif session['status'] == status_tags['CONVERTING']:
+                    elif session['status'] in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
                         return (
                             gr.update(), gr.update(), gr.update(),
                             gr.update(), gr.update(), gr.update(value=session['ebook_list']),
