@@ -1050,8 +1050,9 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_main = True
                         visible_xtts = False
                         visible_bark = False
-                        ebook_data = session['ebook_list'] if session['ebook_list'] is not None else session['ebook']
-                        interactive_convert_btn = True if ebook_data is not None else False
+                        ebook_data = session['ebook_list'] if isinstance(session['ebook_list'], list) and len(session['ebook_list']) > 0 else session['ebook']
+                        convert_btn_enabkled = True if ebook_data is not None else False
+                        print(f"----------------------------convert_btn_enabkled: {convert_btn_enabkled}")
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -1059,7 +1060,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return (
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
-                            gr.update(interactive=interactive_convert_btn), gr.update(value=ebook_data), gr.update(value=session['device']), 
+                            gr.update(interactive=convert_btn_enabkled), gr.update(value=ebook_data), gr.update(value=session['device']), 
                             update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
                             update_gr_voice_list(session_id), gr.update(value='')
                         )
