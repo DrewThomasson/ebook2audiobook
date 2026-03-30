@@ -1235,7 +1235,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     session['status'] = status_tags['DELETION']
                                     msg = f'Are you sure to delete {speaker}?'
                                     return (
-                                        gr.update(value=show_gr_modal(session['status']], msg), visible=True),
+                                        gr.update(value=show_gr_modal(session['status'], msg), visible=True),
                                         gr.update(value='confirm_voice_del')
                                     )
                                 else:
