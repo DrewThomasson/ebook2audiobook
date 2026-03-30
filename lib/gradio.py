@@ -1853,7 +1853,7 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             ebook_name = Path(session['ebook']).stem
                             blocks = session['blocks_current']['blocks']
-                        page_updates = list(populate_page(page, blocks))
+                        page_updates = list(populate_page(session_id, page, blocks))
                         result = (
                             gr.update(value=ebook_name),
                             gr.update(visible=visible_main), gr.update(visible=visible_blocks),
