@@ -2611,6 +2611,7 @@ def convert_ebook_directory(args:dict)->tuple:
                 if any(file.endswith(ext) for ext in ebook_formats):
                     progress_status, passed = convert_ebook(args)
                     if passed:
+                        args['ebook_src'] = file
                         yield progress_status, passed
                     else:
                         return progress_status, passed
