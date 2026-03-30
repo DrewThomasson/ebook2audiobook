@@ -1788,7 +1788,7 @@ def build_interface(args:dict)->gr.Blocks:
                         sources = data if isinstance(data, list) else [data] if data else []
                     if sources:
                         for source in sources:
-                            sessioin['ebook_src'] = source
+                            session['ebook_src'] = source
                             final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
                             final_file = os.path.join(session['audiobooks_dir'], final_name)
                             process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
