@@ -1664,7 +1664,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 show_alert(session_id, state)
 
             def start_conversion(
-                    session_id:str, device:str, ebook_file:str, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
+                    session_id:str, device:str, ebook_file:any, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
@@ -1678,7 +1678,8 @@ def build_interface(args:dict)->gr.Blocks:
                             "blocks_preview": blocks_preview,
                             "device": device,
                             "tts_engine": tts_engine,
-                            "ebook_src": ebook_file[0] if isinstance(ebook_file, list) else ebook_file,
+                            "ebook": None,
+                            "ebook_src": ebook_file if not isinstance(ebook_file, list) else None,
                             "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
                             "voice": voice,
                             "language": language,
