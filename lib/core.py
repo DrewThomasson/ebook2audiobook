@@ -2984,7 +2984,12 @@ def finalize_audiobook(session_id:str)->tuple:
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
         if isinstance(session['ebook_list'], list):
-            count_ebook = len(session['ebook_list']) - 1
+            if session['status'] == status_tags['BLOCKS']:
+                if session['ebook_src'] in session['ebook_list']
+                    session['ebook_list'].remove(session['ebook_src'])
+                count_ebook = len(session['ebook_list'])
+            else:
+                count_ebook = len(session['ebook_list']) - 1
         if session['ebook_list'] is None or count_ebook == 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
