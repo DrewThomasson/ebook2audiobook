@@ -2664,7 +2664,7 @@ def convert_ebook(args:dict)->tuple:
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
             session['ebook_src'] = str(args['ebook_src'])
-            session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
+            session['ebook_list'] = list(args['ebook_list']) if isinstance('ebook_list', list) else None
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
