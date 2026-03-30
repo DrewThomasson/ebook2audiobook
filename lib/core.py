@@ -2946,7 +2946,6 @@ def finalize_audiobook(session_id:str)->tuple:
                 return result(msg, False)
             msg = 'Conversion cancelled'
             return result(msg, False)
-        print(f'*********** Session: {session_id} **************\n{session_info}')
         if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
             return result('No blocks have been selected for the conversion!', False)
         if not session.get('blocks_current', {}):
