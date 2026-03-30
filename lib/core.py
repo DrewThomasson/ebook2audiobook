@@ -2612,7 +2612,7 @@ def convert_ebook_directory(args:dict)->tuple:
                     args['ebook_src'] = file
                     progress_status, passed = convert_ebook(args)
                     if passed:
-                        args['ebook_list'].remove(file)
+                        #args['ebook_list'].remove(file)
                         context.sessions[args['id']]['ebook_list'] = args['ebook_list']
                         yield progress_status, passed
                     else:
@@ -2983,10 +2983,7 @@ def finalize_audiobook(session_id:str)->tuple:
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
         if isinstance(session['ebook_list'], list):
-            if session['status'] == status_tags['BLOCKS']:
-                count_ebook = len(session['ebook_list'])
-            else:
-                count_ebook = len(session['ebook_list']) - 1 if session['ebook_list'] is not None else 0
+            count_ebook = len(session['ebook_list']) - 1
         if session['ebook_list'] is None or count_ebook == 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
