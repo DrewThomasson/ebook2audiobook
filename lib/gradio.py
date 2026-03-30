@@ -1679,7 +1679,7 @@ def build_interface(args:dict)->gr.Blocks:
                             "device": device,
                             "tts_engine": tts_engine,
                             "ebook": None,
-                            "ebook_src": ebook_file if isinstance(ebook_file, src) else None,
+                            "ebook_src": ebook_file if isinstance(ebook_file, str) else None,
                             "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
                             "voice": voice,
                             "language": language,
