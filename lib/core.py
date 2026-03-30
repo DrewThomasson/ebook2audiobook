@@ -2986,7 +2986,9 @@ def finalize_audiobook(session_id:str)->tuple:
         if isinstance(session['ebook_list'], list):
             if session['status'] == status_tags['BLOCKS']:
                 if session['ebook_src'] in session['ebook_list']:
-                    session['ebook_list'].remove(session['ebook_src'])
+                    ebook_list = session['ebook_src']
+                    ebook_list.remove(session['ebook_src'])
+                    session['ebook_list'] = ebook_list
                 count_ebook = len(session['ebook_list'])
             else:
                 count_ebook = len(session['ebook_list']) - 1
