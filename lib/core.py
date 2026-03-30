@@ -61,10 +61,10 @@ active_sessions = None
 progress_bar = None
 
 status_tags = {
-    "BLOCKS": "blocks",
     "OVERRIDE": "override",
     "DELETION": "deletion",
     "READY": "ready",
+    "EDIT": "edit",
     "CONVERTING": "converting",
     "END": "end",
     "DISCONNECTED": "disconnected"
@@ -2609,12 +2609,8 @@ def convert_ebook_directory(args:dict)->tuple:
             total = len(ebook_list)
             for i, file in enumerate(ebook_list):
                 if any(file.endswith(ext) for ext in ebook_formats):
-                    args['ebook_src'] = file
                     progress_status, passed = convert_ebook(args)
                     if passed:
-                        #if context.sessions[args['id']]['status'] != status_tags['BLOCKS']:
-                        #    args['ebook_list'].remove(file)
-                        #    context.sessions[args['id']]['ebook_list'] = args['ebook_list']
                         yield progress_status, passed
                     else:
                         return progress_status, passed
@@ -2663,8 +2659,7 @@ def convert_ebook(args:dict)->tuple:
                 if not context_tracker.start_session(session_id):
                     error = 'convert_ebook() error: Session initialization failed!'
                     return error, False
-            reset_ebook_session(session_id, force=True, filter_keys=False)
-            session['status'] = status_tags['CONVERTING']
+            session['status'] = status_tags['EDIT'] if session['blocks_preview']  else status_tags['CONVERTING'] 
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
@@ -2897,7 +2892,6 @@ def convert_ebook(args:dict)->tuple:
                                                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
                                                 if session['blocks_preview']:
-                                                    session['status'] = status_tags['BLOCKS']
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
                                                     return session['status'], True
@@ -2938,7 +2932,8 @@ def finalize_audiobook(session_id:str)->tuple:
             return result(error, False)
 
         if not session or not session.get('id', False):
-            return result('', False)
+            msg = 'session expired!'
+            return result(msg, False)
         if session['cancellation_requested']:
             if session['status'] == status_tags['DISCONNECTED']:
                 session['status'] = None
@@ -2947,10 +2942,13 @@ def finalize_audiobook(session_id:str)->tuple:
                 return result(msg, False)
             msg = 'Conversion cancelled'
             return result(msg, False)
-        if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
-            return result('No blocks have been selected for the conversion!', False)
+        if session['status'] not in [status_tags['EDIT'], status_tags['CONVERTING']]:
+            msg = 'No blocks have been selected for the conversion!'
+            return result(msg, False)
         if not session.get('blocks_current', {}):
-            return fail('finalize_audiobook() failed! blocks_current empty!')
+            error = 'finalize_audiobook() failed! blocks_current empty!'
+            return fail(error)
+        session['status'] = status_tags['CONVERTING']
         print('Get sentences…')
         blocks_saved = session['blocks_saved']
         blocks_prev = blocks_saved['blocks']
@@ -2958,17 +2956,20 @@ def finalize_audiobook(session_id:str)->tuple:
         blocks = blocks_current['blocks']
         for idx, block in enumerate(blocks):
             if session['cancellation_requested']:
-                return result('Conversion cancelled', False)
+                msg = 'Conversion cancelled'
+                return result(msg, False)
             if not block['keep'] or not block['text'].strip():
                 block['sentences'] = []
                 continue
             prev_block = blocks_prev[idx] if idx < len(blocks_prev) else None
             if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
-                print(f'Block {idx} — unchanged, keeping existing sentences')
+                msg = f'Block {idx} — unchanged, keeping existing sentences'
+                print(msg)
                 continue
             sentences_list = get_sentences(session_id, block['text'])
             if sentences_list is None:
-                return result('No sentences found!', False)
+                error = 'No sentences found!'
+                return result(error, False)
             block['sentences'] = sentences_list
         blocks_current['blocks'] = blocks
         session['blocks_current'] = blocks_current
@@ -2992,11 +2993,8 @@ def finalize_audiobook(session_id:str)->tuple:
         if session['ebook_list'] is None or count_ebook == 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
+            session['ebook_list'] = None
             reset_ebook_session(session_id, force=True, filter_keys=False)
-            if session['status'] == status_tags['BLOCKS']:
-                session['status'] = status_tags['END']
-            else:
-                session['status'] = status_tags['READY']
         elif count_ebook > 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         return result(filename, True)
@@ -3042,6 +3040,7 @@ def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_k
 def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
     data = {
+        "status": status_tags['READY'],
         "ebook": None,
         "ebook_src": None,
         "process_dir": None,
