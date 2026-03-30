@@ -1052,7 +1052,6 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_bark = False
                         ebook_data = session['ebook_list'] if isinstance(session['ebook_list'], list) and len(session['ebook_list']) > 0 else session['ebook']
                         convert_btn_enabkled = True if ebook_data is not None else False
-                        print(f"----------------------------convert_btn_enabkled: {convert_btn_enabkled}")
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -1785,7 +1784,6 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] == status_tags['END']:
-                        session['status'] = status_tags['READY']
                         return gr.update(), gr.update()
                     if session['status'] == status_tags['CONVERTING']:
                         sources = session['ebook_list'] if isinstance(session['ebook_list'], list) else []
