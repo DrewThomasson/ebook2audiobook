@@ -2999,7 +2999,7 @@ def finalize_audiobook(session_id:str)->tuple:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
             reset_ebook_session(session_id, force=True, filter_keys=False)
-        return result(session['status'], True)
+        return result(filename, True)
     except Exception as e:
         DependencyError(e)
         error = f'finalize_audiobook(): {e}'
