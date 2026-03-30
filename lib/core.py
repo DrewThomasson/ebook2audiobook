@@ -2992,7 +2992,6 @@ def finalize_audiobook(session_id:str)->tuple:
             count_ebook = len(session['ebook_list'])
             if count_ebook == 0:
                 session['ebook_list'] = None
-        print(f'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA {count_ebook} AAAAAAAAAAAAAAAAAAAAA')
         if count_ebook > 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
