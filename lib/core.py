@@ -2659,7 +2659,6 @@ def convert_ebook(args:dict)->tuple:
                 if not context_tracker.start_session(session_id):
                     error = 'convert_ebook() error: Session initialization failed!'
                     return error, False
-            session['status'] = status_tags['EDIT'] if session['blocks_preview']  else status_tags['CONVERTING'] 
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
@@ -2689,6 +2688,7 @@ def convert_ebook(args:dict)->tuple:
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
+            session['status'] = status_tags['EDIT'] if session['blocks_preview']  else status_tags['CONVERTING'] 
             ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             cleanup_models_cache()
             print(f"Processing eBook file: {os.path.basename(session['ebook_src'])}")
@@ -2983,7 +2983,7 @@ def finalize_audiobook(session_id:str)->tuple:
             return fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
-        count_ebook = 0
+        count_ebook = -1
         if isinstance(session['ebook_list'], list):
             if session['ebook_src'] in session['ebook_list']:
                 ebook_list = session['ebook_list']

@@ -1709,7 +1709,6 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
-                                session['status'] = status_tags['CONVERTING']
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
                                         if progress_status == status_tags['EDIT']:
