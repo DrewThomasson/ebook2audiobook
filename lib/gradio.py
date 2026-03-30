@@ -1715,7 +1715,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             return gr.update(value=progress_status)
                                         else:
                                             if session['ebook_list'] in [status_tags['CONVERTING']]:
-                                                print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
                                                 yield gr.update(value=progress_status)
                                             else:
                                                 reset_ebook_session(session_id, force=True, filter_keys=False)
