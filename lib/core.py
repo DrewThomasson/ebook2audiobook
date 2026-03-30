@@ -2664,6 +2664,7 @@ def convert_ebook(args:dict)->tuple:
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
             session['ebook_src'] = str(args['ebook_src'])
+            print(list(args['ebook_list']))
             session['ebook_list'] = list(args['ebook_list']) if isinstance('ebook_list', list) else None
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['device'] = str(args['device'])
@@ -2764,8 +2765,6 @@ def convert_ebook(args:dict)->tuple:
                 if error is None:
                     if prepare_dirs(session_id):
                         session['ebook'] = os.path.join(session['process_dir'], os.path.basename(session['ebook_src']))
-                        print(session['ebook_list'])
-                        print(session['ebook'])
                         shutil.copy(session['ebook_src'], session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
