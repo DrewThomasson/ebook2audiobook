@@ -1231,7 +1231,7 @@ def build_interface(args:dict)->gr.Blocks:
                             try:
                                 selected_path = Path(selected).resolve()
                                 parent_path = Path(session['voice_dir']).parent.resolve()
-                                if parent_path in selected_path.parents
+                                if parent_path in selected_path.parents:
                                     session['status'] = status_tags['DELETION']
                                     msg = f'Are you sure to delete {speaker}?'
                                     return (
