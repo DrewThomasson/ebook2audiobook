@@ -2871,10 +2871,10 @@ def convert_ebook(args:dict)->tuple:
                                                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
                                                 if session['blocks_preview']:
-                                                    session['status'] = status_tags['EDIT']
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
-                                                    return session['status'], True
+                                                    progress_status = os.path.basename(session['ebook'])
+                                                    return progress_status, True
                                                 else:
                                                     progress_status, passed = finalize_audiobook(session_id)
                                                     return progress_status, passed
