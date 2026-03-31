@@ -1715,7 +1715,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         if context.sessions[args['id']]['status'] == status_tags['EDIT']:
                                             return gr.update(value=progress_status)
                                         else:
-                                            if len(context.sessions[args['id']]['ebook_list']) == 0:
+                                            if context.sessions[args['id']]['ebook_list'] is None:
                                                 return gr.update(value=progress_status)
                                             yield gr.update(value=progress_status)
                                     else:
