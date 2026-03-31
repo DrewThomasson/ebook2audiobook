@@ -1773,6 +1773,7 @@ def build_interface(args:dict)->gr.Blocks:
             def check_override_audiobook(session_id:str, ebook_data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
+                    print(f"session['status']: {session['status']} ----------------------")
                     if session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
                         source = session['ebook_list'][0] if isinstance(session['ebook_list'], list) else None
                     else:
