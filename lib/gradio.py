@@ -1778,7 +1778,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 source = session['ebook_list'][0]
                         else:
                             source = session['ebook_src']
-                    else:
+                    elif session['status'] != status_tags['SKIP']:
                         if isinstance(ebook_data, list):
                             if len(ebook_data) > 0:
                                 source = ebook_data[0]
