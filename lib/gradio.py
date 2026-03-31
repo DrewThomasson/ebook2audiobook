@@ -1777,11 +1777,15 @@ def build_interface(args:dict)->gr.Blocks:
             def check_override_audiobook(session_id:str, ebook_data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    print(f"session['status']: {session['status']}----------------------")
+                    source = None
                     if session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
-                        source = session['ebook_list'][0] if isinstance(session['ebook_list'], list) else None
+                        if isinstance(session['ebook_list'], list):
+                            if len(session['ebook_list']) > 0:
+                                source = session['ebook_list'][0]
                     else:
-                        source = ebook_data[0] if isinstance(ebook_data, list) else ebook_data
+                        if isinstance(ebook_data, list):
+                            if len(ebook_data) > 0:
+                                source = ebook_data[0]
                     if source is not None:
                         session['ebook_src'] = source
                         final_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['blocks_preview'] else '.'}{session['output_format']}"
@@ -1795,6 +1799,7 @@ def build_interface(args:dict)->gr.Blocks:
                             msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                             return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
                         return gr.update(), (event + 1)
+                session['status'] = status_tags['READY']
                 return gr.update(), event
 
             def click_gr_override_cancel_btn(session_id:str)->dict:
