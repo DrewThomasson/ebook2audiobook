@@ -2397,7 +2397,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=[gr_modal, gr_ebook_file]
             ).then(
-                fn=check_override_audiobook
+                fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event]
             ).then(
