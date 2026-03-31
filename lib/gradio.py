@@ -1709,8 +1709,8 @@ def build_interface(args:dict)->gr.Blocks:
                             show_alert(session_id, {"type": "warning", "msg": error})                   
                         else:
                             session['ticker'] = len(audiobook_options)
-                            ebook_list = copy.deepcopy(args['ebook_list'])
                             if isinstance(args['ebook_list'], list):
+                                 ebook_list = copy.deepcopy(args['ebook_list'])
                                 for i, file in enumerate(ebook_list):
                                     if any(file.endswith(ext) for ext in ebook_formats):
                                         reset_ebook_session(args['id'], force=True, filter_keys=False)
