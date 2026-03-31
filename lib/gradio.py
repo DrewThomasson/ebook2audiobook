@@ -1720,7 +1720,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             return gr.update(value=progress_status)
                                         else:
                                             error = progress_status
-                                            break
+                                        break
                                     else:
                                         args['ebook_list'].remove (file)
                                         error = f'{Path(file).name} has not a supported format! skipping'
