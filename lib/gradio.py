@@ -1773,25 +1773,36 @@ def build_interface(args:dict)->gr.Blocks:
             def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] in [status_tags['CONVERTING']]:
-                        sources = session['ebook_list'] if isinstance(session['ebook_list'], list) else []
+                    if session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
+                        source = session['ebook_list'][0] if isinstance(session['ebook_list'], list) else None
                     else:
-                        sources = data if isinstance(data, list) else [data] if data else []
-                    if sources:
-                        for source in sources:
-                            session['ebook_src'] = source
-                            final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
-                            final_file = os.path.join(session['audiobooks_dir'], final_name)
-                            process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
-                            chapters_dir = os.path.join(process_dir, 'chapters')
-                            sentences_dir = os.path.join(chapters_dir, 'sentences')
-                            audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}')) if os.path.exists(sentences_dir) else False
-                            if os.path.exists(final_file) or audio_sentences_exist:
-                                session['status'] = status_tags['OVERRIDE']
-                                msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
-                                return gr.update(value=show_gr_modal(session['status'], msg), visible=True), gr.update()
-                        return gr.update(), event + 1
+                        source = data if isinstance(data, list) else [data] if data else None
+                    if source is not None:
+                        session['ebook_src'] = source
+                        final_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['blocks_preview'] else '.'}{session['output_format']}"
+                        final_file = os.path.join(session['audiobooks_dir'], final_name)
+                        process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
+                        chapters_dir = os.path.join(process_dir, 'chapters')
+                        sentences_dir = os.path.join(chapters_dir, 'sentences')
+                        audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}')) if os.path.exists(sentences_dir) else False
+                        if os.path.exists(final_file) or audio_sentences_exist:
+                            session['status'] = status_tags['OVERRIDE']
+                            msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
+                            return gr.update(value=show_gr_modal(session['status'], msg), visible=True), gr.update()
+                        return gr.update(), (event + 1)
                 return gr.update(), gr.update()
+
+            def click_gr_override_cancel_btn(session_id:str)->dict:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    if session['status'] == status_tags['OVERRIDE']:
+                        if isinstance(session['ebook_list'], list):
+                            ebook_list = session['ebook_list']
+                            ebook_list.remove(session['ebook_src'])
+                            session['ebook_list'] = ebook_list
+                            return gr.update(value='', visible=False), gr.update(value=session['ebook_list'])
+                    session['status'] = status_tags['READY']
+                return gr.update(value='', visible=False), gr.udpate()
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
                 session = context.get_session(session_id)
@@ -1909,7 +1920,7 @@ def build_interface(args:dict)->gr.Blocks:
                             show_alert(session_id, {"type": "warning", "msg": error})
                             return gr.update(), gr.update(), gr.update()
                         change_saved_blocks(session, page, blocks, *args)
-                        return gr.update(visible=True), gr.update(visible=False), event + 1
+                        return gr.update(visible=True), gr.update(visible=False), (event + 1)
                 return gr.update(), gr.update(), gr.update()
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
@@ -2381,19 +2392,23 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event]
             )
-            gr_override_confirm_btn.click(
-                fn=lambda event: (gr.update(value='', visible=False), event + 1),
-                inputs=[gr_override_event],
-                outputs=[gr_modal, gr_override_event]
-            )
             gr_override_cancel_btn.click(
-                fn=lambda s: (context.sessions[s].__setitem__('status', status_tags['READY']), gr.update(value='', visible=False))[1],
+                fn=click_gr_override_cancel_btn
                 inputs=[gr_session],
-                outputs=[gr_modal]
+                outputs=[gr_modal, gr_ebook_file]
+            ).then(
+                fn=check_override_audiobook
+                inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
+                outputs=[gr_modal, gr_override_event]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components
+            )
+            gr_override_confirm_btn.click(
+                fn=lambda event: (gr.update(value='', visible=False), (event + 1)),
+                inputs=[gr_override_event],
+                outputs=[gr_modal, gr_override_event]
             )
             gr_override_event.change(
                 fn=lambda event: gr.update(interactive=False),
