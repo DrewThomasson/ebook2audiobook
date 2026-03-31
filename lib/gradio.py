@@ -1710,7 +1710,7 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
-                                 ebook_list = copy.deepcopy(args['ebook_list'])
+                                ebook_list = copy.deepcopy(args['ebook_list'])
                                 for i, file in enumerate(ebook_list):
                                     if any(file.endswith(ext) for ext in ebook_formats):
                                         reset_ebook_session(args['id'], force=True, filter_keys=False)
