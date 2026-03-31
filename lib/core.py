@@ -2609,6 +2609,7 @@ def convert_ebook_directory(args:dict)->tuple:
             total = len(ebook_list)
             for i, file in enumerate(ebook_list):
                 if any(file.endswith(ext) for ext in ebook_formats):
+                    reset_ebook_session(args['id'], force=True, filter_keys=False)
                     args['ebook_src'] = file
                     progress_status, passed = convert_ebook(args)
                     yield progress_status, passed
