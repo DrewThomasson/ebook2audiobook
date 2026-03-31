@@ -1710,18 +1710,20 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['ticker'] = len(audiobook_options)
                             ebook_list = copy.deepcopy(args['ebook_list'])
-                            for i, file in enumerate(ebook_list):
-                                if any(file.endswith(ext) for ext in ebook_formats):
-                                    reset_ebook_session(args['id'], force=True, filter_keys=False)
-                                    args['ebook_src'] = file
-                                    progress_status, passed = convert_ebook(args)
-                                    if passed:
-                                        return gr.update(value=progress_status)
+                            if isinstance(args['ebook_list'], list):
+                                for i, file in enumerate(ebook_list):
+                                    if any(file.endswith(ext) for ext in ebook_formats):
+                                        reset_ebook_session(args['id'], force=True, filter_keys=False)
+                                        args['ebook_src'] = file
+                                        progress_status, passed = convert_ebook(args)
+                                        if passed:
+                                            return gr.update(value=progress_status)
+                                        else:
+                                            error = progress_status
+                                            break
                                     else:
-                                        error = progress_status
-                                        break
-                                else:
-                                    error = f'{Path(file).name} has not a supported format! skipping'
+                                        args['ebook_list'].remove (file)
+                                        error = f'{Path(file).name} has not a supported format! skipping'
                                     show_alert(session_id, {"type": "warning", "msg": error})
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
