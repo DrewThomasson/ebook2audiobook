@@ -2439,6 +2439,10 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=refresh_interface,
                 inputs=[gr_session],
                 outputs=outputs_refresh_interface
+            ).then(
+                fn=check_override_audiobook,
+                inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
+                outputs=[gr_modal, gr_override_event]
             )
             gr_blocks_back_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
