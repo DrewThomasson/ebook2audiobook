@@ -2611,6 +2611,7 @@ def convert_ebook_directory(args:dict)->tuple:
                 if any(file.endswith(ext) for ext in ebook_formats):
                     reset_ebook_session(args['id'], force=True, filter_keys=False)
                     args['ebook_src'] = file
+                    args['ebook_list'].remove (file)
                     progress_status, passed = convert_ebook(args)
                     yield progress_status, passed
         else:
