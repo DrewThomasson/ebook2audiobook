@@ -1770,13 +1770,13 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)              
                 return gr.update()
 
-            def check_override_audiobook(session_id:str, data:any, blocks_preview:bool, event:int)->tuple:
+            def check_override_audiobook(session_id:str, ebook_data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
                         source = session['ebook_list'][0] if isinstance(session['ebook_list'], list) else None
                     else:
-                        source = data[0] if isinstance(data, list) else data
+                        source = ebook_data[0] if isinstance(ebook_data, list) else ebook_data
                     if source is not None:
                         session['ebook_src'] = source
                         final_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['blocks_preview'] else '.'}{session['output_format']}"
@@ -1788,9 +1788,9 @@ def build_interface(args:dict)->gr.Blocks:
                         if os.path.exists(final_file) or audio_sentences_exist:
                             session['status'] = status_tags['OVERRIDE']
                             msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
-                            return gr.update(value=show_gr_modal(session['status'], msg), visible=True), gr.update()
+                            return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
                         return gr.update(), (event + 1)
-                return gr.update(), gr.update()
+                return gr.update(), event
 
             def click_gr_override_cancel_btn(session_id:str)->dict:
                 session = context.get_session(session_id)
