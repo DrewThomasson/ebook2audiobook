@@ -2999,6 +2999,7 @@ def finalize_audiobook(session_id:str)->tuple:
             reset_ebook_session(session_id, force=True, filter_keys=False)
         return result(filename, True)
     except Exception as e:
+        reset_ebook_session(session_id, force=True, filter_keys=False)
         DependencyError(e)
         error = f'finalize_audiobook(): {e}'
         exception_alert(session_id, error)
