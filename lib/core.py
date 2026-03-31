@@ -2990,7 +2990,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 ebook_list = session['ebook_list']
                 ebook_list.remove(session['ebook_src'])
                 session['ebook_list'] = ebook_list
-            count_ebook = len(ebook_list)
+            count_ebook = len(session['ebook_list'])
         if count_ebook > 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
