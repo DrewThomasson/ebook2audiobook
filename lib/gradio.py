@@ -1713,6 +1713,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
                                         if progress_status == status_tags['EDIT']:
+                                            print('AAAAAAAAAAAAAAAAAAAAAAAAAAAA')
                                             return gr.update(value=progress_status)
                                         else:
                                             yield gr.update(value=progress_status)
