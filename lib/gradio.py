@@ -1717,10 +1717,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     progress_status, passed = convert_ebook(args)
                                     if passed:
                                         args['ebook_list'].remove (file)
-                                        if len(args['ebook_list']) == 0:
-                                            return gr.update(value=progress_status)
-                                        else:
-                                            yield gr.update(value=progress_status)
+                                        return gr.update(value=progress_status)
                                     else:
                                         error = progress_status
                                         break
