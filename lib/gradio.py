@@ -267,13 +267,6 @@ def build_interface(args:dict)->gr.Blocks:
                     background-color: rgba(239, 68, 68, 0.08) !important;
                 }
                 ////////////////////
-                #gr_ebook_file button .wrap {
-                    content: '';
-                }
-                #gr_ebook_file button .wrap::after {
-                    content: 'Your New Button Text' !important;
-                    font-size: 14px !important;
-                }
                 #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                     height: 100px !important;
                     min-height: 100px !important;
