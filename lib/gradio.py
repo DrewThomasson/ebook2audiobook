@@ -1716,7 +1716,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     args['ebook_src'] = file
                                     progress_status, passed = convert_ebook(args)
                                     if passed:
-                                        args['ebook_list'].remove (file)
                                         return gr.update(value=progress_status)
                                     else:
                                         error = progress_status
