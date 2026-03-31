@@ -1712,17 +1712,12 @@ def build_interface(args:dict)->gr.Blocks:
                             if isinstance(args['ebook_list'], list):
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
-                                        session = context.get_session(session_id)
-                                        if session and session.get('id', False):
-                                            if session['status'] == status_tags['EDIT']:
-                                                return gr.update(value=progress_status)
-                                            else:
-                                                session['ebook_list'] = args['ebook_list'][1:]
-                                                yield gr.update(value=progress_status)
-                                        else:
+                                        if session['status'] == status_tags['EDIT']:
+                                            return gr.update(value=progress_status)
+                                        if len(context.sessions[args['id']]['ebook_list']) == 0:
                                             reset_ebook_session(args['id'], force=True, filter_keys=False)
-                                            error = 'Session expired or not exists!'
-                                            break                                            
+                                            context.sessions[args['id']]['ebook_list'] = None
+                                        yield gr.update(value=progress_status)
                                     else:
                                         reset_ebook_session(args['id'], force=True, filter_keys=False)
                                         error = progress_status
