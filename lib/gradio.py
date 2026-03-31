@@ -1783,7 +1783,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if len(session['ebook_list']) > 0:
                                 source = session['ebook_list'][0]
                         else:
-                            source session['ebook_src']
+                            source = session['ebook_src']
                     else:
                         if isinstance(ebook_data, list):
                             if len(ebook_data) > 0:
