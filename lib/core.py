@@ -2614,7 +2614,10 @@ def convert_ebook_directory(args:dict)->tuple:
                     if passed:
                         if progress_status != status_tags['EDIT']:
                             args['ebook_list'].remove(file)
-                        yield progress_status, passed                           
+                        if progress_status == status_tags['EDIT'] or len(args['ebook_list']) == 0:
+                            return progress_status, passed
+                        else:
+                            yield progress_status, passed
                     else:
                         return progress_status, passed
         else:
