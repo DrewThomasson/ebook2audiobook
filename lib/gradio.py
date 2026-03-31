@@ -1776,7 +1776,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
                         source = session['ebook_list'][0] if isinstance(session['ebook_list'], list) else None
                     else:
-                        source = data if isinstance(data, list) else [data] if data else None
+                        source = data if isinstance(data, list) else data
                     if source is not None:
                         session['ebook_src'] = source
                         final_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['blocks_preview'] else '.'}{session['output_format']}"
