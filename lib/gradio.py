@@ -1782,10 +1782,14 @@ def build_interface(args:dict)->gr.Blocks:
                         if isinstance(session['ebook_list'], list):
                             if len(session['ebook_list']) > 0:
                                 source = session['ebook_list'][0]
+                        else:
+                            source session['ebook_src']
                     else:
                         if isinstance(ebook_data, list):
                             if len(ebook_data) > 0:
                                 source = ebook_data[0]
+                        else:
+                            source = ebook_data
                     if source is not None:
                         session['ebook_src'] = source
                         final_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['blocks_preview'] else '.'}{session['output_format']}"
