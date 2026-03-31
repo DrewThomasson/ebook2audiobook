@@ -2393,7 +2393,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal, gr_override_event]
             )
             gr_override_cancel_btn.click(
-                fn=click_gr_override_cancel_btn
+                fn=click_gr_override_cancel_btn,
                 inputs=[gr_session],
                 outputs=[gr_modal, gr_ebook_file]
             ).then(
