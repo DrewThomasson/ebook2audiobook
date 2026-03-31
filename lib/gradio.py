@@ -1810,7 +1810,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['ebook_list'] = ebook_list
                             return gr.update(value='', visible=False), gr.update(value=session['ebook_list'])
                     session['status'] = status_tags['READY']
-                return gr.update(value='', visible=False), gr.udpate()
+                return gr.update(value='', visible=False), gr.update()
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
                 session = context.get_session(session_id)
