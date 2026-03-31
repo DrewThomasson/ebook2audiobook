@@ -296,11 +296,21 @@ SML tags available:
                         full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                         args['ebook_list'].append(full_path)
                 error = None
-                for progress_status, passed in c.convert_ebook_directory(args):
-                    if passed:
-                        print(progress_status)
+                ebook_list = copy.deepcopy(args['ebook_list'])
+                for i, file in enumerate(ebook_list):
+                    if any(file.endswith(ext) for ext in ebook_formats):
+                        c.reset_ebook_session(args['id'], force=True, filter_keys=False)
+                        args['ebook_src'] = file
+                        progress_status, passed = c.convert_ebook(args)
+                        if passed:
+                            args['ebook_list'].remove (file)
+                            print(progress_status)
+                        else:
+                            error = progress_status
+                            print(error)
+                            sys.exit(1)
                     else:
-                        error = progress_status
+                        error = f'{Path(file).name} has not a supported format! skipping'
                         print(error)
                         sys.exit(1)
             elif args.get('ebook', None) is not None:

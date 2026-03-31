@@ -2601,28 +2601,6 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
-def convert_ebook_directory(args:dict)->tuple:
-    try:
-        passed = False
-        if isinstance(args['ebook_list'], list):
-            ebook_list = copy.deepcopy(args['ebook_list'])
-            total = len(ebook_list)
-            for i, file in enumerate(ebook_list):
-                if any(file.endswith(ext) for ext in ebook_formats):
-                    reset_ebook_session(args['id'], force=True, filter_keys=False)
-                    args['ebook_src'] = file
-                    progress_status, passed = convert_ebook(args)
-                    if passed:
-                        args['ebook_list'].remove (file)
-                    yield progress_status, passed
-        else:
-            error = 'the ebooks source is not a list!'
-            return error, False
-    except Exception as e:
-        error = f'Error convert_ebook_directory(): {e}'
-        exception_alert(args['id'], error)
-        return error, False
-
 def convert_ebook(args:dict)->tuple:
     try:
         global context

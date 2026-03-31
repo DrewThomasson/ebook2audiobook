@@ -1709,18 +1709,24 @@ def build_interface(args:dict)->gr.Blocks:
                             show_alert(session_id, {"type": "warning", "msg": error})                   
                         else:
                             session['ticker'] = len(audiobook_options)
-                            if isinstance(args['ebook_list'], list):
-                                for progress_status, passed in convert_ebook_directory(args):
+                            ebook_list = copy.deepcopy(args['ebook_list'])
+                            for i, file in enumerate(ebook_list):
+                                if any(file.endswith(ext) for ext in ebook_formats):
+                                    reset_ebook_session(args['id'], force=True, filter_keys=False)
+                                    args['ebook_src'] = file
+                                    progress_status, passed = convert_ebook(args)
                                     if passed:
-                                        if context.sessions[args['id']]['status'] == status_tags['EDIT']:
+                                        args['ebook_list'].remove (file)
+                                        if len(args['ebook_list']) == 0:
                                             return gr.update(value=progress_status)
                                         else:
-                                            if context.sessions[args['id']]['ebook_list'] is None:
-                                                return gr.update(value=progress_status)
                                             yield gr.update(value=progress_status)
                                     else:
                                         error = progress_status
                                         break
+                                else:
+                                    error = f'{Path(file).name} has not a supported format! skipping'
+                                    show_alert(session_id, {"type": "warning", "msg": error})
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
                                 progress_status, passed = convert_ebook(args)
@@ -1773,7 +1779,6 @@ def build_interface(args:dict)->gr.Blocks:
             def check_override_audiobook(session_id:str, ebook_data:any, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    print(f"session['status']: {session['status']} ----------------------")
                     if session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
                         source = session['ebook_list'][0] if isinstance(session['ebook_list'], list) else None
                     else:
