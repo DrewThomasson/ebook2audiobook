@@ -1133,14 +1133,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['cancellation_requested'] = True
                                 msg = 'Cancellation requested, please wait…'
                                 return gr.update(value=show_gr_modal('wait', msg), visible=True)
-                        if isinstance(data, list):
-                            ebook_list = []
-                            for f in data:
-                                path = f.get("path") if isinstance(f, dict) else str(f)
-                                ebook_list.append(path)
-                            session['ebook_list'] = ebook_list
-                        else:
-                            session['ebook_src'] = data
                         session['cancellation_requested'] = False
                 except Exception as e:
                     error = f'change_gr_ebook_file(): {e}'
@@ -1778,7 +1770,6 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     source = None
-                    print(f'ebook_data: {ebook_data}-----------------------------------------------------')
                     if session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
                         if isinstance(session['ebook_list'], list):
                             if len(session['ebook_list']) > 0:
