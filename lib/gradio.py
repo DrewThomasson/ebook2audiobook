@@ -1712,26 +1712,20 @@ def build_interface(args:dict)->gr.Blocks:
                             if isinstance(args['ebook_list'], list):
                                 for progress_status, passed in convert_ebook_directory(args):
                                     if passed:
-                                        if session['status'] == status_tags['EDIT']:
+                                        if context.sessions[args['id']]['status'] == status_tags['EDIT']:
                                             return gr.update(value=progress_status)
-                                        if len(context.sessions[args['id']]['ebook_list']) == 0:
-                                            reset_ebook_session(args['id'], force=True, filter_keys=False)
-                                            context.sessions[args['id']]['ebook_list'] = None
-                                            return gr.update(value=progress_status)
-                                        yield gr.update(value=progress_status)
+                                        else:
+                                            if len(context.sessions[args['id']]['ebook_list']) == 0:
+                                                return gr.update(value=progress_status)
+                                            yield gr.update(value=progress_status)
                                     else:
-                                        reset_ebook_session(args['id'], force=True, filter_keys=False)
                                         error = progress_status
                                         break
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
-                                    if progress_status == status_tags['EDIT']:
-                                        return gr.update(value=progress_status)
-                                    else:
-                                        reset_ebook_session(session_id, force=True, filter_keys=False)
-                                        return gr.update(value=progress_status)
+                                    return gr.update(value=progress_status)
                                 else:
                                     error = progress_status
                         if error is not None:
@@ -1742,7 +1736,6 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'start_conversion(): {e}'
                     exception_alert(session_id, error)
-                reset_ebook_session(session_id, force=True, filter_keys=False)
                 return gr.update()
 
             def update_gr_audiobook_list(session_id:str)->dict:
