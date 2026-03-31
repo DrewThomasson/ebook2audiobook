@@ -1724,7 +1724,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         args['ebook_list'].remove (file)
                                         error = f'{Path(file).name} has not a supported format! skipping'
-                                    show_alert(session_id, {"type": "warning", "msg": error})
+                                        show_alert(session_id, {"type": "warning", "msg": error})
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
                                 progress_status, passed = convert_ebook(args)
@@ -2838,24 +2838,24 @@ def build_interface(args:dict)->gr.Blocks:
                                 };
                             }
                             if(typeof(window.tab_progress) !== "function"){
-								window.tab_progress = ()=>{
-									try{
-										const gr_root = (window.gradioApp && window.gradioApp()) || document;
-										const el = gr_root.querySelector("#gr_progress");
-										const val = el?.value || el?.textContent || "";
-										const valArray = splitAtLastDash(val);
-										if(valArray[1]){
-											const title = valArray[0].trim().split(/ (.*)/)[1].trim();
-											const percentage = valArray[1].trim();
-											const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
-											document.title = titleShort + ": " + percentage;
-										}else{
-											document.title = "Ebook2Audiobook";
-										}
-									}catch(e){
-										console.warn("tab_progress error:", e);
-									}
-								};
+                                window.tab_progress = ()=>{
+                                    try{
+                                        const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                        const el = gr_root.querySelector("#gr_progress");
+                                        const val = el?.value || el?.textContent || "";
+                                        const valArray = splitAtLastDash(val);
+                                        if(valArray[1]){
+                                            const title = valArray[0].trim().split(/ (.*)/)[1].trim();
+                                            const percentage = valArray[1].trim();
+                                            const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
+                                            document.title = titleShort + ": " + percentage;
+                                        }else{
+                                            document.title = "Ebook2Audiobook";
+                                        }
+                                    }catch(e){
+                                        console.warn("tab_progress error:", e);
+                                    }
+                                };
                             }
                             if(typeof(splitAtLastDash) !== "function"){
                                 function splitAtLastDash(s){
