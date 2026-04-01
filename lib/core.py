@@ -2891,7 +2891,7 @@ def convert_ebook(args:dict)->tuple:
                     else:
                         error = f"Temporary directory {session['process_dir']} not removed due to failure."
         if session['cancellation_requested']:
-            error = 'Cancelled' if error is None else error + '. Cancelled'
+            error = 'Conversion Cancelled'
         show_alert(session_id, {"type": "warning", "msg": error})
         return error, False
     except Exception as e:
