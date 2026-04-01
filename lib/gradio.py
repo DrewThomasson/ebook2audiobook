@@ -846,14 +846,14 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple([gr.update(interactive=False) for _ in range(12)])
                 return outputs
             
-            def enable_components(session_id:str)->tuple:
+            def enable_components(session_id: str) -> tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['READY']]:
                         session['cancellation_requested'] = False
-                        outputs = tuple([gr.update(interactive=True) for _ in range(12)])
-                        return outputs
-                outputs = tuple([gr.update() for _ in range(12)])
+                        outputs = tuple(gr.update(interactive=True) for _ in range(12))
+                        return outputs + (gr.update(value=''),)
+                outputs = tuple(gr.update() for _ in range(13))
                 return outputs
                 
             def disable_on_voice_upload()->tuple:
@@ -2070,7 +2070,7 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_enable_components = [
                 gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_modal
             ]
             outputs_disable_components = [
                 gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
