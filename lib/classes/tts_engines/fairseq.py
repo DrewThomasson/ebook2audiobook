@@ -1,12 +1,7 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
-<<<<<<< HEAD
 #sys.stderr = StdoutFilter(sys.stdout)
-=======
-sys.stdout = StdoutFilter(sys.stdout)
-sys.stderr = StderrFilter(sys.stderr)
->>>>>>> 0d1d5a61775074509bcc6f852c634669e7bfc42a
 
 class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
 
