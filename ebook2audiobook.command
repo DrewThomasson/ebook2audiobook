@@ -430,6 +430,7 @@ function check_python {
     local installed_version
     installed_version=$(python3 --version 2>&1 | awk '{print $2}')
     local IFS='.'
+	echo "$installed_version"
     read -r ins_major ins_minor ins_patch <<< "$installed_version"
     read -r req_major req_minor req_patch <<< "$MIN_PYTHON_VERSION"
     if [ "$ins_major" -lt "$req_major" ] ||
