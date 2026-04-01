@@ -70,13 +70,13 @@ def kill_previous_instances(script_name: str):
 
 def main()->None:
     wsl_cmd = ''
-    env_prefix = ''
+    wsl_extra = ''
     if os.environ.get('DOCKER_IN_WSL', '0') == '1' and os.environ.get('DOCKER_DESKTOP', '0') == '0' and os.environ.get('PODMAN_DESKTOP', '0') == '0':
         wsl_cmd = 'wsl --user root --'
     if wsl_cmd:
-        env_prefix = 'DEVICE_TAG=cu128'
+        wsl_extra = 'DEVICE_TAG=cu128'
     else:
-        env_prefix = 'DEVICE_TAG=cu128 &&'
+        wsl_extra = 'DEVICE_TAG=cu128 &&'
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
@@ -132,14 +132,14 @@ Docker run image:
          {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 Docker Compose (i.e. cuda 12.8:
         Run Gradio GUI:
-             {wsl_cmd} {env_prefix} docker compose --profile gpu up --no-log-prefix
+             {wsl_cmd} {wsl_extra} docker compose --profile gpu up --no-log-prefix
         Run Headless mode:
-             {wsl_cmd} {env_prefix} docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+             {wsl_cmd} {wsl_extra} docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 Podman Compose (i.e. cuda 12.8:
         Run Gradio GUI:
-             {wsl_cmd} {env_prefix} podman-compose -f podman-compose.yml --profile gpu up
+             {wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu up
         Run Headless mode:
-             {wsl_cmd} {env_prefix} podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+             {wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 SML tags available:
         [break] — silence (random range **0.3–0.6 sec.**)
         [pause] — silence (random range **1.0–1.6 sec.**)
