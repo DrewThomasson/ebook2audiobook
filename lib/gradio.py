@@ -1794,11 +1794,14 @@ def build_interface(args:dict)->gr.Blocks:
                         audio_sentences_exist = False
                         if os.path.exists(sentences_dir):
                             audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
+                        print(f"final_file: {final_file}")
+                        print(f"audio_sentences_exist: {audio_sentences_exist}")
                         if os.path.exists(final_file) or audio_sentences_exist:
                             session['status'] = status_tags['OVERRIDE']
                             msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                             return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
-                        return gr.update(), (event + 1)
+                        else:
+                            return gr.update(), (event + 1)
                 session['status'] = status_tags['READY']
                 return gr.update(), event
 
