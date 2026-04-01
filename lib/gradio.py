@@ -2204,7 +2204,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_voice_list,
                 inputs=[gr_session],
                 outputs=[gr_voice_list],
-                show_progress_on=[gr_progress]
             ).then(
                 fn=enable_on_custom_upload,
                 inputs=[gr_session],
