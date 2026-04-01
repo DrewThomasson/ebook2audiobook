@@ -2287,12 +2287,13 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=toggle_audiobook_files,
                 inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
                 outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
-                show_progress="minimal",
+                show_progress_on=[gr_progress]
             )
             gr_audiobook_list.change(
                 fn=change_gr_audiobook_list,
                 inputs=[gr_session, gr_audiobook_list],
-                outputs=[gr_group_audiobook_list]
+                outputs=[gr_group_audiobook_list],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=update_gr_audiobook_player,
                 inputs=[gr_session],
@@ -2407,16 +2408,19 @@ def build_interface(args:dict)->gr.Blocks:
             gr_convert_btn.click(
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
-                outputs=[gr_modal, gr_override_event]
+                outputs=[gr_modal, gr_override_event],
+                show_progress_on=[gr_progress]
             )
             gr_override_cancel_btn.click(
                 fn=click_gr_override_cancel_btn,
                 inputs=[gr_session],
-                outputs=[gr_modal, gr_ebook_file]
+                outputs=[gr_modal, gr_ebook_file],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
-                outputs=[gr_modal, gr_override_event]
+                outputs=[gr_modal, gr_override_event],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
@@ -2438,7 +2442,8 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=start_conversion,
                 inputs=inputs_start_conversion,
-                outputs=[gr_progress]
+                outputs=[gr_progress],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=edit_blocks,
                 inputs=[gr_session],
@@ -2446,11 +2451,13 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=outputs_refresh_interface
+                outputs=outputs_refresh_interface,
+                show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
-                outputs=[gr_modal, gr_override_event]
+                outputs=[gr_modal, gr_override_event],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
@@ -2477,7 +2484,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_cancel_btn.click(
                 fn=click_gr_blocks_cancel_btn,
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
-                outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data]
+                outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
@@ -2495,15 +2503,18 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_event.change(
                 fn=finalize_audiobook,
                 inputs=[gr_session],
-                outputs=[gr_progress, gr_dummy_bool]
+                outputs=[gr_progress, gr_dummy_bool],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=refresh_interface,
                 inputs=[gr_session],
-                outputs=outputs_refresh_interface
+                outputs=outputs_refresh_interface,
+                show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
-                outputs=[gr_modal, gr_override_event]
+                outputs=[gr_modal, gr_override_event],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
@@ -2530,15 +2541,18 @@ def build_interface(args:dict)->gr.Blocks:
             gr_restore_session.change(
                 fn=change_gr_restore_session,
                 inputs=[gr_restore_session, gr_session_update],
-                outputs=[gr_save_session, gr_session_update, gr_session, gr_glassmask]
+                outputs=[gr_save_session, gr_session_update, gr_session, gr_glassmask],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=restore_interface,
                 inputs=[gr_session],
-                outputs=outputs_restore_interface
+                outputs=outputs_restore_interface,
+                show_progress_on=[gr_progress]
             ).then(
                 fn=restore_audiobook_player,
                 inputs=[gr_session, gr_audiobook_list],
-                outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_timer]
+                outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_timer],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=lambda session: update_gr_glassmask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
                 inputs=[gr_session],
@@ -2551,12 +2565,14 @@ def build_interface(args:dict)->gr.Blocks:
             gr_deletion_confirm_btn.click(
                 fn=click_gr_deletion,
                 inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_data_field_hidden],
-                outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
+                outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list],
+                show_progress_on=[gr_progress]
             )
             gr_deletion_cancel_btn.click(
                 fn=click_gr_deletion,
                 inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list],
-                outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list]
+                outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list],
+                show_progress_on=[gr_progress]
             )
             ############
             app.load(
