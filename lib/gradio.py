@@ -2110,12 +2110,14 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=change_gr_ebook_file,
                 inputs=[gr_session, gr_ebook_file],
-                outputs=[gr_modal]
+                outputs=[gr_modal],
+                show_progress_on=[gr_progress]
             )
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
                 inputs=[gr_session, gr_ebook_mode],
-                outputs=[gr_ebook_file]
+                outputs=[gr_ebook_file],
+                show_progress_on=[gr_progress]
             )
             gr_blocks_preview.select(
                 fn=lambda session_id, val: change_param('blocks_preview', session_id, bool(val)),
@@ -2129,7 +2131,8 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=change_gr_voice_file,
                 inputs=[gr_session, gr_voice_file],
-                outputs=[gr_voice_list]
+                outputs=[gr_voice_list],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=lambda: gr.update(value=None),
                 inputs=None,
@@ -2142,12 +2145,14 @@ def build_interface(args:dict)->gr.Blocks:
             gr_voice_list.change(
                 fn=change_gr_voice_list,
                 inputs=[gr_session, gr_voice_list],
-                outputs=[gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn]
+                outputs=[gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn],
+                show_progress_on=[gr_progress]
             )
             gr_voice_del_btn.click(
                 fn=click_gr_voice_del_btn,
                 inputs=[gr_session, gr_voice_list],
-                outputs=[gr_modal, gr_data_field_hidden]
+                outputs=[gr_modal, gr_data_field_hidden],
+                show_progress_on=[gr_progress]
             )
             gr_device.change(
                 fn=change_gr_device,
@@ -2157,29 +2162,35 @@ def build_interface(args:dict)->gr.Blocks:
             gr_language.change(
                 fn=change_gr_language,
                 inputs=[gr_session, gr_language],
-                outputs=[gr_language, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list]
+                outputs=[gr_language, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=update_gr_voice_list,
                 inputs=[gr_session],
-                outputs=[gr_voice_list]
+                outputs=[gr_voice_list],
+                show_progress_on=[gr_progress]
             )
             gr_tts_engine_list.change(
                 fn=change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_label]
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_label],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=update_gr_voice_list,
                 inputs=[gr_session],
-                outputs=[gr_voice_list]
+                outputs=[gr_voice_list],
+                show_progress_on=[gr_progress]
             )
             gr_fine_tuned_list.change(
                 fn=change_gr_fine_tuned_list,
                 inputs=[gr_session, gr_fine_tuned_list],
-                outputs=[gr_group_custom_model]
+                outputs=[gr_group_custom_model],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=update_gr_voice_list,
                 inputs=[gr_session],
-                outputs=[gr_voice_list]
+                outputs=[gr_voice_list],
+                show_progress_on=[gr_progress]
             )
             gr_custom_model_file.upload(
                 fn=disable_on_custom_upload,
@@ -2189,11 +2200,13 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=change_gr_custom_model_file,
                 inputs=[gr_session, gr_custom_model_file, gr_tts_engine_list],
                 outputs=[gr_custom_model_file, gr_custom_model_list],
-                show_progress_on=[gr_custom_model_list]
+                show_progress_on=[gr_custom_model_list],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=update_gr_voice_list,
                 inputs=[gr_session],
-                outputs=[gr_voice_list]
+                outputs=[gr_voice_list],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=enable_on_custom_upload,
                 inputs=[gr_session],
@@ -2202,12 +2215,14 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
                 inputs=[gr_session, gr_custom_model_list],
-                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn, gr_voice_list]
+                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn, gr_voice_list],
+                show_progress_on=[gr_progress]
             )
             gr_custom_model_del_btn.click(
                 fn=click_gr_custom_model_del_btn,
                 inputs=[gr_session, gr_custom_model_list],
-                outputs=[gr_modal, gr_data_field_hidden]
+                outputs=[gr_modal, gr_data_field_hidden],
+                show_progress_on=[gr_progress]
             )
             gr_output_format_list.change(
                 fn=change_gr_output_format_list,
