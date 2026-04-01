@@ -1695,19 +1695,15 @@ def build_interface(args:dict)->gr.Blocks:
                         error = None
                         if args['ebook_src'] is None and args['ebook_list'] is None:
                             error = 'Error: a file or directory is required.'
-                            show_alert(session_id, {"type": "warning", "msg": error})
                         elif args['xtts_num_beams'] < args['xtts_length_penalty']:
-                            error = 'Error: num beams must be greater or equal than length penalty.'
-                            show_alert(session_id, {"type": "warning", "msg": error})                   
+                            error = 'Error: num beams must be greater or equal than length penalty.'               
                         else:
                             session['ticker'] = len(audiobook_options)
                             if isinstance(args['ebook_list'], list):
                                 ebook_list = copy.deepcopy(args['ebook_list'])
                                 for i, file in enumerate(ebook_list):
                                     if session['cancellation_requested']:
-                                        session['status'] = status_tags['SKIP']
-                                        msg = 'Conversion cancelled'
-                                        show_alert(session_id, {"type": "warning", "msg": msg})
+                                        session['status'] = status_tags['END']
                                         return gr.update(value=msg)
                                     if any(file.endswith(ext) for ext in ebook_formats):
                                         reset_ebook_session(args['id'], force=True, filter_keys=False)
@@ -1717,11 +1713,11 @@ def build_interface(args:dict)->gr.Blocks:
                                             return gr.update(value=progress_status)
                                         else:
                                             error = progress_status
-                                        break
+                                            break
                                     else:
                                         args['ebook_list'].remove (file)
-                                        error = f'{Path(file).name} has not a supported format! skipping'
-                                        show_alert(session_id, {"type": "warning", "msg": error})
+                                        msg = f'{Path(file).name} has not a supported format! skipping'
+                                        show_alert(session_id, {"type": "warning", "msg": msg})
                             else:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
                                 progress_status, passed = convert_ebook(args)

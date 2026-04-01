@@ -2892,7 +2892,6 @@ def convert_ebook(args:dict)->tuple:
                         error = f"Temporary directory {session['process_dir']} not removed due to failure."
         if session['cancellation_requested']:
             error = 'Conversion Cancelled'
-        show_alert(session_id, {"type": "warning", "msg": error})
         return error, False
     except Exception as e:
         error = f'convert_ebook() Exception: {e}'
@@ -2906,8 +2905,6 @@ def finalize_audiobook(session_id:str)->tuple:
 
         def fail(error):
             session['status'] = status_tags['READY']
-            if session['blocks_preview']:
-                show_alert(session_id, {"type": "warning", "msg": error})
             return result(error, False)
 
         if not session or not session.get('id', False):
