@@ -228,7 +228,7 @@ SML tags available:
 
         print(f"v{prog_version} {args['script_mode']} mode")
         
-        if args['script_mode'] in [NATIVE, BUILD_DOCKER]:
+        if args['script_mode'] in [NATIVE, BUILD_DOCKER, FULL_DOCKER]:
             from lib.classes.device_installer import DeviceInstaller
             manager = DeviceInstaller()
             result = manager.install_python_packages()
