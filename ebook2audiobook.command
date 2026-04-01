@@ -422,6 +422,25 @@ function get_iso3_lang {
 	esac
 }
 
+function check_python {
+    if ! command -v python3 &>/dev/null; then
+        echo 'Python is not installed.'
+        return 1
+    fi
+    local installed_version
+    installed_version=$(python3 --version 2>&1 | awk '{print $2}')
+    local IFS='.'
+    read -r ins_major ins_minor ins_patch <<< "$installed_version"
+    read -r req_major req_minor req_patch <<< "$PYTHON_VERSION"
+    if [ "$ins_major" -lt "$req_major" ] ||
+       [ "$ins_major" -eq "$req_major" -a "$ins_minor" -lt "$req_minor" ] ||
+       [ "$ins_major" -eq "$req_major" -a "$ins_minor" -eq "$req_minor" -a "$ins_patch" -lt "$req_patch" ]; then
+        echo "Python $installed_version found but $PYTHON_VERSION or higher is required."
+        return 1
+    fi
+    return 0
+}
+
 function check_required_programs {
 	local programs=("$@")
 	programs_missing=()
@@ -912,10 +931,12 @@ function build_docker_image {
 ######################################## END of functions
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
+	check_python || exit 1
 	python -u "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
+			check_python || exit 1
 			check_docker || exit 1
 			DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
 			if [[ "$DEVICE_INFO_STR" == "" ]]; then
@@ -940,7 +961,7 @@ else
 			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		else
-			install_python_packages || return 1
+			install_python_packages || exit 1
 			install_device_packages "$DOCKER_DEVICE_STR" || exit 1
 			check_sitecustomized || exit 1
 		fi
