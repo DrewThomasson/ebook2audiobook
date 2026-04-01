@@ -2017,7 +2017,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 msg += f'<br/>---------'
                 show_alert(session_id, {"type": "info", "msg": msg})
                 ebook_name = Path(session['ebook']).name
-                final_sentences = []
+                all_sentences = []
                 global_sent = 0
                 ch_num = 0
                 last_save_time = time.monotonic()
@@ -2041,6 +2041,12 @@ def convert_chapters2audio(session_id:str)->bool:
                         )
                         if x < block_resume and not block_changed:
                             print(f'Chapter {ch_num} (block {x}) — unchanged, skipping')
+                            for j, sentence in enumerate(sentences):
+                                sentence = sentence.strip()
+                                if any(c.isalnum() for c in sentence):
+                                    is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
+                                    if (not is_sml) or (j == len(sentences) - 1):
+                                        all_sentences.append(sentence)
                             global_sent += len(sentences)
                             t.update(len(sentences))
                             continue
@@ -2071,7 +2077,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             if any(c.isalnum() for c in sentence):
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
-                                    final_sentences.append(sentence)
+                                    all_sentences.append(sentence)
                                 if j >= start_sentence:
                                     if j == start_sentence and start_sentence > 0:
                                         print(f'********* Resuming from sentence {global_sent} ********')
@@ -2108,7 +2114,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 session['blocks_current'] = blocks_current
                                 return False
                 session['blocks_current'] = blocks_current
-                write_vtt = tts_manager.create_sentences2vtt(final_sentences)
+                write_vtt = tts_manager.create_sentences2vtt(all_sentences)
                 return write_vtt
         except Exception as e:
             DependencyError(e)
