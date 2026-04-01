@@ -1705,10 +1705,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 ebook_list = copy.deepcopy(args['ebook_list'])
                                 for i, file in enumerate(ebook_list):
                                     if session['cancellation_requested']:
-                                        session['status'] = status_tags['READY']
+                                        session['status'] = status_tags['SKIP']
                                         msg = 'Conversion cancelled'
                                         show_alert(session_id, {"type": "warning", "msg": msg})
-                                        return gr.update(value='')
+                                        return gr.update(value=msg)
                                     if any(file.endswith(ext) for ext in ebook_formats):
                                         reset_ebook_session(args['id'], force=True, filter_keys=False)
                                         args['ebook_src'] = file
