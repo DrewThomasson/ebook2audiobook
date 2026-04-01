@@ -2131,7 +2131,8 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=change_gr_voice_file,
                 inputs=[gr_session, gr_voice_file],
-                outputs=[gr_voice_list]
+                outputs=[gr_voice_list],
+                show_progress_on=[gr_voice_list]
             ).then(
                 fn=lambda: gr.update(value=None),
                 inputs=None,
