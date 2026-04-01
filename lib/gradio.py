@@ -2665,7 +2665,11 @@ def build_interface(args:dict)->gr.Blocks:
                                             subtree: true,
                                             characterData: true
                                         });
-                                        gr_progress.addEventListener("change", tab_progress);
+                                        // new MutationObserver(tab_progress).observe(gr_progress.parentElement, { ... });
+                                        // gr_progress.addEventListener("change", tab_progress);
+                                        if(!window._tab_progress_interval){
+                                            window._tab_progress_interval = setInterval(tab_progress, 500);
+                                        }
                                     }catch(e){
                                         console.warn("init_interface error:", e);
                                     }
