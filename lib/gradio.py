@@ -1786,17 +1786,16 @@ def build_interface(args:dict)->gr.Blocks:
                             source = ebook_data
                     if source is not None:
                         session['ebook_src'] = source
-                        final_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
+                        final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
                         process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
                         chapters_dir = os.path.join(process_dir, 'chapters')
                         sentences_dir = os.path.join(chapters_dir, 'sentences')
-                        final_file = os.path.join(process_dir, final_name)
+                        pre_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
+                        pre_file = os.path.join(process_dir, pre_name)
                         audio_sentences_exist = False
                         if os.path.exists(sentences_dir):
                             audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
-                        print(f"final_file: {final_file}")
-                        print(f"audio_sentences_exist: {audio_sentences_exist}")
-                        if os.path.exists(final_file) or audio_sentences_exist:
+                        if os.path.exists(pre_file) or audio_sentences_exist:
                             session['status'] = status_tags['OVERRIDE']
                             msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                             return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
