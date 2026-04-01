@@ -239,6 +239,19 @@ SML tags available:
                     print(error)
                     sys.exit(1)
         import lib.core as c
+        if args['script_mode'] == FULL_DOCKER:
+            try:
+                import torch
+                if hasattr(torch, 'cuda') and torch.cuda.is_available():
+                    devices['CUDA']['found'] = True
+                if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                    devices['MPS']['found'] = True
+                if bool(getattr(torch.version, 'hip', None)):
+                    devices['ROCM']['found'] = True
+                if hasattr(torch, 'xpu') and torch.xpu.is_available():
+                    devices['XPU']['found'] = True
+            except Exception:
+                pass
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
