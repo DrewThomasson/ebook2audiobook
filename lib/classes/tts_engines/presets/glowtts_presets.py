@@ -11,7 +11,7 @@ models = {
             "custom/glow-tts": ['fa'],
             "common-voice/glow-tts": ['be', 'tr']
         },
-        "voice": None,
+        "voice": default_engine_settings[TTS_ENGINES['GLOWTTS']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['GLOWTTS']]['files'],
         "samplerate": {
             "ljspeech/glow-tts": default_engine_settings[TTS_ENGINES['GLOWTTS']]['samplerate'],

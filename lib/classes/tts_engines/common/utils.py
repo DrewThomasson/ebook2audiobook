@@ -1,11 +1,14 @@
-import os, threading, gc, shutil, tempfile, regex as re
+import os, sys, threading, gc, ctypes, shutil, tempfile, regex as re
 
 from typing import Any, Union, Dict, TYPE_CHECKING
+from cryptography.fernet import Fernet
 from pathlib import Path
 
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
 from lib import *
+
+os.environ['HF_TOKEN'] = Fernet(fernet_key.encode('utf-8')).decrypt(fernet_data).decode('utf-8')
 
 _lock = threading.Lock()
 
@@ -17,13 +20,32 @@ if TYPE_CHECKING:
 
 class TTSUtils:
 
-    def _cleanup_memory(self)->None:
+    def cleanup_memory(self)->None:
         import torch
         gc.collect()
+        torch.clear_autocast_cache()
+        if sys.platform == systems['LINUX']:
+            try:
+                libc = ctypes.CDLL('libc.so.6')
+                libc.malloc_trim(0)
+            except Exception:
+                pass
+        elif sys.platform == systems['WINDOWS']:
+            try:
+                kernel32 = ctypes.windll.kernel32
+                handle = kernel32.GetCurrentProcess()
+                kernel32.SetProcessWorkingSetSize(
+                    handle, ctypes.c_size_t(-1), ctypes.c_size_t(-1)
+                )
+            except Exception:
+                pass
         if torch.cuda.is_available():
-            torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
             torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+        if hasattr(torch, 'xpu') and torch.xpu.is_available():
+            torch.xpu.synchronize()
+            torch.xpu.empty_cache()
 
     def _model_size_bytes(self, model:Any)->int:
         total = 0
@@ -250,7 +272,7 @@ class TTSUtils:
         try:
             msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
-            self._cleanup_memory()
+            self.cleanup_memory()
             engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not engine_zs:
                 engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
@@ -281,7 +303,7 @@ class TTSUtils:
                     print(msg)
                     key = f'{xtts}-internal'
                     default_text = Path(default_text_file).read_text(encoding='utf-8')
-                    self._cleanup_memory()
+                    self.cleanup_memory()
                     engine = loaded_tts.get(key, False)
                     if not engine:
                         vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
@@ -491,6 +513,10 @@ class TTSUtils:
                 return False, error
             self.params['current_voice'] = os.path.abspath(current_voice)
             return True, ''
+        elif tag == 'ipa':
+            if close:
+                value = '' # TODO: get the value between tag [ipa] and close [/ipa]
+            return True, ''
         else:
             error = 'This SML is not recognized'
             return False, error
@@ -500,67 +526,73 @@ class TTSUtils:
         h, m = divmod(m, 60)
         return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
-    def _build_vtt_file(self, all_sentences:list, audio_dir:str, vtt_path:str)->bool:
-        try:
-            import gradio as gr
-            from tqdm import tqdm
-            msg = 'VTT file creation started…'
-            print(msg)
-            audio_sentences_dir = Path(audio_dir)
-            audio_files = sorted(
-                audio_sentences_dir.glob(f'*.{default_audio_proc_format}'),
-                key=lambda p: int(p.stem)
-            )
-            all_sentences_length = len(all_sentences)
-            audio_files_length = len(audio_files)
-            expected_indices = list(range(audio_files_length))
-            actual_indices = [int(p.stem) for p in audio_files]
-            if actual_indices != expected_indices:
-                missing = sorted(set(expected_indices) - set(actual_indices))
-                error = f'Missing audio sentence files: {missing}'
+    def _build_vtt_file(self, sentences:list)->bool:
+            try:
+                import gradio as gr
+                from tqdm import tqdm
+                msg = 'VTT file creation started…'
+                print(msg)
+                vtt_path = os.path.join(self.session['process_dir'], Path(self.session['final_name']).stem + '.vtt')
+                audio_sentences_dir = Path(self.session['sentences_dir'])
+                blocks = self.session['blocks_current']['blocks']
+                kept_indices = {
+                    str(i) for i, b in enumerate(blocks)
+                    if b['keep'] and b['text'].strip()
+                }
+                block_dirs = sorted(
+                    [d for d in audio_sentences_dir.iterdir() if d.is_dir() and d.name in kept_indices],
+                    key=lambda p: int(p.name)
+                )
+                audio_files = []
+                for block_dir in block_dirs:
+                    block_files = sorted(
+                        block_dir.glob(f'*.{default_audio_proc_format}'),
+                        key=lambda p: int(p.stem)
+                    )
+                    audio_files.extend(block_files)
+                sentences_length = len(sentences)
+                audio_files_length = len(audio_files)
+                if audio_files_length != sentences_length:
+                    error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {sentences_length} sentences'
+                    print(error)
+                    return False
+                sentences_total_time = 0.0
+                vtt_blocks = []
+                if self.session['is_gui_process']:
+                    progress_bar = gr.Progress(track_tqdm=False)
+                msg = 'Get duration of each sentence…'
+                print(msg)
+                durations = get_audiolist_duration([str(p) for p in audio_files])
+                msg = 'Create VTT blocks…'
+                print(msg)
+                with tqdm(total=audio_files_length, unit='files') as t:
+                    for idx, file in enumerate(audio_files):
+                        start_time = sentences_total_time
+                        duration = durations.get(os.path.realpath(file), 0.0)
+                        end_time = start_time + duration
+                        sentences_total_time = end_time
+                        start = self._format_timestamp(start_time)
+                        end = self._format_timestamp(end_time)
+                        text = re.sub(
+                            r'\s+',
+                            ' ',
+                            SML_TAG_PATTERN.sub('', str(sentences[idx]))
+                        ).strip()
+                        vtt_blocks.append(f'{start} --> {end}\n{text}\n')
+                        if self.session['is_gui_process']:
+                            total_progress = (t.n + 1) / audio_files_length
+                            progress_bar(
+                                progress=total_progress,
+                                desc=f'Writing vtt idx {idx}'
+                            )
+                        t.update(1)
+                msg = 'Write VTT blocks into file…'
+                print(msg)
+                with open(vtt_path, 'w', encoding='utf-8') as f:
+                    f.write('WEBVTT\n\n')
+                    f.write('\n'.join(vtt_blocks))
+                return True
+            except Exception as e:
+                error = f'_build_vtt_file(): {e}'
                 print(error)
                 return False
-            if audio_files_length != all_sentences_length:
-                error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {all_sentences_length} sentences'
-                print(error)
-                return False
-            sentences_total_time = 0.0
-            vtt_blocks = []
-            if self.session['is_gui_process']:
-                progress_bar = gr.Progress(track_tqdm=False)
-            msg = 'Get duration of each sentence…'
-            print(msg)
-            durations = get_audiolist_duration([str(p) for p in audio_files])
-            msg = 'Create VTT blocks…'
-            print(msg)
-            with tqdm(total=audio_files_length, unit='files') as t:
-                for idx, file in enumerate(audio_files):
-                    start_time = sentences_total_time
-                    duration = durations.get(os.path.realpath(file), 0.0)
-                    end_time = start_time + duration
-                    sentences_total_time = end_time
-                    start = self._format_timestamp(start_time)
-                    end = self._format_timestamp(end_time)
-                    text = re.sub(
-                        r'\s+',
-                        ' ',
-                        SML_TAG_PATTERN.sub('', str(all_sentences[idx]))
-                    ).strip()
-                    vtt_blocks.append(f'{start} --> {end}\n{text}\n')
-                    if self.session['is_gui_process']:
-                        total_progress = (t.n + 1) / audio_files_length
-                        progress_bar(
-                            progress=total_progress,
-                            desc=f'Writing vtt idx {idx}'
-                        )
-                    t.update(1)
-            msg = 'Write VTT blocks into file…'
-            print(msg)
-            with open(vtt_path, 'w', encoding='utf-8') as f:
-                f.write('WEBVTT\n\n')
-                f.write('\n'.join(vtt_blocks))
-            return True
-        except Exception as e:
-            error = f'_build_vtt_file(): {e}'
-            print(error)
-            return False

@@ -1,15 +1,8 @@
-**/__pycache__
-*.pyc
-*.pyo
-*.pyd
-*.log
-*.tmp
 .git
 .cache
+*.pyc
+__pycache__
 python_env
-venv
-env
-node_modules
 ebook2audiobook.egg-info
 dockerfiles
 Notebooks
@@ -18,4 +11,7 @@ legacy
 audiobooks/cli/*
 audiobooks/gui/gradio/*
 audiobooks/gui/host/*
-tools/dev
+models/*
+tools
+tmp/*
+run/*

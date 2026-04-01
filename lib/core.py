@@ -61,21 +61,29 @@ active_sessions = None
 progress_bar = None
 
 status_tags = {
-    "BLOCKS": "blocks",
     "OVERRIDE": "override",
     "DELETION": "deletion",
     "READY": "ready",
+    "EDIT": "edit",
+    "SKIP": "skip",
     "CONVERTING": "converting",
     "DISCONNECTED": "disconnected"
 }
 
 save_session_keys_except = [
     'blocks_orig',
-    'blocks_edit'
+    'blocks_saved',
+    'blocks_current'
 ]
 
-class DependencyError(Exception):
+file_prefixes = {
+    "clone": "__",
+    "saved": "__saved_"
+}
 
+########### Classes
+
+class DependencyError(Exception):
     def __init__(self, message:str|None):
         super().__init__(message)
         print(message)
@@ -90,25 +98,26 @@ class DependencyError(Exception):
         print(error)
 
 class SessionTracker:
-
     def __init__(self):
         self.lock = threading.Lock()
+        #self.blocks_autosave = AppAutosave()
+        #self.blocks_autosave.start()
 
     def start_session(self, session_id:str)->bool:
         with self.lock:
             session = context.get_session(session_id)
-            if session['status'] is None:
-                session['status'] = status_tags['READY']
-                return True
+            session['status'] = status_tags['READY']
+            #self.blocks_autosave.register(session_id)
+            return True
         return False
 
     def end_session(self, session_id:str, socket_hash:str)->None:
+        #self.blocks_autosave.unregister(session_id)
         active_sessions.discard(socket_hash)
         with self.lock:
             context.sessions.pop(session_id, None)
 
 class SessionContext:
-
     def __init__(self):
         self.manager:Manager = Manager()
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
@@ -148,7 +157,7 @@ class SessionContext:
             "ticker": 0,
             "cancellation_requested": False,
             "ebook_mode": "single",
-            "blocks_preview": default_blocks_preview,
+            "blocks_preview": False,
             "device": default_device,
             "tts_engine": default_tts_engine,
             "fine_tuned": default_fine_tuned,
@@ -189,17 +198,19 @@ class SessionContext:
             "audiobooks_dir": None,
             ####### Ebook conversion
             "ebook": None,
+            "ebook_src": None,
             "ebook_list": None,
             "process_dir": None,
             "chapters_dir": None,
             "sentences_dir": None,
             "epub_path": None,
-            "filename_noext": None,
             "final_name": None,
+            "filename_noext": None,
             "cover": None,
-            "blocks_orig": [],
-            "blocks_edit": [],
-            "chapters": [],
+            "blocks_orig": {},
+            "blocks_saved": {},
+            "blocks_saved_json": None,
+            "blocks_current": {},
             "duration": 0,
             "playback_time": 0,
             "playback_volume": 0,
@@ -229,22 +240,60 @@ class SessionContext:
             return self.sessions[session_id]
         return {}
 
-    def find_id_by_hash(self, socket_hash: str) -> str | None:
+    def find_id_by_hash(self, socket_hash:str)->str|None:
         for session_id, session in list(self.sessions.items()):
             if socket_hash in session:
                 return session_id
         return None
+"""
+class AppAutosave:
+    def __init__(self, interval:float=15.0):
+        self._interval = interval
+        self._sessions: set[str] = set()
+        self._lock = threading.Lock()
+        self._started = False
 
+    def start(self)->None:
+        if self._started:
+            return
+        self._started = True
+        t = threading.Thread(target=self._timer, daemon=True)
+        t.start()
+
+    def register(self, session_id:str)->None:
+        with self._lock:
+            self._sessions.add(session_id)
+
+    def unregister(self, session_id:str)->None:
+        with self._lock:
+            self._sessions.discard(session_id)
+
+    def _timer(self)->None:
+        while True:
+            time.sleep(self._interval)
+            with self._lock:
+                session_ids = set(self._sessions)
+            for session_id in session_ids:
+                try:
+                    session = context.get_session(session_id)
+                    if not session or not session.get('id', False):
+                        with self._lock:
+                            self._sessions.discard(session_id)
+                        continue
+                except Exception as e:
+                    logger.error(f'AppAutosave._timer({session_id}): {e}!')
+"""
 class JSONDictProxyEncoder(json.JSONEncoder):
-
     def default(self, o:Any)->Any:
         if isinstance(o, DictProxy):
             return dict(o)
         elif isinstance(o, ListProxy):
             return list(o)
         return super().default(o)
+        
+############# End classes
 
-def prepare_dirs(src:str, session_id:str)->bool:
+def prepare_dirs(session_id:str)->bool:
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
@@ -257,8 +306,6 @@ def prepare_dirs(src:str, session_id:str)->bool:
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
-            session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
-            shutil.copy(src, session['ebook'])
             return True
     except Exception as e:
         DependencyError(e)
@@ -336,7 +383,7 @@ def extract_custom_model(session_id)->str|None:
                 model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
                 os.makedirs(model_path, exist_ok=True)
                 required_files_lc = set(x.lower() for x in required_files)
-                msg = f'Extracting files to {model_path}...'
+                msg = f'Extracting files to {model_path}…'
                 with tqdm(total=files_length, unit='files') as t:
                     for f in files:
                         base_f = os.path.basename(f).lower()
@@ -382,13 +429,13 @@ def extract_custom_model(session_id)->str|None:
         session['custom_model'] = None
     return None
         
-def hash_proxy_dict(proxy_dict)->str:
+def hash_proxy_dict(proxy_dict:Any)->str:
     try:
-        data = dict(proxy_dict)
+        data = {k: v for k, v in dict(proxy_dict).items() if k not in save_session_keys_except}
     except Exception:
         data = {}
     data_str = json.dumps(data, sort_keys=True, default=str)
-    return hashlib.md5(data_str.encode("utf-8")).hexdigest()
+    return hashlib.md5(data_str.encode('utf-8')).hexdigest()
 
 def compare_checksums(session_id:str)->tuple[bool, str|None]:
     try:
@@ -438,7 +485,7 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def ocr2xhtml(img: Image.Image, lang: str)->str:
+def ocr2xhtml(img: Image.Image, lang:str)->str:
     try:
         debug = True
         try:
@@ -544,18 +591,21 @@ def load_json_blocks(filepath:str)->list[dict]:
         print(f"load_json_blocks() error: {e}")
         return []
 
-def save_json_blocks(session_id:str, file_path:str, key:str)->bool:
+def save_json_blocks(session:DictProxy, file_path:str, key:str)->None:
     try:
-        session = context.get_session(session_id)
-        if not session:
-            print(f"save_json_blocks error: session not found ({session_id})")
-            return False
+        if key == 'blocks_current':
+            blocks_previous_hash = hash_proxy_dict(MappingProxyType(session['blocks_saved']))
+            blocks_new_hash = hash_proxy_dict(MappingProxyType(session['blocks_current']))
+            if blocks_previous_hash == blocks_new_hash:
+                return
+            session['blocks_saved'] = copy.deepcopy(session['blocks_current'])
+            json_data = session['blocks_saved']
+        else:
+            json_data = session[key]
         with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(session[key], f, ensure_ascii=False, indent=2)
-        return True
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"save_json_blocks() error: {e}")
-        return False
 
 def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
@@ -567,8 +617,8 @@ def convert2epub(session_id:str)-> bool:
         try:
             title = False
             author = False
-            calibre_cli = shutil.which('ebook-convert')
-            if not calibre_cli:
+            ebook_convert = shutil.which('ebook-convert')
+            if not ebook_convert:
                 error = 'ebook-convert utility is not installed or not found.'
                 print(error)
                 return False
@@ -594,8 +644,8 @@ def convert2epub(session_id:str)-> bool:
                 print(msg)
                 doc = fitz.open(file_input)
                 file_meta = doc.metadata
-                filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
-                title = file_meta.get('title') or filename_no_ext
+                filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
+                title = file_meta.get('title') or filename_noext
                 author = file_meta.get('author') or False
                 xhtml_pages = []
                 for i, page in enumerate(doc):
@@ -606,9 +656,7 @@ def convert2epub(session_id:str)-> bool:
                         text = ''
                     if not text:
                         msg = f'The page {i+1} seems to be image-based. Using OCR…'
-                        print(msg)
-                        if session['is_gui_process']:
-                            show_alert({"type": "warning", "msg": msg})
+                        show_alert(session_id, {"type": "warning", "msg": msg})
                         pix = page.get_pixmap(dpi=300)
                         img = Image.open(io.BytesIO(pix.tobytes('png')))
                         xhtml_content = ocr2xhtml(img, session['language'])
@@ -629,13 +677,13 @@ def convert2epub(session_id:str)-> bool:
                         '</body>\n'
                         '</html>\n'
                     )
-                    file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+                    file_input = os.path.join(session['process_dir'], f'{filename_noext}.xhtml')
                     with open(file_input, 'w', encoding='utf-8') as html_file:
                         html_file.write(xhtml_text)
                 else:
                     return False
             elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
-                filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
+                filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 msg = f'File input is an image ({file_ext}). Running OCR…'
                 print(msg)
                 img = Image.open(file_input)
@@ -652,23 +700,23 @@ def convert2epub(session_id:str)-> bool:
                         '<?xml version="1.0" encoding="utf-8"?>\n'
                         '<html xmlns="http://www.w3.org/1999/xhtml">\n'
                         '<head>\n'
-                        f'<meta charset="utf-8"/>\n<title>{filename_no_ext}</title>\n'
+                        f'<meta charset="utf-8"/>\n<title>{filename_noext}</title>\n'
                         '</head>\n'
                         '<body>\n'
                         f'{xhtml_body}\n'
                         '</body>\n'
                         '</html>\n'
                     )
-                    file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+                    file_input = os.path.join(session['process_dir'], f'{filename_noext}.xhtml')
                     with open(file_input, 'w', encoding='utf-8') as html_file:
                         html_file.write(xhtml_text)
                     print(f'OCR completed for {page_count} image page(s).')
                 else:
                     return False
-            msg = f"Running command: {calibre_cli} {file_input} {session['epub_path']}"
+            msg = f"Running command: {ebook_convert} {file_input} {session['epub_path']}"
             print(msg)
             cmd = [
-                    calibre_cli, file_input, session['epub_path'],
+                    ebook_convert, file_input, session['epub_path'],
                     '--input-encoding=utf-8',
                     '--output-profile=generic_eink',
                     '--epub-version=3',
@@ -790,7 +838,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 ]
             except Exception as toc_error:
                 error = f'Error extracting Table of Content: {toc_error}'
-                show_alert({"type": "warning", "msg": error})
+                show_alert(session_id, {"type": "warning", "msg": error})
             # Get spine item IDs
             spine_ids = [item[0] for item in epubBook.spine]
             # Filter only spine documents (i.e., reading order)
@@ -965,9 +1013,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 images = body.find_all('img') + body.find_all('image')
                 if images and zf:
                     msg = f'Doc {idx}: no text but {len(images)} image(s) detected. Running OCR…'
-                    print(msg)
-                    if session['is_gui_process']:
-                        show_alert({"type": "warning", "msg": msg})
+                    show_alert(session_id, {"type": "warning", "msg": msg})
                     ocr_parts = []
                     doc_dir = os.path.dirname(doc.get_name())
                     for img_tag in images:
@@ -1062,9 +1108,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             # clean SML tags badly coded
             res, text = normalize_sml_tags(text)
             if res is False:
-                print(text)
-                if session['is_gui_process']:
-                    show_alert({"type": "warning", "msg": text})
+                show_alert(session_id, {"type": "warning", "msg": text})
                 return None
             # remove any [break] between words or cutting words
             break_token = re.escape(sml_token('break'))
@@ -1149,7 +1193,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         DependencyError(error)
         return None
 
-def get_sentences(text:str, session_id:str)->list|None:
+def get_sentences(session_id:str, text:str)->list|None:
 
     def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
@@ -1661,12 +1705,12 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
-def roman2number(text: str)->str:
+def roman2number(text:str)->str:
 
-    def is_valid_roman(s: str)->bool:
+    def is_valid_roman(s:str)->bool:
         return bool(valid_roman.fullmatch(s))
 
-    def to_int(s: str)->str:
+    def to_int(s:str)->str:
         s = s.upper()
         i = 0
         result = 0
@@ -1788,13 +1832,13 @@ def foreign2latin(text:str, base_lang:str)->str:
             return unidecode(word)
 
     # Protect ALL SML tags using the global grammar
-    protected: Dict[str, str] = {}
+    protected:dict[str, str] = {}
     for i, m in enumerate(SML_TAG_PATTERN.finditer(text)):
-        key: str = f'__TTS_MARKER_{i}__'
+        key:str = f'__TTS_MARKER_{i}__'
         protected[key] = m.group(0)
         text = text.replace(m.group(0), key)
-    tokens: list[str] = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
-    buf: list[str] = []
+    tokens:list[str] = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+    buf:list[str] = []
     for t in tokens:
         if t in protected:
             buf.append(t)
@@ -1802,7 +1846,7 @@ def foreign2latin(text:str, base_lang:str)->str:
             buf.append(romanize(t))
         else:
             buf.append(t)
-    out: str = ''
+    out:str = ''
     for i, t in enumerate(buf):
         if i == 0:
             out += t
@@ -1947,139 +1991,154 @@ def convert_chapters2audio(session_id:str)->bool:
     if session and session.get('id', False):
         try:
             tts_manager = TTSManager(session)
-            resume_chapter = 0
-            missing_chapters = []
-            final_sentences = []
-            chapter_re = re.compile(r'^(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
-            existing_chapters = [f for f in os.listdir(session['chapters_dir']) if chapter_re.match(f)]
-            existing_numbers = sorted(int(chapter_re.match(f).group(1)) for f in existing_chapters)
+            blocks_current = session['blocks_current']
+            blocks = blocks_current['blocks']
+            blocks_saved = session['blocks_saved']['blocks']
+            block_resume = blocks_current['block_resume']
+            sentence_resume = blocks_current['sentence_resume']
             if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
+                print('Cancel requested')
                 return False
-            if existing_numbers:
-                expected = set(range(0, max(existing_numbers) + 1))
-                missing_chapters = sorted(expected - set(existing_numbers))
-                if not missing_chapters:
-                    missing_chapters = [max(existing_numbers) + 1]
-                resume_chapter = existing_numbers[-1]
-            resume_sentence = 0
-            missing_sentences = []
-            sentence_re = re.compile(r'^(\d+)\.' + re.escape(default_audio_proc_format) + r'$')
-            existing_sentences = [f for f in os.listdir(session['sentences_dir']) if sentence_re.match(f)]
-            existing_numbers = sorted(int(sentence_re.match(f).group(1)) for f in existing_sentences)
-            if existing_numbers:
-                expected = set(range(0, max(existing_numbers) + 1))
-                missing_sentences = sorted(expected - set(existing_numbers))
-                if not missing_sentences:
-                    missing_sentences = [max(existing_numbers) + 1]
-                resume_sentence = existing_numbers[-1]
-            total_chapters = len(session['chapters'])
+            blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
+            total_chapters = len(blocks_kept)
             if total_chapters == 0:
-                error = 'No chapterrs found!'
-                print(error)
+                show_alert(session_id, {"type": "warning", "msg": 'No chapters found!'})
                 return False
-            total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
-            total_sentences = sum(sum(1 for row in chapter) for chapter in session['chapters'])
+            total_sentences = sum(len(b['sentences']) for _, b in blocks_kept)
             if total_sentences == 0:
-                error = 'No sentences found!'
-                print(error)
+                show_alert(session_id, {"type": "warning", "msg": 'No sentences found!'})
                 return False
-            msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
-            print(msg)
+            total_iterations = total_sentences
             if session['ebook']:
+                msg = f'---------<br/>'
+                msg += f"{session['filename_noext']}<br/>"
+                msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
+                msg += f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
+                msg += f'<br/>---------'
+                show_alert(session_id, {"type": "info", "msg": msg})
                 ebook_name = Path(session['ebook']).name
+                final_sentences = []
+                global_sent = 0
+                ch_num = 0
+                last_save_time = time.monotonic()
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                    idx_target = 0
-                    for c in range(0, total_chapters):
+                    for x, block in blocks_kept:
                         if session['cancellation_requested']:
-                            msg = 'Cancel requested'
-                            print(msg)
+                            print('Cancel requested')
+                            session['blocks_current'] = blocks_current
                             return False
-                        chapter_idx = c
-                        sentences = session['chapters'][c]
-                        start = idx_target
-                        if c in missing_chapters:
-                            msg = f'********* Recovering missing block {c} *********'
-                            print(msg)
-                        elif resume_chapter == c and c > 0:
-                            msg = f'********* Resuming from block {resume_chapter} *********'
-                            print(msg)
-                        msg = f'Block {chapter_idx} containing {len(sentences)} sentences…'
-                        print(msg)
-                        for idx, sentence in enumerate(sentences):
+                        last_save_time = time.monotonic()
+                        ch_num += 1
+                        sentences = block['sentences']
+                        sent_start = global_sent
+                        prev_block = blocks_saved[x] if x < len(blocks_saved) else None
+                        block_changed = (
+                            prev_block is None
+                            or prev_block.get('text', '').strip() != block['text'].strip()
+                            or prev_block.get('voice', '') != block.get('voice', '')
+                            or prev_block.get('tts_engine', '') != block.get('tts_engine', '')
+                            or prev_block.get('fine_tuned', '') != block.get('fine_tuned', '')
+                        )
+                        if x < block_resume and not block_changed:
+                            print(f'Chapter {ch_num} (block {x}) — unchanged, skipping')
+                            global_sent += len(sentences)
+                            t.update(len(sentences))
+                            continue
+                        if block_changed and x <= block_resume:
+                            print(f'Chapter {ch_num} (block {x}) — changed, reconverting')
+                            ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                            if os.path.exists(ch_file):
+                                os.unlink(ch_file)
+                            start_sentence = 0
+                        elif x == block_resume:
+                            print(f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}')
+                            start_sentence = sentence_resume
+                        else:
+                            start_sentence = 0
+                        print(f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…')
+                        block_dir = os.path.join(session['sentences_dir'], str(x))
+                        os.makedirs(block_dir, exist_ok=True)
+                        blocks_current['block_resume'] = x
+                        blocks_current['sentence_resume'] = start_sentence
+                        session['blocks_current'] = blocks_current
+                        save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                        for j in range(len(sentences)):
                             if session['cancellation_requested']:
-                                msg = 'Cancel requested'
-                                print(msg)
+                                print('Cancel requested')
+                                session['blocks_current'] = blocks_current
                                 return False
-                            sentence = sentence.strip()
+                            sentence = sentences[j].strip()
                             if any(c.isalnum() for c in sentence):
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
-                                if (not is_sml) or (idx == len(sentences) - 1):
+                                if (not is_sml) or (j == len(sentences) - 1):
                                     final_sentences.append(sentence)
-                                if idx_target in missing_sentences or idx_target >= resume_sentence:
-                                    if idx_target in missing_sentences:
-                                        msg = f'********* Recovering missing sentence {idx_target} *********'
-                                        print(msg)
-                                    elif resume_sentence == idx_target and resume_sentence > 0:
-                                        msg = f'********* Resuming from sentence {resume_sentence} ********'
-                                        print(msg)
-                                    success = tts_manager.convert_sentence2audio(idx_target, sentence) if sentence else True
-                                    if not success:
+                                if j >= start_sentence:
+                                    if j == start_sentence and start_sentence > 0:
+                                        print(f'********* Resuming from sentence {global_sent} ********')
+                                    sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
+                                    success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
+                                    if success:
+                                        blocks_current['sentence_resume'] = j
+                                        session['blocks_current'] = blocks_current
+                                        now = time.monotonic()
+                                        if now - last_save_time >= 5:
+                                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                                            last_save_time = now
+                                    else:
+                                        session['blocks_current'] = blocks_current
                                         return False
-                                idx_target += 1
+                                global_sent += 1
                             total_progress = (t.n + 1) / total_iterations
                             if session['is_gui_process']:
                                 progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
                             percent = total_progress * 100
-                            t.set_description(f"{percent:.2f}%")
-                            msg = f' : {sentence}'
-                            print(msg)
+                            t.set_description(f'{percent:.2f}%')
+                            print(f' : {sentence}')
                             t.update(1)
-                        end = idx_target - 1
-                        msg = f'End of Block {chapter_idx}'
-                        print(msg)
-                        if chapter_idx in missing_chapters or idx_target >= resume_sentence:
-                            msg = f'Combining block {chapter_idx} to audio, sentence {start} to {end}'
-                            print(msg)
-                            chapter_audio_file = os.path.join(session['chapters_dir'], f'{chapter_idx}.{default_audio_proc_format}')
-                            combine_result = combine_audio_sentences(session_id, chapter_audio_file, int(start), int(end))
+                        sent_end = global_sent - 1
+                        print(f'End of Chapter {ch_num} (block {x})')
+                        if j >= start_sentence or block_changed:
+                            print(f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}')
+                            chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                            last_save_time = time.monotonic()
+                            combine_result = combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences))
                             if not combine_result:
-                                msg = 'combine_audio_sentences() failed!'
-                                print(msg)
+                                show_alert(session_id, {"type": "error", "msg": 'combine_audio_sentences() failed!'})
+                                session['blocks_current'] = blocks_current
                                 return False
-            return tts_manager.create_sentences2vtt(final_sentences)
+                session['blocks_current'] = blocks_current
+                write_vtt = tts_manager.create_sentences2vtt(final_sentences)
+                return write_vtt
         except Exception as e:
             DependencyError(e)
             error = f'convert_chapters2audio() error: {e}'
-            print(error)
+            exception_alert(session_id, error)
             return False
 
-def combine_audio_sentences(session_id:str, file:str, start:int, end:int)->bool:
+def combine_audio_sentences(session_id:str, file:str, block_idx:int, sentence_count:int)->bool:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
             error = 'Session expired!'
             print(error)
             return False
-        base = session['sentences_dir']
-        ext = f".{default_audio_proc_format}"
-        exists = os.path.exists
-        join = os.path.join
+        block_dir = os.path.join(session['sentences_dir'], str(block_idx))
+        ext = f'.{default_audio_proc_format}'
         missing = []
         selected_files = []
-        for i in range(start, end + 1):
-            path = join(base, f"{i}{ext}")
-            if exists(path):
+        for i in range(sentence_count):
+            path = os.path.join(block_dir, f'{i}{ext}')
+            if os.path.exists(path):
                 selected_files.append(path)
             else:
                 missing.append(i)
         if missing:
-            error = f"Missing sentence files: {missing}"
+            error = f'Missing sentence files in block {block_idx}: {missing}'
             print(error)
             return False
         if not selected_files:
-            error = 'No audio files found in the specified range.'
+            error = f'No audio files found for block {block_idx}.'
             print(error)
             return False
         concat_dir = session['process_dir']
@@ -2285,12 +2344,21 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
-            chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
-            chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
-            chapter_titles = [c[0] for c in session['chapters']]
+            kept_blocks = [
+                (i, b) for i, b in enumerate(session['blocks_current']['blocks'])
+                if b['keep'] and b['text'].strip() and b.get('sentences')
+            ]
+            chapter_files = []
+            chapter_titles = []
+            for block_idx, block in kept_blocks:
+                fname = f'{block_idx}.{default_audio_proc_format}'
+                fpath = os.path.join(session['chapters_dir'], fname)
+                if os.path.exists(fpath):
+                    chapter_files.append(fname)
+                    chapter_titles.append(block['sentences'][0] if block['sentences'] else '')
             is_gui_process = session['is_gui_process']
             if len(chapter_files) == 0:
-                print('No block files exists!')
+                print('No block files exist!')
                 return None
             chunks_size = 892
             total_duration = 0.0
@@ -2479,12 +2547,11 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
 
 def delete_proc_audio_files(dir:str, files:list)->None:
     base = Path(dir)
-    for file in base.glob(f"[0-9]*.{default_audio_proc_format}"):
-        if file.stem.isdigit():
-            if file in files:
-                file.unlink()
+    for file in base.rglob(f'[0-9]*.{default_audio_proc_format}'):
+        if file.stem.isdigit() and file in files:
+            file.unlink()
 
-def clear_folder(folder_path:str)->None:
+def delete_folder(folder_path:str)->None:
     for name in os.listdir(folder_path):
         path = os.path.join(folder_path, name)
         if os.path.isfile(path) or os.path.islink(path):
@@ -2534,41 +2601,18 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
-def convert_ebook_batch(args:dict)->tuple:
-    if isinstance(args['ebook_list'], list):
-        ebook_list = args['ebook_list'][:]
-        for file in ebook_list: # Use a shallow copy
-            if any(file.endswith(ext) for ext in ebook_formats):
-                args['ebook'] = file
-                print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, passed = convert_ebook(args)
-                if passed is False:
-                    msg = f'Conversion failed: {progress_status}'
-                    print(msg)
-                    if not args['is_gui_process']:
-                        sys.exit(1)
-                args['ebook_list'].remove(file) 
-        return progress_status, passed
-    else:
-        error = f'the ebooks source is not a list!'
-        print(error)
-        if not args['is_gui_process']:
-            sys.exit(1)       
-
 def convert_ebook(args:dict)->tuple:
     try:
-        global context        
+        global context
         error = None
         session_id = None
         info_session = None
         if args['language'] is not None:
-            if not os.path.splitext(args['ebook'])[1]:
-                error = f"{args['ebook']} needs a format extension."
-                print(error)
+            if not os.path.splitext(args['ebook_src'])[1]:
+                error = f"{args['ebook_src']} needs a format extension."
                 return error, False
-            if not os.path.exists(args['ebook']):
+            if not os.path.exists(args['ebook_src']):
                 error = 'File does not exist or Directory empty.'
-                print(error)
                 return error, False
             try:
                 if len(args['language']) in (2, 3):
@@ -2582,9 +2626,8 @@ def convert_ebook(args:dict)->tuple:
                 pass
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
-                print(error)
                 return error, False
-            if args['id'] is not None:
+            if args.get('id'):
                 session_id = str(args['id'])
                 session = context.get_session(session_id)
                 if not session:
@@ -2594,16 +2637,12 @@ def convert_ebook(args:dict)->tuple:
                 session = context.set_session(session_id)
                 if not context_tracker.start_session(session_id):
                     error = 'convert_ebook() error: Session initialization failed!'
-                    print(error)
                     return error, False
-            msg = f'*********** Session: {session_id} **************\n{session_info}'
-            print(msg)
-            session['status'] = status_tags['CONVERTING']
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
-            session['ebook'] = str(args['ebook']) if args.get('ebook') is not None else None
-            session['ebook_list'] = list(args['ebook_list']) if args.get('ebook_list') else None
+            session['ebook_src'] = str(args['ebook_src'])
+            session['ebook_list'] = list(args['ebook_list']) if isinstance(args['ebook_list'], list) else None
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
@@ -2628,8 +2667,10 @@ def convert_ebook(args:dict)->tuple:
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
-            ebook_name = get_sanitized(Path(session['ebook']).stem)
+            session['status'] = status_tags['EDIT'] if session['blocks_preview']  else status_tags['CONVERTING'] 
+            ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             cleanup_models_cache()
+            print(f"Processing eBook file: {os.path.basename(session['ebook_src'])}")
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + '.' + session['output_format']
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
@@ -2640,13 +2681,14 @@ def convert_ebook(args:dict)->tuple:
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
                 os.makedirs(session['voice_dir'], exist_ok=True)
-                audio_sentences_exist = glob(f"{session['sentences_dir']}/*.{default_audio_proc_format}")
-                if os.path.exists(session['final_name']) or audio_sentences_exist:
-                    msg = f"Warning! The final file {Path(session['final_name']).name} already exists or some sentences are already converted. Continue? WARNING! The whole previous conversion will be deleted!"
+                audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
+                audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
+                if audio_pre_final_exist or audio_sentences_exist:
+                    msg = f"Warning! This conversion already exists. Continue? WARNING! The whole previous conversion will be deleted!" if audio_pre_final_exist else f"Warning! Some sentences are already converted. Resume?"
                     print(msg)
                     while True:
                         choice = input("[s]kip / [y]es: ").strip().lower()
@@ -2654,11 +2696,13 @@ def convert_ebook(args:dict)->tuple:
                             break
                         print("Please enter 's', or 'y'.")
                     if choice == 'y':
-                        shutil.rmtree(session['process_dir'], ignore_errors=True)
+                        if audio_pre_final_exist:
+                            delete_folder(session['process_dir'])
                     elif choice == 's':
-                        error = 'Conversion skipped.'
+                        msg = 'Conversion skipped.'
+                        return msg, True
                 if error is None:
-                    #delete_unused_tmp_dirs(audiobooks_cli_dir, 180, session_id)
+                    #delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
@@ -2696,7 +2740,9 @@ def convert_ebook(args:dict)->tuple:
                     if not is_installed:
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
-                    if prepare_dirs(session['ebook'], session_id):
+                    if prepare_dirs(session_id):
+                        session['ebook'] = os.path.join(session['process_dir'], os.path.basename(session['ebook_src']))
+                        shutil.copy(session['ebook_src'], session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
                         msg_extra = ''
@@ -2709,6 +2755,8 @@ def convert_ebook(args:dict)->tuple:
                             msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
                         else:
                             msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
+                            if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
+                                msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
                             if session['free_vram_gb'] > 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
@@ -2741,27 +2789,31 @@ def convert_ebook(args:dict)->tuple:
                                 os.environ['SUNO_OFFLOAD_CPU'] = "False"
                                 os.environ['SUNO_USE_SMALL_MODELS'] = "False"
                         if msg == '':
-                            msg = f"Using {session['device'].upper()}"
-                        msg += msg_extra;
+                            msg_extra = f"Using {session['device'].upper()}" + msg_extra
                         device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
                         if float(total_vram_gb) >= float(device_vram_required):
-                            if session['is_gui_process']:
-                                show_alert({"type": "warning", "msg": msg})
-                            print(msg.replace('<br/>','\n'))
+                            if msg:
+                                show_alert(session_id, {"type": "warning", "msg": msg + msg_extra})
+                            else:
+                                show_alert(session_id, {"type": "info", "msg": msg_extra})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             checksum, error = compare_checksums(session_id)
                             if not checksum:
                                 result_epub = convert2epub(session_id)
-                                if not result_epub:
+                                if result_epub:
+                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing todo with the final conversion."
+                                    print(msg)
+                                else:
                                     error = 'convert2epub() failed!'
                             if error is None:
-                                json_blocks_orig_file = os.path.join(session['process_dir'], f"__{session['filename_noext']}.json")
-                                json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
+                                json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
+                                session['blocks_saved_json'] = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                                 missing_json = True
                                 if os.path.exists(json_blocks_orig_file):
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
-                                    if os.path.exists(json_blocks_edit_file):
-                                        session['blocks_edit'] = load_json_blocks(json_blocks_edit_file)
+                                    if os.path.exists(session['blocks_saved_json']):
+                                        session['blocks_saved'] = load_json_blocks(session['blocks_saved_json']) 
+                                        session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                     missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
@@ -2784,9 +2836,7 @@ def convert_ebook(args:dict)->tuple:
                                         pass                         
                                     if session['metadata']['language'] != session['language']:
                                         error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                        print(error)
-                                        if session['is_gui_process']:
-                                            show_alert({"type": "warning", "msg": error})
+                                        show_alert(session_id, {"type": "warning", "msg": error})
                                     is_lang_in_tts_engine = (
                                         session.get('tts_engine') in default_engine_settings and
                                         session.get('language') in default_engine_settings[session['tts_engine']].get('languages', {})
@@ -2795,22 +2845,39 @@ def convert_ebook(args:dict)->tuple:
                                         session['cover'] = get_cover(epubBook, session_id)
                                         if session.get('cover', False):
                                             if missing_json:
-                                                session['blocks_edit'] = []
                                                 raw_blocks = get_blocks(session_id, epubBook)
                                                 if raw_blocks:
-                                                    session['blocks_orig'] = [{"expand": False, "keep": True, "text": t} for t in raw_blocks]
-                                                if session.get('blocks_orig', []):
-                                                    save_json_blocks(session_id, json_blocks_orig_file, 'blocks_orig')
-                                            if not session.get('blocks_edit', []):
-                                                session['blocks_edit'] = copy.deepcopy(session['blocks_orig'])
-                                                save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
-                                            if session.get('blocks_orig', []) and session.get('blocks_edit', []):
+                                                    session['blocks_orig'] = {
+                                                        'block_resume': 0,
+                                                        'sentence_resume': 0,
+                                                        'blocks': [
+                                                            {
+                                                                'expand': False,
+                                                                'keep': True,
+                                                                'text': t,
+                                                                'voice': session['voice'],
+                                                                'tts_engine': session['tts_engine'],
+                                                                'fine_tuned': session['fine_tuned'],
+                                                                'sentences': []
+                                                            }
+                                                            for t in raw_blocks
+                                                        ]
+                                                    }
+                                                if session.get('blocks_orig', {}):
+                                                    save_json_blocks(session, json_blocks_orig_file, 'blocks_orig')
+                                            if not session.get('blocks_saved', {}):
+                                                session['blocks_saved'] = copy.deepcopy(session['blocks_orig'])
+                                                session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
+                                                save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                                            if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
                                                 if session['blocks_preview']:
-                                                    session['status'] = status_tags['BLOCKS']
-                                                    return session['status'], True
+                                                    msg = f'Chapters preview requested. Select which block to convert:'
+                                                    print(msg)
+                                                    progress_status = os.path.basename(session['ebook'])
+                                                    return progress_status, True
                                                 else:
                                                     progress_status, passed = finalize_audiobook(session_id)
-                                                return progress_status, passed
+                                                    return progress_status, passed
                                             else:
                                                 error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
                                         else:
@@ -2825,82 +2892,98 @@ def convert_ebook(args:dict)->tuple:
                         error = f"Temporary directory {session['process_dir']} not removed due to failure."
         if session['cancellation_requested']:
             error = 'Cancelled' if error is None else error + '. Cancelled'
-        if session['is_gui_process']:
-            show_alert({"type": "warning", "msg": error})
+        if not session['is_gui_process']:
+            show_alert(session_id, {"type": "warning", "msg": error})
         return error, False
     except Exception as e:
-        print(f'convert_ebook() Exception: {e}')
-        return e, False
+        error = f'convert_ebook() Exception: {e}'
+        return error, False
 
 def finalize_audiobook(session_id:str)->tuple:
-    session = context.get_session(session_id)
-    if session and session.get('id', False):
+    try:
+        session = context.get_session(session_id)
+        is_preview = session.get('blocks_preview', False) if session else False
+        result = lambda msg, ok: (gr.update(value=msg), gr.update(value=ok)) if is_preview else (msg, ok)
+
+        def fail(error):
+            session['status'] = status_tags['READY']
+            if session['blocks_preview']:
+                show_alert(session_id, {"type": "warning", "msg": error})
+            return result(error, False)
+
+        if not session or not session.get('id', False):
+            msg = 'session expired!'
+            return result(msg, False)
         if session['cancellation_requested']:
             if session['status'] == status_tags['DISCONNECTED']:
                 session['status'] = None
                 context_tracker.end_session(session_id, session['socket_hash'])
-                error = 'Frontend disconnected!'
-            else:
-                error = 'Conversion cancelled'
-            return error, False
-        if session['status'] not in [status_tags['BLOCKS'], status_tags['CONVERTING']]:
-            error = 'No blocks have been selected for the conversion!'
-            return error, False
-        if session.get('blocks_edit', []):
-            json_blocks_edit_file = os.path.join(session['process_dir'], f"__edit_{session['filename_noext']}.json")
-            save_json_blocks(session_id, json_blocks_edit_file, 'blocks_edit')
-            chapters = []
-            msg = f'Get sentences…'
-            print(msg)
-            for block in session['blocks_edit']:
-                if session['cancellation_requested']:
-                    error = 'Conversion cancelled'
-                    return error, False
-                if not block['keep']:
-                    continue
-                text = block['text']
-                if text:
-                    sentences_list = get_sentences(text, session_id)
-                    if sentences_list is None:
-                        error = 'No sentences found!'
-                        return error, False
-                    if sentences_list:
-                        chapters.append(sentences_list)
-            session['chapters'] = chapters
-            if convert_chapters2audio(session_id):
-                msg = 'Conversion successful. Combining sentences and chapters…'
-                show_alert({"type": "info", "msg": msg})
-                exported_files = combine_audio_chapters(session_id)               
-                if exported_files is not None:
-                    progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
-                    session['audiobook'] = exported_files[-1]
-                    msg = f'*********** Session: {session_id} **************\n{session_info}'
-                    print(msg)
-                    if session['blocks_preview']:
-                        reset_ebook_session(session_id)
-                        show_alert({"type": "success", "msg": progress_status})
-                    return progress_status, True
-                else:
-                    error = 'combine_audio_chapters() error: exported_files not created!'
-            else:
-                error = 'convert_chapters2audio() failed!'
+                msg = 'Frontend disconnected!'
+                return result(msg, False)
+            msg = 'Conversion cancelled'
+            return result(msg, False)
+        if session['status'] not in [status_tags['EDIT'], status_tags['CONVERTING']]:
+            msg = 'No blocks have been selected for the conversion!'
+            return result(msg, False)
+        if not session.get('blocks_current', {}):
+            error = 'finalize_audiobook() failed! blocks_current empty!'
+            return fail(error)
+        session['status'] = status_tags['CONVERTING']
+        print('Get sentences…')
+        blocks_saved = session['blocks_saved']
+        blocks_prev = blocks_saved['blocks']
+        blocks_current = session['blocks_current']
+        blocks = blocks_current['blocks']
+        for idx, block in enumerate(blocks):
+            if session['cancellation_requested']:
+                msg = 'Conversion cancelled'
+                return result(msg, False)
+            if not block['keep'] or not block['text'].strip():
+                block['sentences'] = []
+                continue
+            prev_block = blocks_prev[idx] if idx < len(blocks_prev) else None
+            if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
+                msg = f'Block {idx} — unchanged, keeping existing sentences'
+                print(msg)
+                continue
+            sentences_list = get_sentences(session_id, block['text'])
+            if sentences_list is None:
+                error = 'No sentences found!'
+                return result(error, False)
+            block['sentences'] = sentences_list
+        blocks_current['blocks'] = blocks
+        session['blocks_current'] = blocks_current
+        conversion = convert_chapters2audio(session_id)
+        if not conversion:
+            error = 'Conversion cancelled' if session['cancellation_requested'] else 'convert_chapters2audio() failed!'
+            return fail(error)
+        show_alert(session_id, {"type": "info", "msg": 'Combining sentences and chapters…'})
+        exported_files = combine_audio_chapters(session_id)
+        if exported_files is None:
+            return fail('combine_audio_chapters() error: exported_files not created!')
+        session['audiobook'] = exported_files[-1]
+        filename = os.path.basename(session['ebook'])
+        count_ebook = 0
+        if isinstance(session['ebook_list'], list):
+            if session['ebook_src'] in session['ebook_list']:
+                ebook_list = session['ebook_list']
+                ebook_list.remove(session['ebook_src'])
+                session['ebook_list'] = ebook_list
+            count_ebook = len(session['ebook_list'])
+        if count_ebook > 0:
+            show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
-            error = 'finalize_audiobook() failed!'
-    return error, False
-
-def restore_session_from_data(data:dict, session:dict)->None:
-    try:
-        for key, value in data.items():
-            if key in session:
-                if key not in save_session_keys_except:
-                    if isinstance(value, dict) and isinstance(session[key], dict):
-                        restore_session_from_data(value, session[key])
-                    else:
-                        if value is None and session[key] is not None:
-                            continue
-                        session[key] = value
+            session['ebook_list'] = None
+            show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
+            print(f'*********** Session: {session_id} **************\n{session_info}')
+            reset_ebook_session(session_id, force=True, filter_keys=False)
+        return result(filename, True)
     except Exception as e:
+        reset_ebook_session(session_id, force=True, filter_keys=False)
         DependencyError(e)
+        error = f'finalize_audiobook(): {e}'
+        exception_alert(session_id, error)
+        return result(error, False)
 
 def on_unload(req:gr.Request)->None:
     socket_hash = req.session_hash
@@ -2915,24 +2998,43 @@ def on_unload(req:gr.Request)->None:
             else:
                 context_tracker.end_session(session_id, socket_hash)
 
-def reset_ebook_session(session_id:str)->None:
+def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_keys:bool)->None:
+    try:
+        for key, value in data.items():
+            if key in session:
+                if filter_keys and key in save_session_keys_except:
+                    continue
+                if isinstance(value, dict) and value and isinstance(session[key], dict):
+                    nested = session[key]
+                    restore_session_from_data(value, nested, force, filter_keys)
+                    session[key] = nested
+                else:
+                    if not force:
+                        if value is None and session[key] is not None:
+                            continue
+                    session[key] = value
+    except Exception as e:
+        DependencyError(e)
+        error = f'restore_session_from_data(): {e}'
+        exception_alert(session['id'], error)
+
+def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
     data = {
+        "status": status_tags['READY'],
         "ebook": None,
-        "ebook_list": None,
+        "ebook_src": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
         "epub_path": None,
-        "filename_noext": None,
         "final_name": None,
+        "filename_noext": None,
         "cover": None,
-        "blocks_orig": [],
-        "blocks_edit": [],
-        "chapters": [],
-        "duration": 0,
-        "playback_time": 0,
-        "playback_volume": 0,
+        "blocks_orig": {},
+        "blocks_saved": {},
+        "blocks_saved_json": None,
+        "blocks_current": {},
         "metadata": {
             "title": None, 
             "creator": None,
@@ -2952,7 +3054,7 @@ def reset_ebook_session(session_id:str)->None:
             "Modified": None,
         }
     }
-    restore_session_from_data(data, session)
+    restore_session_from_data(data, session, force, filter_keys=filter_keys)
 
 def cleanup_models_cache()->None:
     try:
@@ -2970,26 +3072,30 @@ def cleanup_models_cache()->None:
         error = f"cleanup_models_cache() error: {e}"
         print(error)
 
-def show_alert(state:dict)->None:
-    if isinstance(state, dict):
-        if state['type'] is not None:
-            if state['type'] == 'error':
-                gr.Error(state['msg'])
-            elif state['type'] == 'warning':
-                gr.Warning(state['msg'])
-            elif state['type'] == 'info':
-                gr.Info(state['msg'])
-            elif state['type'] == 'success':
-                gr.Success(state['msg'])
+def show_alert(session_id:str|None, state:dict)->None:
+    print(state['msg'].replace('<br/>', '\n'))
+    if session_id is not None:
+        session = context.get_session(session_id)
+        if session.get('is_gui_process'):
+            if isinstance(state, dict):
+                if state['type'] is not None:
+                    if state['type'] == 'error':
+                        raise gr.Error(state['msg'])
+                    elif state['type'] == 'warning':
+                        gr.Warning(state['msg'])
+                    elif state['type'] == 'info':
+                        gr.Info(state['msg'])
+                    elif state['type'] == 'success':
+                        gr.Success(state['msg'])
 
-def alert_exception(error:str, session_id:str|None)->None:
+def exception_alert(session_id:str|None, error:str)->None:
+    print(error.replace('<br/>', '\n'))
     if session_id is not None:
         session = context.get_session(session_id)
         if session and session.get('id', False):
             session['status'] = status_tags['READY']
-    print(error)
-    gr.Error(error)
-    DependencyError(error)
+            if session['is_gui_process']:
+                raise gr.Error(error)
 
 def get_all_ip_addresses()->list:
     ip_addresses = []

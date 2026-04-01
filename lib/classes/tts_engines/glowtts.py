@@ -1,6 +1,9 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
+sys.stderr = StderrFilter(sys.stderr)
+sys.stderr = StdoutFilter(sys.stdout)
+
 class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
 
     def __init__(self, session:DictProxy):
@@ -56,7 +59,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
         try:
             msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
-            self._cleanup_memory()
+            self.cleanup_memory()
             engine = loaded_tts.get(self.tts_key)
             if not engine:
                 if self.session['custom_model'] is not None:
@@ -74,14 +77,13 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
             error = f"load_engine() error: {e}"
             raise RuntimeError(error) from e
 
-    def convert(self, sentence_index:int, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str)->bool:
         try:
             import torch
             import torchaudio
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
-                final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 if not self._set_voice():
@@ -105,14 +107,14 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                             part = part[:-1]
                         if self.session['language'] == 'bel':
                             from phonemizer import phonemize
-                            part_phonemized = phonemize(
+                            part_ipa = phonemize(
                                 part,
                                 backend="espeak",
                                 language="be",
                                 with_stress=True
                             )
                         else:
-                            part_phonemized = part
+                            part_ipa = part
                         if self.params['current_voice'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
@@ -122,7 +124,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 self.engine.to(device)
                                 if device == devices['CPU']['proc']:
                                     self.engine.tts_to_file(
-                                        text=part_phonemized,
+                                        text=part_ipa,
                                         file_path=tmp_in_wav,
                                     )
                                 else:
@@ -131,7 +133,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                         dtype=self.amp_dtype
                                     ):
                                         self.engine.tts_to_file(
-                                            text=part_phonemized,
+                                            text=part_ipa,
                                             file_path=tmp_in_wav,
                                         )
                                 self.engine.to(devices['CPU']['proc'])
@@ -194,7 +196,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 self.engine.to(device)
                                 if device == devices['CPU']['proc']:
                                     audio_part = self.engine.tts(
-                                        text=part_phonemized,
+                                        text=part_ipa,
                                     )
                                 else:
                                     with torch.autocast(
@@ -202,7 +204,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                         dtype=self.amp_dtype
                                     ):
                                         audio_part = self.engine.tts(
-                                            text=part_phonemized,
+                                            text=part_ipa,
                                         )
                                 self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
@@ -212,11 +214,13 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 if part[-1].isalnum() or part[-1] == '—':
                                     part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
+                                del part_tensor
+                                """
                                 if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                    #np.random.seed(seed)
                                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                                     break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
                                     self.audio_segments.append(break_tensor.clone())
+                                """
                             else:
                                 error = f"part_tensor not valid"
                                 print(error)
@@ -227,12 +231,12 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                             return False
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
-                    torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
+                    torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
                     del segment_tensor
-                    self._cleanup_memory()
+                    self.cleanup_memory()
                     self.audio_segments = []
-                    if not os.path.exists(final_sentence_file):
-                        error = f"Cannot create {final_sentence_file}"
+                    if not os.path.exists(sentence_file):
+                        error = f"Cannot create {sentence_file}"
                         print(error)
                         return False
                 return True
@@ -241,13 +245,12 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                 print(error)
                 return False
         except Exception as e:
+            self.cleanup_memory()
             error = f'GlowTTS.convert(): {e}'
             print(error)
             return False
 
     def create_vtt(self, all_sentences:list)->bool:
-        audio_dir = self.session['sentences_dir']
-        vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
-        if self._build_vtt_file(all_sentences, audio_dir, vtt_path):
+        if self._build_vtt_file(all_sentences):
             return True
         return False

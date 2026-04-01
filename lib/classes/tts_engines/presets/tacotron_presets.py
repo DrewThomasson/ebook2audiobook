@@ -9,7 +9,7 @@ models = {
             "thorsten/tacotron2-DDC": ['de'],
             "ljspeech/tacotron2-DDC": ['en']            
         },
-        "voice": None,
+        "voice": default_engine_settings[TTS_ENGINES['TACOTRON2']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['TACOTRON2']]['files'],
         "samplerate": {
             "mai/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],

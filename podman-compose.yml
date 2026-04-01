@@ -1,41 +1,42 @@
 services:
   ebook2audiobook:
-    image: docker.io/athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}  # or ebook2audiobook:${DEVICE_TAG:-cu128} if you run your own local docker
+    image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cpu}
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.3.10}
-        DEVICE_TAG: ${DEVICE_TAG:-cu128}
+        APP_VERSION: ${APP_VERSION:-26.3.31}
+        DEVICE_TAG: ${DEVICE_TAG:-cpu}
         BUILDAH_FORMAT: docker
-      x-podman:
-        format: docker
     working_dir: /app
-    entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
+    entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
     tty: true
     stdin_open: true
     ports:
       - "7860:7860"
     security_opt:
-      - label=disable  # Required on SELinux/Podman hosts like Unraid/Fedora
+      - label=disable
     volumes:
       - ./ebooks:/app/ebooks:rw
       - ./audiobooks:/app/audiobooks:rw
       - ./models:/app/models:rw
       - ./voices:/app/voices:rw
+      - ./tmp:/app/tmp:rw
     restart: unless-stopped
+    profiles: [cpu]
 
-    # All are optional and harmless if the device/backend is not present
+  ebook2audiobook-gpu:
+    extends:
+      service: ebook2audiobook
+    image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}
+    build:
+      args:
+        DEVICE_TAG: ${DEVICE_TAG:-cu128}
     devices:
-      # NVIDIA CUDA – requires NVIDIA Container Toolkit + CDI generated on host
       - nvidia.com/gpu=all
-
-      # Intel XPU / oneAPI / Arc iGPU / ROCm
       - /dev/dri:/dev/dri
-
-      # AMD ROCm
       - /dev/kfd:/dev/kfd
-
     group_add:
       - video
-      - render  # For Intel/AMD graphics access (harmless on NVIDIA/CPU)
+      - render
+    profiles: [gpu]

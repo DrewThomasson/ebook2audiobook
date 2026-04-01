@@ -5,7 +5,7 @@ models = {
         "lang": "multi",
         "repo": "tts_models/[lang]/fairseq/vits",
         "sub": "",
-        "voice": None,
+        "voice": default_engine_settings[TTS_ENGINES['FAIRSEQ']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['FAIRSEQ']]['files'],
         "samplerate": default_engine_settings[TTS_ENGINES['FAIRSEQ']]['samplerate']
     }
