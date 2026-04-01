@@ -1727,6 +1727,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     error = progress_status
                         if error is not None:
+                            session['status'] = status_tags['READY']
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
