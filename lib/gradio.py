@@ -1705,6 +1705,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 ebook_list = copy.deepcopy(args['ebook_list'])
                                 for i, file in enumerate(ebook_list):
                                     if session['cancellation_requested']:
+                                        session['status'] = status_tags['READY']
                                         error = 'Conversion cancelled'
                                         break
                                     if any(file.endswith(ext) for ext in ebook_formats):
@@ -1858,28 +1859,29 @@ def build_interface(args:dict)->gr.Blocks:
             def edit_blocks(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] in [status_tags['EDIT']]:
-                        visible_main = False
-                        visible_blocks = True
-                        ebook_name = ''
-                        blocks = []
-                        page = 0
-                        if session['cancellation_requested']:
-                            visible_main = True
-                            visible_blocks = False
-                        else:
-                            ebook_name = Path(session['ebook']).stem
-                            blocks = session['blocks_current']['blocks']
-                        page_updates = list(populate_page(session_id, page, blocks))
-                        result = (
-                            gr.update(value=ebook_name),
-                            gr.update(visible=visible_main), gr.update(visible=visible_blocks),
-                            blocks, page,
-                            gr.update(visible=False),
-                            gr.update(visible=len(blocks) > page_size),
-                            *page_updates
-                        )
-                        return result
+                    if not session['cancellation_requested']:
+                        if session['status'] in [status_tags['EDIT']]:
+                            visible_main = False
+                            visible_blocks = True
+                            ebook_name = ''
+                            blocks = []
+                            page = 0
+                            if session['cancellation_requested']:
+                                visible_main = True
+                                visible_blocks = False
+                            else:
+                                ebook_name = Path(session['ebook']).stem
+                                blocks = session['blocks_current']['blocks']
+                            page_updates = list(populate_page(session_id, page, blocks))
+                            result = (
+                                gr.update(value=ebook_name),
+                                gr.update(visible=visible_main), gr.update(visible=visible_blocks),
+                                blocks, page,
+                                gr.update(visible=False),
+                                gr.update(visible=len(blocks) > page_size),
+                                *page_updates
+                            )
+                            return result
                 n = len(blocks_components_flat) + 1
                 return tuple(gr.update() for _ in range(7 + n))
 
