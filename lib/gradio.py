@@ -1708,7 +1708,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         session['status'] = status_tags['READY']
                                         msg = 'Conversion cancelled'
                                         show_alert(session_id, {"type": "warning", "msg": msg})
-                                        return gr.update()
+                                        return gr.update(value='')
                                     if any(file.endswith(ext) for ext in ebook_formats):
                                         reset_ebook_session(args['id'], force=True, filter_keys=False)
                                         args['ebook_src'] = file
