@@ -354,7 +354,6 @@ SML tags available:
             else:
                 error = 'Error: In GUI mode, no option or only --share can be passed'
         if error is not None:
-            show_alert(session_id, {"type": "warning", "msg": error})
             print(error)
             sys.exit(1)
 
