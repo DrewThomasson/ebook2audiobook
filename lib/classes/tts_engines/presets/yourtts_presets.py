@@ -5,7 +5,7 @@ models = {
         "lang": "multi",
         "repo": "tts_models/multilingual/multi-dataset/your_tts",
         "sub": "",
-        "voice": None,
+        "voice": default_engine_settings[TTS_ENGINES['YOURTTS']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['YOURTTS']]['files'],
         "samplerate": default_engine_settings[TTS_ENGINES['YOURTTS']]['samplerate']
     }

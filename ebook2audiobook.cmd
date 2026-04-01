@@ -1,5 +1,4 @@
 @echo off
-
 setlocal EnableExtensions DisableDelayedExpansion
 
 set "SAFE_USERPROFILE=%USERPROFILE%"
@@ -88,10 +87,11 @@ set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%"
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
-set "HELP_FOUND=%ARGS:--help=%"
 set "HEADLESS_FOUND=%ARGS:--headless=%"
 set "WSL_VERSION="
+set "DOCKER_IN_WSL=0"
 set "DOCKER_DESKTOP=0"
+set "PODMAN_DESKTOP=0"
 
 IF NOT DEFINED DEVICE_TAG SET "DEVICE_TAG="
 
@@ -117,6 +117,25 @@ cd /d "%SAFE_SCRIPT_DIR%"
 for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 
 ::::::::::::::::::::::::::::::: CORE FUNCTIONS
+
+if not "%~1"=="" (
+    setlocal EnableDelayedExpansion
+    for /f "delims=" %%V in ('python -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
+    for %%A in (%*) do (
+        set "ARG=%%~A"
+        if "!ARG:~0,2!"=="--" (
+            set "FOUND=0"
+            for %%V in (!VALID_ARGS!) do (
+                if /i "!ARG!"=="%%V" set "FOUND=1"
+            )
+            if !FOUND! equ 0 (
+                echo ERROR: Unknown option "!ARG!"
+                exit /b 1
+            )
+        )
+    )
+    endlocal
+)
 
 :parse_args
 setlocal EnableDelayedExpansion
@@ -146,12 +165,17 @@ endlocal & (
     for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
 )
 if defined arguments.script_mode (
-    if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" (
-        set "SCRIPT_MODE=%arguments.script_mode%"
-    ) else (
-        echo Error: Invalid script mode argument: %arguments.script_mode%
-        goto :failed
-    )
+    set "script_mode_valid=0"
+    if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" set "script_mode_valid=1"
+    if /i "%arguments.script_mode%"=="%FULL_DOCKER%" set "script_mode_valid=1"
+)
+
+if defined arguments.script_mode if "%script_mode_valid%"=="1" (
+    set "SCRIPT_MODE=%arguments.script_mode%"
+)
+if defined arguments.script_mode if "%script_mode_valid%"=="0" (
+    echo Error: Invalid script mode argument: %arguments.script_mode%
+    goto :failed
 )
 if defined arguments.docker_device (
     if /i "%arguments.docker_device%"=="true" (
@@ -178,22 +202,28 @@ if defined arguments.script_mode (
         echo Error: --script_mode requires a value
         goto :failed
     )
-    setlocal enabledelayedexpansion
-    for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
-        set "argname=%%A"
-        set "argname=!argname:arguments.=!"
-        if not "!argname!"=="" (
-            if /i not "!argname!"=="script_mode" (
-                if /i not "!argname!"=="docker_device" (
-                    if /i not "!argname!"=="docker_mode" (
-                        echo Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --!argname!
-                        goto :failed
+    if /i not "%arguments.script_mode%"=="FULL_DOCKER" (
+        setlocal enabledelayedexpansion
+        for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
+            set "argname=%%A"
+            set "argname=!argname:arguments.=!"
+            if not "!argname!"=="" (
+                if /i not "!argname!"=="script_mode" (
+                    if /i not "!argname!"=="docker_device" (
+                        if /i not "!argname!"=="docker_mode" (
+                            echo Error: when --script_mode is not FULL_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --!argname!
+                            goto :failed
+                        )
                     )
                 )
             )
         )
+        endlocal
     )
-    endlocal
+)
+if defined arguments.version (
+	echo v%APP_VERSION%
+	goto :eof
 )
 goto :main
 
@@ -330,8 +360,14 @@ goto :restart_script
 
 :install_scoop
 echo Installing Scoop…
-call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass Process -Force; iwr -useb https://get.scoop.sh | iex"
-if errorlevel 1 goto :failed
+call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "iex \"& {$(irm get.scoop.sh)} -RunAsAdmin\""
+if errorlevel 1 (
+    net session >nul 2>&1
+    if not errorlevel 1 (
+        goto :restart_script
+    )
+    goto :failed
+)
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
@@ -560,25 +596,37 @@ for /f "delims=" %%a in ('wsl echo $WSL_DISTRO_NAME') do set "DOCKER_WSL_CONTAIN
 exit /b 0
 
 :check_docker
+if "%DOCKER_MODE%"=="podman" (
+	where.exe /Q podman-compose.exe
+	if not errorlevel 1 (
+		podman-compose version >nul 2>&1
+		if not errorlevel 1 (
+			echo Podman Desktop detected.
+			set "PODMAN_DESKTOP=1"
+			exit /b 0
+		)
+	)
+	echo Podman is not installed.
+	exit /b 1
+)
 where.exe /Q docker.exe
 if not errorlevel 1 (
-    docker version >nul 2>&1
-    if not errorlevel 1 (
-        echo Docker Desktop detected.
-        set "DOCKER_DESKTOP=1"
-        exit /b 0
-    )
+	docker version >nul 2>&1
+	if not errorlevel 1 (
+		echo Docker Desktop detected.
+		set "DOCKER_DESKTOP=1"
+		exit /b 0
+	)
 )
 wsl --user root -d %DOCKER_WSL_CONTAINER% -- which docker >nul 2>&1
 if errorlevel 1 (
     echo Docker is not installed inside WSL2.
     exit /b 1
 )
-:: Docker Desktop not found, using WSL Docker
-set "DOCKER_DESKTOP=0"
 exit /b 0
 
 :check_docker_daemon
+if "%PODMAN_DESKTOP%"=="1" exit /b 0
 if "%DOCKER_DESKTOP%"=="1" (
     docker info >nul 2>&1
     if not errorlevel 1 exit /b 0
@@ -677,21 +725,14 @@ if defined ARG (
     set "ARG_ESCAPED="
 )
 if "%DOCKER_MODE%"=="podman" (
-	where.exe podman-compose >nul 2>&1
-	if errorlevel 1 (
-		echo podman-compose is not installed.
+	if "%PODMAN_DESKTOP%"=="0" (
+		echo podman-compose is not running.
 		endlocal 
 		exit /b 1
 	)
-)
-if "%DOCKER_MODE%"=="compose" (
-	if "%DOCKER_DESKTOP%"=="1" (
-		docker compose version >nul 2>&1
-	) else (
-		wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker compose version >nul 2>&1
-	)
-	if errorlevel 1 (
-		echo docker compose is not installed.
+) else if "%DOCKER_MODE%"=="compose" (
+	if "%DOCKER_DESKTOP%"=="0" (
+		echo docker compose is not running.
 		endlocal 
 		exit /b 1
 	)
@@ -740,7 +781,7 @@ if "%DOCKER_MODE%"=="podman" (
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%"
     set "PODMAN_BUILD_ARGS=%PODMAN_BUILD_ARGS% --build-arg ISO3_LANG=%ISO3_LANG%"
     cd /d "%SAFE_SCRIPT_DIR%"
-    podman-compose -f podman-compose.yml build
+    podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% build
 	if errorlevel 1 (
 		echo Build failed
 		endlocal 
@@ -749,49 +790,59 @@ if "%DOCKER_MODE%"=="podman" (
 	echo Docker image ready. To run your docker:
 	echo Podman Compose:
 	echo 	GUI mode:
-	echo 		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% podman-compose -f podman-compose.yml up
+	echo 		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% up
 	echo 	Headless mode:
-	echo   		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% podman-compose -f podman-compose.yml run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
     if "%DOCKER_DESKTOP%"=="1" (
 		echo Using docker compose
-        docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
+        docker compose --progress=plain --profile "%COMPOSE_PROFILES%" build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
     ) else (
 		echo Using docker compose into WSL2 %DOCKER_WSL_CONTAINER%
-        wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile %COMPOSE_PROFILES% build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
+        %wsl_cmd% bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile '%COMPOSE_PROFILES%' build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR=\"%ARG_ESCAPED%\" --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
     )
 	if errorlevel 1 (
 		echo Build failed
 		endlocal 
 		exit /b 1
 	)
+	if defined wsl_cmd (
+		set "env_prefix=DEVICE_TAG=%DEVICE_TAG%"
+	) else (
+		set "env_prefix=set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
+	)
 	echo Docker image ready. To run your docker:
 	echo Docker Compose:
 	echo 	GUI mode:
-	echo 		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
+	echo 		%env_prefix% docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
 	echo 	Headless mode:
-	echo   		%wsl_cmd% DEVICE_TAG=%DEVICE_TAG% docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/test/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		%env_prefix% docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else (
-    if "%DOCKER_DESKTOP%"=="1" (
-		echo Using docker buildx
-		docker buildx use default
-        docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
-    ) else (
-		echo Using docker buildx into WSL2 %DOCKER_WSL_CONTAINER%
-		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "service docker status >/dev/null 2>&1 || service docker start"
+	if "%DOCKER_DESKTOP%"=="1" (
+		:: echo Using docker buildx
+		:: docker buildx use default
+        :: docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
+		echo Using docker build
+		docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
+		docker image prune --force
+	) else (
+		echo Using docker build into WSL2 %DOCKER_WSL_CONTAINER%
+		%wsl_cmd% bash -c "service docker status >/dev/null 2>&1 || service docker start"
 		timeout /t 3 /nobreak >nul
-		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder 2>/dev/null || docker buildx create --name wslbuilder --use"
-		if errorlevel 1 (
-			echo Failed to setup buildx builder
-			endlocal 
-			exit /b 1
-		)
-		wsl --user root -d %DOCKER_WSL_CONTAINER% -- bash -c "cd '%WSL_DIR%' && docker buildx build --load --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
+		:: buildx builder setup no longer needed with docker build
+		:: %wsl_cmd% bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder 2>/dev/null || docker buildx create --name wslbuilder --use"
+		:: if errorlevel 1 (
+		:: 	echo Failed to setup buildx builder
+		:: 	endlocal 
+		:: 	exit /b 1
+		:: )
+		%wsl_cmd% bash -c "cd '%WSL_DIR%' && docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
 		if errorlevel 1 (
 			echo Build failed
 			endlocal 
 			exit /b 1
 		)
+		%wsl_cmd% docker image prune --force
 		echo Docker image ready. To run your docker:
 		echo GUI mode:
 		echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
@@ -812,11 +863,16 @@ if defined arguments.help (
     if /i "%arguments.help%"=="true" (
 		call :check_python
 		if errorlevel 1 goto :install_python
-		wsl --user root -d %DOCKER_WSL_CONTAINER% -- which docker >nul 2>&1
-		if not errorlevel 1 (
-			set DOCKER_IN_WSL=1
+		call :check_docker
+		if "%DOCKER_DESKTOP%"=="0" (
+			ifi "%PODMAN_DESKTOP"=="0" (
+				wsl --user root -d %DOCKER_WSL_CONTAINER% -- which docker >nul 2>&1
+				if not errorlevel 1 (
+					set DOCKER_IN_WSL=1
+				)
+			)
 		)
-        call python "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
+        call python -u "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
         goto :eof
     )
 ) else (
@@ -828,8 +884,14 @@ if defined arguments.help (
 			call :check_wsl
 			if errorlevel 1 goto :install_wsl
             call :check_docker
-            if errorlevel 1	goto :install_docker
-            call :check_docker_daemon
+            if errorlevel 1	(
+				if not "%DOCKER_MODE%"=="podman" (
+					goto :install_docker
+				) else (
+					goto :failed
+				)
+            )
+			call :check_docker_daemon
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
             if errorlevel 1 goto :failed
@@ -837,7 +899,9 @@ if defined arguments.help (
                 call :json_get tag
                 if errorlevel 1 goto :failed
             )
-			if "%DOCKER_DESKTOP%"=="1" (
+			if "%PODMAN_DESKTOP%"=="1" (
+				podman image exists "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
+			) else if "%DOCKER_DESKTOP%"=="1" (
 				docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
 			) else (
 				wsl --user root -d %DOCKER_WSL_CONTAINER% -- docker image inspect "%DOCKER_IMG_NAME%:!DEVICE_TAG!" >nul 2>&1
@@ -857,7 +921,7 @@ if defined arguments.help (
         ) else (
 			echo The Docker image is only available with a Linux container
         )
-    ) else (
+    ) else if "%SCRIPT_MODE%"=="%NATIVE%" (
 		call :check_scoop
 		if errorlevel 1 goto :install_scoop
 		call :check_scoop_buckets
@@ -871,9 +935,13 @@ if defined arguments.help (
         call :check_sitecustomized
         if errorlevel 1 goto :failed
         call :build_gui
-        call python.exe "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+        call python.exe -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 		call conda deactivate >nul && call conda deactivate >nul
-    )
+    ) else if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
+        call :check_sitecustomized
+        if errorlevel 1 goto :failed
+        call python.exe -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+	)
 )
 goto :eof
 

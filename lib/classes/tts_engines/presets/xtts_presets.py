@@ -7,7 +7,7 @@ models = {
         "lang": "multi",
         "repo": "coqui/XTTS-v2",
         "sub": "tts_models/multilingual/multi-dataset/xtts_v2/",
-        "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'KumarDahl.wav'),
+        "voice": default_engine_settings[TTS_ENGINES['XTTSv2']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
         "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
     },

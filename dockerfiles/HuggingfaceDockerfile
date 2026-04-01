@@ -1,58 +1,103 @@
-# Read the doc: https://huggingface.co/docs/hub/spaces-sdks-docker
-# you will also find guides on how best to write your Dockerfile
+ARG PYTHON_VERSION=3.12
 
-# Build with the command: 
-# docker build --platform linux/amd64 -t athomasson2/ebook2audiobook:latest . 
+# ============================================================
+# HF SPACES ▒~@~T SINGLE STAGE BUILD + RUNTIME
+# ============================================================
+FROM python:${PYTHON_VERSION}-slim-bookworm
 
-FROM python:3.12
+ARG APP_VERSION=26.3.31
+ARG DEVICE_TAG=cpu
+ARG DOCKER_DEVICE_STR='{"name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "HF Spaces CPU"}'
+ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
+ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
+ARG ISO3_LANG=eng
+ARG INSTALL_RUST=1
 
-# Create and switch to a non-root user
-RUN useradd -m -u 1000 user
-USER user
-ENV PATH="/home/user/.local/bin:$PATH"
+LABEL org.opencontainers.image.title="ebook2audiobook" \
+    org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
+    org.opencontainers.image.version="${APP_VERSION}" \
+    org.opencontainers.image.authors="Drew Thomasson / Rob McDowell" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook"
 
-# Set a working directory for temporary operations
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR} \
+    PIP_BREAK_SYSTEM_PACKAGES=1 \
+    PATH="/root/.cargo/bin:${PATH}" \
+    DEVICE_TAG=${DEVICE_TAG}
+
 WORKDIR /app
 
-# Install system packages
-USER root
-RUN apt-get update && \
-    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 curl espeak-ng sox libsndfile1-dev libc-dev && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
+# System packages (build + runtime)
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends --allow-change-held-packages \
+        gcc g++ make pkg-config cmake curl wget git bash xz-utils python3-dev \
+        fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
+        libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 \
+        libxcb-xfixes0 libxcb-cursor0 libgomp1 libsndfile1 \
+        ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
     rm -rf /var/lib/apt/lists/*
 
+RUN find /usr/local/lib/python3.12/site-packages/pip* -type f -delete 2>/dev/null; \
+    find /usr/local/lib/python3.12/site-packages/pip* -type l -delete 2>/dev/null; \
+    curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
+    python3 /tmp/get-pip.py --ignore-installed && \
+    rm -f /tmp/get-pip.py && \
+    pip install --no-cache-dir setuptools wheel
 
+# Rust toolchain
+RUN bash -o pipefail -c '\
+    if [ "${INSTALL_RUST}" = "1" ]; then \
+        curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable; \
+    else \
+        echo "Skipping Rust toolchain"; \
+    fi'
 
-# Clone the GitHub repository and set it as the working directory
-USER root
-RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
-USER user
-RUN git clone --depth 1 https://github.com/DrewThomasson/ebook2audiobook.git /home/user/app && rm -rf /home/user/app/.git
+# Calibre (CLI)
+RUN set -eux; \
+    wget -nv "${CALIBRE_INSTALLER_URL}" -O /tmp/calibre.sh; \
+    bash /tmp/calibre.sh; \
+    rm -f /tmp/calibre.sh
 
+# Debian-compatible Calibre library aliases
+RUN set -eux; \
+    ln -sf /usr/lib/*-linux-gnu/libfreetype.so.6 /usr/lib/libfreetype.so.6; \
+    ln -sf /usr/lib/*-linux-gnu/libfontconfig.so.1 /usr/lib/libfontconfig.so.1; \
+    ln -sf /usr/lib/*-linux-gnu/libpng16.so.16 /usr/lib/libpng16.so.16; \
+    ln -sf /usr/lib/*-linux-gnu/libX11.so.6 /usr/lib/libX11.so.6; \
+    ln -sf /usr/lib/*-linux-gnu/libXext.so.6 /usr/lib/libXext.so.6; \
+    ln -sf /usr/lib/*-linux-gnu/libXrender.so.1 /usr/lib/libXrender.so.1
 
-# Set the cloned repository as the base working directory
-WORKDIR /home/user/app
+COPY . /app
 
-# Install Python dependencies
-# Install UniDic and its dependencies
-RUN pip install --no-cache-dir unidic-lite unidic
-RUN python3 -m unidic download  # Download UniDic
-RUN mkdir -p /home/user/.local/share/unidic && \
-    mv ~/.local/share/unidic/* /home/user/.local/share/unidic/ || true
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+# Ensure Unix line endings
+RUN find /app -type f \( -name "*.sh" -o -name "*.command" \) -exec sed -i 's/\r$//' {} \;
 
-# Set environment variable to ensure MeCab can locate UniDic
-ENV UNIDIC_DIR=/home/user/.local/share/unidic
+# Build dependencies via project script (as root during build)
+RUN ./ebook2audiobook.command --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR"
 
-# Do a test run to make sure that the base models are pre-downloaded and baked into the image
-#RUN echo "This is a test sentence." > test.txt 
-#RUN python app.py --headless --ebook test.txt --script_mode full_docker
-#RUN rm test.txt
+# Cleanup build-only packages and Rust toolchain to shrink the image
+RUN set -eux; \
+    rustup self uninstall -y 2>/dev/null || true; \
+    apt-get update; \
+    apt-get purge -y --auto-remove gcc g++ make pkg-config cmake wget git xz-utils python3-dev; \
+    rm -rf /var/lib/apt/lists/* /root/.cargo /root/.rustup /tmp/* || true
 
-# Expose the required port
+# ============================================================
+# HF SPACES: create user 1000 and fix permissions
+# ============================================================
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /app/ebooks /app/audiobooks /app/models /app/voices /app/run /app/tmp && \
+    chown -R appuser:appuser /app && \
+    chmod -R 777 /app/tmp /app/run /app/audiobooks /app/models /app/voices
+
+USER 1000
+
 EXPOSE 7860
 
-# Start the Gradio app with the required flag
-ENTRYPOINT ["python", "app.py", "--script_mode", "full_docker"]
+ENTRYPOINT ["bash", "ebook2audiobook.command"]
+CMD ["--script_mode", "full_docker"]

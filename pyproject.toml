@@ -17,6 +17,8 @@ authors = [
     { name = "Drew Thomasson" }
 ]
 dependencies = [
+	"cryptography",
+	"py-cpuinfo",
 	"tqdm",
 	"torchvggish",
 	"regex",
@@ -31,7 +33,6 @@ dependencies = [
 	"pytesseract",
 	"unidic",
 	"hangul-romanize",
-	"indic-nlp-library",
 	"iso639-lang",
 	"jieba",
 	"pycantonese",
@@ -45,6 +46,8 @@ dependencies = [
 	"unidecode",
 	"langdetect",
 	"phonemizer",
+	"pandas>=1.0,<3.0",
+	"indic-nlp-library",
 	"stanza==1.10.1",
 	"pyannote-audio==3.4.0",
 	"argostranslate<=1.10.0",

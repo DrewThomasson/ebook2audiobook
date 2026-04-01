@@ -33,6 +33,8 @@ export CONDA_HOME="$HOME/Miniforge3"
 export CONDA_BIN_PATH="$CONDA_HOME/bin"
 export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
 export PATH="$CONDA_BIN_PATH:${PATH-}"
+export PODMAN_DESKTOP="0"
+export DOCKER_DESKTOP="0"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
@@ -69,6 +71,19 @@ BUILD_NAME=""
 ISO3_LANG="eng"
 SUDO="sudo"
 
+# Validate command arguments against conf.py
+if [ $# -gt 0 ]; then
+    VALID_ARGS=$(python3 -c 'from lib.conf import cli_options; print(" ".join(cli_options))')
+    for arg in "$@"; do
+        if [ "${arg:0:2}" = "--" ]; then
+            if ! echo " $VALID_ARGS " | grep -q " $arg "; then
+                echo "ERROR: Unknown option \"$arg\""
+                exit 1
+            fi
+        fi
+    done
+fi
+
 ARGS=("$@")
 
 # Parse arguments
@@ -94,12 +109,12 @@ while (( $# > 0 )); do
 done
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
-	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
-		SCRIPT_MODE="${arguments[script_mode]}"
-	else
-		echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
-		exit 1
-	fi
+    if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" || "${arguments[script_mode]}" == "$FULL_DOCKER" ]]; then
+        SCRIPT_MODE="${arguments[script_mode]}"
+    else
+        echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
+        exit 1
+    fi
 fi
 
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
@@ -127,20 +142,22 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 		echo "Error: --script_mode requires a value"
 		exit 1
 	fi
-	if [[ -n "${ZSH_VERSION:-}" ]]; then
-		for key in ${(k)arguments}; do
-			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-				echo "Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --$key"
-				exit 1
-			fi
-		done
-	else
-		for key in "${!arguments[@]}"; do
-			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-				echo "Error: when --script_mode is used, only --docker_device or --docker_mode are allowed. Invalid: --$key"
-				exit 1
-			fi
-		done
+	if [[ "$(echo "${arguments[script_mode]}" | tr '[:lower:]' '[:upper:]')" != "FULL_DOCKER" ]]; then
+		if [[ -n "${ZSH_VERSION:-}" ]]; then
+			for key in ${(k)arguments}; do
+				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+					echo "Error: when --script_mode is not FULL_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+					exit 1
+				fi
+			done
+		else
+			for key in "${!arguments[@]}"; do
+				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+					echo "Error: when --script_mode is not FULL_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+					exit 1
+				fi
+			done
+		fi
 	fi
 fi
 
@@ -176,6 +193,11 @@ if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exist
 			exec sg "$APP_GROUP" -c "\"$0\" $*"
 		fi
 	fi
+fi
+
+if [[ -n "${arguments[version]+exists}" ]]; then
+	echo "v${APP_VERSION}"
+	exit 0
 fi
 
 ############### FUNCTIONS ##############
@@ -697,11 +719,20 @@ function check_conda {
 }
 
 function check_docker {
-	if ! command -v docker &> /dev/null; then
-		echo -e "\e[31m=============== Docker is not installed.\e[0m"
+	if [[ "$DOCKER_MODE" == "podman" ]]; then
+		if command -v podman-compose &> /dev/null; then
+			PODMAN_DESKTOP="1"
+			return 0
+		fi
+		echo -e "\e[31m=============== Podman is not installed.\e[0m"
 		return 1
 	fi
-	return 0
+	if command -v docker &> /dev/null; then
+		DOCKER_DESKTOP="1"
+		return 0
+	fi
+	echo -e "\e[31m=============== Docker is not installed.\e[0m"
+	return 1
 }
 
 function install_python_packages {
@@ -812,27 +843,25 @@ function build_docker_image {
 	fi
 	if [[ "$DOCKER_MODE" == "podman" ]]; then
 		echo "--> Using podman-compose"
-		export PODMAN_BUILD_ARGS=(
-			--format docker
-			--no-cache
-			--network=host
-			--build-arg PYTHON_VERSION="$py_vers"
-			--build-arg APP_VERSION="$APP_VERSION"
-			--build-arg DEVICE_TAG="$DEVICE_TAG"
-			--build-arg DOCKER_DEVICE_STR="$ARG"
-			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}"
-			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL"
-			--build-arg ISO3_LANG="$ISO3_LANG"
+		export PODMAN_BUILD_ARGS=$(printf ' %q' \
+			--format docker \
+			--no-cache \
+			--network=host \
+			--build-arg PYTHON_VERSION="$py_vers" \
+			--build-arg APP_VERSION="$APP_VERSION" \
+			--build-arg DEVICE_TAG="$DEVICE_TAG" \
+			--build-arg DOCKER_DEVICE_STR="$ARG" \
+			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
+			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
+			--build-arg ISO3_LANG="$ISO3_LANG" \
 		)
-		PODMAN_BUILD_ARGS_STR=$(printf ' %q' "${PODMAN_BUILD_ARGS[@]}")
-		export PODMAN_BUILD_ARGS="$PODMAN_BUILD_ARGS_STR"
-		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose -f podman-compose.yml build || return 1
+		BUILD_NAME="$DOCKER_IMG_NAME" podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES build || return 1
 		echo "Docker image ready! to run your docker: "
 		echo "Podman Compose:"
 		echo "	GUI mode:"
-		echo "	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml up"
+		echo "	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES up"
 		echo "	Headless mode:"
-		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	elif [[ "$DOCKER_MODE" == "compose" ]]; then
 		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
@@ -853,11 +882,13 @@ function build_docker_image {
 		echo "	GUI mode:"
 		echo "	DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
 		echo "	Headless mode:"
-		echo "  DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/test/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+		echo "  DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	else
-		echo "--> Using docker buildx"
-		docker buildx use default
-		docker buildx build \
+		# echo "--> Using docker buildx"
+		# docker buildx use default
+		# docker buildx build \
+		echo "--> Using docker build"
+		docker build \
 			--no-cache \
 			--progress plain \
 			--build-arg PYTHON_VERSION="$py_vers" \
@@ -869,18 +900,19 @@ function build_docker_image {
 			--build-arg ISO3_LANG="$ISO3_LANG" \
 			-t "$DOCKER_IMG_NAME" \
 			. || return 1
+		docker image prune --force
 		echo "Docker image ready! to run your docker: "
 		echo "	GUI mode:"
 		echo "	docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" ${cmd_options}--rm -it -p 7860:7860 $DOCKER_IMG_NAME"
 		echo "	Headless mode:"
-		echo "	docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options}--rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
+		echo "	docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options}--rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"		
 	fi
 }
 
 ######################################## END of functions
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
-	python "$SCRIPT_DIR/app.py" "${ARGS[@]}"
+	python -u "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
@@ -893,10 +925,18 @@ else
 			if [[ "$DEVICE_TAG" == "" ]]; then
                 DEVICE_TAG=$(json_get "tag")
 			fi
-			if docker image inspect "${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
-				echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
-				echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
-				exit 1
+			if [[ "$PODMAN_DESKTOP" == "1" ]]; then
+				if podman image exists "localhost/%DOCKER_IMG_NAME%:!DEVICE_TAG!" >/dev/null 2>&1; then
+					echo "[STOP] Podman image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
+					echo "Delete it using: podman rmi -f localhost/%DOCKER_IMG_NAME%:!DEVICE_TAG!"
+					exit 1
+				fi
+			elif [[ "$DOCKER_DESKTOP" == "1" ]]; then
+				if docker image inspect "${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
+					echo "[STOP] Docker image '${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
+					echo "Delete it using: docker rmi ${DOCKER_IMG_NAME}:${DEVICE_TAG} --force"
+					exit 1
+				fi
 			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		else
@@ -934,9 +974,12 @@ else
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m=============== conda activate failed.\e[0m"; exit 1; }
 		check_sitecustomized || exit 1
 		check_desktop_app || exit 1
-		python "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
+		python -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
+	elif [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
+		check_sitecustomized || exit 1
+		python -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 	else
 		echo -e "\e[31m=============== ebook2audiobook is not correctly installed.\e[0m"
 	fi

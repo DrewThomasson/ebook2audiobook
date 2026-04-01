@@ -1,6 +1,9 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
+sys.stdout = StdoutFilter(sys.stdout)
+sys.stderr = StderrFilter(sys.stderr)
+
 class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
 
     def __init__(self, session: DictProxy):
@@ -40,7 +43,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
     def load_engine(self)->Any:
         msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
         print(msg)
-        self._cleanup_memory()
+        self.cleanup_memory()
         engine = loaded_tts.get(self.tts_key)
         if not engine:
             if self.session['custom_model'] is not None:
@@ -59,14 +62,13 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
         error = 'load_engine(): engine is None'
         raise RuntimeError(error)
 
-    def convert(self, sentence_index:int, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str)->bool:
         try:
             import torch
             import torchaudio
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
-                final_sentence_file = os.path.join(self.session['sentences_dir'], f'{sentence_index}.{default_audio_proc_format}')
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r"[.:—]")
@@ -189,11 +191,13 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 if part[-1].isalnum() or part[-1] == '—':
                                     part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
+                                del part_tensor
+                                """
                                 if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                    #np.random.seed(seed)
-                                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                    silence_time = int(np.random.uniform(0.4, 0.7) * 100) / 100
                                     break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
                                     self.audio_segments.append(break_tensor.clone())
+                                """
                             else:
                                 error = f"part_tensor not valid"
                                 print(error)
@@ -204,12 +208,12 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                             return False
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
-                    torchaudio.save(final_sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
+                    torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
                     del segment_tensor
-                    self._cleanup_memory()
+                    self.cleanup_memory()
                     self.audio_segments = []
-                    if not os.path.exists(final_sentence_file):
-                        error = f"Cannot create {final_sentence_file}"
+                    if not os.path.exists(sentence_file):
+                        error = f"Cannot create {sentence_file}"
                         print(error)
                         return False
                 return True
@@ -218,13 +222,12 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                 print(error)
                 return False
         except Exception as e:
+            self.cleanup_memory()
             error = f'Fairseq.convert(): {e}'
             print(error)
             return False
 
     def create_vtt(self, all_sentences:list)->bool:
-        audio_dir = self.session['sentences_dir']
-        vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
-        if self._build_vtt_file(all_sentences, audio_dir, vtt_path):
+        if self._build_vtt_file(all_sentences):
             return True
         return False

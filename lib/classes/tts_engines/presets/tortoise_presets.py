@@ -9,7 +9,7 @@ models = {
         "sub": {
             "multi-dataset/tortoise-v2": ['en'],
         },
-        "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'KumarDahl.wav'),
+        "voice": default_engine_settings[TTS_ENGINES['TORTOISE']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['TORTOISE']]['files'],
         "samplerate": {
             "multi-dataset/tortoise-v2": default_engine_settings[TTS_ENGINES['TORTOISE']]['samplerate']

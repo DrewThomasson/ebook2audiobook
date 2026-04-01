@@ -16,7 +16,7 @@ models = {
             "vctk/vits": ['en'],
             "thorsten/vits": ['de']
         },
-        "voice": None,
+        "voice": default_engine_settings[TTS_ENGINES['VITS']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['VITS']]['files'],
         "samplerate": {
             "css10/vits": default_engine_settings[TTS_ENGINES['VITS']]['samplerate'],

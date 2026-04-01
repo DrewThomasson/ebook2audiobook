@@ -25,6 +25,15 @@ class DeviceInstaller():
     def check_hardware(self)->tuple:
         return self.detect_device()
 
+    @cached_property
+    def cpu_baseline(self)->bool:
+        machine = platform.machine().lower()
+        if machine not in ('x86_64', 'amd64', 'x86'):
+            return True
+        from cpuinfo import get_cpu_info
+        flags = set(get_cpu_info().get('flags', []))
+        return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
+
     def check_device_info(self, mode:str)->str:
         os_env = None
         if mode == NATIVE:
@@ -1133,8 +1142,11 @@ class DeviceInstaller():
             torch_version = self.get_package_version('torch')
             numpy_version_base = self.version_tuple(numpy_version)
             torch_version_base = self.version_tuple(torch_version)
+            min_cpu_baseline = self.cpu_baseline
             if torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force', 'numpy<2'])
+            elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force', 'numpy<2.4.0'])
             return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
