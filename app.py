@@ -306,18 +306,18 @@ SML tags available:
                             else:
                                 error = f'{Path(file).name} has not a supported format! skipping'
                                 print(error)
-            elif args.get('ebook', None) is not None:
-                args['ebook_src'] = os.path.abspath(args['ebook'])
-                if not os.path.exists(args['ebook_src']):
-                    error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
+                elif args.get('ebook', None) is not None:
+                    args['ebook_src'] = os.path.abspath(args['ebook'])
+                    if not os.path.exists(args['ebook_src']):
+                        error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
+                    else:
+                        progress_status, passed = c.convert_ebook(args)
+                        c.context.sessions[args['id']]['status'] = c.status_tags['READY']
+                        c.reset_ebook_session(args['id'], force=True, filter_keys=False)
+                        if not passed:
+                            error = progress_status
                 else:
-                    progress_status, passed = c.convert_ebook(args)
-                    c.context.sessions[args['id']]['status'] = c.status_tags['READY']
-                    c.reset_ebook_session(args['id'], force=True, filter_keys=False)
-                    if not passed:
-                        error = progress_status
-            else:
-                error = 'Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.'
+                    error = 'Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.'
         else:
             args['is_gui_process'] = True
             passed_arguments = sys.argv[1:]
