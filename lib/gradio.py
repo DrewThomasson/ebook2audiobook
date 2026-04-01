@@ -1787,7 +1787,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if source is not None:
                         session['ebook_src'] = source
                         final_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['output_split'] else '.'}{session['output_format']}"
-                        final_file = os.path.join(session['audiobooks_dir'], final_name)
+                        final_file = os.path.join(session['process_dir'], final_name)
                         process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
                         chapters_dir = os.path.join(process_dir, 'chapters')
                         sentences_dir = os.path.join(chapters_dir, 'sentences')
