@@ -2039,18 +2039,36 @@ def convert_chapters2audio(session_id:str)->bool:
                             or prev_block.get('tts_engine', '') != block.get('tts_engine', '')
                             or prev_block.get('fine_tuned', '') != block.get('fine_tuned', '')
                         )
+                        missing_sentences = set()
                         if x < block_resume and not block_changed:
                             print(f'Chapter {ch_num} (block {x}) — unchanged, skipping')
-                            for j, sentence in enumerate(sentences):
-                                sentence = sentence.strip()
-                                if any(c.isalnum() for c in sentence):
-                                    is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
-                                    if (not is_sml) or (j == len(sentences) - 1):
-                                        all_sentences.append(sentence)
-                            global_sent += len(sentences)
-                            t.update(len(sentences))
-                            continue
-                        if block_changed and x <= block_resume:
+                            chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                            if not os.path.exists(chapter_audio_file):
+                                print(f'Block {x} chapter audio missing, reconverting entire block…')
+                                start_sentence = 0
+                            else:
+                                block_dir = os.path.join(session['sentences_dir'], str(x))
+                                for j, sentence in enumerate(sentences):
+                                    sentence = sentence.strip()
+                                    if any(c.isalnum() for c in sentence):
+                                        is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
+                                        if (not is_sml) or (j == len(sentences) - 1):
+                                            sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
+                                            if not os.path.exists(sentence_file):
+                                                missing_sentences.add(j)
+                                if not missing_sentences:
+                                    for j, sentence in enumerate(sentences):
+                                        sentence = sentence.strip()
+                                        if any(c.isalnum() for c in sentence):
+                                            is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
+                                            if (not is_sml) or (j == len(sentences) - 1):
+                                                all_sentences.append(sentence)
+                                    global_sent += len(sentences)
+                                    t.update(len(sentences))
+                                    continue
+                                print(f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…')
+                                start_sentence = len(sentences)
+                        elif block_changed and x <= block_resume:
                             print(f'Chapter {ch_num} (block {x}) — changed, reconverting')
                             ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if os.path.exists(ch_file):
@@ -2078,7 +2096,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                 if (not is_sml) or (j == len(sentences) - 1):
                                     all_sentences.append(sentence)
-                                if j >= start_sentence:
+                                if j >= start_sentence or j in missing_sentences:
                                     if j == start_sentence and start_sentence > 0:
                                         print(f'********* Resuming from sentence {global_sent} ********')
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
@@ -2103,7 +2121,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             t.update(1)
                         sent_end = global_sent - 1
                         print(f'End of Chapter {ch_num} (block {x})')
-                        if j >= start_sentence or block_changed:
+                        if j >= start_sentence or block_changed or missing_sentences:
                             print(f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}')
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
