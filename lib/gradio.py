@@ -3100,26 +3100,30 @@ def build_interface(args:dict)->gr.Blocks:
                             window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
                                 window.init_audiobook_player();
                             }, {once: false});
-                            const _fetch = window.fetch;
-                            window.fetch = async function(url, options) {
-                                if (typeof url === 'string' && url.includes('/upload') && options?.body instanceof FormData){
-                                    let has_files = false;
-                                    for(const [, value] of options.body.entries()){
-                                        if(value instanceof File && value.size > 0){
-                                            has_files = true;
-                                            break;
+                            if (!window._fetch_patched) {
+                                const originalFetch = window.fetch;
+                                window._original_fetch = window._original_fetch || originalFetch;
+                                window.fetch = async function(url, options) {
+                                    if (typeof url === 'string' && url.includes('/upload') && options?.body instanceof FormData){
+                                        let has_files = false;
+                                        for(const [, value] of options.body.entries()){
+                                            if(value instanceof File && value.size > 0){
+                                                has_files = true;
+                                                break;
+                                            }
+                                        }
+                                        if(!has_files){
+                                            console.warn('Blocked empty folder upload');
+                                            return new Response(JSON.stringify([]), {
+                                                status: 200,
+                                                headers: {'Content-Type': 'application/json'},
+                                            });
                                         }
                                     }
-                                    if(!has_files){
-                                        console.warn('Blocked empty folder upload');
-                                        return new Response(JSON.stringify([]), {
-                                            status: 200,
-                                            headers: {'Content-Type': 'application/json'},
-                                        });
-                                    }
-                                }
-                                return _fetch.apply(this, arguments);
-                            };
+                                    return window._original_fetch.apply(this, arguments);
+                                };
+                                window._fetch_patched = true;
+                            }
                             try{
                                 bc.postMessage({ type: "check-existing", senderId: tab_id });
                                 setTimeout(()=>{

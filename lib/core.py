@@ -2962,11 +2962,11 @@ def finalize_audiobook(session_id:str)->tuple:
         session['blocks_current'] = blocks_current
         conversion = convert_chapters2audio(session_id)
         if not conversion:
+            error = 'convert_chapters2audio() failed!'
             session = context.get_session(session_id)
-            if session['cancellation_requested']:
-                error = 'Conversion cancelled'
-            else:
-                error = 'convert_chapters2audio() failed!'
+            if session and session.get('id', False):
+                if session['cancellation_requested']:
+                    error = 'Conversion cancelled'
             return fail(error)
         show_alert(session_id, {"type": "info", "msg": 'Combining sentences and chapters…'})
         exported_files = combine_audio_chapters(session_id)
