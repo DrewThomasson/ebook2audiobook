@@ -2041,10 +2041,12 @@ def convert_chapters2audio(session_id:str)->bool:
                         )
                         missing_sentences = set()
                         if x < block_resume and not block_changed:
-                            print(f'Chapter {ch_num} (block {x}) — unchanged, skipping')
+                            msg = f'Chapter {ch_num} (block {x}) — unchanged, skipping'
+                            show_alert(session_id, {"type": "warning", "msg": msg})
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if not os.path.exists(chapter_audio_file):
-                                print(f'Block {x} chapter audio missing, reconverting entire block…')
+                                msg = f'Block {x} chapter audio missing, reconverting entire block…'
+                                show_alert(session_id, {"type": "warning", "msg": msg})
                                 start_sentence = 0
                             else:
                                 block_dir = os.path.join(session['sentences_dir'], str(x))
@@ -2066,20 +2068,24 @@ def convert_chapters2audio(session_id:str)->bool:
                                     global_sent += len(sentences)
                                     t.update(len(sentences))
                                     continue
-                                print(f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…')
+                                msg = f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…'
+                                show_alert(session_id, {"type": "warning", "msg": msg})
                                 start_sentence = len(sentences)
                         elif block_changed and x <= block_resume:
-                            print(f'Chapter {ch_num} (block {x}) — changed, reconverting')
+                            msg = f'Chapter {ch_num} (block {x}) — changed, reconverting'
+                            show_alert(session_id, {"type": "warning", "msg": msg})
                             ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if os.path.exists(ch_file):
                                 os.unlink(ch_file)
                             start_sentence = 0
                         elif x == block_resume:
-                            print(f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}')
+                            msg = f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}'
+                            show_alert(session_id, {"type": "warning", "msg": msg})
                             start_sentence = sentence_resume
                         else:
                             start_sentence = 0
-                        print(f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…')
+                        msg = f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…'
+                        show_alert(session_id, {"type": "warning", "msg": msg})
                         block_dir = os.path.join(session['sentences_dir'], str(x))
                         os.makedirs(block_dir, exist_ok=True)
                         blocks_current['block_resume'] = x
@@ -2098,7 +2104,8 @@ def convert_chapters2audio(session_id:str)->bool:
                                     all_sentences.append(sentence)
                                 if j >= start_sentence or j in missing_sentences:
                                     if j == start_sentence and start_sentence > 0:
-                                        print(f'********* Resuming from sentence {global_sent} ********')
+                                        msg = f'********* Resuming from sentence {global_sent} ********'
+                                        show_alert(session_id, {"type": "warning", "msg": msg})
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if success:
@@ -2120,15 +2127,18 @@ def convert_chapters2audio(session_id:str)->bool:
                             print(f' : {sentence}')
                             t.update(1)
                         sent_end = global_sent - 1
-                        print(f'End of Chapter {ch_num} (block {x})')
+                        msg = f'End of Chapter {ch_num} (block {x})'
+                        show_alert(session_id, {"type": "warning", "msg": msg})
                         if j >= start_sentence or block_changed or missing_sentences:
-                            print(f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}')
+                            msg = f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'
+                            show_alert(session_id, {"type": "warning", "msg": msg})
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                             last_save_time = time.monotonic()
                             combine_result = combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences))
                             if not combine_result:
-                                show_alert(session_id, {"type": "error", "msg": 'combine_audio_sentences() failed!'})
+                                error = 'combine_audio_sentences() failed!'
+                                show_alert(session_id, {"type": "error", "msg": error})
                                 session['blocks_current'] = blocks_current
                                 return False
                 session['blocks_current'] = blocks_current
