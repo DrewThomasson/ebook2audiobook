@@ -2034,7 +2034,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         missing_sentences = set()
                         if x < block_resume and not block_changed:
                             msg = f'Chapter {ch_num} (block {x}) — unchanged, skipping'
-                            show_alert(session_id, {"type": "info", "msg": msg})
+                            print(msg)
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if not os.path.exists(chapter_audio_file):
                                 msg = f'Block {x} chapter audio missing, reconverting entire block…'
