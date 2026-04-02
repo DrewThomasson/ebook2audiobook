@@ -1141,6 +1141,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update()
 
             def change_gr_ebook_mode(session_id:str, val:str)->tuple:
+                try:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session['ebook_mode'] = val
@@ -1148,6 +1149,9 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(label=src_label_file, value=None, file_count='single')
                     else:
                         return gr.update(label=src_label_dir, value=None, file_count='directory')
+                except Exception as e:
+                    error = f'change_gr_ebook_mode(): {e}'
+                    exception_alert(session_id, error)
                 return gr.update(), gr.update()
 
             def change_gr_voice_file(session_id:str, f:str|None)->tuple:
@@ -3093,13 +3097,13 @@ def build_interface(args:dict)->gr.Blocks:
                             window.fetch = async function(url, options) {
                                 if (typeof url === 'string' && url.includes('/upload') && options?.body instanceof FormData){
                                     let has_files = false;
-                                    for (const [, value] of options.body.entries()){
+                                    for(const [, value] of options.body.entries()){
                                         if(value instanceof File && value.size > 0){
                                             has_files = true;
                                             break;
                                         }
                                     }
-                                    if (!has_files){
+                                    if(!has_files){
                                         console.warn('Blocked empty folder upload');
                                         return new Response(JSON.stringify([]), {
                                             status: 200,
