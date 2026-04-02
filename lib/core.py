@@ -2042,7 +2042,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         missing_sentences = set()
                         if x < block_resume and not block_changed:
                             msg = f'Chapter {ch_num} (block {x}) — unchanged, skipping'
-                            show_alert(session_id, {"type": "warning", "msg": msg})
+                            show_alert(session_id, {"type": "info", "msg": msg})
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if not os.path.exists(chapter_audio_file):
                                 msg = f'Block {x} chapter audio missing, reconverting entire block…'
@@ -2073,19 +2073,19 @@ def convert_chapters2audio(session_id:str)->bool:
                                 start_sentence = len(sentences)
                         elif block_changed and x <= block_resume:
                             msg = f'Chapter {ch_num} (block {x}) — changed, reconverting'
-                            show_alert(session_id, {"type": "warning", "msg": msg})
+                            show_alert(session_id, {"type": "info", "msg": msg})
                             ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if os.path.exists(ch_file):
                                 os.unlink(ch_file)
                             start_sentence = 0
                         elif x == block_resume:
                             msg = f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}'
-                            show_alert(session_id, {"type": "warning", "msg": msg})
+                            show_alert(session_id, {"type": "info", "msg": msg})
                             start_sentence = sentence_resume
                         else:
                             start_sentence = 0
                         msg = f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…'
-                        show_alert(session_id, {"type": "warning", "msg": msg})
+                        show_alert(session_id, {"type": "info", "msg": msg})
                         block_dir = os.path.join(session['sentences_dir'], str(x))
                         os.makedirs(block_dir, exist_ok=True)
                         blocks_current['block_resume'] = x
@@ -2105,7 +2105,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 if j >= start_sentence or j in missing_sentences:
                                     if j == start_sentence and start_sentence > 0:
                                         msg = f'********* Resuming from sentence {global_sent} ********'
-                                        show_alert(session_id, {"type": "warning", "msg": msg})
+                                        show_alert(session_id, {"type": "info", "msg": msg})
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
                                     if success:
@@ -2128,10 +2128,10 @@ def convert_chapters2audio(session_id:str)->bool:
                             t.update(1)
                         sent_end = global_sent - 1
                         msg = f'End of Chapter {ch_num} (block {x})'
-                        show_alert(session_id, {"type": "warning", "msg": msg})
+                        show_alert(session_id, {"type": "info", "msg": msg})
                         if j >= start_sentence or block_changed or missing_sentences:
                             msg = f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'
-                            show_alert(session_id, {"type": "warning", "msg": msg})
+                            show_alert(session_id, {"type": "info", "msg": msg})
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                             last_save_time = time.monotonic()
