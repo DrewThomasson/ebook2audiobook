@@ -611,8 +611,6 @@ def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
-            msg = 'Cancel requested'
-            print(msg)
             return False
         try:
             title = False
@@ -783,8 +781,6 @@ def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
         session = context.get_session(session_id)
         if session and session.get('id', False):
             if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
                 return False
             cover_image = None
             cover_path = os.path.join(session['process_dir'], session['filename_noext'] + '.jpg')
@@ -826,8 +822,6 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         session = context.get_session(session_id)
         if session and session.get('id', False):
             if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
                 return []
             # Step 1: Extract TOC (Table of Contents)
             try:
@@ -1997,7 +1991,6 @@ def convert_chapters2audio(session_id:str)->bool:
             block_resume = blocks_current['block_resume']
             sentence_resume = blocks_current['sentence_resume']
             if session['cancellation_requested']:
-                print('Cancel requested')
                 return False
             blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
             total_chapters = len(blocks_kept)
@@ -2024,7 +2017,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     for x, block in blocks_kept:
                         if session['cancellation_requested']:
-                            print('Cancel requested')
                             session['blocks_current'] = blocks_current
                             return False
                         last_save_time = time.monotonic()
@@ -2095,7 +2087,6 @@ def convert_chapters2audio(session_id:str)->bool:
                         save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                         for j in range(len(sentences)):
                             if session['cancellation_requested']:
-                                print('Cancel requested')
                                 session['blocks_current'] = blocks_current
                                 return False
                             sentence = sentences[j].strip()
@@ -2181,8 +2172,6 @@ def combine_audio_sentences(session_id:str, file:str, block_idx:int, sentence_co
         with open(concat_list, 'w') as f:
             for path in selected_files:
                 if session['cancellation_requested']:
-                    msg = 'Cancel requested'
-                    print(msg)
                     return False
                 f.write(f"file '{path.replace(os.sep, '/')}'\n")
         result = assemble_audio_chunks(concat_list, file, session['is_gui_process'])
@@ -2243,8 +2232,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             start_time = 0
             for filename, chapter_title in part_chapters:
                 if session['cancellation_requested']:
-                    msg = 'Cancel requested'
-                    print(msg)
                     return False
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
@@ -2269,8 +2256,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         
         try:
             if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
                 return False
             cover_path = None
             ffprobe_cmd = [
@@ -2421,8 +2406,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 needs_split = total_duration > (int(session['output_split_hours']) * 2) * 3600
                 for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
                     if session['cancellation_requested']:
-                        msg = 'Cancel requested'
-                        print(msg)
                         return None
                     if cur_part and (cur_duration + dur > max_part_duration):
                         part_files.append(cur_part)
@@ -2441,8 +2424,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     with open(concat_list, 'w') as f:
                         for file in part_file_list:
                             if session['cancellation_requested']:
-                                msg = 'Cancel requested'
-                                print(msg)
                                 return None
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
@@ -2464,8 +2445,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 with open(concat_list, 'w') as f:
                     for file in chapter_files:
                         if session['cancellation_requested']:
-                            msg = 'Cancel requested'
-                            print(msg)
                             return None
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
@@ -2945,14 +2924,6 @@ def finalize_audiobook(session_id:str)->tuple:
         if not session or not session.get('id', False):
             msg = 'session expired!'
             return result(msg, False)
-        if session['cancellation_requested']:
-            if session['status'] == status_tags['DISCONNECTED']:
-                session['status'] = None
-                context_tracker.end_session(session_id, session['socket_hash'])
-                msg = 'Frontend disconnected!'
-                return result(msg, False)
-            msg = 'Conversion cancelled'
-            return result(msg, False)
         if session['status'] not in [status_tags['EDIT'], status_tags['CONVERTING']]:
             msg = 'No blocks have been selected for the conversion!'
             return result(msg, False)
@@ -2967,6 +2938,11 @@ def finalize_audiobook(session_id:str)->tuple:
         blocks = blocks_current['blocks']
         for idx, block in enumerate(blocks):
             if session['cancellation_requested']:
+                if session['status'] == status_tags['DISCONNECTED']:
+                    session['status'] = None
+                    context_tracker.end_session(session_id, session['socket_hash'])
+                    msg = 'Frontend disconnected!'
+                    return result(msg, False)
                 msg = 'Conversion cancelled'
                 return result(msg, False)
             if not block['keep'] or not block['text'].strip():

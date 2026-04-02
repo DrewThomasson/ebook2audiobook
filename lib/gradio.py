@@ -1153,7 +1153,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'change_gr_ebook_mode(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update()
+                return gr.update()
 
             def change_gr_voice_file(session_id:str, f:str|None)->tuple:
                 state = {}
@@ -1666,6 +1666,7 @@ def build_interface(args:dict)->gr.Blocks:
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
+                error = ''
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
@@ -1698,7 +1699,6 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split":bool(output_split),
                             "output_split_hours": output_split_hours,
                         }
-                        error = None
                         if args['ebook_src'] is None and args['ebook_list'] is None:
                             error = 'Error: a file or directory is required.'
                         elif args['xtts_num_beams'] < args['xtts_length_penalty']:
@@ -1710,6 +1710,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 for i, file in enumerate(ebook_list):
                                     if session['cancellation_requested']:
                                         session['status'] = status_tags['READY']
+                                        msg = 'Conversion cancelled'
                                         return gr.update(value=msg)
                                     elif any(file.endswith(ext) for ext in ebook_formats):
                                         reset_ebook_session(args['id'], force=True, filter_keys=False)
@@ -1731,16 +1732,17 @@ def build_interface(args:dict)->gr.Blocks:
                                     return gr.update(value=progress_status)
                                 else:
                                     error = progress_status
-                        if error is not None:
+                        if error:
                             session['status'] = status_tags['READY']
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
                                 return gr.update()
                 except Exception as e:
+                    session['status'] = status_tags['READY']
                     error = f'start_conversion(): {e}'
                     exception_alert(session_id, error)
-                return gr.update()
+                return gr.update(value=error)
 
             def update_gr_audiobook_list(session_id:str)->dict:
                 nonlocal audiobook_options

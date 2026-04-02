@@ -242,7 +242,7 @@ SML tags available:
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
-        error = None
+        error = ''
         if args['headless']:
             args['id'] = workflow_id if args['workflow'] else args['session'] if args['session'] else None
             args['is_gui_process'] = False
@@ -353,7 +353,7 @@ SML tags available:
                     c.exception_alert(None, error)
             else:
                 error = 'Error: In GUI mode, no option or only --share can be passed'
-        if error is not None:
+        if error:
             print(error)
             sys.exit(1)
 
