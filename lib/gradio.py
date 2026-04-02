@@ -3090,6 +3090,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 window.init_audiobook_player();
                             }, {once: false});
                             document.addEventListener("change", (e)=>{
+                                alert("ok");
                                 if (e.target?.type === "file" && e.target.webkitdirectory && e.target.files.length === 0) {
                                     e.stopImmediatePropagation();
                                     e.preventDefault();
