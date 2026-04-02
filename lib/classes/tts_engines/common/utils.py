@@ -23,7 +23,8 @@ class TTSUtils:
     def cleanup_memory(self)->None:
         import torch
         gc.collect()
-        torch.clear_autocast_cache()
+        if hasattr(torch, 'clear_autocast_cache'):
+            torch.clear_autocast_cache()
         if sys.platform == systems['LINUX']:
             try:
                 libc = ctypes.CDLL('libc.so.6')
