@@ -2423,6 +2423,9 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
             )
             gr_convert_btn.click(
+                fn=lambda: gr.update(interactive=False),
+                outputs=[gr_convert_btn]
+            ).then(
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
