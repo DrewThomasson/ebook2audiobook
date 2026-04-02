@@ -1814,7 +1814,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
                             else:
                                 return gr.update(), (event + 1)
-                session['status'] = status_tags['READY']
+                    session['status'] = status_tags['READY']
                 return gr.update(), event
 
             def click_gr_override_cancel_btn(session_id:str)->dict:
