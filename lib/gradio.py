@@ -852,8 +852,9 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] in [status_tags['READY']]:
                         session['cancellation_requested'] = False
                         outputs = tuple(gr.update(interactive=True) for _ in range(12))
-                        return outputs + (gr.update(value=''),)
-                outputs = tuple(gr.update() for _ in range(13))
+                        convert_btn_interactive = True if session['ebook_src'] is not None or session['ebook_list'] is not None else False
+                        return outputs + (gr.update(value=''), gr.update(interactive=convert_btn_interactive))
+                outputs = tuple(gr.update() for _ in range(14))
                 return outputs
                 
             def disable_on_voice_upload()->tuple:
@@ -2075,7 +2076,7 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_enable_components = [
                 gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_modal
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_modal, gr_convert_btn
             ]
             outputs_disable_components = [
                 gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
@@ -2440,11 +2441,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
-                show_progress_on=[gr_progress]
-            ).then(
-                fn=refresh_interface,
-                inputs=[gr_session],
-                outputs=outputs_refresh_interface,
                 show_progress_on=[gr_progress]
             ).then(
                 fn=enable_components,
