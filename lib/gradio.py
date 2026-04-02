@@ -1046,6 +1046,8 @@ def build_interface(args:dict)->gr.Blocks:
             def refresh_interface(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
+                    if session['cancellation_requested']:
+                        session['status'] = status_tags['READY']
                     if session['status'] in [status_tags['READY']]:
                         visible_main = True
                         visible_xtts = False
@@ -1873,13 +1875,12 @@ def build_interface(args:dict)->gr.Blocks:
                             ebook_name = ''
                             blocks = []
                             page = 0
+                            ebook_name = Path(session['ebook']).stem
+                            blocks = session['blocks_current']['blocks']
+                            page_updates = list(populate_page(session_id, page, blocks))
                             if session['cancellation_requested']:
                                 visible_main = True
                                 visible_blocks = False
-                            else:
-                                ebook_name = Path(session['ebook']).stem
-                                blocks = session['blocks_current']['blocks']
-                            page_updates = list(populate_page(session_id, page, blocks))
                             result = (
                                 gr.update(value=ebook_name),
                                 gr.update(visible=visible_main), gr.update(visible=visible_blocks),
