@@ -2442,6 +2442,11 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
             ).then(
+                fn=refresh_interface,
+                inputs=[gr_session],
+                outputs=outputs_refresh_interface,
+                show_progress_on=[gr_progress]
+            .then(
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components
