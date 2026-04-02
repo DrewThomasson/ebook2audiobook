@@ -1824,12 +1824,12 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] == status_tags['OVERRIDE']:
+                        session['status'] = status_tags['SKIP']
                         if isinstance(session['ebook_list'], list):
                             ebook_list = session['ebook_list']
                             ebook_list.remove(session['ebook_src'])
                             session['ebook_list'] = ebook_list
                             return gr.update(value='', visible=False), gr.update(value=session['ebook_list'])
-                    session['status'] = status_tags['SKIP']
                 return gr.update(value='', visible=False), gr.update()
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
