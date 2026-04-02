@@ -3091,15 +3091,15 @@ def build_interface(args:dict)->gr.Blocks:
                             }, {once: false});
                             const _fetch = window.fetch;
                             window.fetch = async function(url, options) {
-                                if (typeof url === 'string' && url.includes('/upload') && options?.body instanceof FormData) {
+                                if (typeof url === 'string' && url.includes('/upload') && options?.body instanceof FormData){
                                     let has_files = false;
-                                    for (const [, value] of options.body.entries()) {
-                                        if (value instanceof File && value.size > 0) {
+                                    for (const [, value] of options.body.entries()){
+                                        if(value instanceof File && value.size > 0){
                                             has_files = true;
                                             break;
                                         }
                                     }
-                                    if (!has_files) {
+                                    if (!has_files){
                                         console.warn('Blocked empty folder upload');
                                         return new Response(JSON.stringify([]), {
                                             status: 200,
