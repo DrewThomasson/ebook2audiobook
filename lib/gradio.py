@@ -1142,13 +1142,13 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_ebook_mode(session_id:str, val:str)->tuple:
                 try:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    session['ebook_mode'] = val
-                    if val == 'single':
-                        return gr.update(label=src_label_file, value=None, file_count='single')
-                    else:
-                        return gr.update(label=src_label_dir, value=None, file_count='directory')
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        session['ebook_mode'] = val
+                        if val == 'single':
+                            return gr.update(label=src_label_file, value=None, file_count='single')
+                        else:
+                            return gr.update(label=src_label_dir, value=None, file_count='directory')
                 except Exception as e:
                     error = f'change_gr_ebook_mode(): {e}'
                     exception_alert(session_id, error)
