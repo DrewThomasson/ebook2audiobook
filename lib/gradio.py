@@ -293,6 +293,9 @@ def build_interface(args:dict)->gr.Blocks:
                     align-items: center !important;
                     justify-content: center !important;
                 }
+                #gr_ebook_file button[aria-label="common.upload"], #gr_custom_model_file button[aria-label="common.upload"], #gr_voice_file button[aria-label="common.upload"] {
+                    display: none !important;
+                }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
                 }               
