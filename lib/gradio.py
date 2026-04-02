@@ -3089,6 +3089,14 @@ def build_interface(args:dict)->gr.Blocks:
                             window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
                                 window.init_audiobook_player();
                             }, {once: false});
+                            document.addEventListener("change", (e)=>{
+                                if (e.target?.type === "file" && e.target.webkitdirectory && e.target.files.length === 0) {
+                                    e.stopImmediatePropagation();
+                                    e.preventDefault();
+                                    e.target.value = "";
+                                    alert("The selected folder is empty or contains no files.");
+                                }
+                            }, true);
                             try{
                                 bc.postMessage({ type: "check-existing", senderId: tab_id });
                                 setTimeout(()=>{
