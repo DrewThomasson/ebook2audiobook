@@ -1867,12 +1867,10 @@ def build_interface(args:dict)->gr.Blocks:
                             ebook_list = ebook_data
                             ebook_list.remove(ebook_data[0])
                             ebook_data = ebook_list
-                            ebook_data = None if len(ebook_data) == 0 else ebook_data
-                            session['ebook_list'] = ebook_data
+                            ebook_data = session['ebook_list'] = None if len(ebook_data) == 0 else ebook_data
                             return gr.update(value='', visible=False), gr.update(value=ebook_data)
-                        elif ebook_data is not None:                         
-                            ebook_data = None
-                            session['ebook_src'] = session['ebook'] = ebook_data
+                        else:                         
+                            ebook_data = session['ebook_src'] = session['ebook'] = None
                             return gr.update(value='', visible=False), gr.update(value=ebook_data)
                 return gr.update(value='', visible=False), gr.update()
 
