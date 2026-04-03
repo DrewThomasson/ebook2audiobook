@@ -1623,7 +1623,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['output_split'] = val
                 return gr.update(visible=val)
 
-            def click_gr_session()->tuple:
+            def focus_gr_session()->tuple:
                 msg = 'Backup your current session ID before to start with a new one!'
                 show_alert(session_id, {"type": "warning", "msg": msg})
                 return gr.update(interactive=True), gr.update(visible=True)
@@ -2272,8 +2272,8 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_output_split_hours],
                 outputs=None
             )
-            gr_session.click(
-                fn=click_gr_session,
+            gr_session.focus(
+                fn=focus_gr_session,
                 inputs=[],
                 outputs=[gr_session, gr_session_btn],
             )
