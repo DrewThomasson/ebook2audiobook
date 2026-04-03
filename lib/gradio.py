@@ -143,6 +143,18 @@ def build_interface(args:dict)->gr.Blocks:
                     background-color: #ff5050 !important;
                     font-size: 28px !important;
                 }
+                .small-btn-switch{
+                    background: var(--block-background-fill) !important;
+                    font-size: 22px !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                .small-btn-switch:hover {
+                    background-color: #752eb2 !important;
+                    font-size: 28px !important;
+                }
                 .small-btn:active, .small-btn-red:active {
                     background: var(--body-text-color) !important;
                     font-size: 30px !important;
