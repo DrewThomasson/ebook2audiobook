@@ -865,7 +865,7 @@ def build_interface(args:dict)->gr.Blocks:
             ############## End of Gradio Components creation
 
             def disable_components()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(12)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(13)])
                 return outputs
             
             def enable_components(session_id: str) -> tuple:
@@ -2125,7 +2125,7 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_disable_components = [
                 gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                gr_custom_model_list, gr_output_format_list, gr_output_channel_list
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_convert_btn
             ]
             outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
@@ -2490,8 +2490,9 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
             )
             gr_convert_btn.click(
-                fn=lambda: gr.update(interactive=False),
-                outputs=[gr_convert_btn]
+                fn=disable_components,
+                inputs=None,
+                outputs=outputs_disable_components
             ).then(
                 fn=check_override_audiobook,
                 inputs=[gr_session, gr_ebook_file, gr_blocks_preview, gr_override_event],
@@ -2519,10 +2520,6 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal, gr_override_event]
             )
             gr_override_event.change(
-                fn=lambda event: gr.update(interactive=False),
-                inputs=[gr_override_event],
-                outputs=[gr_convert_btn]
-            ).then(
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components
