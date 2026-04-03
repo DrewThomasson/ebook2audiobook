@@ -875,7 +875,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session['cancellation_requested'] = False
                         outputs = tuple(gr.update(interactive=True) for _ in range(17))
                         convert_btn_interactive = True if session['ebook_src'] is not None or session['ebook_list'] is not None else False
-                        print(f"session['ebook_src']: {session['ebook_src']}")
                         return outputs + (gr.update(value=''), gr.update(interactive=convert_btn_interactive))
                 outputs = tuple(gr.update() for _ in range(19))
                 return outputs
@@ -1868,10 +1867,10 @@ def build_interface(args:dict)->gr.Blocks:
                             ebook_list = ebook_data
                             ebook_list.remove(ebook_data[0])
                             ebook_data = ebook_list
-                            ebook_data = session['ebook_list'] = None if len(ebook_data) == 0 else ebook_data
+                            ebook_data = session['ebook_list'] = session['ebook_src'] = None if len(ebook_data) == 0 else ebook_data
                             return gr.update(value='', visible=False), gr.update(value=ebook_data)
                         else:                         
-                            ebook_data = session['ebook_src'] = session['ebook'] = None
+                            ebook_data = session['ebook_list'] = session['ebook_src'] = session['ebook'] = None
                             return gr.update(value='', visible=False), gr.update(value=ebook_data)
                 return gr.update(value='', visible=False), gr.update()
 
