@@ -245,7 +245,7 @@ SML tags available:
         error = ''
         if args['headless']:
             args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
-            if args['id'] == workflow_id or not arg['session']:
+            if args['id'] == workflow_id or not args['session']:
                 session = c.context.set_session(args['id'])
             else:
                 session = context.get_session(args['id'])
