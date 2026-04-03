@@ -143,17 +143,17 @@ def build_interface(args:dict)->gr.Blocks:
                     background-color: #ff5050 !important;
                     font-size: 28px !important;
                 }
-                .small-btn-switch{
+                .small-btn-lock{
                     background: var(--block-background-fill) !important;
-                    font-size: 22px !important;
+                    font-size: 18px !important;
                     width: 60px !important;
                     height: 60px !important;
                     margin: 0 !important;
                     padding: 0 !important;
                 }
-                .small-btn-switch:hover {
+                .small-btn-lock:hover {
                     background-color: #752eb2 !important;
-                    font-size: 28px !important;
+                    font-size: 20px !important;
                 }
                 .small-btn:active, .small-btn-red:active {
                     background: var(--body-text-color) !important;
@@ -627,8 +627,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                     with gr.Row(elem_id='gr_row_session'):
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=True)
-                                        gr_session_closed_btn = gr.Button('🔒', elem_id='gr_session_closed_btn', elem_classes=['small-btn-switch'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
-                                        gr_session_opened_btn = gr.Button('🔒', elem_id='gr_session_opened_btn', elem_classes=['small-btn-switch'], variant='secondary', visible=False, interactive=True, scale=0, min_width=60)
+                                        gr_session_closed_btn = gr.Button('🔒', elem_id='gr_session_closed_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
+                                        gr_session_opened_btn = gr.Button('🔑', elem_id='gr_session_opened_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=False, interactive=True, scale=0, min_width=60)
                     with gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
@@ -1646,14 +1646,14 @@ def build_interface(args:dict)->gr.Blocks:
                 if not new_session_id:
                     msg = 'Session ID cannot be empty'
                     show_alert(session_id, {"type": "warning", "msg": msg})
-                    return gr.update(), gr.update(), gr.update()
+                    return gr.update(), gr.update(), gr.update(), gr.update()
                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                 if os.path.exists(new_session_dir) or context.sessions.get(new_session_id):
                     # JSON?????
-                    return gr.update(), gr.update(visible=False), gr.update(visible=True)
+                    return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
                 msg = 'Session not found!'
                 show_alert(session_id, {"type": "warning", "msg": msg})
-                return gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_playback_time(session_id:str, time:float)->None:
                 session = context.get_session(session_id)
@@ -2294,7 +2294,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session_opened_btn.click(
                 fn=click_gr_session_opened_btn,
                 inputs=[gr_session],
-                outputs=[gr_session_opened_btn, gr_session_closed_btn, gr_restore_session],
+                outputs=[gr_restore_session, gr_session, gr_session_opened_btn, gr_session_closed_btn],
                 show_progress_on=[gr_progress]
             )
             gr_progress.change(
