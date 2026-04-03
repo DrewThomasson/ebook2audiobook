@@ -1648,7 +1648,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(), gr.update()
                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                 print(new_session_dir)
-                if os.path.exists(new_session_dir):
+                if os.path.exists(new_session_dir) or context.sessions.get(new_session_id):
                     return gr.update(interactive=False), gr.update(visible=False)
                 msg = 'Session not found!'
                 show_alert(session_id, {"type": "warning", "msg": msg})
