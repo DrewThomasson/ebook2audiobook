@@ -613,8 +613,9 @@ def build_interface(args:dict)->gr.Blocks:
                                                 gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True, scale=1)
                                 with gr.Group(elem_id='gr_group_session', elem_classes=['gr-group']):
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
-                                    gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
-    
+                                    with gr.Row():
+                                        gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False, scale=1, info='Click to change the session ID')
+                                        gr_session_btn = gr.Button(value='Validate', elem_id='gr_session_btn', min_width=80, scale=0, visible=False)
                     with gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
@@ -1622,6 +1623,24 @@ def build_interface(args:dict)->gr.Blocks:
                     session['output_split'] = val
                 return gr.update(visible=val)
 
+            def focus_gr_session()->tuple:
+                msg = 'Backup your current session ID before to start with a new one!'
+                show_alert(session_id, {"type": "warning", "msg": msg})
+                return gr.update(interactive=True), gr.update(visible=True)
+
+            def click_gr_session_btn(session_id):
+                new_session_id = session_id.strip()
+                if not new_session_id:
+                    msg = 'Session ID cannot be empty'
+                    show_alert(session_id, {"type": "warning", "msg": msg})
+                    return gr.update(), gr.update()
+                new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
+                if os.path.exists(new_session_dir):
+                    return gr.update(interactive=False), gr.update(visible=False)
+                msg = 'Session not found!'
+                show_alert(session_id, {"type": "warning", "msg": msg})
+                return gr.update(interactive=True), gr.update(visible=True)
+
             def change_gr_playback_time(session_id:str, time:float)->None:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
@@ -2252,6 +2271,16 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=lambda session_id, val: change_param('output_split_hours', session_id, str(val)),
                 inputs=[gr_session, gr_output_split_hours],
                 outputs=None
+            )
+            gr_session.focus(
+                fn=focus_gr_session,
+                inputs=[],
+                outputs=[gr_session, gr_session_btn],
+            )
+            gr_session_btn.click(
+                fn=click_gr_session_btn,
+                inputs=[gr_session],
+                outputs=[gr_session, gr_session_btn],
             )
             gr_progress.change(
                 fn=None,
