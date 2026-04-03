@@ -2288,11 +2288,13 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=focus_gr_session,
                 inputs=[gr_session],
                 outputs=[gr_session, gr_session_btn],
+                show_progress_on=[gr_progress]
             )
             gr_session_btn.click(
                 fn=click_gr_session_btn,
                 inputs=[gr_session],
                 outputs=[gr_session, gr_session_btn],
+                show_progress_on=[gr_progress]
             )
             gr_progress.change(
                 fn=None,
