@@ -865,7 +865,7 @@ def build_interface(args:dict)->gr.Blocks:
             ############## End of Gradio Components creation
 
             def disable_components()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(13)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(18)])
                 return outputs
             
             def enable_components(session_id: str) -> tuple:
@@ -873,10 +873,10 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['READY']]:
                         session['cancellation_requested'] = False
-                        outputs = tuple(gr.update(interactive=True) for _ in range(12))
+                        outputs = tuple(gr.update(interactive=True) for _ in range(17))
                         convert_btn_interactive = True if session['ebook_src'] is not None or session['ebook_list'] is not None else False
                         return outputs + (gr.update(value=''), gr.update(interactive=convert_btn_interactive))
-                outputs = tuple(gr.update() for _ in range(14))
+                outputs = tuple(gr.update() for _ in range(19))
                 return outputs
                 
             def disable_on_voice_upload()->tuple:
