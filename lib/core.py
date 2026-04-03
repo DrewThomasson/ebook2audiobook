@@ -2083,7 +2083,11 @@ def convert_chapters2audio(session_id:str)->bool:
                                 shutil.rmtree(block_dir)
                             start_sentence = 0
                         elif x == block_resume:
-                            if sentence_resume > 0:
+                            if sentence_resume == 0:
+                                block_dir_path = os.path.join(session['sentences_dir'], str(x))
+                                if os.path.isdir(block_dir_path):
+                                    shutil.rmtree(block_dir_path)
+                            else:
                                 msg = f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}'
                                 show_alert(session_id, {"type": "info", "msg": msg})
                             start_sentence = sentence_resume
@@ -2961,7 +2965,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 continue
             prev_block = blocks_prev[idx] if idx < len(blocks_prev) else None
             if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
-                msg = f'Block {idx} — unchanged, keeping existing sentences'
+                msg = f'Block {idx} — unchanged, skipping'
                 print(msg)
                 continue
             sentences_list = get_sentences(session_id, block['text'])
