@@ -2290,6 +2290,18 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_gr_session_closed_btn,
                 inputs=[gr_session],
                 outputs=[gr_session, gr_session_closed_btn, gr_session_opened_btn]
+            ).then(
+                fn=None,
+                inputs=[],
+                outputs=[],
+                js='''
+                    ()=>{
+                        const el = document.querySelector("#gr_session textarea");
+                        if(el){
+                            el.select();
+                        }
+                    }
+                '''
             )
             gr_session_opened_btn.click(
                 fn=click_gr_session_opened_btn,
