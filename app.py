@@ -251,7 +251,8 @@ SML tags available:
                 session = c.context.get_session(args['id'])
                 if not session or (session and not session.get('id', False)):
                     error = 'Session expired or does not exist!'
-                    return error, False
+                    print(error)
+                    sys.exit(1)
             if not c.context_tracker.start_session(session['id']):
                 error = 'Session could not start!'
                 print(error)
