@@ -2624,14 +2624,11 @@ def convert_ebook(args:dict)->tuple:
         if not args.get('id'):
             error = 'Session ID is missing!'
             return error, False
-        if args['is_gui_process']:
-            session_id = str(args['id'])
-            session = context.get_session(session_id)
-            if not session or (session and not session.get('id', False)):
-                error = 'Session expired or does not exist!'
-                return error, False
-        else:
-            session_id = str(args['id'])
+        session_id = str(args['id'])
+        session = context.get_session(session_id)
+        if not session or (session and not session.get('id', False)):
+            error = 'Session expired or does not exist!'
+            return error, False
         if args['language'] is not None:
             if not os.path.splitext(args['ebook_src'])[1]:
                 error = f"{args['ebook_src']} needs a format extension."
