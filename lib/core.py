@@ -2108,6 +2108,8 @@ def convert_chapters2audio(session_id:str)->bool:
                                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             last_save_time = now
                                     else:
+                                        error = f'tts_manager.convert_sentence2audio() failed!'
+                                        show_alert(session_id, {"type": "warning", "msg": error})
                                         session['blocks_current'] = blocks_current
                                         return False
                                 global_sent += 1
