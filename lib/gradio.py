@@ -1638,7 +1638,7 @@ def build_interface(args:dict)->gr.Blocks:
             def focus_gr_session(session_id:str)->tuple:
                 msg = 'Backup your current session ID before to start with a new one!'
                 show_alert(session_id, {"type": "warning", "msg": msg})
-                return gr.update(interactive=True), gr.update(visible=True)
+                return
 
             def click_gr_session_btn(session_id:str)->tuple:
                 new_session_id = session_id.strip()
@@ -2288,8 +2288,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session.focus(
                 fn=focus_gr_session,
                 inputs=[gr_session],
-                outputs=[gr_session, gr_session_btn],
-                show_progress_on=[gr_progress]
+                outputs=None
             )
             gr_session_btn.click(
                 fn=click_gr_session_btn,
