@@ -1628,7 +1628,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_alert(session_id, {"type": "warning", "msg": msg})
                 return gr.update(interactive=True), gr.update(visible=True)
 
-            def click_gr_session_btn(session_id):
+            def click_gr_session_btn(session_id:str)->tuple:
                 new_session_id = session_id.strip()
                 if not new_session_id:
                     msg = 'Session ID cannot be empty'
