@@ -152,7 +152,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding: 0 !important;
                 }
                 .small-btn-lock:hover {
-                    background-color: #000000 !important;
+                    background-color: #752eb2 !important;
                     font-size: 20px !important;
                 }
                 .small-btn:active, .small-btn-red:active, small-btn-lock:active {
