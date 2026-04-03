@@ -2120,8 +2120,9 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_enable_components = [
                 gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_modal, gr_convert_btn,
-                gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_closed_btn, gr_session_opened_btn
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list,
+                gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_closed_btn, gr_session_opened_btn,
+                gr_modal, gr_convert_btn
             ]
             outputs_disable_components = [
                 gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
