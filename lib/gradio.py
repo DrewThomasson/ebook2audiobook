@@ -627,8 +627,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                     with gr.Row(elem_id='gr_row_session'):
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=True)
-                                        gr_session_closed_btn = gr.Button('🔒', elem_id='gr_session_closed_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
-                                        gr_session_opened_btn = gr.Button('🔑', elem_id='gr_session_opened_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=False, interactive=True, scale=0, min_width=60)
+                                        gr_session_closed_btn = gr.Button('🔒︎', elem_id='gr_session_closed_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
+                                        gr_session_opened_btn = gr.Button('🔑︎', elem_id='gr_session_opened_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=False, interactive=True, scale=0, min_width=60)
                     with gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
