@@ -1824,15 +1824,13 @@ def build_interface(args:dict)->gr.Blocks:
                 source = None
                 if session and session.get('id', False):
                     if not session['cancellation_requested']:
-                        if session['status']  in [status_tags['EDIT'], status_tags['SKIP']]:
-                            return gr.update(), event
-                        elif session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
+                        if session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
                             if isinstance(session['ebook_list'], list):
                                 if len(session['ebook_list']) > 0:
                                     source = session['ebook_list'][0]
                             else:
                                 source = session['ebook_src']
-                        else:
+                        elif session['status'] not in [status_tags['EDIT'], status_tags['SKIP']]:
                             if isinstance(ebook_data, list):
                                 if len(ebook_data) > 0:
                                     source = ebook_data[0]
