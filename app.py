@@ -244,7 +244,7 @@ SML tags available:
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         error = ''
         if args['headless']:
-            args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4()
+            args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
             if args['id'] == workflow_id or not arg['session']:
                 session = c.context.set_session(args['id'])
             else:
