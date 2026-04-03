@@ -248,8 +248,8 @@ SML tags available:
             if args['id'] == workflow_id or not args['session']:
                 session = c.context.set_session(args['id'])
             else:
-                session = c.context.get_session(args['id'])
-                if not session or (session and not session.get('id', False)):
+                session_dir = os.path.join(tmp_dir, f"proc-{args['id']}")
+                if not os.path.exists(session_dir) and not context.sessions.get(args['id']):
                     error = 'Session expired or does not exist!'
                     print(error)
                     sys.exit(1)
