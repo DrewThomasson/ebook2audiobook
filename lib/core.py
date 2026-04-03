@@ -2621,6 +2621,17 @@ def convert_ebook(args:dict)->tuple:
         error = None
         session_id = None
         info_session = None
+        if not args.get('id'):
+            error = 'Session ID is missing!'
+            return error, False
+        if args['is_gui_process']:
+            session_id = str(args['id'])
+            session = context.get_session(session_id)
+            if not session or (session and not session.get('id', False)):
+                error = 'Session expired or does not exist!'
+                return error, False
+        else:
+            session_id = str(args['id'])
         if args['language'] is not None:
             if not os.path.splitext(args['ebook_src'])[1]:
                 error = f"{args['ebook_src']} needs a format extension."
@@ -2641,17 +2652,6 @@ def convert_ebook(args:dict)->tuple:
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 return error, False
-            if args.get('id'):
-                session_id = str(args['id'])
-                session = context.get_session(session_id)
-                if not session:
-                    session = context.set_session(session_id)
-            else:
-                session_id = str(uuid.uuid4())
-                session = context.set_session(session_id)
-                if not context_tracker.start_session(session_id):
-                    error = 'convert_ebook() error: Session initialization failed!'
-                    return error, False
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])

@@ -244,7 +244,18 @@ SML tags available:
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         error = ''
         if args['headless']:
-            args['id'] = workflow_id if args['workflow'] else args['session'] if args['session'] else None
+            args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4()
+            if args['id'] == workflow_id or not arg['session']:
+                session = c.context.set_session(args['id'])
+            else:
+                session = context.get_session(args['id'])
+                if not session or (session and not session.get('id', False)):
+                    error = 'Session expired or does not exist!'
+                    return error, False
+            if not c.context_tracker.start_session(session['id']):
+                error = 'Session could not start!'
+                print(error)
+                sys.exit(1)
             args['is_gui_process'] = False
             args['blocks_preview'] = False
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
@@ -261,9 +272,6 @@ SML tags available:
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
-            if args['id'] is None:
-                args['id'] = str(uuid.uuid4())
-                c.context.set_session(args['id'])
             engine_setting_keys = {engine: list(settings.keys()) for engine, settings in default_engine_settings.items()}
             valid_model_keys = engine_setting_keys.get(args['tts_engine'], [])
             renamed_args = {}
