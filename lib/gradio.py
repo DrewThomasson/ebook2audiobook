@@ -1832,7 +1832,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     source = session['ebook_list'][0]
                             else:
                                 source = session['ebook_src']
-                        elif session['status'] not in [status_tags['SKIP']]:
+                        else:
                             if isinstance(ebook_data, list):
                                 if len(ebook_data) > 0:
                                     source = ebook_data[0]
@@ -1862,14 +1862,14 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] == status_tags['OVERRIDE']:
+                        session['status'] = status_tags['SKIP']
                         if isinstance(ebook_data, list):
                             ebook_list = ebook_data
                             ebook_list.remove(ebook_data[0])
                             ebook_data = ebook_list
                             ebook_data = None if len(ebook_data) == 0 else ebook_data
                             return gr.update(value='', visible=False), gr.update(value=ebook_data)
-                        elif ebook_data is not None:
-                            session['status'] = status_tags['SKIP']
+                        elif ebook_data is not None:                         
                             ebook_data = None
                             return gr.update(value='', visible=False), gr.update(value=ebook_data)
                 return gr.update(value='', visible=False), gr.update()
