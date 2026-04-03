@@ -248,7 +248,7 @@ SML tags available:
             if args['id'] == workflow_id or not args['session']:
                 session = c.context.set_session(args['id'])
             else:
-                session = context.get_session(args['id'])
+                session = c.context.get_session(args['id'])
                 if not session or (session and not session.get('id', False)):
                     error = 'Session expired or does not exist!'
                     return error, False
