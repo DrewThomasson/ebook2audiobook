@@ -614,8 +614,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_session', elem_classes=['gr-group']):
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                     with gr.Row():
-                                        gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False, scale=1)
-                                        gr_session_btn = gr.Button(value='Change', elem_id='gr_session_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, min_width=60, scale=0)
+                                        gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=True)
+                                        gr_session_btn = gr.Button(value='Change', elem_id='gr_session_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, min_width=60)
                     with gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
