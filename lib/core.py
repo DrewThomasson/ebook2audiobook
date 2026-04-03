@@ -2039,6 +2039,9 @@ def convert_chapters2audio(session_id:str)->bool:
                             if not os.path.exists(chapter_audio_file):
                                 msg = f'Block {x} chapter audio missing, reconverting entire block…'
                                 show_alert(session_id, {"type": "warning", "msg": msg})
+                                block_dir_path = os.path.join(session['sentences_dir'], str(x))
+                                if os.path.isdir(block_dir_path):
+                                    shutil.rmtree(block_dir_path)
                                 start_sentence = 0
                             else:
                                 block_dir = os.path.join(session['sentences_dir'], str(x))
@@ -2057,18 +2060,27 @@ def convert_chapters2audio(session_id:str)->bool:
                                             is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                             if (not is_sml) or (j == len(sentences) - 1):
                                                 all_sentences.append(sentence)
-                                    global_sent += len(sentences)
+                                            global_sent += 1
                                     t.update(len(sentences))
                                     continue
                                 msg = f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…'
                                 show_alert(session_id, {"type": "warning", "msg": msg})
-                                start_sentence = len(sentences)
+                                ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                                if os.path.exists(ch_file):
+                                    os.unlink(ch_file)
+                                block_dir_path = os.path.join(session['sentences_dir'], str(x))
+                                if os.path.isdir(block_dir_path):
+                                    shutil.rmtree(block_dir_path)
+                                start_sentence = 0
                         elif block_changed and x <= block_resume:
                             msg = f'Chapter {ch_num} (block {x}) — changed, reconverting'
                             show_alert(session_id, {"type": "info", "msg": msg})
                             ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if os.path.exists(ch_file):
                                 os.unlink(ch_file)
+                            block_dir = os.path.join(session['sentences_dir'], str(x))
+                            if os.path.isdir(block_dir):
+                                shutil.rmtree(block_dir)
                             start_sentence = 0
                         elif x == block_resume:
                             if sentence_resume > 0:
