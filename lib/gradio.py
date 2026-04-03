@@ -615,7 +615,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                     with gr.Row():
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False, scale=1)
-                                        gr_session_btn = gr.Button(value='Change', elem_id='gr_session_btn', variant='secondary', interactive=True, min_width=80, scale=0, visible=True)
+                                        gr_session_btn = gr.Button(value='Change', elem_id='gr_session_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, min_width=60, scale=0)
                     with gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
@@ -1623,7 +1623,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['output_split'] = val
                 return gr.update(visible=val)
 
-            def focus_gr_session()->tuple:
+            def click_gr_session()->tuple:
                 msg = 'Backup your current session ID before to start with a new one!'
                 show_alert(session_id, {"type": "warning", "msg": msg})
                 return gr.update(interactive=True), gr.update(visible=True)
@@ -2272,8 +2272,8 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_output_split_hours],
                 outputs=None
             )
-            gr_session.focus(
-                fn=focus_gr_session,
+            gr_session.click(
+                fn=click_gr_session,
                 inputs=[],
                 outputs=[gr_session, gr_session_btn],
             )
