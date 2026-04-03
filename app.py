@@ -249,7 +249,7 @@ SML tags available:
                 session = c.context.set_session(args['id'])
             else:
                 session_dir = os.path.join(tmp_dir, f"proc-{args['id']}")
-                if not os.path.exists(session_dir) and not context.sessions.get(args['id']):
+                if not os.path.exists(session_dir) and not c.context.sessions.get(args['id']):
                     error = 'Session expired or does not exist!'
                     print(error)
                     sys.exit(1)
