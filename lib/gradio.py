@@ -1872,7 +1872,7 @@ def build_interface(args:dict)->gr.Blocks:
                             return gr.update(value='', visible=False), gr.update(value=ebook_data)
                         elif ebook_data is not None:                         
                             ebook_data = None
-                            session['ebook_src'] = ebook_data
+                            session['ebook_src'] = session['ebook'] = ebook_data
                             return gr.update(value='', visible=False), gr.update(value=ebook_data)
                 return gr.update(value='', visible=False), gr.update()
 
