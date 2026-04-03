@@ -1858,21 +1858,19 @@ def build_interface(args:dict)->gr.Blocks:
                     session['status'] = status_tags['READY']
                 return gr.update(), event
 
-            def click_gr_override_cancel_btn(session_id:str)->dict:
+            def click_gr_override_cancel_btn(session_id:str, ebook_data:any)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    print(session['status'])
-                    print(session['ebook_list'])
                     if session['status'] == status_tags['OVERRIDE']:
-                        if isinstance(session['ebook_list'], list):
-                            ebook_list = session['ebook_list']
-                            ebook_list.remove(session['ebook_src'])
-                            session['ebook_list'] = ebook_list
-                            return gr.update(value='', visible=False), gr.update(value=session['ebook_list'])
-                        elif session['ebook_src'] is not None:
+                        if isinstance(ebook_data, list):
+                            ebook_list = ebook_data
+                            ebook_list.remove(ebook_data[0])
+                            ebook_data = ebook_list
+                            return gr.update(value='', visible=False), gr.update(value=ebook_data)
+                        elif ebook_data is not None:
                             session['status'] = status_tags['SKIP']
-                            session['ebook_src'] = session['ebook'] = None
-                            return gr.update(value='', visible=False), gr.update(value=session['ebook_src'])
+                            ebook_data = None
+                            return gr.update(value='', visible=False), gr.update(value=ebook_data)
                 return gr.update(value='', visible=False), gr.update()
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
@@ -2509,7 +2507,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_override_cancel_btn.click(
                 fn=click_gr_override_cancel_btn,
-                inputs=[gr_session],
+                inputs=[gr_session, gr_ebook_file],
                 outputs=[gr_modal, gr_ebook_file],
                 show_progress_on=[gr_progress]
             ).then(
