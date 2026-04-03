@@ -2130,7 +2130,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             combine_result = combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences))
                             if not combine_result:
                                 error = 'combine_audio_sentences() failed!'
-                                show_alert(session_id, {"type": "error", "msg": error})
+                                show_alert(session_id, {"type": "warning", "msg": error})
                                 session['blocks_current'] = blocks_current
                                 return False
                 session['blocks_current'] = blocks_current
