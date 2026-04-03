@@ -627,7 +627,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                     with gr.Row(elem_id='gr_row_session'):
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=True)
-                                        gr_session_btn = gr.Button('⇄', elem_id='gr_session_btn', elem_classes=['small-btn-switch'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                        gr_session_closed_btn = gr.Button('🔒', elem_id='gr_session_closed_btn', elem_classes=['small-btn-switch'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
+                                        gr_session_opened_btn = gr.Button('🔒', elem_id='gr_session_opened_btn', elem_classes=['small-btn-switch'], variant='secondary', visible=False, interactive=True, scale=0, min_width=60)
                     with gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
@@ -1635,24 +1636,23 @@ def build_interface(args:dict)->gr.Blocks:
                     session['output_split'] = val
                 return gr.update(visible=val)
 
-            def focus_gr_session(session_id:str)->tuple:
+            def click_gr_session_closed_btn(session_id:str)->tuple:
                 msg = 'Backup your current session ID before to start with a new one!'
                 show_alert(session_id, {"type": "warning", "msg": msg})
-                return
+                return gr.update(visible=False), gr.update(visible=True)
 
-            def click_gr_session_btn(session_id:str)->tuple:
+            def click_gr_session_opened_btn(session_id:str)->tuple:
                 new_session_id = session_id.strip()
                 if not new_session_id:
                     msg = 'Session ID cannot be empty'
                     show_alert(session_id, {"type": "warning", "msg": msg})
-                    return gr.update(), gr.update()
+                    return gr.update(), gr.update(), gr.update()
                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
-                print(new_session_dir)
                 if os.path.exists(new_session_dir) or context.sessions.get(new_session_id):
-                    return gr.update(interactive=False), gr.update(visible=False)
+                    return gr.update(JSON?????), gr.update(visible=False), gr.update(visible=True)
                 msg = 'Session not found!'
                 show_alert(session_id, {"type": "warning", "msg": msg})
-                return gr.update(interactive=True), gr.update(visible=True)
+                return gr.update(), gr.update(), gr.update()
 
             def change_gr_playback_time(session_id:str, time:float)->None:
                 session = context.get_session(session_id)
@@ -2285,15 +2285,15 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_output_split_hours],
                 outputs=None
             )
-            gr_session.focus(
-                fn=focus_gr_session,
+            gr_session_closed_btn.click(
+                fn=click_gr_session_closed_btn,
                 inputs=[gr_session],
-                outputs=None
+                outputs=[gr_session_closed_btn, gr_session_opened_btn]
             )
-            gr_session_btn.click(
-                fn=click_gr_session_btn,
+            gr_session_opened_btn.click(
+                fn=click_gr_session_opened_btn,
                 inputs=[gr_session],
-                outputs=[gr_session, gr_session_btn],
+                outputs=[gr_session_opened_btn, gr_session_closed_btn, gr_restore_session],
                 show_progress_on=[gr_progress]
             )
             gr_progress.change(
