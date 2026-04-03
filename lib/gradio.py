@@ -2307,7 +2307,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_gr_session_opened_btn,
                 inputs=[gr_session],
                 outputs=[gr_restore_session, gr_session, gr_session_opened_btn, gr_session_closed_btn],
-                show_progress_on=[gr_progress]
             )
             gr_progress.change(
                 fn=None,
