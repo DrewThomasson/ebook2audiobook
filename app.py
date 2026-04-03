@@ -254,7 +254,7 @@ SML tags available:
                     error = 'Session expired or does not exist!'
                     print(error)
                     sys.exit(1)
-                session = context.set_session(args['id'])
+                session = c.context.set_session(args['id'])
             if not c.context_tracker.start_session(args['id']):
                 error = 'Session could not start!'
                 print(error)
