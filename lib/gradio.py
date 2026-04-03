@@ -155,7 +155,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background-color: #752eb2 !important;
                     font-size: 20px !important;
                 }
-                .small-btn:active, .small-btn-red:active, small-btn-lock:active {
+                .small-btn:active, .small-btn-red:active, .small-btn-lock:active {
                     background: var(--body-text-color) !important;
                     font-size: 30px !important;
                     color: var(--body-background-fill) !important;
