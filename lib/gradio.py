@@ -1022,7 +1022,6 @@ def build_interface(args:dict)->gr.Blocks:
                             else:
                                 if not is_valid_gradio_cache(ebook_data):
                                     ebook_data = None
-                        print(f"session['tts_engine']: {session['tts_engine']}")
                         visible_gr_row_split_hours = True if session['output_split'] else False
                         visible_gr_group_custom_model = True if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
                         return (
@@ -1041,7 +1040,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=session['output_split_hours']),
                             gr.update(visible=visible_gr_row_split_hours),
                             update_gr_audiobook_list(session_id),
-                            gr.update(visible=visible_gr_group_custom_model)
+                            gr.update(visible=False)
                         )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
