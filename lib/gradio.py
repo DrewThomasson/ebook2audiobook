@@ -1007,19 +1007,13 @@ def build_interface(args:dict)->gr.Blocks:
                             outputs = tuple([gr.update() for _ in range(16)])
                             return outputs
                         ebook_data = None
-                        file_count = session['ebook_mode']
-                        if session['ebook_list'] is not None and file_count == 'directory':
-                            session['ebook'] = session['ebook_src'] = None
-                            ebook_data = [f for f in session['ebook_list'] if os.path.exists(f)]
+                        upload_mode = session['ebook_mode']
+                        if session['ebook_list'] is not None:
+                            ebook_data = [f for f in session['ebook_list']]
                             if not ebook_data:
                                 ebook_data = None
-                        elif isinstance(session['ebook'], str) and file_count == 'single':
-                            if os.path.exists(session['ebook']):
-                                ebook_data = session['ebook']
-                            else:
-                                ebook_data = session['ebook'] = session['ebook_src'] = None
                         else:
-                            ebook_data = session['ebook'] = session['ebook_src'] = None
+                            ebook_data = session['ebook_src']
                         if ebook_data is not None:
                             if isinstance(ebook_data, list):
                                 ebook_data = [f for f in ebook_data if is_valid_gradio_cache(f)]
@@ -1028,11 +1022,10 @@ def build_interface(args:dict)->gr.Blocks:
                             else:
                                 if not is_valid_gradio_cache(ebook_data):
                                     ebook_data = None
-                        session['ebook'] = ebook_data
                         visible_gr_row_split_hours = True if session['output_split'] else False
                         visible_gr_group_custom_model = True if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
                         return (
-                            gr.update(value=session['ebook']),
+                            gr.update(value=ebook_data),
                             gr.update(value=session['ebook_mode']),
                             gr.update(value=bool(session['blocks_preview'])),
                             gr.update(value=session['device']),
@@ -2020,15 +2013,14 @@ def build_interface(args:dict)->gr.Blocks:
                         custom_model_dir = session.get('custom_model_dir')
                         if isinstance(custom_model_dir, str) and not os.path.exists(custom_model_dir):
                             session['custom_model'] = None
-                    if isinstance(session.get('fine_tuned'), str):
-                        if isinstance(session.get('tts_engine'), str):
-                            models = load_engine_presets(session['tts_engine'])
-                            if models:
-                                if session['fine_tuned'] not in models.keys():
-                                    session['fine_tuned'] = default_fine_tuned
-                            else:
-                                session['tts_engine'] = default_tts_engine
+                    if isinstance(session.get('tts_engine'), str):
+                        models = load_engine_presets(session['tts_engine'])
+                        if models:
+                            if session['fine_tuned'] not in models.keys():
                                 session['fine_tuned'] = default_fine_tuned
+                        else:
+                            session['tts_engine'] = default_tts_engine
+                            session['fine_tuned'] = default_fine_tuned
                     if isinstance(session.get('audiobook'), str):
                         if not os.path.exists(session['audiobook']):
                             session['audiobook'] = None
