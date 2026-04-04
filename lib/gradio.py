@@ -166,7 +166,7 @@ def build_interface(args:dict)->gr.Blocks:
                     color: var(--body-background-fill) !important;
                 }
                 .micro-btn{
-                    font-size: 15px !important;
+                    font-size: 16px !important;
                     background: var(--block-background-fill) !important;
                     width: 26px !important;
                     height: 26px !important;
