@@ -245,6 +245,15 @@ class SessionContext:
             if socket_hash in session:
                 return session_id
         return None
+        
+class JSONDictProxyEncoder(json.JSONEncoder):
+    def default(self, o:Any)->Any:
+        if isinstance(o, DictProxy):
+            return dict(o)
+        elif isinstance(o, ListProxy):
+            return list(o)
+        return super().default(o)
+
 """
 class AppAutosave:
     def __init__(self, interval:float=15.0):
@@ -283,13 +292,6 @@ class AppAutosave:
                 except Exception as e:
                     logger.error(f'AppAutosave._timer({session_id}): {e}!')
 """
-class JSONDictProxyEncoder(json.JSONEncoder):
-    def default(self, o:Any)->Any:
-        if isinstance(o, DictProxy):
-            return dict(o)
-        elif isinstance(o, ListProxy):
-            return list(o)
-        return super().default(o)
         
 ############# End classes
 
