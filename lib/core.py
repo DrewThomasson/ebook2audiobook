@@ -200,6 +200,7 @@ class SessionContext:
             "ebook": None,
             "ebook_src": None,
             "ebook_list": None,
+            "ebook_textarea": None,
             "process_dir": None,
             "chapters_dir": None,
             "sentences_dir": None,
@@ -2650,12 +2651,17 @@ def convert_ebook(args:dict)->tuple:
             error = 'Session expired or does not exist!'
             return error, False
         if args['language'] is not None:
-            if not os.path.splitext(args['ebook_src'])[1]:
-                error = f"{args['ebook_src']} needs a format extension."
-                return error, False
-            if not os.path.exists(args['ebook_src']):
-                error = 'File does not exist or Directory empty.'
-                return error, False
+            if args.get('ebook_src', None) is not None:
+                if not os.path.splitext(args['ebook_src'])[1]:
+                    error = f"{args['ebook_src']} needs a format extension."
+                    return error, False
+                if not os.path.exists(args['ebook_src']):
+                    error = 'File does not exist or Directory empty.'
+                    return error, False
+            elif args.get('ebook_textarea', None) is not None:
+                if not args['ebook_textarea']
+                    error = 'Ebook textarea is empty.'
+                    return error, False
             try:
                 if len(args['language']) in (2, 3):
                     lang_dict = Lang(args['language'])
@@ -2669,10 +2675,20 @@ def convert_ebook(args:dict)->tuple:
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 return error, False
+            if args['ebook_src'] is not None:
+                session['ebook_src'] = str(args['ebook_src'])
+            elif args['ebook_textarea'] is not None:
+                text = args['ebook_textarea']
+                filename = get_sanitized(text[:28]) + '.txt'
+                filepath = os.path.join(tempfile.gettempdir(), filename)
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(text)
+                session['ebook_src'] = filepath
+            else:
+                session['ebook_src'] = None
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
-            session['ebook_src'] = str(args['ebook_src'])
             session['ebook_list'] = list(args['ebook_list']) if isinstance(args['ebook_list'], list) else None
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['device'] = str(args['device'])
