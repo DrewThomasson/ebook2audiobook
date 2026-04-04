@@ -1641,6 +1641,7 @@ def build_interface(args:dict)->gr.Blocks:
             def click_gr_session_closed_btn(session_id:str)->tuple:
                 msg = 'Backup your current session ID before to start with a new one!'
                 show_alert(session_id, {"type": "warning", "msg": msg})
+                session['status'] = status_tags['SKIP']
                 return gr.update(interactive=True), gr.update(visible=False), gr.update(visible=True)
 
             def click_gr_session_opened_btn(session_id:str)->tuple:
@@ -1652,6 +1653,7 @@ def build_interface(args:dict)->gr.Blocks:
                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                 if os.path.exists(new_session_dir) or context.sessions.get(new_session_id):
                     # JSON?????
+                    session['status'] = status_tags['READY']
                     return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
                 msg = 'Session not found!'
                 show_alert(session_id, {"type": "warning", "msg": msg})
