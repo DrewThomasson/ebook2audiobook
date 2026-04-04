@@ -2305,7 +2305,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session_closed_btn.click(
                 fn=click_gr_session_closed_btn,
                 inputs=[gr_session],
-                outputs=[gr_session, gr_session_closed_btn, gr_session_opened_btn]
+                outputs=[gr_session, gr_session_closed_btn, gr_session_opened_btn],
+                show_progress_on=[gr_session]
             ).then(
                 fn=disable_components,
                 inputs=[gr.State('bypass_gr_session_opened_btn')],
@@ -2327,6 +2328,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_gr_session_opened_btn,
                 inputs=[gr_session],
                 outputs=[gr_restore_session, gr_session, gr_session_opened_btn, gr_session_closed_btn],
+                show_progress_on=[gr_session]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
