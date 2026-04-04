@@ -584,8 +584,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_ebook_file', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
                                     gr_ebook_file = gr.File(label=ebook_mode_labels['single'], elem_id='gr_ebook_file', visible=True, file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
-                                    gr_ebook_textarea = gr.Textbox(label=ebook_mode_labels['text'], elem_id='gr_ebook_textarea', value='', visible=False, show_label=True, lines=6, max_lines=6, max_length=max_ebook_textarea_length) #  buttons=[gr_ebook_clear_btn] > gradio v6+
-                                    gr_ebook_clear_btn = gr.ClearButton(gr_ebook_textarea, elem_id='#gr_ebook_clear_btn', value='🗑️', variant='secondary', size='sm')
+                                    gr_ebook_textarea = gr.Textbox(label=ebook_mode_labels['text'], elem_id='gr_ebook_textarea', value='', visible=False, show_label=True, lines=6, max_lines=6, max_length=max_ebook_textarea_length)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory'), ('Text','text')], interactive=True, scale=2)
                                         gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
@@ -2189,10 +2188,6 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal],
                 show_progress_on=[gr_progress]
             )
-            gr_ebook_clear_btn.click(
-                fn=click_gr_ebook_clear_btn,
-                outputs=[gr_ebook_textarea],
-            )
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
                 inputs=[gr_session, gr_ebook_mode],
@@ -3146,7 +3141,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 }
                             }
                             if(typeof(gr_ebook_textarea_counter) !== "function"){
-                                const max_gr_ebook_textarea_length = 500;
+                                const max_gr_ebook_textarea_length = __max_gr_ebook_textarea_length__;
                                 function gr_ebook_textarea_counter() {
                                     const container = document.querySelector('#gr_ebook_textarea');
                                     if (!container) return setTimeout(gr_ebook_textarea_counter, 200);
@@ -3168,13 +3163,13 @@ def build_interface(args:dict)->gr.Blocks:
                                     label.appendChild(counter);
 
                                     const btn = document.createElement('button');
-                                    btn.textContent = 'Clear';
-                                    btn.style.cssText = 'font-size:0.8em;padding:1px 8px;cursor:pointer;border:1px solid #ccc;border-radius:4px;background:transparent;';
-                                    btn.addEventListener('click', () => {
+                                    btn.textContent = '🗑️';
+                                    btn.style.cssText = 'font-size:0.8em;padding:1px 8px;cursor:pointer;border:none;border-radius:9px;background:var(--block-background-fill);';
+                                    btn.addEventListener('click', ()=>{
                                         textarea.value = '';
                                         textarea.dispatchEvent(new Event('input', {bubbles: true}));
                                         counter.textContent = '0 / ' + max_gr_ebook_textarea_length;
-                                        counter.style.color = 'gray';
+                                        counter.style.color = 'var(--body-text-color)';
                                     });
                                     label.appendChild(btn);
 
@@ -3286,7 +3281,7 @@ def build_interface(args:dict)->gr.Blocks:
                         }
                         return null;
                     }
-                ''',
+                '''.replace('__max_gr_ebook_textarea_length__', str(max_gr_ebook_textarea_length)),
                 outputs=[gr_restore_session],
             )
             app.unload(on_unload)
