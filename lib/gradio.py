@@ -1639,10 +1639,13 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(visible=val)
 
             def click_gr_session_closed_btn(session_id:str)->tuple:
-                msg = 'Backup your current session ID before to start with a new one!'
-                show_alert(session_id, {"type": "warning", "msg": msg})
-                session['status'] = status_tags['SKIP']
-                return gr.update(interactive=True), gr.update(visible=False), gr.update(visible=True)
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    msg = 'Backup your current session ID before to start with a new one!'
+                    show_alert(session_id, {"type": "warning", "msg": msg})
+                    session['status'] = status_tags['SKIP']
+                    return gr.update(interactive=True), gr.update(visible=False), gr.update(visible=True)
+                return gr.update(), gr.update(), gr.update()
 
             def click_gr_session_opened_btn(session_id:str)->tuple:
                 new_session_id = session_id.strip()
