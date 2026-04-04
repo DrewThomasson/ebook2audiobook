@@ -1657,15 +1657,27 @@ def build_interface(args:dict)->gr.Blocks:
                     show_alert(backup_session_id, {"type": "warning", "msg": msg})
                     return gr.update(), gr.update(), gr.update(), gr.update()
                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
-                session = context.sessions.get(new_session_id)
-                if os.path.exists(new_session_dir) or session:
-                    session['status'] = status_tags['READY']
-                    return (
-                        gr.update(value=json.dumps(session, cls=JSONDictProxyEncoder)),
-                        gr.update(interactive=False),
-                        gr.update(visible=False),
-                        gr.update(visible=True)
-                    )
+                if os.path.exists(new_session_dir):
+                    session = context.get_session(backup_session_id)
+                    if session and session.get('id', False):
+                        session['status'] = None
+                        context_tracker.end_session(session['id'], session['socket_hash'])
+                        session = context.set_session(new_session_id)
+                        if not context_tracker.start_session(new_session_id):
+                            msg = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
+                            show_alert(backup_session_id, {"type": "warning", "msg": msg})
+                            return gr.update(), gr.update(), gr.update(), gr.update()
+                        else:
+                            active_sessions.add(req.session_hash)
+                            session[req.session_hash] = req.session_hash
+                            session['cancellation_requested'] = False
+                        session['status'] = status_tags['READY']
+                        return (
+                            gr.update(value=json.dumps(session, cls=JSONDictProxyEncoder)),
+                            gr.update(interactive=False),
+                            gr.update(visible=False),
+                            gr.update(visible=True)
+                        )
                 msg = 'Session not found!'
                 show_alert(backup_session_id, {"type": "warning", "msg": msg})
                 return gr.update(), gr.update(), gr.update(), gr.update()
