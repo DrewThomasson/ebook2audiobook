@@ -864,9 +864,13 @@ def build_interface(args:dict)->gr.Blocks:
             
             ############## End of Gradio Components creation
 
-            def disable_components()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(18)])
-                return outputs
+            def disable_components(exception:str|None=None)->tuple:
+                if exception == 'bypass_gr_session_opened_btn':
+                    component = gr.update()
+                else:
+                    component = gr.update(interactive=False)
+                outputs = tuple([gr.update(interactive=False) for _ in range(17)])
+                return outputs + (component)
             
             def enable_components(session_id: str) -> tuple:
                 session = context.get_session(session_id)
@@ -2296,7 +2300,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_session, gr_session_closed_btn, gr_session_opened_btn]
             ).then(
                 fn=disable_components,
-                inputs=None,
+                inputs=[gr.State('bypass_gr_session_opened_btn')],
                 outputs=outputs_disable_components
             ).then(
                 fn=None,
