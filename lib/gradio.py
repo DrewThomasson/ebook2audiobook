@@ -171,9 +171,10 @@ def build_interface(args:dict)->gr.Blocks:
                     height: 24px !important;
                     margin: 0 !important;
                     padding: 0 !important;
+                    border-radius: var(--radius-md) !important;
                 }
                 .micro-btn:hover {
-                    background: var(--button-secondary-background-fill-hover) !important;
+                    background-color: #ff5050 !important;
                 }
                 .micro-btn:active {
                     background: var(--body-text-color) !important;
