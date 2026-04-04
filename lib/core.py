@@ -2659,7 +2659,7 @@ def convert_ebook(args:dict)->tuple:
                     error = 'File does not exist or Directory empty.'
                     return error, False
             elif args.get('ebook_textarea', None) is not None:
-                if not args['ebook_textarea']
+                if not args['ebook_textarea']:
                     error = 'Ebook textarea is empty.'
                     return error, False
             try:
