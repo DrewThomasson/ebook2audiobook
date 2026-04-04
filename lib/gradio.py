@@ -584,7 +584,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_ebook_file', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
                                     gr_ebook_file = gr.File(label=ebook_mode_labels['single'], elem_id='gr_ebook_file', visible=True, file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
-                                    gr_ebook_textarea = gr.Textbox(label=ebook_mode_labels['text'], elem_id='gr_ebook_textarea', value='', visible=False, lines=6, max_lines=6, max_length=max_ebook_textarea_length)
+                                    gr_ebook_clear_btn = gr.Button('🗑️', size='sm', visible=False)
+                                    gr_ebook_textarea = gr.Textbox(label=ebook_mode_labels['text'], elem_id='gr_ebook_textarea', value='', visible=False, lines=6, max_lines=6, max_length=max_ebook_textarea_length, info=f'0 / {max_ebook_textarea_length}',buttons=[gr_ebook_clear_btn])
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory'), ('Text','text')], interactive=True, scale=2)
                                         gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
@@ -1155,6 +1156,13 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'change_gr_ebook_file(): {e}'
                     exception_alert(session_id, error)
                 return gr.update()
+
+            def input_gr_ebook_textarea(text:str)->dict:
+                count = len(text) if text else 0
+                return gr.update(info=f'{count} / {max_ebook_textarea_length}')
+
+            def click_gr_ebook_clear_btn():
+                return gr.update(value='', info=f'0 / {max_ebook_textarea_length}')
 
             def change_gr_ebook_mode(session_id:str, val:str)->dict:
                 try:
@@ -2184,6 +2192,15 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_ebook_file],
                 outputs=[gr_modal],
                 show_progress_on=[gr_progress]
+            )
+            gr_ebook_textarea.input(
+                fn=input_gr_ebook_textarea,
+                inputs=[gr_ebook_textarea],
+                outputs=[gr_ebook_textarea],
+            )
+            gr_ebook_clear_btn.click(
+                fn=click_gr_ebook_clear_btn,
+                outputs=[gr_ebook_textarea],
             )
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
