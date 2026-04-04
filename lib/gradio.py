@@ -1663,15 +1663,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session['status'] = None
                         context_tracker.end_session(session['id'], session['socket_hash'])
                         session = context.set_session(new_session_id)
-                        if not context_tracker.start_session(new_session_id):
-                            msg = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
-                            show_alert(backup_session_id, {"type": "warning", "msg": msg})
-                            return gr.update(), gr.update(), gr.update(), gr.update()
-                        else:
-                            active_sessions.add(req.session_hash)
-                            session[req.session_hash] = req.session_hash
-                            session['cancellation_requested'] = False
-                        session['status'] = status_tags['READY']
                         return (
                             gr.update(value=json.dumps(session, cls=JSONDictProxyEncoder)),
                             gr.update(interactive=False),
