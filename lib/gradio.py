@@ -165,6 +165,22 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 30px !important;
                     color: var(--body-background-fill) !important;
                 }
+                .micro-btn{
+                    background: var(--block-background-fill) !important;
+                    font-size: 24px !important;
+                    width: 24px !important;
+                    height: 24px !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                .micro-btn:hover {
+                    background: var(--button-secondary-background-fill-hover) !important;
+                    font-size: 28px !important;
+                }
+                .micro-btn:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
+                }
                 .file-preview-holder {
                     height: 116px !important;
                     overflow: auto !important;
@@ -3156,7 +3172,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     toolbar.appendChild(counter);
                                     const btn = document.createElement('button');
                                     btn.textContent = '🗑️';
-                                    btn.className = 'small-btn-red';
+                                    btn.id = btn.name = 'clear_ebook_textarea';
+                                    btn.className = 'micro-btn';
                                     btn.addEventListener('click', ()=>{
                                         textarea.value = '';
                                         textarea.dispatchEvent(new Event('input', {bubbles: true}));
