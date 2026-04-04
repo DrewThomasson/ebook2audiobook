@@ -166,12 +166,13 @@ def build_interface(args:dict)->gr.Blocks:
                     color: var(--body-background-fill) !important;
                 }
                 .micro-btn{
+                    color: var(--body-text-color);
                     background: var(--block-background-fill) !important;
                     width: 24px !important;
                     height: 24px !important;
                     margin: 0 !important;
                     padding: 0 !important;
-                    border-radius: var(--radius-md) !important;
+                    border-radius: var(--radius-full) !important;
                 }
                 .micro-btn:hover {
                     background-color: #ff5050 !important;
