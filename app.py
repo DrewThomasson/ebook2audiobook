@@ -339,7 +339,7 @@ SML tags available:
                         c.reset_ebook_session(args['id'], force=True, filter_keys=False)
                         if not passed:
                             error = progress_status
-                elif args.get('text', None) is not None
+                elif args.get('text', None) is not None:
                     args['ebook_textarea'] = args['text'].strip()
                     if not args['ebook_textarea']:
                         error = f"Error: The --text is empty."
