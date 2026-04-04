@@ -1081,7 +1081,7 @@ def build_interface(args:dict)->gr.Blocks:
                     elif session['status'] in [status_tags['CONVERTING']]:
                         return (
                             gr.update(), gr.update(), gr.update(),
-                            gr.update(), gr.update(), gr.update(visible=True, value=session['ebook_list']), gr.update()
+                            gr.update(), gr.update(), gr.update(visible=True, value=session['ebook_list']), gr.update(),
                             gr.update(), gr.update(), gr.update(),
                             gr.update(), gr.update()
                         )  
