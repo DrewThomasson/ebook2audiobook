@@ -870,7 +870,7 @@ def build_interface(args:dict)->gr.Blocks:
                 else:
                     component = gr.update(interactive=False)
                 outputs = tuple([gr.update(interactive=False) for _ in range(17)])
-                return outputs + (component)
+                return outputs + (component,)
             
             def enable_components(session_id: str) -> tuple:
                 session = context.get_session(session_id)
