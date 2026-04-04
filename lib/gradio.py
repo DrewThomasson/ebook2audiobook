@@ -3151,12 +3151,12 @@ def build_interface(args:dict)->gr.Blocks:
                                     const toolbar = document.createElement('div');
                                     toolbar.style.cssText = 'position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;';
                                     const counter = document.createElement('span');
-                                    counter.style.cssText = 'font-size:0.85em;color:gray;';
+                                    counter.style.cssText = 'font-size:0.85em;color:var(--body-text-color);';
                                     counter.textContent = '0 / ' + max_ebook_textarea_length;
                                     toolbar.appendChild(counter);
                                     const btn = document.createElement('button');
                                     btn.textContent = '🗑️';
-                                    btn.style.cssText = 'font-size:0.8em;padding:1px 8px;cursor:pointer;border:none;border-radius:9px;background:var(--block-background-fill);';
+                                    btn.style.className = 'small-btn-red';
                                     btn.addEventListener('click', ()=>{
                                         textarea.value = '';
                                         textarea.dispatchEvent(new Event('input', {bubbles: true}));
@@ -3168,7 +3168,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     textarea.addEventListener('input', () => {
                                         const len = textarea.value.length;
                                         counter.textContent = len + ' / ' + max_ebook_textarea_length;
-                                        counter.style.color = len >= max_ebook_textarea_length ? 'red' : 'gray';
+                                        counter.style.color = len >= max_ebook_textarea_length ? 'red' : 'var(--body-text-color)';
                                     });
                                 }
                             }
