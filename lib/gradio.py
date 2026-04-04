@@ -3156,7 +3156,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     toolbar.appendChild(counter);
                                     const btn = document.createElement('button');
                                     btn.textContent = '🗑️';
-                                    btn.style.className = 'small-btn-red';
+                                    btn.className = 'small-btn-red';
                                     btn.addEventListener('click', ()=>{
                                         textarea.value = '';
                                         textarea.dispatchEvent(new Event('input', {bubbles: true}));
