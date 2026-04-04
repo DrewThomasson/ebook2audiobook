@@ -9,6 +9,7 @@ def build_interface(args:dict)->gr.Blocks:
         title = 'Ebook2Audiobook'
         gr_glassmask_msg = 'Initialization, please wait…'
         models = None
+        backup_session_id = None
         ebook_src = None
         language_options = [
             (
@@ -1639,19 +1640,21 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(visible=val)
 
             def click_gr_session_closed_btn(session_id:str)->tuple:
+                nonlocal backup_session_id
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     msg = 'Backup your current session ID before to start with a new one!'
                     show_alert(session_id, {"type": "warning", "msg": msg})
                     session['status'] = status_tags['SKIP']
+                    backup_session_id = session_id
                     return gr.update(interactive=True), gr.update(visible=False), gr.update(visible=True)
                 return gr.update(), gr.update(), gr.update()
 
-            def click_gr_session_opened_btn(session_id:str)->tuple:
-                new_session_id = session_id.strip()
+            def click_gr_session_opened_btn(new_id:str)->tuple:
+                new_session_id = new_id.strip()               
                 if not new_session_id:
                     msg = 'Session ID cannot be empty'
-                    show_alert(session_id, {"type": "warning", "msg": msg})
+                    show_alert(backup_session_id, {"type": "warning", "msg": msg})
                     return gr.update(), gr.update(), gr.update(), gr.update()
                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                 if os.path.exists(new_session_dir) or context.sessions.get(new_session_id):
@@ -1659,7 +1662,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['status'] = status_tags['READY']
                     return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
                 msg = 'Session not found!'
-                show_alert(session_id, {"type": "warning", "msg": msg})
+                show_alert(backup_session_id, {"type": "warning", "msg": msg})
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_playback_time(session_id:str, time:float)->None:
