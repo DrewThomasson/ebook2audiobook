@@ -1663,6 +1663,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session['status'] = None
                         context_tracker.end_session(session['id'], session['socket_hash'])
                         session = context.set_session(new_session_id)
+                        session['status'] = status_tags['READY']
                         return (
                             gr.update(value=json.dumps(session, cls=JSONDictProxyEncoder)),
                             gr.update(interactive=False),
