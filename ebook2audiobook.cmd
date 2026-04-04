@@ -54,8 +54,8 @@ set "STARTMENU_LNK=%STARTMENU_DIR%\%APP_NAME%.lnk"
 set "DESKTOP_LNK=%SAFE_USERPROFILE%\Desktop\%APP_NAME%.lnk"
 set "ARCH=%PROCESSOR_ARCHITECTURE%" & if defined PROCESSOR_ARCHITEW6432 set "ARCH=%PROCESSOR_ARCHITEW6432%"
 if /i "%ARCH%"=="ARM64" (set "PYTHON_ARCH=arm64") else if /i "%ARCH%"=="AMD64" (set "PYTHON_ARCH=amd64")
-set "MIN_PYTHON_VERSION=3.10.0"
-set "MAX_PYTHON_VERSION=3.12.0"
+set "MIN_PYTHON_VERSION=3.10"
+set "MAX_PYTHON_VERSION=3.12"
 set "PYTHON_VERSION=3.12"
 set "PYTHON_SCOOP=python%PYTHON_VERSION:.=%"
 set "PYTHON_ENV=python_env"
@@ -298,12 +298,12 @@ for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set "INSTALLED_
 for /f "tokens=1-3 delims=." %%a in ("%INSTALLED_VERSION%") do (
 	set "INS_MAJOR=%%a"
 	set "INS_MINOR=%%b"
-	set "INS_PATCH=%%c"
+	set "INS_PATCH=0"
 )
 for /f "tokens=1-3 delims=." %%a in ("%MIN_PYTHON_VERSION%") do (
 	set "REQ_MAJOR=%%a"
 	set "REQ_MINOR=%%b"
-	set "REQ_PATCH=%%c"
+	set "REQ_PATCH=0"
 )
 set "PYTHON_OK=1"
 if %INS_MAJOR% lss %REQ_MAJOR% set "PYTHON_OK=0"

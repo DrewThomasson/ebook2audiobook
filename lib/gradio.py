@@ -1795,7 +1795,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 context_tracker.end_session(session_id, session['socket_hash'])
                                 return gr.update()
                             session['status'] = status_tags['READY']
-                            return gr.update(value=error)
+                        return gr.update(value=error)
                 except Exception as e:
                     session['status'] = status_tags['READY']
                     error = f'start_conversion(): {e}'
