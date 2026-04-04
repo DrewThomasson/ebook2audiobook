@@ -166,7 +166,7 @@ def build_interface(args:dict)->gr.Blocks:
                     color: var(--body-background-fill) !important;
                 }
                 .micro-btn{
-                    color: var(--body-text-color) !important;
+                    color: #ffffff !important;
                     font-size: 12px !important;
                     background: var(--block-background-fill) !important;
                     width: 26px !important;
@@ -3172,7 +3172,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     counter.textContent = '0 / ' + max_ebook_textarea_length;
                                     toolbar.appendChild(counter);
                                     const btn = document.createElement('button');
-                                    btn.value = '🗑';
+                                    btn.textContent = '🗑';
                                     btn.id = btn.name = 'clear_ebook_textarea';
                                     btn.className = 'micro-btn';
                                     btn.addEventListener('click', ()=>{
