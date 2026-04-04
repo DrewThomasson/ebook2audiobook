@@ -28,8 +28,8 @@ def build_interface(args:dict)->gr.Blocks:
         page_size = 15
         visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
-        visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
+        visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
         theme = gr.themes.Origin(
             primary_hue='green',
             secondary_hue='amber',
@@ -1022,8 +1022,8 @@ def build_interface(args:dict)->gr.Blocks:
                             else:
                                 if not is_valid_gradio_cache(ebook_data):
                                     ebook_data = None
-                        visible_gr_row_split_hours = True if session['output_split'] else False
-                        visible_gr_group_custom_model = True if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
+                        visible_row_split_hours = True if session['output_split'] else False
+                        visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
                         return (
                             gr.update(value=ebook_data),
                             gr.update(value=session['ebook_mode']),
@@ -1038,9 +1038,9 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=session['output_channel']),
                             gr.update(value=bool(session['output_split'])),
                             gr.update(value=session['output_split_hours']),
-                            gr.update(visible=visible_gr_row_split_hours),
+                            gr.update(visible=visible_row_split_hours),
                             update_gr_audiobook_list(session_id),
-                            gr.update(visible=False)
+                            gr.update(visible=visible_group_custom_model)
                         )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
@@ -1598,7 +1598,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         session['fine_tuned'] = selected
                         if selected == 'internal':
-                            visible_custom_model = visible_gr_group_custom_model
+                            visible_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
                         else:
                             visible_custom_model = False
                             session['voice'] = models[session['fine_tuned']]['voice']
