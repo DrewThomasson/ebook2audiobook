@@ -1,5 +1,7 @@
 import argparse, socket, multiprocessing, sys, uuid, copy, warnings
 
+from pathlib import Path
+
 from lib.conf import *
 from lib.conf_lang import default_language_code
 from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
