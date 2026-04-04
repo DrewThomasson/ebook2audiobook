@@ -3141,7 +3141,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 }
                             }
                             if(typeof(gr_ebook_textarea_counter) !== "function"){
-                                const max_gr_ebook_textarea_length = __max_gr_ebook_textarea_length__;
+                                const max_ebook_textarea_length = __max_ebook_textarea_length__;
                                 function gr_ebook_textarea_counter() {
                                     const container = document.querySelector('#gr_ebook_textarea');
                                     if (!container) return setTimeout(gr_ebook_textarea_counter, 200);
@@ -3159,7 +3159,7 @@ def build_interface(args:dict)->gr.Blocks:
 
                                     const counter = document.createElement('span');
                                     counter.style.cssText = 'font-size:0.85em;color:gray;margin-right:8px;';
-                                    counter.textContent = '0 / ' + max_gr_ebook_textarea_length;
+                                    counter.textContent = '0 / ' + max_ebook_textarea_length;
                                     label.appendChild(counter);
 
                                     const btn = document.createElement('button');
@@ -3168,15 +3168,15 @@ def build_interface(args:dict)->gr.Blocks:
                                     btn.addEventListener('click', ()=>{
                                         textarea.value = '';
                                         textarea.dispatchEvent(new Event('input', {bubbles: true}));
-                                        counter.textContent = '0 / ' + max_gr_ebook_textarea_length;
+                                        counter.textContent = '0 / ' + max_ebook_textarea_length;
                                         counter.style.color = 'var(--body-text-color)';
                                     });
                                     label.appendChild(btn);
 
                                     textarea.addEventListener('input', () => {
                                         const len = textarea.value.length;
-                                        counter.textContent = len + ' / ' + max_gr_ebook_textarea_length;
-                                        counter.style.color = len >= max_gr_ebook_textarea_length ? 'red' : 'gray';
+                                        counter.textContent = len + ' / ' + max_ebook_textarea_length;
+                                        counter.style.color = len >= max_ebook_textarea_length ? 'red' : 'gray';
                                     });
                                 }
                             }
@@ -3281,7 +3281,7 @@ def build_interface(args:dict)->gr.Blocks:
                         }
                         return null;
                     }
-                '''.replace('__max_gr_ebook_textarea_length__', str(max_gr_ebook_textarea_length)),
+                '''.replace('__max_ebook_textarea_length__', str(max_ebook_textarea_length)),
                 outputs=[gr_restore_session],
             )
             app.unload(on_unload)
