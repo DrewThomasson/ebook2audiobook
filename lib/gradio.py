@@ -3145,23 +3145,15 @@ def build_interface(args:dict)->gr.Blocks:
                                 function gr_ebook_textarea_counter() {
                                     const container = document.querySelector('#gr_ebook_textarea');
                                     if (!container) return setTimeout(gr_ebook_textarea_counter, 200);
-                                    const label = container.querySelector('label, .label-wrap');
                                     const textarea = container.querySelector('textarea');
-                                    if (!label || !textarea) return setTimeout(gr_ebook_textarea_counter, 200);
-
-                                    label.style.display = 'flex';
-                                    label.style.alignItems = 'center';
-                                    label.style.width = '100%';
-
-                                    const spacer = document.createElement('span');
-                                    spacer.style.flexGrow = '1';
-                                    label.appendChild(spacer);
-
+                                    if (!textarea) return setTimeout(gr_ebook_textarea_counter, 200);
+                                    container.style.position = 'relative';
+                                    const toolbar = document.createElement('div');
+                                    toolbar.style.cssText = 'position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;';
                                     const counter = document.createElement('span');
-                                    counter.style.cssText = 'font-size:0.85em;color:gray;margin-right:8px;';
+                                    counter.style.cssText = 'font-size:0.85em;color:gray;';
                                     counter.textContent = '0 / ' + max_ebook_textarea_length;
-                                    label.appendChild(counter);
-
+                                    toolbar.appendChild(counter);
                                     const btn = document.createElement('button');
                                     btn.textContent = '🗑️';
                                     btn.style.cssText = 'font-size:0.8em;padding:1px 8px;cursor:pointer;border:none;border-radius:9px;background:var(--block-background-fill);';
@@ -3171,8 +3163,8 @@ def build_interface(args:dict)->gr.Blocks:
                                         counter.textContent = '0 / ' + max_ebook_textarea_length;
                                         counter.style.color = 'var(--body-text-color)';
                                     });
-                                    label.appendChild(btn);
-
+                                    toolbar.appendChild(btn);
+                                    container.appendChild(toolbar);
                                     textarea.addEventListener('input', () => {
                                         const len = textarea.value.length;
                                         counter.textContent = len + ' / ' + max_ebook_textarea_length;
