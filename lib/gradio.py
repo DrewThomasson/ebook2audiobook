@@ -584,7 +584,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_ebook_file', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
                                     gr_ebook_file = gr.File(label=ebook_mode_labels['single'], elem_id='gr_ebook_file', visible=True, file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
-                                    gr_ebook_textarea = gr.Textbox(label=ebook_mode_labels['text'], elem_id='gr_ebook_textarea', value='', visible=False, show_label=True, lines=6, max_lines=6, max_length=max_ebook_textarea_length, info=f'0 / {max_ebook_textarea_length}') #  buttons=[gr_ebook_clear_btn] > gradio v6+
+                                    gr_ebook_textarea = gr.Textbox(label=ebook_mode_labels['text'], elem_id='gr_ebook_textarea', value='', visible=False, show_label=True, lines=6, max_lines=6, max_length=max_ebook_textarea_length) #  buttons=[gr_ebook_clear_btn] > gradio v6+
                                     gr_ebook_clear_btn = gr.ClearButton(gr_ebook_textarea, elem_id='#gr_ebook_clear_btn', value='🗑️', variant='secondary', size='sm')
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory'), ('Text','text')], interactive=True, scale=2)
@@ -3150,12 +3150,34 @@ def build_interface(args:dict)->gr.Blocks:
                                 function gr_ebook_textarea_counter() {
                                     const container = document.querySelector('#gr_ebook_textarea');
                                     if (!container) return setTimeout(gr_ebook_textarea_counter, 200);
+                                    const label = container.querySelector('label, .label-wrap');
                                     const textarea = container.querySelector('textarea');
-                                    if (!textarea) return setTimeout(gr_ebook_textarea_counter, 200);
-                                    const counter = document.createElement('div');
-                                    counter.style.cssText = 'text-align:right;font-size:0.85em;color:gray;margin-top:-8px;padding-right:4px;';
+                                    if (!label || !textarea) return setTimeout(gr_ebook_textarea_counter, 200);
+
+                                    label.style.display = 'flex';
+                                    label.style.alignItems = 'center';
+                                    label.style.width = '100%';
+
+                                    const spacer = document.createElement('span');
+                                    spacer.style.flexGrow = '1';
+                                    label.appendChild(spacer);
+
+                                    const counter = document.createElement('span');
+                                    counter.style.cssText = 'font-size:0.85em;color:gray;margin-right:8px;';
                                     counter.textContent = '0 / ' + max_gr_ebook_textarea_length;
-                                    textarea.parentElement.appendChild(counter);
+                                    label.appendChild(counter);
+
+                                    const btn = document.createElement('button');
+                                    btn.textContent = 'Clear';
+                                    btn.style.cssText = 'font-size:0.8em;padding:1px 8px;cursor:pointer;border:1px solid #ccc;border-radius:4px;background:transparent;';
+                                    btn.addEventListener('click', () => {
+                                        textarea.value = '';
+                                        textarea.dispatchEvent(new Event('input', {bubbles: true}));
+                                        counter.textContent = '0 / ' + max_gr_ebook_textarea_length;
+                                        counter.style.color = 'gray';
+                                    });
+                                    label.appendChild(btn);
+
                                     textarea.addEventListener('input', () => {
                                         const len = textarea.value.length;
                                         counter.textContent = len + ' / ' + max_gr_ebook_textarea_length;
