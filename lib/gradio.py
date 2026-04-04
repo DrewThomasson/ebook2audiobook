@@ -1163,7 +1163,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return gr.update()
 
-            def change_gr_ebook_mode(session_id:str, val:str)->tuple:
+            def change_gr_ebook_mode(session_id:str, val:str)->dict:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
@@ -1790,11 +1790,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     error = progress_status
                         if error:
-                            session['status'] = status_tags['READY']
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
                                 return gr.update()
+                            session['status'] = status_tags['READY']
                 except Exception as e:
                     session['status'] = status_tags['READY']
                     error = f'start_conversion(): {e}'

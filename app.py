@@ -1,5 +1,7 @@
 import argparse, socket, multiprocessing, sys, uuid, copy, warnings
 
+from pathlib import Path
+
 from lib.conf import *
 from lib.conf_lang import default_language_code
 from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
@@ -298,31 +300,30 @@ SML tags available:
                     if not os.path.exists(args['ebooks_dir']):
                         error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."                 
                     else:
-                        args['ebook_list'] = []
-                        for file in os.listdir(args['ebooks_dir']):
-                            if any(file.endswith(ext) for ext in ebook_formats):
-                                full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
-                                args['ebook_list'].append(full_path)
+                        args['ebook_list'] = [
+                            os.path.abspath(os.path.join(args['ebooks_dir'], file))
+                            for file in os.listdir(args['ebooks_dir'])
+                        ]
                         ebook_list = copy.deepcopy(args['ebook_list'])
                         skipped_ebooks = []
                         conversions_ran = 0
                         for i, file in enumerate(ebook_list):
-                            if any(file.endswith(ext) for ext in ebook_formats):
-                                c.reset_ebook_session(args['id'], force=True, filter_keys=False)
-                                args['ebook_src'] = file
-                                progress_status, passed = c.convert_ebook(args)
-                                conversions_ran += 1
-                                if passed:
-                                    args['ebook_list'].remove(file)
-                                else:
-                                    error = progress_status
-                                    break
-                            else:
+                            if not any(file.endswith(ext) for ext in ebook_formats):
                                 warning_msg = f'{Path(file).name} has not a supported format! skipping'
                                 print(warning_msg)
                                 skipped_ebooks.append(file)
                                 if file in args['ebook_list']:
                                     args['ebook_list'].remove(file)
+                                continue
+                            c.reset_ebook_session(args['id'], force=True, filter_keys=False)
+                            args['ebook_src'] = file
+                            progress_status, passed = c.convert_ebook(args)
+                            conversions_ran += 1
+                            if passed:
+                                args['ebook_list'].remove(file)
+                            else:
+                                error = progress_status
+                                break
                         if conversions_ran == 0:
                             error = 'Error: No supported ebook files found in --ebooks_dir.'
                 elif args.get('ebook', None) is not None:
