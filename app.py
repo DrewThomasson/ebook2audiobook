@@ -1,4 +1,4 @@
-import argparse, socket, multiprocessing, sys, uuid, warnings
+import argparse, socket, multiprocessing, sys, uuid, copy, warnings
 
 from lib.conf import *
 from lib.conf_lang import default_language_code
@@ -242,9 +242,23 @@ SML tags available:
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
-        error = None
+        error = ''
         if args['headless']:
-            args['id'] = workflow_id if args['workflow'] else args['session'] if args['session'] else None
+            args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
+            if args['id'] == workflow_id or not args['session']:
+                session = c.context.set_session(args['id'])
+            else:
+                session_dir = os.path.join(tmp_dir, f"proc-{args['id']}")
+                session = c.context.get_session(args['id'])
+                if not os.path.exists(session_dir) and not session or (session and not session.get('id', False)):
+                    error = 'Session expired or does not exist!'
+                    print(error)
+                    sys.exit(1)
+                session = c.context.set_session(args['id'])
+            if not c.context_tracker.start_session(args['id']):
+                error = 'Session could not start!'
+                print(error)
+                sys.exit(1)
             args['is_gui_process'] = False
             args['blocks_preview'] = False
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
@@ -261,9 +275,6 @@ SML tags available:
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
-            if args['id'] is None:
-                args['id'] = str(uuid.uuid4())
-                c.context.set_session(args['id'])
             engine_setting_keys = {engine: list(settings.keys()) for engine, settings in default_engine_settings.items()}
             valid_model_keys = engine_setting_keys.get(args['tts_engine'], [])
             renamed_args = {}
@@ -293,19 +304,27 @@ SML tags available:
                                 full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                                 args['ebook_list'].append(full_path)
                         ebook_list = copy.deepcopy(args['ebook_list'])
+                        skipped_ebooks = []
+                        conversions_ran = 0
                         for i, file in enumerate(ebook_list):
                             if any(file.endswith(ext) for ext in ebook_formats):
                                 c.reset_ebook_session(args['id'], force=True, filter_keys=False)
                                 args['ebook_src'] = file
                                 progress_status, passed = c.convert_ebook(args)
+                                conversions_ran += 1
                                 if passed:
                                     args['ebook_list'].remove(file)
                                 else:
                                     error = progress_status
                                     break
                             else:
-                                error = f'{Path(file).name} has not a supported format! skipping'
-                                print(error)
+                                warning_msg = f'{Path(file).name} has not a supported format! skipping'
+                                print(warning_msg)
+                                skipped_ebooks.append(file)
+                                if file in args['ebook_list']:
+                                    args['ebook_list'].remove(file)
+                        if conversions_ran == 0:
+                            error = 'Error: No supported ebook files found in --ebooks_dir.'
                 elif args.get('ebook', None) is not None:
                     args['ebook_src'] = os.path.abspath(args['ebook'])
                     if not os.path.exists(args['ebook_src']):
@@ -353,7 +372,7 @@ SML tags available:
                     c.exception_alert(None, error)
             else:
                 error = 'Error: In GUI mode, no option or only --share can be passed'
-        if error is not None:
+        if error:
             print(error)
             sys.exit(1)
 

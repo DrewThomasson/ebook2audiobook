@@ -245,6 +245,15 @@ class SessionContext:
             if socket_hash in session:
                 return session_id
         return None
+        
+class JSONDictProxyEncoder(json.JSONEncoder):
+    def default(self, o:Any)->Any:
+        if isinstance(o, DictProxy):
+            return dict(o)
+        elif isinstance(o, ListProxy):
+            return list(o)
+        return super().default(o)
+
 """
 class AppAutosave:
     def __init__(self, interval:float=15.0):
@@ -283,13 +292,6 @@ class AppAutosave:
                 except Exception as e:
                     logger.error(f'AppAutosave._timer({session_id}): {e}!')
 """
-class JSONDictProxyEncoder(json.JSONEncoder):
-    def default(self, o:Any)->Any:
-        if isinstance(o, DictProxy):
-            return dict(o)
-        elif isinstance(o, ListProxy):
-            return list(o)
-        return super().default(o)
         
 ############# End classes
 
@@ -611,8 +613,6 @@ def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
-            msg = 'Cancel requested'
-            print(msg)
             return False
         try:
             title = False
@@ -783,8 +783,6 @@ def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
         session = context.get_session(session_id)
         if session and session.get('id', False):
             if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
                 return False
             cover_image = None
             cover_path = os.path.join(session['process_dir'], session['filename_noext'] + '.jpg')
@@ -826,8 +824,6 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         session = context.get_session(session_id)
         if session and session.get('id', False):
             if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
                 return []
             # Step 1: Extract TOC (Table of Contents)
             try:
@@ -1997,7 +1993,6 @@ def convert_chapters2audio(session_id:str)->bool:
             block_resume = blocks_current['block_resume']
             sentence_resume = blocks_current['sentence_resume']
             if session['cancellation_requested']:
-                print('Cancel requested')
                 return False
             blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
             total_chapters = len(blocks_kept)
@@ -2024,7 +2019,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
                     for x, block in blocks_kept:
                         if session['cancellation_requested']:
-                            print('Cancel requested')
                             session['blocks_current'] = blocks_current
                             return False
                         last_save_time = time.monotonic()
@@ -2042,11 +2036,14 @@ def convert_chapters2audio(session_id:str)->bool:
                         missing_sentences = set()
                         if x < block_resume and not block_changed:
                             msg = f'Chapter {ch_num} (block {x}) — unchanged, skipping'
-                            show_alert(session_id, {"type": "info", "msg": msg})
+                            print(msg)
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if not os.path.exists(chapter_audio_file):
                                 msg = f'Block {x} chapter audio missing, reconverting entire block…'
                                 show_alert(session_id, {"type": "warning", "msg": msg})
+                                block_dir_path = os.path.join(session['sentences_dir'], str(x))
+                                if os.path.isdir(block_dir_path):
+                                    shutil.rmtree(block_dir_path)
                                 start_sentence = 0
                             else:
                                 block_dir = os.path.join(session['sentences_dir'], str(x))
@@ -2065,21 +2062,34 @@ def convert_chapters2audio(session_id:str)->bool:
                                             is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
                                             if (not is_sml) or (j == len(sentences) - 1):
                                                 all_sentences.append(sentence)
-                                    global_sent += len(sentences)
+                                            global_sent += 1
                                     t.update(len(sentences))
                                     continue
                                 msg = f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…'
                                 show_alert(session_id, {"type": "warning", "msg": msg})
-                                start_sentence = len(sentences)
+                                ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                                if os.path.exists(ch_file):
+                                    os.unlink(ch_file)
+                                block_dir_path = os.path.join(session['sentences_dir'], str(x))
+                                if os.path.isdir(block_dir_path):
+                                    shutil.rmtree(block_dir_path)
+                                start_sentence = 0
                         elif block_changed and x <= block_resume:
                             msg = f'Chapter {ch_num} (block {x}) — changed, reconverting'
                             show_alert(session_id, {"type": "info", "msg": msg})
                             ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                             if os.path.exists(ch_file):
                                 os.unlink(ch_file)
+                            block_dir = os.path.join(session['sentences_dir'], str(x))
+                            if os.path.isdir(block_dir):
+                                shutil.rmtree(block_dir)
                             start_sentence = 0
                         elif x == block_resume:
-                            if sentence_resume > 0:
+                            if sentence_resume == 0:
+                                block_dir_path = os.path.join(session['sentences_dir'], str(x))
+                                if os.path.isdir(block_dir_path):
+                                    shutil.rmtree(block_dir_path)
+                            else:
                                 msg = f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}'
                                 show_alert(session_id, {"type": "info", "msg": msg})
                             start_sentence = sentence_resume
@@ -2095,7 +2105,6 @@ def convert_chapters2audio(session_id:str)->bool:
                         save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                         for j in range(len(sentences)):
                             if session['cancellation_requested']:
-                                print('Cancel requested')
                                 session['blocks_current'] = blocks_current
                                 return False
                             sentence = sentences[j].strip()
@@ -2117,6 +2126,8 @@ def convert_chapters2audio(session_id:str)->bool:
                                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             last_save_time = now
                                     else:
+                                        error = f'tts_manager.convert_sentence2audio() failed!'
+                                        show_alert(session_id, {"type": "warning", "msg": error})
                                         session['blocks_current'] = blocks_current
                                         return False
                                 global_sent += 1
@@ -2139,7 +2150,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             combine_result = combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences))
                             if not combine_result:
                                 error = 'combine_audio_sentences() failed!'
-                                show_alert(session_id, {"type": "error", "msg": error})
+                                show_alert(session_id, {"type": "warning", "msg": error})
                                 session['blocks_current'] = blocks_current
                                 return False
                 session['blocks_current'] = blocks_current
@@ -2181,8 +2192,6 @@ def combine_audio_sentences(session_id:str, file:str, block_idx:int, sentence_co
         with open(concat_list, 'w') as f:
             for path in selected_files:
                 if session['cancellation_requested']:
-                    msg = 'Cancel requested'
-                    print(msg)
                     return False
                 f.write(f"file '{path.replace(os.sep, '/')}'\n")
         result = assemble_audio_chunks(concat_list, file, session['is_gui_process'])
@@ -2243,8 +2252,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             start_time = 0
             for filename, chapter_title in part_chapters:
                 if session['cancellation_requested']:
-                    msg = 'Cancel requested'
-                    print(msg)
                     return False
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
@@ -2269,8 +2276,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         
         try:
             if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
                 return False
             cover_path = None
             ffprobe_cmd = [
@@ -2421,8 +2426,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 needs_split = total_duration > (int(session['output_split_hours']) * 2) * 3600
                 for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
                     if session['cancellation_requested']:
-                        msg = 'Cancel requested'
-                        print(msg)
                         return None
                     if cur_part and (cur_duration + dur > max_part_duration):
                         part_files.append(cur_part)
@@ -2441,8 +2444,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     with open(concat_list, 'w') as f:
                         for file in part_file_list:
                             if session['cancellation_requested']:
-                                msg = 'Cancel requested'
-                                print(msg)
                                 return None
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
@@ -2464,8 +2465,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 with open(concat_list, 'w') as f:
                     for file in chapter_files:
                         if session['cancellation_requested']:
-                            msg = 'Cancel requested'
-                            print(msg)
                             return None
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
@@ -2642,6 +2641,14 @@ def convert_ebook(args:dict)->tuple:
         error = None
         session_id = None
         info_session = None
+        if not args.get('id'):
+            error = 'Session ID is missing!'
+            return error, False
+        session_id = str(args['id'])
+        session = context.get_session(session_id)
+        if not session or (session and not session.get('id', False)):
+            error = 'Session expired or does not exist!'
+            return error, False
         if args['language'] is not None:
             if not os.path.splitext(args['ebook_src'])[1]:
                 error = f"{args['ebook_src']} needs a format extension."
@@ -2662,17 +2669,6 @@ def convert_ebook(args:dict)->tuple:
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 return error, False
-            if args.get('id'):
-                session_id = str(args['id'])
-                session = context.get_session(session_id)
-                if not session:
-                    session = context.set_session(session_id)
-            else:
-                session_id = str(uuid.uuid4())
-                session = context.set_session(session_id)
-                if not context_tracker.start_session(session_id):
-                    error = 'convert_ebook() error: Session initialization failed!'
-                    return error, False
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
@@ -2833,7 +2829,7 @@ def convert_ebook(args:dict)->tuple:
                                 show_alert(session_id, {"type": "info", "msg": msg_extra})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             checksum, error = compare_checksums(session_id)
-                            if not checksum:
+                            if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
                                     msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing todo with the final conversion."
@@ -2945,14 +2941,6 @@ def finalize_audiobook(session_id:str)->tuple:
         if not session or not session.get('id', False):
             msg = 'session expired!'
             return result(msg, False)
-        if session['cancellation_requested']:
-            if session['status'] == status_tags['DISCONNECTED']:
-                session['status'] = None
-                context_tracker.end_session(session_id, session['socket_hash'])
-                msg = 'Frontend disconnected!'
-                return result(msg, False)
-            msg = 'Conversion cancelled'
-            return result(msg, False)
         if session['status'] not in [status_tags['EDIT'], status_tags['CONVERTING']]:
             msg = 'No blocks have been selected for the conversion!'
             return result(msg, False)
@@ -2967,6 +2955,11 @@ def finalize_audiobook(session_id:str)->tuple:
         blocks = blocks_current['blocks']
         for idx, block in enumerate(blocks):
             if session['cancellation_requested']:
+                if session['status'] == status_tags['DISCONNECTED']:
+                    session['status'] = None
+                    context_tracker.end_session(session_id, session['socket_hash'])
+                    msg = 'Frontend disconnected!'
+                    return result(msg, False)
                 msg = 'Conversion cancelled'
                 return result(msg, False)
             if not block['keep'] or not block['text'].strip():
@@ -2974,7 +2967,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 continue
             prev_block = blocks_prev[idx] if idx < len(blocks_prev) else None
             if prev_block and prev_block.get('text', '').strip() == block['text'].strip() and block.get('sentences', []):
-                msg = f'Block {idx} — unchanged, keeping existing sentences'
+                msg = f'Block {idx} — unchanged, skipping'
                 print(msg)
                 continue
             sentences_list = get_sentences(session_id, block['text'])
@@ -2986,11 +2979,11 @@ def finalize_audiobook(session_id:str)->tuple:
         session['blocks_current'] = blocks_current
         conversion = convert_chapters2audio(session_id)
         if not conversion:
+            error = 'convert_chapters2audio() failed!'
             session = context.get_session(session_id)
-            if session['cancellation_requested']:
-                error = 'Conversion cancelled'
-            else:
-                error = 'convert_chapters2audio() failed!'
+            if session and session.get('id', False):
+                if session['cancellation_requested']:
+                    error = 'Conversion cancelled'
             return fail(error)
         show_alert(session_id, {"type": "info", "msg": 'Combining sentences and chapters…'})
         exported_files = combine_audio_chapters(session_id)
