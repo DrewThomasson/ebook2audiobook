@@ -167,7 +167,6 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .micro-btn{
                     background: var(--block-background-fill) !important;
-                    font-size: 24px !important;
                     width: 24px !important;
                     height: 24px !important;
                     margin: 0 !important;
@@ -175,7 +174,6 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .micro-btn:hover {
                     background: var(--button-secondary-background-fill-hover) !important;
-                    font-size: 28px !important;
                 }
                 .micro-btn:active {
                     background: var(--body-text-color) !important;
