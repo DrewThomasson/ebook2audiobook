@@ -1,4 +1,6 @@
-import argparse, socket, multiprocessing, sys, uuid, warnings
+import argparse, socket, multiprocessing, sys, uuid, copy, warnings
+
+from pathlib import Path
 
 from lib.conf import *
 from lib.conf_lang import default_language_code
@@ -70,13 +72,13 @@ def kill_previous_instances(script_name: str):
 
 def main()->None:
     wsl_cmd = ''
-    env_prefix = ''
+    wsl_extra = ''
     if os.environ.get('DOCKER_IN_WSL', '0') == '1' and os.environ.get('DOCKER_DESKTOP', '0') == '0' and os.environ.get('PODMAN_DESKTOP', '0') == '0':
         wsl_cmd = 'wsl --user root --'
     if wsl_cmd:
-        env_prefix = 'DEVICE_TAG=cu128'
+        wsl_extra = 'DEVICE_TAG=cu128'
     else:
-        env_prefix = 'DEVICE_TAG=cu128 &&'
+        wsl_extra = 'DEVICE_TAG=cu128 &&'
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
@@ -132,14 +134,14 @@ Docker run image:
          {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 Docker Compose (i.e. cuda 12.8:
         Run Gradio GUI:
-             {wsl_cmd} {env_prefix} docker compose --profile gpu up --no-log-prefix
+             {wsl_cmd} {wsl_extra} docker compose --profile gpu up --no-log-prefix
         Run Headless mode:
-             {wsl_cmd} {env_prefix} docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+             {wsl_cmd} {wsl_extra} docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 Podman Compose (i.e. cuda 12.8:
         Run Gradio GUI:
-             {wsl_cmd} {env_prefix} podman-compose -f podman-compose.yml --profile gpu up
+             {wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu up
         Run Headless mode:
-             {wsl_cmd} {env_prefix} podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+             {wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 SML tags available:
         [break] — silence (random range **0.3–0.6 sec.**)
         [pause] — silence (random range **1.0–1.6 sec.**)
@@ -228,7 +230,7 @@ SML tags available:
 
         print(f"v{prog_version} {args['script_mode']} mode")
         
-        if args['script_mode'] in [NATIVE, BUILD_DOCKER]:
+        if args['script_mode'] in [NATIVE, BUILD_DOCKER, FULL_DOCKER]:
             from lib.classes.device_installer import DeviceInstaller
             manager = DeviceInstaller()
             result = manager.install_python_packages()
@@ -242,8 +244,23 @@ SML tags available:
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
+        error = ''
         if args['headless']:
-            args['id'] = workflow_id if args['workflow'] else args['session'] if args['session'] else None
+            args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
+            if args['id'] == workflow_id or not args['session']:
+                session = c.context.set_session(args['id'])
+            else:
+                session_dir = os.path.join(tmp_dir, f"proc-{args['id']}")
+                session = c.context.get_session(args['id'])
+                if not os.path.exists(session_dir) and not session or (session and not session.get('id', False)):
+                    error = 'Session expired or does not exist!'
+                    print(error)
+                    sys.exit(1)
+                session = c.context.set_session(args['id'])
+            if not c.context_tracker.start_session(args['id']):
+                error = 'Session could not start!'
+                print(error)
+                sys.exit(1)
             args['is_gui_process'] = False
             args['blocks_preview'] = False
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
@@ -260,9 +277,6 @@ SML tags available:
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
-            if args['id'] is None:
-                args['id'] = str(uuid.uuid4())
-                c.context.set_session(args['id'])
             engine_setting_keys = {engine: list(settings.keys()) for engine, settings in default_engine_settings.items()}
             valid_model_keys = engine_setting_keys.get(args['tts_engine'], [])
             renamed_args = {}
@@ -272,66 +286,58 @@ SML tags available:
             args.update(renamed_args)
             if args.get('ebook', None) is not None and args.get('ebooks_dir', None) is not None:
                 error = 'Error: You cannot specify both --ebook and --ebooks_dir in headless mode.'
-                print(error)
-                sys.exit(1)
-            if args.get('voice', None) is not None:
-                if os.path.exists(args['voice']):
-                    args['voice'] = os.path.abspath(args['voice'])
-            if args.get('custom_model', None) is not None:
-                if os.path.exists(args['custom_model']):
-                    args['custom_model'] = os.path.abspath(args['custom_model'])
-            if args.get('output_dir', None) is not None and not os.path.exists(args['output_dir']):
-                error = 'Error: --output_dir path does not exist.'
-                print(error)
-                sys.exit(1)                
-            if args.get('ebooks_dir', None) is not None:
-                args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
-                if not os.path.exists(args['ebooks_dir']):
-                    error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."
-                    print(error)
-                    sys.exit(1)                   
-                args['ebook_list'] = []
-                for file in os.listdir(args['ebooks_dir']):
-                    if any(file.endswith(ext) for ext in ebook_formats):
-                        full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
-                        args['ebook_list'].append(full_path)
-                error = None
-                ebook_list = copy.deepcopy(args['ebook_list'])
-                for i, file in enumerate(ebook_list):
-                    if any(file.endswith(ext) for ext in ebook_formats):
-                        c.reset_ebook_session(args['id'], force=True, filter_keys=False)
-                        args['ebook_src'] = file
-                        progress_status, passed = c.convert_ebook(args)
-                        if passed:
-                            args['ebook_list'].remove (file)
-                            print(progress_status)
-                        else:
-                            error = progress_status
-                            print(error)
-                            sys.exit(1)
-                    else:
-                        error = f'{Path(file).name} has not a supported format! skipping'
-                        print(error)
-                        sys.exit(1)
-            elif args.get('ebook', None) is not None:
-                args['ebook_src'] = os.path.abspath(args['ebook'])
-                if not os.path.exists(args['ebook_src']):
-                    error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
-                    print(error)
-                    sys.exit(1)
-                progress_status, passed = c.convert_ebook(args)
-                c.context.sessions[args['id']]['status'] = c.status_tags['READY']
-                c.reset_ebook_session(args['id'], force=True, filter_keys=False)
-                if passed:
-                    print(progress_status)
-                else:
-                    error = progress_status
-                    print(error)
-                    sys.exit(1)
             else:
-                error = 'Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.'
-                print(error)
-                sys.exit(1)       
+                if args.get('voice', None) is not None:
+                    if os.path.exists(args['voice']):
+                        args['voice'] = os.path.abspath(args['voice'])
+                if args.get('custom_model', None) is not None:
+                    if os.path.exists(args['custom_model']):
+                        args['custom_model'] = os.path.abspath(args['custom_model'])
+                if args.get('output_dir', None) is not None and not os.path.exists(args['output_dir']):
+                    error = 'Error: --output_dir path does not exist.'              
+                elif args.get('ebooks_dir', None) is not None:
+                    args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
+                    if not os.path.exists(args['ebooks_dir']):
+                        error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."                 
+                    else:
+                        args['ebook_list'] = [
+                            os.path.abspath(os.path.join(args['ebooks_dir'], file))
+                            for file in os.listdir(args['ebooks_dir'])
+                        ]
+                        ebook_list = copy.deepcopy(args['ebook_list'])
+                        skipped_ebooks = []
+                        conversions_ran = 0
+                        for i, file in enumerate(ebook_list):
+                            if not any(file.endswith(ext) for ext in ebook_formats):
+                                warning_msg = f'{Path(file).name} has not a supported format! skipping'
+                                print(warning_msg)
+                                skipped_ebooks.append(file)
+                                if file in args['ebook_list']:
+                                    args['ebook_list'].remove(file)
+                                continue
+                            c.reset_ebook_session(args['id'], force=True, filter_keys=False)
+                            args['ebook_src'] = file
+                            progress_status, passed = c.convert_ebook(args)
+                            conversions_ran += 1
+                            if passed:
+                                args['ebook_list'].remove(file)
+                            else:
+                                error = progress_status
+                                break
+                        if conversions_ran == 0:
+                            error = 'Error: No supported ebook files found in --ebooks_dir.'
+                elif args.get('ebook', None) is not None:
+                    args['ebook_src'] = os.path.abspath(args['ebook'])
+                    if not os.path.exists(args['ebook_src']):
+                        error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
+                    else:
+                        progress_status, passed = c.convert_ebook(args)
+                        c.context.sessions[args['id']]['status'] = c.status_tags['READY']
+                        c.reset_ebook_session(args['id'], force=True, filter_keys=False)
+                        if not passed:
+                            error = progress_status
+                else:
+                    error = 'Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.'
         else:
             args['is_gui_process'] = True
             passed_arguments = sys.argv[1:]
@@ -367,8 +373,9 @@ SML tags available:
                     c.exception_alert(None, error)
             else:
                 error = 'Error: In GUI mode, no option or only --share can be passed'
-                print(error)
-                sys.exit(1)
+        if error:
+            print(error)
+            sys.exit(1)
 
 if __name__ == '__main__':
     init_multiprocessing()
