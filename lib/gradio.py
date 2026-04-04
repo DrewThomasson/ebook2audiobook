@@ -2822,6 +2822,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         if(!window._tab_progress_interval){
                                             window._tab_progress_interval = setInterval(tab_progress, 500);
                                         }
+                                        gr_ebook_textarea_counter();
                                     }catch(e){
                                         console.warn("init_interface error:", e);
                                     }
@@ -3159,26 +3160,25 @@ def build_interface(args:dict)->gr.Blocks:
                             if(typeof(gr_ebook_textarea_counter) !== "function"){
                                 const max_ebook_textarea_length = __max_ebook_textarea_length__;
                                 function gr_ebook_textarea_counter() {
-                                    const container = document.querySelector('#gr_ebook_textarea');
-                                    if (!container) return setTimeout(gr_ebook_textarea_counter, 200);
-                                    const textarea = container.querySelector('textarea');
-                                    if (!textarea) return setTimeout(gr_ebook_textarea_counter, 200);
-                                    container.style.position = 'relative';
-                                    const toolbar = document.createElement('div');
-                                    toolbar.style.cssText = 'position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;';
-                                    const counter = document.createElement('span');
-                                    counter.style.cssText = 'font-size:0.85em;color:var(--body-text-color);';
-                                    counter.textContent = '0 / ' + max_ebook_textarea_length;
+                                    const container = document.querySelector("#gr_ebook_textarea textarea");
+                                    const textarea = container.querySelector("textarea");
+                                    const gr_convert_btn = document.querySelector("#gr_convert_btn button");
+                                    container.style.position = "relative";
+                                    const toolbar = document.createElement("div");
+                                    toolbar.style.cssText = "position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;";
+                                    const counter = document.createElement("span");
+                                    counter.style.cssText = "font-size:0.85em;color:var(--body-text-color);";
+                                    counter.textContent = "0 / " + max_ebook_textarea_length;
                                     toolbar.appendChild(counter);
-                                    const btn = document.createElement('button');
-                                    btn.textContent = '🗑';
-                                    btn.id = btn.name = 'clear_ebook_textarea';
-                                    btn.className = 'micro-btn';
-                                    btn.addEventListener('click', ()=>{
-                                        textarea.value = '';
-                                        textarea.dispatchEvent(new Event('input', {bubbles: true}));
-                                        counter.textContent = '0 / ' + max_ebook_textarea_length;
-                                        counter.style.color = 'var(--body-text-color)';
+                                    const btn = document.createElement("button");
+                                    btn.textContent = "🗑";
+                                    btn.id = btn.name = "clear_ebook_textarea";
+                                    btn.className = "micro-btn";
+                                    btn.addEventListener("click", ()=>{
+                                        textarea.value = "";
+                                        textarea.dispatchEvent(new Event("input", {bubbles: true}));
+                                        counter.textContent = "0 / " + max_ebook_textarea_length;
+                                        counter.style.color = "var(--body-text-color)";
                                     });
                                     toolbar.appendChild(btn);
                                     container.appendChild(toolbar);
@@ -3186,10 +3186,10 @@ def build_interface(args:dict)->gr.Blocks:
                                         const len = textarea.value.length;
                                         counter.textContent = len + ' / ' + max_ebook_textarea_length;
                                         counter.style.color = len >= max_ebook_textarea_length ? 'red' : 'var(--body-text-color)';
+                                        gr_convert_btn.disabled = len <= 10;
                                     });
                                 }
                             }
-                            gr_ebook_textarea_counter();
                             //////////////////////
                             const bc = new BroadcastChannel("E2A-channel");
                             const tab_id = create_uuid();
@@ -3250,7 +3250,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 const originalFetch = window.fetch;
                                 window._original_fetch = window._original_fetch || originalFetch;
                                 window.fetch = async function(url, options) {
-                                    if (typeof url === 'string' && url.includes('/upload') && options?.body instanceof FormData){
+                                    if (typeof url === "string" && url.includes("/upload") && options?.body instanceof FormData){
                                         let has_files = false;
                                         for(const [, value] of options.body.entries()){
                                             if(value instanceof File && value.size > 0){
@@ -3259,10 +3259,10 @@ def build_interface(args:dict)->gr.Blocks:
                                             }
                                         }
                                         if(!has_files){
-                                            console.warn('Blocked empty folder upload');
+                                            console.warn("Blocked empty folder upload");
                                             return new Response(JSON.stringify([]), {
                                                 status: 200,
-                                                headers: {'Content-Type': 'application/json'},
+                                                headers: {"Content-Type": "application/json"},
                                             });
                                         }
                                     }
