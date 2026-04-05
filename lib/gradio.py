@@ -2042,7 +2042,6 @@ def build_interface(args:dict)->gr.Blocks:
                     else:
                         session = context.set_session(data.get('id'))
                     if len(active_sessions) == 0 or (data and data.get('status', None) is None):
-                        print(data)
                         restore_session_from_data(data, session, force=False, filter_keys=True)
                     if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
@@ -2101,7 +2100,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(None, error)
                     return gr.update(), gr.update(), gr.update(), gr.update()
 
-            async def update_gr_save_session(session_id:str, state:dict)->tuple:
+            async def update_gr_save_session(session_id:str, ebook_textarea:str, state:dict)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if not session or (session and not session.get('id', False)):
@@ -2134,6 +2133,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(),
                             )
                     else:
+                        session['ebook_textarea'] = ebook_textarea
                         if session.get('status', None) == status_tags['EDIT']:
                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                         new_hash = hash_proxy_dict(MappingProxyType(session))
@@ -2550,7 +2550,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_timer = gr.Timer(9, active=False)
             gr_timer.tick(
                 fn=update_gr_save_session,
-                inputs=[gr_session, gr_session_update],
+                inputs=[gr_session, gr_ebook_textarea, gr_session_update],
                 outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
             )
             gr_convert_btn.click(
