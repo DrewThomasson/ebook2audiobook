@@ -1183,6 +1183,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['ebook_mode'] = val
+                        #session['ebook_file'] = session['ebook_src'] = session['ebook_textarea'] = None
                         if val == 'single':
                             return gr.update(visible=True, label=ebook_mode_labels['single'], value=None, file_count='single'), gr.update(visible=False, value=None)
                         elif val == 'directory':
