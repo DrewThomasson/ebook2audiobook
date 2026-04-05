@@ -1013,12 +1013,19 @@ def build_interface(args:dict)->gr.Blocks:
                             return outputs
                         ebook_data = None
                         upload_mode = session['ebook_mode']
-                        if session['ebook_list'] is not None:
+                        visible_ebook_file = False
+                        visible_ebook_textarea = False
+                        if session.get('ebook_list', None) is not None:
                             ebook_data = [f for f in session['ebook_list']]
                             if not ebook_data:
                                 ebook_data = None
+                            visible_ebook_file = True
+                        elif session.get('ebook_textarea', None) is not None:
+                            ebook_data = session['ebook_textarea']
+                            visible_ebook_textarea = True
                         else:
                             ebook_data = session['ebook_src']
+                            visible_ebook_file = True
                         if ebook_data is not None:
                             if isinstance(ebook_data, list):
                                 ebook_data = [f for f in ebook_data if is_valid_gradio_cache(f)]
@@ -1029,8 +1036,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     ebook_data = None
                         visible_row_split_hours = True if session['output_split'] else False
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
-                        visible_ebook_file = True
-                        visible_ebook_textarea = False
                         return (
                             gr.update(visible=visible_ebook_file, value=ebook_data),
                             gr.update(visible=visible_ebook_textarea, value=''),
