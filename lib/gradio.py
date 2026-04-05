@@ -915,17 +915,13 @@ def build_interface(args:dict)->gr.Blocks:
                 return outputs + (gr.update(interactive=convert_btn_enabled), gr.update(visible=visible_buttons), gr.update(visible=visible_buttons))
 
             def disable_on_custom_upload()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(10)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(12)])
                 return outputs + (gr.update(visible='hidden'),)
             
-            def enable_on_custom_upload(session_id:str)->tuple:
-                session = context.get_session(session_id)
-                custom_del_btn_visible = 'hidden'
-                convert_btn_enabled = False
-                outputs = tuple([gr.update(interactive=True) for _ in range(9)])
-                if session and session.get('id', False):
-                    convert_btn_enabled = True if session['ebook'] is not None else convert_btn_enabled
-                    custom_del_btn_visible = True if session['custom_model'] is not None else custom_del_btn_visible
+            def enable_on_custom_upload(custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
+                outputs = tuple([gr.update(interactive=True) for _ in range(11)])
+                convert_btn_enabled = True if ebook_data or ebook_textarea else False
+                custom_del_btn_visible = True if custom_model is not None else False
                 return outputs + (gr.update(interactive=convert_btn_enabled), gr.update(visible=custom_del_btn_visible))
 
             def show_gr_modal(type:str, msg:str)->str:
@@ -2179,7 +2175,8 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_on_custom_upload = [
                 gr_ebook_file, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
-                gr_fine_tuned_list, gr_voice_file, gr_session_closed_btn, gr_session_opened_btn, gr_convert_btn, gr_custom_model_del_btn
+                gr_fine_tuned_list, gr_voice_file, gr_session_closed_btn, gr_session_opened_btn,
+                gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_del_btn
             ]
             gr_ebook_file.change(
                 fn=change_gr_ebook_file,
@@ -2287,7 +2284,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_voice_list],
             ).then(
                 fn=enable_on_custom_upload,
-                inputs=[gr_session],
+                inputs=[gr_custom_model_list, gr_ebook_file, gr_ebook_textarea],
                 outputs=outputs_on_custom_upload
             )
             gr_custom_model_list.change(
