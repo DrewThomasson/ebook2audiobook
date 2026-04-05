@@ -901,28 +901,28 @@ def build_interface(args:dict)->gr.Blocks:
                 return outputs
                 
             def disable_on_voice_upload()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(9)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(11)])
                 return outputs + (gr.update(visible='hidden'), gr.update(visible='hidden'))
             
             def enable_on_voice_upload(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 visible_buttons = 'hidden'
                 convert_btn_enabled = False
-                outputs = tuple([gr.update(interactive=True) for _ in range(8)])
+                outputs = tuple([gr.update(interactive=True) for _ in range(10)])
                 if session and session.get('id', False):
                     convert_btn_enabled = True if session['ebook'] is not None else convert_btn_enabled
                     visible_buttons = True if session['voice'] is not None else visible_buttons
                 return outputs + (gr.update(interactive=convert_btn_enabled), gr.update(visible=visible_buttons), gr.update(visible=visible_buttons))
 
             def disable_on_custom_upload()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(8)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(10)])
                 return outputs + (gr.update(visible='hidden'),)
             
             def enable_on_custom_upload(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 custom_del_btn_visible = 'hidden'
                 convert_btn_enabled = False
-                outputs = tuple([gr.update(interactive=True) for _ in range(7)])
+                outputs = tuple([gr.update(interactive=True) for _ in range(9)])
                 if session and session.get('id', False):
                     convert_btn_enabled = True if session['ebook'] is not None else convert_btn_enabled
                     custom_del_btn_visible = True if session['custom_model'] is not None else custom_del_btn_visible
@@ -2174,18 +2174,18 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_on_voice_upload = [
                 gr_ebook_file, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
-                gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list,
+                gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_session_closed_btn, gr_session_opened_btn,
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn
             ]
             outputs_on_custom_upload = [
                 gr_ebook_file, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
-                gr_fine_tuned_list, gr_voice_file, gr_convert_btn, gr_custom_model_del_btn
+                gr_fine_tuned_list, gr_voice_file, gr_session_closed_btn, gr_session_opened_btn, gr_convert_btn, gr_custom_model_del_btn
             ]
             gr_ebook_file.change(
                 fn=change_gr_ebook_file,
                 inputs=[gr_session, gr_ebook_file],
                 outputs=[gr_modal],
-                show_progress_on=[gr_progress]
+                show_progress_on=[gr_ebook_file]
             ).then(
                 fn=lambda sid, f: gr.update(
                     interactive=context.get_session(sid).get('status') == status_tags['READY'] and f is not None
