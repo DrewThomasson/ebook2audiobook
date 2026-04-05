@@ -1670,28 +1670,29 @@ def build_interface(args:dict)->gr.Blocks:
 
             def click_gr_session_opened_btn(new_id:str)->tuple:
                 new_session_id = new_id.strip()            
-                if new_session_id != backup_session_id:
-                    if not new_session_id:
-                        msg = 'Session ID cannot be empty'
-                        show_alert(backup_session_id, {"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(), gr.update(), gr.update()
-                    new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
-                    new_session = context.get_session(new_session_id)
-                    if os.path.exists(new_session_dir) or new_session:
-                        session = context.get_session(backup_session_id)
-                        if session and session.get('id', False):
-                            session['status'] = None
-                            if not new_session:
-                                new_session = context.set_session(new_session_id)
-                            new_session['status'] = status_tags['READY']
-                            return (
-                                gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)),
-                                gr.update(interactive=False),
-                                gr.update(visible=False),
-                                gr.update(visible=True)
-                            )
-                    msg = 'Session not found!'
+                if new_session_id == backup_session_id:
+                    return gr.update(), gr.update(), gr.update(), gr.update()
+                if not new_session_id:
+                    msg = 'Session ID cannot be empty'
                     show_alert(backup_session_id, {"type": "warning", "msg": msg})
+                    return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
+                new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
+                new_session = context.get_session(new_session_id)
+                if os.path.exists(new_session_dir) or new_session:
+                    session = context.get_session(backup_session_id)
+                    if session and session.get('id', False):
+                        session['status'] = None
+                        if not new_session:
+                            new_session = context.set_session(new_session_id)
+                        new_session['status'] = status_tags['READY']
+                        return (
+                            gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)),
+                            gr.update(interactive=False),
+                            gr.update(visible=False),
+                            gr.update(visible=True)
+                        )
+                msg = 'Session not found!'
+                show_alert(backup_session_id, {"type": "warning", "msg": msg})
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_playback_time(session_id:str, time:float)->None:
