@@ -2219,7 +2219,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_ebook_textarea.change(
                 fn=change_gr_ebook_textarea,
-                input=[gr_session, gr_ebook_textarea],
+                inputs=[gr_session, gr_ebook_textarea],
                 outputs=None
             )
             gr_ebook_mode.change(
