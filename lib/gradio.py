@@ -1658,7 +1658,6 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(backup_session_id)
                     if session and session.get('id', False):
                         session['status'] = None
-                        context_tracker.end_session(session['id'], session['socket_hash'])
                         session = context.set_session(new_session_id)
                         session['status'] = status_tags['READY']
                         return (
