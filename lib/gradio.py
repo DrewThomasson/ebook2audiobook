@@ -888,7 +888,7 @@ def build_interface(args:dict)->gr.Blocks:
                     component = gr.update(interactive=False)
                 outputs = tuple([gr.update(interactive=False) for _ in range(18)])
                 return outputs + (component,)
-            
+
             def enable_components(session_id: str) -> tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
@@ -899,11 +899,11 @@ def build_interface(args:dict)->gr.Blocks:
                         return outputs + (gr.update(value=''), gr.update(interactive=convert_btn_interactive))
                 outputs = tuple(gr.update() for _ in range(20))
                 return outputs
-                
+
             def disable_on_voice_upload()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(11)])
                 return outputs + (gr.update(visible='hidden'), gr.update(visible='hidden'))
-            
+
             def enable_on_voice_upload(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 visible_buttons = 'hidden'
@@ -917,7 +917,7 @@ def build_interface(args:dict)->gr.Blocks:
             def disable_on_custom_upload()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(12)])
                 return outputs + (gr.update(visible='hidden'),)
-            
+
             def enable_on_custom_upload(custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
                 outputs = tuple([gr.update(interactive=True) for _ in range(11)])
                 convert_btn_enabled = True if ebook_data or ebook_textarea else False
@@ -1168,7 +1168,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'change_gr_ebook_file(): {e}'
                     exception_alert(session_id, error)
                 return gr.update()
-            
+
             def change_gr_ebook_textarea(session_id:str, ebook_textarea:str)->None:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
@@ -1242,7 +1242,7 @@ def build_interface(args:dict)->gr.Blocks:
                     visible = session['voice'] is not None
                     return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
                 return gr.update(), gr.update(), gr.update()
-                
+    
             def click_gr_voice_del_btn(session_id:str, selected:str)->tuple:
                 try:
                     if selected is not None:
@@ -1650,7 +1650,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session['output_channel'] = val
                 return
-                
+    
             def change_gr_output_split(session_id:str, val:str)->dict:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
@@ -1669,21 +1669,19 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(), gr.update(), gr.update()
 
             def click_gr_session_opened_btn(new_id:str)->tuple:
-                new_session_id = new_id.strip()      
-                print(f"--------------------------{new_session_id}-----------------------")
-                print(f"--------------------------{backup_session_id}-----------------------")
-                if not new_session_id:
-                    msg = 'Session ID cannot be empty'
-                    show_alert(backup_session_id, {"type": "warning", "msg": msg})
-                    return gr.update(), gr.update(), gr.update(), gr.update()
-                elif new_session_id == backup_session_id:
-                    session = context.get_session(backup_session_id)
-                    return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
-                new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
-                new_session = context.get_session(new_session_id)
-                if os.path.exists(new_session_dir) or new_session:
-                    session = context.get_session(backup_session_id)
-                    if session and session.get('id', False):
+                session = context.get_session(backup_session_id)
+                if session and session.get('id', False):
+                    new_session_id = new_id.strip()
+                    if not new_session_id:
+                        msg = 'Session ID cannot be empty'
+                        show_alert(backup_session_id, {"type": "warning", "msg": msg})
+                        return gr.update(), gr.update(), gr.update(), gr.update()
+                    elif new_session_id == backup_session_id:
+                        session['status'] = status_tags['READY']
+                        return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
+                    new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
+                    new_session = context.get_session(new_session_id)
+                    if os.path.exists(new_session_dir) or new_session:
                         session['status'] = None
                         if not new_session:
                             new_session = context.set_session(new_session_id)
@@ -1694,8 +1692,8 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=False),
                             gr.update(visible=True)
                         )
-                msg = 'Session not found!'
-                show_alert(backup_session_id, {"type": "warning", "msg": msg})
+                    msg = 'Session not found!'
+                    show_alert(backup_session_id, {"type": "warning", "msg": msg})
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_playback_time(session_id:str, time:float)->None:
