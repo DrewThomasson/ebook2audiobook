@@ -1721,7 +1721,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 show_alert(session_id, state)
 
             def start_conversion(
-                    session_id:str, device:str, ebook_file:str|list|None, ebook_textarea:str|None, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
+                    session_id:str, device:str, ebook_file:str|list|None, ebook_textarea:str, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
@@ -1862,7 +1862,10 @@ def build_interface(args:dict)->gr.Blocks:
                                     source = ebook_data[0]
                             else:
                                 source = ebook_data
-                        if source is not None:
+                        if source is None:
+                            if ebook_textarea:
+                                return gr.update(), (event + 1)
+                        else:
                             session['ebook_src'] = source
                             final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
                             process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
