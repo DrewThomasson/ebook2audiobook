@@ -1024,7 +1024,7 @@ def build_interface(args:dict)->gr.Blocks:
                         elif session.get('ebook_textarea', None) is not None:
                             ebook_textarea = session['ebook_textarea']
                             visible_ebook_textarea = True
-                        elif session.get('ebook_textarea', None) is None:
+                        else:
                             ebook_data = session['ebook_src']
                             visible_ebook_file = True
                         if ebook_data is not None:
