@@ -1144,19 +1144,6 @@ def build_interface(args:dict)->gr.Blocks:
             def update_gr_glassmask(str:str=gr_glassmask_msg, attr:list=['gr-glass-mask'])->dict:
                 return gr.update(value=str, elem_id='gr_glassmask', elem_classes=attr)
 
-            def change_convert_btn(session_id:str, upload_file:str|None=None, upload_file_mode:str|None=None, custom_model_file:str|None=None)->dict:
-                try:
-                    if hasattr(upload_file, 'name') and not hasattr(custom_model_file, 'name'):
-                        return gr.update(variant='primary', interactive=True)
-                    elif isinstance(upload_file, list) and len(upload_file) > 0 and upload_file_mode == 'directory' and not hasattr(custom_model_file, 'name'):
-                        return gr.update(variant='primary', interactive=True)
-                    else:
-                        return gr.update(variant='primary', interactive=False)
-                except Exception as e:
-                    error = f'change_convert_btn(): {e}'
-                    exception_alert(session_id, error)
-                    gr.update()
-
             def change_gr_ebook_file(session_id:str, data:any)->tuple:
                 try:
                     session = context.get_session(session_id)
@@ -2195,10 +2182,6 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_fine_tuned_list, gr_voice_file, gr_convert_btn, gr_custom_model_del_btn
             ]
             gr_ebook_file.change(
-                fn=change_convert_btn,
-                inputs=[gr_session, gr_ebook_file, gr_ebook_mode, gr_custom_model_file],
-                outputs=[gr_convert_btn]
-            ).then(
                 fn=change_gr_ebook_file,
                 inputs=[gr_session, gr_ebook_file],
                 outputs=[gr_modal],
@@ -3182,13 +3165,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     });
                                     toolbar.appendChild(btn);
                                     container.appendChild(toolbar);
-                                    textarea.addEventListener('input', ()=>{
-                                        alert("ok");
-                                        const len = textarea.value.length;
-                                        counter.textContent = len + ' / ' + max_ebook_textarea_length;
-                                        counter.style.color = len >= max_ebook_textarea_length ? 'red' : 'var(--body-text-color)';
-                                        gr_convert_btn.disabled = len <= 10;
-                                    });
                                 }
                             }
                             //////////////////////
