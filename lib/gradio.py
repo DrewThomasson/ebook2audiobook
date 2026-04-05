@@ -3183,6 +3183,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     toolbar.appendChild(btn);
                                     container.appendChild(toolbar);
                                     textarea.addEventListener('input', ()=>{
+                                        alert("ok");
                                         const len = textarea.value.length;
                                         counter.textContent = len + ' / ' + max_ebook_textarea_length;
                                         counter.style.color = len >= max_ebook_textarea_length ? 'red' : 'var(--body-text-color)';
