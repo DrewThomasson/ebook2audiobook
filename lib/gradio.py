@@ -2560,7 +2560,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_audiobook,
-                inputs=[gr_session, gr_ebook_file, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_file, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
             ).then(
@@ -2593,7 +2593,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_audiobook,
-                inputs=[gr_session, gr_ebook_file, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_file, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
             ).then(
@@ -2650,7 +2650,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_audiobook,
-                inputs=[gr_session, gr_ebook_file, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_file, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
             ).then(
