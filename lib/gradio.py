@@ -1675,7 +1675,7 @@ def build_interface(args:dict)->gr.Blocks:
                     show_alert(backup_session_id, {"type": "warning", "msg": msg})
                     return gr.update(), gr.update(), gr.update(), gr.update()
                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
-                if os.path.exists(new_session_dir):
+                if os.path.exists(new_session_dir) or context.sessions.get(new_session_id, False):
                     session = context.get_session(backup_session_id)
                     if session and session.get('id', False):
                         session['status'] = None
