@@ -1173,6 +1173,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session['ebook_textarea'] = ebook_textarea
+                    print(f'change_gr_ebook_textarea: {ebook_textarea}')
                 return
 
             def click_gr_ebook_clear_btn():
