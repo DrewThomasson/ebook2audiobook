@@ -1688,7 +1688,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session['status'] = None
                         if not new_session:
                             new_session = context.set_session(new_session_id)
-                        new_session['status'] = status_tags['READY']
                         return (
                             gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)),
                             gr.update(interactive=False),
@@ -2055,8 +2054,12 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.set_session(str(uuid.uuid4()))
                     else:
                         session = context.set_session(data.get('id'))
-                    if len(active_sessions) == 0 or (data and data.get('status', None) is None):
-                        restore_session_from_data(data, session, force=False, filter_keys=True)
+                    if len(active_sessions) == 0 or (data and data.get('status') in (None, status_tags['SKIP'])):
+                        restore_session_from_data(
+                            data, session,
+                            force=bool(data and data.get('status') == status_tags['SKIP']),
+                            filter_keys=True,
+                        )
                     if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                         return gr.update(), gr.update(), gr.update(value=''), update_gr_glassmask(str=error)
