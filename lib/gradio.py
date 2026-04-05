@@ -2146,7 +2146,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(value=state),
                                 gr.update(),
                             )
-                    else:
+                    elif session.get('status', None) != status_tags['SKIP']:
                         if session.get('status', None) == status_tags['EDIT']:
                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                         new_hash = hash_proxy_dict(MappingProxyType(session))
@@ -2161,6 +2161,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(value=state),
                                 gr.update(),
                             )
+                    yield gr.update(), gr.update(), gr.update()
                 except Exception as e:
                     error = f'update_gr_save_session(): {e}!'
                     exception_alert(session_id, error)
