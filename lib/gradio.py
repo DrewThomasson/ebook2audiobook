@@ -1096,7 +1096,7 @@ def build_interface(args:dict)->gr.Blocks:
                             ebook_data = session['ebook_src']
                         elif session['ebook_mode'] == 'text':
                             ebook_textarea = session['ebook_textarea']
-                        convert_btn_enabled = True if ebook_mode == 'text' or ebook_data is not None else False
+                        convert_btn_enabled = True if session['ebook_mode'] == 'text' or ebook_data is not None else False
                         return (
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
@@ -1876,7 +1876,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 source = ebook_textarea
                         if source is not None:
                             if ebook_mode == 'text':
-                                print('KKKKKKKKKKKKKKKKKKKKKKKKKKKK')
                                 return gr.update(), (event + 1)
                             else:
                                 session['ebook_src'] = source
