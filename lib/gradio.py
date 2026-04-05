@@ -2201,7 +2201,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_ebook_file, gr_ebook_textarea],
                 show_progress_on=[gr_progress]
             ).then(
-                fn=lambda sid, f: gr.update(interactive=True if f == 'text'),
+                fn=lambda sid, f: gr.update(interactive=True if f == 'text' else False),
                 inputs=[gr_ebook_mode],
                 outputs=[gr_convert_btn],
             )
