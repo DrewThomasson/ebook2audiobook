@@ -2042,6 +2042,7 @@ def build_interface(args:dict)->gr.Blocks:
                     else:
                         session = context.set_session(data.get('id'))
                     if len(active_sessions) == 0 or (data and data.get('status', None) is None):
+                        print(session)
                         restore_session_from_data(data, session, force=False, filter_keys=True)
                     if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
