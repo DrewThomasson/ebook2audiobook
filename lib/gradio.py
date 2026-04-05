@@ -1168,6 +1168,12 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'change_gr_ebook_file(): {e}'
                     exception_alert(session_id, error)
                 return gr.update()
+            
+            def change_gr_ebook_textarea(session_id:str, ebook_textarea:str)->None:
+                session = context.get_session(session_id)
+                if session and session.get('id', False)
+                    session['ebook_textarea'] = ebook_textarea
+                return
 
             def click_gr_ebook_clear_btn():
                 return gr.update(value='', info=f'0 / {max_ebook_textarea_length}')
@@ -2100,7 +2106,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(None, error)
                     return gr.update(), gr.update(), gr.update(), gr.update()
 
-            async def update_gr_save_session(session_id:str, ebook_textarea:str, state:dict)->tuple:
+            async def update_gr_save_session(session_id:str, state:dict)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if not session or (session and not session.get('id', False)):
@@ -2133,7 +2139,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(),
                             )
                     else:
-                        session['ebook_textarea'] = ebook_textarea
                         if session.get('status', None) == status_tags['EDIT']:
                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                         new_hash = hash_proxy_dict(MappingProxyType(session))
@@ -2211,6 +2216,11 @@ def build_interface(args:dict)->gr.Blocks:
                 ),
                 inputs=[gr_session, gr_ebook_file],
                 outputs=[gr_convert_btn],
+            )
+            gr_ebook_textarea.change(
+                fn=change_gr_ebook_textarea,
+                input=[gr_session, gr_ebook_textarea],
+                outputs=None
             )
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
@@ -2550,7 +2560,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_timer = gr.Timer(9, active=False)
             gr_timer.tick(
                 fn=update_gr_save_session,
-                inputs=[gr_session, gr_ebook_textarea, gr_session_update],
+                inputs=[gr_session, gr_session_update],
                 outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
             )
             gr_convert_btn.click(
