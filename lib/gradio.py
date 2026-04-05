@@ -1173,7 +1173,6 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session['ebook_textarea'] = ebook_textarea
-                    print(f'change_gr_ebook_textarea: {ebook_textarea}')
                 return
 
             def click_gr_ebook_clear_btn():
@@ -2048,6 +2047,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.set_session(str(uuid.uuid4()))
                     else:
                         session = context.set_session(data.get('id'))
+                    print(data)
                     if len(active_sessions) == 0 or (data and data.get('status', None) is None):
                         restore_session_from_data(data, session, force=False, filter_keys=True)
                     if not context_tracker.start_session(session['id']):
