@@ -1843,7 +1843,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)              
                 return gr.update()
 
-            def check_override_audiobook(session_id:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int)->tuple:
+            def check_override_audiobook(session_id:str, ebook_mode:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 source = None
                 if session and session.get('id', False):
@@ -1851,37 +1851,41 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['status'] in [status_tags['EDIT']]:
                             return gr.update(), event
                         elif session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
-                            if isinstance(session['ebook_list'], list):
-                                if len(session['ebook_list']) > 0:
-                                    source = session['ebook_list'][0]
-                            else:
+                            if ebook_mode == 'directory':
+                                if isinstance(session['ebook_list'], list):
+                                    if len(session['ebook_list']) > 0:
+                                        source = session['ebook_list'][0]
+                            elif ebook_mode == 'single':
                                 source = session['ebook_src']
                         else:
-                            if isinstance(ebook_data, list):
-                                if len(ebook_data) > 0:
-                                    source = ebook_data[0]
-                            elif not ebook_textarea:
+                            if ebook_mode == 'directory':
+                                if isinstance(ebook_data, list):
+                                    if len(ebook_data) > 0:
+                                        source = ebook_data[0]
+                            elif ebook_mode == 'single':
                                 source = ebook_data
-                        if source is None:
-                            if ebook_textarea:
+                            elif ebook_mode == 'text':
+                                source = ebook_textarea
+                        if source is not None:
+                            if ebook_mode == 'text':
                                 return gr.update(), (event + 1)
-                        else:
-                            session['ebook_src'] = source
-                            final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
-                            process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
-                            chapters_dir = os.path.join(process_dir, 'chapters')
-                            sentences_dir = os.path.join(chapters_dir, 'sentences')
-                            pre_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
-                            pre_file = os.path.join(process_dir, pre_name)
-                            audio_sentences_exist = False
-                            if os.path.exists(sentences_dir):
-                                audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
-                            if os.path.exists(pre_file) or audio_sentences_exist:
-                                session['status'] = status_tags['OVERRIDE']
-                                msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
-                                return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
                             else:
-                                return gr.update(), (event + 1)
+                                session['ebook_src'] = source
+                                final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
+                                process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
+                                chapters_dir = os.path.join(process_dir, 'chapters')
+                                sentences_dir = os.path.join(chapters_dir, 'sentences')
+                                pre_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
+                                pre_file = os.path.join(process_dir, pre_name)
+                                audio_sentences_exist = False
+                                if os.path.exists(sentences_dir):
+                                    audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
+                                if os.path.exists(pre_file) or audio_sentences_exist:
+                                    session['status'] = status_tags['OVERRIDE']
+                                    msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
+                                    return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
+                                else:
+                                    return gr.update(), (event + 1)
                     session['status'] = status_tags['READY']
                 return gr.update(), event
 
@@ -2545,7 +2549,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_disable_components
             ).then(
                 fn=check_override_audiobook,
-                inputs=[gr_session, gr_ebook_file, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_file, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
             )
