@@ -3159,7 +3159,8 @@ def build_interface(args:dict)->gr.Blocks:
                             }
                             if(typeof(gr_ebook_textarea_counter) !== "function"){
                                 const max_ebook_textarea_length = __max_ebook_textarea_length__;
-                                function gr_ebook_textarea_counter() {
+                                function gr_ebook_textarea_counter(){
+                                    alert("ok");
                                     const container = document.querySelector("#gr_ebook_textarea textarea");
                                     const textarea = container.querySelector("textarea");
                                     const gr_convert_btn = document.querySelector("#gr_convert_btn button");
@@ -3182,7 +3183,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     });
                                     toolbar.appendChild(btn);
                                     container.appendChild(toolbar);
-                                    textarea.addEventListener('input', () => {
+                                    textarea.addEventListener('input', ()=>{
                                         const len = textarea.value.length;
                                         counter.textContent = len + ' / ' + max_ebook_textarea_length;
                                         counter.style.color = len >= max_ebook_textarea_length ? 'red' : 'var(--body-text-color)';
