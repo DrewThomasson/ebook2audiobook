@@ -1860,7 +1860,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if isinstance(ebook_data, list):
                                 if len(ebook_data) > 0:
                                     source = ebook_data[0]
-                            else:
+                            elif not ebook_textarea:
                                 source = ebook_data
                         if source is None:
                             if ebook_textarea:
