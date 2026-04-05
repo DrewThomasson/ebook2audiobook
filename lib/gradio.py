@@ -2047,6 +2047,8 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
                     nonlocal models
+                    print(f"data: {data}")
+                    print(f"req: {req}")
                     msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                     if not data.get('id', False):
                         session = context.set_session(str(uuid.uuid4()))
