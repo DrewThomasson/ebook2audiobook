@@ -1670,11 +1670,11 @@ def build_interface(args:dict)->gr.Blocks:
 
             def click_gr_session_opened_btn(new_id:str)->tuple:
                 new_session_id = new_id.strip()            
-                if new_session_id == backup_session_id:
-                    return gr.update(), gr.update(), gr.update(), gr.update()
                 if not new_session_id:
                     msg = 'Session ID cannot be empty'
                     show_alert(backup_session_id, {"type": "warning", "msg": msg})
+                    return gr.update(), gr.update(), gr.update(), gr.update()
+                elif new_session_id == backup_session_id:
                     return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                 new_session = context.get_session(new_session_id)
