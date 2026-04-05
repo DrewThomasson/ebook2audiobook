@@ -3185,10 +3185,12 @@ def build_interface(args:dict)->gr.Blocks:
                                     btn.id = btn.name = "clear_ebook_textarea";
                                     btn.className = "micro-btn";
                                     btn.addEventListener("click", ()=>{
-                                        textarea.value = "";
-                                        textarea.dispatchEvent(new Event("input", {bubbles: true}));
-                                        counter.textContent = "0 / " + max_ebook_textarea_length;
-                                        counter.style.color = "var(--body-text-color)";
+                                        if(textarea.disabled == false){
+                                            textarea.value = "";
+                                            textarea.dispatchEvent(new Event("input", {bubbles: true}));
+                                            counter.textContent = "0 / " + max_ebook_textarea_length;
+                                            counter.style.color = "var(--body-text-color)";
+                                        }
                                     });
                                     toolbar.appendChild(btn);
                                     container.appendChild(toolbar);
