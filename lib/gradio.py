@@ -1868,6 +1868,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 source = ebook_textarea
                         if source is not None:
                             if ebook_mode == 'text':
+                                print('KKKKKKKKKKKKKKKKKKKKKKKKKKKK')
                                 return gr.update(), (event + 1)
                             else:
                                 session['ebook_src'] = source
