@@ -1685,7 +1685,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session['status'] = None
                         if not new_session:
                             new_session = context.set_session(new_session_id)
-                        new_session['status'] = status_tags['READY']
                         return (
                             gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)),
                             gr.update(interactive=False),
@@ -3251,18 +3250,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     console.warn("Error updating status on unload:", e);
                                 }
                             });
-                            const currentStorage = localStorage.getItem("data");
-                            if(currentStorage){
-                                window.session_storage = JSON.parse(currentStorage);
-                                window.session_storage.tab_id = tab_id;
-                                if(window.session_storage.playback_volume === 0){
-                                    window.session_storage.playback_volume = 1.0;
-                                }
-                            }else{
-                                window.session_storage = {};
-                                window.session_storage.playback_time = 0;
-                                window.session_storage.playback_volume = 1.0;
-                            }
                             window.onElementAvailable("#gr_voice_player_hidden audio", (el)=>{
                                 window.init_voice_player_hidden();
                             }, {once: false});
@@ -3306,6 +3293,18 @@ def build_interface(args:dict)->gr.Blocks:
                                 }, 250);
                             }catch(e){
                                 console.warn("bc.postMessage error:", e);
+                            }
+                            const currentStorage = localStorage.getItem("data");
+                            if(currentStorage){
+                                window.session_storage = JSON.parse(currentStorage);
+                                window.session_storage.tab_id = tab_id;
+                                if(window.session_storage.playback_volume === 0){
+                                    window.session_storage.playback_volume = 1.0;
+                                }
+                            }else{
+                                window.session_storage = {};
+                                window.session_storage.playback_time = 0;
+                                window.session_storage.playback_volume = 1.0;
                             }
                             return window.session_storage;
                         }catch(e){
