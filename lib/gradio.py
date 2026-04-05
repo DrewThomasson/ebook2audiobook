@@ -1012,7 +1012,7 @@ def build_interface(args:dict)->gr.Blocks:
                             outputs = tuple([gr.update() for _ in range(16)])
                             return outputs
                         ebook_data = None
-                        ebook_text = None
+                        ebook_textarea = None
                         upload_mode = session['ebook_mode']
                         visible_ebook_file = False
                         visible_ebook_textarea = False
@@ -1022,9 +1022,9 @@ def build_interface(args:dict)->gr.Blocks:
                                 ebook_data = None
                             visible_ebook_file = True
                         elif session.get('ebook_textarea', None) is not None:
-                            ebook_text = session['ebook_textarea']
+                            ebook_textarea = session['ebook_textarea']
                             visible_ebook_textarea = True
-                        else:
+                        elif session.get('ebook_textarea', None) is None:
                             ebook_data = session['ebook_src']
                             visible_ebook_file = True
                         if ebook_data is not None:
@@ -1039,7 +1039,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
                         return (
                             gr.update(visible=visible_ebook_file, value=ebook_data),
-                            gr.update(visible=visible_ebook_textarea, value=ebook_text),
+                            gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                             gr.update(value=session['ebook_mode']),
                             gr.update(value=bool(session['blocks_preview'])),
                             gr.update(value=session['device']),
@@ -2047,7 +2047,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.set_session(str(uuid.uuid4()))
                     else:
                         session = context.set_session(data.get('id'))
-                    print(data)
                     if len(active_sessions) == 0 or (data and data.get('status', None) is None):
                         restore_session_from_data(data, session, force=False, filter_keys=True)
                     if not context_tracker.start_session(session['id']):
