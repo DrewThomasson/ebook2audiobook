@@ -2186,6 +2186,10 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_ebook_file],
                 outputs=[gr_modal],
                 show_progress_on=[gr_progress]
+            ).then(
+                fn=enable_components,
+                inputs=[gr_session],
+                outputs=outputs_enable_components
             )
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
