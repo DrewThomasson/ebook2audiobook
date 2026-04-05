@@ -1081,18 +1081,26 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_main = True
                         visible_xtts = False
                         visible_bark = False
-                        ebook_data = session['ebook_list'] if isinstance(session['ebook_list'], list) and len(session['ebook_list']) > 0 else session['ebook']
-                        convert_btn_enabkled = True if ebook_data is not None else False
+                        visible_ebook_file = False
+                        visible_ebook_textarea = False
+                        convert_btn_enabled = False
+                        ebook_data = None
+                        ebook_textarea = None
                         if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
-                        visible_gr_ebook_file = True
-                        visible_gr_ebook_textarea = False
+                        if session['ebook_mode'] == 'directory':
+                            ebook_data = session['ebook_list']
+                        elif session['ebook_mode'] == 'single':
+                            ebook_data = session['ebook_src']
+                        elif session['ebook_mode'] == 'text':
+                            ebook_textarea = session['ebook_textarea']
+                        convert_btn_enabled = True if ebook_mode == 'text' or ebook_data is not None else False
                         return (
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
-                            gr.update(interactive=convert_btn_enabkled), gr.update(visible=visible_ebook_file, value=ebook_data), gr.update(visible=visible_gr_ebook_textarea, value=''),
+                            gr.update(interactive=convert_btn_enabled), gr.update(visible=visible_ebook_file, value=ebook_data), gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                             gr.update(value=session['device']), update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
                             update_gr_voice_list(session_id), gr.update(value='')
                         )
