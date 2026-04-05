@@ -2187,7 +2187,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal],
                 show_progress_on=[gr_progress]
             ).then(
-                fn=lambda s: gr.update(interactive=s.get('status') in [status_tags['READY']]),
+                fn=lambda sid: gr.update(interactive=context.get_session(sid).get('status') == status_tags['READY']),
                 inputs=[gr_session],
                 outputs=[gr_convert_btn],
             )
