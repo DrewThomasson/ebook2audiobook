@@ -3185,7 +3185,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     btn.id = btn.name = "clear_ebook_textarea";
                                     btn.className = "micro-btn";
                                     btn.addEventListener("click", ()=>{
-                                        if(textarea.disabled == false){
+                                        if(!textarea.readOnly){
                                             textarea.value = "";
                                             textarea.dispatchEvent(new Event("input", {bubbles: true}));
                                             counter.textContent = "0 / " + max_ebook_textarea_length;
