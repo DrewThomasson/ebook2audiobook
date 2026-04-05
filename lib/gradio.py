@@ -2187,8 +2187,10 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal],
                 show_progress_on=[gr_progress]
             ).then(
-                fn=lambda sid: gr.update(interactive=context.get_session(sid).get('status') == status_tags['READY']),
-                inputs=[gr_session],
+                fn=lambda sid, f: gr.update(
+                    interactive=context.get_session(sid).get('status') == status_tags['READY'] and f is not None
+                ),
+                inputs=[gr_session, gr_ebook_file],
                 outputs=[gr_convert_btn],
             )
             gr_ebook_mode.change(
