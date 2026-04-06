@@ -2670,7 +2670,7 @@ def convert_ebook(args:dict)->tuple:
                     return error, False
                 text = args['ebook_textarea']
                 filename = get_sanitized(text[:24]) + '..._.txt'
-                filename = f"{get_sanitized(text[:24])}..._{session_id.hex}.txt"
+                filename = f"{get_sanitized(text[:24])}..._{session_id}.txt"
                 filepath = os.path.join(tempfile.gettempdir(), filename)
                 with open(filepath, 'w', encoding='utf-8') as f:
                     f.write(text)
