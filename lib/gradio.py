@@ -1802,17 +1802,17 @@ def build_interface(args:dict)->gr.Blocks:
                         }
                         if args['ebook_mode'] == 'text':
                             if not args.get('ebook_textarea'):
-                                error = 'Error: textarea is empty.'
+                                error = 'Textarea is empty.'
                             elif len(args.get('ebook_textarea', 0)) < 10:
-                                error = 'Error: textarea must be > 10 chars.'
+                                error = 'Textarea must be > 10 chars.'
                         elif args['ebook_mode'] == 'single':
                             if not args('ebook_src'):
-                                error = 'Error: a file or directory is required.'
+                                error = 'An ebook file is required.'
                         elif args['ebook_mode'] == 'directory':
                             if not args.get('ebook_list'):
-                                error = 'Error: a file or directory is required.'                          
+                                error = 'A directory with ebook files is required.'                          
                         if args['xtts_num_beams'] < args['xtts_length_penalty']:
-                            error = 'Error: num beams must be greater or equal than length penalty.'               
+                            error = 'num beams must be greater or equal than length penalty.'               
                         if error is None:
                             session['ticker'] = len(audiobook_options)
                             if args['ebook_mode'] == 'directory':
@@ -1914,19 +1914,19 @@ def build_interface(args:dict)->gr.Blocks:
                                 if ebook_mode == 'directory':
                                     if isinstance(ebook_data, list):
                                         if not ebook_data:
-                                            error = 'Error: a directory with ebook files is required.'
+                                            error = 'A directory with ebook files is required.'
                                         else:
                                             source = ebook_data[0]
                                 elif ebook_mode == 'single':
                                     if not ebook_data:
-                                        error = 'Error: an ebook file is required.'
+                                        error = 'An ebook file is required.'
                                     else:
                                         source = ebook_data
                                 elif ebook_mode == 'text':
                                     if not ebook_textarea:
-                                        error = 'Error: textarea is empty.'
+                                        error = 'Textarea is empty.'
                                     elif len(ebook_textarea) < 10:
-                                        error = 'Error: textarea must be > 10 chars.'
+                                        error = 'Textarea must be > 10 chars.'
                                     else:
                                         source = ebook_textarea
                                 if source is None:
