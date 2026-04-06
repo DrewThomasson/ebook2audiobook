@@ -3006,7 +3006,7 @@ def finalize_audiobook(session_id:str)->tuple:
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
-        if session['ebook_mode' == 'directory':
+        if session['ebook_mode'] == 'directory':
             if isinstance(session['ebook_list'], list):
                 if session['ebook_src'] in session['ebook_list']:
                     ebook_list = session['ebook_list']
