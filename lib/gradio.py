@@ -1937,6 +1937,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             source = ebook_textarea
                             if source is not None:
                                 if ebook_mode == 'text':
+                                    session['status'] = status_tags['SKIP']
                                     return gr.update(), (event + 1)
                                 else:
                                     session['ebook_src'] = source
@@ -1954,6 +1955,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                                         return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
                                     else:
+                                        session['status'] = status_tags['SKIP']
                                         return gr.update(), (event + 1)
                             if error is not None:
                                 show_alert(session_id, {"type": "warning", "msg": error})
