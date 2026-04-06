@@ -1792,7 +1792,6 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split":bool(output_split),
                             "output_split_hours": output_split_hours,
                         }
-                        
                         if args['ebook_mode'] == 'text' and (not args.get('ebook_textarea') or len(args.get('ebook_textarea', 0)) < 10):
                             error = 'Error: textarea is empty or not enough characters.'
                         elif args['ebook_mode'] != 'text' and args['ebook_src'] is None and args['ebook_list'] is None:
