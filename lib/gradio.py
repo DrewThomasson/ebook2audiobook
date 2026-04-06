@@ -895,7 +895,12 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] in [status_tags['READY']]:
                         session['cancellation_requested'] = False
                         outputs = tuple(gr.update(interactive=True) for _ in range(18))
-                        convert_btn_interactive = True if session['ebook_src'] is not None or session['ebook_list'] is not None else False
+                        convert_btn_interactive = False
+                        if session['ebook_mode'] == 'text':
+                            convert_btn_interactive = True 
+                        else:
+                            if session['ebook_src'] is not None or session['ebook_list'] is not None:
+                                convert_btn_interactive = True
                         return outputs + (gr.update(value=''), gr.update(interactive=convert_btn_interactive))
                 outputs = tuple(gr.update() for _ in range(20))
                 return outputs
