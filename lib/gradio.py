@@ -300,7 +300,14 @@ def build_interface(args:dict)->gr.Blocks:
                     background-color: rgba(239, 68, 68, 0.08) !important;
                 }
                 ////////////////////
-                #gr_ebook_src, #gr_ebook_textarea, #gr_custom_model_file, #gr_voice_file {
+                #gr_ebook_textarea {
+                    height: auto !important;
+                    min-height: 100px !important;
+                    display: flex  !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                }
+                #gr_ebook_src, #gr_custom_model_file, #gr_voice_file {
                     height: 100px !important;
                     min-height: 100px !important;
                     max-height: 100px !important;
