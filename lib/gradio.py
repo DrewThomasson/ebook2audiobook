@@ -2055,6 +2055,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.set_session(str(uuid.uuid4()))
                     else:
                         session = context.set_session(data.get('id'))
+                    print(data['ebook_textarea'])
                     if len(active_sessions) == 0 or (data and data.get('status') in (None, status_tags['READY'])):
                         restore_session_from_data(
                             data, session,
