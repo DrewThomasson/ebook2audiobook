@@ -1182,18 +1182,15 @@ def build_interface(args:dict)->gr.Blocks:
                     session['ebook_textarea'] = ebook_textarea
                 return
 
-            def click_gr_ebook_clear_btn():
-                return gr.update(value='', info=f'0 / {max_ebook_textarea_length}')
-
             def change_gr_ebook_mode(session_id:str, val:str)->dict:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['ebook_mode'] = val
                         if val == 'single':
-                            return gr.update(visible=True, label=ebook_mode_labels['single'], value=None, file_count='single'), gr.update(visible=False)
+                            return gr.update(visible=True, label=ebook_mode_labels['single'], file_count='single'), gr.update(visible=False)
                         elif val == 'directory':
-                            return gr.update(visible=True, label=ebook_mode_labels['directory'], value=None, file_count='directory'), gr.update(visible=False)
+                            return gr.update(visible=True, label=ebook_mode_labels['directory'], file_count='directory'), gr.update(visible=False)
                         elif val == 'text':
                             return gr.update(visible=False), gr.update(visible=True)
                 except Exception as e:
