@@ -1801,6 +1801,7 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split_hours": output_split_hours
                         }
                         if args['ebook_mode'] == 'text':
+                            args['ebook_textarea'] = args.get('ebook_textarea','').strip()
                             if not args.get('ebook_textarea'):
                                 error = 'Textarea is empty.'
                             elif len(args.get('ebook_textarea', 0)) < 10:
@@ -1923,6 +1924,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         source = ebook_data
                                 elif ebook_mode == 'text':
+                                    ebook_textarea = ebook_textarea.strip()
                                     if not ebook_textarea:
                                         error = 'Textarea is empty.'
                                     elif len(ebook_textarea) < 10:
