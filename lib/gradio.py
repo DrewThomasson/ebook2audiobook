@@ -1765,7 +1765,7 @@ def build_interface(args:dict)->gr.Blocks:
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
-                error = ''
+                error = None
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
@@ -1801,14 +1801,19 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split_hours": output_split_hours
                         }
                         if args['ebook_mode'] == 'text':
-                            if not args.get('ebook_textarea') or len(args.get('ebook_textarea', 0)) < 10:
-                                error = 'Error: textarea is empty or not enough characters.'
-                        else:
-                            if args['ebook_src'] is None and args['ebook_list'] is None:
+                            if not args.get('ebook_textarea'):
+                                error = 'Error: textarea is empty.'
+                            elif len(args.get('ebook_textarea', 0)) < 10:
+                                error = 'Error: textarea must be > 10 chars.'
+                        elif args['ebook_mode'] == 'single':
+                            if not args('ebook_src'):
                                 error = 'Error: a file or directory is required.'
-                        elif args['xtts_num_beams'] < args['xtts_length_penalty']:
+                        elif args['ebook_mode'] == 'directory':
+                            if not args.get('ebook_list'):
+                                error = 'Error: a file or directory is required.'                          
+                        if args['xtts_num_beams'] < args['xtts_length_penalty']:
                             error = 'Error: num beams must be greater or equal than length penalty.'               
-                        else:
+                        if error is None:
                             session['ticker'] = len(audiobook_options)
                             if args['ebook_mode'] == 'directory':
                                 if args['ebook_list']:
