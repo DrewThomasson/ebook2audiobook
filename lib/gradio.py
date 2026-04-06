@@ -2244,6 +2244,15 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=lambda f: gr.update(interactive=True if f == 'text' else False),
                 inputs=[gr_ebook_mode],
                 outputs=[gr_convert_btn],
+            ).then(
+                fn=None,
+                inputs=[gr_ebook_mode],
+                outputs=[],
+                js='''
+                    (mode) => {
+                        if(mode === 'text') gr_ebook_textarea_counter();
+                    }
+                '''
             )
             gr_blocks_preview.select(
                 fn=lambda session_id, val: change_param('blocks_preview', session_id, bool(val)),
@@ -2857,7 +2866,6 @@ def build_interface(args:dict)->gr.Blocks:
                                         if(!window._tab_progress_interval){
                                             window._tab_progress_interval = setInterval(tab_progress, 500);
                                         }
-                                        gr_ebook_textarea_counter();
                                     }catch(e){
                                         console.warn("init_interface error:", e);
                                     }
