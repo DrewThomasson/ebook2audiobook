@@ -308,9 +308,8 @@ def build_interface(args:dict)->gr.Blocks:
                     justify-content: center !important;
                 }
                 #gr_ebook_src, #gr_custom_model_file, #gr_voice_file {
-                    height: 100px !important;
+                    height: auto !important;
                     min-height: 100px !important;
-                    max-height: 100px !important;
                     display: flex  !important;
                     align-items: center !important;
                     justify-content: center !important;
