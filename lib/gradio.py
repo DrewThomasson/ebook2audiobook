@@ -1912,7 +1912,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if ebook_data:
                                         source = ebook_data
                                 elif ebook_mode == 'text':
-                                    if ebook_textarea and len(ebook_textarea, 0)) > 10:
+                                    if ebook_textarea and len(ebook_textarea) > 10:
                                         source = ebook_textarea
                             if source is not None:
                                 if ebook_mode == 'text':
