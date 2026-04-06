@@ -1197,11 +1197,11 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         session['ebook_mode'] = val
                         if val == 'single':
-                            return gr.update(visible=True, label=ebook_mode_labels['single'], file_count='single', value=None), gr.update(visible=False)
+                            return gr.update(visible=True, label=ebook_mode_labels['single'], file_count='single', value=session['ebook_src']), gr.update(visible=False)
                         elif val == 'directory':
-                            return gr.update(visible=True, label=ebook_mode_labels['directory'], file_count='directory', value=None), gr.update(visible=False)
+                            return gr.update(visible=True, label=ebook_mode_labels['directory'], file_count='directory', value=session['ebook_list']), gr.update(visible=False)
                         elif val == 'text':
-                            return gr.update(visible=False), gr.update(visible=True)
+                            return gr.update(visible=False), gr.update(visible=True, value=session['ebook_textarea'])
                 except Exception as e:
                     error = f'change_gr_ebook_mode(): {e}'
                     exception_alert(session_id, error)
