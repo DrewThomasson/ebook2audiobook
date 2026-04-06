@@ -2269,15 +2269,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=lambda f: gr.update(interactive=True if f == 'text' else False),
                 inputs=[gr_ebook_mode],
                 outputs=[gr_convert_btn],
-            ).then(
-                fn=None,
-                inputs=[gr_ebook_mode],
-                outputs=[],
-                js='''
-                    (mode)=>{
-                        if(mode == "text") window.gr_ebook_textarea_counter();
-                    }
-                '''
             )
             gr_blocks_preview.select(
                 fn=lambda session_id, val: change_param('blocks_preview', session_id, bool(val)),
@@ -2795,6 +2786,7 @@ def build_interface(args:dict)->gr.Blocks:
                             let gr_playback_time;
                             let gr_progress;
                             let gr_voice_play;
+                            let gr_ebook_textarea;
                             let tabs_opened = false;
                             let init_elements_timeout;
                             let init_audiobook_player_timeout;
@@ -2849,8 +2841,9 @@ def build_interface(args:dict)->gr.Blocks:
                                 window.init_interface = ()=>{
                                     try {
                                         gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                        gr_progress = gr_root.querySelector("#gr_progress");
-                                        if(!gr_root || !gr_progress){
+                                        gr_progress = (gr_root) ? gr_root.querySelector("#gr_progress") : undefined;
+                                        gr_ebook_textarea = (gr_root) ? gr_root.querySelector("#gr_ebook_textarea") : undefined;
+                                        if(!gr_root || !gr_progress || !gr_ebook_textarea){
                                             clearTimeout(init_elements_timeout);
                                             console.warn("Components not ready… retrying");
                                             init_elements_timeout = setTimeout(init_interface, 1000);
@@ -2891,6 +2884,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         if(!window._tab_progress_interval){
                                             window._tab_progress_interval = setInterval(tab_progress, 500);
                                         }
+                                        window.gr_ebook_textarea_counter();
                                     }catch(e){
                                         console.warn("init_interface error:", e);
                                     }
