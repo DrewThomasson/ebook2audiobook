@@ -1835,7 +1835,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
                                 return gr.update()
-                            session['status'] = status_tags['READY']
+                            session['status'] = status_tags['SKIP']
                         return gr.update(value=error)
                 except Exception as e:
                     session['status'] = status_tags['READY']
