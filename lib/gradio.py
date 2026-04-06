@@ -1929,9 +1929,6 @@ def build_interface(args:dict)->gr.Blocks:
                                         error = 'Textarea must be > 10 chars.'
                                     else:
                                         source = ebook_textarea
-                                if source is None:
-                                    show_alert(session_id, {"type": "warning", "msg": error})
-                                    return gr.update(), event
                             if source is not None:
                                 if ebook_mode == 'text':
                                     return gr.update(), (event + 1)
@@ -1952,7 +1949,9 @@ def build_interface(args:dict)->gr.Blocks:
                                         return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
                                     else:
                                         return gr.update(), (event + 1)
-                    session['status'] = status_tags['READY']
+                            if error is not None:
+                                show_alert(session_id, {"type": "warning", "msg": error})
+                            session['status'] = status_tags['READY']
                 return gr.update(), event
 
             def click_gr_override_cancel_btn(session_id:str, ebook_data:any, ebook_textarea:str)->tuple:
