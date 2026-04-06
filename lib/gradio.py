@@ -302,7 +302,7 @@ def build_interface(args:dict)->gr.Blocks:
                 ////////////////////
                 #gr_ebook_textarea {
                     height: auto !important;
-                    min-height: 100px !important;
+                    min-height: 60px !important;
                     display: flex  !important;
                     align-items: center !important;
                     justify-content: center !important;
