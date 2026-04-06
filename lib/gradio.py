@@ -303,14 +303,16 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_ebook_textarea {
                     height: auto !important;
                     min-height: 55px !important;
-                    display: flex  !important;
+                    display: flex !important;
+                    flex-direction: column !important;
                     align-items: center !important;
                     justify-content: center !important;
                 }
                 #gr_ebook_src, #gr_custom_model_file, #gr_voice_file {
                     height: auto !important;
                     min-height: 100px !important;
-                    display: flex  !important;
+                    display: flex !important;
+                    flex-direction: column !important;
                     align-items: center !important;
                     justify-content: center !important;
                 }
