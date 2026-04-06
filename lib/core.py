@@ -3021,9 +3021,14 @@ def finalize_audiobook(session_id:str)->tuple:
             session['ebook_src'] = session['ebook_list'] = None
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
+            if session['ebook_mode'] == 'text':
+                session['status'] = status_tags['SKIP']
+            else:
+                session['status'] = status_tags['READY']
             reset_ebook_session(session_id, force=True, filter_keys=False)
         return result(filename, True)
     except Exception as e:
+        session['status'] = status_tags['READY']
         reset_ebook_session(session_id, force=True, filter_keys=False)
         DependencyError(e)
         error = f'finalize_audiobook(): {e}'
@@ -3066,7 +3071,6 @@ def restore_session_from_data(data:dict, session:DictProxy, force:bool, filter_k
 def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
     data = {
-        "status": status_tags['READY'],
         "ebook": None,
         "ebook_src": None,
         "process_dir": None,

@@ -1826,6 +1826,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             msg = 'Conversion cancelled'
                                             return gr.update(value=msg)
                                         elif any(file.endswith(ext) for ext in ebook_formats):
+                                            session['status'] = status_tags['READY']
                                             reset_ebook_session(args['id'], force=True, filter_keys=False)
                                             args['ebook_src'] = file
                                             progress_status, passed = convert_ebook(args)
