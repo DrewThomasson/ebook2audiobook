@@ -67,6 +67,7 @@ status_tags = {
     "EDIT": "edit",
     "SKIP": "skip",
     "CONVERTING": "converting",
+    "END": "end",
     "DISCONNECTED": "disconnected"
 }
 
@@ -3022,7 +3023,7 @@ def finalize_audiobook(session_id:str)->tuple:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
             if session['ebook_mode'] == 'text':
-                session['status'] = None
+                session['status'] = status_tags['END']
             else:
                 session['status'] = status_tags['READY']
             reset_ebook_session(session_id, force=True, filter_keys=False)

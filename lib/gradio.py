@@ -900,7 +900,7 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_components(session_id: str) -> tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] in [status_tags['READY']]:
+                    if session['status'] in [status_tags['READY'], status_tags['END']]:
                         session['cancellation_requested'] = False
                         outputs = tuple(gr.update(interactive=True) for _ in range(18))
                         convert_btn_interactive = False
@@ -1091,7 +1091,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     if session['cancellation_requested']:
                         session['status'] = status_tags['READY']
-                    if session['status'] in [status_tags['READY']]:
+                    if session['status'] in [status_tags['READY'], status_tags['END']]:
                         visible_main = True
                         visible_xtts = False
                         visible_bark = False
@@ -1903,7 +1903,7 @@ def build_interface(args:dict)->gr.Blocks:
                 source = None
                 if session and session.get('id', False):
                     if not session['cancellation_requested']:
-                        if not session['status'] in [status_tags['SKIP']]:
+                        if not session['status'] in [status_tags['SKIP'], status_tags['END']]:
                             if session['status'] in [status_tags['EDIT']]:
                                 return gr.update(), event
                             elif session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
