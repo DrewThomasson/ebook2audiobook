@@ -1800,10 +1800,12 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split":bool(output_split),
                             "output_split_hours": output_split_hours
                         }
-                        if args['ebook_mode'] == 'text' and (not args.get('ebook_textarea') or len(args.get('ebook_textarea', 0)) < 10):
-                            error = 'Error: textarea is empty or not enough characters.'
-                        elif args['ebook_mode'] != 'text' and args['ebook_src'] is None and args['ebook_list'] is None:
-                            error = 'Error: a file or directory is required.'
+                        if args['ebook_mode'] == 'text':
+                            if not args.get('ebook_textarea') or len(args.get('ebook_textarea', 0)) < 10:
+                                error = 'Error: textarea is empty or not enough characters.'
+                        else:
+                            if args['ebook_src'] is None and args['ebook_list'] is None:
+                                error = 'Error: a file or directory is required.'
                         elif args['xtts_num_beams'] < args['xtts_length_penalty']:
                             error = 'Error: num beams must be greater or equal than length penalty.'               
                         else:
@@ -1906,14 +1908,25 @@ def build_interface(args:dict)->gr.Blocks:
                             else:
                                 if ebook_mode == 'directory':
                                     if isinstance(ebook_data, list):
-                                        if len(ebook_data) > 0:
+                                        if not ebook_data:
+                                            error = 'Error: a directory with ebook files is required.'
+                                        else:
                                             source = ebook_data[0]
                                 elif ebook_mode == 'single':
-                                    if ebook_data:
+                                    if not ebook_data:
+                                        error = 'Error: an ebook file is required.'
+                                    else:
                                         source = ebook_data
                                 elif ebook_mode == 'text':
-                                    if ebook_textarea and len(ebook_textarea) > 10:
+                                    if not ebook_textarea:
+                                        error = 'Error: textarea is empty.'
+                                    elif len(ebook_textarea) < 10:
+                                        error = 'Error: textarea must be > 10 chars.'
+                                    else:
                                         source = ebook_textarea
+                                if source is None:
+                                    show_alert(session_id, {"type": "warning", "msg": error})
+                                    return gr.update(), event
                             if source is not None:
                                 if ebook_mode == 'text':
                                     return gr.update(), (event + 1)
