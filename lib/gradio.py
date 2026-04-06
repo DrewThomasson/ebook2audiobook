@@ -3090,10 +3090,13 @@ def build_interface(args:dict)->gr.Blocks:
                                     btn.id = btn.name = "clear_ebook_textarea";
                                     btn.className = "micro-btn";
                                     btn.addEventListener("click", ()=>{
-                                        textarea.value = "";
-                                        textarea.dispatchEvent(new Event("input", {bubbles: true}));
-                                        counter.textContent = "0 / " + max_ebook_textarea_length;
-                                        counter.style.color = "var(--body-text-color)";
+                                        const storage = JSON.parse(localStorage.getItem("data") || "{}");
+                                        if(storage.status == 'ready'){{
+                                            textarea.value = "";
+                                            textarea.dispatchEvent(new Event("input", {bubbles: true}));
+                                            counter.textContent = "0 / " + max_ebook_textarea_length;
+                                            counter.style.color = "var(--body-text-color)";
+                                        }
                                     });
                                     textarea.addEventListener("input", ()=>{
                                         const len = textarea.value.length;
