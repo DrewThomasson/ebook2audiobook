@@ -347,8 +347,8 @@ SML tags available:
                     args['ebook_textarea'] = args['text'].strip()
                     if not args['ebook_textarea']:
                         error = f"Error: The --text is empty."
-                    if len(args['ebook_textarea']) > 500:
-                        error = 'Error: --text input exceeds 500 characters.'
+                    elif len(args['ebook_textarea']) > max_ebook_textarea_length:
+                        error = f'Error: --text input exceeds {max_ebook_textarea_length}
                     else:
                         progress_status, passed = c.convert_ebook(args)
                         c.context.sessions[args['id']]['status'] = c.status_tags['READY']

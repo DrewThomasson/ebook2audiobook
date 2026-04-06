@@ -1014,7 +1014,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(16)])
+                            outputs = tuple([gr.update() for _ in range(18)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
