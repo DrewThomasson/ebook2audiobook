@@ -2250,7 +2250,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[],
                 js='''
                     (mode) => {
-                        if(mode === 'text') gr_ebook_textarea_counter();
+                        if(mode === 'text') window.gr_ebook_textarea_counter();
                     }
                 '''
             )
@@ -2740,7 +2740,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=None,
                 inputs=None,
-                js='()=>{init_interface();}'
+                js='()=>{window.init_interface();}'
             )
             gr_deletion_confirm_btn.click(
                 fn=click_gr_deletion,
