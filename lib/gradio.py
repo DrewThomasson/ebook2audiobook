@@ -1840,7 +1840,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['status'] = status_tags['SKIP']
                         return gr.update(value=error)
                 except Exception as e:
-                    session['status'] = status_tags['READY']
+                    session['status'] = status_tags['SKIP']
                     error = f'start_conversion(): {e}'
                     exception_alert(session_id, error)
                     return gr.update(value=error)
