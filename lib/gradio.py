@@ -1792,28 +1792,36 @@ def build_interface(args:dict)->gr.Blocks:
                             error = 'Error: num beams must be greater or equal than length penalty.'               
                         else:
                             session['ticker'] = len(audiobook_options)
-                            if isinstance(args['ebook_list'], list):
-                                ebook_list = copy.deepcopy(args['ebook_list'])
-                                for i, file in enumerate(ebook_list):
-                                    if session['cancellation_requested']:
-                                        session['status'] = status_tags['READY']
-                                        msg = 'Conversion cancelled'
-                                        return gr.update(value=msg)
-                                    elif any(file.endswith(ext) for ext in ebook_formats):
-                                        reset_ebook_session(args['id'], force=True, filter_keys=False)
-                                        args['ebook_src'] = file
-                                        progress_status, passed = convert_ebook(args)
-                                        if passed:
-                                            return gr.update(value=progress_status)
+                            if args['ebook_mode'] == 'directory':
+                                if args['ebook_list']:
+                                    ebook_list = copy.deepcopy(args['ebook_list'])
+                                    for i, file in enumerate(ebook_list):
+                                        if session['cancellation_requested']:
+                                            session['status'] = status_tags['READY']
+                                            msg = 'Conversion cancelled'
+                                            return gr.update(value=msg)
+                                        elif any(file.endswith(ext) for ext in ebook_formats):
+                                            reset_ebook_session(args['id'], force=True, filter_keys=False)
+                                            args['ebook_src'] = file
+                                            progress_status, passed = convert_ebook(args)
+                                            if passed:
+                                                return gr.update(value=progress_status)
+                                            else:
+                                                error = progress_status
+                                                break
                                         else:
-                                            error = progress_status
-                                            break
-                                    else:
-                                        args['ebook_list'].remove (file)
-                                        msg = f'{Path(file).name} has not a supported format! skipping'
-                                        show_alert(session_id, {"type": "warning", "msg": msg})
-                            else:
+                                            args['ebook_list'].remove (file)
+                                            msg = f'{Path(file).name} has not a supported format! skipping'
+                                            show_alert(session_id, {"type": "warning", "msg": msg})
+                            elif args['ebook_mode'] == 'single':
                                 print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
+                                progress_status, passed = convert_ebook(args)
+                                if passed:
+                                    return gr.update(value=progress_status)
+                                else:
+                                    error = progress_status
+                            elif args['ebook_mode'] == 'text':
+                                print('Processing eBook text:')
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
                                     return gr.update(value=progress_status)
