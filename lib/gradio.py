@@ -1921,13 +1921,16 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         source = ebook_data
                                 elif ebook_mode == 'text':
-                                    ebook_textarea = ebook_textarea.strip()
                                     if not ebook_textarea:
                                         error = 'Textarea is empty.'
                                     elif len(ebook_textarea) < 10:
                                         error = 'Textarea must be > 10 chars.'
                                     else:
-                                        source = ebook_textarea
+                                        ebook_textarea = ebook_textarea.strip()
+                                        if len(ebook_textarea) < 10:
+                                            error = 'Textarea must be > 10 chars.'
+                                        else:
+                                            source = ebook_textarea
                             if source is not None:
                                 if ebook_mode == 'text':
                                     return gr.update(), (event + 1)
