@@ -1793,7 +1793,7 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split_hours": output_split_hours,
                         }
                         
-                        if args['ebook_mode'] == 'text' and not args['ebook_textarea'] or len(args['ebook_textarea']) < 10:
+                        if args['ebook_mode'] == 'text' and not args.get*'ebook_textarea'( or len(args.get('ebook_textarea', 0)) < 10:
                             error = 'Error: textarea is empty or not enough characters.'
                         elif args['ebook_mode'] != 'text' and args['ebook_src'] is None and args['ebook_list'] is None:
                             error = 'Error: a file or directory is required.'
@@ -1837,11 +1837,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     error = progress_status
                         if error:
+                            session['status'] = status_tags['SKIP']
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
                                 return gr.update()
-                            session['status'] = status_tags['SKIP']
                         return gr.update(value=error)
                 except Exception as e:
                     session['status'] = status_tags['SKIP']
