@@ -1167,8 +1167,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 msg = 'Cancellation requested, please wait…'
                                 return gr.update(value=show_gr_modal('wait', msg), visible=True)
                         session['cancellation_requested'] = False
-                        session['ebook_src'] = data if ebook_mode == 'single' else None
-                        session['ebook_list'] = data if ebook_mode == 'directory' else None
+                        if ebook_mode == 'single':
+                            session['ebook_src'] = data
+                        elif ebook_mode == 'directory':
+                            session['ebook_list'] = data
                 except Exception as e:
                     error = f'change_gr_ebook_src(): {e}'
                     exception_alert(session_id, error)
@@ -1745,7 +1747,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 show_alert(session_id, state)
 
             def start_conversion(
-                    session_id:str, device:str, ebook_src:str|list|None, ebook_textarea:str, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
+                    session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str
                 )->tuple:
@@ -1753,13 +1755,6 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if ebook_textarea is not None:
-                            text = ebook_textarea
-                            filename = get_sanitized(text[:28]) + '.txt'
-                            filepath = os.path.join(tempfile.gettempdir(), filename)
-                            with open(filepath, 'w', encoding='utf-8') as f:
-                                f.write(text)
-                            session['ebook_src'] = filepath
                         args = {
                             "id": session_id,
                             "is_gui_process": session['is_gui_process'],
@@ -1768,8 +1763,10 @@ def build_interface(args:dict)->gr.Blocks:
                             "device": device,
                             "tts_engine": tts_engine,
                             "ebook": None,
-                            "ebook_src": ebook_src if isinstance(ebook_src, str) else None,
-                            "ebook_list": ebook_src if isinstance(ebook_src, list) else None,
+                            "ebook_mode": ebook_mode,
+                            "ebook_src": ebook_src if ebook_mode == 'single' else session['ebook_src'],
+                            "ebook_list": ebook_src if ebook_mode == 'directory' else session['ebook_list'],
+                            "ebook_textarea": ebook_textarea if ebook_mode == 'text' else session['ebook_textarea'],
                             "voice": voice,
                             "language": language,
                             "custom_model": custom_model,
@@ -1918,14 +1915,15 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     if session['status'] == status_tags['OVERRIDE']:
                         session['status'] = status_tags['SKIP']
-                        if isinstance(ebook_data, list):
-                            ebook_list = ebook_data
-                            ebook_list.remove(ebook_data[0])
-                            ebook_data = ebook_list
-                            ebook_data = session['ebook_list'] = session['ebook_src'] = None if len(ebook_data) == 0 else ebook_data
-                            return gr.update(value='', visible=False), gr.update(value=ebook_data)
-                        else:                         
-                            ebook_data = session['ebook_list'] = session['ebook_src'] = session['ebook'] = None
+                        if session['ebook_mode'] == 'directory':
+                            if isinstance(ebook_data, list):
+                                ebook_list = ebook_data
+                                ebook_list.remove(ebook_data[0])
+                                ebook_data = ebook_list
+                                ebook_data = session['ebook_list'] = session['ebook_src'] = None if len(ebook_data) == 0 else ebook_data
+                                return gr.update(value='', visible=False), gr.update(value=ebook_data)
+                        else:                       
+                            ebook_data = session['ebook_src'] = session['ebook'] = None
                             return gr.update(value='', visible=False), gr.update(value=ebook_data)
                 return gr.update(value='', visible=False), gr.update()
 
@@ -2175,7 +2173,7 @@ def build_interface(args:dict)->gr.Blocks:
             ################## Events
 
             inputs_start_conversion = [
-                gr_session, gr_device, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
+                gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours

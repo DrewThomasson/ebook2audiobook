@@ -224,6 +224,7 @@ SML tags available:
             sys.exit(1)
         args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
         args['share'] =  args['share'] if args['share'] else False
+        args['ebook_mode'] = 'single'
         args['ebook_list'] = None
 
         print(f"v{prog_version} {args['script_mode']} mode")
@@ -299,6 +300,7 @@ SML tags available:
                 if args.get('output_dir', None) is not None and not os.path.exists(args['output_dir']):
                     error = 'Error: --output_dir path does not exist.'              
                 elif args.get('ebooks_dir', None) is not None:
+                    args['ebook_mode'] = 'directory'
                     args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
                     if not os.path.exists(args['ebooks_dir']):
                         error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."                 
@@ -330,6 +332,7 @@ SML tags available:
                         if conversions_ran == 0:
                             error = 'Error: No supported ebook files found in --ebooks_dir.'
                 elif args.get('ebook', None) is not None:
+                    args['ebook_mode'] = 'single'
                     args['ebook_src'] = os.path.abspath(args['ebook'])
                     if not os.path.exists(args['ebook_src']):
                         error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
@@ -340,6 +343,7 @@ SML tags available:
                         if not passed:
                             error = progress_status
                 elif args.get('text', None) is not None:
+                    args['ebook_mode'] = 'text'
                     args['ebook_textarea'] = args['text'].strip()
                     if not args['ebook_textarea']:
                         error = f"Error: The --text is empty."
