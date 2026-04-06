@@ -1029,9 +1029,7 @@ def build_interface(args:dict)->gr.Blocks:
                         upload_mode = session['ebook_mode']
                         visible_ebook_src = False
                         visible_ebook_textarea = False
-                        enable_convert_btn = False
                         if session.get('ebook_mode') == 'text':
-                            enable_convert_btn = True
                             ebook_textarea = session['ebook_textarea']
                             visible_ebook_textarea = True
                         elif session.get('ebook_mode') == 'directory':
@@ -1070,8 +1068,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=session['output_split_hours']),
                             gr.update(visible=visible_row_split_hours),
                             update_gr_audiobook_list(session_id),
-                            gr.update(visible=visible_group_custom_model),
-                            gr.update(interactive=enable_convert_btn)
+                            gr.update(visible=visible_group_custom_model)
                         )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
@@ -2246,8 +2243,7 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_restore_interface = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model,
-                gr_convert_btn
+                gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model
             ]
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
@@ -2783,6 +2779,10 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_audiobook_list],
                 outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_timer],
                 show_progress_on=[gr_progress]
+            ).then(
+                fn=lambda mode: gr.update(interactive=mode=='text'),
+                inputs=[gr_ebook_mode],
+                outputs=[gr_convert_btn]
             ).then(
                 fn=lambda session: update_gr_glassmask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
                 inputs=[gr_session],
