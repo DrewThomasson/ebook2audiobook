@@ -3077,7 +3077,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     toolbar.style.cssText = "position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;";
                                     const counter = document.createElement("span");
                                     counter.style.cssText = "font-size:0.85em;color:var(--body-text-color);";
-                                    counter.textContent = "0 / " + max_ebook_textarea_length;
+                                    counter.textContent = textarea.value.length + " / " + max_ebook_textarea_length;
                                     toolbar.appendChild(counter);
                                     const btn = document.createElement("button");
                                     btn.textContent = "🗑";
@@ -3087,7 +3087,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         if(!textarea.readOnly){
                                             textarea.value = "";
                                             textarea.dispatchEvent(new Event("input", {bubbles: true}));
-                                            counter.textContent = textarea.value.length + " / " + max_ebook_textarea_length;
+                                            counter.textContent = "0 / " + max_ebook_textarea_length;
                                             counter.style.color = "var(--body-text-color)";
                                         }
                                     });
