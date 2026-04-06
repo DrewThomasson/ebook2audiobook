@@ -3058,35 +3058,35 @@ def build_interface(args:dict)->gr.Blocks:
                                     return false;
                                 };
                             }
-                            if(typeof window.gr_ebook_textarea_counter !== 'function'){
+                            if(typeof window.gr_ebook_textarea_counter !== "function"){
                                 const max_ebook_textarea_length = __max_ebook_textarea_length__;
                                 window.gr_ebook_textarea_counter = function(){
-                                    const container = document.querySelector('#gr_ebook_textarea');
-                                    const textarea = container.querySelector('textarea');
-                                    const gr_convert_btn = document.querySelector('#gr_convert_btn button');
-                                    container.style.position = 'relative';
-                                    const toolbar = document.createElement('div');
-                                    toolbar.style.cssText = 'position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;';
-                                    const counter = document.createElement('span');
-                                    counter.style.cssText = 'font-size:0.85em;color:var(--body-text-color);';
-                                    counter.textContent = '0 / ' + max_ebook_textarea_length;
+                                    const container = document.querySelector("#gr_ebook_textarea");
+                                    const textarea = container.querySelector("textarea");
+                                    const gr_convert_btn = document.querySelector("#gr_convert_btn button");
+                                    container.style.position = "relative";
+                                    const toolbar = document.createElement("div");
+                                    toolbar.style.cssText = "position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;";
+                                    const counter = document.createElement("span");
+                                    counter.style.cssText = "font-size:0.85em;color:var(--body-text-color);";
+                                    counter.textContent = "0 / " + max_ebook_textarea_length;
                                     toolbar.appendChild(counter);
-                                    const btn = document.createElement('button');
-                                    btn.textContent = '🗑';
-                                    btn.id = btn.name = 'clear_ebook_textarea';
-                                    btn.className = 'micro-btn';
-                                    btn.addEventListener('click', ()=>{
+                                    const btn = document.createElement("button");
+                                    btn.textContent = "🗑";
+                                    btn.id = btn.name = "clear_ebook_textarea";
+                                    btn.className = "micro-btn";
+                                    btn.addEventListener("click", ()=>{
                                         if(!textarea.readOnly){
-                                            textarea.value = '';
-                                            textarea.dispatchEvent(new Event('input', {bubbles: true}));
-                                            counter.textContent = '0 / ' + max_ebook_textarea_length;
-                                            counter.style.color = 'var(--body-text-color)';
+                                            textarea.value = "";
+                                            textarea.dispatchEvent(new Event("input", {bubbles: true}));
+                                            counter.textContent = textarea.value.length + " / " + max_ebook_textarea_length;
+                                            counter.style.color = "var(--body-text-color)";
                                         }
                                     });
-                                    textarea.addEventListener('input', ()=>{
+                                    textarea.addEventListener("input", ()=>{
                                         const len = textarea.value.length;
-                                        counter.textContent = len + ' / ' + max_ebook_textarea_length;
-                                        counter.style.color = len >= max_ebook_textarea_length ? 'red' : 'var(--body-text-color)';
+                                        counter.textContent = len + " / " + max_ebook_textarea_length;
+                                        counter.style.color = len >= max_ebook_textarea_length ? "red" : "var(--body-text-color)";
                                     });
                                     toolbar.appendChild(btn);
                                     container.appendChild(toolbar);
@@ -3232,9 +3232,9 @@ def build_interface(args:dict)->gr.Blocks:
                                     try{
                                         return crypto.randomUUID();
                                     }catch(e){
-                                        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c =>{
+                                        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c =>{
                                             const r = Math.random() * 16 | 0;
-                                            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                                            const v = c === "x" ? r : (r & 0x3 | 0x8);
                                             return v.toString(16);
                                         });
                                     }
