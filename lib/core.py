@@ -200,6 +200,7 @@ class SessionContext:
             "ebook": None,
             "ebook_src": None,
             "ebook_list": None,
+            "ebook_textarea": None,
             "process_dir": None,
             "chapters_dir": None,
             "sentences_dir": None,
@@ -2650,12 +2651,6 @@ def convert_ebook(args:dict)->tuple:
             error = 'Session expired or does not exist!'
             return error, False
         if args['language'] is not None:
-            if not os.path.splitext(args['ebook_src'])[1]:
-                error = f"{args['ebook_src']} needs a format extension."
-                return error, False
-            if not os.path.exists(args['ebook_src']):
-                error = 'File does not exist or Directory empty.'
-                return error, False
             try:
                 if len(args['language']) in (2, 3):
                     lang_dict = Lang(args['language'])
@@ -2669,11 +2664,30 @@ def convert_ebook(args:dict)->tuple:
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 return error, False
+            if args.get('ebook_mode') == 'text':
+                if not args['ebook_textarea']:
+                    error = 'Ebook textarea is empty.'
+                    return error, False
+                text = args['ebook_textarea']
+                filename = get_sanitized(text[:24]) + '..._.txt'
+                filepath = os.path.join(tempfile.gettempdir(), filename)
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(text)
+                session['ebook_textarea'] = args['ebook_textarea']
+                session['ebook_src'] = filepath
+            else:
+                if args.get('ebook_src'):
+                    if not os.path.splitext(args['ebook_src'])[1]:
+                        error = f"{args['ebook_src']} needs a format extension."
+                        return error, False
+                    if not os.path.exists(args['ebook_src']):
+                        error = 'File does not exist or Directory empty.'
+                        return error, False
+                    session['ebook_src'] = str(args['ebook_src'])
+            session['ebook_list'] = args.get('ebook_list', None)
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
-            session['ebook_src'] = str(args['ebook_src'])
-            session['ebook_list'] = list(args['ebook_list']) if isinstance(args['ebook_list'], list) else None
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
@@ -2992,16 +3006,17 @@ def finalize_audiobook(session_id:str)->tuple:
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
-        if isinstance(session['ebook_list'], list):
-            if session['ebook_src'] in session['ebook_list']:
-                ebook_list = session['ebook_list']
-                ebook_list.remove(session['ebook_src'])
-                session['ebook_list'] = ebook_list
-            count_ebook = len(session['ebook_list'])
+        if session['ebook_mode'] == 'directory':
+            if isinstance(session['ebook_list'], list):
+                if session['ebook_src'] in session['ebook_list']:
+                    ebook_list = session['ebook_list']
+                    ebook_list.remove(session['ebook_src'])
+                    session['ebook_list'] = ebook_list
+                count_ebook = len(session['ebook_list'])
         if count_ebook > 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
-            session['ebook_list'] = None
+            session['ebook_src'] = session['ebook_list'] = None
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
             reset_ebook_session(session_id, force=True, filter_keys=False)
@@ -3052,6 +3067,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "status": status_tags['READY'],
         "ebook": None,
         "ebook_src": None,
+        "ebook_textarea": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,

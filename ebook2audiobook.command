@@ -430,13 +430,15 @@ function check_python {
     local installed_version
     installed_version=$(python3 --version 2>&1 | awk '{print $2}')
     local IFS='.'
-    echo "$installed_version"
     read -r ins_major ins_minor ins_patch <<< "$installed_version"
     read -r req_major req_minor req_patch <<< "$MIN_PYTHON_VERSION"
-    req_patch=${req_patch:-0}
+    ins_patch="${ins_patch%%[!0-9]*}"
+    ins_patch="${ins_patch:-0}"
+    req_patch="${req_patch%%[!0-9]*}"
+    req_patch="${req_patch:-0}"
     if [ "$ins_major" -lt "$req_major" ] ||
        [ "$ins_major" -eq "$req_major" -a "$ins_minor" -lt "$req_minor" ] ||
-       [ "$ins_major" -eq "$req_major" -a "$ins_minor" -eq "$req_minor" -a "${ins_patch:-0}" -lt "$req_patch" ]; then
+       [ "$ins_major" -eq "$req_major" -a "$ins_minor" -eq "$req_minor" -a "$ins_patch" -lt "$req_patch" ]; then
         echo "Python $installed_version found but $MIN_PYTHON_VERSION or higher is required."
         return 1
     fi
