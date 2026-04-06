@@ -1888,7 +1888,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)              
                 return gr.update()
 
-            def check_override_audiobook(session_id:str, ebook_mode:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int)->tuple:
+            def check_override_ebook(session_id:str, ebook_mode:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 source = None
                 if session and session.get('id', False):
@@ -1909,9 +1909,11 @@ def build_interface(args:dict)->gr.Blocks:
                                         if len(ebook_data) > 0:
                                             source = ebook_data[0]
                                 elif ebook_mode == 'single':
-                                    source = ebook_data
+                                    if ebook_data:
+                                        source = ebook_data
                                 elif ebook_mode == 'text':
-                                    source = ebook_textarea
+                                    if ebook_textarea and len(ebook_textarea', 0)) > 10:
+                                        source = ebook_textarea
                             if source is not None:
                                 if ebook_mode == 'text':
                                     return gr.update(), (event + 1)
@@ -2606,7 +2608,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=outputs_disable_components
             ).then(
-                fn=check_override_audiobook,
+                fn=check_override_ebook,
                 inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
@@ -2617,7 +2619,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal, gr_ebook_src, gr_ebook_textarea],
                 show_progress_on=[gr_progress]
             ).then(
-                fn=check_override_audiobook,
+                fn=check_override_ebook,
                 inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
@@ -2650,7 +2652,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_refresh_interface,
                 show_progress_on=[gr_progress]
             ).then(
-                fn=check_override_audiobook,
+                fn=check_override_ebook,
                 inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
@@ -2707,7 +2709,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_refresh_interface,
                 show_progress_on=[gr_progress]
             ).then(
-                fn=check_override_audiobook,
+                fn=check_override_ebook,
                 inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
@@ -3090,13 +3092,10 @@ def build_interface(args:dict)->gr.Blocks:
                                     btn.id = btn.name = "clear_ebook_textarea";
                                     btn.className = "micro-btn";
                                     btn.addEventListener("click", ()=>{
-                                        const storage = JSON.parse(localStorage.getItem("data") || "{}");
-                                        if(storage.status == "ready"){
-                                            textarea.value = "";
-                                            textarea.dispatchEvent(new Event("input", {bubbles: true}));
-                                            counter.textContent = "0 / " + max_ebook_textarea_length;
-                                            counter.style.color = "var(--body-text-color)";
-                                        }
+                                        textarea.value = "";
+                                        textarea.dispatchEvent(new Event("input", {bubbles: true}));
+                                        counter.textContent = "0 / " + max_ebook_textarea_length;
+                                        counter.style.color = "var(--body-text-color)";
                                     });
                                     textarea.addEventListener("input", ()=>{
                                         const len = textarea.value.length;
@@ -3107,7 +3106,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     container.appendChild(toolbar);
                                 };
                             }
-
                             if(typeof(window.tab_progress) !== "function"){
                                 window.tab_progress = ()=>{
                                     try{
