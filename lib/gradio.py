@@ -2249,8 +2249,8 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_ebook_mode],
                 outputs=[],
                 js='''
-                    (mode) => {
-                        if(mode === 'text') window.gr_ebook_textarea_counter();
+                    (mode)=>{
+                        if(mode == "text") window.gr_ebook_textarea_counter();
                     }
                 '''
             )
@@ -3077,6 +3077,11 @@ def build_interface(args:dict)->gr.Blocks:
                                             counter.textContent = '0 / ' + max_ebook_textarea_length;
                                             counter.style.color = 'var(--body-text-color)';
                                         }
+                                    });
+                                    textarea.addEventListener('input', ()=>{
+                                        const len = textarea.value.length;
+                                        counter.textContent = len + ' / ' + max_ebook_textarea_length;
+                                        counter.style.color = len >= max_ebook_textarea_length ? 'red' : 'var(--body-text-color)';
                                     });
                                     toolbar.appendChild(btn);
                                     container.appendChild(toolbar);
