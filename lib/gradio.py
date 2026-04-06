@@ -1850,7 +1850,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     return gr.update(value=progress_status)
                                 else:
                                     error = progress_status
-                        if error:
+                        if error is not None:
                             session['status'] = status_tags['SKIP']
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
