@@ -1790,7 +1790,7 @@ def build_interface(args:dict)->gr.Blocks:
                             "bark_text_temp": float(bark_text_temp),
                             "bark_waveform_temp": float(bark_waveform_temp),
                             "output_split":bool(output_split),
-                            "output_split_hours": output_split_hours,
+                            "output_split_hours": output_split_hours
                         }
                         if args['ebook_mode'] == 'text' and (not args.get('ebook_textarea') or len(args.get('ebook_textarea', 0)) < 10):
                             error = 'Error: textarea is empty or not enough characters.'
