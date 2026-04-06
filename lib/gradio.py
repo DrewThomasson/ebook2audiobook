@@ -3053,6 +3053,36 @@ def build_interface(args:dict)->gr.Blocks:
                                     return false;
                                 };
                             }
+                            if(typeof window.gr_ebook_textarea_counter !== 'function'){
+                                const max_ebook_textarea_length = __max_ebook_textarea_length__;
+                                window.gr_ebook_textarea_counter = function(){
+                                    const container = document.querySelector('#gr_ebook_textarea');
+                                    const textarea = container.querySelector('textarea');
+                                    const gr_convert_btn = document.querySelector('#gr_convert_btn button');
+                                    container.style.position = 'relative';
+                                    const toolbar = document.createElement('div');
+                                    toolbar.style.cssText = 'position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;';
+                                    const counter = document.createElement('span');
+                                    counter.style.cssText = 'font-size:0.85em;color:var(--body-text-color);';
+                                    counter.textContent = '0 / ' + max_ebook_textarea_length;
+                                    toolbar.appendChild(counter);
+                                    const btn = document.createElement('button');
+                                    btn.textContent = '🗑';
+                                    btn.id = btn.name = 'clear_ebook_textarea';
+                                    btn.className = 'micro-btn';
+                                    btn.addEventListener('click', ()=>{
+                                        if(!textarea.readOnly){
+                                            textarea.value = '';
+                                            textarea.dispatchEvent(new Event('input', {bubbles: true}));
+                                            counter.textContent = '0 / ' + max_ebook_textarea_length;
+                                            counter.style.color = 'var(--body-text-color)';
+                                        }
+                                    });
+                                    toolbar.appendChild(btn);
+                                    container.appendChild(toolbar);
+                                };
+                            }
+
                             if(typeof(window.tab_progress) !== "function"){
                                 window.tab_progress = ()=>{
                                     try{
@@ -3108,7 +3138,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     }
                                 };
                             }
-                            if(typeof(parseVTT) !== "function"){
+                            if(typeof(window.parseVTT) !== "function"){
                                  window.parseVTT = (vtt)=>{
                                     function pushCue(){
                                         if(start !== null && end !== null && textBuffer.length){
@@ -3198,35 +3228,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             return v.toString(16);
                                         });
                                     }
-                                }
-                            }
-                            if(typeof(gr_ebook_textarea_counter) !== "function"){
-                                const max_ebook_textarea_length = __max_ebook_textarea_length__;
-                                function gr_ebook_textarea_counter(){
-                                    const container = document.querySelector("#gr_ebook_textarea");
-                                    const textarea = container.querySelector("textarea");
-                                    const gr_convert_btn = document.querySelector("#gr_convert_btn button");
-                                    container.style.position = "relative";
-                                    const toolbar = document.createElement("div");
-                                    toolbar.style.cssText = "position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;";
-                                    const counter = document.createElement("span");
-                                    counter.style.cssText = "font-size:0.85em;color:var(--body-text-color);";
-                                    counter.textContent = "0 / " + max_ebook_textarea_length;
-                                    toolbar.appendChild(counter);
-                                    const btn = document.createElement("button");
-                                    btn.textContent = "🗑";
-                                    btn.id = btn.name = "clear_ebook_textarea";
-                                    btn.className = "micro-btn";
-                                    btn.addEventListener("click", ()=>{
-                                        if(!textarea.readOnly){
-                                            textarea.value = "";
-                                            textarea.dispatchEvent(new Event("input", {bubbles: true}));
-                                            counter.textContent = "0 / " + max_ebook_textarea_length;
-                                            counter.style.color = "var(--body-text-color)";
-                                        }
-                                    });
-                                    toolbar.appendChild(btn);
-                                    container.appendChild(toolbar);
                                 }
                             }
                             //////////////////////
