@@ -1797,18 +1797,22 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split":bool(output_split),
                             "output_split_hours": output_split_hours
                         }
-                        if args['ebook_mode'] == 'text':
-                            args['ebook_textarea'] = args.get('ebook_textarea','').strip()
-                            if not args.get('ebook_textarea'):
-                                error = 'Textarea is empty.'
-                            elif len(args.get('ebook_textarea', 0)) < 10:
-                                error = 'Textarea must be > 10 chars.'
+                        if args['ebook_mode'] == 'directory':
+                            if isinstance(args['ebook_list'], list):
+                                if not args['ebook_list']:
+                                    error = 'A directory with ebook files is required.'
                         elif args['ebook_mode'] == 'single':
-                            if not args('ebook_src'):
+                            if not args['ebook_src']:
                                 error = 'An ebook file is required.'
-                        elif args['ebook_mode'] == 'directory':
-                            if not args.get('ebook_list'):
-                                error = 'A directory with ebook files is required.'                          
+                        elif args['ebook_mode'] == 'text':
+                            if not args['ebook_textarea']:
+                                error = 'Textarea is empty.'
+                            elif len(args['ebook_textarea']) < 10:
+                                error = 'Textarea must be > 10 chars.'
+                            else:
+                                args['ebook_textarea'] = args['ebook_textarea'].strip()
+                                if len(args['ebook_textarea']) < 10:
+                                    error = 'Textarea must be > 10 chars.'                     
                         if args['xtts_num_beams'] < args['xtts_length_penalty']:
                             error = 'num beams must be greater or equal than length penalty.'               
                         if error is None:
