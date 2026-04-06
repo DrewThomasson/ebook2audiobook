@@ -155,9 +155,9 @@ if DEVICE_SYSTEM == systems['WINDOWS']:
 # Global settings
 # ---------------------------------------------------------------------
 
-max_upload_size = '6GB'
+max_upload_size = '6GB' # MB or GB
 tmp_expire = 7 # days
-max_ebook_textarea_length = 1000 # chars
+max_ebook_textarea_length = 1024 # chars
 
 # ---------------------------------------------------------------------
 # Interface configuration
