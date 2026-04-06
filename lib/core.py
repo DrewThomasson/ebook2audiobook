@@ -3069,7 +3069,6 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "status": status_tags['READY'],
         "ebook": None,
         "ebook_src": None,
-        "ebook_textarea": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
