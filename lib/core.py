@@ -3006,16 +3006,17 @@ def finalize_audiobook(session_id:str)->tuple:
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
-        if isinstance(session['ebook_list'], list):
-            if session['ebook_src'] in session['ebook_list']:
-                ebook_list = session['ebook_list']
-                ebook_list.remove(session['ebook_src'])
-                session['ebook_list'] = ebook_list
-            count_ebook = len(session['ebook_list'])
+        if session['ebook_mode' == 'directory':
+            if isinstance(session['ebook_list'], list):
+                if session['ebook_src'] in session['ebook_list']:
+                    ebook_list = session['ebook_list']
+                    ebook_list.remove(session['ebook_src'])
+                    session['ebook_list'] = ebook_list
+                count_ebook = len(session['ebook_list'])
         if count_ebook > 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
-            session['ebook_list'] = None
+            session['ebook_src'] = session['ebook_list'] = None
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
             reset_ebook_session(session_id, force=True, filter_keys=False)
