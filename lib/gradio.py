@@ -911,11 +911,15 @@ def build_interface(args:dict)->gr.Blocks:
                         session['cancellation_requested'] = False
                         outputs = tuple(gr.update(interactive=True) for _ in range(18))
                         enabled_convert_btn = False
-                        if session['ebook_mode'] == ebook_modes['TEXT']:
-                            enabled_convert_btn = True 
-                        else:
-                            if session['ebook_src'] is not None or session['ebook_list'] is not None:
+                        if session['ebook_mode'] == ebook_modes['DIRECTORY']:
+                            if session.get('ebook_list'):
+                                if isinstance(session['ebook_list'], list):
                                 enabled_convert_btn = True
+                        elif session['ebook_mode'] == ebook_modes['SINGLE']:
+                            if session.get('ebook_src'):
+                                enabled_convert_btn = True
+                        elif session['ebook_mode'] == ebook_modes['TEXT']:
+                            enabled_convert_btn = True 
                         return outputs + (gr.update(value=''), gr.update(interactive=enabled_convert_btn))
                 outputs = tuple(gr.update() for _ in range(20))
                 return outputs
