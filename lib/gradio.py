@@ -2771,14 +2771,14 @@ def build_interface(args:dict)->gr.Blocks:
                                 data.playback_time = Number(window.session_storage.playback_time);
                                 data.playback_volume = parseFloat(window.session_storage.playback_volume);
                                 localStorage.setItem("data", JSON.stringify(data));
-                                const b = document.querySelector("#clear_ebook_textarea");
-                                if(b){
-                                    if(data.ebook_mode == "text"){
-                                        if(data.status == "ready"){
-                                            b.style.display = "block";
-                                        }else{
-                                            b.style.display = "none";
-                                        }
+                            }
+                            const b = document.querySelector("#clear_ebook_textarea");
+                            if(b){
+                                if(data.ebook_mode == "text"){
+                                    if(data.status == "ready"){
+                                        b.style.display = "block";
+                                    }else{
+                                        b.style.display = "none";
                                     }
                                 }
                             }
