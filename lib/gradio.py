@@ -30,8 +30,16 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
-        js_hide_elements = '()=>document.querySelector("#clear_ebook_textarea")?.style.setProperty("display", "none")'
-        js_show_elements = '()=>document.querySelector("#clear_ebook_textarea")?.style.removeProperty("display")'
+        js_hide_elements = '''
+            ()=>{
+                document.querySelector("#clear_ebook_textarea")?.style.setProperty("display", "none");
+            }
+        '''
+        js_show_elements = '''
+            ()=>{
+                window.gr_ebook_textarea_counter();
+            }
+        '''
         theme = gr.themes.Origin(
             primary_hue='green',
             secondary_hue='amber',
