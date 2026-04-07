@@ -32,7 +32,7 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
         js_hide_elements = '''
             ()=>{
-                document.querySelector("#clear_ebook_textarea")?.style.setProperty("display", "none");
+                document.querySelector("#clear_ebook_textarea")?.remove();
             }
         '''
         js_show_elements = '''
@@ -2671,11 +2671,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_gr_override_cancel_btn,
                 inputs=[gr_session, gr_ebook_src, gr_ebook_textarea],
                 outputs=[gr_modal, gr_ebook_src, gr_ebook_textarea],
-                show_progress_on=[gr_progress]
-            ).then(
-                fn=check_override_ebook,
-                inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
-                outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=enable_components,
