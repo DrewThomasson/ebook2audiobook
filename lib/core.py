@@ -3022,10 +3022,7 @@ def finalize_audiobook(session_id:str)->tuple:
             session['ebook_src'] = session['ebook_list'] = None
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
-            if session['ebook_mode'] == 'text':
-                session['status'] = status_tags['END']
-            else:
-                session['status'] = status_tags['READY']
+            session['status'] = status_tags['END']
             reset_ebook_session(session_id, force=True, filter_keys=False)
         return result(filename, True)
     except Exception as e:
