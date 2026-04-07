@@ -1970,16 +1970,12 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     if session['status'] == status_tags['OVERRIDE']:
                         session['status'] = status_tags['SKIP']
-                        if session['ebook_mode'] == 'directory':
-                            if isinstance(ebook_data, list):
-                                ebook_list = ebook_data
-                                ebook_list.remove(ebook_data[0])
-                                ebook_data = ebook_list
-                                ebook_data = session['ebook_list'] = session['ebook_src'] = None if len(ebook_data) == 0 else ebook_data
-                                return gr.update(value='', visible=False), gr.update(value=ebook_data)
-                        else:                       
-                            ebook_data = session['ebook_src'] = session['ebook'] = None
-                            return gr.update(value='', visible=False), gr.update(value=ebook_data)
+                        if session['ebook_mode'] == 'text':
+                            blocks_current = session['blocks_current']
+                            ebook_textarea = ' '.join(block['text'] for block in blocks_current)
+                            return gr.update(value='', visible=False), gr.update(visible=True, value=ebook_data)
+                        else:
+                            return gr.update(value='', visible=True), gr.update(visible=False)
                 return gr.update(value='', visible=False), gr.update()
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
