@@ -1216,16 +1216,21 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['ebook_mode'] = val
+                        enabled_convert_btn = False
                         if val == ebook_modes['SINGLE']:
-                            return gr.update(visible=True, label=ebook_mode_labels[ebook_modes['SINGLE']], file_count=ebook_modes['SINGLE'], value=session['ebook_src']), gr.update(visible=False)
+                            if session.get('ebook_src'):
+                                enabled_convert_btn = True
+                            return gr.update(visible=True, label=ebook_mode_labels[ebook_modes['SINGLE']], file_count=ebook_modes['SINGLE'], value=session['ebook_src']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn)
                         elif val == ebook_modes['DIRECTORY']:
-                            return gr.update(visible=True, label=ebook_mode_labels[ebook_modes['DIRECTORY']], file_count=ebook_modes['DIRECTORY'], value=session['ebook_list']), gr.update(visible=False)
+                            if session.get('ebook_list'):
+                                enabled_convert_btn = True
+                            return gr.update(visible=True, label=ebook_mode_labels[ebook_modes['DIRECTORY']], file_count=ebook_modes['DIRECTORY'], value=session['ebook_list']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn)
                         elif val == ebook_modes['TEXT']:
-                            return gr.update(visible=False), gr.update(visible=True, value=session['ebook_textarea'])
+                            return gr.update(visible=False), gr.update(visible=True, value=session['ebook_textarea']), gr.update(interactive=True)
                 except Exception as e:
                     error = f'change_gr_ebook_mode(): {e}'
                     exception_alert(session_id, error)
-                return gr.update()
+                return gr.update(), gr.update()
 
             def change_gr_voice_file(session_id:str, f:str|None)->tuple:
                 state = {}
@@ -2308,12 +2313,12 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=change_gr_ebook_mode,
                 inputs=[gr_session, gr_ebook_mode],
                 outputs=[gr_ebook_src, gr_ebook_textarea],
-                js=js_show_elements,
-                show_progress_on=[gr_progress]
+                show_progress_on=[gr_progress, gr_convert_btn]
             ).then(
                 fn=lambda f: gr.update(interactive=True if f == 'text' else False),
                 inputs=[gr_ebook_mode],
-                outputs=[gr_convert_btn],
+                outputs=None
+                js=js_show_elements,
             )
             gr_blocks_preview.select(
                 fn=lambda session_id, val: change_param('blocks_preview', session_id, bool(val)),
