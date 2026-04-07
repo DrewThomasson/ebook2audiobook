@@ -1973,7 +1973,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['ebook_mode'] == 'text':
                             blocks_current = session['blocks_current']
                             ebook_textarea = ' '.join(block['text'] for block in blocks_current)
-                            return gr.update(value='', visible=False), gr.update(visible=True, value=ebook_data)
+                            return gr.update(value='', visible=False), gr.update(visible=True, value=ebook_textarea)
                         else:
                             return gr.update(value='', visible=True), gr.update(visible=False)
                 return gr.update(value='', visible=False), gr.update()
