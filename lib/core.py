@@ -71,6 +71,12 @@ status_tags = {
     "DISCONNECTED": "disconnected"
 }
 
+ebook_modes = {
+    "SINGLE": "single",
+    "DIRECTORY": "directory",
+    "TEXT": "text"
+}
+
 save_session_keys_except = [
     'blocks_orig',
     'blocks_saved',
@@ -157,7 +163,7 @@ class SessionContext:
             "status": None,
             "ticker": 0,
             "cancellation_requested": False,
-            "ebook_mode": "single",
+            "ebook_mode": ebook_modes['SINGLE'],
             "blocks_preview": False,
             "device": default_device,
             "tts_engine": default_tts_engine,
@@ -200,6 +206,7 @@ class SessionContext:
             ####### Ebook conversion
             "ebook": None,
             "ebook_src": None,
+            "ebook_src_notextarea": None,
             "ebook_list": None,
             "ebook_textarea": None,
             "process_dir": None,
@@ -2665,10 +2672,13 @@ def convert_ebook(args:dict)->tuple:
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 return error, False
-            if args.get('ebook_mode') == 'text':
+            if args.get('ebook_mode') == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
                     error = 'Ebook textarea is empty.'
                     return error, False
+                # since ebook_textarea override ebook_src during the conversion
+                # so it needs to save the current real ebook_src to get it back after the textarea conversion.
+                session['ebook_src_notextarea'] = args['ebook_src']
                 text = args['ebook_textarea']
                 text_name = f'{get_sanitized(text[:64])}_{session_id}'
                 text_name_hash = hashlib.md5(text_name.encode()).hexdigest()
@@ -3009,7 +3019,7 @@ def finalize_audiobook(session_id:str)->tuple:
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
-        if session['ebook_mode'] == 'directory':
+        if session['ebook_mode'] == ebook_modes['DIRECTORY']:
             if isinstance(session['ebook_list'], list):
                 if session['ebook_src'] in session['ebook_list']:
                     ebook_list = session['ebook_list']
@@ -3019,7 +3029,8 @@ def finalize_audiobook(session_id:str)->tuple:
         if count_ebook > 0:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
-            session['ebook_src'] = session['ebook_list'] = None
+            session['ebook_list'] = None
+            session['ebook_src'] = session['ebook_src_current'] if session['ebook_mode'] == ebook_modes['TEXT'] else None
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
             session['status'] = status_tags['END']

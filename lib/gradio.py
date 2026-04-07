@@ -24,7 +24,7 @@ def build_interface(args:dict)->gr.Blocks:
         fine_tuned_options = []
         audiobook_options = []
         options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
-        ebook_mode_labels = {"single": "Import a File", "directory": "Select a Directory", "text": "Text Prompt"}
+        ebook_mode_labels = {ebook_modes['SINGLE']: "Import a File", ebook_modes['DIRECTORY']: "Select a Directory", ebook_modes['TEXT']: "Text Prompt"}
         page_size = 15
         visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
@@ -609,10 +609,10 @@ def build_interface(args:dict)->gr.Blocks:
                             with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_ebook_src', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
-                                    gr_ebook_src = gr.File(label=ebook_mode_labels['single'], elem_id='gr_ebook_src', visible=True, file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
-                                    gr_ebook_textarea = gr.Textbox(label=ebook_mode_labels['text'], elem_id='gr_ebook_textarea', visible=False, show_label=True, lines=8, max_length=max_ebook_textarea_length)
+                                    gr_ebook_src = gr.File(label=ebook_mode_labels[ebook_modes['SINGLE']], elem_id='gr_ebook_src', visible=True, file_types=ebook_formats, file_count=ebook_modes['SINGLE'], allow_reordering=True, height=100)
+                                    gr_ebook_textarea = gr.Textbox(label=ebook_mode_labels[ebook_modes['TEXT']], elem_id='gr_ebook_textarea', visible=False, show_label=True, lines=8, max_length=max_ebook_textarea_length)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
-                                        gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory'), ('Text','text')], interactive=True, scale=2)
+                                        gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File',ebook_modes['SINGLE']), ('Directory',ebook_modes['DIRECTORY']), ('Text',ebook_modes['TEXT'])], interactive=True, scale=2)
                                         gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
@@ -907,7 +907,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session['cancellation_requested'] = False
                         outputs = tuple(gr.update(interactive=True) for _ in range(18))
                         enabled_convert_btn = False
-                        if session['ebook_mode'] == 'text':
+                        if session['ebook_mode'] == ebook_modes['TEXT']:
                             enabled_convert_btn = True 
                         else:
                             if session['ebook_src'] is not None or session['ebook_list'] is not None:
@@ -1033,11 +1033,11 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_ebook_src = False
                         visible_ebook_textarea = False
                         enabled_convert_btn = False
-                        if session.get('ebook_mode') == 'text':
+                        if session.get('ebook_mode') == ebook_modes['TEXT']:
                             ebook_textarea = session['ebook_textarea']
                             visible_ebook_textarea = True
                             enabled_convert_btn = True
-                        elif session.get('ebook_mode') == 'directory':
+                        elif session.get('ebook_mode') == ebook_modes['DIRECTORY']:
                             if session.get('ebook_list', None) is not None:
                                 if len(session['ebook_list']) > 0:
                                     ebook_data = [f for f in session['ebook_list'] if is_valid_gradio_cache(f)]
@@ -1046,7 +1046,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     ebook_data = None
                                 visible_ebook_src = True
-                        elif session.get('ebook_mode') == 'single':
+                        elif session.get('ebook_mode') == ebook_modes['SINGLE']:
                             if is_valid_gradio_cache(session['ebook_src']):
                                 ebook_data = session['ebook_src']
                             if ebook_data:
@@ -1108,16 +1108,16 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
-                        if session['ebook_mode'] == 'directory':
+                        if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                             visible_ebook_src = True
                             ebook_data = session['ebook_list']
-                        elif session['ebook_mode'] == 'single':
+                        elif session['ebook_mode'] == ebook_modes['SINGLE']:
                             visible_ebook_src = True
                             ebook_data = session['ebook_src']
-                        elif session['ebook_mode'] == 'text':
+                        elif session['ebook_mode'] == ebook_modes['TEXT']:
                             visible_ebook_textarea = True
                             ebook_textarea = session['ebook_textarea']
-                        convert_btn_enabled = True if session['ebook_mode'] == 'text' or ebook_data is not None else False
+                        convert_btn_enabled = True if session['ebook_mode'] == ebook_modes['TEXT'] or ebook_data is not None else False
                         return (
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
@@ -1185,9 +1185,9 @@ def build_interface(args:dict)->gr.Blocks:
                                 msg = 'Cancellation requested, please wait…'
                                 return gr.update(value=show_gr_modal('wait', msg), visible=True)
                         session['cancellation_requested'] = False
-                        if ebook_mode == 'single':
+                        if ebook_mode == ebook_modes['SINGLE']:
                             session['ebook_src'] = data
-                        elif ebook_mode == 'directory':
+                        elif ebook_mode == ebook_modes['DIRECTORY']:
                             session['ebook_list'] = data
                 except Exception as e:
                     error = f'change_gr_ebook_src(): {e}'
@@ -1205,11 +1205,11 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['ebook_mode'] = val
-                        if val == 'single':
-                            return gr.update(visible=True, label=ebook_mode_labels['single'], file_count='single', value=session['ebook_src']), gr.update(visible=False)
-                        elif val == 'directory':
-                            return gr.update(visible=True, label=ebook_mode_labels['directory'], file_count='directory', value=session['ebook_list']), gr.update(visible=False)
-                        elif val == 'text':
+                        if val == ebook_modes['SINGLE']:
+                            return gr.update(visible=True, label=ebook_mode_labels[ebook_modes['SINGLE']], file_count=ebook_modes['SINGLE'], value=session['ebook_src']), gr.update(visible=False)
+                        elif val == ebook_modes['DIRECTORY']:
+                            return gr.update(visible=True, label=ebook_mode_labels[ebook_modes['DIRECTORY']], file_count=ebook_modes['DIRECTORY'], value=session['ebook_list']), gr.update(visible=False)
+                        elif val == ebook_modes['TEXT']:
                             return gr.update(visible=False), gr.update(visible=True, value=session['ebook_textarea'])
                 except Exception as e:
                     error = f'change_gr_ebook_mode(): {e}'
@@ -1770,9 +1770,6 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        # since ebook_textarea override ebook_src during the conversion
-                        # so it needs to save the current real ebook_src to get it back after the textarea conversion.
-                        ebook_src_current = ebook_src
                         args = {
                             "id": session_id,
                             "is_gui_process": session['is_gui_process'],
@@ -1782,9 +1779,9 @@ def build_interface(args:dict)->gr.Blocks:
                             "tts_engine": tts_engine,
                             "ebook": None,
                             "ebook_mode": ebook_mode,
-                            "ebook_src": ebook_src if ebook_mode == 'single' else session['ebook_src'],
-                            "ebook_list": ebook_src if ebook_mode == 'directory' else session['ebook_list'],
-                            "ebook_textarea": ebook_textarea if ebook_mode == 'text' else session['ebook_textarea'],
+                            "ebook_src": ebook_src if ebook_mode == ebook_modes['SINGLE'] else session['ebook_src'],
+                            "ebook_list": ebook_src if ebook_mode == ebook_modes['DIRECTORY'] else session['ebook_list'],
+                            "ebook_textarea": ebook_textarea if ebook_mode == ebook_modes['TEXT'] else session['ebook_textarea'],
                             "voice": voice,
                             "language": language,
                             "custom_model": custom_model,
@@ -1804,14 +1801,14 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split":bool(output_split),
                             "output_split_hours": output_split_hours
                         }
-                        if args['ebook_mode'] == 'directory':
+                        if args['ebook_mode'] == ebook_modes['DIRECTORY']:
                             if isinstance(args['ebook_list'], list):
                                 if not args['ebook_list']:
                                     error = 'A directory with ebook files is required.'
-                        elif args['ebook_mode'] == 'single':
+                        elif args['ebook_mode'] == ebook_modes['SINGLE']:
                             if not args['ebook_src']:
                                 error = 'An ebook file is required.'
-                        elif args['ebook_mode'] == 'text':
+                        elif args['ebook_mode'] == ebook_modes['TEXT']:
                             if not args['ebook_textarea']:
                                 error = 'Textarea is empty.'
                             elif len(args['ebook_textarea']) < 10:
@@ -1824,7 +1821,7 @@ def build_interface(args:dict)->gr.Blocks:
                             error = 'num beams must be greater or equal than length penalty.'               
                         if error is None:
                             session['ticker'] = len(audiobook_options)
-                            if args['ebook_mode'] == 'directory':
+                            if args['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if args['ebook_list']:
                                     ebook_list = copy.deepcopy(args['ebook_list'])
                                     for i, file in enumerate(ebook_list):
@@ -1846,17 +1843,16 @@ def build_interface(args:dict)->gr.Blocks:
                                             args['ebook_list'].remove (file)
                                             msg = f'{Path(file).name} has not a supported format! skipping'
                                             show_alert(session_id, {"type": "warning", "msg": msg})
-                            elif args['ebook_mode'] == 'single':
+                            elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                 print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
                                     return gr.update(value=progress_status)
                                 else:
                                     error = progress_status
-                            elif args['ebook_mode'] == 'text':
+                            elif args['ebook_mode'] == ebook_modes['TEXT']:
                                 print('Processing eBook text:')
                                 progress_status, passed = convert_ebook(args)
-                                session['ebook_src'] = ebook_src_current
                                 if passed:
                                     return gr.update(value=progress_status)
                                 else:
@@ -1916,25 +1912,25 @@ def build_interface(args:dict)->gr.Blocks:
                             if session['status'] in [status_tags['EDIT']]:
                                 return gr.update(), event
                             elif session['status'] in [status_tags['OVERRIDE'], status_tags['CONVERTING']]:
-                                if ebook_mode == 'directory':
+                                if ebook_mode == ebook_modes['DIRECTORY']:
                                     if isinstance(session['ebook_list'], list):
                                         if len(session['ebook_list']) > 0:
                                             source = session['ebook_list'][0]
-                                elif ebook_mode == 'single':
+                                elif ebook_mode == ebook_modes['SINGLE']:
                                     source = session['ebook_src']
                             else:
-                                if ebook_mode == 'directory':
+                                if ebook_mode == ebook_modes['DIRECTORY']:
                                     if isinstance(ebook_data, list):
                                         if not ebook_data:
                                             error = 'A directory with ebook files is required.'
                                         else:
                                             source = ebook_data[0]
-                                elif ebook_mode == 'single':
+                                elif ebook_mode == ebook_modes['SINGLE']:
                                     if not ebook_data:
                                         error = 'An ebook file is required.'
                                     else:
                                         source = ebook_data
-                                elif ebook_mode == 'text':
+                                elif ebook_mode == ebook_modes['TEXT']:
                                     if not ebook_textarea:
                                         error = 'Textarea is empty.'
                                     elif len(ebook_textarea) < 10:
@@ -1946,7 +1942,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         else:
                                             source = ebook_textarea
                             if source is not None:
-                                if ebook_mode == 'text':
+                                if ebook_mode == ebook_modes['TEXT']:
                                     session['status'] = status_tags['SKIP']
                                     return gr.update(), (event + 1)
                                 else:
@@ -1977,7 +1973,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     if session['status'] == status_tags['OVERRIDE']:
                         session['status'] = status_tags['SKIP']
-                        if session['ebook_mode'] == 'text':
+                        if session['ebook_mode'] == ebook_modes['TEXT']:
                             return gr.update(value='', visible=False), gr.update(visible=True)
                         else:
                             return gr.update(value='', visible=True), gr.update(visible=False)
@@ -2088,7 +2084,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] in [status_tags['EDIT']]:
                         session['status'] = status_tags['READY']
                         change_saved_blocks(session, page, blocks, *args)
-                        if session['ebook_mode'] == 'text':
+                        if session['ebook_mode'] == ebook_modes['TEXT']:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
                             session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
@@ -2103,7 +2099,7 @@ def build_interface(args:dict)->gr.Blocks:
                             show_alert(session_id, {"type": "warning", "msg": error})
                             return gr.update(), gr.update(), gr.update(), gr.update()
                         change_saved_blocks(session, page, blocks, *args)
-                        if session['ebook_mode'] == 'text':
+                        if session['ebook_mode'] == ebook_modes['TEXT']:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
                             session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
