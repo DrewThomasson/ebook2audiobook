@@ -1833,8 +1833,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 args['ebook_textarea'] = args['ebook_textarea'].strip()
                                 if len(args['ebook_textarea']) < 10:
                                     error = 'Textarea must be > 10 chars.'                     
-                        if args['xtts_num_beams'] < args['xtts_length_penalty']:
-                            error = 'num beams must be greater or equal than length penalty.'               
+                        #elif args['xtts_num_beams'] < args['xtts_length_penalty']:
+                        #    error = 'num beams must be greater or equal than length penalty.'               
                         if error is None:
                             session['ticker'] = len(audiobook_options)
                             if args['ebook_mode'] == ebook_modes['DIRECTORY']:
@@ -1956,31 +1956,32 @@ def build_interface(args:dict)->gr.Blocks:
                                             error = 'Textarea must be > 10 chars.'
                                         else:
                                             source = ebook_textarea
-                            if source is not None:
-                                if ebook_mode == ebook_modes['TEXT']:
-                                    session['status'] = status_tags['SKIP']
-                                    return gr.update(), (event + 1)
-                                else:
-                                    session['ebook_src'] = source
-                                    final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
-                                    process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
-                                    chapters_dir = os.path.join(process_dir, 'chapters')
-                                    sentences_dir = os.path.join(chapters_dir, 'sentences')
-                                    pre_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
-                                    pre_file = os.path.join(process_dir, pre_name)
-                                    audio_sentences_exist = False
-                                    if os.path.exists(sentences_dir):
-                                        audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
-                                    if os.path.exists(pre_file) or audio_sentences_exist:
-                                        session['status'] = status_tags['OVERRIDE']
-                                        msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
-                                        return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
-                                    else:
+                            if error is None:
+                                if source is not None:
+                                    if ebook_mode == ebook_modes['TEXT']:
                                         session['status'] = status_tags['SKIP']
                                         return gr.update(), (event + 1)
-                            if error is not None:
+                                    else:
+                                        session['ebook_src'] = source
+                                        final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
+                                        process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], final_name).encode()).hexdigest()}")
+                                        chapters_dir = os.path.join(process_dir, 'chapters')
+                                        sentences_dir = os.path.join(chapters_dir, 'sentences')
+                                        pre_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
+                                        pre_file = os.path.join(process_dir, pre_name)
+                                        audio_sentences_exist = False
+                                        if os.path.exists(sentences_dir):
+                                            audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
+                                        if os.path.exists(pre_file) or audio_sentences_exist:
+                                            session['status'] = status_tags['OVERRIDE']
+                                            msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
+                                            return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
+                                        else:
+                                            session['status'] = status_tags['SKIP']
+                                            return gr.update(), (event + 1)
+                            else:
                                 show_alert(session_id, {"type": "warning", "msg": error})
-                            session['status'] = status_tags['READY']
+                            session['status'] = status_tags['END']
                 return gr.update(), event
 
             def click_gr_override_cancel_btn(session_id:str, ebook_data:any, ebook_textarea:str)->tuple:
