@@ -30,6 +30,8 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
+        js_hide_clear_ebook_textarea_btn = '()=>document.querySelector("#clear_ebook_textarea")?.style.setProperty("display", "none")'
+        js_show_clear_ebook_textarea_btn = '()=>document.querySelector("#clear_ebook_textarea")?.style.removeProperty("display")'
         theme = gr.themes.Origin(
             primary_hue='green',
             secondary_hue='amber',
@@ -2433,6 +2435,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=[gr.State('bypass_gr_session_opened_btn')],
                 outputs=outputs_disable_components,
+                js=js_hide_clear_ebook_textarea_btn,
                 show_progress_on=[gr_progress]
             ).then(
                 fn=None,
@@ -2456,6 +2459,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
+                js=js_show_clear_ebook_textarea_btn,
                 show_progress_on=[gr_progress]
             )
             gr_progress.change(
@@ -2638,6 +2642,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components,
+                js=js_hide_clear_ebook_textarea_btn,
                 show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_ebook,
@@ -2648,6 +2653,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
+                js=js_show_clear_ebook_textarea_btn,
                 show_progress_on=[gr_progress]
             )
             gr_override_cancel_btn.click(
@@ -2664,6 +2670,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
+                js=js_show_clear_ebook_textarea_btn,
                 show_progress_on=[gr_progress]
             )
             gr_override_confirm_btn.click(
@@ -2675,6 +2682,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components,
+                js=js_hide_clear_ebook_textarea_btn,
                 show_progress_on=[gr_progress]
             ).then(
                 fn=start_conversion,
@@ -2699,25 +2707,8 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
+                js=js_show_clear_ebook_textarea_btn,
                 show_progress_on=[gr_progress]
-            )
-            gr_blocks_back_btn.click(
-                fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
-            ).then(
-                fn=populate_page,
-                inputs=[gr_session, gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header]
-            )
-            gr_blocks_next_btn.click(
-                fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
-            ).then(
-                fn=populate_page,
-                inputs=[gr_session, gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header]
             )
             gr_blocks_cancel_btn.click(
                 fn=click_gr_blocks_cancel_btn,
@@ -2728,6 +2719,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
+                js=js_show_clear_ebook_textarea_btn,
                 show_progress_on=[gr_progress]
             )
             gr_blocks_confirm_btn.click(
@@ -2758,7 +2750,26 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
+                js=js_show_clear_ebook_textarea_btn,
                 show_progress_on=[gr_progress]
+            )
+            gr_blocks_back_btn.click(
+                fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
+            ).then(
+                fn=populate_page,
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data],
+                outputs=[*blocks_components_flat, gr_blocks_header]
+            )
+            gr_blocks_next_btn.click(
+                fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
+                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
+            ).then(
+                fn=populate_page,
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data],
+                outputs=[*blocks_components_flat, gr_blocks_header]
             )
             gr_save_session.change(
                 fn=None,
@@ -2771,16 +2782,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 data.playback_time = Number(window.session_storage.playback_time);
                                 data.playback_volume = parseFloat(window.session_storage.playback_volume);
                                 localStorage.setItem("data", JSON.stringify(data));
-                            }
-                            const b = document.querySelector("#clear_ebook_textarea");
-                            if(b){
-                                if(data.ebook_mode == "text"){
-                                    if(data.status == "ready"){
-                                        b.style.display = "block";
-                                    }else{
-                                        b.style.display = "none";
-                                    }
-                                }
                             }
                         }catch(e){
                             console.warn("gr_save_session.change error: "+e);
