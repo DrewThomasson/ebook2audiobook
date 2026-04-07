@@ -2677,6 +2677,11 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_disable_components,
                 show_progress_on=[gr_progress]
             ).then(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='()=>{const b = document.querySelector("#clear_ebook_textarea"); if (b) b.style.display = "none";}'
+            ).then(
                 fn=start_conversion,
                 inputs=inputs_start_conversion,
                 outputs=[gr_progress],
