@@ -2675,7 +2675,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=None,
                 inputs=[gr_event],
                 outputs=None,
-                js=f'(ready)=>{{ if (ready) {{ {js_show_elements}}}}}'
+                js=f'(ready)=>{{if(ready){{{js_show_elements}}}}}'
             )
             gr_override_cancel_btn.click(
                 fn=click_gr_override_cancel_btn,
