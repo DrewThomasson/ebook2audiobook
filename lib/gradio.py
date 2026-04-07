@@ -2603,18 +2603,18 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=None,
                 js='''
-                () => {
-                    if (!window._bark_sliders_initialized) {
-                        const checkBarkExist = setInterval(() => {
-                            const slider = document.querySelector("#gr_bark_waveform_temp input[type=range]");
-                            if(slider){
-                                clearInterval(checkBarkExist);
-                                window._bark_sliders_initialized = true;
-                                init_bark_sliders();
-                            }
-                        }, 500);
+                    ()=>{
+                        if (!window._bark_sliders_initialized) {
+                            const checkBarkExist = setInterval(() => {
+                                const slider = document.querySelector("#gr_bark_waveform_temp input[type=range]");
+                                if(slider){
+                                    clearInterval(checkBarkExist);
+                                    window._bark_sliders_initialized = true;
+                                    init_bark_sliders();
+                                }
+                            }, 500);
+                        }
                     }
-                }
                 '''
             )
             gr_bark_text_temp.change(
@@ -2676,11 +2676,6 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=outputs_disable_components,
                 show_progress_on=[gr_progress]
-            ).then(
-                fn=None,
-                inputs=None,
-                outputs=None,
-                js='()=>{const b = document.querySelector("#clear_ebook_textarea"); if (b) b.style.display = "none";}'
             ).then(
                 fn=start_conversion,
                 inputs=inputs_start_conversion,
@@ -2776,6 +2771,16 @@ def build_interface(args:dict)->gr.Blocks:
                                 data.playback_time = Number(window.session_storage.playback_time);
                                 data.playback_volume = parseFloat(window.session_storage.playback_volume);
                                 localStorage.setItem("data", JSON.stringify(data));
+                                const b = document.querySelector("#clear_ebook_textarea");
+                                if(b){
+                                    if(data.ebook_mode == "text"){
+                                        if(data.status == "ready"){
+                                            b.style.display = "block";
+                                        }else{
+                                            b.style.display = "none";
+                                        }
+                                    }
+                                }
                             }
                         }catch(e){
                             console.warn("gr_save_session.change error: "+e);
