@@ -2667,9 +2667,13 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal, gr_override_event],
                 show_progress_on=[gr_progress]
             ).then(
-                fn=lambda s: enable_components(s) if s['status'] == status_tags['READY'] else [gr.update()] * len(outputs_enable_components),
+                fn=lambda s: (
+                    enable_components(s) + [True]
+                    if context.get_session(s)['status'] == status_tags['READY']
+                    else [gr.update()] * len(outputs_enable_components) + [False]
+                ),
                 inputs=[gr_session],
-                outputs=outputs_enable_components,
+                outputs=outputs_enable_components + [gr_is_ready],
                 show_progress_on=[gr_progress]
             )
             gr_override_cancel_btn.click(
