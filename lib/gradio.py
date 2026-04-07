@@ -914,7 +914,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                             if session.get('ebook_list'):
                                 if isinstance(session['ebook_list'], list):
-                                enabled_convert_btn = True
+                                    enabled_convert_btn = True
                         elif session['ebook_mode'] == ebook_modes['SINGLE']:
                             if session.get('ebook_src'):
                                 enabled_convert_btn = True
