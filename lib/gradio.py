@@ -1230,7 +1230,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'change_gr_ebook_mode(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update()
 
             def change_gr_voice_file(session_id:str, f:str|None)->tuple:
                 state = {}
@@ -2312,8 +2312,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
                 inputs=[gr_session, gr_ebook_mode],
-                outputs=[gr_ebook_src, gr_ebook_textarea],
-                show_progress_on=[gr_progress, gr_convert_btn]
+                outputs=[gr_ebook_src, gr_ebook_textarea, gr_convert_btn],
+                show_progress_on=[gr_progress]
             ).then(
                 fn=None,
                 inputs=[gr_ebook_mode],
