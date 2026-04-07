@@ -901,6 +901,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['READY'], status_tags['END']]:
+                        session['status'] = status_tags['READY']
                         session['cancellation_requested'] = False
                         outputs = tuple(gr.update(interactive=True) for _ in range(18))
                         convert_btn_interactive = False
