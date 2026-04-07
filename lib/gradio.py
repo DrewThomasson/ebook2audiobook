@@ -2789,14 +2789,14 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_restore_interface,
                 show_progress_on=[gr_progress]
             ).then(
+                fn=lambda f: gr.update(interactive=True if f == 'text' else False),
+                inputs=[gr_ebook_mode],
+                outputs=[gr_convert_btn],
+            ).then(
                 fn=restore_audiobook_player,
                 inputs=[gr_session, gr_audiobook_list],
                 outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_timer],
                 show_progress_on=[gr_progress]
-            ).then(
-                fn=lambda f: gr.update(interactive=True if f == 'text' else False),
-                inputs=[gr_ebook_mode],
-                outputs=[gr_convert_btn],
             ).then(
                 fn=lambda session: update_gr_glassmask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
                 inputs=[gr_session],
