@@ -3150,7 +3150,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     const gr_convert_btn = document.querySelector("#gr_convert_btn button");
                                     container.style.position = "relative";
                                     const toolbar = document.createElement("div");
-                                    toolbar.id = tollbar.name = "ebook_textarea_toolbar";
+                                    toolbar.id = toolbar.name = "ebook_textarea_toolbar";
                                     toolbar.style.cssText = "position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;";
                                     const counter = document.createElement("span");
                                     counter.style.cssText = "font-size:0.85em;color:var(--body-text-color);";
