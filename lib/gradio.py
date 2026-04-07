@@ -30,8 +30,8 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
-        js_hide_clear_ebook_textarea_btn = '()=>document.querySelector("#clear_ebook_textarea")?.style.setProperty("display", "none")'
-        js_show_clear_ebook_textarea_btn = '()=>document.querySelector("#clear_ebook_textarea")?.style.removeProperty("display")'
+        js_hide_elements = '()=>document.querySelector("#clear_ebook_textarea")?.style.setProperty("display", "none")'
+        js_show_elements = '()=>document.querySelector("#clear_ebook_textarea")?.style.removeProperty("display")'
         theme = gr.themes.Origin(
             primary_hue='green',
             secondary_hue='amber',
@@ -2435,7 +2435,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=[gr.State('bypass_gr_session_opened_btn')],
                 outputs=outputs_disable_components,
-                js=js_hide_clear_ebook_textarea_btn,
+                js=js_hide_elements,
                 show_progress_on=[gr_progress]
             ).then(
                 fn=None,
@@ -2459,7 +2459,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_clear_ebook_textarea_btn,
+                js=js_show_elements,
                 show_progress_on=[gr_progress]
             )
             gr_progress.change(
@@ -2642,7 +2642,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components,
-                js=js_hide_clear_ebook_textarea_btn,
+                js=js_hide_elements,
                 show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_ebook,
@@ -2653,7 +2653,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_clear_ebook_textarea_btn,
+                js=js_show_elements,
                 show_progress_on=[gr_progress]
             )
             gr_override_cancel_btn.click(
@@ -2670,7 +2670,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_clear_ebook_textarea_btn,
+                js=js_show_elements,
                 show_progress_on=[gr_progress]
             )
             gr_override_confirm_btn.click(
@@ -2682,7 +2682,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components,
-                js=js_hide_clear_ebook_textarea_btn,
+                js=js_hide_elements,
                 show_progress_on=[gr_progress]
             ).then(
                 fn=start_conversion,
@@ -2707,7 +2707,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_clear_ebook_textarea_btn,
+                js=js_show_elements,
                 show_progress_on=[gr_progress]
             )
             gr_blocks_cancel_btn.click(
@@ -2719,7 +2719,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_clear_ebook_textarea_btn,
+                js=js_show_elements,
                 show_progress_on=[gr_progress]
             )
             gr_blocks_confirm_btn.click(
@@ -2750,7 +2750,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_clear_ebook_textarea_btn,
+                js=js_show_elements,
                 show_progress_on=[gr_progress]
             )
             gr_blocks_back_btn.click(
