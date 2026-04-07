@@ -2686,6 +2686,7 @@ def convert_ebook(args:dict)->tuple:
                 session['ebook_textarea'] = args['ebook_textarea']
                 session['ebook_src'] = text_filepath
             else:
+                session['ebook_list'] = args.get('ebook_list', None)
                 if args.get('ebook_src'):
                     if not os.path.splitext(args['ebook_src'])[1]:
                         error = f"{args['ebook_src']} needs a format extension."
@@ -2694,7 +2695,6 @@ def convert_ebook(args:dict)->tuple:
                         error = 'File does not exist or Directory empty.'
                         return error, False
                     session['ebook_src'] = str(args['ebook_src'])
-            session['ebook_list'] = args.get('ebook_list', None)
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
@@ -3038,7 +3038,7 @@ def finalize_audiobook(session_id:str)->tuple:
             reset_ebook_session(session_id, force=True, filter_keys=False)
         return result(filename, True)
     except Exception as e:
-        session['status'] = status_tags['READY']
+        session['status'] = status_tags['END']
         reset_ebook_session(session_id, force=True, filter_keys=False)
         DependencyError(e)
         error = f'finalize_audiobook(): {e}'
