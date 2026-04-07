@@ -2664,7 +2664,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_progress]
             ).then(
                 fn=lambda s: (
-                    enable_components(s) + [1]
+                    enable_components(s) + (1,)
                     if context.get_session(s)['status'] == status_tags['READY']
                     else [gr.update()] * len(outputs_enable_components) + [0]
                 ),
