@@ -2675,11 +2675,6 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
                 show_progress_on=[gr_progress]
-            ).then(
-                fn=None,
-                inputs=None,
-                outputs=None,
-                js='() => { if (!document.querySelector("#convert_btn button")?.disabled) { window.gr_ebook_textarea_counter(); } }'
             )
             gr_override_cancel_btn.click(
                 fn=click_gr_override_cancel_btn,
