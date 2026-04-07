@@ -2083,7 +2083,8 @@ def build_interface(args:dict)->gr.Blocks:
                         change_saved_blocks(session, page, blocks, *args)
                         if session['ebook_mode'] == 'text':
                             blocks_current = session['blocks_current']
-                            session['ebook_textarea'] = ' '.join(block['text'] for block in blocks_current)
+                            blocks = blocks_current['blocks']
+                            session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
                 return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), session['blocks_current']['blocks'], gr.update(value=session['ebook_textarea'])
 
             def click_gr_blocks_confirm_btn(session_id:str, event:int, page:int, blocks:list[dict], *args)->tuple:
