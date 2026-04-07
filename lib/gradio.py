@@ -1837,7 +1837,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     ebook_list = copy.deepcopy(args['ebook_list'])
                                     for i, file in enumerate(ebook_list):
                                         if session['cancellation_requested']:
-                                            session['status'] = status_tags['READY']
+                                            session['status'] = status_tags['END']
                                             msg = 'Conversion cancelled'
                                             return gr.update(value=msg)
                                         elif any(file.endswith(ext) for ext in ebook_formats):
@@ -1867,12 +1867,13 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     error = progress_status
                         if error is not None:
-                            session['status'] = status_tags['END']
-                            session['ebook_src'] = session['ebook_src_notextarea']
+                            if session['ebook_mode'] == ebook_modes['TEXT']:
+                                session['ebook_src'] = session['ebook_src_notextarea']
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
                                 return gr.update()
+                            session['status'] = status_tags['END']
                         return gr.update(value=error)
                 except Exception as e:
                     session['status'] = status_tags['END']
