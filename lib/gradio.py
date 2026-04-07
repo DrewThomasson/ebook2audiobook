@@ -1195,6 +1195,9 @@ def build_interface(args:dict)->gr.Blocks:
                         session['cancellation_requested'] = False
                         if ebook_mode == ebook_modes['SINGLE']:
                             session['ebook_src'] = data
+                            # since ebook_textarea override ebook_src during the conversion
+                            # so it needs to save the current real ebook_src to get it back after the textarea conversion.
+                            session['ebook_src_notextarea'] = data
                         elif ebook_mode == ebook_modes['DIRECTORY']:
                             session['ebook_list'] = data
                 except Exception as e:
@@ -1852,14 +1855,12 @@ def build_interface(args:dict)->gr.Blocks:
                                             msg = f'{Path(file).name} has not a supported format! skipping'
                                             show_alert(session_id, {"type": "warning", "msg": msg})
                             elif args['ebook_mode'] == ebook_modes['SINGLE']:
-                                print(f"Processing eBook file: {os.path.basename(args['ebook_src'])}")
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
                                     return gr.update(value=progress_status)
                                 else:
                                     error = progress_status
                             elif args['ebook_mode'] == ebook_modes['TEXT']:
-                                print('Processing eBook text:')
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
                                     return gr.update(value=progress_status)

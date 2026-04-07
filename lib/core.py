@@ -2676,9 +2676,6 @@ def convert_ebook(args:dict)->tuple:
                 if not args['ebook_textarea']:
                     error = 'Ebook textarea is empty.'
                     return error, False
-                # since ebook_textarea override ebook_src during the conversion
-                # so it needs to save the current real ebook_src to get it back after the textarea conversion.
-                session['ebook_src_notextarea'] = args['ebook_src']
                 text = args['ebook_textarea']
                 text_name = f'{get_sanitized(text[:64])}_{session_id}'
                 text_name_hash = hashlib.md5(text_name.encode()).hexdigest()
