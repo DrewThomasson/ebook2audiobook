@@ -3030,7 +3030,7 @@ def finalize_audiobook(session_id:str)->tuple:
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
             session['ebook_list'] = None
-            session['ebook_src'] = session['ebook_src_current'] if session['ebook_mode'] == ebook_modes['TEXT'] else None
+            session['ebook_src'] = session['ebook_src_notextarea'] if session['ebook_mode'] == ebook_modes['TEXT'] else None
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
             session['status'] = status_tags['END']
