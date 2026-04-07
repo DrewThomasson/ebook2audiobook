@@ -1040,7 +1040,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 if len(session['ebook_list']) > 0:
                                     ebook_data = [f for f in session['ebook_list'] if is_valid_gradio_cache(f)]
                                 if ebook_data:
-                                    enabled_convert_btn
+                                    enabled_convert_btn = True
                                 else:
                                     ebook_data = None
                                 visible_ebook_src = True
@@ -2257,7 +2257,7 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_restore_interface = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn
+                gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model
             ]
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
@@ -2788,10 +2788,6 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_restore_interface,
                 show_progress_on=[gr_progress]
-            ).then(
-                fn=lambda f: gr.update(interactive=True if f == 'text' else False),
-                inputs=[gr_ebook_mode],
-                outputs=[gr_convert_btn],
             ).then(
                 fn=restore_audiobook_player,
                 inputs=[gr_session, gr_audiobook_list],
