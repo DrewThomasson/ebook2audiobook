@@ -2094,10 +2094,14 @@ def build_interface(args:dict)->gr.Blocks:
                         if not any(b['keep'] and b['text'].strip() for b in blocks):
                             error = 'At least one block must be kept.'
                             show_alert(session_id, {"type": "warning", "msg": error})
-                            return gr.update(), gr.update(), gr.update()
+                            return gr.update(), gr.update(), gr.update(), gr.update()
                         change_saved_blocks(session, page, blocks, *args)
-                        return gr.update(visible=True), gr.update(visible=False), (event + 1)
-                return gr.update(), gr.update(), gr.update()
+                        if session['ebook_mode'] == 'text':
+                            blocks_current = session['blocks_current']
+                            blocks = blocks_current['blocks']
+                            session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
+                        return gr.update(visible=True), gr.update(visible=False), gr.update(value=session['ebook_textarea']), (event + 1)
+                return gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
