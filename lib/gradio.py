@@ -899,20 +899,20 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple([gr.update(interactive=False) for _ in range(18)])
                 return outputs + (component,)
 
-            def enable_components(session_id: str) -> tuple:
+            def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['READY'], status_tags['END']]:
                         session['status'] = status_tags['READY']
                         session['cancellation_requested'] = False
                         outputs = tuple(gr.update(interactive=True) for _ in range(18))
-                        convert_btn_interactive = False
+                        enabled_convert_btn = False
                         if session['ebook_mode'] == 'text':
-                            convert_btn_interactive = True 
+                            enabled_convert_btn = True 
                         else:
                             if session['ebook_src'] is not None or session['ebook_list'] is not None:
-                                convert_btn_interactive = True
-                        return outputs + (gr.update(value=''), gr.update(interactive=convert_btn_interactive))
+                                enabled_convert_btn = True
+                        return outputs + (gr.update(value=''), gr.update(interactive=enabled_convert_btn))
                 outputs = tuple(gr.update() for _ in range(20))
                 return outputs
 
@@ -1770,6 +1770,9 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
+                        # since ebook_textarea override ebook_src during the conversion
+                        # so it needs to save the current real ebook_src to get it back after the textarea conversion.
+                        ebook_src_current = ebook_src
                         args = {
                             "id": session_id,
                             "is_gui_process": session['is_gui_process'],
@@ -1853,12 +1856,14 @@ def build_interface(args:dict)->gr.Blocks:
                             elif args['ebook_mode'] == 'text':
                                 print('Processing eBook text:')
                                 progress_status, passed = convert_ebook(args)
+                                session['ebook_src'] = ebook_src_current
                                 if passed:
                                     return gr.update(value=progress_status)
                                 else:
                                     error = progress_status
                         if error is not None:
                             session['status'] = status_tags['SKIP']
+                            session['ebook_src'] = ebook_src_current
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
