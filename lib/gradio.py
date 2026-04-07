@@ -2673,7 +2673,7 @@ def build_interface(args:dict)->gr.Blocks:
                     else None
                 ),
                 inputs=[gr_session],
-                outputs=outputs_enable_components
+                outputs=outputs_enable_components,
                 show_progress_on=[gr_progress]
             )
             gr_override_cancel_btn.click(
