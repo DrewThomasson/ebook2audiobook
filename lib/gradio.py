@@ -31,14 +31,10 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
         js_hide_elements = '''
-            ()=>{
-                document.querySelector("#ebook_textarea_toolbar")?.remove();
-            }
+            document.querySelector("#ebook_textarea_toolbar")?.remove();
         '''
         js_show_elements = '''
-            ()=>{
-                window.gr_ebook_textarea_counter();
-            }
+            window.gr_ebook_textarea_counter();
         '''
         theme = gr.themes.Origin(
             primary_hue='green',
@@ -892,7 +888,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session_update = gr.State({'hash': None})
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
             
-            gr_override_event = gr.Number(value=0, visible=False, precision=0)
+            gr_event = gr.Number(value=0, visible=False, precision=0)
             gr_blocks_event = gr.Number(value=0, visible=False, precision=0)
             
             gr_dummy_bool = gr.State(value=False)
@@ -2452,7 +2448,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=[gr.State('bypass_gr_session_opened_btn')],
                 outputs=outputs_disable_components,
-                js=js_hide_elements,
+                js=f'()=>{{{js_hide_elements}}}',
                 show_progress_on=[gr_progress]
             ).then(
                 fn=None,
@@ -2476,7 +2472,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_elements,
+                js=f'()=>{{{js_show_elements}}}',
                 show_progress_on=[gr_progress]
             )
             gr_progress.change(
@@ -2659,22 +2655,27 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components,
-                js=js_hide_elements,
+                js=f'()=>{{{js_hide_elements}}}',
                 show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_ebook,
-                inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
-                outputs=[gr_modal, gr_override_event],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event],
+                outputs=[gr_modal, gr_event],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=lambda s: (
-                    enable_components(s)
+                    enable_components(s) + [1]
                     if context.get_session(s)['status'] == status_tags['READY']
-                    else [gr.update()] * len(outputs_enable_components)
+                    else [gr.update()] * len(outputs_enable_components) + [0]
                 ),
                 inputs=[gr_session],
-                outputs=outputs_enable_components,
+                outputs=outputs_enable_components + [gr_event],
                 show_progress_on=[gr_progress]
+            ).then(
+                fn=None,
+                inputs=[gr_event],
+                outputs=None,
+                js=f'(ready)=>{{ if (ready) {{ {js_show_elements}}}}}'
             )
             gr_override_cancel_btn.click(
                 fn=click_gr_override_cancel_btn,
@@ -2685,19 +2686,19 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_elements,
+                js=f'()=>{{{js_show_elements}}}',
                 show_progress_on=[gr_progress]
             )
             gr_override_confirm_btn.click(
                 fn=lambda event: (gr.update(value='', visible=False), (event + 1)),
-                inputs=[gr_override_event],
-                outputs=[gr_modal, gr_override_event]
+                inputs=[gr_event],
+                outputs=[gr_modal, gr_event]
             )
-            gr_override_event.change(
+            gr_event.change(
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components,
-                js=js_hide_elements,
+                js=f'()=>{{{js_hide_elements}}}',
                 show_progress_on=[gr_progress]
             ).then(
                 fn=start_conversion,
@@ -2715,14 +2716,14 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_ebook,
-                inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
-                outputs=[gr_modal, gr_override_event],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event],
+                outputs=[gr_modal, gr_event],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_elements,
+                js=f'()=>{{{js_show_elements}}}',
                 show_progress_on=[gr_progress]
             )
             gr_blocks_cancel_btn.click(
@@ -2734,7 +2735,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_elements,
+                js=f'()=>{{{js_show_elements}}}',
                 show_progress_on=[gr_progress]
             )
             gr_blocks_confirm_btn.click(
@@ -2758,14 +2759,14 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_progress]
             ).then(
                 fn=check_override_ebook,
-                inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_override_event],
-                outputs=[gr_modal, gr_override_event],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event],
+                outputs=[gr_modal, gr_event],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=js_show_elements,
+                js=f'()=>{{{js_show_elements}}}',
                 show_progress_on=[gr_progress]
             )
             gr_blocks_back_btn.click(
