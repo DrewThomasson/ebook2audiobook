@@ -2315,10 +2315,10 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_ebook_src, gr_ebook_textarea],
                 show_progress_on=[gr_progress, gr_convert_btn]
             ).then(
-                fn=lambda f: gr.update(interactive=True if f == 'text' else False),
+                fn=None,
                 inputs=[gr_ebook_mode],
-                outputs=None
-                js=js_show_elements,
+                outputs=None,
+                js='(mode) => { if (mode === "text") { window.gr_ebook_textarea_counter(); } }'
             )
             gr_blocks_preview.select(
                 fn=lambda session_id, val: change_param('blocks_preview', session_id, bool(val)),
