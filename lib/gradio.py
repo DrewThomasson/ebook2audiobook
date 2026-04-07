@@ -2670,7 +2670,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=lambda s: (
                     enable_components(s) + (1,)
-                    if context.get_session(s)['status'] == status_tags['READY']
+                    if context.get_session(s)['status'] == status_tags['END']
                     else [gr.update()] * len(outputs_enable_components) + [0]
                 ),
                 inputs=[gr_session],
@@ -2680,7 +2680,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=None,
                 inputs=[gr_event],
                 outputs=None,
-                js=f'(ready)=>{{if(ready){{{js_show_elements}}}}}'
+                js=f'(end)=>{{if(end){{{js_show_elements}}}}}'
             )
             gr_override_cancel_btn.click(
                 fn=click_gr_override_cancel_btn,
