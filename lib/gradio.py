@@ -1866,15 +1866,15 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     error = progress_status
                         if error is not None:
-                            session['status'] = status_tags['SKIP']
-                            session['ebook_src'] = ebook_src_current
+                            session['status'] = status_tags['END']
+                            session['ebook_src'] = session['ebook_src_notextarea']
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
                                 return gr.update()
                         return gr.update(value=error)
                 except Exception as e:
-                    session['status'] = status_tags['SKIP']
+                    session['status'] = status_tags['END']
                     error = f'start_conversion(): {e}'
                     exception_alert(session_id, error)
                     return gr.update(value=error)
