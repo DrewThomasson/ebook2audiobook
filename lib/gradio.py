@@ -2308,6 +2308,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=change_gr_ebook_mode,
                 inputs=[gr_session, gr_ebook_mode],
                 outputs=[gr_ebook_src, gr_ebook_textarea],
+                js=js_show_elements,
                 show_progress_on=[gr_progress]
             ).then(
                 fn=lambda f: gr.update(interactive=True if f == 'text' else False),
