@@ -187,8 +187,8 @@ jobs:
       - name: Create Audiobook Output folders for Artifacts
         shell: bash
         run: |
-          mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK}
-          find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK} -mindepth 1 -exec rm -rf {} +
+          mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK,TORTOISE,GLOWTTS}
+          find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK,TORTOISE,GLOWTTS} -mindepth 1 -exec rm -rf {} +
 
       # This step only runs on non-windows because we don't need to modify the .command file if we are running .cmd
       - name: Add set -e at beginning of ebook2audiobook.command (for error passing)
@@ -262,6 +262,22 @@ jobs:
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
+
+      - name: English TORTOISE Custom-Voice headless batch test
+        shell: bash
+        run: |
+          cd ~/ebook2audiobook
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine TORTOISE --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TORTOISE
+
+      - name: English GLOWTTS Custom-Voice headless batch test
+        shell: bash
+        run: |
+          cd ~/ebook2audiobook
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine GLOWTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/GLOWTTS
 
       - name: Default XTTSv2 headless Custom-Voice single test
         shell: bash
