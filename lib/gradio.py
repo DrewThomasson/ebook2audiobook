@@ -1988,13 +1988,8 @@ def build_interface(args:dict)->gr.Blocks:
             def click_gr_override_cancel_btn(session_id:str, ebook_data:any, ebook_textarea:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] == status_tags['OVERRIDE']:
-                        session['status'] = status_tags['SKIP']
-                        if session['ebook_mode'] == ebook_modes['TEXT']:
-                            return gr.update(value='', visible=False), gr.update(visible=True)
-                        else:
-                            return gr.update(value='', visible=True), gr.update(visible=False)
-                return gr.update(value='', visible=False), gr.update()
+                    session['status'] = status_tags['SKIP']
+                return gr.update(value='', visible=False)
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
                 session = context.get_session(session_id)
@@ -2319,7 +2314,11 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_ebook_src]
             ).then(
                 fn=lambda sid, m, f: gr.update(
-                    interactive=m == ebook_modes['TEXT'] or f is not None
+                    interactive=(
+                        m == ebook_modes['TEXT']
+                        or (isinstance(f, list) and len(f) > 0)
+                        or (not isinstance(f, list) and f is not None)
+                    )
                 ),
                 inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
                 outputs=[gr_convert_btn],
@@ -2693,7 +2692,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_override_cancel_btn.click(
                     fn=click_gr_override_cancel_btn,
                     inputs=[gr_session, gr_ebook_src, gr_ebook_textarea],
-                    outputs=[gr_modal, gr_ebook_src, gr_ebook_textarea],
+                    outputs=[gr_modal, gr_ebook_src],
                     show_progress_on=[gr_progress]
                 )
             )
@@ -3145,6 +3144,10 @@ def build_interface(args:dict)->gr.Blocks:
                                     const container = document.querySelector("#gr_ebook_textarea");
                                     const textarea = container.querySelector("textarea");
                                     const gr_convert_btn = document.querySelector("#gr_convert_btn button");
+                                    const ebook_textarea_toolbar = document.querySelector("#ebook_textarea_toolbar");
+                                    if(ebook_textarea_toolbar){
+                                        ebook_textarea_toolbar.remove();
+                                    }
                                     container.style.position = "relative";
                                     const toolbar = document.createElement("div");
                                     toolbar.id = toolbar.name = "ebook_textarea_toolbar";
