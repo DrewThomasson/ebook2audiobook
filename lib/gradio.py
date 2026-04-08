@@ -2283,9 +2283,13 @@ def build_interface(args:dict)->gr.Blocks:
                     return event.then(
                         fn=lambda s: (
                             enable_components(s) + (1,)
-                            if context.get_session(s)['status'] == status_tags['END']
+                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
                             and context.get_session(s)['ebook_mode'] == ebook_modes['TEXT']
-                            else [gr.update()] * len(outputs_enable_components) + [0]
+                            else (
+                                enable_components(s) + (0,)
+                                if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
+                                else [gr.update()] * len(outputs_enable_components) + [0]
+                            )
                         ),
                         inputs=[gr_session],
                         outputs=outputs_enable_components + [gr_end_event],
@@ -2725,7 +2729,8 @@ def build_interface(args:dict)->gr.Blocks:
                         js=f'()=>{{{js_hide_elements}}}',
                         show_progress_on=[gr_progress]
                     )
-                )
+                ),
+                always=False
             )
             chain_enable(
                 gr_override_cancel_btn.click(
@@ -2733,7 +2738,8 @@ def build_interface(args:dict)->gr.Blocks:
                     inputs=[gr_session, gr_ebook_src, gr_ebook_textarea],
                     outputs=[gr_modal, gr_ebook_src, gr_ebook_textarea],
                     show_progress_on=[gr_progress]
-                )
+                ),
+                always=False
             )
             gr_override_confirm_btn.click(
                 fn=lambda event: (gr.update(value='', visible=False), (event + 1)),
@@ -2760,7 +2766,8 @@ def build_interface(args:dict)->gr.Blocks:
                             outputs=outputs_edit_blocks
                         )
                     )
-                )
+                ),
+                always=False
             )
             chain_enable(
                 gr_blocks_cancel_btn.click(
@@ -2768,7 +2775,8 @@ def build_interface(args:dict)->gr.Blocks:
                     inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                     outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data, gr_ebook_textarea],
                     show_progress_on=[gr_progress]
-                )
+                ),
+                always=False
             )
             gr_blocks_confirm_btn.click(
                 fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
@@ -2790,7 +2798,8 @@ def build_interface(args:dict)->gr.Blocks:
                             show_progress_on=[gr_progress]
                         )
                     )
-                )
+                ),
+                always=False
             )
             ###########
             gr_blocks_back_btn.click(
