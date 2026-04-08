@@ -2314,7 +2314,7 @@ def build_interface(args:dict)->gr.Blocks:
                     outputs=[gr_modal],
                     show_progress_on=[gr_ebook_src]
                 )
-            }
+            )
             gr_ebook_textarea.change(
                 fn=change_gr_ebook_textarea,
                 inputs=[gr_session, gr_ebook_textarea],
