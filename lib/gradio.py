@@ -2077,15 +2077,18 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_saved_blocks(session:DictProxy, page:int, blocks:list[dict], *args)->None:
                 new_blocks = collect_page(page, blocks, *args)
-                for b in new_blocks:
+                blocks_current = session['blocks_current']
+                old_blocks = blocks_current['blocks']
+                for idx, b in enumerate(new_blocks):
                     if not b.get('voice'):
                         b['voice'] = session.get('voice', '')
                     if not b.get('tts_engine'):
                         b['tts_engine'] = session.get('tts_engine', '')
                     if not b.get('fine_tuned'):
                         b['fine_tuned'] = session.get('fine_tuned', '')
-                session['blocks_saved'] = session['blocks_current']
-                blocks_current = session['blocks_current']
+                    old_b = old_blocks[idx] if idx < len(old_blocks) else None
+                    if old_b and old_b.get('text', '').strip() != b.get('text', '').strip():
+                        b['sentences'] = []
                 blocks_current['blocks'] = new_blocks
                 session['blocks_current'] = blocks_current
                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
