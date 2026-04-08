@@ -1984,10 +1984,10 @@ def build_interface(args:dict)->gr.Blocks:
                             session['status'] = status_tags['END']
                 return gr.update(), event
 
-            def click_gr_override_cancel_btn(session_id:str, ebook_data:any, ebook_textarea:str)->tuple:
+            def click_gr_override_cancel_btn(session_id:str)->dict:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['status'] = status_tags['SKIP']
+                    session['status'] = status_tags['END']
                 return gr.update(value='', visible=False)
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
@@ -2734,10 +2734,10 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_override_cancel_btn.click(
                     fn=click_gr_override_cancel_btn,
                     inputs=[gr_session, gr_ebook_src, gr_ebook_textarea],
-                    outputs=[gr_modal, gr_ebook_src, gr_ebook_textarea],
+                    outputs=[gr_modal],
                     show_progress_on=[gr_progress]
                 ),
-                always=False
+                always=True
             )
             gr_override_confirm_btn.click(
                 fn=lambda event: (gr.update(value='', visible=False), (event + 1)),
@@ -2774,7 +2774,7 @@ def build_interface(args:dict)->gr.Blocks:
                     outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data, gr_ebook_textarea],
                     show_progress_on=[gr_progress]
                 ),
-                always=False
+                always=True
             )
             gr_blocks_confirm_btn.click(
                 fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
@@ -2797,7 +2797,7 @@ def build_interface(args:dict)->gr.Blocks:
                         )
                     )
                 ),
-                always=False
+                always=True
             )
             ###########
             gr_blocks_back_btn.click(
