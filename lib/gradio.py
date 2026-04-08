@@ -2285,6 +2285,7 @@ def build_interface(args:dict)->gr.Blocks:
                     outputs=None,
                     js=f'(gr_end_event)=>{{if(gr_end_event){{{js_show_elements}}}}}'
                 )
+
             inputs_start_conversion = [
                 gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
