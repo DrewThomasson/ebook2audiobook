@@ -3031,7 +3031,14 @@ def finalize_audiobook(session_id:str)->tuple:
             elif session['ebook_mode'] == ebook_modes['SINGLE']:
                 session['ebook_src'] = None
             elif session['ebook_mode'] == ebook_modes['TEXT']:
-                os.remove(session['ebook_src'])
+                ebook_src = session['ebook_src']
+                if sebook_src:
+                    try:
+                        os.remove(ebook_src)
+                    except FileNotFoundError:
+                        pass
+                    except OSError:
+                        pass
                 session['ebook_src'] = session['ebook_src_notextarea']
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
