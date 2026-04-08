@@ -2314,7 +2314,11 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_ebook_src]
             ).then(
                 fn=lambda sid, m, f: gr.update(
-                    interactive=m == ebook_modes['TEXT'] or f is not None
+                    interactive=(
+                        m == ebook_modes['TEXT']
+                        or (isinstance(f, list) and len(f) > 0)
+                        or (not isinstance(f, list) and f is not None)
+                    )
                 ),
                 inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
                 outputs=[gr_convert_btn],
@@ -3140,6 +3144,10 @@ def build_interface(args:dict)->gr.Blocks:
                                     const container = document.querySelector("#gr_ebook_textarea");
                                     const textarea = container.querySelector("textarea");
                                     const gr_convert_btn = document.querySelector("#gr_convert_btn button");
+                                    const ebook_textarea_toolbar = document.querySelector("#ebook_textarea_toolbar");
+                                    if(ebook_textarea_toolbar){
+                                        ebook_textarea_toolbar.remove();
+                                    }
                                     container.style.position = "relative";
                                     const toolbar = document.createElement("div");
                                     toolbar.id = toolbar.name = "ebook_textarea_toolbar";
