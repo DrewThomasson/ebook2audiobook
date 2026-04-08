@@ -1746,13 +1746,13 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(), False
                 if is_visible:
                     return gr.update(visible=False, value=None), False
-                p = Path(audiobook)
-                if not p.exists():
-                    error = f'Audio not found: {p}'
+                file = Path(audiobook)
+                if not file.exists():
+                    error = f'Audio not found: {file}'
                     show_alert(session_id, {"type": "error", "msg": error})
                     return gr.update(), False
-                files = [str(p)]
-                vtt = p.with_suffix(".vtt")
+                files = [str(file)]
+                vtt = file.with_suffix(".vtt")
                 if vtt.exists():
                     files.append(str(vtt))
                 return gr.update(visible=True, value=files), True
@@ -2776,6 +2776,14 @@ def build_interface(args:dict)->gr.Blocks:
                         inputs=[gr_session],
                         outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
                     ).then(
+                        fn=lambda s, al, ft: (
+                            toggle_audiobook_files(s, al, ft)
+                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
+                            else (gr.update(), gr.update())
+                        ),
+                        inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
+                        outputs=[gr_audiobook_files, gr_audiobook_files_toggled]
+                    ).then(
                         fn=None,
                         inputs=None,
                         js='()=>{ window.load_vtt(); }'
@@ -2818,6 +2826,14 @@ def build_interface(args:dict)->gr.Blocks:
                         ),
                         inputs=[gr_session],
                         outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
+                    ).then(
+                        fn=lambda s, al, ft: (
+                            toggle_audiobook_files(s, al, ft)
+                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
+                            else (gr.update(), gr.update())
+                        ),
+                        inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
+                        outputs=[gr_audiobook_files, gr_audiobook_files_toggled]
                     ).then(
                         fn=None,
                         inputs=None,
