@@ -1848,7 +1848,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             if passed:
                                                 return gr.update(value=progress_status)
                                             else:
-                                                error = progress_statusk
+                                                error = progress_status
                                         else:
                                             ebook_list.remove(file)
                                             args['ebook_list'] = ebook_list
