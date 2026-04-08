@@ -1922,6 +1922,7 @@ def build_interface(args:dict)->gr.Blocks:
             def check_override_ebook(session_id:str, ebook_mode:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int)->tuple:
                 session = context.get_session(session_id)
                 source = None
+                error = None
                 if session and session.get('id', False):
                     if not session['cancellation_requested']:
                         if not session['status'] in [status_tags['SKIP'], status_tags['END']]:
