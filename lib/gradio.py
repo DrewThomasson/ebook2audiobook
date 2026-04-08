@@ -2802,7 +2802,11 @@ def build_interface(args:dict)->gr.Blocks:
                 ),
                 always=True
             ).then(
-                fn=lambda s: gr.update(value=context.get_session(s).get('audiobook', None)),
+                fn=lambda: gr.update(value=None),
+                inputs=None,
+                outputs=[gr_audiobook_list]
+            ).then(
+                fn=lambda s: gr.update(value=os.path.basename(context.get_session(s)['audiobook'])),
                 inputs=[gr_session],
                 outputs=[gr_audiobook_list]
             )
