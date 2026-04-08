@@ -1839,26 +1839,22 @@ def build_interface(args:dict)->gr.Blocks:
                             session['ticker'] = len(audiobook_options)
                             if args['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if args['ebook_list']:
-                                    ebook_list = copy.deepcopy(args['ebook_list'])
-                                    for i, file in enumerate(ebook_list):
-                                        if session['cancellation_requested']:
-                                            session['status'] = status_tags['END']
-                                            msg = 'Conversion cancelled'
-                                            return gr.update(value=msg)
-                                        elif any(file.endswith(ext) for ext in ebook_formats):
-                                            session['status'] = status_tags['READY']
-                                            reset_ebook_session(args['id'], force=True, filter_keys=False)
+                                    if isinstance(args['ebook_list'], list):
+                                        ebook_list = copy.deepcopy(args['ebook_list'])
+                                        file = ebook_list[0]
+                                        if any(file.endswith(ext) for ext in ebook_formats):
                                             args['ebook_src'] = file
                                             progress_status, passed = convert_ebook(args)
                                             if passed:
-                                                yield gr.update(value=progress_status)
+                                                return gr.update(value=progress_status)
                                             else:
-                                                error = progress_status
-                                                break
+                                                error = progress_statusk
                                         else:
-                                            args['ebook_list'].remove (file)
+                                            ebook_list.remove(file)
+                                            args['ebook_list'] = ebook_list
                                             msg = f'{Path(file).name} has not a supported format! skipping'
                                             show_alert(session_id, {"type": "warning", "msg": msg})
+                                            return gr.update(value=progress_status)
                             elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
