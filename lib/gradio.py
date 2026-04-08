@@ -1842,7 +1842,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     if isinstance(args['ebook_list'], list):
                                         ebook_list = copy.deepcopy(args['ebook_list'])
                                         file = ebook_list[0]
-                                        session['status'] = status_tags['READY']
                                         if any(file.endswith(ext) for ext in ebook_formats):
                                             args['ebook_src'] = file
                                             progress_status, passed = convert_ebook(args)
