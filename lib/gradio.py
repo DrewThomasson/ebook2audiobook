@@ -2667,20 +2667,6 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event],
                 outputs=[gr_modal, gr_event],
                 show_progress_on=[gr_progress]
-            ).then(
-                fn=lambda s: (
-                    enable_components(s) + (1,)
-                    if context.get_session(s)['status'] == status_tags['END']
-                    else [gr.update()] * len(outputs_enable_components) + [0]
-                ),
-                inputs=[gr_session],
-                outputs=outputs_enable_components + [gr_event],
-                show_progress_on=[gr_progress]
-            ).then(
-                fn=None,
-                inputs=[gr_event],
-                outputs=None,
-                js=f'(end)=>{{if(end){{{js_show_elements}}}}}'
             )
             gr_override_cancel_btn.click(
                 fn=click_gr_override_cancel_btn,
