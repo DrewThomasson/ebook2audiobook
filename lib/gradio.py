@@ -1187,12 +1187,6 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if data is None:
-                            if session.get('status', None) in [status_tags['EDIT'], status_tags['CONVERTING']]:
-                                session['cancellation_requested'] = True
-                                msg = 'Cancellation requested, please wait…'
-                                return gr.update(value=show_gr_modal('wait', msg), visible=True)
-                        session['cancellation_requested'] = False
                         if ebook_mode == ebook_modes['SINGLE']:
                             session['ebook_src'] = data
                             # since ebook_textarea override ebook_src during the conversion
@@ -1200,6 +1194,12 @@ def build_interface(args:dict)->gr.Blocks:
                             session['ebook_src_notextarea'] = data
                         elif ebook_mode == ebook_modes['DIRECTORY']:
                             session['ebook_list'] = data
+                        if data is None:
+                            if session.get('status', None) in [status_tags['EDIT'], status_tags['CONVERTING']]:
+                                session['cancellation_requested'] = True
+                                msg = 'Cancellation requested, please wait…'
+                                return gr.update(value=show_gr_modal('wait', msg), visible=True)
+                        session['cancellation_requested'] = False
                 except Exception as e:
                     error = f'change_gr_ebook_src(): {e}'
                     exception_alert(session_id, error)
@@ -2584,7 +2584,9 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_audiobook_list],
                 outputs=[gr_modal, gr_data_field_hidden]
             )
+
             ########### XTTSv2 Params
+
             gr_tab_xtts_params.select(
                 fn=None,
                 inputs=None,
@@ -2644,7 +2646,9 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_xtts_enable_text_splitting],
                 outputs=None
             )
+
             ########### BARK Params
+
             gr_tab_bark_params.select(
                 fn=None,
                 inputs=None,
@@ -2674,14 +2678,18 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_bark_waveform_temp],
                 outputs=None
             )
+
             ############ Timer to save session to localStorage
+
             gr_timer = gr.Timer(9, active=False)
             gr_timer.tick(
                 fn=update_gr_save_session,
                 inputs=[gr_session, gr_session_update],
                 outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
             )
+
             ########### Main chains
+
             chain_enable(
                 chain_check_override(
                     gr_convert_btn.click(
