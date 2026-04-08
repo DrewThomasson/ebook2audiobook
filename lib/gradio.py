@@ -2769,7 +2769,7 @@ def build_interface(args:dict)->gr.Blocks:
                         )
                     ).then(
                         fn=lambda s: (
-                            gr.update(choices=audiobook_options, value=Path(context.get_session(s)['audiobook']).name)
+                            gr.update(choices=audiobook_options, value=context.get_session(s)['audiobook'])
                             if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
                             and context.get_session(s)['audiobook'] is not None
                             else gr.update()
@@ -2809,7 +2809,7 @@ def build_interface(args:dict)->gr.Blocks:
                         )
                     ).then(
                         fn=lambda s: (
-                            gr.update(choices=audiobook_options, value=Path(context.get_session(s)['audiobook']).name)
+                            gr.update(choices=audiobook_options, value=context.get_session(s)['audiobook'])
                             if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
                             and context.get_session(s)['audiobook'] is not None
                             else gr.update()
