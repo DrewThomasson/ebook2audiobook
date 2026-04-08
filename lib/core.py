@@ -3032,7 +3032,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 session['ebook_src'] = None
             elif session['ebook_mode'] == ebook_modes['TEXT']:
                 ebook_src = session['ebook_src']
-                if sebook_src:
+                if ebook_src:
                     try:
                         os.remove(ebook_src)
                     except FileNotFoundError:

@@ -3143,7 +3143,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     const container = document.querySelector("#gr_ebook_textarea");
                                     if(container){
                                         const textarea = container.querySelector("textarea");
-                                        const gr_convert_btn = document.querySelector("#gr_convert_btn button");
                                         const ebook_textarea_toolbar = document.querySelector("#ebook_textarea_toolbar");
                                         if(ebook_textarea_toolbar){
                                             ebook_textarea_toolbar.remove();
