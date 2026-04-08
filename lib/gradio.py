@@ -1159,7 +1159,7 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['audiobook'] is not None:
+                        if session['audiobook'] is not None: 
                             vtt = Path(session['audiobook']).with_suffix('.vtt')
                             if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
                                 error = f"{Path(session['audiobook']).name} does not exist!"
@@ -1169,9 +1169,8 @@ def build_interface(args:dict)->gr.Blocks:
                             duration = audio_info.get('duration', False)
                             if duration:
                                 session['duration'] = float(audio_info['duration'])
-                                with open(vtt, 'r', encoding='utf-8-sig', errors='replace') as f:
+                                with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                                     vtt_content = f.read()
-                                vtt_content = f'{vtt_content}\n<!-- {int(time.time())} -->'
                                 return gr.update(value=0.0), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
                             else:
                                 error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
@@ -2604,6 +2603,10 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_group_audiobook_list],
                 show_progress_on=[gr_progress]
             ).then(
+                fn=lambda: (gr.update(value=0.0), gr.update(value=None), gr.update(value='')),
+                inputs=None,
+                outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
+            ).then(
                 fn=update_gr_audiobook_player,
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
@@ -3259,7 +3262,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             gr_audiobook_sentence.style.margin = "0";
                                             gr_audiobook_sentence.style.padding = "7px 0 7px 0";
                                             gr_audiobook_sentence.style.lineHeight = "14px";
-                                            const txt = gr_audiobook_vtt.value.replace(/\n<!--.*-->$/, '').trim();
+                                            const txt = gr_audiobook_vtt.value;
                                             if(txt == ""){
                                                 gr_audiobook_sentence.value = "…";
                                             }else{
