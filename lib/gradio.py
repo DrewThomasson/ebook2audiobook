@@ -2769,12 +2769,16 @@ def build_interface(args:dict)->gr.Blocks:
                         )
                     ).then(
                         fn=lambda s: (
-                            gr.update(choices=[])
+                            update_gr_audiobook_player(s)
                             if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
-                            else gr.update()
+                            else (gr.update(), gr.update(), gr.update())
                         ),
                         inputs=[gr_session],
-                        outputs=[gr_audiobook_list]
+                        outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
+                    ).then(
+                        fn=None,
+                        inputs=None,
+                        js='()=>{ window.load_vtt(); }'
                     )
                 ),
                 always=False
@@ -2808,12 +2812,16 @@ def build_interface(args:dict)->gr.Blocks:
                         )
                     ).then(
                         fn=lambda s: (
-                            gr.update(choices=[])
+                            update_gr_audiobook_player(s)
                             if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
-                            else gr.update()
+                            else (gr.update(), gr.update(), gr.update())
                         ),
                         inputs=[gr_session],
-                        outputs=[gr_audiobook_list]
+                        outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
+                    ).then(
+                        fn=None,
+                        inputs=None,
+                        js='()=>{ window.load_vtt(); }'
                     )
                 ),
                 always=True
