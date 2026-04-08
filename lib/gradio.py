@@ -2908,8 +2908,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     try {
                                         gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         gr_progress = (gr_root) ? gr_root.querySelector("#gr_progress") : undefined;
-                                        gr_ebook_textarea = (gr_root) ? gr_root.querySelector("#gr_ebook_textarea") : undefined;
-                                        if(!gr_root || !gr_progress || !gr_ebook_textarea){
+                                        if(!gr_root || !gr_progress){
                                             clearTimeout(init_elements_timeout);
                                             console.warn("Components not ready… retrying");
                                             init_elements_timeout = setTimeout(init_interface, 1000);
@@ -3142,37 +3141,39 @@ def build_interface(args:dict)->gr.Blocks:
                                 const max_ebook_textarea_length = __max_ebook_textarea_length__;
                                 window.gr_ebook_textarea_counter = function(){
                                     const container = document.querySelector("#gr_ebook_textarea");
-                                    const textarea = container.querySelector("textarea");
-                                    const gr_convert_btn = document.querySelector("#gr_convert_btn button");
-                                    const ebook_textarea_toolbar = document.querySelector("#ebook_textarea_toolbar");
-                                    if(ebook_textarea_toolbar){
-                                        ebook_textarea_toolbar.remove();
+                                    if(container){
+                                        const textarea = container.querySelector("textarea");
+                                        const gr_convert_btn = document.querySelector("#gr_convert_btn button");
+                                        const ebook_textarea_toolbar = document.querySelector("#ebook_textarea_toolbar");
+                                        if(ebook_textarea_toolbar){
+                                            ebook_textarea_toolbar.remove();
+                                        }
+                                        container.style.position = "relative";
+                                        const toolbar = document.createElement("div");
+                                        toolbar.id = toolbar.name = "ebook_textarea_toolbar";
+                                        toolbar.style.cssText = "position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;";
+                                        const counter = document.createElement("span");
+                                        counter.style.cssText = "font-size:0.85em;color:var(--body-text-color);";
+                                        counter.textContent = textarea.value.length + " / " + max_ebook_textarea_length;
+                                        toolbar.appendChild(counter);
+                                        const btn = document.createElement("button");
+                                        btn.textContent = "🗑";
+                                        btn.id = btn.name = "clear_ebook_textarea";
+                                        btn.className = "micro-btn";
+                                        btn.addEventListener("click", ()=>{
+                                            textarea.value = "";
+                                            textarea.dispatchEvent(new Event("input", {bubbles: true}));
+                                            counter.textContent = "0 / " + max_ebook_textarea_length;
+                                            counter.style.color = "var(--body-text-color)";
+                                        });
+                                        textarea.addEventListener("input", ()=>{
+                                            const len = textarea.value.length;
+                                            counter.textContent = len + " / " + max_ebook_textarea_length;
+                                            counter.style.color = len >= max_ebook_textarea_length ? "red" : "var(--body-text-color)";
+                                        });
+                                        toolbar.appendChild(btn);
+                                        container.appendChild(toolbar);
                                     }
-                                    container.style.position = "relative";
-                                    const toolbar = document.createElement("div");
-                                    toolbar.id = toolbar.name = "ebook_textarea_toolbar";
-                                    toolbar.style.cssText = "position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;";
-                                    const counter = document.createElement("span");
-                                    counter.style.cssText = "font-size:0.85em;color:var(--body-text-color);";
-                                    counter.textContent = textarea.value.length + " / " + max_ebook_textarea_length;
-                                    toolbar.appendChild(counter);
-                                    const btn = document.createElement("button");
-                                    btn.textContent = "🗑";
-                                    btn.id = btn.name = "clear_ebook_textarea";
-                                    btn.className = "micro-btn";
-                                    btn.addEventListener("click", ()=>{
-                                        textarea.value = "";
-                                        textarea.dispatchEvent(new Event("input", {bubbles: true}));
-                                        counter.textContent = "0 / " + max_ebook_textarea_length;
-                                        counter.style.color = "var(--body-text-color)";
-                                    });
-                                    textarea.addEventListener("input", ()=>{
-                                        const len = textarea.value.length;
-                                        counter.textContent = len + " / " + max_ebook_textarea_length;
-                                        counter.style.color = len >= max_ebook_textarea_length ? "red" : "var(--body-text-color)";
-                                    });
-                                    toolbar.appendChild(btn);
-                                    container.appendChild(toolbar);
                                 };
                             }
                             if(typeof(window.tab_progress) !== "function"){
