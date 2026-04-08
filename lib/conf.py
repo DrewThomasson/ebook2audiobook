@@ -12,7 +12,7 @@ systems = {
 
 cli_options = [
     '--script_mode', '--docker_mode', '--session', '--share', '--headless', 
-    '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
+    '--ebook', '--ebooks_dir', '--text', '--language', '--voice', '--device', '--tts_engine', 
     '--custom_model', '--fine_tuned', '--output_format', '--output_channel',
     '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', 
     '--top_k', '--top_p', '--speed', '--enable_text_splitting', '--text_temp',
@@ -155,8 +155,9 @@ if DEVICE_SYSTEM == systems['WINDOWS']:
 # Global settings
 # ---------------------------------------------------------------------
 
-max_upload_size = '6GB'
+max_upload_size = '6GB' # MB or GB
 tmp_expire = 7 # days
+max_ebook_textarea_length = 1024 # chars
 
 # ---------------------------------------------------------------------
 # Interface configuration

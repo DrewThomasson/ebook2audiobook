@@ -279,6 +279,7 @@ options:
   --ebooks_dir EBOOKS_DIR
                         Relative or absolute path of the directory containing the files to convert.
                             Cannot be used when --ebook is present.
+  --text TEXT           Raw text for conversion. Cannot be used when --ebook or --ebooks_dir is present.
   --language LANGUAGE   Language of the e-book. Default language is set
                             in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py
 
