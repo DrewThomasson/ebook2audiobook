@@ -2098,9 +2098,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                 block_dir_path = os.path.join(session['sentences_dir'], str(x))
                                 if os.path.isdir(block_dir_path):
                                     shutil.rmtree(block_dir_path)
-                            else:
-                                msg = f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}'
-                                show_alert(session_id, {"type": "info", "msg": msg})
                             start_sentence = sentence_resume
                         else:
                             start_sentence = 0
