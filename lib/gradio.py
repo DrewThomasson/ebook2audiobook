@@ -2797,14 +2797,14 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_session],
                             outputs=[gr_progress, gr_dummy_bool],
                             show_progress_on=[gr_progress]
+                        ).then(
+                            fn=lambda: gr.update(value=None),
+                            inputs=None,
+                            outputs=[gr_audiobook_list]
                         )
                     )
                 ),
                 always=True
-            ).then(
-                fn=lambda: gr.update(value=None),
-                inputs=None,
-                outputs=[gr_audiobook_list]
             )
             ###########
             gr_blocks_back_btn.click(
