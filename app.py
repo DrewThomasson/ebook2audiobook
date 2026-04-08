@@ -320,6 +320,7 @@ SML tags available:
                                 if file in args['ebook_list']:
                                     args['ebook_list'].remove(file)
                                 continue
+                            c.context.sessions[args['id']]['status'] = c.status_tags['READY']
                             c.reset_ebook_session(args['id'], force=True, filter_keys=False)
                             args['ebook_src'] = file
                             progress_status, passed = c.convert_ebook(args)
