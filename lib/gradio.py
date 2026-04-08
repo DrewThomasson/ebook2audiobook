@@ -1190,8 +1190,8 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         if data is None:
                             if session.get('status', None) in [status_tags['EDIT'], status_tags['CONVERTING']]:
-                                session['ebook_src'] = None
                                 session['cancellation_requested'] = True
+                                session['status'] = status_tags['END']
                                 msg = 'Cancellation requested, please wait…'
                                 return gr.update(value=show_gr_modal('wait', msg), visible=True)
                         session['cancellation_requested'] = False
