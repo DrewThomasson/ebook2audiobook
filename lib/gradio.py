@@ -2319,10 +2319,10 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal],
                 show_progress_on=[gr_ebook_src]
             ).then(
-                fn=lambda sid, f: gr.update(
-                    interactive=context.get_session(sid).get('status') == status_tags['READY'] and f is not None
+                fn=lambda sid, m, f: gr.update(
+                    interactive=m == ebook_modes['TEXT'] or f is not None
                 ),
-                inputs=[gr_session, gr_ebook_src],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
                 outputs=[gr_convert_btn],
             )
             gr_ebook_textarea.change(
@@ -2339,7 +2339,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=None,
                 inputs=[gr_ebook_mode],
                 outputs=None,
-                js='(mode) => { if (mode === "text") { window.gr_ebook_textarea_counter(); } }'
+                js=f'(mode)=>{{if(mode == "{ebook_modes['TEXT']}}"){{window.gr_ebook_textarea_counter();}}}}'
             )
             gr_blocks_preview.select(
                 fn=lambda session_id, val: change_param('blocks_preview', session_id, bool(val)),
