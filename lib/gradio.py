@@ -1739,12 +1739,12 @@ def build_interface(args:dict)->gr.Blocks:
                     session['playback_time'] = time
                 return
 
-            def toggle_audiobook_files(session_id:str, audiobook:str, is_visible:bool)->tuple:
+            def toggle_audiobook_files(session_id:str, audiobook:str, is_visible:bool, refresh_only:bool=False)->tuple:
                 if not audiobook:
                     error = 'No audiobook selected.'
                     show_alert(session_id, {"type": "error", "msg": error})
                     return gr.update(), False
-                if is_visible:
+                if is_visible and not refresh_only:
                     return gr.update(visible=False, value=None), False
                 file = Path(audiobook)
                 if not file.exists():
@@ -1752,7 +1752,7 @@ def build_interface(args:dict)->gr.Blocks:
                     show_alert(session_id, {"type": "error", "msg": error})
                     return gr.update(), False
                 files = [str(file)]
-                vtt = file.with_suffix(".vtt")
+                vtt = file.with_suffix('.vtt')
                 if vtt.exists():
                     files.append(str(vtt))
                 return gr.update(visible=True, value=files), True
@@ -2777,8 +2777,8 @@ def build_interface(args:dict)->gr.Blocks:
                         outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
                     ).then(
                         fn=lambda s, al, ft: (
-                            toggle_audiobook_files(s, al, ft)
-                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
+                            toggle_audiobook_files(s, al, ft, refresh_only=True)
+                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']] and ft
                             else (gr.update(), gr.update())
                         ),
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
@@ -2828,8 +2828,8 @@ def build_interface(args:dict)->gr.Blocks:
                         outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
                     ).then(
                         fn=lambda s, al, ft: (
-                            toggle_audiobook_files(s, al, ft)
-                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
+                            toggle_audiobook_files(s, al, ft, refresh_only=True)
+                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']] and ft
                             else (gr.update(), gr.update())
                         ),
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
