@@ -2808,7 +2808,7 @@ def build_interface(args:dict)->gr.Blocks:
                         )
                     ).then(
                         fn=lambda s: (
-                            gr.update(value=None)
+                            gr.update(value='')
                             if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
                             else gr.update()
                         ),
