@@ -2244,10 +2244,10 @@ def build_interface(args:dict)->gr.Blocks:
 
             ################## Events
 
-            def chain_enable(event):
+            def chain_end(event):
                 def fn(s):
                     session = context.get_session(s)
-                    if(session.get('status') == status_tags['END']and session.get('ebook_mode') == ebook_modes['TEXT']):
+                    if(session.get('status') == status_tags['END'] and session.get('ebook_mode') == ebook_modes['TEXT']):
                         return list(enable_components(s)) + [1]
                     return [gr.update()] * len(outputs_enable_components) + [0]
                 return event.then(
@@ -2307,7 +2307,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_fine_tuned_list, gr_voice_file, gr_session_closed_btn, gr_session_opened_btn,
                 gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_del_btn
             ]
-            chain_enable(
+            chain_end(
                 gr_ebook_src.change(
                     fn=change_gr_ebook_src,
                     inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
@@ -2666,7 +2666,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_session_update],
                 outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
             )
-            chain_enable(
+            chain_end(
                 gr_convert_btn.click(
                     fn=disable_components,
                     inputs=None,
@@ -2680,7 +2680,7 @@ def build_interface(args:dict)->gr.Blocks:
                     show_progress_on=[gr_progress]
                 )
             )
-            chain_enable(
+            chain_end(
                 gr_override_cancel_btn.click(
                     fn=click_gr_override_cancel_btn,
                     inputs=[gr_session, gr_ebook_src, gr_ebook_textarea],
@@ -2693,7 +2693,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_event],
                 outputs=[gr_modal, gr_event]
             )
-            chain_enable(
+            chain_end(
                 gr_event.change(
                     fn=disable_components,
                     inputs=None,
@@ -2721,7 +2721,7 @@ def build_interface(args:dict)->gr.Blocks:
                     show_progress_on=[gr_progress]
                 )
             )
-            chain_enable(
+            chain_end(
                 gr_blocks_cancel_btn.click(
                     fn=click_gr_blocks_cancel_btn,
                     inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
@@ -2738,7 +2738,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_group_main, gr_group_blocks, gr_ebook_textarea, gr_blocks_event]
             )
-            chain_enable(
+            chain_end(
                 gr_blocks_event.change(
                     fn=finalize_audiobook,
                     inputs=[gr_session],
