@@ -2120,7 +2120,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                     all_sentences.append(sentence)
                                 if j >= start_sentence or j in missing_sentences:
                                     if j == start_sentence and start_sentence > 0:
-                                        msg = f'********* Resuming from sentence {global_sent} ********'
+                                        msg = f'*** Resuming from sentence {global_sent} ***'
                                         show_alert(session_id, {"type": "info", "msg": msg})
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                                     success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
