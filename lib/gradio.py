@@ -2084,6 +2084,7 @@ def build_interface(args:dict)->gr.Blocks:
                         b['tts_engine'] = session.get('tts_engine', '')
                     if not b.get('fine_tuned'):
                         b['fine_tuned'] = session.get('fine_tuned', '')
+                session['blocks_saved'] = session['blocks_current']
                 blocks_current = session['blocks_current']
                 blocks_current['blocks'] = new_blocks
                 session['blocks_current'] = blocks_current
@@ -2785,7 +2786,6 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_group_main, gr_group_blocks, gr_ebook_textarea, gr_blocks_event]
             )
-            
             chain_enable(
                 chain_check_override(
                     chain_refresh(
