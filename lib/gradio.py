@@ -2243,15 +2243,6 @@ def build_interface(args:dict)->gr.Blocks:
 
             ################## Events
 
-            def chain_disable(event):
-                return event.then(
-                    fn=disable_components,
-                    inputs=None,
-                    outputs=outputs_disable_components,
-                    js=f'()=>{{{js_hide_elements}}}',
-                    show_progress_on=[gr_progress]
-                )
-
             def chain_check_override(event):
                 return event.then(
                     fn=check_override_ebook,
@@ -2331,11 +2322,13 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_fine_tuned_list, gr_voice_file, gr_session_closed_btn, gr_session_opened_btn,
                 gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_del_btn
             ]
-            gr_ebook_src.change(
-                fn=change_gr_ebook_src,
-                inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
-                outputs=[gr_modal],
-                show_progress_on=[gr_ebook_src]
+            chain_enable(
+                gr_ebook_src.change(
+                    fn=change_gr_ebook_src,
+                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
+                    outputs=[gr_modal],
+                    show_progress_on=[gr_ebook_src]
+                )
             )
             gr_ebook_textarea.change(
                 fn=change_gr_ebook_textarea,
@@ -2691,7 +2684,13 @@ def build_interface(args:dict)->gr.Blocks:
             ########### Main chains
             chain_enable(
                 chain_check_override(
-                    chain_disable(gr_convert_btn.click)
+                    gr_convert_btn.click(
+                        fn=disable_components,
+                        inputs=None,
+                        outputs=outputs_disable_components,
+                        js=f'()=>{{{js_hide_elements}}}',
+                        show_progress_on=[gr_progress]
+                    )
                 )
             )
             chain_enable(
@@ -2710,7 +2709,13 @@ def build_interface(args:dict)->gr.Blocks:
             chain_enable(
                 chain_check_override(
                     chain_refresh(
-                        chain_disable(gr_event.change).then(
+                        gr_event.change(
+                            fn=disable_components,
+                            inputs=None,
+                            outputs=outputs_disable_components,
+                            js=f'()=>{{{js_hide_elements}}}',
+                            show_progress_on=[gr_progress]
+                        ).then(
                             fn=start_conversion,
                             inputs=inputs_start_conversion,
                             outputs=[gr_progress],
@@ -2740,6 +2745,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_group_main, gr_group_blocks, gr_ebook_textarea, gr_blocks_event]
             )
+            
             chain_enable(
                 chain_check_override(
                     chain_refresh(
