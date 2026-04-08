@@ -2307,22 +2307,14 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_fine_tuned_list, gr_voice_file, gr_session_closed_btn, gr_session_opened_btn,
                 gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_del_btn
             ]
-            gr_ebook_src.change(
-                fn=change_gr_ebook_src,
-                inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
-                outputs=[gr_modal],
-                show_progress_on=[gr_ebook_src]
-            ).then(
-                fn=lambda sid, m, f: gr.update(
-                    interactive=(
-                        m == ebook_modes['TEXT']
-                        or (isinstance(f, list) and len(f) > 0)
-                        or (not isinstance(f, list) and f is not None)
-                    )
-                ),
-                inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
-                outputs=[gr_convert_btn],
-            )
+            chain_enable(
+                gr_ebook_src.change(
+                    fn=change_gr_ebook_src,
+                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
+                    outputs=[gr_modal],
+                    show_progress_on=[gr_ebook_src]
+                )
+            }
             gr_ebook_textarea.change(
                 fn=change_gr_ebook_textarea,
                 inputs=[gr_session, gr_ebook_textarea],
