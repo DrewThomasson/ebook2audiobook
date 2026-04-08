@@ -1937,11 +1937,10 @@ def build_interface(args:dict)->gr.Blocks:
                                     source = session['ebook_src']
                             else:
                                 if ebook_mode == ebook_modes['DIRECTORY']:
-                                    if isinstance(ebook_data, list):
-                                        if not ebook_data:
-                                            error = 'A directory with ebook files is required.'
-                                        else:
-                                            source = ebook_data[0]
+                                    if not ebook_data:
+                                        error = 'A directory with ebook files is required.'
+                                    else:
+                                        source = ebook_data[0]
                                 elif ebook_mode == ebook_modes['SINGLE']:
                                     if not ebook_data:
                                         error = 'An ebook file is required.'
@@ -2251,13 +2250,13 @@ def build_interface(args:dict)->gr.Blocks:
             ################## Events
 
             def chain_enable(event):
+                def fn(s):
+                    session = context.get_session(s)
+                    if(session.get('status') == status_tags['END']and session.get('ebook_mode') == ebook_modes['TEXT']):
+                        return list(enable_components(s)) + [1]
+                    return [gr.update()] * len(outputs_enable_components) + [0]
                 return event.then(
-                    fn=lambda s: (
-                        list(enable_components(s)) + [1]
-                        if context.get_session(s)['status'] == status_tags['END']
-                        and context.get_session(s)['ebook_mode'] == ebook_modes['TEXT']
-                        else [gr.update()] * len(outputs_enable_components) + [0]
-                    ),
+                    fn=fn,
                     inputs=[gr_session],
                     outputs=outputs_enable_components + [gr_end_event],
                     show_progress_on=[gr_progress]
