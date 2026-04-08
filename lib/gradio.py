@@ -2805,10 +2805,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=lambda: gr.update(value=None),
                 inputs=None,
                 outputs=[gr_audiobook_list]
-            ).then(
-                fn=lambda s: gr.update(value=os.path.basename(context.get_session(s)['audiobook'])),
-                inputs=[gr_session],
-                outputs=[gr_audiobook_list]
             )
             ###########
             gr_blocks_back_btn.click(
