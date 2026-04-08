@@ -2766,6 +2766,14 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=edit_blocks,
                             inputs=[gr_session],
                             outputs=outputs_edit_blocks
+                        ).then(
+                            fn=lambda s: (
+                                gr.update(value=os.path.basename(context.get_session(s)['audiobook']))
+                                if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
+                                else gr.update()
+                            ),
+                            inputs=[gr_session],
+                            outputs=[gr_audiobook_list]
                         )
                     )
                 ),
@@ -2798,7 +2806,11 @@ def build_interface(args:dict)->gr.Blocks:
                             outputs=[gr_progress, gr_dummy_bool],
                             show_progress_on=[gr_progress]
                         ).then(
-                            fn=lambda s: gr.update(value=os.path.basename(context.get_session(s)['audiobook'])),
+                            fn=lambda s: (
+                                gr.update(value=os.path.basename(context.get_session(s)['audiobook']))
+                                if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
+                                else gr.update()
+                            ),
                             inputs=[gr_session],
                             outputs=[gr_audiobook_list]
                         )
