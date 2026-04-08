@@ -914,8 +914,7 @@ def build_interface(args:dict)->gr.Blocks:
                         enabled_convert_btn = False
                         if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                             if session.get('ebook_list'):
-                                if isinstance(session['ebook_list'], list):
-                                    enabled_convert_btn = True
+                                enabled_convert_btn = True
                         elif session['ebook_mode'] == ebook_modes['SINGLE']:
                             if session.get('ebook_src'):
                                 enabled_convert_btn = True
@@ -2244,14 +2243,39 @@ def build_interface(args:dict)->gr.Blocks:
 
             ################## Events
 
-            def chain_end(event):
-                def fn(s):
-                    session = context.get_session(s)
-                    if(session.get('status') == status_tags['END'] and session.get('ebook_mode') == ebook_modes['TEXT']):
-                        return list(enable_components(s)) + [1]
-                    return [gr.update()] * len(outputs_enable_components) + [0]
+            def chain_disable(event):
                 return event.then(
-                    fn=fn,
+                    fn=disable_components,
+                    inputs=None,
+                    outputs=outputs_disable_components,
+                    js=f'()=>{{{js_hide_elements}}}',
+                    show_progress_on=[gr_progress]
+                )
+
+            def chain_check_override(event):
+                return event.then(
+                    fn=check_override_ebook,
+                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event],
+                    outputs=[gr_modal, gr_event],
+                    show_progress_on=[gr_progress]
+                )
+
+            def chain_refresh(event):
+                return event.then(
+                    fn=refresh_interface,
+                    inputs=[gr_session],
+                    outputs=outputs_refresh_interface,
+                    show_progress_on=[gr_progress]
+                )
+
+            def chain_enable(event):
+                return event.then(
+                    fn=lambda s: (
+                        enable_components(s) + (1,)
+                        if context.get_session(s)['status'] == status_tags['END']
+                        and context.get_session(s)['ebook_mode'] == ebook_modes['TEXT']
+                        else [gr.update()] * len(outputs_enable_components) + [0]
+                    ),
                     inputs=[gr_session],
                     outputs=outputs_enable_components + [gr_end_event],
                     show_progress_on=[gr_progress]
@@ -2260,7 +2284,6 @@ def build_interface(args:dict)->gr.Blocks:
                     inputs=[gr_end_event],
                     outputs=None,
                     js=f'(gr_end_event)=>{{if(gr_end_event){{{js_show_elements}}}}}'
-                )
 
             inputs_start_conversion = [
                 gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
@@ -2307,7 +2330,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_fine_tuned_list, gr_voice_file, gr_session_closed_btn, gr_session_opened_btn,
                 gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_del_btn
             ]
-            chain_end(
+            chain_enable(
                 gr_ebook_src.change(
                     fn=change_gr_ebook_src,
                     inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
@@ -2666,25 +2689,17 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_session_update],
                 outputs=[gr_save_session, gr_session_update, gr_audiobook_list]
             )
-            chain_end(
-                gr_convert_btn.click(
-                    fn=disable_components,
-                    inputs=None,
-                    outputs=outputs_disable_components,
-                    js=f'()=>{{{js_hide_elements}}}',
-                    show_progress_on=[gr_progress]
-                ).then(
-                    fn=check_override_ebook,
-                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event],
-                    outputs=[gr_modal, gr_event],
-                    show_progress_on=[gr_progress]
+            ########### Main chains
+            chain_enable(
+                chain_check_override(
+                    chain_disable(gr_convert_btn.click)
                 )
             )
-            chain_end(
+            chain_enable(
                 gr_override_cancel_btn.click(
                     fn=click_gr_override_cancel_btn,
                     inputs=[gr_session, gr_ebook_src, gr_ebook_textarea],
-                    outputs=[gr_modal],
+                    outputs=[gr_modal, gr_ebook_src, gr_ebook_textarea],
                     show_progress_on=[gr_progress]
                 )
             )
@@ -2693,35 +2708,23 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_event],
                 outputs=[gr_modal, gr_event]
             )
-            chain_end(
-                gr_event.change(
-                    fn=disable_components,
-                    inputs=None,
-                    outputs=outputs_disable_components,
-                    js=f'()=>{{{js_hide_elements}}}',
-                    show_progress_on=[gr_progress]
-                ).then(
-                    fn=start_conversion,
-                    inputs=inputs_start_conversion,
-                    outputs=[gr_progress],
-                    show_progress_on=[gr_progress]
-                ).then(
-                    fn=edit_blocks,
-                    inputs=[gr_session],
-                    outputs=outputs_edit_blocks
-                ).then(
-                    fn=refresh_interface,
-                    inputs=[gr_session],
-                    outputs=outputs_refresh_interface,
-                    show_progress_on=[gr_progress]
-                ).then(
-                    fn=check_override_ebook,
-                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event],
-                    outputs=[gr_modal, gr_event],
-                    show_progress_on=[gr_progress]
+            chain_enable(
+                chain_check_override(
+                    chain_refresh(
+                        chain_disable(gr_event.change).then(
+                            fn=start_conversion,
+                            inputs=inputs_start_conversion,
+                            outputs=[gr_progress],
+                            show_progress_on=[gr_progress]
+                        ).then(
+                            fn=edit_blocks,
+                            inputs=[gr_session],
+                            outputs=outputs_edit_blocks
+                        )
+                    )
                 )
             )
-            chain_end(
+            chain_enable(
                 gr_blocks_cancel_btn.click(
                     fn=click_gr_blocks_cancel_btn,
                     inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
@@ -2738,24 +2741,19 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
                 outputs=[gr_group_main, gr_group_blocks, gr_ebook_textarea, gr_blocks_event]
             )
-            chain_end(
-                gr_blocks_event.change(
-                    fn=finalize_audiobook,
-                    inputs=[gr_session],
-                    outputs=[gr_progress, gr_dummy_bool],
-                    show_progress_on=[gr_progress]
-                ).then(
-                    fn=refresh_interface,
-                    inputs=[gr_session],
-                    outputs=outputs_refresh_interface,
-                    show_progress_on=[gr_progress]
-                ).then(
-                    fn=check_override_ebook,
-                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event],
-                    outputs=[gr_modal, gr_event],
-                    show_progress_on=[gr_progress]
+            chain_enable(
+                chain_check_override(
+                    chain_refresh(
+                        gr_blocks_event.change(
+                            fn=finalize_audiobook,
+                            inputs=[gr_session],
+                            outputs=[gr_progress, gr_dummy_bool],
+                            show_progress_on=[gr_progress]
+                        )
+                    )
                 )
             )
+            ###########
             gr_blocks_back_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
                 inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
@@ -2774,6 +2772,7 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
                 outputs=[*blocks_components_flat, gr_blocks_header]
             )
+            #############
             gr_save_session.change(
                 fn=None,
                 inputs=[gr_save_session],
