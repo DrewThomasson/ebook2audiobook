@@ -2603,10 +2603,6 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_group_audiobook_list],
                 show_progress_on=[gr_progress]
             ).then(
-                fn=lambda: (gr.update(value=0.0), gr.update(value=None), gr.update(value='')),
-                inputs=None,
-                outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
-            ).then(
                 fn=update_gr_audiobook_player,
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
@@ -2801,6 +2797,14 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_session],
                             outputs=[gr_progress, gr_dummy_bool],
                             show_progress_on=[gr_progress]
+                        ).then(
+                            fn=update_gr_audiobook_player,
+                            inputs=[gr_session],
+                            outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
+                        ).then(
+                            fn=None,
+                            inputs=None,
+                            js='()=>{window.load_vtt();}'
                         )
                     )
                 ),
