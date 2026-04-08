@@ -1988,13 +1988,8 @@ def build_interface(args:dict)->gr.Blocks:
             def click_gr_override_cancel_btn(session_id:str, ebook_data:any, ebook_textarea:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session['status'] == status_tags['OVERRIDE']:
-                        session['status'] = status_tags['SKIP']
-                        if session['ebook_mode'] == ebook_modes['TEXT']:
-                            return gr.update(value='', visible=False), gr.update(visible=True)
-                        else:
-                            return gr.update(value='', visible=True), gr.update(visible=False)
-                return gr.update(value='', visible=False), gr.update()
+                    session['status'] = status_tags['SKIP']
+                return gr.update(value='', visible=False)
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
                 session = context.get_session(session_id)
@@ -2693,7 +2688,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_override_cancel_btn.click(
                     fn=click_gr_override_cancel_btn,
                     inputs=[gr_session, gr_ebook_src, gr_ebook_textarea],
-                    outputs=[gr_modal, gr_ebook_src, gr_ebook_textarea],
+                    outputs=[gr_modal, gr_ebook_src],
                     show_progress_on=[gr_progress]
                 )
             )
