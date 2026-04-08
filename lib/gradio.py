@@ -2802,13 +2802,9 @@ def build_interface(args:dict)->gr.Blocks:
                 ),
                 always=True
             ).then(
-                fn=update_gr_audiobook_player,
+                fn=lambda s: gr.update(value=context.get_session(s).get('audiobook', None)),
                 inputs=[gr_session],
-                outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
-            ).then(
-                fn=None,
-                inputs=None,
-                js='()=>{window.load_vtt();}'
+                outputs=[gr_audiobook_list]
             )
             ###########
             gr_blocks_back_btn.click(
