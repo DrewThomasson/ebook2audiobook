@@ -937,13 +937,13 @@ def build_interface(args:dict)->gr.Blocks:
 
             def disable_on_custom_upload()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(12)])
-                return outputs + (gr.update(show_label=False), gr.update(visible='hidden'))
+                return outputs + (gr.update(visible=False), gr.update(visible='hidden'))
 
             def enable_on_custom_upload(custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
                 outputs = tuple([gr.update(interactive=True) for _ in range(11)])
                 enabled_convert_btn = True if ebook_data or ebook_textarea else False
                 visible_custom_del_btn = True if custom_model is not None else False
-                return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(show_label=True), gr.update(visible=visible_custom_del_btn))
+                return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=True), gr.update(visible=visible_custom_del_btn))
 
             def show_gr_modal(type:str, msg:str)->str:
                 return f'''
