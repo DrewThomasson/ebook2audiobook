@@ -1216,11 +1216,11 @@ def build_interface(args:dict)->gr.Blocks:
                         if val == ebook_modes['SINGLE']:
                             if session.get('ebook_src'):
                                 enabled_convert_btn = True
-                            return gr.update(visible=True, file_count=ebook_modes['SINGLE'], value=session['ebook_src']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn)
+                            return gr.update(visible=True, label='', file_count=ebook_modes['SINGLE'], value=session['ebook_src']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn)
                         elif val == ebook_modes['DIRECTORY']:
                             if session.get('ebook_list'):
                                 enabled_convert_btn = True
-                            return gr.update(visible=True, file_count=ebook_modes['DIRECTORY'], value=session['ebook_list']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn)
+                            return gr.update(visible=True, label='', file_count=ebook_modes['DIRECTORY'], value=session['ebook_list']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn)
                         elif val == ebook_modes['TEXT']:
                             return gr.update(visible=False), gr.update(visible=True, value=session['ebook_textarea']), gr.update(interactive=True)
                 except Exception as e:
