@@ -2778,7 +2778,8 @@ def build_interface(args:dict)->gr.Blocks:
                             else (gr.update(), gr.update())
                         ),
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
-                        outputs=[gr_audiobook_files, gr_audiobook_files_toggled]
+                        outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
+                        js='()=>{ window.load_vtt(); }'
                     )
                 ),
                 always=False
