@@ -2637,6 +2637,10 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
             ).then(
+                fn=lambda ft: (gr.update(value=None), gr.update()) if ft else (gr.update(), gr.update()),
+                inputs=[gr_audiobook_files_toggled],
+                outputs=[gr_audiobook_files, gr_audiobook_files_toggled]
+            ).then(
                 fn=lambda s, al, ft: (
                     toggle_audiobook_files(s, al, ft, refresh_only=True)
                     if ft and al
