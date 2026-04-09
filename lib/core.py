@@ -209,6 +209,7 @@ class SessionContext:
             "ebook_src_notextarea": None,
             "ebook_list": None,
             "ebook_textarea": None,
+            "audiobook_overriden": None,
             "process_dir": None,
             "chapters_dir": None,
             "sentences_dir": None,

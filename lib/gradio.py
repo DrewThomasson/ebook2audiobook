@@ -894,12 +894,12 @@ def build_interface(args:dict)->gr.Blocks:
             ############## End of Gradio Components creation
 
             def disable_components(exception:str|None=None)->tuple:
-                if exception == 'bypass_gr_session_opened_btn':
-                    component = gr.update()
-                else:
-                    component = gr.update(interactive=False)
+                session_opened_btn = gr.update(interactive=False)
+                if exception is not None:
+                    if exception == 'bypass_gr_session_opened_btn':
+                        session_opened_btn = gr.update()
                 outputs = tuple([gr.update(interactive=False) for _ in range(20)])
-                return outputs + (component,)
+                return outputs + (session_opened_btn,)
 
             def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
@@ -1967,11 +1967,13 @@ def build_interface(args:dict)->gr.Blocks:
                                         sentences_dir = os.path.join(chapters_dir, 'sentences')
                                         pre_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
                                         pre_file = os.path.join(process_dir, pre_name)
+                                        final_file = os.path.join(session['audiobooks_dir'], final_name)
                                         audio_sentences_exist = False
                                         if os.path.exists(sentences_dir):
                                             audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
                                         if os.path.exists(pre_file) or audio_sentences_exist:
                                             session['status'] = status_tags['OVERRIDE']
+                                            session['audiobook_overriden'] = final_file
                                             msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                                             return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
                                         else:
@@ -1986,7 +1988,16 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session['status'] = status_tags['END']
+                    session['audiobook_overriden'] = None
                 return gr.update(value='', visible=False)
+
+            def click_gr_override_confirm_btn(session_id:str, event:int)->tuple:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    nonlocal audiobook_options
+                    audiobook_options = [t for t in audiobook_options if t[1] != session['audiobook']]
+                    return gr.update(value='', visible=False), (event + 1), gr.update(choices=audiobook_options)
+                return gr.update(), event, gr.update()
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
                 session = context.get_session(session_id)
@@ -2320,7 +2331,8 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
-                gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_closed_btn, gr_session_opened_btn
+                gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn,
+                gr_session_closed_btn, gr_session_opened_btn
             ]
             outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
@@ -2748,9 +2760,9 @@ def build_interface(args:dict)->gr.Blocks:
                 always=True
             )
             gr_override_confirm_btn.click(
-                fn=lambda event: (gr.update(value='', visible=False), (event + 1)),
-                inputs=[gr_event],
-                outputs=[gr_modal, gr_event]
+                fn=click_gr_override_confirm_btn,
+                inputs=[gr_session, gr_event],
+                outputs=[gr_modal, gr_event, gr_audiobook_list]
             )
             chain_enable(
                 chain_check_override(
