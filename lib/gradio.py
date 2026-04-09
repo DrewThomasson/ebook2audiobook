@@ -2607,7 +2607,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_audiobook_player,
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt],
-                #js='()=>{window.load_vtt();}'
+                js='()=>{window.load_vtt();}'
             )
             gr_audiobook_del_btn.click(
                 fn=click_gr_audiobook_del_btn,
@@ -2765,7 +2765,8 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_session],
                             outputs=outputs_edit_blocks
                         )
-                    ).then(
+                    )
+                    '''.then(
                         fn=lambda s: (
                             update_gr_audiobook_player(s)
                             if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
@@ -2781,8 +2782,8 @@ def build_interface(args:dict)->gr.Blocks:
                         ),
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
                         outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
-                        #js='()=>{window.load_vtt();}'
-                    )
+                        js='()=>{window.load_vtt();}'
+                    )'''
                 ),
                 always=False
             )
@@ -2813,7 +2814,8 @@ def build_interface(args:dict)->gr.Blocks:
                             outputs=[gr_progress, gr_dummy_bool],
                             show_progress_on=[gr_progress]
                         )
-                    ).then(
+                    )
+                    '''.then(
                         fn=lambda s: (
                             update_gr_audiobook_player(s)
                             if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
@@ -2829,8 +2831,8 @@ def build_interface(args:dict)->gr.Blocks:
                         ),
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
                         outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
-                        #js='()=>{ window.load_vtt(); }'
-                    )
+                        js='()=>{window.load_vtt();}'
+                    )'''
                 ),
                 always=True
             )
