@@ -1925,7 +1925,6 @@ def build_interface(args:dict)->gr.Blocks:
                 error = None
                 if session and session.get('id', False):
                     if not session['cancellation_requested']:
-                        print(f"check_override_ebook: {session.get('status')}")
                         if not session['status'] in [status_tags['SKIP'], status_tags['END']]:
                             if session['status'] in [status_tags['EDIT']]:
                                 return gr.update(), event
