@@ -343,7 +343,7 @@ def build_interface(args:dict)->gr.Blocks:
                     display: none !important;
                 }
                 #gr_ebook_src .file-preview-holder {
-                    padding-top: 24px !important;
+                    padding-top: 20px !important;
                 }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
