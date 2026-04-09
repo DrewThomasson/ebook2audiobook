@@ -1738,6 +1738,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def toggle_audiobook_files(session_id:str, audiobook:str, is_visible:bool, refresh_only:bool=False)->tuple:
                 try:
+                    print('toggle_audiobook_files called()')
                     if not audiobook:
                         error = 'No audiobook selected.'
                         show_alert(session_id, {"type": "error", "msg": error})
