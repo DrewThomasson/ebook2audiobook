@@ -2637,12 +2637,12 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt]
             ).then(
-                fn=lambda s, ft: (
-                    toggle_audiobook_files(s, context.get_session(s)['audiobook'], ft, refresh_only=True)
-                    if ft and context.get_session(s).get('audiobook')
+                fn=lambda s, al, ft: (
+                    toggle_audiobook_files(s, al, ft, refresh_only=True)
+                    if ft and al
                     else (gr.update(), gr.update())
                 ),
-                inputs=[gr_session, gr_audiobook_files_toggled],
+                inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
                 outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
                 js='()=>{window.load_vtt();}'
             )
