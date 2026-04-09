@@ -2384,7 +2384,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_voice_file.upload(
                 fn=disable_on_voice_upload,
                 inputs=None,
-                outputs=outputs_on_voice_upload
+                outputs=outputs_on_voice_upload,
+                show_progress_on=[gr_voice_file]
             ).then(
                 fn=change_gr_voice_file,
                 inputs=[gr_session, gr_voice_file],
@@ -2453,7 +2454,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_file.upload(
                 fn=disable_on_custom_upload,
                 inputs=None,
-                outputs=outputs_on_custom_upload
+                outputs=outputs_on_custom_upload,
+                show_progress_on=[gr_custom_model_file]
             ).then(
                 fn=change_gr_custom_model_file,
                 inputs=[gr_session, gr_custom_model_file, gr_tts_engine_list],
@@ -2463,6 +2465,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_voice_list,
                 inputs=[gr_session],
                 outputs=[gr_voice_list],
+                show_progress_on=[gr_custom_model_list]
             ).then(
                 fn=enable_on_custom_upload,
                 inputs=[gr_custom_model_list, gr_ebook_src, gr_ebook_textarea],
