@@ -3099,6 +3099,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "blocks_saved": {},
         "blocks_saved_json": None,
         "blocks_current": {},
+        "ebook_overriden", None,
         "metadata": {
             "title": None, 
             "creator": None,

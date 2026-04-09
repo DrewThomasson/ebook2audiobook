@@ -1995,14 +1995,15 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     nonlocal audiobook_options
-                    current = session['audiobook']
-                    idx = next((i for i, t in enumerate(audiobook_options) if t[1] == current), -1)
-                    audiobook_options = [t for t in audiobook_options if t[1] != current]
-                    if audiobook_options:
-                        new_idx = max(0, idx - 1)
-                        session['audiobook'] = audiobook_options[new_idx][1]
-                    else:
-                        session['audiobook'] = None
+                    file_converting = session['audiobook_overrident']
+                    idx = next((i for i, t in enumerate(audiobook_options) if t[1] == file_converting), -1)
+                    audiobook_options = [t for t in audiobook_options if t[1] != file_converting]
+                    if session['audiobook'] == file_converting:
+                        if audiobook_options:
+                            new_idx = max(0, idx - 1)
+                            session['audiobook'] = audiobook_options[new_idx][1]
+                        else:
+                            session['audiobook'] = None
                     return gr.update(value='', visible=False), (event + 1), gr.update(choices=audiobook_options, value=session['audiobook'])
                 return gr.update(), event, gr.update()
 
