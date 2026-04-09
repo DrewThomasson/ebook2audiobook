@@ -314,6 +314,13 @@ def build_interface(args:dict)->gr.Blocks:
                     align-items: center !important;
                     justify-content: center !important;
                 }
+                #gr_ebook_textarea label, #gr_custom_model_file label {
+                    background: none !important;
+                    border: none !important;
+                }
+                #gr_audiobook_player label {
+                    display: none !important;
+                }
                 #gr_ebook_src, #gr_custom_model_file, #gr_voice_file {
                     height: auto !important;
                     min-height: 100px !important;
@@ -321,13 +328,6 @@ def build_interface(args:dict)->gr.Blocks:
                     flex-direction: column !important;
                     align-items: center !important;
                     justify-content: center !important;
-                }
-                #gr_ebook_textarea label, #gr_custom_model_file label {
-                    background: none !important;
-                    border: none !important;
-                }
-                #gr_audiobook_player label {
-                    display: none !important;
                 }
                 #gr_ebook_src button>div, #gr_ebook_textarea button>div, #gr_custom_model_file button>div, #gr_voice_file button>div {
                     font-size: 12px !important;
@@ -610,7 +610,7 @@ def build_interface(args:dict)->gr.Blocks:
                             with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_ebook_src', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
-                                    gr_ebook_src = gr.File(show_label=False, label=ebook_mode_labels[ebook_modes['SINGLE']], elem_id='gr_ebook_src', visible=True, file_types=ebook_formats, file_count=ebook_modes['SINGLE'], allow_reordering=True, height=100)
+                                    gr_ebook_src = gr.File(show_label=True, label='', elem_id='gr_ebook_src', visible=True, file_types=ebook_formats, file_count=ebook_modes['SINGLE'], allow_reordering=True, height=100)
                                     gr_ebook_textarea = gr.Textbox(show_label=True, label=ebook_mode_labels[ebook_modes['TEXT']], elem_id='gr_ebook_textarea', visible=False, lines=8, max_length=max_ebook_textarea_length)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File',ebook_modes['SINGLE']), ('Directory',ebook_modes['DIRECTORY']), ('Text',ebook_modes['TEXT'])], interactive=True, scale=2)
