@@ -2827,7 +2827,7 @@ def build_interface(args:dict)->gr.Blocks:
                     ).then(
                         fn=lambda s, al, ft: (
                             toggle_audiobook_files(s, al, ft, refresh_only=True)
-                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']] and ft
+                            if context.get_session(s).get('status') in [status_tags['END'], status_tags['READY']] and ft
                             else (gr.update(), gr.update())
                         ),
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
