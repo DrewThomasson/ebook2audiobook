@@ -2466,7 +2466,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=enable_on_custom_upload,
                 inputs=[gr_custom_model_list, gr_ebook_src, gr_ebook_textarea],
-                outputs=outputs_on_custom_upload
+                outputs=outputs_on_custom_upload,
                 show_progress_on=[gr_custom_model_list]
             )
             gr_custom_model_list.change(
