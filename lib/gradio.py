@@ -1863,6 +1863,7 @@ def build_interface(args:dict)->gr.Blocks:
                             elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
+                                    session['status'] = status_tags['END']
                                     return gr.update(value=progress_status)
                                 else:
                                     error = progress_status

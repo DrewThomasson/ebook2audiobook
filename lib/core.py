@@ -3023,7 +3023,11 @@ def finalize_audiobook(session_id:str)->tuple:
             reset_ebook_session(session_id, force=True, filter_keys=False)
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
-            if session['ebook_mode'] == ebook_modes['TEXT']:
+            if session['ebook_mode'] == ebook_modes['DIRECTORY']:
+                session['ebook_list'] = None
+            elif session['ebook_mode'] == ebook_modes['SINGLE']:
+                session['ebook_src'] = None
+            elif session['ebook_mode'] == ebook_modes['TEXT']:
                 ebook_src = session['ebook_src']
                 if ebook_src:
                     try:
