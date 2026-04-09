@@ -1740,22 +1740,27 @@ def build_interface(args:dict)->gr.Blocks:
                 return
 
             def toggle_audiobook_files(session_id:str, audiobook:str, is_visible:bool, refresh_only:bool=False)->tuple:
-                if not audiobook:
-                    error = 'No audiobook selected.'
-                    show_alert(session_id, {"type": "error", "msg": error})
-                    return gr.update(), False
-                if is_visible and not refresh_only:
-                    return gr.update(visible=False, value=None), False
-                file = Path(audiobook)
-                if not file.exists():
-                    error = f'Audio not found: {file}'
-                    show_alert(session_id, {"type": "error", "msg": error})
-                    return gr.update(), False
-                files = [str(file)]
-                vtt = file.with_suffix('.vtt')
-                if vtt.exists():
-                    files.append(str(vtt))
-                return gr.update(visible=True, value=files), True
+                try:
+                    if not audiobook:
+                        error = 'No audiobook selected.'
+                        show_alert(session_id, {"type": "error", "msg": error})
+                        return gr.update(), False
+                    if is_visible and not refresh_only:
+                        return gr.update(visible=False, value=None), False
+                    file = Path(audiobook)
+                    if not file.exists():
+                        error = f'Audio not found: {file}'
+                        show_alert(session_id, {"type": "error", "msg": error})
+                        return gr.update(), False
+                    files = [str(file)]
+                    vtt = file.with_suffix('.vtt')
+                    if vtt.exists():
+                        files.append(str(vtt))
+                    return gr.update(visible=True, value=files), True
+                except Exception as e:
+                    error = f'toggle_audiobook_files(): {e}!'
+                    exception_alert(session_id, error)              
+                return gr.update(), False
 
             def change_param(key:str, session_id:str, val:Any, val2:Any=None)->None:
                 session = context.get_session(session_id)
@@ -2826,10 +2831,7 @@ def build_interface(args:dict)->gr.Blocks:
                             else (gr.update(), gr.update())
                         ),
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
-                        outputs=[gr_audiobook_files, gr_audiobook_files_toggled]
-                    ).then(
-                        fn=None,
-                        inputs=None,
+                        outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
                         js='()=>{ window.load_vtt(); }'
                     )
                 ),
