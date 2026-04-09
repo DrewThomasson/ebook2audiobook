@@ -1991,21 +1991,28 @@ def build_interface(args:dict)->gr.Blocks:
                     session['audiobook_overriden'] = None
                 return gr.update(value='', visible=False)
 
-            def click_gr_override_confirm_btn(session_id:str, event:int)->tuple:
+            def click_gr_override_confirm_btn(session_id:str, event:int, audiobook_files_toggled:bool)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     nonlocal audiobook_options
-                    file_converting = session['audiobook_overriden']
+                    file_converting = session['audiobook_overrident']
                     idx = next((i for i, t in enumerate(audiobook_options) if t[1] == file_converting), -1)
                     audiobook_options = [t for t in audiobook_options if t[1] != file_converting]
+                    files_update = gr.update()
+                    files_toggled_update = gr.update()
                     if session['audiobook'] == file_converting:
                         if audiobook_options:
                             new_idx = max(0, idx - 1)
                             session['audiobook'] = audiobook_options[new_idx][1]
                         else:
                             session['audiobook'] = None
-                    return gr.update(value='', visible=False), (event + 1), gr.update(choices=audiobook_options, value=session['audiobook'])
-                return gr.update(), event, gr.update()
+                        if audiobook_files_toggled and session['audiobook']:
+                            files_update, files_toggled_update = toggle_audiobook_files(session_id, session['audiobook'], False)
+                        elif audiobook_files_toggled:
+                            files_update = gr.update(visible=False, value=None)
+                            files_toggled_update = False
+                    return gr.update(value='', visible=False), (event + 1), gr.update(choices=audiobook_options, value=session['audiobook']), files_update, files_toggled_update
+                return gr.update(), event, gr.update(), gr.update(), gr.update()
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
                 session = context.get_session(session_id)
@@ -2769,8 +2776,8 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_override_confirm_btn.click(
                 fn=click_gr_override_confirm_btn,
-                inputs=[gr_session, gr_event],
-                outputs=[gr_modal, gr_event, gr_audiobook_list]
+                inputs=[gr_session, gr_event, gr_audiobook_files_toggled],
+                outputs=[gr_modal, gr_event, gr_audiobook_list, gr_audiobook_files, gr_audiobook_files_toggled]
             )
             chain_enable(
                 chain_check_override(
