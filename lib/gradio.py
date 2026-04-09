@@ -2607,6 +2607,11 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_audiobook_player,
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt],
+            ).then(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='()=>{window.load_vtt();}'
             )
             gr_audiobook_del_btn.click(
                 fn=click_gr_audiobook_del_btn,
