@@ -1759,7 +1759,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(visible=True, value=files), True
                 except Exception as e:
                     error = f'toggle_audiobook_files(): {e}!'
-                    exception_alert(session_id, error)              
+                    exception_alert(session_id, error)
                 return gr.update(), False
 
             def change_param(key:str, session_id:str, val:Any, val2:Any=None)->None:
@@ -2779,7 +2779,7 @@ def build_interface(args:dict)->gr.Blocks:
                     ).then(
                         fn=lambda s, al, ft: (
                             toggle_audiobook_files(s, al, ft, refresh_only=True)
-                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']] and ft
+                            if context.get_session(s).get('status') in [status_tags['END'], status_tags['READY']] and ft
                             else (gr.update(), gr.update())
                         ),
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
