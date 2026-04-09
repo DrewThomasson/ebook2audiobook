@@ -1995,7 +1995,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     nonlocal audiobook_options
-                    file_converting = session['audiobook_overrident']
+                    file_converting = session['audiobook_overriden']
                     idx = next((i for i, t in enumerate(audiobook_options) if t[1] == file_converting), -1)
                     audiobook_options = [t for t in audiobook_options if t[1] != file_converting]
                     if session['audiobook'] == file_converting:
