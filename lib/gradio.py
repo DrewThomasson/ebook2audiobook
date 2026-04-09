@@ -342,6 +342,9 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_ebook_src button[aria-label="common.upload"], #gr_ebook_textarea  button[aria-label="common.upload"], #gr_custom_model_file button[aria-label="common.upload"], #gr_voice_file button[aria-label="common.upload"] {
                     display: none !important;
                 }
+                #gr_ebook_src textarea {
+                    padding-top: 50px !important;
+                }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
                 }               
