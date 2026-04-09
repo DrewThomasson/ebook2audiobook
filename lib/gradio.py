@@ -2766,7 +2766,8 @@ def build_interface(args:dict)->gr.Blocks:
                             outputs=outputs_edit_blocks
                         )
                     )
-                    '''.then(
+                    '''
+                    .then(
                         fn=lambda s: (
                             update_gr_audiobook_player(s)
                             if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
@@ -2783,7 +2784,8 @@ def build_interface(args:dict)->gr.Blocks:
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
                         outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
                         js='()=>{window.load_vtt();}'
-                    )'''
+                    )
+                    '''
                 ),
                 always=False
             )
@@ -2815,7 +2817,8 @@ def build_interface(args:dict)->gr.Blocks:
                             show_progress_on=[gr_progress]
                         )
                     )
-                    '''.then(
+                    '''
+                    .then(
                         fn=lambda s: (
                             update_gr_audiobook_player(s)
                             if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
@@ -2832,7 +2835,8 @@ def build_interface(args:dict)->gr.Blocks:
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
                         outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
                         js='()=>{window.load_vtt();}'
-                    )'''
+                    )
+                    '''
                 ),
                 always=True
             )
