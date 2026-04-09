@@ -2956,7 +2956,7 @@ def finalize_audiobook(session_id:str)->tuple:
         result = lambda msg, ok: (gr.update(value=msg), gr.update(value=ok)) if is_preview else (msg, ok)
 
         def fail(error):
-            session['status'] = status_tags['READY']
+            session['status'] = status_tags['END']
             return result(error, False)
 
         if not session or not session.get('id', False):
@@ -2977,7 +2977,6 @@ def finalize_audiobook(session_id:str)->tuple:
         for idx, block in enumerate(blocks):
             if session['cancellation_requested']:
                 if session['status'] == status_tags['DISCONNECTED']:
-                    session['status'] = None
                     context_tracker.end_session(session_id, session['socket_hash'])
                     msg = 'Frontend disconnected!'
                     return result(msg, False)
@@ -3021,7 +3020,6 @@ def finalize_audiobook(session_id:str)->tuple:
                     session['ebook_list'] = ebook_list
                 count_ebook = len(session['ebook_list'])
         if count_ebook > 0:
-            session['status'] = status_tags['READY']
             reset_ebook_session(session_id, force=True, filter_keys=False)
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
