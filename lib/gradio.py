@@ -323,8 +323,9 @@ def build_interface(args:dict)->gr.Blocks:
                     justify-content: center !important;
                 }
                 #gr_ebook_src label, #gr_ebook_textarea label, #gr_custom_model_file label, #gr_voice_file label {
-                    background: none !important;
-                    border: none !important;
+                    /*background: none !important;
+                    border: none !important;*/
+                    display: none !important;
                 }
                 #gr_audiobook_player label {
                     display: none !important;
@@ -401,10 +402,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_row_voice_player, #gr_row_custom_model_list, #gr_row_session, #gr_row_audiobook_list {
                     height: 60px !important;
                 }
-                #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
-                    display: none !important;
-                }
-                #gr_audiobook_files label[data-testid="block-label"] {
+                #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label), #gr_audiobook_files label[data-testid="block-label"] {
                     display: none !important;
                 }
                 #gr_audiobook_player audio {
