@@ -1142,6 +1142,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_audiobook_list(session_id:str, selected:str|None)->dict:
                 try:
+                    print('change_gr_audiobook_list')
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['audiobook'] = selected
@@ -1738,7 +1739,6 @@ def build_interface(args:dict)->gr.Blocks:
 
             def toggle_audiobook_files(session_id:str, audiobook:str, is_visible:bool, refresh_only:bool=False)->tuple:
                 try:
-                    print('toggle_audiobook_files called()')
                     if not audiobook:
                         error = 'No audiobook selected.'
                         show_alert(session_id, {"type": "error", "msg": error})
