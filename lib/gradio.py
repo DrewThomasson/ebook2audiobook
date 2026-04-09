@@ -1862,7 +1862,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             return gr.update(value=progress_status)
                             elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                 progress_status, passed = convert_ebook(args)
-                                print(f"------------------- status: {session['status']} ------------")
                                 if passed:
                                     return gr.update(value=progress_status)
                                 else:
@@ -2608,7 +2607,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=update_gr_audiobook_player,
                 inputs=[gr_session],
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt],
-                js='()=>{window.load_vtt();}'
             )
             gr_audiobook_del_btn.click(
                 fn=click_gr_audiobook_del_btn,
