@@ -1918,6 +1918,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 source = None
                 error = None
+                print('check_override_ebook called')
                 if session and session.get('id', False):
                     if not session['cancellation_requested']:
                         if not session['status'] in [status_tags['SKIP'], status_tags['END']]:
