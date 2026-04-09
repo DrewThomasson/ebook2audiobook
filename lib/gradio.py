@@ -322,10 +322,9 @@ def build_interface(args:dict)->gr.Blocks:
                     align-items: center !important;
                     justify-content: center !important;
                 }
-                #gr_ebook_src label, #gr_ebook_textarea label, #gr_custom_model_file label, #gr_voice_file label {
-                    /*background: none !important;
-                    border: none !important;*/
-                    display: none !important;
+                #gr_ebook_textarea label, #gr_custom_model_file label {
+                    background: none !important;
+                    border: none !important;
                 }
                 #gr_audiobook_player label {
                     display: none !important;
@@ -612,7 +611,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_ebook_src', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
                                     gr_ebook_src = gr.File(show_label=False, label=ebook_mode_labels[ebook_modes['SINGLE']], elem_id='gr_ebook_src', visible=True, file_types=ebook_formats, file_count=ebook_modes['SINGLE'], allow_reordering=True, height=100)
-                                    gr_ebook_textarea = gr.Textbox(label=ebook_mode_labels[ebook_modes['TEXT']], elem_id='gr_ebook_textarea', visible=False, show_label=True, lines=8, max_length=max_ebook_textarea_length)
+                                    gr_ebook_textarea = gr.Textbox(show_label=True, label=ebook_mode_labels[ebook_modes['TEXT']], elem_id='gr_ebook_textarea', visible=False, show_label=True, lines=8, max_length=max_ebook_textarea_length)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File',ebook_modes['SINGLE']), ('Directory',ebook_modes['DIRECTORY']), ('Text',ebook_modes['TEXT'])], interactive=True, scale=2)
                                         gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
@@ -622,7 +621,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', elem_classes=['gr-group'], visible=visible_gr_group_voice_file)
                                 with gr_group_voice_file:
                                     gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
-                                    gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
+                                    gr_voice_file = gr.File(show_label=False, label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                     with gr.Row(elem_id='gr_row_voice_player') as gr_row_voice_player:
                                         gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
                                         gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
@@ -641,7 +640,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_group_custom_model = gr.Group(visible=False)
                                     with gr_group_custom_model:
                                         gr_custom_model_label = gr.Textbox(label='', elem_id='gr_custom_model_label', elem_classes=['gr-label'], interactive=False)
-                                        gr_custom_model_file = gr.File(label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
+                                        gr_custom_model_file = gr.File(show_label=True, label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
                                         gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
                                         with gr_row_custom_model_list:
                                             gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
