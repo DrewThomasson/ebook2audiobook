@@ -1918,7 +1918,6 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 source = None
                 error = None
-                print('check_override_ebook called')
                 if session and session.get('id', False):
                     if not session['cancellation_requested']:
                         if not session['status'] in [status_tags['SKIP'], status_tags['END']]:
@@ -2780,10 +2779,6 @@ def build_interface(args:dict)->gr.Blocks:
                         ),
                         inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
                         outputs=[gr_audiobook_files, gr_audiobook_files_toggled]
-                    ).then(
-                        fn=None,
-                        inputs=None,
-                        js='()=>{ window.load_vtt(); }'
                     )
                 ),
                 always=False
