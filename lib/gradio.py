@@ -1998,20 +1998,23 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     nonlocal audiobook_options
                     file_converting = session['audiobook_overriden']
-                    idx = next((i for i, t in enumerate(audiobook_options) if t[1] == file_converting), -1)
-                    audiobook_options = [t for t in audiobook_options if t[1] != file_converting]
+                    if file_converting:
+                        idx = next((i for i, t in enumerate(audiobook_options) if t[1] == file_converting), -1)
+                        audiobook_options = [t for t in audiobook_options if t[1] != file_converting]
                     files_update = gr.update()
                     files_toggled_update = gr.update()
                     if session['audiobook'] == file_converting:
                         if audiobook_options:
                             new_idx = max(0, idx - 1)
-                            session['audiobook'] = audiobook_options[new_idx][1]
+                            new_selected = audiobook_options[new_idx][1]
+                            session['audiobook'] = new_selected
                             if audiobook_files_toggled and session['audiobook']:
                                 files_update, files_toggled_update = toggle_audiobook_files(session_id, session['audiobook'], False)
                             elif audiobook_files_toggled:
                                 files_update = gr.update(visible=False, value=None)
                                 files_toggled_update = False
-                    return gr.update(value='', visible=False), (event + 1), gr.update(choices=audiobook_options, value=session['audiobook']), files_update, files_toggled_update
+                            return gr.update(value='', visible=False), (event + 1), gr.update(choices=audiobook_options, value=new_selected), files_update, files_toggled_update
+                    return gr.update(value='', visible=False), (event + 1), gr.update(), files_update, files_toggled_update
                 return gr.update(), event, gr.update(), gr.update(), gr.update()
 
             def populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
