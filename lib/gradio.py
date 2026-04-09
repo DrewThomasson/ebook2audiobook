@@ -1142,7 +1142,6 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_audiobook_list(session_id:str, selected:str|None)->dict:
                 try:
-                    print('change_gr_audiobook_list')
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['audiobook'] = selected
