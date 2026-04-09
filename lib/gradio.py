@@ -1748,7 +1748,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if not file.exists():
                         error = f'Audio not found: {file}'
                         show_alert(session_id, {"type": "error", "msg": error})
-                        return gr.update(), False
+                        return gr.update(visible=False, value=None), False
                     files = [str(file)]
                     vtt = file.with_suffix('.vtt')
                     if vtt.exists():
