@@ -1939,22 +1939,22 @@ def build_interface(args:dict)->gr.Blocks:
                                 for f in os.listdir(session['audiobooks_dir'])
                                 if not f.lower().endswith(".vtt")
                             ]
-                        audiobook_options.sort(
-                            key=lambda x: os.path.getmtime(x[1]),
-                            reverse=True
-                        )
-                        session['audiobook'] = (
-                            session['audiobook']
-                            if session['audiobook'] in [option[1] for option in audiobook_options]
-                            else None
-                        )
                         if len(audiobook_options) > 0:
+                            audiobook_options.sort(
+                                key=lambda x: os.path.getmtime(x[1]),
+                                reverse=True
+                            )
+                            session['audiobook'] = (
+                                session['audiobook']
+                                if session['audiobook'] in [option[1] for option in audiobook_options]
+                                else None
+                            )
                             if session['audiobook'] is not None:
-                                return gr.update(choices=audiobook_options, value=session['audiobook'])
                             else:
-                                return gr.update(choices=audiobook_options, value=audiobook_options[0][1])
+                                session['audiobook'] = audiobook_options[0][1]
                         else:
-                            return gr.update(choices=audiobook_options, value=None)
+                            session['audiobook'] = None
+                        return gr.update(choices=audiobook_options, value=session['audiobook'])
                 except Exception as e:
                     error = f'update_gr_audiobook_list(): {e}!'
                     exception_alert(session_id, error)              
