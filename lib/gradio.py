@@ -2043,9 +2043,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 b = blocks[idx]
                                 updates.append(gr.update(label=f'Block {idx}', visible=True, open=b['expand']))
                                 updates.append(gr.update(value=b['keep']))
+                                updates.append(gr.update(value=b.get('voice')))
                                 updates.append(gr.update(value=b['text']))
                             else:
                                 updates.append(gr.update(visible=False))
+                                updates.append(gr.update())
                                 updates.append(gr.update())
                                 updates.append(gr.update())
                         end = min(start + page_size, len(blocks))
