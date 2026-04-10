@@ -558,7 +558,6 @@ def build_interface(args:dict)->gr.Blocks:
                 .accordion-block-voice-list {
                     margin: 0 !important;
                     padding: 0 16px 0 0 !important;
-                    max-width: 50% !important;
                 }
                 .gr-blocks-buttons {
                     display: flex !important;
