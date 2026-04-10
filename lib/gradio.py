@@ -1283,11 +1283,21 @@ def build_interface(args:dict)->gr.Blocks:
                     if not voice_options:
                         session['voice'] = None
                     else:
+                        old_voice = session.get('voice')
                         voice_value = voice_options[0][1]
-                        session['voice'] = next(
+                        new_voice = next(
                             (value for label, value in voice_options if value == selected),
                             voice_value,
                         )
+                        if session.get('blocks_current'):
+                            blocks_current = session['blocks_current']
+                            blocks = blocks_current['blocks']
+                            for b in blocks:
+                                if b.get('voice') is None or b.get('voice') == old_voice:
+                                    b['voice'] = new_voice
+                            blocks_current['blocks'] = blocks
+                            session['blocks_current'] = blocks_current
+                        session['voice'] = new_voice
                     visible = session['voice'] is not None
                     return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
                 return gr.update(), gr.update(), gr.update()
