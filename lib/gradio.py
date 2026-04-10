@@ -2105,6 +2105,10 @@ def build_interface(args:dict)->gr.Blocks:
                             page = 0
                             ebook_name = Path(session['ebook']).stem
                             blocks = session['blocks_current']['blocks']
+                            current_voice = session.get('voice')
+                            for b in blocks:
+                                if not b.get('voice'):
+                                    b['voice'] = current_voice
                             page_updates = list(populate_page(session_id, page, blocks))
                             if session['cancellation_requested']:
                                 visible_main = True
