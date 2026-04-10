@@ -556,7 +556,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background-color: var(--table-odd-background-fill) !important;
                 }
                 .accordion-block-voice-list {
-                    margin: 0 !important;
+                    margin: auto !important;
                     padding: 0 16px 0 0 !important;
                 }
                 .gr-blocks-buttons {
