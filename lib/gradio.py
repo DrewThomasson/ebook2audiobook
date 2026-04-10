@@ -1588,15 +1588,14 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session.get('language') != selected:
-                            return gr.update(), gr.update(), gr.update(), gr.update()
-                        prev = session['language']      
-                        session['language'] = selected
-                        return (
-                            gr.update(value=session['language']),
-                            update_gr_tts_engine_list(session_id),
-                            update_gr_custom_model_list(session_id),
-                            update_gr_fine_tuned_list(session_id)
-                        )
+                            prev = session['language']      
+                            session['language'] = selected
+                            return (
+                                gr.update(value=session['language']),
+                                update_gr_tts_engine_list(session_id),
+                                update_gr_custom_model_list(session_id),
+                                update_gr_fine_tuned_list(session_id)
+                            )
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
             def check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
