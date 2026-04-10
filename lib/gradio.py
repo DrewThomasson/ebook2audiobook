@@ -1293,7 +1293,7 @@ def build_interface(args:dict)->gr.Blocks:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
                             for b in blocks:
-                                if b.get('voice') is None or b.get('voice') == old_voice:
+                                if not b.get('voice') or b.get('voice') == old_voice:
                                     b['voice'] = new_voice
                             blocks_current['blocks'] = blocks
                             session['blocks_current'] = blocks_current
