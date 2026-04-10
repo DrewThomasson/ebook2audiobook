@@ -2004,6 +2004,7 @@ def build_interface(args:dict)->gr.Blocks:
                     files_update = gr.update()
                     files_toggled_update = gr.update()
                     if session['audiobook'] == file_converting:
+                        print('click_gr_override_confirm_btn():  select audiobook is the converting file')
                         if audiobook_options:
                             new_idx = max(0, idx - 1)
                             new_selected = audiobook_options[new_idx][1]
