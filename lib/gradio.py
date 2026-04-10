@@ -1074,6 +1074,8 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_ebook_src = True
                         visible_row_split_hours = True if session['output_split'] else False
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
+                        visible_voice_buttons = session.get('voice') is not None
+                        visible_custom_del_btn = session.get('custom_model') is not None
                         return (
                             gr.update(visible=visible_ebook_src, value=ebook_data),
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
@@ -1092,12 +1094,15 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=visible_row_split_hours),
                             update_gr_audiobook_list(session_id),
                             gr.update(visible=visible_group_custom_model),
-                            gr.update(interactive=enabled_convert_btn)
+                            gr.update(interactive=enabled_convert_btn),
+                            gr.update(visible=visible_voice_buttons),
+                            gr.update(visible=visible_voice_buttons),
+                            gr.update(visible=visible_custom_del_btn)
                         )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(18)])
+                outputs = tuple([gr.update() for _ in range(21)])
                 return outputs
 
             def restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -1287,21 +1292,20 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_voice_list(session_id:str, selected:str|None)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    if session.get('voice') == selected:
-                        return gr.update(), gr.update(), gr.update()
-                    if not voice_options:
-                        session['voice_previous'] = session.get('voice')
-                        session['voice'] = None
-                    else:
-                        voice_value = voice_options[0][1]
-                        new_voice = next(
-                            (value for label, value in voice_options if value == selected),
-                            voice_value,
-                        )
-                        session['voice_previous'] = session.get('voice')
-                        session['voice'] = new_voice
-                    visible = session['voice'] is not None
-                    return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
+                    if session.get('voice') != selected:
+                        if not voice_options:
+                            session['voice_previous'] = session.get('voice')
+                            session['voice'] = None
+                        else:
+                            voice_value = voice_options[0][1]
+                            new_voice = next(
+                                (value for label, value in voice_options if value == selected),
+                                voice_value,
+                            )
+                            session['voice_previous'] = session.get('voice')
+                            session['voice'] = new_voice
+                        visible = session['voice'] is not None
+                        return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
                 return gr.update(), gr.update(), gr.update()
     
             def click_gr_voice_del_btn(session_id:str, selected:str)->tuple:
@@ -2410,7 +2414,8 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_restore_interface = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn
+                gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
+                gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn
             ]
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
