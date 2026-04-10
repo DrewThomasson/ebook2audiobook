@@ -819,6 +819,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.Column(scale=1)
                                 acc_reset_btn = gr.Button(
                                     '↺',
+                                    label='Reset to original',
                                     elem_id=f'block_reset_{i}',
                                     elem_classes=['gr-block-reset'],
                                     variant='secondary',
