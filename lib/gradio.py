@@ -1668,6 +1668,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(visible=visible_custom_model),
                                 update_gr_fine_tuned_list(session_id),
                                 gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"),
+                                update_gr_custom_model_list(session_id),
                                 gr.update(value=f"My {session['tts_engine']} Custom Models")
                             )
                         else:
@@ -1680,6 +1681,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(visible=False),
                                 update_gr_fine_tuned_list(session_id),
                                 gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
+                                gr.update(),
                                 gr.update(value='')
                             )
                 return tuple(gr.update() for _ in range(7))
@@ -2518,7 +2520,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_tts_engine_list.change(
                 fn=change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_label],
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_custom_model_label],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=update_gr_voice_list,
