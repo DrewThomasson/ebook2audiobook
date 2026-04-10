@@ -821,6 +821,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     visible=True,
                                 )
                                 acc_voice_list = gr.Dropdown(show_label=False, elem_id='block_voice_{i}', elem_classes=['accordion-block-voice-list'], choices=voice_options, type='value', interactive=True)
+                                gr.Column(scale=0)
                                 acc_reset_btn = gr.Button(
                                     '↺',
                                     elem_id=f'block_reset_{i}',
