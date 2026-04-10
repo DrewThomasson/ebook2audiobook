@@ -1281,13 +1281,16 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if not voice_options:
+                        session['voice_previous'] = session.get('voice')
                         session['voice'] = None
                     else:
                         voice_value = voice_options[0][1]
-                        session['voice'] = next(
+                        new_voice = next(
                             (value for label, value in voice_options if value == selected),
                             voice_value,
                         )
+                        session['voice_previous'] = session.get('voice')
+                        session['voice'] = new_voice
                     visible = session['voice'] is not None
                     return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
                 return gr.update(), gr.update(), gr.update()
@@ -2080,11 +2083,17 @@ def build_interface(args:dict)->gr.Blocks:
                             blocks = []
                             page = 0
                             ebook_name = Path(session['ebook']).stem
-                            blocks = session['blocks_current']['blocks']
+                            blocks_current = session['blocks_current']
+                            blocks = blocks_current['blocks']
                             current_voice = session.get('voice')
-                            for b in blocks:
-                                if not b.get('voice'):
-                                    b['voice'] = current_voice
+                            previous_voice = session.get('voice_previous')
+                            if previous_voice is not None:
+                                for b in blocks:
+                                    if not b.get('voice') or b.get('voice') == previous_voice:
+                                        b['voice'] = current_voice
+                                blocks_current['blocks'] = blocks
+                                session['blocks_current'] = blocks_current
+                                session.pop('voice_previous', None)
                             page_updates = list(populate_page(session_id, page, blocks))
                             if session['cancellation_requested']:
                                 visible_main = True

@@ -176,6 +176,7 @@ class SessionContext:
             "language": default_language_code,
             "language_iso1": None,
             "voice": None,
+            "voice_previous": None,
             "voice_dir": None,
             "custom_model": None,
             "custom_model_dir": None,
