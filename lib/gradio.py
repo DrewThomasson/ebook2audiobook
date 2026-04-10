@@ -1684,7 +1684,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(),
                                 gr.update(value='')
                             )
-                return tuple(gr.update() for _ in range(7))
+                return tuple(gr.update() for _ in range(8))
 
             def change_gr_fine_tuned_list(session_id:str, selected:str)->tuple:
                 if selected:
