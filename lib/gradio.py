@@ -1949,8 +1949,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 if session['audiobook'] in [option[1] for option in audiobook_options]
                                 else None
                             )
-                            if session['audiobook'] is not None:
-                            else:
+                            if session['audiobook'] is None:
                                 session['audiobook'] = audiobook_options[0][1]
                         else:
                             session['audiobook'] = None
