@@ -1299,8 +1299,22 @@ def build_interface(args:dict)->gr.Blocks:
                             session['blocks_current'] = blocks_current
                         session['voice'] = new_voice
                     visible = session['voice'] is not None
-                    return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
-                return gr.update(), gr.update(), gr.update()
+                    voice_updates = []
+                    if session.get('blocks_current'):
+                        blocks_current = session['blocks_current']
+                        blocks = blocks_current['blocks']
+                        page = session.get('blocks_page', 0)
+                        start = int(page) * page_size
+                        for i in range(page_size):
+                            idx = start + i
+                            if idx < len(blocks):
+                                voice_updates.append(gr.update(value=blocks[idx].get('voice'), choices=voice_options))
+                            else:
+                                voice_updates.append(gr.update())
+                    else:
+                        voice_updates = [gr.update()] * page_size
+                    return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible), *voice_updates
+                return gr.update(), gr.update(), gr.update(), *([gr.update()] * page_size)
     
             def click_gr_voice_del_btn(session_id:str, selected:str)->tuple:
                 try:
@@ -2462,7 +2476,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_voice_list.change(
                 fn=change_gr_voice_list,
                 inputs=[gr_session, gr_voice_list],
-                outputs=[gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn],
+                outputs=[gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, *blocks_voices],
                 show_progress_on=[gr_progress]
             )
             gr_voice_del_btn.click(
