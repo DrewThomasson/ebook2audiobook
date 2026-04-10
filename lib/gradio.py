@@ -1278,7 +1278,6 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update()
 
             def change_gr_voice_list(session_id:str, selected:str|None)->tuple:
-                print(f'change_gr_voice_list called: selected={selected}')
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if not voice_options:
