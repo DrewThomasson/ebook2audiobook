@@ -820,7 +820,15 @@ def build_interface(args:dict)->gr.Blocks:
                                     scale=0,
                                     visible=True,
                                 )
-                                acc_voice_list = gr.Dropdown(show_label=False, elem_id='block_voice_{i}', elem_classes=['accordion-block-voice-list'], choices=voice_options, type='value', interactive=True, scale=1)
+                                acc_voice_list = gr.Dropdown(
+                                    show_label=False,
+                                    elem_id=f'block_voice_{i}',
+                                    elem_classes=['accordion-block-voice-list'],
+                                    choices=voice_options,
+                                    type='value',
+                                    interactive=True,
+                                    scale=1
+                                )
                                 acc_reset_btn = gr.Button(
                                     '↺',
                                     elem_id=f'block_reset_{i}',
@@ -859,15 +867,16 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_blocks_expands],
                             outputs=[gr_blocks_expands]
                         )
-                        block_components.append((acc, keep_cbx, acc_tbx))
+                        block_components.append((acc, keep_cbx, acc_voice_list, acc_tbx))
 
                 with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
                     gr_blocks_cancel_btn = gr.Button('🡄', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
                     gr_blocks_confirm_btn = gr.Button('🡆', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
 
-            blocks_components_flat = [comp for triplet in block_components for comp in triplet]
+            blocks_components_flat = [comp for quad in block_components for comp in quad]
             blocks_keeps = [c[1] for c in block_components]
-            blocks_texts = [c[2] for c in block_components]
+            blocks_voices = [c[2] for c in block_components]
+            blocks_texts = [c[3] for c in block_components]
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
@@ -2096,7 +2105,8 @@ def build_interface(args:dict)->gr.Blocks:
             def collect_page(page:int, blocks:list[dict], *args)->list[dict]:
                 expands = args[0]
                 keeps = args[1:page_size + 1]
-                texts = args[page_size + 1:]
+                voices = args[page_size + 1:2 * page_size + 1]
+                texts = args[2 * page_size + 1:]
                 new_blocks = [dict(b) for b in blocks]
                 start = int(page) * page_size
                 for i in range(page_size):
@@ -2104,6 +2114,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if idx < len(new_blocks):
                         new_blocks[idx]['expand'] = expands[i] if i < len(expands) else False
                         new_blocks[idx]['keep'] = keeps[i]
+                        new_blocks[idx]['voice'] = voices[i]
                         new_blocks[idx]['text'] = texts[i]
                 return new_blocks
 
@@ -2813,7 +2824,7 @@ def build_interface(args:dict)->gr.Blocks:
             chain_enable(
                 gr_blocks_cancel_btn.click(
                     fn=click_gr_blocks_cancel_btn,
-                    inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
+                    inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                     outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data, gr_ebook_textarea],
                     show_progress_on=[gr_progress]
                 ),
@@ -2821,11 +2832,11 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_confirm_btn.click(
                 fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
+                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                 outputs=[gr_blocks_data]
             ).then(
                 fn=click_gr_blocks_confirm_btn,
-                inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
+                inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                 outputs=[gr_group_main, gr_group_blocks, gr_ebook_textarea, gr_blocks_event]
             )
             chain_enable(
@@ -2844,7 +2855,7 @@ def build_interface(args:dict)->gr.Blocks:
             ###########
             gr_blocks_back_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
+                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                 outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
             ).then(
                 fn=populate_page,
@@ -2853,7 +2864,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_blocks_next_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_texts],
+                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                 outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
             ).then(
                 fn=populate_page,
