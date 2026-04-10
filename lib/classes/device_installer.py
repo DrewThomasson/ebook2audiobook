@@ -41,18 +41,22 @@ class DeviceInstaller():
             arch = self.check_arch
             pyvenv = list(sys.version_info[:2])
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
+        elif mode == BUILD_DOCKER:
+            name, tag, msg = self.check_hardware
+            os_env = 'manylinux_2_28'
+            pyvenv = list(sys.version_info[:2])
+            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
+            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
+            tag = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else tag
+            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
+            with open('.device_info.json', 'w', encoding='utf-8') as f:
+                json.dump(device_info, f)
+            return json.dumps(device_info)
         else:
-            if mode == BUILD_DOCKER:
-                name, tag, msg = self.check_hardware
-                os_env = 'manylinux_2_28'
-                pyvenv = list(sys.version_info[:2])
-                pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
-                arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
-                tag = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else tag
-                device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
-                with open('.device_info.json', 'w', encoding='utf-8') as f:
-                    json.dump(device_info, f)
-                return json.dumps(device_info)
+            name, tag, msg = self.check_hardware
+            arch = self.check_arch
+            pyvenv = list(sys.version_info[:2])
+            os_env = self.check_platform
         if all([name, tag, os_env, arch, pyvenv]):
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
             return json.dumps(device_info)
