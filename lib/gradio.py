@@ -2003,18 +2003,19 @@ def build_interface(args:dict)->gr.Blocks:
                         audiobook_options = [t for t in audiobook_options if t[1] != file_converting]
                     files_update = gr.update()
                     files_toggled_update = gr.update()
-                    if session['audiobook'] == file_converting:
+                    if session['audiobook'] == file_converting or not audiobook_options:
                         print('click_gr_override_confirm_btn():  select audiobook is the converting file')
+                        new_selected = None
                         if audiobook_options:
                             new_idx = max(0, idx - 1)
                             new_selected = audiobook_options[new_idx][1]
-                            session['audiobook'] = new_selected if new_selected else session['audiobook']
-                            if audiobook_files_toggled and new_selected:
-                                files_update, files_toggled_update = toggle_audiobook_files(session_id, session['audiobook'], False)
-                            elif audiobook_files_toggled:
-                                files_update = gr.update(visible=False, value=None)
-                                files_toggled_update = False
-                            return gr.update(value='', visible=False), (event + 1), gr.update(choices=audiobook_options, value=new_selected), files_update, files_toggled_update
+                        session['audiobook'] = new_selected if new_selected is not None else session['audiobook']
+                        if audiobook_files_toggled and new_selected is not None:
+                            files_update, files_toggled_update = toggle_audiobook_files(session_id, new_selected, False)
+                        else:
+                            files_update = gr.update(visible=False, value=None)
+                            files_toggled_update = False
+                        return gr.update(value='', visible=False), (event + 1), gr.update(choices=audiobook_options, value=new_selected), files_update, files_toggled_update
                     return gr.update(value='', visible=False), (event + 1), gr.update(), files_update, files_toggled_update
                 return gr.update(), event, gr.update(), gr.update(), gr.update()
 
