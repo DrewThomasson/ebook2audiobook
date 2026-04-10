@@ -1166,10 +1166,10 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session.get('audiobook') == selected:
+                        group_visible = True if session.get('audiobook') else False
+                        if session.get('audiobook') == selected and audiobook_options:
                             return gr.update()
                         session['audiobook'] = selected
-                        group_visible = True if session['audiobook'] else False
                         return gr.update(visible=group_visible)
                 except Exception as e:
                     error = f'change_gr_audiobook_list(): {e}'
