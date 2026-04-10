@@ -1293,8 +1293,8 @@ def build_interface(args:dict)->gr.Blocks:
                         session['voice_previous'] = session.get('voice')
                         session['voice'] = new_voice
                     visible = session['voice'] is not None
-                    return gr.update(visible=visible), gr.update(visible=visible)
-                return gr.update(), gr.update()
+                    return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
+                return gr.update(), gr.update(), gr.update()
     
             def click_gr_voice_del_btn(session_id:str, selected:str)->tuple:
                 try:
@@ -2463,10 +2463,10 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_on_voice_upload,
                 show_progress_on=[gr_voice_list]
             )
-            gr_voice_list.change(
+            gr_voice_list.input(
                 fn=change_gr_voice_list,
                 inputs=[gr_session, gr_voice_list],
-                outputs=[gr_voice_play, gr_voice_del_btn],
+                outputs=[gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn],
                 show_progress_on=[gr_progress]
             )
             gr_voice_del_btn.click(
