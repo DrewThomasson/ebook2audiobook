@@ -1159,6 +1159,8 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
+                        if session.get('audiobook') == selected:
+                            return gr.update()
                         session['audiobook'] = selected
                         group_visible = True if session['audiobook'] else False
                         return gr.update(visible=group_visible)
@@ -1195,10 +1197,12 @@ def build_interface(args:dict)->gr.Blocks:
             def update_gr_glassmask(str:str=gr_glassmask_msg, attr:list=['gr-glass-mask'])->dict:
                 return gr.update(value=str, elem_id='gr_glassmask', elem_classes=attr)
 
-            def change_gr_ebook_src(session_id:str, ebook_mode:str, data:any)->tuple:
+            def change_gr_ebook_src(session_id:str, ebook_mode:str, data:any)->dict:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
+                        if (session.get('ebook_src') == data and ebook_mode == ebook_modes['SINGLE']) or (session.get('ebook_list') == data and ebook_mode == ebook_modes['DIRECTORY']):
+                            return gr.update()
                         if ebook_mode == ebook_modes['SINGLE']:
                             session['ebook_src'] = data
                             # since ebook_textarea override ebook_src during the conversion
@@ -1220,13 +1224,16 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_ebook_textarea(session_id:str, ebook_textarea:str)->None:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['ebook_textarea'] = ebook_textarea
+                    if session.get('ebook_textarea') != ebook_textarea:
+                        session['ebook_textarea'] = ebook_textarea
                 return
 
-            def change_gr_ebook_mode(session_id:str, val:str)->dict:
+            def change_gr_ebook_mode(session_id:str, val:str)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
+                        if session.get('ebook_mode') == val:
+                            return gr.update(), gr.update(), gr.update()
                         session['ebook_mode'] = val
                         enabled_convert_btn = False
                         if val == ebook_modes['SINGLE']:
@@ -1280,7 +1287,8 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_voice_list(session_id:str, selected:str|None)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    print(f'change_gr_voice_list: selected={selected}, current={session.get("voice")}, previous={session.get("voice_previous")}')
+                    if session.get('voice') == selected:
+                        return gr.update(), gr.update(), gr.update()
                     if not voice_options:
                         session['voice_previous'] = session.get('voice')
                         session['voice'] = None
@@ -1572,12 +1580,15 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_device(session_id:str, selected:str)->None:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['device'] = selected
+                    if session.get('device') != selected:
+                        session['device'] = selected
 
             def change_gr_language(session_id:str, selected:str)->tuple:
                 if selected:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
+                        if session.get('language') != selected:
+                            return gr.update(), gr.update(), gr.update(), gr.update()
                         prev = session['language']      
                         session['language'] = selected
                         return (
@@ -1635,36 +1646,37 @@ def build_interface(args:dict)->gr.Blocks:
                 nonlocal models
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    models = load_engine_presets(engine)
-                    session['voice'] = None if session['voice'] == default_engine_settings[session['tts_engine']]['voice'] else session['voice']
-                    session['tts_engine'] = engine
-                    session['fine_tuned'] = default_fine_tuned
-                    visible_bark = False
-                    visible_xtts = False
-                    if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                        visible_custom_model = True if session['fine_tuned'] == 'internal' else False
-                        visible_xtts = visible_gr_tab_xtts_params
-                        return (
-                            gr.update(value=show_rating(session['tts_engine'])), 
-                            gr.update(visible=visible_xtts),
-                            gr.update(visible=False),
-                            gr.update(visible=visible_custom_model),
-                            update_gr_fine_tuned_list(session_id),
-                            gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"),
-                            gr.update(value=f"My {session['tts_engine']} Custom Models")
-                        )
-                    else:
-                        if session['tts_engine'] == TTS_ENGINES['BARK']:
-                            visible_bark = visible_gr_tab_bark_params
-                        return (
-                            gr.update(value=show_rating(session['tts_engine'])),
-                            gr.update(visible=False),
-                            gr.update(visible=visible_bark), 
-                            gr.update(visible=False),
-                            update_gr_fine_tuned_list(session_id),
-                            gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
-                            gr.update(value='')
-                        )
+                    if session.get('tts_engine') != engine:
+                        models = load_engine_presets(engine)
+                        session['voice'] = None if session['voice'] == default_engine_settings[session['tts_engine']]['voice'] else session['voice']
+                        session['tts_engine'] = engine
+                        session['fine_tuned'] = default_fine_tuned
+                        visible_bark = False
+                        visible_xtts = False
+                        if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                            visible_custom_model = True if session['fine_tuned'] == 'internal' else False
+                            visible_xtts = visible_gr_tab_xtts_params
+                            return (
+                                gr.update(value=show_rating(session['tts_engine'])), 
+                                gr.update(visible=visible_xtts),
+                                gr.update(visible=False),
+                                gr.update(visible=visible_custom_model),
+                                update_gr_fine_tuned_list(session_id),
+                                gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"),
+                                gr.update(value=f"My {session['tts_engine']} Custom Models")
+                            )
+                        else:
+                            if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                visible_bark = visible_gr_tab_bark_params
+                            return (
+                                gr.update(value=show_rating(session['tts_engine'])),
+                                gr.update(visible=False),
+                                gr.update(visible=visible_bark), 
+                                gr.update(visible=False),
+                                update_gr_fine_tuned_list(session_id),
+                                gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
+                                gr.update(value='')
+                            )
                 outputs = tuple([gr.update(interactive=False) for _ in range(7)])
                 return outputs
 
@@ -1672,36 +1684,40 @@ def build_interface(args:dict)->gr.Blocks:
                 if selected:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        session['fine_tuned'] = selected
-                        if selected == 'internal':
-                            visible_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
-                        else:
-                            visible_custom_model = False
-                            session['voice'] = models[session['fine_tuned']]['voice']
-                        return gr.update(visible=visible_custom_model)
+                        if session.get('fine_tuned') != selected:
+                            session['fine_tuned'] = selected
+                            if selected == 'internal':
+                                visible_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
+                            else:
+                                visible_custom_model = False
+                                session['voice'] = models[session['fine_tuned']]['voice']
+                            return gr.update(visible=visible_custom_model)
                 return gr.update()
 
             def change_gr_custom_model_list(session_id:str, selected:str|None)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['custom_model'] = selected
-                    if selected is not None:
-                        session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
-                    visible_fine_tuned = True if selected is None else False
-                    visible_del_btn = False if selected is None else True
-                    return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(session_id)
+                    if session.get('custom_model') != selected:
+                        session['custom_model'] = selected
+                        if selected is not None:
+                            session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
+                        visible_fine_tuned = True if selected is None else False
+                        visible_del_btn = False if selected is None else True
+                        return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(session_id)
                 return gr.update(), gr.update(), gr.update()
 
             def change_gr_output_format_list(session_id:str, val:str)->None:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['output_format'] = val
+                    if session.get('output_format') != val:
+                        session['output_format'] = val
                 return
 
             def change_gr_output_channel_list(session_id:str, val:str)->None:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['output_channel'] = val
+                    if session.get('output_channel') != val:
+                        session['output_channel'] = val
                 return
     
             def change_gr_output_split(session_id:str, val:str)->dict:
@@ -1752,7 +1768,8 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_playback_time(session_id:str, time:float)->None:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['playback_time'] = time
+                    if session.get('playback_time') != time:
+                        session['playback_time'] = time
                 return
 
             def toggle_audiobook_files(session_id:str, audiobook:str, is_visible:bool, refresh_only:bool=False)->tuple:
@@ -1781,22 +1798,24 @@ def build_interface(args:dict)->gr.Blocks:
             def change_param(key:str, session_id:str, val:Any, val2:Any=None)->None:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session[key] = val
-                    state = {}
-                    if key == 'xtts_length_penalty':
-                        if val2 is not None:
-                            if float(val) > float(val2):
-                                error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
-                                state['type'] = 'warning'
-                                state['msg'] = error
-                                show_alert(session_id, state)
-                    elif key == 'xtts_num_beams':
-                        if val2 is not None:
-                            if float(val) < float(val2):
-                                error = 'Num beams must be always higher than length penalty or equal if its value is 1.0'   
-                                state['type'] = 'warning'
-                                state['msg'] = error
-                                show_alert(session_id, state)
+                    if session.get(key) != val:
+                        session[key] = val
+                        state = {}
+                        if key == 'xtts_length_penalty':
+                            if val2 is not None:
+                                if float(val) > float(val2):
+                                    error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
+                                    state['type'] = 'warning'
+                                    state['msg'] = error
+                                    show_alert(session_id, state)
+                        elif key == 'xtts_num_beams':
+                            if val2 is not None:
+                                if float(val) < float(val2):
+                                    error = 'Num beams must be always higher than length penalty or equal if its value is 1.0'   
+                                    state['type'] = 'warning'
+                                    state['msg'] = error
+                                    show_alert(session_id, state)
+                return
 
             def start_conversion(
                     session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
@@ -2463,7 +2482,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=outputs_on_voice_upload,
                 show_progress_on=[gr_voice_list]
             )
-            gr_voice_list.input(
+            gr_voice_list.change(
                 fn=change_gr_voice_list,
                 inputs=[gr_session, gr_voice_list],
                 outputs=[gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn],
