@@ -1164,6 +1164,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_audiobook_list(session_id:str, selected:str|None)->dict:
                 try:
+                    print('----------------------- change_gr_audiobook_list called! ---------------')
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         group_visible = True if session.get('audiobook') else False
