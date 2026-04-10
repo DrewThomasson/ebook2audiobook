@@ -1258,6 +1258,7 @@ def build_interface(args:dict)->gr.Blocks:
                     else:                  
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
+                            print(f'change_gr_voice_list: selected={selected}, current={session.get("voice")}, previous={session.get("voice_previous")}')
                             voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
                             voice_name = get_sanitized(voice_name)
                             final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
@@ -2087,7 +2088,6 @@ def build_interface(args:dict)->gr.Blocks:
                             blocks = blocks_current['blocks']
                             current_voice = session.get('voice')
                             previous_voice = session.get('voice_previous')
-                            print(f'edit_blocks: current_voice={current_voice}, previous_voice={previous_voice}')
                             if previous_voice is not None:
                                 for b in blocks:
                                     if not b.get('voice') or b.get('voice') == previous_voice:
