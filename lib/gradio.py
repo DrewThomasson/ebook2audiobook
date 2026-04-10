@@ -2150,7 +2150,7 @@ def build_interface(args:dict)->gr.Blocks:
                 old_blocks = blocks_current['blocks']
                 for idx, b in enumerate(new_blocks):
                     if not b.get('voice'):
-                        b['voice'] = session.get('voice', '')
+                        b['voice'] = session.get('voice')
                     if not b.get('tts_engine'):
                         b['tts_engine'] = session.get('tts_engine', '')
                     if not b.get('fine_tuned'):
