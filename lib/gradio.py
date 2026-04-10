@@ -1676,7 +1676,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
                                 gr.update(value='')
                             )
-                return gr.update(), *tuple(gr.update(interactive=False) for _ in range(6))
+                return tuple(gr.update() for _ in range(7))
 
             def change_gr_fine_tuned_list(session_id:str, selected:str)->tuple:
                 if selected:
