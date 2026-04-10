@@ -2009,7 +2009,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if audiobook_options:
                             new_idx = max(0, idx - 1)
                             new_selected = audiobook_options[new_idx][1]
-                        session['audiobook'] = new_selected if new_selected is not None else session['audiobook']
+                        session['audiobook'] = new_selected
                         if audiobook_files_toggled and new_selected is not None:
                             files_update, files_toggled_update = toggle_audiobook_files(session_id, new_selected, False)
                         else:
