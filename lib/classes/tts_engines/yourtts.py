@@ -47,9 +47,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             msg = f"TTS {self.tts_key} already loaded"
             print(msg)
             return engine
-        if self.session.get('custom_model') is not None:
-            error = f"{self.session['tts_engine']} custom model not implemented yet"
-            raise NotImplementedError(error)
         try:
             model_cfg = self.models[self.session['fine_tuned']]
             model_path = model_cfg['repo']

@@ -44,9 +44,9 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         self.cleanup_memory()
         engine = loaded_tts.get(self.tts_key)
         if not engine:
-            if self.session['custom_model'] is not None:
-                error = f"{self.session['tts_engine']} custom model not implemented yet!"
-                raise NotImplementedError(error)
+            #if self.session['custom_model'] is not None:
+            #    error = f"{self.session['tts_engine']} custom model not implemented yet!"
+            #    raise NotImplementedError(error)
             engine = self._load_api(self.tts_key, self.model_path)
         if engine:
             msg = f'TTS {self.tts_key} Loaded!'
