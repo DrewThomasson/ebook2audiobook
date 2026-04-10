@@ -557,7 +557,7 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .accordion-block-voice-list {
                     margin: 0 !important;
-                    padding: 0 !important;
+                    padding: 0 10px 0 0 !important;
                 }
                 .gr-blocks-buttons {
                     display: flex !important;
@@ -820,7 +820,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     scale=0,
                                     visible=True,
                                 )
-                                acc_voice_list = gr.Dropdown(show_label=False, elem_id='block_voice_{i}', elem_classes=['accordion-block-voice-list'], choices=voice_options, type='value', interactive=True, scale=1)
+                                acc_voice_list = gr.Dropdown(show_label=False, elem_id='block_voice_{i}', elem_classes=['accordion-block-voice-list'], choices=voice_options, type='value', interactive=True, scale=0)
                                 acc_reset_btn = gr.Button(
                                     '↺',
                                     elem_id=f'block_reset_{i}',
