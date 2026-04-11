@@ -811,7 +811,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible=False,
                             open=False
                         ) as acc:
-                            with gr.Row(elem_classes=['no-wrap']):
+                            with gr.Row(elem_classes=[row_class, 'no-wrap']):
                                 keep_cbx = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=True,
