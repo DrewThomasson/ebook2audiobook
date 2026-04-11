@@ -919,6 +919,7 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
+                    print(f"-------------------------- status: {session['status']} ---------------------------")
                     if session['status'] in [status_tags['READY'], status_tags['END']]:
                         session['status'] = status_tags['READY']
                         session['cancellation_requested'] = False
