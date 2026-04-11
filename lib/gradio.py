@@ -549,11 +549,11 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .accordion-block-even,
                 .accordion-block-even * {
-                    background-color: var(--table-even-background-fill) !important;
+                    background-color: #ffffff !important;
                 }
                 .accordion-block-odd,
                 .accordion-block-odd * {
-                    background-color: var(--table-odd-background-fill) !important;
+                    background-color: #ffff00 !important;
                 }
                 .accordion-block-voice-list {
                     margin: auto !important;
@@ -803,15 +803,15 @@ def build_interface(args:dict)->gr.Blocks:
                 block_components = []
                 with gr.Column(elem_id='gr_column_blocks'):
                     for i in range(page_size):
-                        row_class = 'accordion-block-even' if i % 2 == 0 else 'accordion-block-odd'
+                        acc_class = 'accordion-block-even' if i % 2 == 0 else 'accordion-block-odd'
                         with gr.Accordion(
                             f'Block {i}',
                             elem_id=f'block_{i}',
-                            elem_classes=[row_class],
+                            elem_classes=[acc_class],
                             visible=False,
                             open=False
                         ) as acc:
-                            with gr.Row(elem_classes=[row_class, 'no-wrap']):
+                            with gr.Row(elem_classes=['no-wrap']):
                                 keep_cbx = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=True,
