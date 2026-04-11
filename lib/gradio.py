@@ -2610,19 +2610,14 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=[gr_session],
                 outputs=outputs_disable_components,
-                js=f'()=>{{{js_hide_elements}}}',
-                show_progress_on=[gr_progress]
-            ).then(
-                fn=None,
-                inputs=[],
-                outputs=[],
-                js='''
-                    ()=>{
+                js=f'''
+                    ()=>{{
                         const el = document.querySelector("#gr_session textarea");
-                        if(el){
+                        if(el){{
                             el.select();
-                        }
-                    }
+                        }}
+                        {js_hide_elements}
+                    }}
                 '''
             )
             gr_session_open_btn.click(
