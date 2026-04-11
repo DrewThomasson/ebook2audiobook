@@ -1307,8 +1307,8 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                             session['voice_previous'] = session.get('voice')
                             session['voice'] = new_voice
-                    visible = session['voice'] is not None
-                    return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
+                    visible_voice_buttons = session['voice'] is not None
+                    return gr.update(value=session['voice']), gr.update(visible=visible_voice_buttons), gr.update(visible=visible_voice_buttons)
                 return gr.update(), gr.update(), gr.update()
     
             def click_gr_voice_del_btn(session_id:str, selected:str)->tuple:
