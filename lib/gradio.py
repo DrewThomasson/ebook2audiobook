@@ -938,7 +938,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'enable_components(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(21))
+                outputs = tuple(gr.update() for _ in range(20))
                 return outputs
 
             def disable_on_voice_upload()->tuple:
