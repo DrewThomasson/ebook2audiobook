@@ -914,9 +914,13 @@ def build_interface(args:dict)->gr.Blocks:
             
             ############## End of Gradio Components creation
 
-            def disable_components(exception:str|None=None)->tuple:
-                session_open_btn = gr.update(interactive=False)
-                outputs = tuple([gr.update(interactive=False) for _ in range(19)])
+            def disable_components(session_id:str)->tuple:
+                session = context.get_session(session_id)
+                outputs = tuple([gr.update() for _ in range(20)])
+                if session and session.get('id', False):
+                    outputs = tuple([gr.update(interactive=False) for _ in range(19)])
+                    if session['status'] == status_tags['SWITCH']:
+                        return outputs + (gr.update(visible=False),)
                 return outputs
 
             def enable_components(session_id: str) -> tuple:
@@ -2602,7 +2606,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_session]
             ).then(
                 fn=disable_components,
-                inputs=None,
+                inputs=[gr_session],
                 outputs=outputs_disable_components,
                 js=f'()=>{{{js_hide_elements}}}',
                 show_progress_on=[gr_progress]
@@ -2821,7 +2825,7 @@ def build_interface(args:dict)->gr.Blocks:
                 chain_check_override(
                     gr_convert_btn.click(
                         fn=disable_components,
-                        inputs=None,
+                        inputs=[gr_session],
                         outputs=outputs_disable_components,
                         js=f'()=>{{{js_hide_elements}}}',
                         show_progress_on=[gr_progress]
@@ -2848,7 +2852,7 @@ def build_interface(args:dict)->gr.Blocks:
                     chain_refresh(
                         gr_event.change(
                             fn=disable_components,
-                            inputs=None,
+                            inputs=[gr_session],
                             outputs=outputs_disable_components,
                             js=f'()=>{{{js_hide_elements}}}',
                             show_progress_on=[gr_progress]
