@@ -2166,11 +2166,11 @@ def build_interface(args:dict)->gr.Blocks:
                 blocks_current = session['blocks_current']
                 old_blocks = blocks_current['blocks']
                 for idx, b in enumerate(new_blocks):
-                    if not b.get('voice'):
+                    if 'voice' not in b:
                         b['voice'] = session.get('voice')
-                    if not b.get('tts_engine'):
+                    if 'tts_engine' not in b:
                         b['tts_engine'] = session.get('tts_engine', '')
-                    if not b.get('fine_tuned'):
+                    if 'fine_tuned' not in b:
                         b['fine_tuned'] = session.get('fine_tuned', '')
                     old_b = old_blocks[idx] if idx < len(old_blocks) else None
                     if old_b and old_b.get('text', '').strip() != b.get('text', '').strip():
