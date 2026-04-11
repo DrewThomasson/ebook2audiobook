@@ -1760,7 +1760,7 @@ def build_interface(args:dict)->gr.Blocks:
                     new_session_id = new_id.strip()
                     if new_session_id:
                         if new_session_id == backup_session_id:
-                            return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
+                            return gr.update(), gr.update(value=backup_session_id, interactive=False), gr.update(visible=False), gr.update(visible=True)
                         new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                         new_session = context.get_session(new_session_id)
                         if os.path.exists(new_session_dir) or new_session:
