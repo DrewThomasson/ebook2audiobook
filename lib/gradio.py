@@ -1770,33 +1770,34 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(visible=val)
 
             def click_gr_session_switch_btn(session_id:str)->tuple:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    if session['status'] == status_tags['READY']:
-                        session['status'] = status_tags['SWITCH']
-                        msg = 'Backup your current session ID before to start with a new one!'
-                        show_alert(session_id, {"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(interactive=True), gr.update(value=session_id), gr.update(value='🔑︎')
-                    elif session['status'] == status_tags['SWITCH']:
-                        new_session_id = new_id.strip()
-                        if new_session_id:
-                            if new_session_id == back_id:
-                                session['status'] = status_tags['READY']
-                                return gr.update(), gr.update(interactive=False), gr.update(value=session_id), gr.update(value='︎︎')
-                            new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
-                            new_session = context.get_session(new_session_id)
-                            if os.path.exists(new_session_dir) or new_session:
-                                session['status'] = status_tags['READY']
-                                if not new_session:
-                                    new_session = context.set_session(new_session_id)
-                                new_session['status'] = None
-                                return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), gr.update(value=None), gr.update(value='︎︎')
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        if session['status'] == status_tags['READY']:
+                            session['status'] = status_tags['SWITCH']
+                            msg = 'Backup your current session ID before to start with a new one!'
+                            show_alert(session_id, {"type": "warning", "msg": msg})
+                            return gr.update(), gr.update(interactive=True), gr.update(value=session_id), gr.update(value='🔑︎')
+                        elif session['status'] == status_tags['SWITCH']:
+                            new_session_id = new_id.strip()
+                            if new_session_id:
+                                if new_session_id == back_id:
+                                    session['status'] = status_tags['READY']
+                                    return gr.update(), gr.update(interactive=False), gr.update(value=session_id), gr.update(value='︎︎')
+                                new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
+                                new_session = context.get_session(new_session_id)
+                                if os.path.exists(new_session_dir) or new_session:
+                                    session['status'] = status_tags['READY']
+                                    if not new_session:
+                                        new_session = context.set_session(new_session_id)
+                                    new_session['status'] = None
+                                    return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), gr.update(value=None), gr.update(value='︎︎')
+                                else:
+                                    msg = 'Session not found!'
+                                    show_alert(back_id, {"type": "warning", "msg": msg})
                             else:
-                                msg = 'Session not found!'
+                                msg = 'Session ID cannot be empty'
                                 show_alert(back_id, {"type": "warning", "msg": msg})
-                        else:
-                            msg = 'Session ID cannot be empty'
-                            show_alert(back_id, {"type": "warning", "msg": msg})
                 except Exception as e:
                     error = f'click_gr_session_switch_btn(): {e}'
                     exception_alert(session_id, error)
