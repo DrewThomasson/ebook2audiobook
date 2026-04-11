@@ -1652,6 +1652,18 @@ def build_interface(args:dict)->gr.Blocks:
                     show_alert(session_id, state)
                 return gr.update(value=None), gr.update()
 
+            def change_gr_custom_model_list(session_id:str, selected:str|None)->tuple:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    if session.get('custom_model') != selected:
+                        session['custom_model'] = selected
+                        if selected is not None:
+                            session['voice'] = os.path.join(selected, f'{os.path.basename(selected)}.wav')
+                    visible_fine_tuned = session['custom_model'] is None
+                    visible_del_btn = session['custom_model'] is not None
+                    return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(session_id)
+                return gr.update(), gr.update(), gr.update()
+
             def change_gr_tts_engine_list(session_id:str, engine:str)->tuple:
                 nonlocal models
                 session = context.get_session(session_id)
@@ -1704,18 +1716,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['voice'] = models[session['fine_tuned']]['voice']
                             return gr.update(visible=visible_custom_model)
                 return gr.update()
-
-            def change_gr_custom_model_list(session_id:str, selected:str|None)->tuple:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    if session.get('custom_model') != selected:
-                        session['custom_model'] = selected
-                        if selected is not None:
-                            session['voice'] = os.path.join(selected, f"{os.path.basename(selected)}.wav")
-                        visible_fine_tuned = True if selected is None else False
-                        visible_del_btn = False if selected is None else True
-                        return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(session_id)
-                return gr.update(), gr.update(), gr.update()
 
             def change_gr_output_format_list(session_id:str, val:str)->None:
                 session = context.get_session(session_id)
