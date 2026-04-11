@@ -550,7 +550,7 @@ def build_interface(args:dict)->gr.Blocks:
                 .accordion-block-even, .accordion-block-even div textarea .wrap {
                     background: var(--table-even-background-fill) !important;
                 }
-                .accordion-block-odd, .accordion-block-odd div textarea, .wrap {
+                .accordion-block-odd, .accordion-block-odd div textarea .wrap {
                     background: var(--table-odd-background-fill) !important;
                 }
                 .accordion-block-voice-list {
