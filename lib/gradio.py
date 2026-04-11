@@ -801,7 +801,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
 
                 block_components = []
-                with gr.Column(elem_id='gr_column_blocks'):
+                with gr.Column(elem_id='gr_column_blocks', elem_classes=['gr-col']):
                     for i in range(page_size):
                         acc_class = 'accordion-block-even' if i % 2 == 0 else 'accordion-block-odd'
                         with gr.Accordion(
@@ -812,7 +812,7 @@ def build_interface(args:dict)->gr.Blocks:
                             open=False
                         ) as acc:
                             with gr.Row(elem_classes=['no-wrap']):
-                                keep_cbx = gr.Checkbox(
+                                acc_keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=True,
                                     label='',
@@ -838,7 +838,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     scale=0,
                                     min_width=40
                                 )
-                            acc_tbx = gr.Textbox(
+                            acc_text = gr.Textbox(
                                 elem_id=f'block_text_{i}',
                                 lines=18,
                                 max_lines=18,
@@ -849,7 +849,7 @@ def build_interface(args:dict)->gr.Blocks:
                             acc_reset_btn.click(
                                 fn=lambda session, _i=i: click_reset_block(session, _i),
                                 inputs=[gr_session],
-                                outputs=[acc_tbx]
+                                outputs=[acc_text]
                             )
                         acc.expand(
                             fn=lambda expands, _i=i: [
@@ -867,7 +867,7 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_blocks_expands],
                             outputs=[gr_blocks_expands]
                         )
-                        block_components.append((acc, keep_cbx, acc_voice_list, acc_tbx))
+                        block_components.append((acc, acc_keep, acc_voice_list, acc_text))
 
                 with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
                     gr_blocks_cancel_btn = gr.Button('🡄', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
