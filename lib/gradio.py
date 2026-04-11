@@ -125,7 +125,7 @@ def build_interface(args:dict)->gr.Blocks:
                     animation: fadeOut 2s ease-out 2s forwards !important;
                 }
                 .small-btn{
-                    background-color: var(--block-background-fill) !important;
+                    background: var(--block-background-fill) !important;
                     font-size: 22px !important;
                     width: 60px !important;
                     height: 100% !important;
@@ -133,11 +133,11 @@ def build_interface(args:dict)->gr.Blocks:
                     padding: 0 !important;
                 }
                 .small-btn:hover {
-                    background-color: var(--button-primary-background-fill-hover) !important;
+                    background: var(--button-primary-background-fill-hover) !important;
                     font-size: 28px !important;
                 }
                 .small-btn-red{
-                    background-color: var(--block-background-fill) !important;
+                    background: var(--block-background-fill) !important;
                     font-size: 22px !important;
                     width: 60px !important;
                     height: 60px !important;
@@ -149,7 +149,7 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 28px !important;
                 }
                 .small-btn-lock{
-                    background-color: var(--block-background-fill) !important;
+                    background: var(--block-background-fill) !important;
                     font-size: 18px !important;
                     width: 60px !important;
                     height: 60px !important;
@@ -161,18 +161,18 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 20px !important;
                 }
                 .small-btn-lock:active {
-                    background-color: var(--body-text-color) !important;
+                    background: var(--body-text-color) !important;
                     font-size: 20px !important;
                     color: var(--body-background-fill) !important;
                 }
                 .small-btn:active, .small-btn-red:active {
-                    background-color: var(--body-text-color) !important;
+                    background: var(--body-text-color) !important;
                     font-size: 30px !important;
                     color: var(--body-background-fill) !important;
                 }
                 .micro-btn{
                     font-size: 16px !important;
-                    background-color: var(--block-background-fill) !important;
+                    background: var(--block-background-fill) !important;
                     width: 26px !important;
                     height: 26px !important;
                     margin: 0 !important;
@@ -183,7 +183,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background-color: #ff5050 !important;
                 }
                 .micro-btn:active {
-                    background-color: var(--body-text-color) !important;
+                    background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
                 .file-preview-holder {
@@ -191,7 +191,7 @@ def build_interface(args:dict)->gr.Blocks:
                     overflow: auto !important;
                 }
                 .progress-bar.svelte-ls20lj {
-                    background-color: var(--secondary-500) !important;
+                    background: var(--secondary-500) !important;
                 }
                 .file-preview-holder {
                     height: auto !important;
@@ -244,7 +244,7 @@ def build_interface(args:dict)->gr.Blocks:
                     width: 90px !important;
                     padding: 0 !important;
                     border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
-                    background-color: var(--block-background-fill) !important;
+                    background: var(--block-background-fill) !important;
                     display: flex !important;
                     align-items: center !important;
                     justify-content: center !important;
@@ -255,7 +255,7 @@ def build_interface(args:dict)->gr.Blocks:
                     width: 90px !important;
                     padding: 0 !important;
                     border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
-                    background-color: var(--block-background-fill) !important;
+                    background: var(--block-background-fill) !important;
                     display: flex !important;
                     align-items: center !important;
                     justify-content: center !important;
@@ -263,7 +263,7 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .gr-markdown-output-split-hours {
                     overflow: hidden !important;
-                    background-color: var(--block-background-fill) !important;
+                    background: var(--block-background-fill) !important;
                     border-radius: 0 !important; 
                     font-size: 12px !important;
                     text-align: center !important;
@@ -277,7 +277,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding: 0 !important;
                     width: 60px !important;
                     height: 60px !important;
-                    background-color: var(--block-background-fill) !important;
+                    background: var(--block-background-fill) !important;
                 }
                 .play-pause-button:hover svg {
                     fill: #ffab00 !important;
@@ -289,7 +289,7 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .gr-convert-btn:hover { background-color: #34d058 !important; }
                 .gr-convert-btn:active, .button-red:active {
-                    background-color: var(--body-text-color) !important;
+                    background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
                 [id^="block_"]:has(input[type="checkbox"]:checked) {
@@ -459,7 +459,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gap: 100px !important;
                 }
                 #gr_blocks_markdown {
-                    background-color: var(--body-background-fill) !important;
+                    background: var(--body-background-fill) !important;
                     width: 100% !important;
                     text-align: center !important;
                     display: flex !important;
@@ -468,7 +468,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding-bottom: 20px !important;
                 }
                 #gr_blocks_markdown p {
-                    background-color: var(--body-background-fill) !important;
+                    background: var(--body-background-fill) !important;
                     width: 100% !important;
                     font-size: 18px !important;
                     font-weight: bold !important;
@@ -549,11 +549,11 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .accordion-block-even,
                 .accordion-block-even * {
-                    background-color: var(--table-even-background-fill) !important;
+                    background: var(--table-even-background-fill) !important;
                 }
                 .accordion-block-odd,
                 .accordion-block-odd * {
-                    background-color: var(--table-odd-background-fill) !important;
+                    background: var(--table-odd-background-fill) !important;
                 }
                 .accordion-block-voice-list {
                     margin: auto !important;
@@ -574,7 +574,7 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .gr-blocks-buttons:hover { background-color: #34d058 !important; }
                 .gr-blocks-buttons:active, .button-red:active {
-                    background-color: var(--body-text-color) !important;
+                    background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
                 .gr-block-reset {
@@ -583,13 +583,13 @@ def build_interface(args:dict)->gr.Blocks:
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
                 .button-green:active, .button-red:active {
-                    background-color: var(--body-text-color) !important;
+                    background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
                 .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
                 .button-green:active, .button-red:active {
-                    background-color: var(--body-text-color) !important;
+                    background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
                 .spinner {
