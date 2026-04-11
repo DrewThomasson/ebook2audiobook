@@ -932,7 +932,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 enabled_convert_btn = True
                         elif session['ebook_mode'] == ebook_modes['TEXT']:
                             enabled_convert_btn = True 
-                        print(outputs)
                         return outputs + (gr.update(value=''), gr.update(interactive=enabled_convert_btn))
                 outputs = tuple(gr.update() for _ in range(22))
                 return outputs
