@@ -2068,22 +2068,26 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] in [status_tags['EDIT']]:
                         start = int(page) * page_size
                         updates = []
+                        expands = []
                         for i in range(page_size):
                             idx = start + i
                             if idx < len(blocks):
                                 b = blocks[idx]
-                                updates.append(gr.update(label=f'Block {idx}', visible=True, open=b['expand']))
+                                exp = b.get('expand', False)
+                                expands.append(exp)
+                                updates.append(gr.update(label=f'Block {idx}', visible=True, open=exp))
                                 updates.append(gr.update(value=b['keep']))
                                 updates.append(gr.update(value=b.get('voice'), choices=voice_options))
                                 updates.append(gr.update(value=b['text']))
                             else:
+                                expands.append(False)
                                 updates.append(gr.update(visible=False))
                                 updates.append(gr.update())
                                 updates.append(gr.update())
                                 updates.append(gr.update())
                         end = min(start + page_size, len(blocks))
                         header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
-                        return (*updates, header)
+                        return (*updates, header, expands)
 
             def navigate(page:int, blocks:list[dict], direction:int, *args)->tuple:
                 new_blocks = collect_page(page, blocks, *args)
@@ -2136,7 +2140,7 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                             return result
                 n = len(blocks_components_flat) + 1
-                return tuple(gr.update() for _ in range(7 + n))
+                return tuple(gr.update() for _ in range(7 + n + 1))
 
             def click_reset_block(session_id:str, block_id:int)->dict:
                 session = context.get_session(session_id)
@@ -2415,7 +2419,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
                 gr_blocks_data, gr_blocks_page,
                 gr_blocks_back_btn, gr_blocks_next_btn,
-                *blocks_components_flat, gr_blocks_header
+                *blocks_components_flat, gr_blocks_header, gr_blocks_expands
             ]
             outputs_restore_interface = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
@@ -2904,7 +2908,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=populate_page,
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header]
+                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands]
             )
             gr_blocks_next_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
@@ -2913,7 +2917,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=populate_page,
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header]
+                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands]
             )
             #############
             gr_save_session.change(
