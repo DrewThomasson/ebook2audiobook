@@ -916,11 +916,8 @@ def build_interface(args:dict)->gr.Blocks:
 
             def disable_components(exception:str|None=None)->tuple:
                 session_open_btn = gr.update(interactive=False)
-                if exception is not None:
-                    if exception == 'bypass_gr_session_open_btn':
-                        session_open_btn = gr.update()
-                outputs = tuple([gr.update(interactive=False) for _ in range(20)])
-                return outputs + (session_open_btn,)
+                outputs = tuple([gr.update(interactive=False) for _ in range(19)])
+                return outputs
 
             def enable_components(session_id: str) -> tuple:
                 session = context.get_session(session_id)
@@ -928,9 +925,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] in [status_tags['READY'], status_tags['END']]:
                         session['status'] = status_tags['READY']
                         session['cancellation_requested'] = False
-                        outputs = list(gr.update(interactive=True) for _ in range(20))
-                        outputs[18] = gr.update(interactive=True, visible=False if session['status'] == status_tags['SWITCH'] else True)
-                        outputs[19] = gr.update(interactive=True, visible=True if session['status'] == status_tags['SWITCH'] else False)
+                        outputs = list(gr.update(interactive=True) for _ in range(18))
                         enabled_convert_btn = False
                         if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                             if session.get('ebook_list'):
@@ -940,8 +935,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 enabled_convert_btn = True
                         elif session['ebook_mode'] == ebook_modes['TEXT']:
                             enabled_convert_btn = True
-                        return tuple(outputs) + (gr.update(value=''), gr.update(interactive=enabled_convert_btn))
-                outputs = tuple(gr.update() for _ in range(22))
+                        return tuple(outputs) + (gr.update(visible=True), gr.update(value=''), gr.update(interactive=enabled_convert_btn))
+                outputs = tuple(gr.update() for _ in range(21))
                 return outputs
 
             def disable_on_voice_upload()->tuple:
@@ -1749,8 +1744,8 @@ def build_interface(args:dict)->gr.Blocks:
                     msg = 'Backup your current session ID before to start with a new one!'
                     show_alert(session_id, {"type": "warning", "msg": msg})
                     session['status'] = status_tags['SWITCH']
-                    return gr.update(interactive=True), gr.update(visible=False), gr.update(visible=True), gr.update(value=session_id)
-                return gr.update(), gr.update(), gr.update(), gr.update()
+                    return gr.update(interactive=True), gr.update(value=session_id), gr.update(visible=True)
+                return gr.update(), gr.update(), gr.update()
 
             def click_gr_session_open_btn(new_id:str, back_id:str)->tuple:
                 session = context.get_session(back_id)
@@ -2409,15 +2404,13 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
-                gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_close_btn, gr_session_open_btn,
-                gr_modal, gr_convert_btn
+                gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_close_btn, gr_modal, gr_convert_btn
             ]
             outputs_disable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
-                gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn,
-                gr_session_close_btn, gr_session_open_btn
+                gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_close_btn
             ]
             outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
@@ -2605,11 +2598,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session_close_btn.click(
                 fn=click_gr_session_close_btn,
                 inputs=[gr_session],
-                outputs=[gr_session, gr_backup_session, gr_session_close_btn, gr_session_open_btn],
+                outputs=[gr_session, gr_backup_session, gr_session_open_btn],
                 show_progress_on=[gr_session]
             ).then(
                 fn=disable_components,
-                inputs=[gr.State('bypass_gr_session_open_btn')],
+                inputs=None,
                 outputs=outputs_disable_components,
                 js=f'()=>{{{js_hide_elements}}}',
                 show_progress_on=[gr_progress]
