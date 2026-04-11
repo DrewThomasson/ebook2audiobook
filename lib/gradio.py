@@ -553,7 +553,7 @@ def build_interface(args:dict)->gr.Blocks:
                 .accordion-block-odd, .accordion-block-odd div textarea {
                     background: var(--table-odd-background-fill) !important;
                 }
-                .accordion-block-keep > label {
+                .accordion-block-keep > div > label {
                     display: none !important;
                 }
                 .accordion-block-voice-list {
