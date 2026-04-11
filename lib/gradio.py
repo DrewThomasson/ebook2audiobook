@@ -579,7 +579,11 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
-                .gr-block-reset {
+                .accordion-block-keep {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                .accordion-block-reset {
                     margin-left: 30px !important;
                     margin-right: 30px !important;
                 }
@@ -818,6 +822,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 acc_keep = gr.Checkbox(
                                     label='',
                                     elem_id=f'block_keep_{i}',
+                                    elem_classes=['accordion-block-keep'],
                                     value=True,
                                     interactive=True,
                                     scale=0,
@@ -835,7 +840,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 acc_reset_btn = gr.Button(
                                     '↺',
                                     elem_id=f'block_reset_{i}',
-                                    elem_classes=['gr-block-reset'],
+                                    elem_classes=['accordion-block-reset'],
                                     variant='secondary',
                                     interactive=True,
                                     scale=0,
