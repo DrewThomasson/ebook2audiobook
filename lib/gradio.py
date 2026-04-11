@@ -807,7 +807,6 @@ def build_interface(args:dict)->gr.Blocks:
                         with gr.Accordion(
                             f'Block {i}',
                             elem_id=f'block_{i}',
-                            elem_classes=[acc_class],
                             visible=False,
                             open=False
                         ) as acc:
