@@ -459,7 +459,7 @@ def build_interface(args:dict)->gr.Blocks:
                     gap: 100px !important;
                 }
                 #gr_blocks_markdown {
-                    background-color: var(--body-background-fill) !important;
+                    background: var(--body-background-fill) !important;
                     width: 100% !important;
                     text-align: center !important;
                     display: flex !important;
@@ -468,7 +468,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding-bottom: 20px !important;
                 }
                 #gr_blocks_markdown p {
-                    background-color: var(--body-background-fill) !important;
+                    background: var(--body-background-fill) !important;
                     width: 100% !important;
                     font-size: 18px !important;
                     font-weight: bold !important;
@@ -549,11 +549,11 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .accordion-block-even,
                 .accordion-block-even * {
-                    background-color: #ffffff !important;
+                    background: var(--table-even-background-fill) !important;
                 }
                 .accordion-block-odd,
                 .accordion-block-odd * {
-                    background-color: #ffff00 !important;
+                    background: var(--table-odd-background-fill) !important;
                 }
                 .accordion-block-voice-list {
                     margin: auto !important;
