@@ -547,14 +547,11 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
-                .accordion-block-even, .accordion-block-even div textarea {
+                .accordion-block-even, .accordion-block-even div textarea, .accordion-block-keep > div {
                     background: var(--table-even-background-fill) !important;
                 }
-                .accordion-block-odd, .accordion-block-odd div textarea {
+                .accordion-block-odd, .accordion-block-odd div textarea, .accordion-block-keep > div {
                     background: var(--table-odd-background-fill) !important;
-                }
-                .accordion-block-keep > div > label {
-                    display: none !important;
                 }
                 .accordion-block-voice-list {
                     margin: auto !important;
