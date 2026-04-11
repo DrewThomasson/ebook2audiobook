@@ -670,8 +670,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                     with gr.Row(elem_id='gr_row_session'):
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
-                                        gr_session_close_btn = gr.Button('🔒︎', elem_id='gr_session_close_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
-                                        gr_session_open_btn = gr.Button('🔑︎', elem_id='gr_session_open_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=False, interactive=True, scale=0, min_width=60)
+                                        gr_session_switch_btn = gr.Button('🔒︎', elem_id='gr_session_switch_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
                     with gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
@@ -925,7 +924,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
-                            outputs = list(gr.update(interactive=True) for _ in range(18))
+                            outputs = list(gr.update(interactive=True) for _ in range(17))
                             enabled_convert_btn = False
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if session.get('ebook_list'):
@@ -943,7 +942,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return outputs
 
             def disable_on_voice_upload()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(11)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(10)])
                 return outputs + (gr.update(visible='hidden'), gr.update(visible='hidden'))
 
             def enable_on_voice_upload(session_id:str)->tuple:
@@ -1770,24 +1769,20 @@ def build_interface(args:dict)->gr.Blocks:
                     session['output_split'] = val
                 return gr.update(visible=val)
 
-            def click_gr_session_close_btn(session_id:str)->tuple:
+            def click_gr_session_switch_btn(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['status'] = status_tags['SWITCH']
-                    msg = 'Backup your current session ID before to start with a new one!'
-                    show_alert(session_id, {"type": "warning", "msg": msg})
-                    return gr.update(interactive=True), gr.update(value=session_id), gr.update(visible=True)
-                return gr.update(), gr.update(), gr.update()
-
-            def click_gr_session_open_btn(new_id:str, back_id:str)->tuple:
-                try:
-                    session = context.get_session(back_id)
-                    if session and session.get('id', False):
+                    if session['status'] == status_tags['READY']:
+                        session['status'] = status_tags['SWITCH']
+                        msg = 'Backup your current session ID before to start with a new one!'
+                        show_alert(session_id, {"type": "warning", "msg": msg})
+                        return gr.update(), gr.update(interactive=True), gr.update(value=session_id), gr.update(value='🔑︎')
+                    elif session['status'] == status_tags['SWITCH']:
                         new_session_id = new_id.strip()
                         if new_session_id:
                             if new_session_id == back_id:
                                 session['status'] = status_tags['READY']
-                                return gr.update(), gr.update(interactive=False), gr.update(value=None), gr.update(visible=True)
+                                return gr.update(), gr.update(interactive=False), gr.update(value=session_id), gr.update(value='︎︎')
                             new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                             new_session = context.get_session(new_session_id)
                             if os.path.exists(new_session_dir) or new_session:
@@ -1795,10 +1790,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 if not new_session:
                                     new_session = context.set_session(new_session_id)
                                 new_session['status'] = None
-                                return (
-                                    gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)),
-                                    gr.update(interactive=False), gr.update(value=None), gr.update(visible=True)
-                                )
+                                return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), gr.update(value=None), gr.update(value='︎︎')
                             else:
                                 msg = 'Session not found!'
                                 show_alert(back_id, {"type": "warning", "msg": msg})
@@ -1806,7 +1798,7 @@ def build_interface(args:dict)->gr.Blocks:
                             msg = 'Session ID cannot be empty'
                             show_alert(back_id, {"type": "warning", "msg": msg})
                 except Exception as e:
-                    error = f'click_gr_session_open_btn(): {e}'
+                    error = f'click_gr_session_switch_btn(): {e}'
                     exception_alert(session_id, error)
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
@@ -2457,7 +2449,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
-                gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_open_btn, gr_modal, gr_convert_btn
+                gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn
             ]
             outputs_disable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
@@ -2484,12 +2476,12 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_on_voice_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
-                gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_session_close_btn, gr_session_open_btn,
+                gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_session_switch_btn,
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn
             ]
             outputs_on_custom_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
-                gr_fine_tuned_list, gr_voice_file, gr_session_close_btn, gr_session_open_btn,
+                gr_fine_tuned_list, gr_voice_file, gr_session_switch_btn,
                 gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_label, gr_custom_model_del_btn
             ]
             
@@ -2648,10 +2640,10 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_output_split_hours],
                 outputs=None
             )
-            gr_session_close_btn.click(
-                fn=click_gr_session_close_btn,
-                inputs=[gr_session],
-                outputs=[gr_session, gr_backup_session, gr_session_open_btn],
+            gr_session_switch_btn.click(
+                fn=click_gr_session_switch_btn,
+                inputs=[gr_session, gr_backup_session],
+                outputs=[gr_restore_session, gr_session, gr_backup_session, gr_session_switch_btn],
                 show_progress_on=[gr_session]
             ).then(
                 fn=disable_components,
@@ -2666,12 +2658,6 @@ def build_interface(args:dict)->gr.Blocks:
                         {js_hide_elements}
                     }}
                 '''
-            )
-            gr_session_open_btn.click(
-                fn=click_gr_session_open_btn,
-                inputs=[gr_session, gr_backup_session],
-                outputs=[gr_restore_session, gr_session, gr_backup_session, gr_session_close_btn],
-                show_progress_on=[gr_session]
             ).then(
                 fn=enable_components,
                 inputs=[gr_session],
