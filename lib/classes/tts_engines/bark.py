@@ -64,7 +64,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                if not self._set_voice(kwargs.get('voice', self.session['voice'])):
+                if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
                     return False
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
                 if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():

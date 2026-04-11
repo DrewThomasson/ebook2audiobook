@@ -85,7 +85,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                if not self._set_voice(kwargs.get('voice', self.session['voice'])):
+                if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
                     return False
                 speaker_argument = {}
                 if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:

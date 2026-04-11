@@ -106,7 +106,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     not_supported_punc_pattern = re.compile(r'\p{P}+')
                 else:
                     not_supported_punc_pattern = re.compile(r'["—…¡¿]')
-                if not self._set_voice(kwargs.get('voice', self.session['voice'])):
+                if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
                     return False
                 proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                 os.makedirs(proc_dir, exist_ok=True)
