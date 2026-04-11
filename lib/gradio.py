@@ -581,7 +581,6 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .accordion-block-keep {
                     margin: 0 !important;
-                    padding: 0 !important;
                 }
                 .accordion-block-reset {
                     margin-left: 30px !important;
