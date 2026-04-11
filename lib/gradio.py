@@ -2074,7 +2074,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 b = blocks[idx]
                                 updates.append(gr.update(label=f'Block {idx}', visible=True, open=b['expand']))
                                 updates.append(gr.update(value=b['keep']))
-                                updates.append(gr.update(value=b.get('voice') or session.get('voice'), choices=voice_options))
+                                updates.append(gr.update(value=b.get('voice'), choices=voice_options))
                                 updates.append(gr.update(value=b['text']))
                             else:
                                 updates.append(gr.update(visible=False))
