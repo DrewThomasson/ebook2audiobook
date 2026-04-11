@@ -1754,10 +1754,8 @@ def build_interface(args:dict)->gr.Blocks:
                         new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                         new_session = context.get_session(new_session_id)
                         if os.path.exists(new_session_dir) or new_session:
-                            session['status'] = None
                             if not new_session:
                                 new_session = context.set_session(new_session_id)
-                            new_session['status'] = status_tags['READY']
                             return (
                                 gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)),
                                 gr.update(interactive=False),
