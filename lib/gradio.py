@@ -807,6 +807,7 @@ def build_interface(args:dict)->gr.Blocks:
                         with gr.Accordion(
                             f'Block {i}',
                             elem_id=f'block_{i}',
+                            elem_classes=[acc_class],
                             visible=False,
                             open=False
                         ) as acc:
@@ -1751,6 +1752,8 @@ def build_interface(args:dict)->gr.Blocks:
                     session['status'] = status_tags['READY']
                     new_session_id = new_id.strip()
                     if new_session_id:
+                        if new_session_id == backup_session_id:
+                            return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
                         new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                         new_session = context.get_session(new_session_id)
                         if os.path.exists(new_session_dir) or new_session:
@@ -1766,8 +1769,6 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             msg = 'Session not found!'
                             show_alert(backup_session_id, {"type": "warning", "msg": msg})
-                    elif new_session_id == backup_session_id:
-                        return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
                     else:
                         msg = 'Session ID cannot be empty'
                         show_alert(backup_session_id, {"type": "warning", "msg": msg})
