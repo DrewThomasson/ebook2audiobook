@@ -553,6 +553,9 @@ def build_interface(args:dict)->gr.Blocks:
                 .accordion-block-odd, .accordion-block-odd div textarea {
                     background: var(--table-odd-background-fill) !important;
                 }
+                .accordion-block-keep > label {
+                    display: none !important;
+                }
                 .accordion-block-voice-list {
                     margin: auto !important;
                     padding: 0 16px 0 0 !important;
@@ -811,12 +814,13 @@ def build_interface(args:dict)->gr.Blocks:
                         ) as acc:
                             with gr.Row(elem_id='block_options_row_{i}', elem_classes=[acc_class, 'no-wrap']) as block_options_row:
                                 acc_keep = gr.Checkbox(
-                                    elem_id=f'block_keep_{i}',
-                                    value=True,
                                     show_label=False,
+                                    elem_id=f'block_keep_{i}',
+                                    elem_classes=['accordion-block-keep'],
+                                    value=True,
                                     interactive=True,
                                     scale=0,
-                                    visible=True,
+                                    visible=True
                                 )
                                 acc_voice_list = gr.Dropdown(
                                     show_label=False,
