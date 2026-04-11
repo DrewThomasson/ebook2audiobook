@@ -813,7 +813,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 acc_keep = gr.Checkbox(
                                     elem_id=f'block_keep_{i}',
                                     value=True,
-                                    label='',
+                                    show_label=False,
                                     interactive=True,
                                     scale=0,
                                     visible=True,
