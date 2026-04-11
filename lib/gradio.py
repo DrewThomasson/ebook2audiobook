@@ -914,10 +914,12 @@ def build_interface(args:dict)->gr.Blocks:
             ############## End of Gradio Components creation
 
             def disable_components()->tuple:
+                print('disable_components() called')
                 outputs = tuple([gr.update() for _ in range(19)])
                 return outputs
 
             def enable_components(session_id: str) -> tuple:
+                print('enable_components() called')
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
