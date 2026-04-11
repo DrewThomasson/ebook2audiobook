@@ -923,13 +923,15 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple([gr.update(interactive=False) for _ in range(20)])
                 return outputs + (session_open_btn,)
 
-            def enable_components(session_id:str)->tuple:
+            def enable_components(session_id: str) -> tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['READY'], status_tags['END']]:
                         session['status'] = status_tags['READY']
                         session['cancellation_requested'] = False
-                        outputs = tuple(gr.update(interactive=True) for _ in range(20))
+                        outputs = list(gr.update(interactive=True) for _ in range(20))
+                        outputs[18] = gr.update(interactive=True, visible=True)   # gr_session_close_btn
+                        outputs[19] = gr.update(interactive=True, visible=False)  # gr_session_open_btn
                         enabled_convert_btn = False
                         if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                             if session.get('ebook_list'):
@@ -938,8 +940,8 @@ def build_interface(args:dict)->gr.Blocks:
                             if session.get('ebook_src'):
                                 enabled_convert_btn = True
                         elif session['ebook_mode'] == ebook_modes['TEXT']:
-                            enabled_convert_btn = True 
-                        return outputs + (gr.update(value=''), gr.update(interactive=enabled_convert_btn))
+                            enabled_convert_btn = True
+                        return tuple(outputs) + (gr.update(value=''), gr.update(interactive=enabled_convert_btn))
                 outputs = tuple(gr.update() for _ in range(22))
                 return outputs
 
@@ -1753,14 +1755,14 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update(interactive=True), gr.update(visible=False), gr.update(visible=True)
                 return gr.update(), gr.update(), gr.update()
 
-            def click_gr_session_open_btn(new_id:str)->tuple:
+            def click_gr_session_open_btn(new_id: str) -> tuple:
                 session = context.get_session(backup_session_id)
                 if session and session.get('id', False):
                     session['status'] = status_tags['READY']
                     new_session_id = new_id.strip()
                     if new_session_id:
                         if new_session_id == backup_session_id:
-                            return gr.update(), gr.update(value=backup_session_id, interactive=False), gr.update(visible=False), gr.update(visible=True)
+                            return gr.update(), gr.update(interactive=False)
                         new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                         new_session = context.get_session(new_session_id)
                         if os.path.exists(new_session_dir) or new_session:
@@ -1769,9 +1771,7 @@ def build_interface(args:dict)->gr.Blocks:
                             new_session['status'] = None
                             return (
                                 gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)),
-                                gr.update(interactive=False),
-                                gr.update(visible=False),
-                                gr.update(visible=True)
+                                gr.update(interactive=False)
                             )
                         else:
                             msg = 'Session not found!'
@@ -1779,7 +1779,7 @@ def build_interface(args:dict)->gr.Blocks:
                     else:
                         msg = 'Session ID cannot be empty'
                         show_alert(backup_session_id, {"type": "warning", "msg": msg})
-                return gr.update(), gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update()
 
             def change_gr_playback_time(session_id:str, time:float)->None:
                 session = context.get_session(session_id)
@@ -2632,7 +2632,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session_open_btn.click(
                 fn=click_gr_session_open_btn,
                 inputs=[gr_session],
-                outputs=[gr_restore_session, gr_session, gr_session_open_btn, gr_session_close_btn],
+                outputs=[gr_restore_session, gr_session],
                 show_progress_on=[gr_session]
             ).then(
                 fn=enable_components,
