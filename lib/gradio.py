@@ -1749,6 +1749,7 @@ def build_interface(args:dict)->gr.Blocks:
             def click_gr_session_open_btn(new_id:str)->tuple:
                 session = context.get_session(backup_session_id)
                 if session and session.get('id', False):
+                    session['status'] = status_tags['READY']
                     new_session_id = new_id.strip()
                     if new_session_id:
                         new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
@@ -1756,6 +1757,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if os.path.exists(new_session_dir) or new_session:
                             if not new_session:
                                 new_session = context.set_session(new_session_id)
+                            new_session['status'] = status_tags['READY']
                             return (
                                 gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)),
                                 gr.update(interactive=False),
@@ -1766,7 +1768,6 @@ def build_interface(args:dict)->gr.Blocks:
                             msg = 'Session not found!'
                             show_alert(backup_session_id, {"type": "warning", "msg": msg})
                     elif new_session_id == backup_session_id:
-                        session['status'] = status_tags['READY']
                         return gr.update(), gr.update(interactive=False), gr.update(visible=False), gr.update(visible=True)
                     else:
                         msg = 'Session ID cannot be empty'
