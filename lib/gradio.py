@@ -2117,7 +2117,7 @@ def build_interface(args:dict)->gr.Blocks:
                             previous_voice = session.get('voice_previous')
                             if previous_voice is not None:
                                 for b in blocks:
-                                    if not b.get('voice') or b.get('voice') == previous_voice:
+                                    if b.get('voice') == previous_voice:
                                         b['voice'] = current_voice
                                 blocks_current['blocks'] = blocks
                                 session['blocks_current'] = blocks_current
