@@ -1984,7 +1984,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def update_gr_audiobook_list(session_id:str)->dict:
                 try:
-                     nonlocal audiobook_options
+                    nonlocal audiobook_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session['audiobooks_dir'] is not None:
