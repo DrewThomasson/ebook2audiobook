@@ -1293,7 +1293,6 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update()
 
             def change_gr_voice_list(session_id:str, selected:str|None)->tuple:
-                print('change_gr_voice_list called')
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session.get('voice') != selected:
@@ -1405,10 +1404,6 @@ def build_interface(args:dict)->gr.Blocks:
                                         os.remove(file)
                                     shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
                                     msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
-                                    if voice_options:
-                                        session['voice'] = voice_options[0][1]
-                                    else:
-                                        session['voice'] = None
                                     show_alert(session_id, {"type": "info", "msg": msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                                 elif method == 'confirm_custom_model_del':
@@ -1418,7 +1413,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     if session['custom_model'] is not None and session['voice'] is not None:
                                         if session['custom_model'] in session['voice']:
                                             session['voice'] = models[session['fine_tuned']]['voice']
-                                    session['custom_model'] = None
                                     show_alert(session_id, {"type": "info", "msg": msg})
                                     return gr.update(value='', visible=False), update_gr_custom_model_list(session_id), gr.update(),  gr.update()
                                 elif method == 'confirm_audiobook_del':
@@ -1433,7 +1427,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], audiobook).encode()).hexdigest()}")
                                     shutil.rmtree(process_dir, ignore_errors=True)
                                     msg = f'Audiobook {selected_name} deleted!'
-                                    session['audiobook'] = None
                                     show_alert(session_id, {"type": "info", "msg": msg})
                                     return gr.update(value='', visible=False), gr.update(), update_gr_audiobook_list(session_id), gr.update()
                 except Exception as e:
