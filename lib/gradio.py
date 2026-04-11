@@ -1149,7 +1149,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value='', visible=False), gr.update(visible=visible_main),
                             gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
                             gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_ebook_src, value=ebook_data), gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
-                            gr.update(value=session['device']), update_gr_audiobook_list(session_id), gr.update(value=session['audiobook']),
+                            gr.update(value=session['device']), gr.update(value=session['audiobook']), update_gr_audiobook_list(session_id),
                             update_gr_voice_list(session_id), gr.update(value='')
                         )
                     elif session['status'] in [status_tags['CONVERTING']]:
@@ -1164,14 +1164,12 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_audiobook_list(session_id:str, selected:str|None)->dict:
                 try:
-                    print('----------------------- change_gr_audiobook_list called! ---------------')
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        group_visible = True if session.get('audiobook') else False
-                        if session.get('audiobook') == selected and audiobook_options:
-                            return gr.update()
-                        session['audiobook'] = selected
-                        return gr.update(visible=group_visible)
+                        if session.get('audiobook') != selected:
+                            session['audiobook'] = selected
+                        visible = session['audiobook'] is not None
+                        return gr.update(visible=visible)
                 except Exception as e:
                     error = f'change_gr_audiobook_list(): {e}'
                     exception_alert(session_id, error)
@@ -2427,7 +2425,7 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
-                gr_ebook_src, gr_ebook_textarea, gr_device, gr_audiobook_list, gr_audiobook_player,
+                gr_ebook_src, gr_ebook_textarea, gr_device, gr_audiobook_player, gr_audiobook_list,
                 gr_voice_list, gr_progress
             ]
             outputs_on_voice_upload = [
