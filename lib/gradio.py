@@ -815,7 +815,6 @@ def build_interface(args:dict)->gr.Blocks:
                         ) as acc:
                             with gr.Row(elem_id='block_options_row_{i}', elem_classes=[acc_class, 'no-wrap']) as block_options_row:
                                 acc_keep = gr.Checkbox(
-                                    show_label=False,
                                     label='',
                                     elem_id=f'block_keep_{i}',
                                     value=True,
