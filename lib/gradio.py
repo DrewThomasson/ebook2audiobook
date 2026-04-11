@@ -547,10 +547,10 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
-                .accordion-block-even, .accordion-block-even div textarea, .accordion-block-keep > div {
+                .accordion-block-even, .accordion-block-even div textarea, .accordion-block-keep div {
                     background: var(--table-even-background-fill) !important;
                 }
-                .accordion-block-odd, .accordion-block-odd div textarea, .accordion-block-keep > div {
+                .accordion-block-odd, .accordion-block-odd div textarea, .accordion-block-keep div {
                     background: var(--table-odd-background-fill) !important;
                 }
                 .accordion-block-voice-list {
@@ -812,6 +812,7 @@ def build_interface(args:dict)->gr.Blocks:
                             with gr.Row(elem_id='block_options_row_{i}', elem_classes=[acc_class, 'no-wrap']) as block_options_row:
                                 acc_keep = gr.Checkbox(
                                     show_label=False,
+                                    label='',
                                     elem_id=f'block_keep_{i}',
                                     elem_classes=['accordion-block-keep'],
                                     value=True,
@@ -838,10 +839,10 @@ def build_interface(args:dict)->gr.Blocks:
                                     min_width=40
                                 )
                             acc_text = gr.Textbox(
+                                show_label=False,
                                 elem_id=f'block_text_{i}',
                                 lines=18,
                                 max_lines=18,
-                                show_label=False,
                                 container=False,
                                 interactive=True
                             )
