@@ -931,7 +931,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session['cancellation_requested'] = False
                         outputs = list(gr.update(interactive=True) for _ in range(20))
                         outputs[18] = gr.update(interactive=True, visible=False if session['status'] == status_tags['SWITCH'] else True)
-                        outputs[19] = gr.update(interactive=True, visible=True if session['status'] == status_tags['SWITCH'] else False)  # gr_session_open_btn
+                        outputs[19] = gr.update(interactive=True, visible=True if session['status'] == status_tags['SWITCH'] else False)
                         enabled_convert_btn = False
                         if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                             if session.get('ebook_list'):
@@ -1762,7 +1762,7 @@ def build_interface(args:dict)->gr.Blocks:
                     new_session_id = new_id.strip()
                     if new_session_id:
                         if new_session_id == backup_session_id:
-                            return gr.update(), gr.update(interactive=False)
+                            return gr.update(), gr.update(value=backup_session_id, interactive=False)
                         new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                         new_session = context.get_session(new_session_id)
                         if os.path.exists(new_session_dir) or new_session:
