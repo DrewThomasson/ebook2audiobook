@@ -916,11 +916,12 @@ def build_interface(args:dict)->gr.Blocks:
 
             def disable_components(session_id:str)->tuple:
                 session = context.get_session(session_id)
-                outputs = tuple([gr.update() for _ in range(20)])
                 if session and session.get('id', False):
                     outputs = tuple([gr.update(interactive=False) for _ in range(19)])
+                    print(f"session['status']: {session['status']}")
                     if session['status'] == status_tags['SWITCH']:
                         return outputs + (gr.update(visible=False),)
+                outputs = tuple([gr.update() for _ in range(20)])
                 return outputs
 
             def enable_components(session_id: str) -> tuple:
