@@ -930,8 +930,8 @@ def build_interface(args:dict)->gr.Blocks:
                         session['status'] = status_tags['READY']
                         session['cancellation_requested'] = False
                         outputs = list(gr.update(interactive=True) for _ in range(20))
-                        outputs[18] = gr.update(interactive=True, visible=True)   # gr_session_close_btn
-                        outputs[19] = gr.update(interactive=True, visible=False)  # gr_session_open_btn
+                        outputs[18] = gr.update(interactive=True, visible=False if session['status'] == status_tags['SWITCH'] else True)
+                        outputs[19] = gr.update(interactive=True, visible=True if session['status'] == status_tags['SWITCH'] else False)  # gr_session_open_btn
                         enabled_convert_btn = False
                         if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                             if session.get('ebook_list'):
@@ -1750,7 +1750,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     msg = 'Backup your current session ID before to start with a new one!'
                     show_alert(session_id, {"type": "warning", "msg": msg})
-                    session['status'] = status_tags['SKIP']
+                    session['status'] = status_tags['SWITCH']
                     backup_session_id = session_id
                     return gr.update(interactive=True), gr.update(visible=False), gr.update(visible=True)
                 return gr.update(), gr.update(), gr.update()

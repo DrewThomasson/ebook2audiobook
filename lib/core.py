@@ -66,6 +66,7 @@ status_tags = {
     "READY": "ready",
     "EDIT": "edit",
     "SKIP": "skip",
+    "SWITCH": "switch",
     "CONVERTING": "converting",
     "END": "end",
     "DISCONNECTED": "disconnected"
