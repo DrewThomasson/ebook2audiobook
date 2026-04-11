@@ -61,7 +61,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
         error = 'load_engine(): engine is None'
         raise RuntimeError(error)
 
-    def convert(self, sentence_file:str, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->bool:
         try:
             import torch
             import torchaudio
@@ -71,7 +71,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r"[.:—]")
-                if not self._set_voice():
+                if not self._set_voice(kwargs.get('voice', self.session['voice'])):
                     return False
                 proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                 os.makedirs(proc_dir, exist_ok=True)

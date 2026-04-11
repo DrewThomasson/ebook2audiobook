@@ -65,7 +65,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             error = 'load_engine(): engine is None'
             raise RuntimeError(error)
 
-    def convert(self, sentence_file:str, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->bool:
         try:
             import torch
             import torchaudio
@@ -76,7 +76,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
-                if not self._set_voice():
+                if not self._set_voice(kwargs.get('voice', self.session['voice'])):
                     return False
                 speaker_argument = {}
                 if self.params['current_voice'] is not None:

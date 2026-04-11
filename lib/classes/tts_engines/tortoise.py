@@ -75,7 +75,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
         error = 'load_engine(): engine is None'
         raise RuntimeError(error)
 
-    def convert(self, sentence_file:str, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->bool:
         try:
             import torch
             import torchaudio
@@ -85,7 +85,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
-                if not self._set_voice():
+                if not self._set_voice(kwargs.get('voice', self.session['voice'])):
                     return False
                 speaker_argument = {}
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
