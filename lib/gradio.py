@@ -916,10 +916,8 @@ def build_interface(args:dict)->gr.Blocks:
 
             def disable_components(session_id:str)->tuple:
                 try:
-                    print('disable_components() called')
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        print(f"session['status']: {session['status']}")
                         outputs = tuple([gr.update(interactive=False) for _ in range(19)])
                         if session['status'] == status_tags['SWITCH']:
                             return outputs + (gr.update(visible=False),)
@@ -2668,15 +2666,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=[gr_session],
                 outputs=outputs_disable_components,
-                js=f'''
-                    ()=>{{
-                        const el = document.querySelector("#gr_session textarea");
-                        if(el){{
-                            el.select();
-                        }}
-                        {js_hide_elements}
-                    }}
-                '''
             )
             gr_session_open_btn.click(
                 fn=click_gr_session_open_btn,
