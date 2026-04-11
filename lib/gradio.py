@@ -939,7 +939,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 enabled_convert_btn = True
                         elif session['ebook_mode'] == ebook_modes['TEXT']:
                             enabled_convert_btn = True
-                        return tuple(outputs) + (gr.update(visible=True), gr.update(value=''), gr.update(interactive=enabled_convert_btn))
+                        return tuple(outputs) + (gr.update(visible=False), gr.update(value=''), gr.update(interactive=enabled_convert_btn))
                 outputs = tuple(gr.update() for _ in range(21))
                 return outputs
 
@@ -1745,9 +1745,9 @@ def build_interface(args:dict)->gr.Blocks:
             def click_gr_session_close_btn(session_id:str)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
+                    session['status'] = status_tags['SWITCH']
                     msg = 'Backup your current session ID before to start with a new one!'
                     show_alert(session_id, {"type": "warning", "msg": msg})
-                    session['status'] = status_tags['SWITCH']
                     return gr.update(interactive=True), gr.update(value=session_id), gr.update(visible=True)
                 return gr.update(), gr.update(), gr.update()
 
@@ -2409,7 +2409,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
-                gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_close_btn, gr_modal, gr_convert_btn
+                gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_open_btn, gr_modal, gr_convert_btn
             ]
             outputs_disable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
