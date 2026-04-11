@@ -579,8 +579,8 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
-                .accordion-block-keep {
-                    margin: 0 !important;
+                .accordion-block-keep, .accordion-block-keep .wrap{
+                    background: none !important;
                 }
                 .accordion-block-reset {
                     margin-left: 30px !important;
