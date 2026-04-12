@@ -1793,7 +1793,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if not new_session:
                                         new_session = context.set_session(new_session_id)
                                     new_session['status'] = None
-                                    return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), gr.update(value=None), gr.update(value='︎︎'), , False, True
+                                    return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), gr.update(value=None), gr.update(value='︎︎'), False, True
                                 else:
                                     msg = 'Session not found!'
                                     show_alert(backup_session_id, {"type": "warning", "msg": msg})
