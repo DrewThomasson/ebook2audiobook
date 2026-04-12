@@ -2660,7 +2660,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_session_switch_btn]
             )
             gr_session_switch_disable_state.change(
-                fn=disable_components,
+                fn=lambda session_id: disable_components(session_id, exceptions=['gr_session_switch_btn']),
                 inputs=[gr_session_switch_disable_state],
                 outputs=outputs_disable_components,
                 show_progress_on=[gr_session_switch_btn]
