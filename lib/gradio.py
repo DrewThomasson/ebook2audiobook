@@ -912,14 +912,12 @@ def build_interface(args:dict)->gr.Blocks:
             ############## End of Gradio Components creation
 
             def disable_components(session_id:str)->tuple:
-                print('disable_components called')
                 if session_id is None:
                     return tuple(gr.update() for _ in range(19))
                 outputs = tuple(gr.update(interactive=False) for _ in range(19))
                 return outputs
 
             def enable_components(session_id:str)->tuple:
-                print('enable_components called')
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
@@ -1771,7 +1769,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['output_split'] = val
                 return gr.update(visible=val)
 
-            def click_gr_session_switch_btn(session_id: str, backup_session_id: str | None) -> tuple:
+            def click_gr_session_switch_btn(session_id:str, backup_session_id:str|None)->tuple:
                 try:
                     if backup_session_id is not None:
                         back_id = backup_session_id
@@ -1785,23 +1783,23 @@ def build_interface(args:dict)->gr.Blocks:
                             session['status'] = status_tags['SWITCH']
                             msg = 'Backup your current session ID before to start with a new one!'
                             show_alert(back_id, {"type": "warning", "msg": msg})
-                            return gr.update(), gr.update(interactive=True), back_id, gr.update(value='🔑︎'), back_id, None
+                            return gr.update(), gr.update(interactive=True), back_id, gr.update(value='🔑︎'), back_id, gr.update()
                         elif session['status'] == status_tags['SWITCH']:
                             if new_id is None or not new_id.strip():
                                 msg = 'Session ID cannot be empty'
                                 show_alert(back_id, {"type": "warning", "msg": msg})
-                                return gr.update(), gr.update(), backup_session_id, gr.update(), None, None
+                                return gr.update(), gr.update(), backup_session_id, gr.update(), gr.update(), gr.update()
                             new_session_id = new_id.strip()
                             session['status'] = status_tags['READY']
                             if new_session_id == back_id:
-                                return gr.update(), gr.update(interactive=False), back_id, gr.update(value='🔒︎'), None, back_id
+                                return gr.update(), gr.update(interactive=False), back_id, gr.update(value='🔒︎'), gr.update(), back_id
                             new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                             new_session = context.get_session(new_session_id)
                             if os.path.exists(new_session_dir) or new_session:
                                 if not new_session:
                                     new_session = context.set_session(new_session_id)
                                 new_session['status'] = status_tags['READY']
-                                return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), None, gr.update(value='🔒︎'), None, new_session_id
+                                return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), None, gr.update(value='🔒︎'), gr.update(), new_session_id
                             else:
                                 session['status'] = status_tags['SWITCH']
                                 msg = 'Session not found!'
@@ -1809,7 +1807,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'click_gr_session_switch_btn(): {e}'
                     exception_alert(back_id, error)
-                return gr.update(), gr.update(), backup_session_id, gr.update(), None, None
+                return gr.update(), gr.update(), backup_session_id, gr.update(), gr.update(), gr.update()
 
             def change_gr_playback_time(session_id:str, time:float)->None:
                 session = context.get_session(session_id)
