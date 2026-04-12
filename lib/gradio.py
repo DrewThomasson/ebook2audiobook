@@ -2883,7 +2883,6 @@ def build_interface(args:dict)->gr.Blocks:
                         fn=disable_components,
                         inputs=[gr_session],
                         outputs=outputs_disable_components,
-                        js=f'()=>{{{js_hide_elements}}}',
                         show_progress_on=[gr_progress]
                     )
                 ),
