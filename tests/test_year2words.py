@@ -1,4 +1,4 @@
-"""Tests for year-to-words conversion logic in lib/core.py.
+"""Tests for year-to-words conversion logic.
 
 Only requires num2words and pytest — no torch, stanza, or other heavy deps.
 Run with: pytest tests/test_year2words.py -v
@@ -13,6 +13,7 @@ sys.path.insert(0, PROJECT_ROOT)
 
 os.chdir(PROJECT_ROOT)
 from lib.conf_lang import default_language_code, language_math_phonemes  # noqa: E402
+from lib.lang_eng import convert_years_in_context  # noqa: E402
 from num2words import num2words  # noqa: E402
 
 
@@ -57,9 +58,7 @@ def year2words(year_str, lang, lang_iso1, is_num2words_compat):
 
 
 # ---------------------------------------------------------------------------
-# Test cases: (year_string, expected_pronunciation)
-#
-# Add new entries here to extend coverage.
+# year2words test cases: (year_string, expected_pronunciation)
 # ---------------------------------------------------------------------------
 YEAR_CASES_ENGLISH = [
     # Standard years — split into two halves
@@ -106,4 +105,56 @@ YEAR_CASES_ENGLISH = [
 )
 def test_year2words_english(year_str, expected):
     result = year2words(year_str, lang="eng", lang_iso1="en", is_num2words_compat=True)
+    assert result == expected
+
+
+# ---------------------------------------------------------------------------
+# Keyword context detection tests: (input_text, expected_output)
+#
+# Tests that convert_years_in_context catches years preceded by English
+# temporal keywords, month names, day-comma patterns, and decade suffixes.
+# ---------------------------------------------------------------------------
+CONTEXT_CASES_ENGLISH = [
+    # Temporal prepositions
+    ("in 1978", "in nineteen seventy-eight"),
+    ("by 1985", "by nineteen eighty-five"),
+    ("from 1949", "from nineteen forty-nine"),
+    ("since 1992", "since nineteen ninety-two"),
+    ("after 1976", "after nineteen seventy-six"),
+    ("before 1949", "before nineteen forty-nine"),
+    ("until 1997", "until nineteen ninety-seven"),
+    ("during 1989", "during nineteen eighty-nine"),
+    ("around 1920", "around nineteen twenty"),
+    ("early 1989", "early nineteen eighty-nine"),
+    ("late 1776", "late seventeen seventy-six"),
+
+    # Month names
+    ("January 1985", "January nineteen eighty-five"),
+    ("June 1989", "June nineteen eighty-nine"),
+    ("Dec 2020", "Dec twenty twenty"),
+
+    # Day-comma pattern
+    ("June 4, 1989", "June 4, nineteen eighty-nine"),
+    ("August 22, 1904", "August 22, nineteen oh four"),
+
+    # Decades
+    ("the 1980s", "the nineteen eightys"),
+    ("the 1850s", "the eighteen fiftys"),
+    ("the 2010s", "the twenty tens"),
+
+    # Should NOT match — no keyword context
+    ("he had 1500 troops", "he had 1500 troops"),
+]
+
+
+@pytest.mark.parametrize(
+    "input_text,expected",
+    CONTEXT_CASES_ENGLISH,
+    ids=[c[0] for c in CONTEXT_CASES_ENGLISH],
+)
+def test_convert_years_in_context(input_text, expected):
+    result = convert_years_in_context(
+        input_text, lang="eng", lang_iso1="en",
+        is_num2words_compat=True, year2words_fn=year2words,
+    )
     assert result == expected

@@ -1129,33 +1129,11 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
                             text
                         )
-            msg = 'Convert remaining years to words…'
-            print(msg)
-            # Catch years that Stanza NER missed or that skipped the NER path.
-            # Matches 4-digit years (1000-2099) preceded by temporal keywords,
-            # month names, day-comma patterns, or followed by "s" (decades).
-            _year_prefix_re = re.compile(
-                r'(?:'
-                r'(?:(?:in|of|by|from|to|since|after|before|until|during|around|circa|year|early|late|mid)'
-                r'\s+)'                                         # temporal keyword + space
-                r'|(?:(?:january|february|march|april|may|june|july|august|september|october|november|december'
-                r'|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)'
-                r'[\s,]*)'                                      # month name + optional comma/space
-                r'|(?:\d{1,2},?\s+)'                            # day number ("15, " or "15 ")
-                r')'
-                r'((?:1[0-9]|20)[0-9]{2})\b',
-                re.IGNORECASE
-            )
-            _year_decade_re = re.compile(
-                r'\b((?:1[0-9]|20)[0-9]{2})(?=s\b)',           # "1980s"
-                re.IGNORECASE
-            )
-            def _ctx_year_repl(m):
-                return m.group(0)[:m.start(1) - m.start(0)] + year2words(m.group(1), lang, lang_iso1, is_num2words_compat)
-            text = _year_prefix_re.sub(_ctx_year_repl, text)
-            text = _year_decade_re.sub(
-                lambda m: year2words(m.group(1), lang, lang_iso1, is_num2words_compat), text
-            )
+            if lang == 'eng':
+                msg = 'Convert remaining years to words…'
+                print(msg)
+                from lib.lang_eng import convert_years_in_context
+                text = convert_years_in_context(text, lang, lang_iso1, is_num2words_compat, year2words)
             msg = 'Convert romans to numbers…'
             print(msg)
             text = roman2number(text)
