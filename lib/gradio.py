@@ -913,10 +913,13 @@ def build_interface(args:dict)->gr.Blocks:
 
             def disable_components(session_id:str, exceptions:list=[])->tuple:
                 if session_id is None:
-                    return tuple(gr.update() for _ in range(20))
-                outputs = tuple(gr.update(interactive=False) for _ in range(19))
-                if 'gr_session_switch_btn' in exceptions:
-                    outputs += (gr.update(interactive=True),)
+                    outputs tuple(gr.update() for _ in range(20))
+                else:
+                    outputs = tuple(gr.update(interactive=False) for _ in range(19))
+                    if 'gr_session_switch_btn' in exceptions:
+                        outputs += (gr.update(interactive=True),)
+                    else:
+                        outputs += (gr.update(),)
                 return outputs
 
             def enable_components(session_id:str)->tuple:
