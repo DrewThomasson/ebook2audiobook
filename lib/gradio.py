@@ -2653,6 +2653,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components,
+                show_progress_on=[gr_progress],
                 js=f'''
                     ()=>{{
                         const el = document.querySelector("#gr_session textarea");
@@ -2667,7 +2668,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                show_progress_on=[gr_progress]
+                show_progress_on=[gr_progress],
                 js=f'''
                     ()=>{{
                         const el = document.querySelector("#gr_session textarea");
