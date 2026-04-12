@@ -2679,7 +2679,7 @@ def convert_ebook(args:dict)->tuple:
                 text_name = f'{get_sanitized(text[:64])}_{session_id}'
                 text_name_hash = hashlib.md5(text_name.encode()).hexdigest()
                 #text_filename = f'{get_sanitized(text[:48])}_{text_name_hash}.txt'
-                text_filename = re.sub(SML_TAG_PATTERN, '', text)
+                text_filename = SML_TAG_PATTERN.sub('', text)
                 text_filename = get_sanitized(text_filename)
                 text_filename = f'{text_filename[:48]}_{session_id}'
                 text_filepath = os.path.join(tempfile.gettempdir(), text_filename)
