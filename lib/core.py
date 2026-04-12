@@ -1129,6 +1129,33 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
                             text
                         )
+            msg = 'Convert remaining years to words…'
+            print(msg)
+            # Catch years that Stanza NER missed or that skipped the NER path.
+            # Matches 4-digit years (1000-2099) preceded by temporal keywords,
+            # month names, day-comma patterns, or followed by "s" (decades).
+            _year_prefix_re = re.compile(
+                r'(?:'
+                r'(?:(?:in|of|by|from|to|since|after|before|until|during|around|circa|year|early|late|mid)'
+                r'\s+)'                                         # temporal keyword + space
+                r'|(?:(?:january|february|march|april|may|june|july|august|september|october|november|december'
+                r'|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)'
+                r'[\s,]*)'                                      # month name + optional comma/space
+                r'|(?:\d{1,2},?\s+)'                            # day number ("15, " or "15 ")
+                r')'
+                r'((?:1[0-9]|20)[0-9]{2})\b',
+                re.IGNORECASE
+            )
+            _year_decade_re = re.compile(
+                r'\b((?:1[0-9]|20)[0-9]{2})(?=s\b)',           # "1980s"
+                re.IGNORECASE
+            )
+            def _ctx_year_repl(m):
+                return m.group(0)[:m.start(1) - m.start(0)] + year2words(m.group(1), lang, lang_iso1, is_num2words_compat)
+            text = _year_prefix_re.sub(_ctx_year_repl, text)
+            text = _year_decade_re.sub(
+                lambda m: year2words(m.group(1), lang, lang_iso1, is_num2words_compat), text
+            )
             msg = 'Convert romans to numbers…'
             print(msg)
             text = roman2number(text)
@@ -1519,11 +1546,28 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
         last_two = int(year_str[2:])
         lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
         lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
-        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
+        if not year_str.isdigit() or len(year_str) != 4:
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
             else:
                 return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
+        if last_two == 0:
+            # XX00: "nineteen hundred", but keep round thousands like 2000 as "two thousand"
+            if year % 1000 == 0:
+                if is_num2words_compat:
+                    return num2words(year, lang=lang_iso1)
+                else:
+                    return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
+            if is_num2words_compat:
+                return f'{num2words(first_two, lang=lang_iso1)} hundred'
+            else:
+                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(first_two)) + ' hundred'
+        if last_two < 10:
+            # XX01-XX09: "nineteen oh one", "twenty oh nine"
+            if is_num2words_compat:
+                return f'{num2words(first_two, lang=lang_iso1)} oh {num2words(last_two, lang=lang_iso1)}'
+            else:
+                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(first_two)) + ' oh ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(last_two))
         if is_num2words_compat:
             return f'{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}' 
         else:
