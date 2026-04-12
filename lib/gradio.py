@@ -1785,7 +1785,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if new_session_id:
                                 if new_session_id == backup_session_id:
                                     session['status'] = status_tags['READY']
-                                    return gr.update(), gr.update(interactive=False), gr.update(value=session_id), gr.update(value='︎︎'), False, True
+                                    return gr.update(), gr.update(interactive=False), gr.update(value=session_id), gr.update(value='🔒︎'), False, True
                                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                                 new_session = context.get_session(new_session_id)
                                 if os.path.exists(new_session_dir) or new_session:
@@ -1793,7 +1793,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if not new_session:
                                         new_session = context.set_session(new_session_id)
                                     new_session['status'] = None
-                                    return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), gr.update(value=None), gr.update(value='︎︎'), False, True
+                                    return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), gr.update(value=None), gr.update(value='🔒︎'), False, True
                                 else:
                                     msg = 'Session not found!'
                                     show_alert(backup_session_id, {"type": "warning", "msg": msg})
