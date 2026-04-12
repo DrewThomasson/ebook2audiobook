@@ -668,6 +668,8 @@ def build_interface(args:dict)->gr.Blocks:
                                                 gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True, scale=1)
                                 with gr.Group(elem_id='gr_group_session', elem_classes=['gr-group']):
                                     gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
+                                    gr_session_switch_enable_state = gr.State(True)
+                                    gr_session_switch_disable_state = gr.State(False)
                                     with gr.Row(elem_id='gr_row_session'):
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                                         gr_session_switch_btn = gr.Button('🔒︎', elem_id='gr_session_switch_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
@@ -788,7 +790,7 @@ def build_interface(args:dict)->gr.Blocks:
                         gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
                         gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
                     gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
-                    gr_audiobook_files_toggled = gr.State(False)
+                    gr_audiobook_files_state = gr.State(False)
                 with gr.Group(elem_id='gr_group_convert_btn', elem_classes=['gr-group-convert-btn']) as gr_group_convert_btn:
                     gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
@@ -1777,13 +1779,13 @@ def build_interface(args:dict)->gr.Blocks:
                             session['status'] = status_tags['SWITCH']
                             msg = 'Backup your current session ID before to start with a new one!'
                             show_alert(session_id, {"type": "warning", "msg": msg})
-                            return gr.update(), gr.update(interactive=True), gr.update(value=session_id), gr.update(value='🔑︎')
+                            return gr.update(), gr.update(interactive=True), gr.update(value=session_id), gr.update(value='🔑︎'), True, False
                         elif session['status'] == status_tags['SWITCH']:
                             new_session_id = session_id.strip()
                             if new_session_id:
                                 if new_session_id == backup_session_id:
                                     session['status'] = status_tags['READY']
-                                    return gr.update(), gr.update(interactive=False), gr.update(value=session_id), gr.update(value='︎︎')
+                                    return gr.update(), gr.update(interactive=False), gr.update(value=session_id), gr.update(value='︎︎'), False, True
                                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                                 new_session = context.get_session(new_session_id)
                                 if os.path.exists(new_session_dir) or new_session:
@@ -1791,7 +1793,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if not new_session:
                                         new_session = context.set_session(new_session_id)
                                     new_session['status'] = None
-                                    return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), gr.update(value=None), gr.update(value='︎︎')
+                                    return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), gr.update(value=None), gr.update(value='︎︎'), , False, True
                                 else:
                                     msg = 'Session not found!'
                                     show_alert(backup_session_id, {"type": "warning", "msg": msg})
@@ -1801,7 +1803,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'click_gr_session_switch_btn(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_playback_time(session_id:str, time:float)->None:
                 session = context.get_session(session_id)
@@ -2074,7 +2076,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['audiobook_overriden'] = None
                 return gr.update(value='', visible=False)
 
-            def click_gr_override_confirm_btn(session_id:str, event:int, audiobook_files_toggled:bool)->tuple:
+            def click_gr_override_confirm_btn(session_id:str, event:int, audiobook_files_state:bool)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
@@ -2083,7 +2085,7 @@ def build_interface(args:dict)->gr.Blocks:
                             idx = next((i for i, t in enumerate(audiobook_options) if t[1] == file_converting), -1)
                             new_list = [t for t in audiobook_options if t[1] != file_converting]
                             files_update = gr.update()
-                            files_toggled_update = gr.update()
+                            files_state_update = gr.update()
                             if session['audiobook'] == file_converting or not new_list:
                                 print('click_gr_override_confirm_btn():  select audiobook is the converting file')
                                 new_selected = None
@@ -2091,13 +2093,13 @@ def build_interface(args:dict)->gr.Blocks:
                                     new_idx = max(0, idx - 1)
                                     new_selected = new_list[new_idx][1]
                                 session['audiobook'] = new_selected
-                                if audiobook_files_toggled and new_selected is not None:
-                                    files_update, files_toggled_update = toggle_audiobook_files(session_id, new_selected, False)
+                                if audiobook_files_state and new_selected is not None:
+                                    files_update, files_state_update = toggle_audiobook_files(session_id, new_selected, False)
                                 else:
                                     files_update = gr.update(visible=False, value=None)
-                                    files_toggled_update = False
-                                return gr.update(value='', visible=False), (event + 1), gr.update(choices=new_list, value=new_selected), files_update, files_toggled_update
-                        return gr.update(value='', visible=False), (event + 1), gr.update(), files_update, files_toggled_update
+                                    files_state_update = False
+                                return gr.update(value='', visible=False), (event + 1), gr.update(choices=new_list, value=new_selected), files_update, files_state_update
+                        return gr.update(value='', visible=False), (event + 1), gr.update(), files_update, files_state_update
                 except Exception as e:
                     error = f'click_gr_override_confirm_btn(): {e}'
                     exception_alert(session_id, error)
@@ -2644,9 +2646,10 @@ def build_interface(args:dict)->gr.Blocks:
             gr_session_switch_btn.click(
                 fn=click_gr_session_switch_btn,
                 inputs=[gr_session, gr_backup_session],
-                outputs=[gr_restore_session, gr_session, gr_backup_session, gr_session_switch_btn],
+                outputs=[gr_restore_session, gr_session, gr_backup_session, gr_session_switch_btn, gr_session_switch_disable_state, gr_session_switch_enable_state],
                 show_progress_on=[gr_session]
-            ).then(
+            )
+            gr_session_switch_disable_state.change(
                 fn=disable_components,
                 inputs=None,
                 outputs=outputs_disable_components,
@@ -2659,12 +2662,21 @@ def build_interface(args:dict)->gr.Blocks:
                         {js_hide_elements}
                     }}
                 '''
-            ).then(
+            )
+            gr_session_switch_enable_state.change(
                 fn=enable_components,
                 inputs=[gr_session],
                 outputs=outputs_enable_components,
-                js=f'()=>{{{js_show_elements}}}',
                 show_progress_on=[gr_progress]
+                js=f'''
+                    ()=>{{
+                        const el = document.querySelector("#gr_session textarea");
+                        if(el){{
+                            el.blur();
+                        }}
+                        {js_show_elements}
+                    }}
+                '''
             )
             gr_progress.change(
                 fn=None,
@@ -2722,8 +2734,8 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_audiobook_download_btn.click(
                 fn=toggle_audiobook_files,
-                inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_toggled],
-                outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
+                inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_state],
+                outputs=[gr_audiobook_files, gr_audiobook_files_state],
                 show_progress_on=[gr_progress]
             )
             gr_audiobook_list.change(
@@ -2738,7 +2750,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=lambda: (gr.update(visible=False, value=None), False),
                 inputs=None,
-                outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
+                outputs=[gr_audiobook_files, gr_audiobook_files_state],
                 js='()=>{window.load_vtt();}'
             )
             gr_audiobook_del_btn.click(
@@ -2875,8 +2887,8 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_override_confirm_btn.click(
                 fn=click_gr_override_confirm_btn,
-                inputs=[gr_session, gr_event, gr_audiobook_files_toggled],
-                outputs=[gr_modal, gr_event, gr_audiobook_list, gr_audiobook_files, gr_audiobook_files_toggled]
+                inputs=[gr_session, gr_event, gr_audiobook_files_state],
+                outputs=[gr_modal, gr_event, gr_audiobook_list, gr_audiobook_files, gr_audiobook_files_state]
             )
             chain_enable(
                 chain_check_override(
