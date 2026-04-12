@@ -960,7 +960,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return outputs + (gr.update(visible=False), gr.update(visible='hidden'))
 
             def enable_on_custom_upload(custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
-                outputs = tuple([gr.update(interactive=True) for _ in range(1Z)])
+                outputs = tuple([gr.update(interactive=True) for _ in range(11)])
                 enabled_convert_btn = True if ebook_data or ebook_textarea else False
                 visible_custom_del_btn = True if custom_model is not None else False
                 return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=True), gr.update(visible=visible_custom_del_btn))
@@ -1929,20 +1929,22 @@ def build_interface(args:dict)->gr.Blocks:
                                 if args['ebook_list']:
                                     if isinstance(args['ebook_list'], list):
                                         ebook_list = copy.deepcopy(args['ebook_list'])
-                                        file = ebook_list[0]
-                                        if any(file.endswith(ext) for ext in ebook_formats):
-                                            args['ebook_src'] = file
-                                            progress_status, passed = convert_ebook(args)
-                                            if passed:
-                                                return gr.update(value=progress_status)
-                                            else:
-                                                error = progress_status
-                                        else:
+                                        while ebook_list:
+                                            file = ebook_list[0]
                                             ebook_list.remove(file)
-                                            args['ebook_list'] = ebook_list
-                                            msg = f'{Path(file).name} has not a supported format! skipping'
-                                            show_alert(session_id, {"type": "warning", "msg": msg})
-                                            return gr.update(value=progress_status)
+                                            if any(file.endswith(ext) for ext in ebook_formats):
+                                                args['ebook_list'] = ebook_list
+                                                args['ebook_src'] = file
+                                                progress_status, passed = convert_ebook(args)
+                                                if passed:
+                                                    return gr.update(value=progress_status)
+                                                else:
+                                                    error = progress_status
+                                                    break
+                                            else:
+                                                msg = f'{Path(file).name} has not a supported format! skipping'
+                                                show_alert(session_id, {"type": "warning", "msg": msg})
+                                        args['ebook_list'] = ebook_list
                             elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
