@@ -2671,9 +2671,9 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_session_switch_disable_state],
                 js=f'''
                     ()=>{{
-                        const el = document.querySelector("#gr_session textarea");
-                        if(el){{
-                            el.select();
+                        const elem = document.querySelector("#gr_session textarea");
+                        if(elem){{
+                            elem.select();
                         }}
                         {js_hide_elements}
                     }}
@@ -2690,9 +2690,9 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_session_switch_enable_state],
                 js=f'''
                     ()=>{{
-                        const el = document.querySelector("#gr_session textarea");
-                        if(el){{
-                            el.blur();
+                        const elem = document.querySelector("#gr_session textarea");
+                        if(elem){{
+                            elem.setSelectionRange(0, 0);
                         }}
                         {js_show_elements}
                     }}
