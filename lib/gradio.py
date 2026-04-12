@@ -912,10 +912,13 @@ def build_interface(args:dict)->gr.Blocks:
             ############## End of Gradio Components creation
 
             def disable_components(session_id:str, exceptions:list=[])->tuple:
-                outputs = tuple(gr.update() for _ in range(20))
-                if session_id is not None:
+                if session_id is None:
+                    outputs = tuple(gr.update() for _ in range(20))
+                else:
                     if 'gr_session_switch_btn' in exceptions:
                         outputs = tuple(gr.update(interactive=False) for _ in range(19)) + (gr.update(interactive=True),)
+                    else:
+                        outputs = tuple(gr.update(interactive=False) for _ in range(20))
                 return outputs
 
             def enable_components(session_id:str)->tuple:
