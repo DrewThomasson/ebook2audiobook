@@ -911,7 +911,7 @@ def build_interface(args:dict)->gr.Blocks:
             
             ############## End of Gradio Components creation
 
-            def disable_components(session_id: str) -> tuple:
+            def disable_components(session_id:str)->tuple:
                 if session_id is None:
                     return tuple(gr.update() for _ in range(19))
                 outputs = tuple(gr.update(interactive=False) for _ in range(19))
@@ -2871,7 +2871,7 @@ def build_interface(args:dict)->gr.Blocks:
                 chain_check_override(
                     gr_convert_btn.click(
                         fn=disable_components,
-                        inputs=None,
+                        inputs=[gr_session],
                         outputs=outputs_disable_components,
                         js=f'()=>{{{js_hide_elements}}}',
                         show_progress_on=[gr_progress]
@@ -2898,7 +2898,7 @@ def build_interface(args:dict)->gr.Blocks:
                     chain_refresh(
                         gr_event.change(
                             fn=disable_components,
-                            inputs=None,
+                            inputs=[gr_session],
                             outputs=outputs_disable_components,
                             js=f'()=>{{{js_hide_elements}}}',
                             show_progress_on=[gr_progress]
