@@ -1776,9 +1776,9 @@ def build_interface(args:dict)->gr.Blocks:
                     new_id = session_id if backup_session_id is not None else None
                     back_id = backup_session_id if backup_session_id is not None else session_id
                     session = context.get_session(back_id)
+                    print(f"----------------------- new_id: {new_id} -----------------")
+                    print(f"----------------------- back_id: {back_id} -----------------")
                     if session and session.get('id', False):
-                        print(f"----------------------- new_id: {new_id} -----------------")
-                        print(f"----------------------- back_id: {back_id} -----------------")
                         if session['status'] == status_tags['READY']:
                             session['status'] = status_tags['SWITCH']
                             msg = 'Backup your current session ID before to start with a new one!'
