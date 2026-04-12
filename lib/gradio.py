@@ -2662,14 +2662,13 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=None,
                 inputs=None,
                 outputs=None,
-                js=f'''
-                    ()=>{{
+                js='''
+                    ()=>{
                         const el = document.querySelector("#gr_session textarea");
-                        if(el){{
+                        if(el){
                             el.select();
-                        }}
-                        {js_hide_elements}
-                    }}
+                        }
+                    }
                 '''
             )
             gr_session_switch_enable_state.change(
