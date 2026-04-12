@@ -911,10 +911,12 @@ def build_interface(args:dict)->gr.Blocks:
             
             ############## End of Gradio Components creation
 
-            def disable_components(session_id:str)->tuple:
+            def disable_components(session_id:str, exceptions:list=[])->tuple:
                 if session_id is None:
                     return tuple(gr.update() for _ in range(20))
-                outputs = tuple(gr.update(interactive=False) for _ in range(20))
+                outputs = tuple(gr.update(interactive=False) for _ in range(19))
+                if 'gr_session_switch_btn' in exceptions:
+                    outputs += (gr.update(interactive=True,)
                 return outputs
 
             def enable_components(session_id:str)->tuple:
@@ -2087,11 +2089,11 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         file_converting = session['audiobook_overriden']
+                        files_update = gr.update()
+                        files_state_update = gr.update()
                         if file_converting:
                             idx = next((i for i, t in enumerate(audiobook_options) if t[1] == file_converting), -1)
                             new_list = [t for t in audiobook_options if t[1] != file_converting]
-                            files_update = gr.update()
-                            files_state_update = gr.update()
                             if session['audiobook'] == file_converting or not new_list:
                                 print('click_gr_override_confirm_btn():  select audiobook is the converting file')
                                 new_selected = None
@@ -2458,7 +2460,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
-                gr_session_switch_btn, gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn
+                gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn
             ]
             outputs_enable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
