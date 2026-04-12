@@ -919,10 +919,11 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple([gr.update(interactive=False) for _ in range(19)])
                 return outputs
 
-            def enable_components(session_id: str) -> tuple:
+            def enable_components(session_id:str)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
+                        print(f"------------------------------{session['status']}-------------")
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
@@ -2672,6 +2673,10 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_session],
                 js=f'''
                     ()=>{{
+                        const el = document.querySelector("#gr_session textarea");
+                        if(el){{
+                            el.blur();
+                        }}
                         {js_show_elements}
                     }}
                 '''
