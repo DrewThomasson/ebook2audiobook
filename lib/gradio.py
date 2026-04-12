@@ -2886,12 +2886,11 @@ def build_interface(args:dict)->gr.Blocks:
                         inputs=[gr_session],
                         outputs=outputs_disable_components,
                         show_progress_on=[gr_progress]
-                    ).then(
-                        fn=lambda: None,
-                        js=f'()=>{{{js_hide_elements}}}'
                     )
                 ),
                 always=False
+            ).then(
+                js=f'()=>{{{js_hide_elements}}}'
             )
             chain_enable(
                 gr_override_cancel_btn.click(
