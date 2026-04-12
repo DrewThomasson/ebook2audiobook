@@ -2676,7 +2676,7 @@ def convert_ebook(args:dict)->tuple:
                     error = 'Ebook textarea is empty.'
                     return error, False
                 text = args['ebook_textarea']
-                text_name = f'{get_sanitized(text[:64])}_{session_id}'
+                text_name = f'{get_sanitized(re.sub(SML_TAG_PATTERN, "", text)[:64])}_{session_id}'
                 text_name_hash = hashlib.md5(text_name.encode()).hexdigest()
                 text_filename = f'{get_sanitized(text[:48])}_{text_name_hash}.txt'
                 text_filepath = os.path.join(tempfile.gettempdir(), text_filename)
