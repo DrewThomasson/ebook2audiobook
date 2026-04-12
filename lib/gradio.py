@@ -921,7 +921,6 @@ def build_interface(args:dict)->gr.Blocks:
 
             def enable_components(session_id:str)->tuple:
                 try:
-                    print(f"------------------------------{session_id}-------------")
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
@@ -1788,14 +1787,14 @@ def build_interface(args:dict)->gr.Blocks:
                             if new_session_id:
                                 session['status'] = status_tags['READY']
                                 if new_session_id == back_id:
-                                    return gr.update(), gr.update(interactive=False), back_id, gr.update(value='🔒︎'), disable_state, not enable_state
+                                    return gr.update(), gr.update(value=back_id, interactive=False), back_id, gr.update(value='🔒︎'), disable_state, not enable_state
                                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                                 new_session = context.get_session(new_session_id)
                                 if os.path.exists(new_session_dir) or new_session:
                                     if not new_session:
                                         new_session = context.set_session(new_session_id)
                                     new_session['status'] = status_tags['READY']
-                                    return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), None, gr.update(value='🔒︎'), disable_state, not enable_state
+                                    return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(value=new_session_id, interactive=False), None, gr.update(value='🔒︎'), disable_state, not enable_state
                                 else:
                                     msg = 'Session not found!'
                                     show_alert(back_id, {"type": "warning", "msg": msg})
