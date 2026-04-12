@@ -1785,13 +1785,12 @@ def build_interface(args:dict)->gr.Blocks:
                         elif session['status'] == status_tags['SWITCH']:
                             new_session_id = new_id.strip()
                             if new_session_id:
+                                session['status'] = status_tags['READY']
                                 if new_session_id == back_id:
-                                    session['status'] = status_tags['READY']
                                     return gr.update(), gr.update(interactive=False), back_id, gr.update(value='🔒︎'), disable_state, not enable_state
                                 new_session_dir = os.path.join(tmp_dir, f'proc-{new_session_id}')
                                 new_session = context.get_session(new_session_id)
                                 if os.path.exists(new_session_dir) or new_session:
-                                    session['status'] = status_tags['READY']
                                     if not new_session:
                                         new_session = context.set_session(new_session_id)
                                     new_session['status'] = status_tags['READY']
