@@ -1794,7 +1794,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     session['status'] = status_tags['READY']
                                     if not new_session:
                                         new_session = context.set_session(new_session_id)
-                                    new_session['status'] = None
+                                    new_session['status'] = status_tags['READY']
                                     return gr.update(value=json.dumps(new_session, cls=JSONDictProxyEncoder)), gr.update(interactive=False), None, gr.update(value='🔒︎'), disable_state, not enable_state
                                 else:
                                     msg = 'Session not found!'
