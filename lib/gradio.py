@@ -28,7 +28,10 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
         js_hide_elements = '''
-            document.querySelector("#ebook_textarea_toolbar")?.remove();
+            const el = document.querySelector("#ebook_textarea_toolbar");
+            console.log("toolbar element:", el);
+            console.log("shadow root check:", document.querySelector("gradio-app")?.shadowRoot);
+            if (el) el.style.display = "none";
         '''
         js_show_elements = '''
             window.gr_ebook_textarea_counter();
