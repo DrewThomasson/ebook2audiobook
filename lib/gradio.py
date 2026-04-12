@@ -1771,7 +1771,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['output_split'] = val
                 return gr.update(visible=val)
 
-            def click_gr_session_switch_btn(session_id: str, backup_session_id: str, disable_state: bool, enable_state: bool) -> tuple:
+            def click_gr_session_switch_btn(session_id:str, backup_session_id:str|None, disable_state:bool, enable_state:bool)->tuple:
                 try:
                     new_id = session_id if backup_session_id is not None else None
                     back_id = backup_session_id if backup_session_id is not None else session_id
