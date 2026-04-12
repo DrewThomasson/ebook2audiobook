@@ -2664,11 +2664,11 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_session],
                 js=f'''
                     ()=>{{
+                        {js_hide_elements}
                         const el = document.querySelector("#gr_session textarea");
                         if(el){{
                             el.select();
                         }}
-                        {js_hide_elements}
                     }}
                 '''
             )
