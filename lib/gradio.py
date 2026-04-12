@@ -2662,31 +2662,13 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=None,
                 inputs=None,
                 outputs=None,
-                js='''
-                    ()=>{
-                        const el = document.querySelector("#gr_session textarea");
-                        if(el){
-                            el.select();
-                        }
-                    }
-                '''
-            )
-            gr_session_switch_enable_state.change(
-                fn=enable_components,
-                inputs=[gr_session_switch_enable_state],
-                outputs=outputs_enable_components,
-                show_progress_on=[gr_session_switch_btn]
-            ).then(
-                fn=None,
-                inputs=None,
-                outputs=None,
                 js=f'''
                     ()=>{{
                         const el = document.querySelector("#gr_session textarea");
                         if(el){{
-                            el.blur();
+                            el.select();
                         }}
-                        {js_show_elements}
+                        {js_hide_elements}
                     }}
                 '''
             )
