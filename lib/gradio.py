@@ -926,7 +926,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
-                            outputs = list(gr.update(interactive=True) for _ in range(18))
+                            outputs = list(gr.update(interactive=True) for _ in range(17))
                             enabled_convert_btn = False
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if session.get('ebook_list'):
@@ -940,7 +940,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'enable_components(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(21))
+                outputs = tuple(gr.update() for _ in range(20))
                 return outputs
 
             def disable_on_voice_upload()->tuple:
@@ -2063,7 +2063,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 audio_sentences_exist = any(Path(sentences_dir).rglob(f'*.{default_audio_proc_format}'))
                                             if os.path.exists(pre_file) or audio_sentences_exist:
                                                 session['status'] = status_tags['OVERRIDE']
-                                                session['audiobook_overriden'] = final_file
+                                                session['audiobook_overridden'] = final_file
                                                 msg = f"Warning! the final file {final_name} of this conversion already exists. If you continue all new text and setting changes will override the previous conversion!"
                                                 return gr.update(value=show_gr_modal(session['status'], msg), visible=True), event
                                             else:
@@ -2081,14 +2081,14 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     session['status'] = status_tags['END']
-                    session['audiobook_overriden'] = None
+                    session['audiobook_overridden'] = None
                 return gr.update(value='', visible=False)
 
             def click_gr_override_confirm_btn(session_id:str, event:int, audiobook_files_state:bool)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        file_converting = session['audiobook_overriden']
+                        file_converting = session['audiobook_overridden']
                         files_update = gr.update()
                         files_state_update = gr.update()
                         if file_converting:

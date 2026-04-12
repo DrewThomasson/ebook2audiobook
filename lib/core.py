@@ -211,7 +211,7 @@ class SessionContext:
             "ebook_src_notextarea": None,
             "ebook_list": None,
             "ebook_textarea": None,
-            "audiobook_overriden": None,
+            "audiobook_overridden": None,
             "process_dir": None,
             "chapters_dir": None,
             "sentences_dir": None,
@@ -3100,7 +3100,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "blocks_saved": {},
         "blocks_saved_json": None,
         "blocks_current": {},
-        "audiobook_overriden": None,
+        "audiobook_overridden": None,
         "metadata": {
             "title": None, 
             "creator": None,
