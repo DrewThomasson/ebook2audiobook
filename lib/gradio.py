@@ -27,15 +27,8 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
-        js_hide_elements = '''
-            const elem = document.querySelector("#ebook_textarea_toolbar");
-            console.log("toolbar element:", elem);
-            console.log("shadow root check:", document.querySelector("gradio-app")?.shadowRoot);
-            if (elem) elem.style.display = "none";
-        '''
-        js_show_elements = '''
-            window.gr_ebook_textarea_counter();
-        '''
+        js_hide_elements = 'document.querySelector("#ebook_textarea_toolbar")?.remove();'
+        js_show_elements = 'window.gr_ebook_textarea_counter();'
         theme = gr.themes.Origin(
             primary_hue='green',
             secondary_hue='amber',
@@ -3338,9 +3331,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if(container){
                                         const textarea = container.querySelector("textarea");
                                         const ebook_textarea_toolbar = document.querySelector("#ebook_textarea_toolbar");
-                                        if(ebook_textarea_toolbar){
-                                            ebook_textarea_toolbar.remove();
-                                        }
+                                        document.querySelector("#ebook_textarea_toolbar")?.remove();
                                         container.style.position = "relative";
                                         const toolbar = document.createElement("div");
                                         toolbar.id = toolbar.name = "ebook_textarea_toolbar";
