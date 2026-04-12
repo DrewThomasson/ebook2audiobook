@@ -912,12 +912,14 @@ def build_interface(args:dict)->gr.Blocks:
             ############## End of Gradio Components creation
 
             def disable_components(session_id:str)->tuple:
+                print('disable_components called')
                 if session_id is None:
                     return tuple(gr.update() for _ in range(19))
                 outputs = tuple(gr.update(interactive=False) for _ in range(19))
                 return outputs
 
             def enable_components(session_id:str)->tuple:
+                print('enable_components called')
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
@@ -2669,6 +2671,25 @@ def build_interface(args:dict)->gr.Blocks:
                             el.select();
                         }}
                         {js_hide_elements}
+                    }}
+                '''
+            )
+            gr_session_switch_enable_state.change(
+                fn=enable_components,
+                inputs=[gr_session_switch_enable_state],
+                outputs=outputs_enable_components,
+                show_progress_on=[gr_session_switch_btn]
+            ).then(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js=f'''
+                    ()=>{{
+                        const el = document.querySelector("#gr_session textarea");
+                        if(el){{
+                            el.blur();
+                        }}
+                        {js_show_elements}
                     }}
                 '''
             )
