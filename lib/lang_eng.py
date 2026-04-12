@@ -6,6 +6,8 @@ the conversion language is English.
 """
 import re
 
+from num2words import num2words
+
 # Matches 4-digit years (1000-2099) preceded by English temporal context
 YEAR_PREFIX_RE = re.compile(
     r'(?:'
@@ -25,6 +27,30 @@ YEAR_DECADE_RE = re.compile(
     r'\b((?:1[0-9]|20)[0-9]{2})(?=s\b)',
     re.IGNORECASE
 )
+
+
+def year2words_eng(year_str, lang_iso1, is_num2words_compat):
+    """English-specific year pronunciation for XX00 and XX01-XX09 cases.
+
+    Returns the English spoken form, or None if standard logic should handle it.
+    """
+    year = int(year_str)
+    first_two = int(year_str[:2])
+    last_two = int(year_str[2:])
+    if last_two == 0:
+        # Round thousands like 2000 → "two thousand"
+        if year % 1000 == 0:
+            return None
+        # XX00 → "nineteen hundred"
+        if is_num2words_compat:
+            return f'{num2words(first_two, lang=lang_iso1)} hundred'
+        return None
+    if last_two < 10:
+        # XX01-XX09 → "nineteen oh one"
+        if is_num2words_compat:
+            return f'{num2words(first_two, lang=lang_iso1)} oh {num2words(last_two, lang=lang_iso1)}'
+        return None
+    return None
 
 
 def convert_years_in_context(text, lang, lang_iso1, is_num2words_compat, year2words_fn):

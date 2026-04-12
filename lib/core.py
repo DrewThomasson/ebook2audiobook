@@ -1130,7 +1130,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             text
                         )
             if lang == 'eng':
-                msg = 'Convert remaining years to words…'
+                msg = 'ENG - Convert remaining years to words…'
                 print(msg)
                 from lib.lang_eng import convert_years_in_context
                 text = convert_years_in_context(text, lang, lang_iso1, is_num2words_compat, year2words)
@@ -1529,23 +1529,17 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
                 return num2words(year, lang=lang_iso1)
             else:
                 return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
-        if last_two == 0:
-            # XX00: "nineteen hundred", but keep round thousands like 2000 as "two thousand"
-            if year % 1000 == 0:
-                if is_num2words_compat:
-                    return num2words(year, lang=lang_iso1)
-                else:
-                    return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
-            if is_num2words_compat:
-                return f'{num2words(first_two, lang=lang_iso1)} hundred'
-            else:
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(first_two)) + ' hundred'
+        if lang == 'eng' and last_two < 10:
+            from lib.lang_eng import year2words_eng
+            eng_result = year2words_eng(year_str, lang_iso1, is_num2words_compat)
+            if eng_result is not None:
+                return eng_result
+            # None means fall through to default logic (e.g. round thousands)
         if last_two < 10:
-            # XX01-XX09: "nineteen oh one", "twenty oh nine"
             if is_num2words_compat:
-                return f'{num2words(first_two, lang=lang_iso1)} oh {num2words(last_two, lang=lang_iso1)}'
+                return num2words(year, lang=lang_iso1)
             else:
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(first_two)) + ' oh ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(last_two))
+                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
         if is_num2words_compat:
             return f'{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}' 
         else:

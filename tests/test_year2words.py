@@ -1,8 +1,3 @@
-"""Tests for year-to-words conversion logic.
-
-Only requires num2words and pytest — no torch, stanza, or other heavy deps.
-Run with: pytest tests/test_year2words.py -v
-"""
 import os
 import sys
 
@@ -17,10 +12,10 @@ from lib.lang_eng import convert_years_in_context  # noqa: E402
 from num2words import num2words  # noqa: E402
 
 
-# ---------------------------------------------------------------------------
-# Local copy of year2words so tests don't need to import lib.core (which
-# pulls in torch, stanza, gradio, etc.). Keep in sync with lib/core.py.
-# ---------------------------------------------------------------------------
+# Stub of year2words matching lib/core.py logic — delegates English cases to lang_eng
+from lib.lang_eng import year2words_eng  # noqa: E402
+
+
 def year2words(year_str, lang, lang_iso1, is_num2words_compat):
     try:
         year = int(year_str)
@@ -33,21 +28,15 @@ def year2words(year_str, lang, lang_iso1, is_num2words_compat):
                 return num2words(year, lang=lang_iso1)
             else:
                 return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
-        if last_two == 0:
-            if year % 1000 == 0:
-                if is_num2words_compat:
-                    return num2words(year, lang=lang_iso1)
-                else:
-                    return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
-            if is_num2words_compat:
-                return f'{num2words(first_two, lang=lang_iso1)} hundred'
-            else:
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(first_two)) + ' hundred'
+        if lang == 'eng' and last_two < 10:
+            eng_result = year2words_eng(year_str, lang_iso1, is_num2words_compat)
+            if eng_result is not None:
+                return eng_result
         if last_two < 10:
             if is_num2words_compat:
-                return f'{num2words(first_two, lang=lang_iso1)} oh {num2words(last_two, lang=lang_iso1)}'
+                return num2words(year, lang=lang_iso1)
             else:
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(first_two)) + ' oh ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(last_two))
+                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
         if is_num2words_compat:
             return f'{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}'
         else:
@@ -57,9 +46,7 @@ def year2words(year_str, lang, lang_iso1, is_num2words_compat):
         return False
 
 
-# ---------------------------------------------------------------------------
-# year2words test cases: (year_string, expected_pronunciation)
-# ---------------------------------------------------------------------------
+# year test case
 YEAR_CASES_ENGLISH = [
     # Standard years — split into two halves
     ("1776", "seventeen seventy-six"),
@@ -108,14 +95,8 @@ def test_year2words_english(year_str, expected):
     assert result == expected
 
 
-# ---------------------------------------------------------------------------
-# Keyword context detection tests: (input_text, expected_output)
-#
-# Tests that convert_years_in_context catches years preceded by English
-# temporal keywords, month names, day-comma patterns, and decade suffixes.
-# ---------------------------------------------------------------------------
+# context words indicating years
 CONTEXT_CASES_ENGLISH = [
-    # Temporal prepositions
     ("in 1978", "in nineteen seventy-eight"),
     ("by 1985", "by nineteen eighty-five"),
     ("from 1949", "from nineteen forty-nine"),
@@ -127,22 +108,14 @@ CONTEXT_CASES_ENGLISH = [
     ("around 1920", "around nineteen twenty"),
     ("early 1989", "early nineteen eighty-nine"),
     ("late 1776", "late seventeen seventy-six"),
-
-    # Month names
     ("January 1985", "January nineteen eighty-five"),
     ("June 1989", "June nineteen eighty-nine"),
     ("Dec 2020", "Dec twenty twenty"),
-
-    # Day-comma pattern
     ("June 4, 1989", "June 4, nineteen eighty-nine"),
     ("August 22, 1904", "August 22, nineteen oh four"),
-
-    # Decades
     ("the 1980s", "the nineteen eightys"),
     ("the 1850s", "the eighteen fiftys"),
     ("the 2010s", "the twenty tens"),
-
-    # Should NOT match — no keyword context
     ("he had 1500 troops", "he had 1500 troops"),
 ]
 
