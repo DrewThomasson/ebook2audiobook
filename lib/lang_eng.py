@@ -1,75 +1,46 @@
-"""English-specific text-to-speech preprocessing.
-
-Handles year detection heuristics that rely on English keywords
-(temporal prepositions, month names, etc.). Only called when
-the conversion language is English.
-"""
+"""English-specific TTS preprocessing. Only called when lang == 'eng'."""
 import re
-
 from num2words import num2words
 
-# Matches 4-digit years (1000-2099) preceded by English temporal context
 YEAR_PREFIX_RE = re.compile(
     r'(?:'
-    r'(?:(?:in|of|by|from|to|since|after|before|until|during|around|circa|year|early|late|mid)'
-    r'\s+)'                                         # temporal keyword + space
+    r'(?:(?:in|of|by|from|to|since|after|before|until|during|around|circa|year|early|late|mid)\s+)'
     r'|(?:(?:january|february|march|april|may|june|july|august|september|october|november|december'
-    r'|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)'
-    r'[\s,]*)'                                      # month name + optional comma/space
-    r'|(?:\d{1,2},?\s+)'                            # day number ("15, " or "15 ")
+    r'|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)[\s,]*)'
+    r'|(?:\d{1,2},?\s+)'
     r')'
     r'((?:1[0-9]|20)[0-9]{2})\b',
     re.IGNORECASE
 )
 
-# Matches decade references like "1980s", "2010s"
-YEAR_DECADE_RE = re.compile(
-    r'\b((?:1[0-9]|20)[0-9]{2})(?=s\b)',
-    re.IGNORECASE
-)
+YEAR_DECADE_RE = re.compile(r'\b((?:1[0-9]|20)[0-9]{2})(?=s\b)', re.IGNORECASE)
 
 
 def year2words_eng(year_str, lang_iso1, is_num2words_compat):
-    """English-specific year pronunciation for XX00 and XX01-XX09 cases.
-
-    Returns the English spoken form, or None if standard logic should handle it.
+    """Handle XX00 ("nineteen hundred") and XX01-XX09 ("nineteen oh one").
+    Returns None to fall through to default logic (e.g. round thousands).
     """
+    if not is_num2words_compat:
+        return None
     year = int(year_str)
     first_two = int(year_str[:2])
     last_two = int(year_str[2:])
     if last_two == 0:
-        # Round thousands like 2000 → "two thousand"
         if year % 1000 == 0:
             return None
-        # XX00 → "nineteen hundred"
-        if is_num2words_compat:
-            return f'{num2words(first_two, lang=lang_iso1)} hundred'
-        return None
+        return f'{num2words(first_two, lang=lang_iso1)} hundred'
     if last_two < 10:
-        # XX01-XX09 → "nineteen oh one"
-        if is_num2words_compat:
-            return f'{num2words(first_two, lang=lang_iso1)} oh {num2words(last_two, lang=lang_iso1)}'
-        return None
+        return f'{num2words(first_two, lang=lang_iso1)} oh {num2words(last_two, lang=lang_iso1)}'
     return None
 
 
 def convert_years_in_context(text, lang, lang_iso1, is_num2words_compat, year2words_fn):
-    """Replace years detected by English keyword heuristics with spoken form.
+    """Replace years near English temporal keywords with spoken form."""
+    def _repl(m):
+        prefix = m.group(0)[:m.start(1) - m.start(0)]
+        return prefix + year2words_fn(m.group(1), lang, lang_iso1, is_num2words_compat)
 
-    Args:
-        text: Input text to process.
-        lang: ISO-639-3 language code (e.g. "eng").
-        lang_iso1: ISO-639-1 language code (e.g. "en").
-        is_num2words_compat: Whether num2words supports this language.
-        year2words_fn: The year2words function from core.py.
-
-    Returns:
-        Text with contextually detected years converted to words.
-    """
-    def _ctx_year_repl(m):
-        return m.group(0)[:m.start(1) - m.start(0)] + year2words_fn(m.group(1), lang, lang_iso1, is_num2words_compat)
-
-    text = YEAR_PREFIX_RE.sub(_ctx_year_repl, text)
+    text = YEAR_PREFIX_RE.sub(_repl, text)
     text = YEAR_DECADE_RE.sub(
         lambda m: year2words_fn(m.group(1), lang, lang_iso1, is_num2words_compat), text
     )

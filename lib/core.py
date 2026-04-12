@@ -1534,7 +1534,6 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
             eng_result = year2words_eng(year_str, lang_iso1, is_num2words_compat)
             if eng_result is not None:
                 return eng_result
-            # None means fall through to default logic (e.g. round thousands)
         if last_two < 10:
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
