@@ -1083,7 +1083,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 )
                 re_num = re.compile(r'(?<!\w)[-+]?\d+(?:\.\d+)?(?!\w)')
                 text = unicodedata.normalize('NFKC', text).replace('\u00A0', ' ')
-                if re_num.search(text) and re_ordinal.search(text):
+                re_year = re.compile(r'\b(?:1[0-9]|20)\d{2}\b')
+                if re_num.search(text) and (re_ordinal.search(text) or re_year.search(text)):
                     date_spans = get_date_entities(text, stanza_nlp)
                     if date_spans:
                         result = []
@@ -1129,11 +1130,6 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
                             text
                         )
-            if lang == 'eng':
-                msg = 'ENG - Convert remaining years to words…'
-                print(msg)
-                from lib.lang_eng import convert_years_in_context
-                text = convert_years_in_context(text, lang, lang_iso1, is_num2words_compat, year2words)
             msg = 'Convert romans to numbers…'
             print(msg)
             text = roman2number(text)
@@ -1524,17 +1520,7 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
         last_two = int(year_str[2:])
         lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
         lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
-        if not year_str.isdigit() or len(year_str) != 4:
-            if is_num2words_compat:
-                return num2words(year, lang=lang_iso1)
-            else:
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
-        if lang == 'eng' and last_two < 10:
-            from lib.lang_eng import year2words_eng
-            eng_result = year2words_eng(year_str, lang_iso1, is_num2words_compat)
-            if eng_result is not None:
-                return eng_result
-        if last_two < 10:
+        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
             else:
