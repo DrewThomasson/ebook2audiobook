@@ -926,7 +926,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
-                            outputs = list(gr.update(interactive=True) for _ in range(17))
+                            outputs = list(gr.update(interactive=True) for _ in range(18))
                             enabled_convert_btn = False
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if session.get('ebook_list'):
@@ -940,7 +940,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'enable_components(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(20))
+                outputs = tuple(gr.update() for _ in range(21))
                 return outputs
 
             def disable_on_voice_upload()->tuple:
