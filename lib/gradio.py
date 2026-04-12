@@ -2651,7 +2651,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=click_gr_session_switch_btn,
                 inputs=[gr_session, gr_backup_session],
                 outputs=[gr_restore_session, gr_session, gr_backup_session, gr_session_switch_btn, gr_session_switch_disable_state, gr_session_switch_enable_state],
-                show_progress_on=[gr_session]
+                show_progress_on=[gr_session_switch_btn]
             )
             gr_session_switch_disable_state.change(
                 fn=disable_components,
