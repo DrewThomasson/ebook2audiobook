@@ -1806,7 +1806,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'click_gr_session_switch_btn(): {e}'
                     exception_alert(back_id, error)
-                return gr.update(), gr.update(), backup_session_id, gr.update(), None, None
+                return gr.update(), gr.update(), None, gr.update(), None, None
 
             def change_gr_playback_time(session_id:str, time:float)->None:
                 session = context.get_session(session_id)
