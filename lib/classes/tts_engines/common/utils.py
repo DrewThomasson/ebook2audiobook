@@ -486,11 +486,8 @@ class TTSUtils:
             error = '_convert_sml SML_TAG_PATTERN error: m is empty'
             return False, error
         tag = m.group('tag')
-        value = m.group('value')
         close = bool(m.group('close'))
-        print(f'tag: {tag}')
-        print(f'value: {value}')
-        print(f'close: {close}')
+        value = m.group('value')
         assert tag in TTS_SML, f'Unknown SML tag: {tag!r}'
         if tag == 'break':
             silence_time = float(int(np.random.uniform(0.3, 0.5) * 100) / 100)
@@ -503,6 +500,11 @@ class TTSUtils:
             self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone())
             return True, ''
         elif tag == 'voice':
+            if close:
+                res = self._set_voice(self.params['current_voice'])
+                if not res:
+                    return False, '_convert_sml() _set_voice() error'
+                return True, ''
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
                 return False, error
@@ -510,10 +512,10 @@ class TTSUtils:
             if not os.path.exists(current_voice):
                 error = f'_convert_sml() error: voice {current_voice} does not exist!'
                 return False, error
-            if close:
-                res = self._set_voice(current_voice)
-                if not res:
-                    return False, '_convert_sml() _set_voice() error'
+            self.params['current_voice'] = current_voice
+            res = self._set_voice(current_voice)
+            if not res:
+                return False, '_convert_sml() _set_voice() error'
             return True, ''
         elif tag == 'ipa':
             if close:

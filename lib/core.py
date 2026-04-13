@@ -2858,7 +2858,7 @@ def convert_ebook(args:dict)->tuple:
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
-                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing todo with the final conversion."
+                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
                                     print(msg)
                                 else:
                                     error = 'convert2epub() failed!'
