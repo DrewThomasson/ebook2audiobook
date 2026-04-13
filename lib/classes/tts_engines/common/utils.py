@@ -500,11 +500,6 @@ class TTSUtils:
             self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone())
             return True, ''
         elif tag == 'voice':
-            if close:
-                res = self._set_voice()
-                if not res:
-                    return False, '_convert_sml() _set_voice() error'
-                return True, ''
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
                 return False, error
@@ -512,7 +507,10 @@ class TTSUtils:
             if not os.path.exists(current_voice):
                 error = f'_convert_sml() error: voice {current_voice} does not exist!'
                 return False, error
-            self.params['current_voice'] = os.path.abspath(current_voice)
+            if close:
+                res = self._set_voice(current_voice)
+                if not res:
+                    return False, '_convert_sml() _set_voice() error'
             return True, ''
         elif tag == 'ipa':
             if close:

@@ -1645,7 +1645,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if custom_file is not None:
                         state = {}
                         if len(custom_model_options) > max_custom_model:
-                            error = f'You are allowed to upload a max of {max_custom_models} models'   
+                            error = f'You are allowed to upload a max of {max_custom_model} models'
                             state['type'] = 'warning'
                             state['msg'] = error
                         else:
@@ -2417,7 +2417,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return event.then(
                         fn=lambda s: (
                             list(enable_components(s)) + [
-                                1 if context.get_session(s)['ebook_mode'] == ebook_modes['TEXT']
+                                1 if context.get_session(s).get('ebook_mode') == ebook_modes['TEXT']
                                 else 0
                             ]
                         ),
