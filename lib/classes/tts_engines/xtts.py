@@ -82,7 +82,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
-    def convert(self, sentence_file:str, sentence:str, **kwargs)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
             import torchaudio
@@ -91,28 +91,22 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
-                    return False
-                if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
-                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
+                if self.params.get('inline_voice'):
+                    self.params['current_voice'] = self.params['inline_voice']
                 else:
-                    msg = 'Computing speaker latents…'
-                    print(msg)
-                    if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
-                    else:
-                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)  
-                    self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
+                    run, error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
+                    if not run:
+                        return False, error
+                    self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        res, error = self._convert_sml(part)
-                        if not res: 
-                            print(error)
-                            return False
+                        run, error = self._convert_sml(part)
+                        if not run:
+                            return False, error
                         continue
                     if not any(c.isalnum() for c in part):
                         continue
@@ -121,6 +115,16 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         if part.endswith("'"):
                             part = part[:-1]
                         part = part.replace('.', ' ;\n')
+                        if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
+                            self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
+                        else:
+                            msg = 'Computing speaker latents…'
+                            print(msg)
+                            if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
+                            else:
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)  
+                            self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
                         fine_tuned_params = {
                             key.removeprefix("xtts_"): cast_type(self.session[key])
                             for key, cast_type in {
@@ -177,12 +181,10 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                     self.audio_segments.append(break_tensor.clone())
                             else:
                                 error = f"part_tensor not valid"
-                                print(error)
-                                return False
+                                return False, error
                         else:
                             error = f"audio_part not valid"
-                            print(error)
-                            return False
+                            return False, error
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
@@ -191,18 +193,15 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
                         error = f"Cannot create {sentence_file}"
-                        print(error)
-                        return False
-                return True
+                        return False, error
+                return True, None
             else:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
-                print(error)
-                return False
+                return False, error
         except Exception as e:
             self.cleanup_memory()
             error = f'Xttsv2.convert(): {e}'
-            print(error)
-            return False
+            return False, error
 
     def create_vtt(self, all_sentences:list)->bool:
         if self._build_vtt_file(all_sentences):

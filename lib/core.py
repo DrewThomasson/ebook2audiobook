@@ -2126,8 +2126,8 @@ def convert_chapters2audio(session_id:str)->bool:
                                         msg = f'*** Resuming from sentence {global_sent} ***'
                                         show_alert(session_id, {"type": "info", "msg": msg})
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                                    success = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block.get('voice', session['voice'])) if sentence else True
-                                    if success:
+                                    run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block.get('voice', session['voice'])) if sentence else True
+                                    if run:
                                         blocks_current['sentence_resume'] = j
                                         session['blocks_current'] = blocks_current
                                         now = time.monotonic()
@@ -2135,7 +2135,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             last_save_time = now
                                     else:
-                                        error = f'tts_manager.convert_sentence2audio() failed!'
                                         show_alert(session_id, {"type": "warning", "msg": error})
                                         session['blocks_current'] = blocks_current
                                         return False

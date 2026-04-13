@@ -446,7 +446,7 @@ class TTSUtils:
         sf.write(tmp_path,wav_numpy,expected_sr,subtype='PCM_16')
         return tmp_path
 
-    def _set_voice(self, block_voice:str|None)->bool:
+    def _set_voice(self, block_voice:str|None)->tuple:
         self.params['current_voice'] = (
             block_voice if block_voice is not None 
             else self.models[self.session['fine_tuned']]['voice']
@@ -456,10 +456,9 @@ class TTSUtils:
             if self.params['current_voice'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['current_voice']:
                 self.session['voice'] = self.params['current_voice'] = self._check_xtts_builtin_speakers(self.params['current_voice'], self.speaker)
                 if not self.params['current_voice']:
-                    msg = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
-                    print(msg)
-                    return False
-        return True
+                    error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
+                    return False, error
+        return True, None
         
     def _split_sentence_on_sml(self, sentence:str)->list[str]:
         parts:list[str] = []
@@ -478,7 +477,7 @@ class TTSUtils:
                 parts.append(tail)
         return parts
 
-    def _convert_sml(self, sml:str)->tuple[bool, str]:
+    def _convert_sml(self, sml:str)->tuple:
         import torch
         import numpy as np
         m = SML_TAG_PATTERN.fullmatch(sml)
@@ -492,20 +491,18 @@ class TTSUtils:
         if tag == 'break':
             silence_time = float(int(np.random.uniform(0.3, 0.5) * 100) / 100)
             self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone())
-            return True, ''
+            return True, None
         elif tag == 'pause':
             silence_time = float(value) if value else float(
                 int(np.random.uniform(0.6, 1.1) * 100) / 100
             )
             self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)).clone())
-            return True, ''
+            return True, None
         elif tag == 'voice':
             if close:
                 self.params['inline_voice'] = None
-                res = self._set_voice(self.params['block_voice'])
-                if not res:
-                    return False, '_convert_sml() _set_voice() error'
-                return True, ''
+                run, error = self._set_voice(self.params['block_voice'])
+                return run, error
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
                 return False, error
@@ -514,11 +511,11 @@ class TTSUtils:
                 error = f'_convert_sml() error: voice {inline_voice} does not exist!'
                 return False, error
             self.params['inline_voice'] = self.params['current_voice'] = inline_voice
-            return True, ''
+            return True, None
         elif tag == 'ipa':
             if close:
                 value = '' # TODO: get the value between tag [ipa] and close [/ipa]
-            return True, ''
+            return True, None
         else:
             error = 'This SML is not recognized'
             return False, error

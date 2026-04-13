@@ -65,7 +65,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             error = 'load_engine(): engine is None'
             raise RuntimeError(error)
 
-    def convert(self, sentence_file:str, sentence:str, **kwargs)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
             import torchaudio
@@ -79,8 +79,9 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
-                    if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
-                        return False
+                    run, error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
+                    if not run:
+                        return False, error
                     self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
                 for part in sentence_parts:
@@ -88,10 +89,9 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        res, error = self._convert_sml(part)
-                        if not res: 
-                            print(error)
-                            return False
+                        run, error = self._convert_sml(part)
+                        if not run: 
+                            return False, error
                         continue
                     if not any(c.isalnum() for c in part):
                         continue
@@ -142,12 +142,10 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                 """
                             else:
                                 error = f"part_tensor not valid"
-                                print(error)
-                                return False
+                                return False, error
                         else:
                             error = f"audio_part not valid"
-                            print(error)
-                            return False
+                            return False, error
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
@@ -156,18 +154,15 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
                         error = f"Cannot create {sentence_file}"
-                        print(error)
-                        return False
-                return True
+                        return False, error
+                return True, None
             else:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
-                print(error)
-                return False
+                return False, error
         except Exception as e:
             self.cleanup_memory()
             error = f'YourTTS.convert(): {e}'
-            print(error)
-            return False
+            return False, error
 
     def create_vtt(self, all_sentences:list)->bool:
         if self._build_vtt_file(all_sentences):
