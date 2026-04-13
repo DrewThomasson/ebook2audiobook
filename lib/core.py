@@ -2855,7 +2855,6 @@ def convert_ebook(args:dict)->tuple:
                                 show_alert(session_id, {"type": "info", "msg": msg_extra})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             checksum, error = compare_checksums(session_id)
-                            print(f'--------------------- checksum: {checksum}---------------')
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
@@ -2927,6 +2926,7 @@ def convert_ebook(args:dict)->tuple:
                                                 session['blocks_saved'] = copy.deepcopy(session['blocks_orig'])
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                                            print(session['blocks_current'])
                                             if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
