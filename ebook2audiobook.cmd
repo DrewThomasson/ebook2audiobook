@@ -381,7 +381,9 @@ goto :restart_script
 
 :install_scoop
 echo Installing Scoop…
-call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "iex \"& {$(irm get.scoop.sh)} -RunAsAdmin\""
+call "%PS_EXE%" %PS_ARGS% -Command "irm get.scoop.sh -OutFile '%TEMP%\install_scoop.ps1'"
+call "%PS_EXE%" %PS_ARGS% -File "%TEMP%\install_scoop.ps1" -RunAsAdmin
+del "%TEMP%\install_scoop.ps1" >nul 2>&1
 if errorlevel 1 (
     net session >nul 2>&1
     if not errorlevel 1 (

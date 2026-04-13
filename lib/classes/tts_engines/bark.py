@@ -55,7 +55,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         error = 'load_engine(): engine is None'
         raise RuntimeError(error)
 
-    def convert(self, sentence_file:str, sentence:str, **kwargs)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
             import torchaudio
@@ -64,8 +64,13 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
-                    return False
+                if self.params.get('inline_voice'):
+                    self.params['current_voice'] = self.params['inline_voice']
+                else:
+                    run, error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
+                    if not run:
+                        return False, error
+                    self.params['block_voice'] = self.params['current_voice']
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
                 if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
                     bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
@@ -76,9 +81,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     os.makedirs(pth_voice_dir, exist_ok=True)
                 #pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
                 self.engine.synthesizer.voice_dir = pth_voice_dir
-                speaker_argument = {}
-                if self.speaker not in self.engine.speakers:
-                    speaker_argument['speaker_wav'] = self.params['current_voice']
                 fine_tuned_params = {
                     key.removeprefix("bark_"): cast_type(self.session[key])
                     for key, cast_type in {
@@ -93,10 +95,9 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        res, error = self._convert_sml(part)
-                        if not res: 
-                            print(error)
-                            return False
+                        run, error = self._convert_sml(part)
+                        if not run:
+                            return False, error
                         continue
                     if not any(c.isalnum() for c in part):
                         continue
@@ -116,6 +117,9 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             CAPITALIZATION for emphasis of a word
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
+                        speaker_argument = {}
+                        if self.speaker not in self.engine.speakers:
+                            speaker_argument['speaker_wav'] = self.params['current_voice']
                         with torch.no_grad():
                             self.engine.to(device)
                             if device == devices['CPU']['proc']:
@@ -155,12 +159,10 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 """
                             else:
                                 error = f"part_tensor not valid"
-                                print(error)
-                                return False
+                                return False, error
                         else:
                             error = f"audio_part not valid"
-                            print(error)
-                            return False
+                            return False, error
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
@@ -169,18 +171,15 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
                         error = f"Cannot create {sentence_file}"
-                        print(error)
-                        return False
-                return True
+                        return False, error
+                return True, None
             else:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
-                print(error)
-                return False
+                return False, error
         except Exception as e:
             self.cleanup_memory()
             error = f'Bark.convert(): {e}'
-            print(error)
-            return False
+            return False, error
 
     def create_vtt(self, all_sentences:list)->bool:
         if self._build_vtt_file(all_sentences):

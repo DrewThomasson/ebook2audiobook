@@ -911,10 +911,12 @@ def build_interface(args:dict)->gr.Blocks:
             
             ############## End of Gradio Components creation
 
-            def disable_components(session_id:str, exceptions:list=[])->tuple:
+            def disable_components(session_id:str, exceptions:list|None=None)->tuple:
                 if session_id is None:
                     outputs = tuple(gr.update() for _ in range(20))
                 else:
+                    if exceptions is None:
+                        exceptions = []
                     if 'gr_session_switch_btn' in exceptions:
                         outputs = tuple(gr.update(interactive=False) for _ in range(19)) + (gr.update(interactive=True),)
                     else:
@@ -1643,7 +1645,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if custom_file is not None:
                         state = {}
                         if len(custom_model_options) > max_custom_model:
-                            error = f'You are allowed to upload a max of {max_custom_models} models'   
+                            error = f'You are allowed to upload a max of {max_custom_model} models'
                             state['type'] = 'warning'
                             state['msg'] = error
                         else:
@@ -1877,6 +1879,7 @@ def build_interface(args:dict)->gr.Blocks:
                 error = None
                 try:
                     session = context.get_session(session_id)
+                    reset_ebook_session(session_id, force=True, filter_keys=False)
                     if session and session.get('id', False):
                         args = {
                             "id": session_id,
@@ -2415,7 +2418,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return event.then(
                         fn=lambda s: (
                             list(enable_components(s)) + [
-                                1 if context.get_session(s)['ebook_mode'] == ebook_modes['TEXT']
+                                1 if context.get_session(s).get('ebook_mode') == ebook_modes['TEXT']
                                 else 0
                             ]
                         ),

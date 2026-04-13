@@ -2126,8 +2126,8 @@ def convert_chapters2audio(session_id:str)->bool:
                                         msg = f'*** Resuming from sentence {global_sent} ***'
                                         show_alert(session_id, {"type": "info", "msg": msg})
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                                    success = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block.get('voice', session['voice'])) if sentence else True
-                                    if success:
+                                    run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block.get('voice', session['voice']))
+                                    if run:
                                         blocks_current['sentence_resume'] = j
                                         session['blocks_current'] = blocks_current
                                         now = time.monotonic()
@@ -2135,7 +2135,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             last_save_time = now
                                     else:
-                                        error = f'tts_manager.convert_sentence2audio() failed!'
                                         show_alert(session_id, {"type": "warning", "msg": error})
                                         session['blocks_current'] = blocks_current
                                         return False
@@ -2854,24 +2853,27 @@ def convert_ebook(args:dict)->tuple:
                             else:
                                 show_alert(session_id, {"type": "info", "msg": msg_extra})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
+                            json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
+                            session['blocks_saved_json'] = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                             checksum, error = compare_checksums(session_id)
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
-                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing todo with the final conversion."
+                                    for jf in [json_blocks_orig_file, session['blocks_saved_json']]:
+                                        if os.path.exists(jf):
+                                            os.unlink(jf)
+                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
                                     print(msg)
                                 else:
                                     error = 'convert2epub() failed!'
                             if error is None:
-                                json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
-                                session['blocks_saved_json'] = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                                 missing_json = True
                                 if os.path.exists(json_blocks_orig_file):
+                                    missing_json = False
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
                                     if os.path.exists(session['blocks_saved_json']):
-                                        session['blocks_saved'] = load_json_blocks(session['blocks_saved_json']) 
+                                        session['blocks_saved'] = load_json_blocks(session['blocks_saved_json'])
                                         session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
-                                    missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
                                     metadata = dict(session['metadata'])
