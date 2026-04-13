@@ -173,7 +173,7 @@ So you should first remove manually any text you don't want to be converted in a
 
    - **Linux/MacOS**  
      ```bash
-     ./ebook2audiobook.command  # Run launch script
+     ./ebook2audiobook.command
      ```
      <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
      
