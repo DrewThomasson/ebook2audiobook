@@ -499,7 +499,7 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def ocr2xhtml(img: Image.Image, lang:str)->str:
+def ocr2xhtml(img: Image.Image, lang:str)->tuple:
     try:
         debug = True
         try:
@@ -507,8 +507,7 @@ def ocr2xhtml(img: Image.Image, lang:str)->str:
             # Handle silent OCR failures (empty or None result)
             if data is None or data.empty:
                 error = f'Tesseract returned empty OCR data for language "{lang}".'
-                print(error)
-                return False
+                return False, error
         except (pytesseract.TesseractError, Exception) as e:
             print(f'The OCR {lang} trained model must be downloaded.')
             try:
@@ -527,16 +526,13 @@ def ocr2xhtml(img: Image.Image, lang:str)->str:
                     data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
                     if data is None or data.empty:
                         error = f'Tesseract returned empty OCR data even after downloading {lang}.traineddata.'
-                        print(error)
-                        return False
+                        return False, error
                 else:
                     error = f'Failed to download traineddata for {lang} (HTTP {response.status_code})'
-                    print(error)
-                    return False
+                    return False, error
             except Exception as e:
                 error = f'Automatic download failed: {e}'
-                print(error)
-                return False
+                return False, error
         data = data.dropna(subset=['text'])
         lines = []
         last_block = None
@@ -590,12 +586,11 @@ def ocr2xhtml(img: Image.Image, lang:str)->str:
             for line in debug_dump:
                 print(line)
             print('========================')
-        return '\n'.join(xhtml_parts)
+        return '\n'.join(xhtml_parts), None
     except Exception as e:
         DependencyError(e)
         error = f'ocr2xhtml error: {e}'
-        print(error)
-        return False
+        return False, error
 
 def load_json_blocks(filepath:str)->list[dict]:
     try:
@@ -671,12 +666,14 @@ def convert2epub(session_id:str)-> bool:
                         show_alert(session_id, {"type": "warning", "msg": msg})
                         pix = page.get_pixmap(dpi=300)
                         img = Image.open(io.BytesIO(pix.tobytes('png')))
-                        xhtml_content = ocr2xhtml(img, session['language'])
+                        xhtml_content, error = ocr2xhtml(img, session['language'])
                     else:
+                        error = None
                         xhtml_content = text
-                    print(f'------------------- xhtml_content: {xhtml_content} -----------------')
                     if xhtml_content:
                         xhtml_pages.append(xhtml_content)
+                    else:
+                        show_alert(session_id, {"type": "warning", "msg": error})
                 if xhtml_pages:
                     xhtml_body = '\n'.join(xhtml_pages)
                     xhtml_text = (
@@ -705,8 +702,11 @@ def convert2epub(session_id:str)-> bool:
                 for i, frame in enumerate(ImageSequence.Iterator(img)):
                     page_count += 1
                     frame = frame.convert('RGB')
-                    xhtml_content = ocr2xhtml(frame, session['language'])
-                    xhtml_pages.append(xhtml_content)
+                    xhtml_content, error = ocr2xhtml(frame, session['language'])
+                    if xhtml_content:
+                        xhtml_pages.append(xhtml_content)
+                    else:
+                        show_alert(session_id, {"type": "warning", "msg": error})
                 if xhtml_pages:
                     xhtml_body = '\n'.join(xhtml_pages)
                     xhtml_text = (
@@ -1041,9 +1041,11 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             img_data = zf.read(img_zip_path)
                             img = Image.open(io.BytesIO(img_data))
                             img = img.convert('RGB')
-                            xhtml_content = ocr2xhtml(img, lang)
+                            xhtml_content, error = ocr2xhtml(img, lang)
                             if xhtml_content:
                                 ocr_parts.append(xhtml_content)
+                            else:
+                                show_alert(session_id, {"type": "warning", "msg": error})
                         except Exception as ocr_err:
                             print(f'OCR error on {img_zip_path}: {ocr_err}')
             tuples_list = list(_tuple_row(body))
