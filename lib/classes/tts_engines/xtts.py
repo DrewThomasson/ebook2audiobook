@@ -82,7 +82,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
-    def convert(self, sentence_file:str, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->bool:
         try:
             import torch
             import torchaudio
@@ -91,7 +91,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                if not self._set_voice():
+                if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
                     return False
                 if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
                     self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]

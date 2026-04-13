@@ -47,9 +47,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             msg = f"TTS {self.tts_key} already loaded"
             print(msg)
             return engine
-        if self.session.get('custom_model') is not None:
-            error = f"{self.session['tts_engine']} custom model not implemented yet"
-            raise NotImplementedError(error)
         try:
             model_cfg = self.models[self.session['fine_tuned']]
             model_path = model_cfg['repo']
@@ -68,7 +65,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             error = 'load_engine(): engine is None'
             raise RuntimeError(error)
 
-    def convert(self, sentence_file:str, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->bool:
         try:
             import torch
             import torchaudio
@@ -79,7 +76,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
-                if not self._set_voice():
+                if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
                     return False
                 speaker_argument = {}
                 if self.params['current_voice'] is not None:

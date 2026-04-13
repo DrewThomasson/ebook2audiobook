@@ -66,6 +66,7 @@ status_tags = {
     "READY": "ready",
     "EDIT": "edit",
     "SKIP": "skip",
+    "SWITCH": "switch",
     "CONVERTING": "converting",
     "END": "end",
     "DISCONNECTED": "disconnected"
@@ -176,6 +177,7 @@ class SessionContext:
             "language": default_language_code,
             "language_iso1": None,
             "voice": None,
+            "voice_previous": None,
             "voice_dir": None,
             "custom_model": None,
             "custom_model_dir": None,
@@ -209,6 +211,7 @@ class SessionContext:
             "ebook_src_notextarea": None,
             "ebook_list": None,
             "ebook_textarea": None,
+            "audiobook_overridden": None,
             "process_dir": None,
             "chapters_dir": None,
             "sentences_dir": None,
@@ -908,7 +911,6 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return []
 
 def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
-
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             prev_child_had_data = False
@@ -1132,7 +1134,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 )
                 re_num = re.compile(r'(?<!\w)[-+]?\d+(?:\.\d+)?(?!\w)')
                 text = unicodedata.normalize('NFKC', text).replace('\u00A0', ' ')
-                if re_num.search(text) and re_ordinal.search(text):
+                re_year = re.compile(r'\b(?:1[0-9]|20)\d{2}\b')
+                if re_num.search(text) and (re_ordinal.search(text) or re_year.search(text)):
                     date_spans = get_date_entities(text, stanza_nlp)
                     if date_spans:
                         result = []
@@ -2098,9 +2101,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                 block_dir_path = os.path.join(session['sentences_dir'], str(x))
                                 if os.path.isdir(block_dir_path):
                                     shutil.rmtree(block_dir_path)
-                            else:
-                                msg = f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}'
-                                show_alert(session_id, {"type": "info", "msg": msg})
                             start_sentence = sentence_resume
                         else:
                             start_sentence = 0
@@ -2123,10 +2123,10 @@ def convert_chapters2audio(session_id:str)->bool:
                                     all_sentences.append(sentence)
                                 if j >= start_sentence or j in missing_sentences:
                                     if j == start_sentence and start_sentence > 0:
-                                        msg = f'********* Resuming from sentence {global_sent} ********'
+                                        msg = f'*** Resuming from sentence {global_sent} ***'
                                         show_alert(session_id, {"type": "info", "msg": msg})
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                                    success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
+                                    success = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block.get('voice', session['voice'])) if sentence else True
                                     if success:
                                         blocks_current['sentence_resume'] = j
                                         session['blocks_current'] = blocks_current
@@ -2677,9 +2677,11 @@ def convert_ebook(args:dict)->tuple:
                     error = 'Ebook textarea is empty.'
                     return error, False
                 text = args['ebook_textarea']
-                text_name = f'{get_sanitized(text[:64])}_{session_id}'
-                text_name_hash = hashlib.md5(text_name.encode()).hexdigest()
-                text_filename = f'{get_sanitized(text[:48])}_{text_name_hash}.txt'
+                text_name = get_sanitized(text[:64])
+                text_name_hash = hashlib.md5(f'{text_name}_{session_id}'.encode()).hexdigest()
+                text_filename = SML_TAG_PATTERN.sub('', text_name)
+                text_filename = get_sanitized(text_filename)
+                text_filename = f'{text_filename[:48]}_{session_id}.txt'
                 text_filepath = os.path.join(tempfile.gettempdir(), text_filename)
                 with open(text_filepath, 'w', encoding='utf-8') as f:
                     f.write(text)
@@ -2959,7 +2961,7 @@ def finalize_audiobook(session_id:str)->tuple:
         result = lambda msg, ok: (gr.update(value=msg), gr.update(value=ok)) if is_preview else (msg, ok)
 
         def fail(error):
-            session['status'] = status_tags['READY']
+            session['status'] = status_tags['END']
             return result(error, False)
 
         if not session or not session.get('id', False):
@@ -2980,7 +2982,6 @@ def finalize_audiobook(session_id:str)->tuple:
         for idx, block in enumerate(blocks):
             if session['cancellation_requested']:
                 if session['status'] == status_tags['DISCONNECTED']:
-                    session['status'] = None
                     context_tracker.end_session(session_id, session['socket_hash'])
                     msg = 'Frontend disconnected!'
                     return result(msg, False)
@@ -3024,6 +3025,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     session['ebook_list'] = ebook_list
                 count_ebook = len(session['ebook_list'])
         if count_ebook > 0:
+            reset_ebook_session(session_id, force=True, filter_keys=False)
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
@@ -3032,7 +3034,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 session['ebook_src'] = None
             elif session['ebook_mode'] == ebook_modes['TEXT']:
                 ebook_src = session['ebook_src']
-                if sebook_src:
+                if ebook_src:
                     try:
                         os.remove(ebook_src)
                     except FileNotFoundError:
@@ -3041,9 +3043,9 @@ def finalize_audiobook(session_id:str)->tuple:
                         pass
                 session['ebook_src'] = session['ebook_src_notextarea']
             session['status'] = status_tags['END']
+            reset_ebook_session(session_id, force=True, filter_keys=False)
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
             print(f'*********** Session: {session_id} **************\n{session_info}')
-            reset_ebook_session(session_id, force=True, filter_keys=False)
         return result(filename, True)
     except Exception as e:
         session['status'] = status_tags['END']
@@ -3101,6 +3103,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "blocks_saved": {},
         "blocks_saved_json": None,
         "blocks_current": {},
+        "audiobook_overridden": None,
         "metadata": {
             "title": None, 
             "creator": None,

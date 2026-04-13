@@ -34,27 +34,30 @@ class DeviceInstaller():
         flags = set(get_cpu_info().get('flags', []))
         return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
 
-    def check_device_info(self, mode:str)->str:
-        os_env = None
+    def check_device_info(self, mode: str) -> str:
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
             arch = self.check_arch
             pyvenv = list(sys.version_info[:2])
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
-        else:
-            if mode == BUILD_DOCKER:
-                name, tag, msg = self.check_hardware
-                os_env = 'manylinux_2_28'
-                pyvenv = list(sys.version_info[:2])
-                pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
-                arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
-                tag = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else tag
-                device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
-                with open('.device_info.json', 'w', encoding='utf-8') as f:
-                    json.dump(device_info, f)
+            if all([name, tag, os_env, arch, pyvenv]):
+                device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
                 return json.dumps(device_info)
-        if all([name, tag, os_env, arch, pyvenv]):
-            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
+        elif mode == FULL_DOCKER:
+            if os.path.isfile('.device_info.json'):
+                with open('.device_info.json', 'r', encoding='utf-8') as f:
+                    device_info = json.load(f)
+                return json.dumps(device_info)
+        elif mode == BUILD_DOCKER:
+            name, tag, msg = self.check_hardware
+            os_env = 'manylinux_2_28'
+            pyvenv = list(sys.version_info[:2])
+            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
+            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
+            tag = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else tag
+            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
+            with open('.device_info.json', 'w', encoding='utf-8') as f:
+                json.dump(device_info, f)
             return json.dumps(device_info)
         return ''
         

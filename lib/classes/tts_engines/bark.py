@@ -44,9 +44,9 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         self.cleanup_memory()
         engine = loaded_tts.get(self.tts_key)
         if not engine:
-            if self.session['custom_model'] is not None:
-                error = f"{self.session['tts_engine']} custom model not implemented yet!"
-                raise NotImplementedError(error)
+            #if self.session['custom_model'] is not None:
+            #    error = f"{self.session['tts_engine']} custom model not implemented yet!"
+            #    raise NotImplementedError(error)
             engine = self._load_api(self.tts_key, self.model_path)
         if engine:
             msg = f'TTS {self.tts_key} Loaded!'
@@ -55,7 +55,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         error = 'load_engine(): engine is None'
         raise RuntimeError(error)
 
-    def convert(self, sentence_file:str, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->bool:
         try:
             import torch
             import torchaudio
@@ -64,7 +64,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                if not self._set_voice():
+                if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
                     return False
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
                 if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():

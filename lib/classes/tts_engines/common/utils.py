@@ -446,9 +446,9 @@ class TTSUtils:
         sf.write(tmp_path,wav_numpy,expected_sr,subtype='PCM_16')
         return tmp_path
 
-    def _set_voice(self)->bool:
+    def _set_voice(self, block_voice:str)->bool:
         self.params['current_voice'] = (
-            self.session['voice'] if self.session['voice'] is not None 
+            block_voice if block_voice is not None 
             else self.models[self.session['fine_tuned']]['voice']
         )
         if self.params['current_voice'] is not None:
