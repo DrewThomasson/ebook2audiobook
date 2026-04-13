@@ -501,7 +501,7 @@ class TTSUtils:
             return True, ''
         elif tag == 'voice':
             if close:
-                res = self._set_voice(self.params['current_voice'])
+                res = self._set_voice(self.params['default_voice'])
                 if not res:
                     return False, '_convert_sml() _set_voice() error'
                 return True, ''

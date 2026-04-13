@@ -78,13 +78,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 not_supported_punc_pattern = re.compile(r'[—]')
                 if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
                     return False
-                speaker_argument = {}
-                if self.params['current_voice'] is not None:
-                    speaker_wav = self.params['current_voice']
-                    speaker_argument = {"speaker_wav": speaker_wav}
-                else:
-                    self.speaker = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
-                    speaker_argument = {"speaker": self.speaker}
+                self.params['default_voice'] = self.params['current_voice']
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -102,7 +96,14 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         trim_audio_buffer = 0.002
                         if part.endswith("'"):
                             part = part[:-1]
-                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()                        
+                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()     
+                        speaker_argument = {}
+                        if self.params['current_voice'] is not None:
+                            speaker_wav = self.params['current_voice']
+                            speaker_argument = {"speaker_wav": speaker_wav}
+                        else:
+                            self.speaker = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
+                            speaker_argument = {"speaker": self.speaker}                        
                         with torch.no_grad():
                             self.engine.to(device)
                             if device == devices['CPU']['proc']:
