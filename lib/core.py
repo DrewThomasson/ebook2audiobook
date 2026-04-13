@@ -656,20 +656,23 @@ def convert2epub(session_id:str)-> bool:
                 author = file_meta.get('author') or False
                 xhtml_pages = []
                 for i, page in enumerate(doc):
-                    try:
-                        text = page.get_text('xhtml').strip()
-                    except Exception as e:
-                        print(f'Error extracting text from page {i+1}: {e}')
-                        text = ''
-                    if not text:
+                    has_text = page.get_text('text').strip()
+                    if has_text:
+                        try:
+                            xhtml_content = page.get_text('xhtml').strip()
+                        except Exception as e:
+                            print(f'Error extracting text from page {i+1}: {e}')
+                            xhtml_content = ''
+                        error = None
+                    else:
+                        xhtml_content = ''
+                        error = None
+                    if not xhtml_content:
                         msg = f'The page {i+1} seems to be image-based. Using OCR…'
                         show_alert(session_id, {"type": "warning", "msg": msg})
                         pix = page.get_pixmap(dpi=300)
                         img = Image.open(io.BytesIO(pix.tobytes('png')))
                         xhtml_content, error = ocr2xhtml(img, session['language'])
-                    else:
-                        error = None
-                        xhtml_content = text
                     if xhtml_content:
                         xhtml_pages.append(xhtml_content)
                     else:
