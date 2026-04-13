@@ -486,8 +486,11 @@ class TTSUtils:
             error = '_convert_sml SML_TAG_PATTERN error: m is empty'
             return False, error
         tag = m.group('tag')
-        close = bool(m.group('close'))
         value = m.group('value')
+        close = bool(m.group('close'))
+        print(f'tag: {tag}')
+        print(f'value: {value}')
+        print(f'close: {close}')
         assert tag in TTS_SML, f'Unknown SML tag: {tag!r}'
         if tag == 'break':
             silence_time = float(int(np.random.uniform(0.3, 0.5) * 100) / 100)
