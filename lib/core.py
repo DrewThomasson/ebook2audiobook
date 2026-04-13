@@ -896,7 +896,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 for doc_idx, doc in enumerate(all_docs):
                     text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
                     if text is None:
-                        break
+                        continue
                     elif text:
                         bloks.append(text)
             if len(bloks) == 0:
