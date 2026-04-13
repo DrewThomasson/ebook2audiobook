@@ -513,7 +513,6 @@ class TTSUtils:
                 error = f'_convert_sml() error: voice {current_voice} does not exist!'
                 return False, error
             self.params['current_voice'] = current_voice
-            res = self._set_voice(current_voice)
             return True, ''
         elif tag == 'ipa':
             if close:
