@@ -501,18 +501,19 @@ class TTSUtils:
             return True, ''
         elif tag == 'voice':
             if close:
-                res = self._set_voice(self.params['default_voice'])
+                self.params['inline_voice'] = None
+                res = self._set_voice(self.params['block_voice'])
                 if not res:
                     return False, '_convert_sml() _set_voice() error'
                 return True, ''
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
                 return False, error
-            current_voice = os.path.abspath(value)
-            if not os.path.exists(current_voice):
-                error = f'_convert_sml() error: voice {current_voice} does not exist!'
+            inline_voice = os.path.abspath(value)
+            if not os.path.exists(inline_voice):
+                error = f'_convert_sml() error: voice {inline_voice} does not exist!'
                 return False, error
-            self.params['current_voice'] = current_voice
+            self.params['inline_voice'] = self.params['current_voice'] = inline_voice
             return True, ''
         elif tag == 'ipa':
             if close:

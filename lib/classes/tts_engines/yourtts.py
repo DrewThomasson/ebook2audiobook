@@ -76,9 +76,12 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
-                if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
-                    return False
-                self.params['default_voice'] = self.params['current_voice']
+                if self.params.get('inline_voice'):
+                    self.params['current_voice'] = self.params['inline_voice']
+                else:
+                    if not self._set_voice(kwargs.get('block_voice', self.session['voice'])):
+                        return False
+                    self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
