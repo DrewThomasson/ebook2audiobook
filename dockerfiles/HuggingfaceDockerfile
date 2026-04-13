@@ -1,11 +1,11 @@
 ARG PYTHON_VERSION=3.12
 
 # ============================================================
-# HF SPACES ▒~@~T SINGLE STAGE BUILD + RUNTIME
+# HF SPACES — SINGLE STAGE BUILD + RUNTIME
 # ============================================================
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-ARG APP_VERSION=26.4.8
+ARG APP_VERSION=26.4.12
 ARG DEVICE_TAG=cpu
 ARG DOCKER_DEVICE_STR='{"name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "HF Spaces CPU"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
@@ -14,86 +14,110 @@ ARG ISO3_LANG=eng
 ARG INSTALL_RUST=1
 
 LABEL org.opencontainers.image.title="ebook2audiobook" \
-    org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
-    org.opencontainers.image.version="${APP_VERSION}" \
-    org.opencontainers.image.authors="Drew Thomasson / Rob McDowell" \
-    org.opencontainers.image.licenses="MIT" \
-    org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook"
+	org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
+	org.opencontainers.image.version="${APP_VERSION}" \
+	org.opencontainers.image.authors="Drew Thomasson / Rob McDowell" \
+	org.opencontainers.image.licenses="MIT" \
+	org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook"
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR} \
-    PIP_BREAK_SYSTEM_PACKAGES=1 \
-    PATH="/root/.cargo/bin:${PATH}" \
-    DEVICE_TAG=${DEVICE_TAG}
+	PYTHONDONTWRITEBYTECODE=1 \
+	PYTHONUNBUFFERED=1 \
+	PIP_NO_CACHE_DIR=1 \
+	DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR} \
+	PIP_BREAK_SYSTEM_PACKAGES=1 \
+	PATH="/root/.cargo/bin:${PATH}" \
+	DEVICE_TAG=${DEVICE_TAG}
 
 WORKDIR /app
 
+# ============================================================
 # System packages (build + runtime)
+# ============================================================
 RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends --allow-change-held-packages \
-        gcc g++ make pkg-config cmake curl wget git bash xz-utils python3-dev \
-        fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
-        libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 \
-        libxcb-xfixes0 libxcb-cursor0 libgomp1 libsndfile1 \
-        ${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
-    rm -rf /var/lib/apt/lists/*
+	apt-get update; \
+	apt-get install -y --no-install-recommends --allow-change-held-packages \
+		gcc g++ make pkg-config cmake curl wget git bash xz-utils python3-dev \
+		fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
+		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 \
+		libxcb-xfixes0 libxcb-cursor0 libgomp1 libsndfile1 \
+		${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
+	rm -rf /var/lib/apt/lists/*
 
+# ============================================================
+# Refresh pip to a known-good version
+# ============================================================
 RUN find /usr/local/lib/python3.12/site-packages/pip* -type f -delete 2>/dev/null; \
-    find /usr/local/lib/python3.12/site-packages/pip* -type l -delete 2>/dev/null; \
-    curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
-    python3 /tmp/get-pip.py --ignore-installed && \
-    rm -f /tmp/get-pip.py && \
-    pip install --no-cache-dir setuptools wheel
+	find /usr/local/lib/python3.12/site-packages/pip* -type l -delete 2>/dev/null; \
+	curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
+	python3 /tmp/get-pip.py --ignore-installed && \
+	rm -f /tmp/get-pip.py && \
+	pip install --no-cache-dir setuptools wheel
 
-# Rust toolchain
+# ============================================================
+# Rust toolchain (needed by some Python deps at build time)
+# ============================================================
 RUN bash -o pipefail -c '\
-    if [ "${INSTALL_RUST}" = "1" ]; then \
-        curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable; \
-    else \
-        echo "Skipping Rust toolchain"; \
-    fi'
+	if [ "${INSTALL_RUST}" = "1" ]; then \
+		curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable; \
+	else \
+		echo "Skipping Rust toolchain"; \
+	fi'
 
-# Calibre (CLI)
+# ============================================================
+# Calibre (CLI only)
+# ============================================================
 RUN set -eux; \
-    wget -nv "${CALIBRE_INSTALLER_URL}" -O /tmp/calibre.sh; \
-    bash /tmp/calibre.sh; \
-    rm -f /tmp/calibre.sh
+	wget -nv "${CALIBRE_INSTALLER_URL}" -O /tmp/calibre.sh; \
+	bash /tmp/calibre.sh; \
+	rm -f /tmp/calibre.sh
 
 # Debian-compatible Calibre library aliases
 RUN set -eux; \
-    ln -sf /usr/lib/*-linux-gnu/libfreetype.so.6 /usr/lib/libfreetype.so.6; \
-    ln -sf /usr/lib/*-linux-gnu/libfontconfig.so.1 /usr/lib/libfontconfig.so.1; \
-    ln -sf /usr/lib/*-linux-gnu/libpng16.so.16 /usr/lib/libpng16.so.16; \
-    ln -sf /usr/lib/*-linux-gnu/libX11.so.6 /usr/lib/libX11.so.6; \
-    ln -sf /usr/lib/*-linux-gnu/libXext.so.6 /usr/lib/libXext.so.6; \
-    ln -sf /usr/lib/*-linux-gnu/libXrender.so.1 /usr/lib/libXrender.so.1
+	ln -sf /usr/lib/*-linux-gnu/libfreetype.so.6   /usr/lib/libfreetype.so.6; \
+	ln -sf /usr/lib/*-linux-gnu/libfontconfig.so.1 /usr/lib/libfontconfig.so.1; \
+	ln -sf /usr/lib/*-linux-gnu/libpng16.so.16     /usr/lib/libpng16.so.16; \
+	ln -sf /usr/lib/*-linux-gnu/libX11.so.6        /usr/lib/libX11.so.6; \
+	ln -sf /usr/lib/*-linux-gnu/libXext.so.6       /usr/lib/libXext.so.6; \
+	ln -sf /usr/lib/*-linux-gnu/libXrender.so.1    /usr/lib/libXrender.so.1
 
 COPY . /app
 
-# Ensure Unix line endings
+# Ensure Unix line endings on all shell scripts
 RUN find /app -type f \( -name "*.sh" -o -name "*.command" \) -exec sed -i 's/\r$//' {} \;
 
-# Build dependencies via project script (as root during build)
+# ============================================================
+# Build Python dependencies via project script
+# ============================================================
 RUN ./ebook2audiobook.command --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR"
 
-# Cleanup build-only packages and Rust toolchain to shrink the image
+# ============================================================
+# Cleanup build-only packages and Rust toolchain to shrink image
+# ============================================================
 RUN set -eux; \
-    rustup self uninstall -y 2>/dev/null || true; \
-    apt-get update; \
-    apt-get purge -y --auto-remove gcc g++ make pkg-config cmake wget git xz-utils python3-dev; \
-    rm -rf /var/lib/apt/lists/* /root/.cargo /root/.rustup /tmp/* || true
+	rustup self uninstall -y 2>/dev/null || true; \
+	apt-get update; \
+	apt-get purge -y --auto-remove gcc g++ make pkg-config cmake wget git xz-utils python3-dev; \
+	rm -rf /var/lib/apt/lists/* /root/.cargo /root/.rustup /tmp/* || true
 
 # ============================================================
-# HF SPACES: create user 1000 and fix permissions
+# Named volumes — declare before chown so Docker creates them as root
+# ============================================================
+VOLUME \
+	/app/ebooks \
+	/app/audiobooks \
+	/app/models \
+	/app/voices \
+	/app/run \
+	/app/tmp
+
+# ============================================================
+# HF SPACES: create unprivileged user 1000 and fix permissions
 # ============================================================
 RUN useradd -m -u 1000 appuser && \
-    mkdir -p /app/ebooks /app/audiobooks /app/models /app/voices /app/run /app/tmp && \
-    chown -R appuser:appuser /app && \
-    chmod -R 777 /app/tmp /app/run /app/audiobooks /app/models /app/voices
+	mkdir -p /app/ebooks /app/audiobooks /app/models /app/voices /app/run /app/tmp && \
+	chown -R appuser:appuser /app && \
+	chmod -R 777 /app/tmp /app/run /app/audiobooks /app/models /app/voices
 
 USER 1000
 

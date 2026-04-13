@@ -61,9 +61,9 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.cleanup_memory()
             engine = loaded_tts.get(self.tts_key)
             if not engine:
-                if self.session['custom_model'] is not None:
-                    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                    raise NotImplementedError(msg)
+                #if self.session['custom_model'] is not None:
+                #    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
+                #    raise NotImplementedError(msg)
                 self.tts_key = self.model_path
                 engine = self._load_api(self.tts_key, self.model_path)
             if engine:
@@ -76,7 +76,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             error = f"load_engine() error: {e}"
             raise RuntimeError(error) from e
 
-    def convert(self, sentence_file:str, sentence:str)->bool:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
             import torchaudio
@@ -85,25 +85,22 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                if not self._set_voice():
-                    return False
-                speaker_argument = {}
-                if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
-                    if self.session['language'] in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
-                        speaker_argument = {"speaker": 'p262'}
-                elif self.session['language'] == 'cat' and 'custom/vits' in self.models['internal']['sub']:
-                    if self.session['language'] in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
-                        speaker_argument = {"speaker": '09901'}
+                if self.params.get('inline_voice'):
+                    self.params['current_voice'] = self.params['inline_voice']
+                else:
+                    run, error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
+                    if not run:
+                        return False, error
+                    self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        res, error = self._convert_sml(part)
-                        if not res: 
-                            print(error)
-                            return False
+                        run, error = self._convert_sml(part)
+                        if not run:
+                            return False, error
                         continue
                     if not any(c.isalnum() for c in part):
                         continue
@@ -111,6 +108,13 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
                             part = part[:-1]
+                        speaker_argument = {}
+                        if self.session['language'] == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
+                            if self.session['language'] in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
+                                speaker_argument = {"speaker": 'p262'}
+                        elif self.session['language'] == 'cat' and 'custom/vits' in self.models['internal']['sub']:
+                            if self.session['language'] in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
+                                speaker_argument = {"speaker": '09901'}
                         if self.params['current_voice'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
@@ -159,14 +163,12 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                                 except subprocess.CalledProcessError as e:
                                     error = f"Subprocess error: {e.stderr}"
-                                    print(error)
-                                    DependencyError(e)
-                                    return False
+                                    DependencyError(error)
+                                    return False, error
                                 except FileNotFoundError as e:
                                     error = f"File not found: {e}"
-                                    print(error)
-                                    DependencyError(e)
-                                    return False
+                                    DependencyError(error)
+                                    return False, error
                             else:
                                 tmp_out_wav = tmp_in_wav
                             if self.engine_zs:
@@ -181,8 +183,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 self.engine_zs.to(devices['CPU']['proc'])
                             else:
                                 error = f'Engine {self.tts_zs_key} is None'
-                                print(error)
-                                return False
+                                return False, error
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
@@ -223,12 +224,10 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 """
                             else:
                                 error = f"part_tensor not valid"
-                                print(error)
-                                return False
+                                return False, error
                         else:
                             error = f"audio_part not valid"
-                            print(error)
-                            return False
+                            return False, error
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
@@ -237,18 +236,15 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
                         error = f"Cannot create {sentence_file}"
-                        print(error)
-                        return False
-                return True
+                        return False, error
+                return True, None
             else:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
-                print(error)
-                return False
+                return False, error
         except Exception as e:
             self.cleanup_memory()
             error = f'Vits.convert(): {e}'
-            print(error)
-            return False
+            return False, error
 
     def create_vtt(self, all_sentences:list)->bool:
         if self._build_vtt_file(all_sentences):

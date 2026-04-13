@@ -66,6 +66,7 @@ status_tags = {
     "READY": "ready",
     "EDIT": "edit",
     "SKIP": "skip",
+    "SWITCH": "switch",
     "CONVERTING": "converting",
     "END": "end",
     "DISCONNECTED": "disconnected"
@@ -176,6 +177,7 @@ class SessionContext:
             "language": default_language_code,
             "language_iso1": None,
             "voice": None,
+            "voice_previous": None,
             "voice_dir": None,
             "custom_model": None,
             "custom_model_dir": None,
@@ -209,6 +211,7 @@ class SessionContext:
             "ebook_src_notextarea": None,
             "ebook_list": None,
             "ebook_textarea": None,
+            "audiobook_overridden": None,
             "process_dir": None,
             "chapters_dir": None,
             "sentences_dir": None,
@@ -496,7 +499,7 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def ocr2xhtml(img: Image.Image, lang:str)->str:
+def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
     try:
         debug = True
         try:
@@ -504,8 +507,7 @@ def ocr2xhtml(img: Image.Image, lang:str)->str:
             # Handle silent OCR failures (empty or None result)
             if data is None or data.empty:
                 error = f'Tesseract returned empty OCR data for language "{lang}".'
-                print(error)
-                return False
+                return False, error
         except (pytesseract.TesseractError, Exception) as e:
             print(f'The OCR {lang} trained model must be downloaded.')
             try:
@@ -524,16 +526,13 @@ def ocr2xhtml(img: Image.Image, lang:str)->str:
                     data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
                     if data is None or data.empty:
                         error = f'Tesseract returned empty OCR data even after downloading {lang}.traineddata.'
-                        print(error)
-                        return False
+                        return False, error
                 else:
                     error = f'Failed to download traineddata for {lang} (HTTP {response.status_code})'
-                    print(error)
-                    return False
+                    return False, error
             except Exception as e:
                 error = f'Automatic download failed: {e}'
-                print(error)
-                return False
+                return False, error
         data = data.dropna(subset=['text'])
         lines = []
         last_block = None
@@ -587,12 +586,11 @@ def ocr2xhtml(img: Image.Image, lang:str)->str:
             for line in debug_dump:
                 print(line)
             print('========================')
-        return '\n'.join(xhtml_parts)
+        return '\n'.join(xhtml_parts), None
     except Exception as e:
         DependencyError(e)
         error = f'ocr2xhtml error: {e}'
-        print(error)
-        return False
+        return False, error
 
 def load_json_blocks(filepath:str)->list[dict]:
     try:
@@ -658,19 +656,89 @@ def convert2epub(session_id:str)-> bool:
                 author = file_meta.get('author') or False
                 xhtml_pages = []
                 for i, page in enumerate(doc):
-                    try:
-                        text = page.get_text('xhtml').strip()
-                    except Exception as e:
-                        print(f'Error extracting text from page {i+1}: {e}')
-                        text = ''
-                    if not text:
+                    has_text = page.get_text('text').strip()
+                    if has_text:
+                        try:
+                            xhtml_content = page.get_text('xhtml').strip()
+                        except Exception as e:
+                            print(f'Error extracting text from page {i+1}: {e}')
+                            xhtml_content = ''
+                        error = None
+                    else:
+                        xhtml_content = ''
+                        error = None
+                    if not xhtml_content:
                         msg = f'The page {i+1} seems to be image-based. Using OCR…'
                         show_alert(session_id, {"type": "warning", "msg": msg})
                         pix = page.get_pixmap(dpi=300)
                         img = Image.open(io.BytesIO(pix.tobytes('png')))
-                        xhtml_content = ocr2xhtml(img, session['language'])
+                        xhtml_content, error = ocr2xhtml(img, session['language'])
+                    if xhtml_content:
+                        xhtml_pages.append(xhtml_content)
                     else:
-                        xhtml_content = text
+                        show_alert(session_id, {"type": "warning", "msg": error})
+                if xhtml_pages:
+                    xhtml_body = '\n'.join(xhtml_pages)
+                    xhtml_text = (
+                        '<?xml version="1.0" encoding="utf-8"?>\n'
+                        '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                        '<head>\n'
+                        f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                        '</head>\n'
+                        '<body>\n'
+                        f'{xhtml_body}\n'
+                        '</body>\n'
+                        '</html>\n'
+                    )
+                    file_input = os.path.join(session['process_dir'], f'{filename_noext}.xhtml')
+                    with open(file_input, 'w', encoding='utf-8') as html_file:
+                        html_file.write(xhtml_text)
+                else:
+                    return False
+            elif file_ext == '.pptx':
+                from html import escape as html_escape
+                from pptx import Presentation as PptxPresentation
+                filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
+                msg = f'File input is a presentation ({file_ext}). Extracting content…'
+                print(msg)
+                prs = PptxPresentation(file_input)
+                title = prs.core_properties.title or filename_noext
+                author = prs.core_properties.author or False
+                xhtml_pages = []
+                for i, slide in enumerate(prs.slides):
+                    slide_texts = []
+                    slide_images = []
+                    for shape in slide.shapes:
+                        if shape.has_text_frame:
+                            for para in shape.text_frame.paragraphs:
+                                text = para.text.strip()
+                                if text:
+                                    slide_texts.append(text)
+                        if shape.has_table:
+                            for row in shape.table.rows:
+                                row_texts = [c.text.strip() for c in row.cells if c.text.strip()]
+                                if row_texts:
+                                    slide_texts.append(' | '.join(row_texts))
+                        try:
+                            slide_images.append(shape.image.blob)
+                        except (AttributeError, ValueError):
+                            pass
+                    if slide_texts:
+                        xhtml_content = '\n'.join(f'<p>{html_escape(t)}</p>' for t in slide_texts)
+                    elif slide_images:
+                        msg = f'Slide {i+1} seems to be image-based. Using OCR…'
+                        show_alert(session_id, {"type": "warning", "msg": msg})
+                        xhtml_parts = []
+                        for blob in slide_images:
+                            img = Image.open(io.BytesIO(blob))
+                            xhtml_content, error = ocr2xhtml(img, session['language'])
+                            if xhtml_content:
+                                xhtml_parts.append(xhtml_content)
+                            else:
+                                show_alert(session_id, {"type": "warning", "msg": error})
+                        xhtml_content = '\n'.join(xhtml_parts) if xhtml_parts else ''
+                    else:
+                        xhtml_content = ''
                     if xhtml_content:
                         xhtml_pages.append(xhtml_content)
                 if xhtml_pages:
@@ -691,6 +759,57 @@ def convert2epub(session_id:str)-> bool:
                         html_file.write(xhtml_text)
                 else:
                     return False
+            elif file_ext == '.docx':
+                from docx import Document as DocxDocument
+                filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
+                docx_doc = DocxDocument(file_input)
+                all_text = ''.join(p.text.strip() for p in docx_doc.paragraphs)
+                if not all_text:
+                    for table in docx_doc.tables:
+                        for row in table.rows:
+                            for cell in row.cells:
+                                all_text += cell.text.strip()
+                                if all_text:
+                                    break
+                            if all_text:
+                                break
+                        if all_text:
+                            break
+                if not all_text:
+                    msg = f'File input is a DOCX with no extractable text. Extracting images for OCR…'
+                    print(msg)
+                    title = docx_doc.core_properties.title or filename_noext
+                    author = docx_doc.core_properties.author or False
+                    xhtml_pages = []
+                    for rel in docx_doc.part.rels.values():
+                        if 'image' in rel.reltype:
+                            try:
+                                img = Image.open(io.BytesIO(rel.target_part.blob))
+                                xhtml_content, error = ocr2xhtml(img, session['language'])
+                                if xhtml_content:
+                                    xhtml_pages.append(xhtml_content)
+                                else:
+                                    show_alert(session_id, {"type": "warning", "msg": error})
+                            except Exception as e:
+                                print(f'Error processing embedded image: {e}')
+                    if xhtml_pages:
+                        xhtml_body = '\n'.join(xhtml_pages)
+                        xhtml_text = (
+                            '<?xml version="1.0" encoding="utf-8"?>\n'
+                            '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                            '<head>\n'
+                            f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                            '</head>\n'
+                            '<body>\n'
+                            f'{xhtml_body}\n'
+                            '</body>\n'
+                            '</html>\n'
+                        )
+                        file_input = os.path.join(session['process_dir'], f'{filename_noext}.xhtml')
+                        with open(file_input, 'w', encoding='utf-8') as html_file:
+                            html_file.write(xhtml_text)
+                    else:
+                        return False
             elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 msg = f'File input is an image ({file_ext}). Running OCR…'
@@ -701,8 +820,11 @@ def convert2epub(session_id:str)-> bool:
                 for i, frame in enumerate(ImageSequence.Iterator(img)):
                     page_count += 1
                     frame = frame.convert('RGB')
-                    xhtml_content = ocr2xhtml(frame, session['language'])
-                    xhtml_pages.append(xhtml_content)
+                    xhtml_content, error = ocr2xhtml(frame, session['language'])
+                    if xhtml_content:
+                        xhtml_pages.append(xhtml_content)
+                    else:
+                        show_alert(session_id, {"type": "warning", "msg": error})
                 if xhtml_pages:
                     xhtml_body = '\n'.join(xhtml_pages)
                     xhtml_text = (
@@ -856,7 +978,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 print(error)
                 return []
             title = get_ebook_title(epubBook, all_docs)
-            bloks = []
+            blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
                 try:
@@ -893,14 +1015,15 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 for doc_idx, doc in enumerate(all_docs):
                     text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
                     if text is None:
-                        break
-                    elif text:
-                        bloks.append(text)
-            if len(bloks) == 0:
-                error = 'No bloks found! possible reason: file corrupted or need to convert images to text with OCR'
+                        error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
+                        show_alert(session_id, {"type": "warning", "msg": error})
+                        return []
+                    blocks.append(text)
+            if len(blocks) == 0:
+                error = 'No blocks found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
                 return []
-            return bloks
+            return blocks
         return []
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -908,7 +1031,6 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return []
 
 def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
-
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             prev_child_had_data = False
@@ -1040,9 +1162,11 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             img_data = zf.read(img_zip_path)
                             img = Image.open(io.BytesIO(img_data))
                             img = img.convert('RGB')
-                            xhtml_content = ocr2xhtml(img, lang)
+                            xhtml_content, error = ocr2xhtml(img, lang)
                             if xhtml_content:
                                 ocr_parts.append(xhtml_content)
+                            else:
+                                show_alert(session_id, {"type": "warning", "msg": error})
                         except Exception as ocr_err:
                             print(f'OCR error on {img_zip_path}: {ocr_err}')
             tuples_list = list(_tuple_row(body))
@@ -1132,7 +1256,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 )
                 re_num = re.compile(r'(?<!\w)[-+]?\d+(?:\.\d+)?(?!\w)')
                 text = unicodedata.normalize('NFKC', text).replace('\u00A0', ' ')
-                if re_num.search(text) and re_ordinal.search(text):
+                re_year = re.compile(r'\b(?:1[0-9]|20)\d{2}\b')
+                if re_num.search(text) and (re_ordinal.search(text) or re_year.search(text)):
                     date_spans = get_date_entities(text, stanza_nlp)
                     if date_spans:
                         result = []
@@ -2098,9 +2223,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                 block_dir_path = os.path.join(session['sentences_dir'], str(x))
                                 if os.path.isdir(block_dir_path):
                                     shutil.rmtree(block_dir_path)
-                            else:
-                                msg = f'Chapter {ch_num} (block {x}) — resuming from sentence {sentence_resume}'
-                                show_alert(session_id, {"type": "info", "msg": msg})
                             start_sentence = sentence_resume
                         else:
                             start_sentence = 0
@@ -2123,11 +2245,11 @@ def convert_chapters2audio(session_id:str)->bool:
                                     all_sentences.append(sentence)
                                 if j >= start_sentence or j in missing_sentences:
                                     if j == start_sentence and start_sentence > 0:
-                                        msg = f'********* Resuming from sentence {global_sent} ********'
+                                        msg = f'*** Resuming from sentence {global_sent} ***'
                                         show_alert(session_id, {"type": "info", "msg": msg})
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                                    success = tts_manager.convert_sentence2audio(sentence_file, sentence) if sentence else True
-                                    if success:
+                                    run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block.get('voice', session['voice']))
+                                    if run:
                                         blocks_current['sentence_resume'] = j
                                         session['blocks_current'] = blocks_current
                                         now = time.monotonic()
@@ -2135,7 +2257,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             last_save_time = now
                                     else:
-                                        error = f'tts_manager.convert_sentence2audio() failed!'
                                         show_alert(session_id, {"type": "warning", "msg": error})
                                         session['blocks_current'] = blocks_current
                                         return False
@@ -2677,9 +2798,11 @@ def convert_ebook(args:dict)->tuple:
                     error = 'Ebook textarea is empty.'
                     return error, False
                 text = args['ebook_textarea']
-                text_name = f'{get_sanitized(text[:64])}_{session_id}'
-                text_name_hash = hashlib.md5(text_name.encode()).hexdigest()
-                text_filename = f'{get_sanitized(text[:48])}_{text_name_hash}.txt'
+                text_name = get_sanitized(text[:64])
+                text_name_hash = hashlib.md5(f'{text_name}_{session_id}'.encode()).hexdigest()
+                text_filename = SML_TAG_PATTERN.sub('', text_name)
+                text_filename = get_sanitized(text_filename)
+                text_filename = f'{text_filename[:48]}_{session_id}.txt'
                 text_filepath = os.path.join(tempfile.gettempdir(), text_filename)
                 with open(text_filepath, 'w', encoding='utf-8') as f:
                     f.write(text)
@@ -2852,24 +2975,27 @@ def convert_ebook(args:dict)->tuple:
                             else:
                                 show_alert(session_id, {"type": "info", "msg": msg_extra})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
+                            json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
+                            session['blocks_saved_json'] = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                             checksum, error = compare_checksums(session_id)
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
-                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing todo with the final conversion."
+                                    for jf in [json_blocks_orig_file, session['blocks_saved_json']]:
+                                        if os.path.exists(jf):
+                                            os.unlink(jf)
+                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
                                     print(msg)
                                 else:
                                     error = 'convert2epub() failed!'
                             if error is None:
-                                json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
-                                session['blocks_saved_json'] = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                                 missing_json = True
                                 if os.path.exists(json_blocks_orig_file):
+                                    missing_json = False
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
                                     if os.path.exists(session['blocks_saved_json']):
-                                        session['blocks_saved'] = load_json_blocks(session['blocks_saved_json']) 
+                                        session['blocks_saved'] = load_json_blocks(session['blocks_saved_json'])
                                         session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
-                                    missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
                                     metadata = dict(session['metadata'])
@@ -2959,7 +3085,7 @@ def finalize_audiobook(session_id:str)->tuple:
         result = lambda msg, ok: (gr.update(value=msg), gr.update(value=ok)) if is_preview else (msg, ok)
 
         def fail(error):
-            session['status'] = status_tags['READY']
+            session['status'] = status_tags['END']
             return result(error, False)
 
         if not session or not session.get('id', False):
@@ -2980,7 +3106,6 @@ def finalize_audiobook(session_id:str)->tuple:
         for idx, block in enumerate(blocks):
             if session['cancellation_requested']:
                 if session['status'] == status_tags['DISCONNECTED']:
-                    session['status'] = None
                     context_tracker.end_session(session_id, session['socket_hash'])
                     msg = 'Frontend disconnected!'
                     return result(msg, False)
@@ -3024,6 +3149,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     session['ebook_list'] = ebook_list
                 count_ebook = len(session['ebook_list'])
         if count_ebook > 0:
+            reset_ebook_session(session_id, force=True, filter_keys=False)
             show_alert(session_id, {"type": "success", "msg": f"{filename} / converted. {count_ebook} ebook(s) conversion remaining…"})
         else:
             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
@@ -3031,12 +3157,19 @@ def finalize_audiobook(session_id:str)->tuple:
             elif session['ebook_mode'] == ebook_modes['SINGLE']:
                 session['ebook_src'] = None
             elif session['ebook_mode'] == ebook_modes['TEXT']:
-                os.remove(session['ebook_src'])
+                ebook_src = session['ebook_src']
+                if ebook_src:
+                    try:
+                        os.remove(ebook_src)
+                    except FileNotFoundError:
+                        pass
+                    except OSError:
+                        pass
                 session['ebook_src'] = session['ebook_src_notextarea']
-            show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
-            print(f'*********** Session: {session_id} **************\n{session_info}')
             session['status'] = status_tags['END']
             reset_ebook_session(session_id, force=True, filter_keys=False)
+            show_alert(session_id, {"type": "success", "msg": f"{filename} / converted."})
+            print(f'*********** Session: {session_id} **************\n{session_info}')
         return result(filename, True)
     except Exception as e:
         session['status'] = status_tags['END']
@@ -3094,6 +3227,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "blocks_saved": {},
         "blocks_saved_json": None,
         "blocks_current": {},
+        "audiobook_overridden": None,
         "metadata": {
             "title": None, 
             "creator": None,

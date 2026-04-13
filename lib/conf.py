@@ -156,7 +156,7 @@ if DEVICE_SYSTEM == systems['WINDOWS']:
 # ---------------------------------------------------------------------
 
 max_upload_size = '6GB' # MB or GB
-tmp_expire = 7 # days
+tmp_expire = 60 # days
 max_ebook_textarea_length = 1024 # chars
 
 # ---------------------------------------------------------------------
@@ -190,14 +190,14 @@ audiobooks_cli_dir = os.path.abspath(os.path.join('audiobooks','cli'))
 ebook_formats = [
     ".epub", ".mobi", ".azw3", ".fb2", ".lrf", ".rb", ".snb", ".tcr", ".pdf",
     ".txt", ".rtf", ".doc", ".docx", ".html", ".odt", ".azw", ".tiff", ".tif",
-    ".png", ".jpg", ".jpeg", ".bmp",
+    ".png", ".jpg", ".jpeg", ".bmp", ".pptx"
 ]
 voice_formats = [
     ".mp4", ".m4b", ".m4a", ".mp3", ".wav", ".aac", ".flac", ".alac", ".ogg",
-    ".aiff", ".aif", ".wma", ".dsd", ".opus", ".pcmu", ".pcma", ".gsm",
+    ".aiff", ".aif", ".wma", ".dsd", ".opus", ".pcmu", ".pcma", ".gsm"
 ]
 output_formats = [
-    "aac", "flac", "mp3", "m4b", "m4a", "mp4", "mov", "ogg", "wav", "webm",
+    "aac", "flac", "mp3", "m4b", "m4a", "mp4", "mov", "ogg", "wav", "webm"
 ]
 default_audio_proc_samplerate = 24000
 default_audio_proc_format = 'flac' # or 'mp3', 'aac', 'm4a', 'm4b', 'amr', '3gp', 'alac'. 'wav' format is ok but limited to process files < 4GB
