@@ -499,7 +499,7 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def ocr2xhtml(img: Image.Image, lang:str)->str:
+def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
     try:
         debug = True
         try:
@@ -507,8 +507,7 @@ def ocr2xhtml(img: Image.Image, lang:str)->str:
             # Handle silent OCR failures (empty or None result)
             if data is None or data.empty:
                 error = f'Tesseract returned empty OCR data for language "{lang}".'
-                print(error)
-                return False
+                return False, error
         except (pytesseract.TesseractError, Exception) as e:
             print(f'The OCR {lang} trained model must be downloaded.')
             try:
@@ -527,16 +526,13 @@ def ocr2xhtml(img: Image.Image, lang:str)->str:
                     data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
                     if data is None or data.empty:
                         error = f'Tesseract returned empty OCR data even after downloading {lang}.traineddata.'
-                        print(error)
-                        return False
+                        return False, error
                 else:
                     error = f'Failed to download traineddata for {lang} (HTTP {response.status_code})'
-                    print(error)
-                    return False
+                    return False, error
             except Exception as e:
                 error = f'Automatic download failed: {e}'
-                print(error)
-                return False
+                return False, error
         data = data.dropna(subset=['text'])
         lines = []
         last_block = None
@@ -590,12 +586,11 @@ def ocr2xhtml(img: Image.Image, lang:str)->str:
             for line in debug_dump:
                 print(line)
             print('========================')
-        return '\n'.join(xhtml_parts)
+        return '\n'.join(xhtml_parts), None
     except Exception as e:
         DependencyError(e)
         error = f'ocr2xhtml error: {e}'
-        print(error)
-        return False
+        return False, error
 
 def load_json_blocks(filepath:str)->list[dict]:
     try:
@@ -661,19 +656,89 @@ def convert2epub(session_id:str)-> bool:
                 author = file_meta.get('author') or False
                 xhtml_pages = []
                 for i, page in enumerate(doc):
-                    try:
-                        text = page.get_text('xhtml').strip()
-                    except Exception as e:
-                        print(f'Error extracting text from page {i+1}: {e}')
-                        text = ''
-                    if not text:
+                    has_text = page.get_text('text').strip()
+                    if has_text:
+                        try:
+                            xhtml_content = page.get_text('xhtml').strip()
+                        except Exception as e:
+                            print(f'Error extracting text from page {i+1}: {e}')
+                            xhtml_content = ''
+                        error = None
+                    else:
+                        xhtml_content = ''
+                        error = None
+                    if not xhtml_content:
                         msg = f'The page {i+1} seems to be image-based. Using OCR…'
                         show_alert(session_id, {"type": "warning", "msg": msg})
                         pix = page.get_pixmap(dpi=300)
                         img = Image.open(io.BytesIO(pix.tobytes('png')))
-                        xhtml_content = ocr2xhtml(img, session['language'])
+                        xhtml_content, error = ocr2xhtml(img, session['language'])
+                    if xhtml_content:
+                        xhtml_pages.append(xhtml_content)
                     else:
-                        xhtml_content = text
+                        show_alert(session_id, {"type": "warning", "msg": error})
+                if xhtml_pages:
+                    xhtml_body = '\n'.join(xhtml_pages)
+                    xhtml_text = (
+                        '<?xml version="1.0" encoding="utf-8"?>\n'
+                        '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                        '<head>\n'
+                        f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                        '</head>\n'
+                        '<body>\n'
+                        f'{xhtml_body}\n'
+                        '</body>\n'
+                        '</html>\n'
+                    )
+                    file_input = os.path.join(session['process_dir'], f'{filename_noext}.xhtml')
+                    with open(file_input, 'w', encoding='utf-8') as html_file:
+                        html_file.write(xhtml_text)
+                else:
+                    return False
+            elif file_ext == '.pptx':
+                from html import escape as html_escape
+                from pptx import Presentation as PptxPresentation
+                filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
+                msg = f'File input is a presentation ({file_ext}). Extracting content…'
+                print(msg)
+                prs = PptxPresentation(file_input)
+                title = prs.core_properties.title or filename_noext
+                author = prs.core_properties.author or False
+                xhtml_pages = []
+                for i, slide in enumerate(prs.slides):
+                    slide_texts = []
+                    slide_images = []
+                    for shape in slide.shapes:
+                        if shape.has_text_frame:
+                            for para in shape.text_frame.paragraphs:
+                                text = para.text.strip()
+                                if text:
+                                    slide_texts.append(text)
+                        if shape.has_table:
+                            for row in shape.table.rows:
+                                row_texts = [c.text.strip() for c in row.cells if c.text.strip()]
+                                if row_texts:
+                                    slide_texts.append(' | '.join(row_texts))
+                        try:
+                            slide_images.append(shape.image.blob)
+                        except (AttributeError, ValueError):
+                            pass
+                    if slide_texts:
+                        xhtml_content = '\n'.join(f'<p>{html_escape(t)}</p>' for t in slide_texts)
+                    elif slide_images:
+                        msg = f'Slide {i+1} seems to be image-based. Using OCR…'
+                        show_alert(session_id, {"type": "warning", "msg": msg})
+                        xhtml_parts = []
+                        for blob in slide_images:
+                            img = Image.open(io.BytesIO(blob))
+                            xhtml_content, error = ocr2xhtml(img, session['language'])
+                            if xhtml_content:
+                                xhtml_parts.append(xhtml_content)
+                            else:
+                                show_alert(session_id, {"type": "warning", "msg": error})
+                        xhtml_content = '\n'.join(xhtml_parts) if xhtml_parts else ''
+                    else:
+                        xhtml_content = ''
                     if xhtml_content:
                         xhtml_pages.append(xhtml_content)
                 if xhtml_pages:
@@ -694,6 +759,57 @@ def convert2epub(session_id:str)-> bool:
                         html_file.write(xhtml_text)
                 else:
                     return False
+            elif file_ext == '.docx':
+                from docx import Document as DocxDocument
+                filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
+                docx_doc = DocxDocument(file_input)
+                all_text = ''.join(p.text.strip() for p in docx_doc.paragraphs)
+                if not all_text:
+                    for table in docx_doc.tables:
+                        for row in table.rows:
+                            for cell in row.cells:
+                                all_text += cell.text.strip()
+                                if all_text:
+                                    break
+                            if all_text:
+                                break
+                        if all_text:
+                            break
+                if not all_text:
+                    msg = f'File input is a DOCX with no extractable text. Extracting images for OCR…'
+                    print(msg)
+                    title = docx_doc.core_properties.title or filename_noext
+                    author = docx_doc.core_properties.author or False
+                    xhtml_pages = []
+                    for rel in docx_doc.part.rels.values():
+                        if 'image' in rel.reltype:
+                            try:
+                                img = Image.open(io.BytesIO(rel.target_part.blob))
+                                xhtml_content, error = ocr2xhtml(img, session['language'])
+                                if xhtml_content:
+                                    xhtml_pages.append(xhtml_content)
+                                else:
+                                    show_alert(session_id, {"type": "warning", "msg": error})
+                            except Exception as e:
+                                print(f'Error processing embedded image: {e}')
+                    if xhtml_pages:
+                        xhtml_body = '\n'.join(xhtml_pages)
+                        xhtml_text = (
+                            '<?xml version="1.0" encoding="utf-8"?>\n'
+                            '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                            '<head>\n'
+                            f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                            '</head>\n'
+                            '<body>\n'
+                            f'{xhtml_body}\n'
+                            '</body>\n'
+                            '</html>\n'
+                        )
+                        file_input = os.path.join(session['process_dir'], f'{filename_noext}.xhtml')
+                        with open(file_input, 'w', encoding='utf-8') as html_file:
+                            html_file.write(xhtml_text)
+                    else:
+                        return False
             elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 msg = f'File input is an image ({file_ext}). Running OCR…'
@@ -704,8 +820,11 @@ def convert2epub(session_id:str)-> bool:
                 for i, frame in enumerate(ImageSequence.Iterator(img)):
                     page_count += 1
                     frame = frame.convert('RGB')
-                    xhtml_content = ocr2xhtml(frame, session['language'])
-                    xhtml_pages.append(xhtml_content)
+                    xhtml_content, error = ocr2xhtml(frame, session['language'])
+                    if xhtml_content:
+                        xhtml_pages.append(xhtml_content)
+                    else:
+                        show_alert(session_id, {"type": "warning", "msg": error})
                 if xhtml_pages:
                     xhtml_body = '\n'.join(xhtml_pages)
                     xhtml_text = (
@@ -859,7 +978,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 print(error)
                 return []
             title = get_ebook_title(epubBook, all_docs)
-            bloks = []
+            blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
                 try:
@@ -896,14 +1015,15 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 for doc_idx, doc in enumerate(all_docs):
                     text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
                     if text is None:
-                        break
-                    elif text:
-                        bloks.append(text)
-            if len(bloks) == 0:
-                error = 'No bloks found! possible reason: file corrupted or need to convert images to text with OCR'
+                        error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
+                        show_alert(session_id, {"type": "warning", "msg": error})
+                        return []
+                    blocks.append(text)
+            if len(blocks) == 0:
+                error = 'No blocks found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
                 return []
-            return bloks
+            return blocks
         return []
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -1042,9 +1162,11 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             img_data = zf.read(img_zip_path)
                             img = Image.open(io.BytesIO(img_data))
                             img = img.convert('RGB')
-                            xhtml_content = ocr2xhtml(img, lang)
+                            xhtml_content, error = ocr2xhtml(img, lang)
                             if xhtml_content:
                                 ocr_parts.append(xhtml_content)
+                            else:
+                                show_alert(session_id, {"type": "warning", "msg": error})
                         except Exception as ocr_err:
                             print(f'OCR error on {img_zip_path}: {ocr_err}')
             tuples_list = list(_tuple_row(body))

@@ -24,6 +24,8 @@ dependencies = [
 	"regex",
 	"docker",
 	"ebooklib",
+	"python-pptx",
+	"python-docx",
 	"fastapi",
 	"hf_xet",
 	"beautifulsoup4",
