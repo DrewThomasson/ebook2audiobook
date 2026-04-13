@@ -2126,7 +2126,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                         msg = f'*** Resuming from sentence {global_sent} ***'
                                         show_alert(session_id, {"type": "info", "msg": msg})
                                     sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                                    run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block.get('voice', session['voice'])) if sentence else True
+                                    run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block.get('voice', session['voice']))
                                     if run:
                                         blocks_current['sentence_resume'] = j
                                         session['blocks_current'] = blocks_current
@@ -2873,6 +2873,7 @@ def convert_ebook(args:dict)->tuple:
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
                                     if os.path.exists(session['blocks_saved_json']):
                                         session['blocks_saved'] = load_json_blocks(session['blocks_saved_json'])
+                                        session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
                                     metadata = dict(session['metadata'])
