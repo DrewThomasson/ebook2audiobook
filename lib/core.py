@@ -674,6 +674,7 @@ def convert2epub(session_id:str)-> bool:
                         xhtml_content = ocr2xhtml(img, session['language'])
                     else:
                         xhtml_content = text
+                    print(f'------------------- xhtml_content: {xhtml_content} -----------------')
                     if xhtml_content:
                         xhtml_pages.append(xhtml_content)
                 if xhtml_pages:
@@ -896,7 +897,6 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 for doc_idx, doc in enumerate(all_docs):
                     text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
                     if text is not None:
-                        print(f'------------------- filter_blocks text: {filter_blocks} -----------------')
                         bloks.append(text)
             if len(bloks) == 0:
                 error = 'No bloks found! possible reason: file corrupted or need to convert images to text with OCR'
