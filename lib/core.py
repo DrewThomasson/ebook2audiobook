@@ -2869,8 +2869,14 @@ def convert_ebook(args:dict)->tuple:
                                 if os.path.exists(json_blocks_orig_file):
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
                                     if os.path.exists(session['blocks_saved_json']):
-                                        session['blocks_saved'] = load_json_blocks(session['blocks_saved_json']) 
-                                        session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
+                                        session['blocks_saved'] = load_json_blocks(session['blocks_saved_json'])
+                                        if checksum:
+                                            session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
+                                        else:
+                                            session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
+                                            session['blocks_current']['block_resume'] = 0
+                                            session['blocks_current']['sentence_resume'] = 0
+                                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                     missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
@@ -2926,7 +2932,6 @@ def convert_ebook(args:dict)->tuple:
                                                 session['blocks_saved'] = copy.deepcopy(session['blocks_orig'])
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
-                                            print(session['blocks_current'])
                                             if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
