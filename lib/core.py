@@ -2854,30 +2854,26 @@ def convert_ebook(args:dict)->tuple:
                             else:
                                 show_alert(session_id, {"type": "info", "msg": msg_extra})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
+                            json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
+                            session['blocks_saved_json'] = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                             checksum, error = compare_checksums(session_id)
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
+                                    for jf in [json_blocks_orig_file, session['blocks_saved_json']]:
+                                        if os.path.exists(jf):
+                                            os.unlink(jf)
                                     msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
                                     print(msg)
                                 else:
                                     error = 'convert2epub() failed!'
                             if error is None:
-                                json_blocks_orig_file = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
-                                session['blocks_saved_json'] = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                                 missing_json = True
                                 if os.path.exists(json_blocks_orig_file):
+                                    missing_json = False
                                     session['blocks_orig'] = load_json_blocks(json_blocks_orig_file)
                                     if os.path.exists(session['blocks_saved_json']):
                                         session['blocks_saved'] = load_json_blocks(session['blocks_saved_json'])
-                                        if checksum:
-                                            session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
-                                        else:
-                                            session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
-                                            session['blocks_current']['block_resume'] = 0
-                                            session['blocks_current']['sentence_resume'] = 0
-                                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
-                                    missing_json = False
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
                                     metadata = dict(session['metadata'])

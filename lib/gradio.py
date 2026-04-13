@@ -1879,6 +1879,7 @@ def build_interface(args:dict)->gr.Blocks:
                 error = None
                 try:
                     session = context.get_session(session_id)
+                    reset_ebook_session(session_id, force=True, filter_keys=False)
                     if session and session.get('id', False):
                         args = {
                             "id": session_id,
