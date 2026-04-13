@@ -499,7 +499,7 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def ocr2xhtml(img: Image.Image, lang:str)->tuple:
+def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
     try:
         debug = True
         try:
@@ -978,7 +978,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 print(error)
                 return []
             title = get_ebook_title(epubBook, all_docs)
-            bloks = []
+            blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
                 try:
@@ -1014,13 +1014,16 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 zip_basenames = {os.path.basename(n): n for n in zip_names}
                 for doc_idx, doc in enumerate(all_docs):
                     text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
-                    if text is not None:
-                        bloks.append(text)
-            if len(bloks) == 0:
-                error = 'No bloks found! possible reason: file corrupted or need to convert images to text with OCR'
+                    if text is None:
+                        error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
+                        show_alert(session_id, {"type": "warning", "msg": error})
+                        return []
+                    blocks.append(text)
+            if len(blocks) == 0:
+                error = 'No blocks found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
                 return []
-            return bloks
+            return blocks
         return []
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
