@@ -1134,7 +1134,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 )
                 re_num = re.compile(r'(?<!\w)[-+]?\d+(?:\.\d+)?(?!\w)')
                 text = unicodedata.normalize('NFKC', text).replace('\u00A0', ' ')
-                if re_num.search(text) and re_ordinal.search(text):
+                re_year = re.compile(r'\b(?:1[0-9]|20)\d{2}\b')
+                if re_num.search(text) and (re_ordinal.search(text) or re_year.search(text)):
                     date_spans = get_date_entities(text, stanza_nlp)
                     if date_spans:
                         result = []
@@ -2679,7 +2680,7 @@ def convert_ebook(args:dict)->tuple:
                 text_name = f'{get_sanitized(text[:64])}_{session_id}'
                 text_name_hash = hashlib.md5(text_name.encode()).hexdigest()
                 #text_filename = f'{get_sanitized(text[:48])}_{text_name_hash}.txt'
-                text_filename = SML_TAG_PATTERN.sub(text, '')
+                text_filename = re.sub(SML_TAG_PATTERN, '', text)
                 text_filename = get_sanitized(text_filename)
                 text_filename = f'{text_filename[:48]}_{session_id}'
                 text_filepath = os.path.join(tempfile.gettempdir(), text_filename)
