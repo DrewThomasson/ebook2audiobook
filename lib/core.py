@@ -696,6 +696,7 @@ def convert2epub(session_id:str)-> bool:
                 else:
                     return False
             elif file_ext == '.pptx':
+                from html import escape as html_escape
                 from pptx import Presentation as PptxPresentation
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 msg = f'File input is a presentation ({file_ext}). Extracting content…'
@@ -723,7 +724,7 @@ def convert2epub(session_id:str)-> bool:
                         except (AttributeError, ValueError):
                             pass
                     if slide_texts:
-                        xhtml_content = '\n'.join(f'<p>{t}</p>' for t in slide_texts)
+                        xhtml_content = '\n'.join(f'<p>{html_escape(t)}</p>' for t in slide_texts)
                     elif slide_images:
                         msg = f'Slide {i+1} seems to be image-based. Using OCR…'
                         show_alert(session_id, {"type": "warning", "msg": msg})
@@ -763,6 +764,17 @@ def convert2epub(session_id:str)-> bool:
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 docx_doc = DocxDocument(file_input)
                 all_text = ''.join(p.text.strip() for p in docx_doc.paragraphs)
+                if not all_text:
+                    for table in docx_doc.tables:
+                        for row in table.rows:
+                            for cell in row.cells:
+                                all_text += cell.text.strip()
+                                if all_text:
+                                    break
+                            if all_text:
+                                break
+                        if all_text:
+                            break
                 if not all_text:
                     msg = f'File input is a DOCX with no extractable text. Extracting images for OCR…'
                     print(msg)
