@@ -695,7 +695,7 @@ def convert2epub(session_id:str)-> bool:
                         html_file.write(xhtml_text)
                 else:
                     return False
-            elif file_ext in ['.pptx', '.ppt']:
+            elif file_ext == '.pptx':
                 from pptx import Presentation as PptxPresentation
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 msg = f'File input is a presentation ({file_ext}). Extracting content…'
