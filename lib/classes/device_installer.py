@@ -36,6 +36,13 @@ class DeviceInstaller():
 
     def check_device_info(self, mode:str)->str:
         if mode == NATIVE:
+            if os.path.isfile('.device_info.json'):
+                try:
+                    with open('.device_info.json', 'r', encoding='utf-8') as f:
+                        device_info = json.load(f)
+                    return json.dumps(device_info)
+                except (OSError, json.JSONDecodeError):
+                    pass
             name, tag, msg = self.check_hardware
             arch = self.check_arch
             pyvenv = list(sys.version_info[:2])
