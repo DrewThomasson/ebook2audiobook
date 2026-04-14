@@ -964,7 +964,16 @@ else
 			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		else
-			echo "$DOCKER_DEVICE_STR" > .device_info.json
+			if ! python - "$DOCKER_DEVICE_STR" <<'EOF'
+import json
+import sys
+json.loads(sys.argv[1])
+EOF
+			then
+				echo "Invalid DOCKER_DEVICE_STR: expected valid JSON"
+				exit 1
+			fi
+			printf '%s' "$DOCKER_DEVICE_STR" > .device_info.json
 			install_python_packages || exit 1
 			install_device_packages "$DOCKER_DEVICE_STR" || exit 1
 			check_sitecustomized || exit 1

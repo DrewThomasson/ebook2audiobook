@@ -45,12 +45,19 @@ class DeviceInstaller():
                 return json.dumps(device_info)
         elif mode == FULL_DOCKER:
             if os.path.isfile('.device_info.json'):
-                with open('.device_info.json', 'r', encoding='utf-8') as f:
-                    device_info = json.load(f)
-                return json.dumps(device_info)
+                try:
+                    with open('.device_info.json', 'r', encoding='utf-8') as f:
+                        device_info = json.load(f)
+                    return json.dumps(device_info)
+                except (OSError, json.JSONDecodeError):
+                    pass
             env_str = os.environ.get('DOCKER_DEVICE_STR', '')
             if env_str:
-                return env_str
+                try:
+                    json.loads(env_str)
+                    return env_str
+                except json.JSONDecodeError:
+                    pass
         elif mode == BUILD_DOCKER:
             name, tag, msg = self.check_hardware
             os_env = 'manylinux_2_28'
