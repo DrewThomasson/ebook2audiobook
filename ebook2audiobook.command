@@ -964,6 +964,7 @@ else
 			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		else
+			echo "$DOCKER_DEVICE_STR" > .device_info.json
 			install_python_packages || exit 1
 			install_device_packages "$DOCKER_DEVICE_STR" || exit 1
 			check_sitecustomized || exit 1

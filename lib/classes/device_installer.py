@@ -34,7 +34,7 @@ class DeviceInstaller():
         flags = set(get_cpu_info().get('flags', []))
         return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
 
-    def check_device_info(self, mode: str) -> str:
+    def check_device_info(self, mode:str)->str:
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
             arch = self.check_arch
@@ -48,6 +48,9 @@ class DeviceInstaller():
                 with open('.device_info.json', 'r', encoding='utf-8') as f:
                     device_info = json.load(f)
                 return json.dumps(device_info)
+            env_str = os.environ.get('DOCKER_DEVICE_STR', '')
+            if env_str:
+                return env_str
         elif mode == BUILD_DOCKER:
             name, tag, msg = self.check_hardware
             os_env = 'manylinux_2_28'
