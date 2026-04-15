@@ -153,6 +153,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — silence (random range **1.0–1.6 sec.**)
 - `[pause:N]` — fixed pause (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
+To automatically convert English Book to Multi-Speaker book use [E2A-SML](https://github.com/DrewThomasson?tab=repositories)
 
 **Check our other repo dedicated to add SML automatically in your ebook -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
