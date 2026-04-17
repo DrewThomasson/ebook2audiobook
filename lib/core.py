@@ -2569,24 +2569,25 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 if cur_part:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
+                pad_width = len(str(len(part_files)))
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                    concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:02d}.txt')
+                    concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:0{pad_width}d}.txt')
                     with open(concat_list, 'w') as f:
                         for file in part_file_list:
                             if session['cancellation_requested']:
                                 return None
                             path = Path(session['chapters_dir']) / file
                             f.write(f"file '{path.as_posix()}'\n")
-                    merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}"
+                    merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1:0{pad_width}d}.{default_audio_proc_format}"
                     result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
                     if not result:
                         error = f'assemble_audio_chunks() Final merge failed for part {part_idx+1}.'
                         print(error)
                         return None
-                    metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
+                    metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                    final_file = os.path.join(session['audiobooks_dir'], (f"{Path(session['final_name']).stem}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']))
+                    final_file = os.path.join(session['audiobooks_dir'], (f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}" if needs_split else session['final_name']))
                     if export_audio(str(merged_audio), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
