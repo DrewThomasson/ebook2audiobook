@@ -2501,15 +2501,15 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     final_vtt = f"{Path(final_file).stem}.vtt"
                     proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
                     final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
-                    shutil.move(proc_vtt_path, final_vtt_path)
-                    return True
+                    if shutil.move(proc_vtt_path, final_vtt_path):
+                        return True
                 else:
                     error = f"{Path(final_file).name} is corrupted or does not exist"
                     print(error)
         except Exception as e:
             error = f'Export failed: {e}'
             print(error)
-            return False
+        return False
 
     try:
         session = context.get_session(session_id)
@@ -2546,7 +2546,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             assert len(durations) == len(chapter_files)
             exported_files = []
             concat_dir = session['process_dir']
-            if session['output_split']:
+            if session.get('output_split'):
                 part_files = []
                 part_chapter_indices = []
                 cur_part = []
@@ -2586,7 +2586,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                    final_file = Path(session['audiobooks_dir']) / (f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name'])
+                    final_file = os.path.join(self.session['audiobooks_dir'], (f"{Path(self.session['final_name']).stem}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']))
                     if export_audio(str(merged_audio), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
