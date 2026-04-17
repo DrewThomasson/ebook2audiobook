@@ -142,14 +142,15 @@ os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
-os.environ["CUDA_MODULE_LOADING"] = "LAZY"
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+os.environ['CUDA_MODULE_LOADING' = 'LAZY'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
+else:
+    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = "expandable_segments:True"
 
 # ---------------------------------------------------------------------
 # Global settings
