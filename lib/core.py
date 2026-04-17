@@ -2586,7 +2586,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                    final_file = os.path.join(self.session['audiobooks_dir'], (f"{Path(self.session['final_name']).stem}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']))
+                    final_file = os.path.join(session['audiobooks_dir'], (f"{Path(session['final_name']).stem}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']))
                     if export_audio(str(merged_audio), str(metadata_file), str(final_file)):
                         exported_files.append(str(final_file))
             else:
