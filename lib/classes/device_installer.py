@@ -596,166 +596,166 @@ class DeviceInstaller():
                     except Exception:
                         pass
 
-# ============================================================
-        # CUDA
-        # ============================================================
-        elif has_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
-            version = ''
-            msg = ''
+            # ============================================================
+            # CUDA
+            # ============================================================
+            elif has_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
+                version = ''
+                msg = ''
 
-            # 1) CUDA runtime detection via ctypes (primary)
-            try:
-                import ctypes
-                libcudart = None
+                # 1) CUDA runtime detection via ctypes (primary)
+                try:
+                    import ctypes
+                    libcudart = None
 
-                if os.name == 'nt':
-                    # CUDA 12+ filename dropped the minor: 'cudart64_12.dll'
-                    # CUDA 11.x still has minor suffix:   'cudart64_11{minor}.dll'
-                    candidates = []
-                    # Forward-compat for CUDA 13/14/15 (newest first)
-                    for major in range(15, 11, -1):
-                        candidates.append(f'cudart64_{major}.dll')
-                    # CUDA 11.x minors (newest first)
-                    for minor in range(9, -1, -1):
-                        candidates.append(f'cudart64_11{minor}.dll')
-                    for dll in candidates:
-                        try:
-                            libcudart = ctypes.CDLL(dll)
-                            break
-                        except OSError:
-                            continue
-                else:
-                    # Linux / WSL2 — SONAME is major-only for CUDA 11+
-                    candidates = ['libcudart.so']
-                    min_major, _ = cuda_version_range['min']
-                    max_major, _ = cuda_version_range['max']
-                    # Extend upward past max for tolerance
-                    for major in range(max_major + 3, min_major - 1, -1):
-                        candidates.append(f'libcudart.so.{major}')
-                    cuda_lib_dirs = [
-                        '/usr/local/cuda/lib64',
-                        '/usr/lib/x86_64-linux-gnu',
-                        '/usr/lib64',
-                    ]
-                    for d in cuda_lib_dirs:
-                        if os.path.isdir(d):
+                    if os.name == 'nt':
+                        # CUDA 12+ filename dropped the minor: 'cudart64_12.dll'
+                        # CUDA 11.x still has minor suffix:   'cudart64_11{minor}.dll'
+                        candidates = []
+                        # Forward-compat for CUDA 13/14/15 (newest first)
+                        for major in range(15, 11, -1):
+                            candidates.append(f'cudart64_{major}.dll')
+                        # CUDA 11.x minors (newest first)
+                        for minor in range(9, -1, -1):
+                            candidates.append(f'cudart64_11{minor}.dll')
+                        for dll in candidates:
                             try:
-                                for f in sorted(os.listdir(d), reverse=True):
-                                    if f.startswith('libcudart.so.'):
-                                        candidates.append(os.path.join(d, f))
+                                libcudart = ctypes.CDLL(dll)
+                                break
                             except OSError:
-                                pass
-                    for lib_name in candidates:
-                        try:
-                            libcudart = ctypes.CDLL(lib_name)
-                            break
-                        except OSError:
-                            continue
+                                continue
+                    else:
+                        # Linux / WSL2 — SONAME is major-only for CUDA 11+
+                        candidates = ['libcudart.so']
+                        min_major, _ = cuda_version_range['min']
+                        max_major, _ = cuda_version_range['max']
+                        # Extend upward past max for tolerance
+                        for major in range(max_major + 3, min_major - 1, -1):
+                            candidates.append(f'libcudart.so.{major}')
+                        cuda_lib_dirs = [
+                            '/usr/local/cuda/lib64',
+                            '/usr/lib/x86_64-linux-gnu',
+                            '/usr/lib64',
+                        ]
+                        for d in cuda_lib_dirs:
+                            if os.path.isdir(d):
+                                try:
+                                    for f in sorted(os.listdir(d), reverse=True):
+                                        if f.startswith('libcudart.so.'):
+                                            candidates.append(os.path.join(d, f))
+                                except OSError:
+                                    pass
+                        for lib_name in candidates:
+                            try:
+                                libcudart = ctypes.CDLL(lib_name)
+                                break
+                            except OSError:
+                                continue
 
-                if libcudart:
-                    v_int = ctypes.c_int()
-                    if libcudart.cudaRuntimeGetVersion(ctypes.byref(v_int)) == 0:
-                        device_count = ctypes.c_int()
-                        if libcudart.cudaGetDeviceCount(ctypes.byref(device_count)) == 0:
-                            v = v_int.value
-                            major = v // 1000
-                            minor = (v % 1000) // 10
-                            if device_count.value > 0:
-                                version = f'{major}.{minor}'
+                    if libcudart:
+                        v_int = ctypes.c_int()
+                        if libcudart.cudaRuntimeGetVersion(ctypes.byref(v_int)) == 0:
+                            device_count = ctypes.c_int()
+                            if libcudart.cudaGetDeviceCount(ctypes.byref(device_count)) == 0:
+                                v = v_int.value
+                                major = v // 1000
+                                minor = (v % 1000) // 10
+                                if device_count.value > 0:
+                                    version = f'{major}.{minor}'
+                                else:
+                                    msg = f'CUDA runtime present ({major}.{minor}) but no devices.'
                             else:
-                                msg = f'CUDA runtime present ({major}.{minor}) but no devices.'
-                        else:
-                            v = v_int.value
-                            major = v // 1000
-                            minor = (v % 1000) // 10
-                            msg = f'CUDA runtime present ({major}.{minor}) but cudaGetDeviceCount failed.'
-            except (OSError, AttributeError):
-                pass
+                                v = v_int.value
+                                major = v // 1000
+                                minor = (v % 1000) // 10
+                                msg = f'CUDA runtime present ({major}.{minor}) but cudaGetDeviceCount failed.'
+                except (OSError, AttributeError):
+                    pass
 
-            # 2) CUDA toolkit version file (fallback)
-            if not version:
-                if os.name == 'posix':
-                    for p in ('/usr/local/cuda/version.json', '/usr/local/cuda/version.txt'):
-                        if os.path.exists(p):
-                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                version = lib_version_parse(f.read()) or ''
-                            break
-                elif os.name == 'nt':
-                    cuda_path = os.environ.get('CUDA_PATH')
-                    if cuda_path:
-                        for p in (
-                            os.path.join(cuda_path, 'version.json'),
-                            os.path.join(cuda_path, 'version.txt'),
-                        ):
+                # 2) CUDA toolkit version file (fallback)
+                if not version:
+                    if os.name == 'posix':
+                        for p in ('/usr/local/cuda/version.json', '/usr/local/cuda/version.txt'):
                             if os.path.exists(p):
                                 with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                                     version = lib_version_parse(f.read()) or ''
                                 break
+                    elif os.name == 'nt':
+                        cuda_path = os.environ.get('CUDA_PATH')
+                        if cuda_path:
+                            for p in (
+                                os.path.join(cuda_path, 'version.json'),
+                                os.path.join(cuda_path, 'version.txt'),
+                            ):
+                                if os.path.exists(p):
+                                    with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                        version = lib_version_parse(f.read()) or ''
+                                    break
 
-            # 3) Version comparison + tag assignment
-            # Tolerant: CUDA > max is accepted (driver is backward-compatible),
-            # but torch build tag clamps at max (cu128) so we install a real wheel.
-            if version:
-                cmp, current, min_tuple, max_tuple = version_classify(version, cuda_version_range)
-                min_ver = '.'.join(str(p) for p in min_tuple)
-                max_ver = '.'.join(str(p) for p in max_tuple)
-                if cmp == -1:
-                    msg = f'CUDA {version} < min {min_ver}. Please upgrade.'
-                elif cmp is None:
-                    msg = f'CUDA version {version} unparseable.'
-                else:
-                    devices['CUDA']['found'] = True
-                    name = devices['CUDA']['proc']
-                    if cmp == 1:
-                        tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                        msg = f'CUDA {version} > tested max {max_ver}; using cu{max_tuple[0]}{max_tuple[1]} torch build.'
-                    else:
-                        tag = f'cu{current[0]}{current[1]}'
-            else:
-                msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
-
-            # 4) PyTorch fallback (only helps if a CUDA-enabled torch is already installed)
-            if not devices['CUDA']['found']:
-                try:
-                    import torch
-                    if torch.cuda.is_available():
-                        devices['CUDA']['found'] = True
-                        torch_cuda_ver = torch.version.cuda
-                        if torch_cuda_ver:
-                            cmp, current, min_tuple, max_tuple = version_classify(torch_cuda_ver, cuda_version_range)
-                            if cmp == 1:
-                                tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                            elif cmp == 0 and current is not None:
-                                tag = f'cu{current[0]}{current[1]}'
-                            else:
-                                tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                        name = devices['CUDA']['proc']
-                        msg = ''
-                except Exception:
-                    pass
-
-            # 5) nvidia-smi header parsing — last-resort rescue
-            # Works driver-only; useful on fresh installs with no toolkit
-            # and CPU-only torch (where step 4 can't help).
-            if not devices['CUDA']['found'] and has_cmd('nvidia-smi'):
-                out = try_cmd('nvidia-smi')
-                # Header line: '| NVIDIA-SMI ...  Driver Version: ...  CUDA Version: 12.4 |'
-                m = re.search(r'cuda\s*version\s*:?\s*([0-9]+(?:\.[0-9]+)?)', out, re.IGNORECASE)
-                if m:
-                    smi_version = m.group(1)
-                    cmp, current, min_tuple, max_tuple = version_classify(smi_version, cuda_version_range)
+                # 3) Version comparison + tag assignment
+                # Tolerant: CUDA > max is accepted (driver is backward-compatible),
+                # but torch build tag clamps at max (cu128) so we install a real wheel.
+                if version:
+                    cmp, current, min_tuple, max_tuple = version_classify(version, cuda_version_range)
+                    min_ver = '.'.join(str(p) for p in min_tuple)
                     max_ver = '.'.join(str(p) for p in max_tuple)
                     if cmp == -1:
-                        msg = f'CUDA {smi_version} (from nvidia-smi) < min. Please upgrade.'
-                    elif cmp is not None:
+                        msg = f'CUDA {version} < min {min_ver}. Please upgrade.'
+                    elif cmp is None:
+                        msg = f'CUDA version {version} unparseable.'
+                    else:
                         devices['CUDA']['found'] = True
                         name = devices['CUDA']['proc']
                         if cmp == 1:
                             tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                            msg = f'CUDA {smi_version} (from nvidia-smi) > tested max {max_ver}; using cu{max_tuple[0]}{max_tuple[1]} torch build.'
+                            msg = f'CUDA {version} > tested max {max_ver}; using cu{max_tuple[0]}{max_tuple[1]} torch build.'
                         else:
                             tag = f'cu{current[0]}{current[1]}'
-                            msg = f'CUDA {smi_version} detected via nvidia-smi (driver-only).'
+                else:
+                    msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
+
+                # 4) PyTorch fallback (only helps if a CUDA-enabled torch is already installed)
+                if not devices['CUDA']['found']:
+                    try:
+                        import torch
+                        if torch.cuda.is_available():
+                            devices['CUDA']['found'] = True
+                            torch_cuda_ver = torch.version.cuda
+                            if torch_cuda_ver:
+                                cmp, current, min_tuple, max_tuple = version_classify(torch_cuda_ver, cuda_version_range)
+                                if cmp == 1:
+                                    tag = f'cu{max_tuple[0]}{max_tuple[1]}'
+                                elif cmp == 0 and current is not None:
+                                    tag = f'cu{current[0]}{current[1]}'
+                                else:
+                                    tag = f'cu{max_tuple[0]}{max_tuple[1]}'
+                            name = devices['CUDA']['proc']
+                            msg = ''
+                    except Exception:
+                        pass
+
+                # 5) nvidia-smi header parsing — last-resort rescue
+                # Works driver-only; useful on fresh installs with no toolkit
+                # and CPU-only torch (where step 4 can't help).
+                if not devices['CUDA']['found'] and has_cmd('nvidia-smi'):
+                    out = try_cmd('nvidia-smi')
+                    # Header line: '| NVIDIA-SMI ...  Driver Version: ...  CUDA Version: 12.4 |'
+                    m = re.search(r'cuda\s*version\s*:?\s*([0-9]+(?:\.[0-9]+)?)', out, re.IGNORECASE)
+                    if m:
+                        smi_version = m.group(1)
+                        cmp, current, min_tuple, max_tuple = version_classify(smi_version, cuda_version_range)
+                        max_ver = '.'.join(str(p) for p in max_tuple)
+                        if cmp == -1:
+                            msg = f'CUDA {smi_version} (from nvidia-smi) < min. Please upgrade.'
+                        elif cmp is not None:
+                            devices['CUDA']['found'] = True
+                            name = devices['CUDA']['proc']
+                            if cmp == 1:
+                                tag = f'cu{max_tuple[0]}{max_tuple[1]}'
+                                msg = f'CUDA {smi_version} (from nvidia-smi) > tested max {max_ver}; using cu{max_tuple[0]}{max_tuple[1]} torch build.'
+                            else:
+                                tag = f'cu{current[0]}{current[1]}'
+                                msg = f'CUDA {smi_version} detected via nvidia-smi (driver-only).'
 
             # ============================================================
             # INTEL XPU
