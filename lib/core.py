@@ -2848,6 +2848,7 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview']  else status_tags['CONVERTING'] 
             ebook_name = get_sanitized(Path(session['ebook_src']).stem)
+            print(f'--------------------EBOOK NAME: {ebook_name} -------------------------')
             cleanup_models_cache()
             print(f"Processing eBook file: {os.path.basename(session['ebook_src'])}")
             if session['is_gui_process']:
