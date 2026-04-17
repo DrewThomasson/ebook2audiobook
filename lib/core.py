@@ -2393,7 +2393,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             print(error)
             return False
 
-    def export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None)->bool:
+    def export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
 
         def on_progress(p:float)->None:
             if is_gui_process:
@@ -2467,7 +2467,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-y', final_file
                 ]
             is_gui_process = session['is_gui_process']
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=on_progress)
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg=f'Export part {part_num}' if part_num is not None else 'Export', on_progress=on_progress)
             if proc_pipe.result:
                 if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
@@ -2585,7 +2585,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         if needs_split else session['final_name']
                     ))
                     block_indices = set(kept_blocks[i][0] for i in indices) if needs_split else None
-                    if export_audio(str(merged_audio), str(metadata_file), str(final_file), block_indices=block_indices):
+                    if export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
                         exported_files.append(str(final_file))
             else:
                 concat_list = os.path.join(concat_dir, f'concat_list_chapters_1.txt')
