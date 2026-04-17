@@ -96,10 +96,21 @@ if [[ "${OSTYPE:-}" == darwin* ]]; then
 fi
 
 # =========================================================
+# LINUX SHORTCUT CLEANUP (NO TESTS, GUARDED)
+# =========================================================
+if [[ "${OSTYPE:-}" == linux* ]]; then
+	echo "Cleaning Linux shortcuts"
+
+	if [[ -n "$DESKTOP_ALIAS" && "$DESKTOP_ALIAS" != "/" ]]; then
+		rm -f "$DESKTOP_ALIAS" 2>/dev/null || true
+	fi
+fi
+
+# =========================================================
 # PROCESS .installed (CONTROLLED REMOVAL)
 # =========================================================
 REMOVE_CONDA=0
-if [[ -f "$INSTALLED_LOG" ]] && grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
+if [[ -f "$INSTALLED_LOG" ]] && grep -iqF "Miniforge3" "$INSTALLED_LOG"; then
 	REMOVE_CONDA=1
 fi
 
