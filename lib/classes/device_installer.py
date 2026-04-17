@@ -120,85 +120,63 @@ class DeviceInstaller():
             if text.startswith('{'):
                 try:
                     obj = json.loads(text)
-
                     if isinstance(obj, dict):
-                        # New CUDA JSON
                         if devices['CUDA']['proc'] in obj and isinstance(obj[devices['CUDA']['proc']], dict):
                             v = obj[devices['CUDA']['proc']].get('version')
                             if v:
                                 return str(v)
-
-                        # Old JSON format
                         v = obj.get('version')
                         if v:
                             return str(v)
-
                 except Exception:
                     pass
-            m = re.search(
-                r'cuda\s*version\s*([0-9]+(?:\.[0-9]+){1,2})',
-                text,
-                re.IGNORECASE
-            )
+            m = re.search(r'cuda\s*version\s*([0-9]+(?:\.[0-9]+){1,2})', text, re.IGNORECASE)
             if m:
                 return m.group(1)
-            m = re.search(
-                r'cuda\s*([0-9]+(?:\.[0-9]+)?)',
-                text,
-                re.IGNORECASE
-            )
+            m = re.search(r'cuda\s*([0-9]+(?:\.[0-9]+)?)', text, re.IGNORECASE)
             if m:
                 return m.group(1)
-            m = re.search(
-                r'rocm\s*version\s*([0-9]+(?:\.[0-9]+){0,2})',
-                text,
-                re.IGNORECASE
-            )
+            m = re.search(r'rocm\s*version\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
             if m:
                 parts = m.group(1).split('.')
                 return f'{parts[0]}.{parts[1] if len(parts) > 1 else 0}'
-
-            m = re.search(
-                r'hip\s*version\s*([0-9]+(?:\.[0-9]+){0,2})',
-                text,
-                re.IGNORECASE
-            )
+            m = re.search(r'hip\s*version\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
             if m:
                 parts = m.group(1).split('.')
                 return f'{parts[0]}.{parts[1] if len(parts) > 1 else 0}'
-            m = re.search(
-                r'(oneapi|xpu)\s*(toolkit\s*)?version\s*([0-9]+(?:\.[0-9]+)?)',
-                text,
-                re.IGNORECASE
-            )
+            m = re.search(r'(oneapi|xpu)\s*(toolkit\s*)?version\s*([0-9]+(?:\.[0-9]+)?)', text, re.IGNORECASE)
             if m:
                 return m.group(3)
             return None
 
-        def toolkit_version_compare(version_str:Union[str, None], version_range:dict)->Union[int, None]:
+        def version_classify(version_str:Union[str, None], version_range:dict)->tuple:
+            # Returns (cmp, current_tuple, min_tuple, max_tuple)
+            # cmp: -1 = below min, 0 = in range, 1 = above max, None = parse fail / unranged
             if version_str is None:
-                return None
+                return (None, None, None, None)
             min_tuple = tuple(version_range.get('min', (0, 0)))
             max_tuple = tuple(version_range.get('max', (0, 0)))
-            if min_tuple == (0, 0) and max_tuple == (0, 0):
-                return 0
-            parts = version_str.split('.')
-            major = int(parts[0])
-            minor = int(parts[1]) if len(parts) > 1 else 0
-            patch = int(parts[2]) if len(parts) > 2 else 0
+            try:
+                parts = version_str.split('.')
+                major = int(parts[0])
+                minor = int(parts[1]) if len(parts) > 1 else 0
+            except (ValueError, IndexError):
+                return (None, None, min_tuple, max_tuple)
             current = (major, minor)
+            if min_tuple == (0, 0) and max_tuple == (0, 0):
+                return (0, current, min_tuple, max_tuple)
             if min_tuple != (0, 0) and current < min_tuple:
-                return -1
+                return (-1, current, min_tuple, max_tuple)
             if max_tuple != (0, 0) and current > max_tuple:
-                return 1
-            return 0
+                return (1, current, min_tuple, max_tuple)
+            return (0, current, min_tuple, max_tuple)
 
         def tegra_version()->str:
             if os.path.exists('/etc/nv_tegra_release'):
                 return try_cmd('cat /etc/nv_tegra_release')
             return ''
 
-        def jetpack_version(text:str)->str:
+        def jetpack_version(text:str)->tuple:
             m1 = re.search(r'r(\d+)', text)
             m2 = re.search(r'revision:\s*([\d\.]+)', text)
             msg = ''
@@ -209,27 +187,18 @@ class DeviceInstaller():
             rev = m2.group(1)
             parts = rev.split('.')
             rev_major = int(parts[0])
-            rev_minor = int(parts[1]) if len(parts) > 1 else 0
-            rev_patch = int(parts[2]) if len(parts) > 2 else 0
             if l4t_major < 35:
                 msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 6+. Falling back to CPU.'
                 return ('unsupported', msg)
-            else:
-                if l4t_major == 35:
-                    return ('51', msg)
-                else:
-                    if rev_major == 2:
-                        return ('60', msg)
-                    else:
-                        return ('61', msg)
-            msg = 'Unrecognized JetPack 6.x version. Falling back to CPU.'
-            return ('unknown', msg)
+            if l4t_major == 35:
+                return ('51', msg)
+            if rev_major == 2:
+                return ('60', msg)
+            return ('61', msg)
 
         def has_amd_gpu_pci():
-            # macOS: no ROCm-capable AMD GPUs
             if self.system == systems['MACOS']:
                 return False
-            # ---------- Linux ----------
             if os.name == 'posix':
                 sysfs = '/sys/bus/pci/devices'
                 if os.path.isdir(sysfs):
@@ -252,25 +221,19 @@ class DeviceInstaller():
                         (' vga ' in out or ' 3d ' in out)
                     )
                 return False
-            # ---------- Windows ----------
-            # Hardware may exist, but ROCm will still be disabled
             if os.name == 'nt':
                 if has_cmd('wmic'):
                     out = try_cmd('wmic path win32_VideoController get Name,PNPDeviceID').lower()
                     return 'ven_1002' in out
                 if has_cmd('powershell'):
-                    out = try_cmd('powershell -Command "Get-PnpDevice -Class Display | Select-Object -ExpandProperty InstanceId"'
-                    ).lower()
+                    out = try_cmd('powershell -Command "Get-PnpDevice -Class Display | Select-Object -ExpandProperty InstanceId"').lower()
                     return 'ven_1002' in out
                 return False
             return False
 
         def has_rocm():
             if self.system == systems['LINUX']:
-                rocm_paths = [
-                    '/opt/rocm',
-                    '/opt/rocm/bin/rocminfo',
-                ]
+                rocm_paths = ['/opt/rocm', '/opt/rocm/bin/rocminfo']
                 if any(os.path.exists(p) for p in rocm_paths):
                     return True
                 return has_cmd('rocminfo')
@@ -285,10 +248,8 @@ class DeviceInstaller():
             return False
 
         def has_nvidia_gpu_pci():
-            # macOS: NVIDIA GPUs are unsupported → always False
             if self.system == systems['MACOS']:
                 return False
-            # ---------- Linux ----------
             if os.name == 'posix':
                 sysfs = '/sys/bus/pci/devices'
                 if os.path.isdir(sysfs):
@@ -308,15 +269,12 @@ class DeviceInstaller():
                     out = try_cmd('lspci -nn').lower()
                     return '10de:' in out and (' vga ' in out or ' 3d ' in out)
                 return False
-            # ---------- Windows ----------
             if os.name == 'nt':
                 if has_cmd('nvidia-smi'):
                     return True
                 if has_cmd('wmic'):
-                    out = try_cmd(
-                        'wmic path win32_VideoController get Name,PNPDeviceID'
-                    ).lower()
-                    return 'ven_10de' in out and 'display' in out
+                    out = try_cmd('wmic path win32_VideoController get Name,PNPDeviceID').lower()
+                    return 'ven_10de' in out
                 if has_cmd('powershell'):
                     out = try_cmd(
                         'powershell -Command "Get-PnpDevice -Class Display | '
@@ -348,10 +306,8 @@ class DeviceInstaller():
             return 'gpu' in out
 
         def has_intel_gpu_pci():
-            # macOS: Intel GPUs exist but XPU runtime is not supported
             if self.system == systems['MACOS']:
                 return False
-            # ---------- Linux ----------
             if os.name == 'posix':
                 sysfs = '/sys/bus/pci/devices'
                 if os.path.isdir(sysfs):
@@ -371,12 +327,9 @@ class DeviceInstaller():
                     out = try_cmd('lspci -nn').lower()
                     return '8086:' in out and (' vga ' in out or ' 3d ' in out)
                 return False
-            # ---------- Windows ----------
             if os.name == 'nt':
                 if has_cmd('wmic'):
-                    out = try_cmd(
-                        'wmic path win32_VideoController get Name,PNPDeviceID'
-                    ).lower()
+                    out = try_cmd('wmic path win32_VideoController get Name,PNPDeviceID').lower()
                     return 'ven_8086' in out
                 if has_cmd('powershell'):
                     out = try_cmd(
@@ -388,15 +341,11 @@ class DeviceInstaller():
             return False
 
         def has_xpu():
-            # No XPU on macOS
             if self.system == systems['MACOS']:
                 return False
-            # ---------- Linux ----------
             if os.name == 'posix':
-                # Must have render node
                 if not os.path.exists('/dev/dri/renderD128'):
                     return False
-                # Prefer Level Zero runtime check
                 if has_cmd('sycl-ls'):
                     out = try_cmd('sycl-ls').lower()
                     if 'level-zero' in out and 'gpu' in out:
@@ -406,10 +355,7 @@ class DeviceInstaller():
                     if 'intel' in out and 'gpu' in out:
                         return True
                 return False
-            # ---------- Windows ----------
             if os.name == 'nt':
-                # XPU runtime is exposed via Intel GPU drivers + PyTorch
-                # Best signal: oneAPI / Level Zero tooling
                 if has_cmd('sycl-ls'):
                     out = try_cmd('sycl-ls').lower()
                     return 'gpu' in out
@@ -439,22 +385,21 @@ class DeviceInstaller():
             if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
                 raw = tegra_version()
                 jp_code, msg = jetpack_version(raw)
-                if jp_code in ['unsupported', 'unknown']:
-                    pass
-                elif os.path.exists('/etc/nv_tegra_release'):
-                    devices['JETSON']['found'] = True
-                    name = devices['JETSON']['proc']
-                    tag = f'jetson{jp_code}'
-                elif os.path.exists('/proc/device-tree/compatible'):
-                    out = try_cmd('cat /proc/device-tree/compatible')
-                    if 'tegra' in out:
+                if jp_code not in ('unsupported', 'unknown'):
+                    if os.path.exists('/etc/nv_tegra_release'):
                         devices['JETSON']['found'] = True
                         name = devices['JETSON']['proc']
                         tag = f'jetson{jp_code}'
-                else:
-                    out = try_cmd('uname -a')
-                    if 'tegra' in out:
-                        msg = 'Jetson GPU detected but not(?) compatible'
+                    elif os.path.exists('/proc/device-tree/compatible'):
+                        out = try_cmd('cat /proc/device-tree/compatible')
+                        if 'tegra' in out:
+                            devices['JETSON']['found'] = True
+                            name = devices['JETSON']['proc']
+                            tag = f'jetson{jp_code}'
+                    else:
+                        out = try_cmd('uname -a')
+                        if 'tegra' in out:
+                            msg = 'Jetson GPU detected but not(?) compatible'
                 if devices['JETSON']['found']:
                     os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
                     os.environ['TORCH_CUDA_ENABLE_CUDA_GRAPH'] = '0'
@@ -465,7 +410,7 @@ class DeviceInstaller():
             # ============================================================
             elif has_rocm() and has_amd_gpu_pci():
 
-                def _normalize_version(v: str) -> str:
+                def _normalize_version(v:str)->str:
                     m = re.search(r'\d+\.\d+(?:\.\d+)?', v or '')
                     return m.group(0) if m else ''
 
@@ -473,13 +418,12 @@ class DeviceInstaller():
                 msg = ''
                 hip_device_count = 0
 
-                # 1) HIP RUNTIME detection via ctypes (primary)
+                # 1) HIP runtime detection via ctypes (primary)
                 try:
                     import ctypes
                     libhip = None
 
                     if os.name == 'nt':
-                        # Windows: try amdhip64.dll
                         hip_path = os.environ.get('HIP_PATH', '')
                         candidates = ['amdhip64.dll']
                         if hip_path:
@@ -491,24 +435,19 @@ class DeviceInstaller():
                             except OSError:
                                 continue
                     else:
-                        # Linux / WSL2: try multiple library name patterns
                         candidates = ['libamdhip64.so']
-
                         min_major, _ = rocm_version_range['min']
                         max_major, _ = rocm_version_range['max']
-                        for major in range(max_major, min_major - 1, -1):
+                        for major in range(max_major + 2, min_major - 1, -1):
                             candidates.append(f'libamdhip64.so.{major}')
-
                         hip_lib_dirs = [
                             '/opt/rocm/lib',
                             '/opt/rocm/lib64',
                             '/usr/lib/x86_64-linux-gnu',
                             '/usr/lib64',
                         ]
-                        # Also check versioned rocm installs
                         for p in sorted(glob('/opt/rocm-*/lib'), reverse=True):
                             hip_lib_dirs.append(p)
-
                         for d in hip_lib_dirs:
                             if os.path.isdir(d):
                                 try:
@@ -517,7 +456,6 @@ class DeviceInstaller():
                                             candidates.append(os.path.join(d, f))
                                 except OSError:
                                     pass
-
                         for lib_name in candidates:
                             try:
                                 libhip = ctypes.CDLL(lib_name)
@@ -527,26 +465,20 @@ class DeviceInstaller():
 
                     if libhip:
                         device_count = ctypes.c_int()
-                        # hipGetDeviceCount returns 0 on success
                         if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
                             hip_device_count = device_count.value
-
-                        # hipRuntimeGetVersion returns version int
                         v_int = ctypes.c_int()
                         if libhip.hipRuntimeGetVersion(ctypes.byref(v_int)) == 0:
                             v = v_int.value
-                            # ROCm 5+: version = major * 10000000 + minor * 100000 + patch
                             if v >= 10000000:
                                 major = v // 10000000
                                 minor = (v % 10000000) // 100000
-                            # Older encoding: major * 100 + minor * 10 + patch
                             elif v >= 100:
                                 major = v // 100
                                 minor = (v % 100) // 10
                             else:
                                 major = v
                                 minor = 0
-
                             if hip_device_count > 0:
                                 version = f'{major}.{minor}'
                             else:
@@ -554,15 +486,14 @@ class DeviceInstaller():
                 except (OSError, AttributeError):
                     pass
 
-                # 2) hipcc detection (fallback)
+                # 2) hipcc fallback
                 if not version:
-                    if os.name == 'posix':
-                        if has_cmd('hipcc'):
-                            out = try_cmd('hipcc --version')
-                            if out:
-                                m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
-                                if m:
-                                    version = _normalize_version(m.group(1))
+                    if os.name == 'posix' and has_cmd('hipcc'):
+                        out = try_cmd('hipcc --version')
+                        if out:
+                            m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
+                            if m:
+                                version = _normalize_version(m.group(1))
                     elif os.name == 'nt':
                         hip_path = os.environ.get('HIP_PATH', '')
                         hipcc = os.path.join(hip_path, 'bin', 'hipcc') if hip_path else ''
@@ -579,7 +510,7 @@ class DeviceInstaller():
                                 if m:
                                     version = _normalize_version(m.group(1))
 
-                # 3) PyTorch torch.version.hip (fallback)
+                # 3) torch.version.hip fallback
                 if not version:
                     try:
                         import torch
@@ -588,7 +519,7 @@ class DeviceInstaller():
                     except Exception:
                         pass
 
-                # 4) ROCm directory / version file detection (fallback)
+                # 4) ROCm install dir fallback
                 if not version:
                     if os.name == 'posix':
                         for p in sorted(glob('/opt/rocm-*'), reverse=True):
@@ -598,15 +529,11 @@ class DeviceInstaller():
                                 version = v
                                 break
                         if not version:
-                            for p in (
-                                '/opt/rocm/.info/version',
-                                '/opt/rocm/version',
-                            ):
+                            for p in ('/opt/rocm/.info/version', '/opt/rocm/version'):
                                 if os.path.exists(p):
                                     try:
                                         with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                            v = f.read()
-                                            version = _normalize_version(lib_version_parse(v))
+                                            version = _normalize_version(lib_version_parse(f.read()))
                                         break
                                     except Exception:
                                         pass
@@ -622,47 +549,38 @@ class DeviceInstaller():
                             for env in ('ROCM_PATH', 'HIP_PATH'):
                                 base = os.environ.get(env)
                                 if base:
-                                    for p in (
-                                        os.path.join(base, 'version'),
-                                        os.path.join(base, '.info', 'version'),
-                                    ):
+                                    for p in (os.path.join(base, 'version'), os.path.join(base, '.info', 'version')):
                                         if os.path.exists(p):
                                             try:
                                                 with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                                    v = f.read()
-                                                    version = _normalize_version(lib_version_parse(v))
+                                                    version = _normalize_version(lib_version_parse(f.read()))
                                                 break
                                             except Exception:
                                                 pass
                                 if version:
                                     break
 
-                # Version comparison and tag assignment
+                # Version comparison + tag assignment (tolerant: accept > max, clamp tag)
                 if version:
-                    cmp = toolkit_version_compare(version, rocm_version_range)
-                    min_version = rocm_version_range['min']
-                    max_version = rocm_version_range['max']
-
-                    min_version_str = '.'.join(map(str, min_version)) if isinstance(min_version, (tuple, list)) else str(min_version)
-                    max_version_str = '.'.join(map(str, max_version)) if isinstance(max_version, (tuple, list)) else str(max_version)
-
+                    cmp, current, min_tuple, max_tuple = version_classify(version, rocm_version_range)
+                    min_ver = '.'.join(str(p) for p in min_tuple)
+                    max_ver = '.'.join(str(p) for p in max_tuple)
                     if cmp == -1:
-                        msg = f'ROCm {version} < min {min_version_str}. Please upgrade.'
-                    elif cmp == 1:
-                        msg = f'ROCm {version} > max {max_version_str}. Falling back to CPU.'
-                    elif cmp == 0:
-                        devices['ROCM']['found'] = True
-                        parts = version.split('.')
-                        major = parts[0]
-                        minor = parts[1] if len(parts) > 1 else 0
-                        name = devices['ROCM']['proc']
-                        tag = f'rocm{major}{minor}'
+                        msg = f'ROCm {version} < min {min_ver}. Please upgrade.'
+                    elif cmp is None:
+                        msg = 'ROCm GPU detected but version unparseable.'
                     else:
-                        msg = 'ROCm GPU detected but not compatible or ROCm runtime is missing.'
+                        devices['ROCM']['found'] = True
+                        name = devices['ROCM']['proc']
+                        if cmp == 1:
+                            tag = f'rocm{max_tuple[0]}{max_tuple[1]}'
+                            msg = f'ROCm {version} > tested max {max_ver}; using rocm{max_tuple[0]}{max_tuple[1]} torch build.'
+                        else:
+                            tag = f'rocm{current[0]}{current[1]}'
                 else:
                     msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
 
-                # 5) PyTorch last-resort fallback — if nothing above found ROCm
+                # 5) Last-resort torch fallback
                 if not devices['ROCM']['found']:
                     try:
                         import torch
@@ -670,8 +588,7 @@ class DeviceInstaller():
                             devices['ROCM']['found'] = True
                             torch_hip_ver = _normalize_version(torch.version.hip)
                             if torch_hip_ver:
-                                version = torch_hip_ver
-                                parts = version.split('.')
+                                parts = torch_hip_ver.split('.')
                                 major = parts[0]
                                 minor = parts[1] if len(parts) > 1 else 0
                                 tag = f'rocm{major}{minor}'
@@ -679,147 +596,166 @@ class DeviceInstaller():
                     except Exception:
                         pass
 
-            # ============================================================
-            # CUDA
-            # ============================================================
-            elif has_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
-                version = ''
-                msg = ''
+# ============================================================
+        # CUDA
+        # ============================================================
+        elif has_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
+            version = ''
+            msg = ''
 
-                # 1) CUDA RUNTIME detection
-                try:
-                    import ctypes
-                    libcudart = None
+            # 1) CUDA runtime detection via ctypes (primary)
+            try:
+                import ctypes
+                libcudart = None
 
-                    if os.name == 'nt':
-                        # Windows: scan for cudart64_XX.dll
-                        min_major, min_minor = cuda_version_range['min']
-                        max_major, max_minor = cuda_version_range['max']
-                        for major in range(min_major, max_major + 1):
-                            start_minor = min_minor if major == min_major else 0
-                            end_minor = max_minor if major == max_major else 9
-                            for minor in range(start_minor, end_minor + 1):
-                                dll = f'cudart64_{major}{minor}.dll'
-                                try:
-                                    libcudart = ctypes.CDLL(dll)
-                                    break
-                                except OSError:
-                                    pass
-                            if libcudart:
-                                break
-                    else:
-                        # Linux / WSL2: try multiple library name patterns
-                        candidates = ['libcudart.so']  # unversioned (dev installs)
-
-                        # Add versioned names: libcudart.so.12, libcudart.so.11, etc.
-                        min_major, _ = cuda_version_range['min']
-                        max_major, _ = cuda_version_range['max']
-                        for major in range(max_major, min_major - 1, -1):  # newest first
-                            candidates.append(f'libcudart.so.{major}')
-
-                        # Also check common install paths directly
-                        cuda_lib_dirs = [
-                            '/usr/local/cuda/lib64',
-                            '/usr/lib/x86_64-linux-gnu',
-                            '/usr/lib64',
-                        ]
-                        for d in cuda_lib_dirs:
-                            if os.path.isdir(d):
-                                try:
-                                    for f in sorted(os.listdir(d), reverse=True):
-                                        if f.startswith('libcudart.so.'):
-                                            candidates.append(os.path.join(d, f))
-                                except OSError:
-                                    pass
-
-                        for lib_name in candidates:
+                if os.name == 'nt':
+                    # CUDA 12+ filename dropped the minor: 'cudart64_12.dll'
+                    # CUDA 11.x still has minor suffix:   'cudart64_11{minor}.dll'
+                    candidates = []
+                    # Forward-compat for CUDA 13/14/15 (newest first)
+                    for major in range(15, 11, -1):
+                        candidates.append(f'cudart64_{major}.dll')
+                    # CUDA 11.x minors (newest first)
+                    for minor in range(9, -1, -1):
+                        candidates.append(f'cudart64_11{minor}.dll')
+                    for dll in candidates:
+                        try:
+                            libcudart = ctypes.CDLL(dll)
+                            break
+                        except OSError:
+                            continue
+                else:
+                    # Linux / WSL2 — SONAME is major-only for CUDA 11+
+                    candidates = ['libcudart.so']
+                    min_major, _ = cuda_version_range['min']
+                    max_major, _ = cuda_version_range['max']
+                    # Extend upward past max for tolerance
+                    for major in range(max_major + 3, min_major - 1, -1):
+                        candidates.append(f'libcudart.so.{major}')
+                    cuda_lib_dirs = [
+                        '/usr/local/cuda/lib64',
+                        '/usr/lib/x86_64-linux-gnu',
+                        '/usr/lib64',
+                    ]
+                    for d in cuda_lib_dirs:
+                        if os.path.isdir(d):
                             try:
-                                libcudart = ctypes.CDLL(lib_name)
-                                break
+                                for f in sorted(os.listdir(d), reverse=True):
+                                    if f.startswith('libcudart.so.'):
+                                        candidates.append(os.path.join(d, f))
                             except OSError:
-                                continue
+                                pass
+                    for lib_name in candidates:
+                        try:
+                            libcudart = ctypes.CDLL(lib_name)
+                            break
+                        except OSError:
+                            continue
 
-                    if libcudart:
-                        v_int = ctypes.c_int()
-                        if libcudart.cudaRuntimeGetVersion(ctypes.byref(v_int)) == 0:
-                            device_count = ctypes.c_int()
-                            if libcudart.cudaGetDeviceCount(ctypes.byref(device_count)) == 0:
-                                v = v_int.value
-                                major = v // 1000
-                                minor = (v % 1000) // 10
-                                if device_count.value > 0:
-                                    version = f'{major}.{minor}'
-                                else:
-                                    msg = f'Runtime present ({major}.{minor}) but no devices.'
+                if libcudart:
+                    v_int = ctypes.c_int()
+                    if libcudart.cudaRuntimeGetVersion(ctypes.byref(v_int)) == 0:
+                        device_count = ctypes.c_int()
+                        if libcudart.cudaGetDeviceCount(ctypes.byref(device_count)) == 0:
+                            v = v_int.value
+                            major = v // 1000
+                            minor = (v % 1000) // 10
+                            if device_count.value > 0:
+                                version = f'{major}.{minor}'
                             else:
-                                # cudaGetDeviceCount failed — driver issue?
-                                v = v_int.value
-                                major = v // 1000
-                                minor = (v % 1000) // 10
-                                msg = f'Runtime present ({major}.{minor}) but cudaGetDeviceCount failed.'
-                except (OSError, AttributeError):
-                    pass
+                                msg = f'CUDA runtime present ({major}.{minor}) but no devices.'
+                        else:
+                            v = v_int.value
+                            major = v // 1000
+                            minor = (v % 1000) // 10
+                            msg = f'CUDA runtime present ({major}.{minor}) but cudaGetDeviceCount failed.'
+            except (OSError, AttributeError):
+                pass
 
-                # 2) CUDA TOOLKIT detection (fallback)
-                if not version:
-                    if os.name == 'posix':
+            # 2) CUDA toolkit version file (fallback)
+            if not version:
+                if os.name == 'posix':
+                    for p in ('/usr/local/cuda/version.json', '/usr/local/cuda/version.txt'):
+                        if os.path.exists(p):
+                            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                                version = lib_version_parse(f.read()) or ''
+                            break
+                elif os.name == 'nt':
+                    cuda_path = os.environ.get('CUDA_PATH')
+                    if cuda_path:
                         for p in (
-                            '/usr/local/cuda/version.json',
-                            '/usr/local/cuda/version.txt',
+                            os.path.join(cuda_path, 'version.json'),
+                            os.path.join(cuda_path, 'version.txt'),
                         ):
                             if os.path.exists(p):
                                 with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                    v = f.read()
-                                    version = lib_version_parse(v)
+                                    version = lib_version_parse(f.read()) or ''
                                 break
-                    elif os.name == 'nt':
-                        cuda_path = os.environ.get('CUDA_PATH')
-                        if cuda_path:
-                            for p in (
-                                os.path.join(cuda_path, 'version.json'),
-                                os.path.join(cuda_path, 'version.txt'),
-                            ):
-                                if os.path.exists(p):
-                                    with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                        v = f.read()
-                                        version = lib_version_parse(v)
-                                    break
 
-                if version:
-                    cmp = toolkit_version_compare(version, cuda_version_range)
-                    min_ver = '.'.join(str(part) for part in cuda_version_range['min'])
-                    max_ver = '.'.join(str(part) for part in cuda_version_range['max'])
-                    if cmp == -1:
-                        msg = f'CUDA {version} < min {min_ver}. Please upgrade.'
-                    elif cmp == 1:
-                        msg = f'CUDA {version} > max {max_ver}. Falling back to CPU.'
-                    elif cmp == 0:
-                        devices['CUDA']['found'] = True
-                        parts = version.split('.')
-                        major = parts[0]
-                        minor = parts[1] if len(parts) > 1 else 0
-                        name = devices['CUDA']['proc']
-                        tag = f'cu{major}{minor}'
-                    else:
-                        msg = 'Cuda GPU detected but not compatible or Cuda runtime is missing.'
+            # 3) Version comparison + tag assignment
+            # Tolerant: CUDA > max is accepted (driver is backward-compatible),
+            # but torch build tag clamps at max (cu128) so we install a real wheel.
+            if version:
+                cmp, current, min_tuple, max_tuple = version_classify(version, cuda_version_range)
+                min_ver = '.'.join(str(p) for p in min_tuple)
+                max_ver = '.'.join(str(p) for p in max_tuple)
+                if cmp == -1:
+                    msg = f'CUDA {version} < min {min_ver}. Please upgrade.'
+                elif cmp is None:
+                    msg = f'CUDA version {version} unparseable.'
                 else:
-                    msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
+                    devices['CUDA']['found'] = True
+                    name = devices['CUDA']['proc']
+                    if cmp == 1:
+                        tag = f'cu{max_tuple[0]}{max_tuple[1]}'
+                        msg = f'CUDA {version} > tested max {max_ver}; using cu{max_tuple[0]}{max_tuple[1]} torch build.'
+                    else:
+                        tag = f'cu{current[0]}{current[1]}'
+            else:
+                msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
 
-                if not devices['CUDA']['found']:
-                    try:
-                        import torch
-                        if torch.cuda.is_available():
-                            devices['CUDA']['found'] = True
-                            torch_cuda_ver = torch.version.cuda  # e.g. '12.8'
-                            if torch_cuda_ver:
-                                version = torch_cuda_ver
-                                parts = version.split('.')
-                                major = parts[0]
-                                minor = parts[1] if len(parts) > 1 else 0
-                                tag = f'cu{major}{minor}'
-                            msg = ''
-                    except Exception:
-                        pass
+            # 4) PyTorch fallback (only helps if a CUDA-enabled torch is already installed)
+            if not devices['CUDA']['found']:
+                try:
+                    import torch
+                    if torch.cuda.is_available():
+                        devices['CUDA']['found'] = True
+                        torch_cuda_ver = torch.version.cuda
+                        if torch_cuda_ver:
+                            cmp, current, min_tuple, max_tuple = version_classify(torch_cuda_ver, cuda_version_range)
+                            if cmp == 1:
+                                tag = f'cu{max_tuple[0]}{max_tuple[1]}'
+                            elif cmp == 0 and current is not None:
+                                tag = f'cu{current[0]}{current[1]}'
+                            else:
+                                tag = f'cu{max_tuple[0]}{max_tuple[1]}'
+                        name = devices['CUDA']['proc']
+                        msg = ''
+                except Exception:
+                    pass
+
+            # 5) nvidia-smi header parsing — last-resort rescue
+            # Works driver-only; useful on fresh installs with no toolkit
+            # and CPU-only torch (where step 4 can't help).
+            if not devices['CUDA']['found'] and has_cmd('nvidia-smi'):
+                out = try_cmd('nvidia-smi')
+                # Header line: '| NVIDIA-SMI ...  Driver Version: ...  CUDA Version: 12.4 |'
+                m = re.search(r'cuda\s*version\s*:?\s*([0-9]+(?:\.[0-9]+)?)', out, re.IGNORECASE)
+                if m:
+                    smi_version = m.group(1)
+                    cmp, current, min_tuple, max_tuple = version_classify(smi_version, cuda_version_range)
+                    max_ver = '.'.join(str(p) for p in max_tuple)
+                    if cmp == -1:
+                        msg = f'CUDA {smi_version} (from nvidia-smi) < min. Please upgrade.'
+                    elif cmp is not None:
+                        devices['CUDA']['found'] = True
+                        name = devices['CUDA']['proc']
+                        if cmp == 1:
+                            tag = f'cu{max_tuple[0]}{max_tuple[1]}'
+                            msg = f'CUDA {smi_version} (from nvidia-smi) > tested max {max_ver}; using cu{max_tuple[0]}{max_tuple[1]} torch build.'
+                        else:
+                            tag = f'cu{current[0]}{current[1]}'
+                            msg = f'CUDA {smi_version} detected via nvidia-smi (driver-only).'
 
             # ============================================================
             # INTEL XPU
@@ -846,11 +782,7 @@ class DeviceInstaller():
                             except OSError:
                                 continue
                     else:
-                        candidates = [
-                            'libze_loader.so',
-                            'libze_loader.so.1',
-                        ]
-
+                        candidates = ['libze_loader.so', 'libze_loader.so.1']
                         ze_lib_dirs = [
                             '/usr/lib/x86_64-linux-gnu',
                             '/usr/lib64',
@@ -864,7 +796,6 @@ class DeviceInstaller():
                                             candidates.append(os.path.join(d, f))
                                 except OSError:
                                     pass
-
                         for lib_name in candidates:
                             try:
                                 libze = ctypes.CDLL(lib_name)
@@ -873,24 +804,21 @@ class DeviceInstaller():
                                 continue
 
                     if libze:
-                        # zeInit(0) — 0 = ZE_INIT_FLAG_GPU_ONLY
-                        if libze.zeInit(ctypes.c_uint(0)) == 0:  # ZE_RESULT_SUCCESS
+                        if libze.zeInit(ctypes.c_uint(0)) == 0:
                             driver_count = ctypes.c_uint(0)
                             if libze.zeDriverGet(ctypes.byref(driver_count), None) == 0 and driver_count.value > 0:
                                 xpu_device_count = driver_count.value
                 except (OSError, AttributeError):
                     pass
 
-                # 2) sycl-ls detection (gets device count + oneAPI presence)
+                # 2) sycl-ls detection
                 if not version:
-                    if os.name == 'posix':
-                        if has_cmd('sycl-ls'):
-                            out = try_cmd('sycl-ls')
-                            if out:
-                                # Count GPU devices in sycl-ls output
-                                gpu_lines = [l for l in out.splitlines() if 'gpu' in l.lower()]
-                                if gpu_lines and xpu_device_count == 0:
-                                    xpu_device_count = len(gpu_lines)
+                    if os.name == 'posix' and has_cmd('sycl-ls'):
+                        out = try_cmd('sycl-ls')
+                        if out:
+                            gpu_lines = [l for l in out.splitlines() if 'gpu' in l.lower()]
+                            if gpu_lines and xpu_device_count == 0:
+                                xpu_device_count = len(gpu_lines)
                     elif os.name == 'nt':
                         oneapi_root = os.environ.get('ONEAPI_ROOT', '')
                         sycl_ls = os.path.join(oneapi_root, 'bin', 'sycl-ls') if oneapi_root else ''
@@ -907,7 +835,7 @@ class DeviceInstaller():
                                 if gpu_lines:
                                     xpu_device_count = len(gpu_lines)
 
-                # 3) oneAPI version file detection
+                # 3) oneAPI version file
                 if not version:
                     if os.name == 'posix':
                         for p in (
@@ -917,8 +845,7 @@ class DeviceInstaller():
                         ):
                             if os.path.exists(p):
                                 with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                    v = f.read()
-                                    version = lib_version_parse(v)
+                                    version = lib_version_parse(f.read()) or ''
                                 break
                     elif os.name == 'nt':
                         oneapi_root = os.environ.get('ONEAPI_ROOT')
@@ -930,30 +857,28 @@ class DeviceInstaller():
                             ):
                                 if os.path.exists(p):
                                     with open(p, 'r', encoding='utf-8', errors='ignore') as f:
-                                        v = f.read()
-                                        version = lib_version_parse(v)
+                                        version = lib_version_parse(f.read()) or ''
                                     break
 
-                # Version comparison and tag assignment
+                # Version comparison + tag assignment (unranged by default: accepts anything)
                 if version:
-                    cmp = toolkit_version_compare(version, xpu_version_range)
-                    min_ver = xpu_version_range.get('min', '')
-                    max_ver = xpu_version_range.get('max', '')
-                    min_ver_str = '.'.join(map(str, min_ver)) if isinstance(min_ver, (tuple, list)) else str(min_ver)
-                    max_ver_str = '.'.join(map(str, max_ver)) if isinstance(max_ver, (tuple, list)) else str(max_ver)
-
+                    cmp, current, min_tuple, max_tuple = version_classify(version, xpu_version_range)
+                    min_ver = '.'.join(str(p) for p in min_tuple)
+                    max_ver = '.'.join(str(p) for p in max_tuple)
                     if cmp == -1:
-                        msg = f'XPU oneAPI {version} < min {min_ver_str}. Please upgrade.'
-                    elif cmp == 1:
-                        msg = f'XPU oneAPI {version} > max {max_ver_str}. Falling back to CPU.'
-                    elif cmp == 0:
+                        msg = f'XPU oneAPI {version} < min {min_ver}. Please upgrade.'
+                    elif cmp is None:
+                        msg = 'Intel GPU detected but oneAPI version unparseable.'
+                    else:
                         devices['XPU']['found'] = True
                         name = devices['XPU']['proc']
                         tag = devices['XPU']['proc']
-                    else:
-                        msg = 'Intel GPU detected but Intel oneAPI Base Toolkit not installed.'
-                else:
+                        if cmp == 1:
+                            msg = f'XPU oneAPI {version} > tested max {max_ver}; using default xpu torch build.'
+                elif xpu_device_count > 0:
                     msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
+                else:
+                    msg = 'Intel GPU detected but oneAPI Base Toolkit not installed.'
 
                 # 4) PyTorch last-resort fallback
                 if not devices['XPU']['found']:
@@ -961,8 +886,6 @@ class DeviceInstaller():
                         import torch
                         if hasattr(torch, 'xpu') and torch.xpu.is_available():
                             devices['XPU']['found'] = True
-                            # PyTorch doesn't expose a oneAPI version directly,
-                            # but we can confirm device presence
                             xpu_device_count = torch.xpu.device_count()
                             name = devices['XPU']['proc']
                             tag = devices['XPU']['proc']
