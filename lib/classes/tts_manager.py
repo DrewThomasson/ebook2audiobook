@@ -19,6 +19,3 @@ class TTSManager:
 
     def convert_sentence2audio(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         return self.engine.convert(sentence_file, sentence, **kwargs)
-        
-    def create_sentences2vtt(self, sentences:list)->bool:
-        return self.engine.create_vtt(sentences)

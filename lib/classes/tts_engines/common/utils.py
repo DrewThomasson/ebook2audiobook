@@ -18,6 +18,87 @@ if TYPE_CHECKING:
     from torch.nn import Module
     from torchaudio.transforms import Resample
 
+def _format_timestamp(seconds:float)->str:
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return f'{int(h):02}:{int(m):02}:{s:06.3f}'
+
+def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->bool:
+    try:
+        import gradio as gr
+        from tqdm import tqdm
+        msg = 'VTT file creation started…'
+        print(msg)
+        if vtt_path is None:
+            vtt_path = os.path.join(session['process_dir'], Path(session['final_name']).stem + '.vtt')
+        audio_sentences_dir = Path(session['sentences_dir'])
+        blocks = session['blocks_current']['blocks']
+        kept_indices = {
+            str(i) for i, b in enumerate(blocks)
+            if b['keep'] and b['text'].strip()
+            and (block_indices is None or i in block_indices)
+        }
+        block_dirs = sorted(
+            [d for d in audio_sentences_dir.iterdir() if d.is_dir() and d.name in kept_indices],
+            key=lambda p: int(p.name)
+        )
+        audio_files = []
+        sentences_to_use = []
+        for block_dir in block_dirs:
+            block_idx = int(block_dir.name)
+            block_files = sorted(
+                block_dir.glob(f'*.{default_audio_proc_format}'),
+                key=lambda p: int(p.stem)
+            )
+            audio_files.extend(block_files)
+            sentences_to_use.extend(blocks[block_idx].get('sentences', []))
+        audio_files_length = len(audio_files)
+        sentences_length = len(sentences_to_use)
+        if audio_files_length != sentences_length:
+            error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {sentences_length} sentences'
+            print(error)
+            return False
+        sentences_total_time = 0.0
+        vtt_blocks = []
+        if session['is_gui_process']:
+            progress_bar = gr.Progress(track_tqdm=False)
+        msg = 'Get duration of each sentence…'
+        print(msg)
+        durations = get_audiolist_duration([str(p) for p in audio_files])
+        msg = 'Create VTT blocks…'
+        print(msg)
+        with tqdm(total=audio_files_length, unit='files') as t:
+            for idx, file in enumerate(audio_files):
+                start_time = sentences_total_time
+                duration = durations.get(os.path.realpath(file), 0.0)
+                end_time = start_time + duration
+                sentences_total_time = end_time
+                start = _format_timestamp(start_time)
+                end = _format_timestamp(end_time)
+                text = re.sub(
+                    r'\s+',
+                    ' ',
+                    SML_TAG_PATTERN.sub('', str(sentences_to_use[idx]))
+                ).strip()
+                vtt_blocks.append(f'{start} --> {end}\n{text}\n')
+                if session['is_gui_process']:
+                    total_progress = (t.n + 1) / audio_files_length
+                    progress_bar(
+                        progress=total_progress,
+                        desc=f'Writing vtt idx {idx}'
+                    )
+                t.update(1)
+        msg = 'Write VTT blocks into file…'
+        print(msg)
+        with open(vtt_path, 'w', encoding='utf-8') as f:
+            f.write('WEBVTT\n\n')
+            f.write('\n'.join(vtt_blocks))
+        return True
+    except Exception as e:
+        error = f'build_vtt_file(): {e}'
+        print(error)
+        return False
+
 class TTSUtils:
 
     def cleanup_memory(self)->None:
@@ -519,79 +600,3 @@ class TTSUtils:
         else:
             error = 'This SML is not recognized'
             return False, error
-
-    def _format_timestamp(self, seconds:float)->str:
-        m, s = divmod(seconds, 60)
-        h, m = divmod(m, 60)
-        return f'{int(h):02}:{int(m):02}:{s:06.3f}'
-
-    def _build_vtt_file(self, sentences:list)->bool:
-            try:
-                import gradio as gr
-                from tqdm import tqdm
-                msg = 'VTT file creation started…'
-                print(msg)
-                vtt_path = os.path.join(self.session['process_dir'], Path(self.session['final_name']).stem + '.vtt')
-                audio_sentences_dir = Path(self.session['sentences_dir'])
-                blocks = self.session['blocks_current']['blocks']
-                kept_indices = {
-                    str(i) for i, b in enumerate(blocks)
-                    if b['keep'] and b['text'].strip()
-                }
-                block_dirs = sorted(
-                    [d for d in audio_sentences_dir.iterdir() if d.is_dir() and d.name in kept_indices],
-                    key=lambda p: int(p.name)
-                )
-                audio_files = []
-                for block_dir in block_dirs:
-                    block_files = sorted(
-                        block_dir.glob(f'*.{default_audio_proc_format}'),
-                        key=lambda p: int(p.stem)
-                    )
-                    audio_files.extend(block_files)
-                sentences_length = len(sentences)
-                audio_files_length = len(audio_files)
-                if audio_files_length != sentences_length:
-                    error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {sentences_length} sentences'
-                    print(error)
-                    return False
-                sentences_total_time = 0.0
-                vtt_blocks = []
-                if self.session['is_gui_process']:
-                    progress_bar = gr.Progress(track_tqdm=False)
-                msg = 'Get duration of each sentence…'
-                print(msg)
-                durations = get_audiolist_duration([str(p) for p in audio_files])
-                msg = 'Create VTT blocks…'
-                print(msg)
-                with tqdm(total=audio_files_length, unit='files') as t:
-                    for idx, file in enumerate(audio_files):
-                        start_time = sentences_total_time
-                        duration = durations.get(os.path.realpath(file), 0.0)
-                        end_time = start_time + duration
-                        sentences_total_time = end_time
-                        start = self._format_timestamp(start_time)
-                        end = self._format_timestamp(end_time)
-                        text = re.sub(
-                            r'\s+',
-                            ' ',
-                            SML_TAG_PATTERN.sub('', str(sentences[idx]))
-                        ).strip()
-                        vtt_blocks.append(f'{start} --> {end}\n{text}\n')
-                        if self.session['is_gui_process']:
-                            total_progress = (t.n + 1) / audio_files_length
-                            progress_bar(
-                                progress=total_progress,
-                                desc=f'Writing vtt idx {idx}'
-                            )
-                        t.update(1)
-                msg = 'Write VTT blocks into file…'
-                print(msg)
-                with open(vtt_path, 'w', encoding='utf-8') as f:
-                    f.write('WEBVTT\n\n')
-                    f.write('\n'.join(vtt_blocks))
-                return True
-            except Exception as e:
-                error = f'_build_vtt_file(): {e}'
-                print(error)
-                return False

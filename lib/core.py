@@ -46,6 +46,7 @@ from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
+from lib.classes.tts_engines.common.utils import build_vtt_file
 
 from lib import *
 
@@ -2146,7 +2147,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 msg += f'<br/>---------'
                 show_alert(session_id, {"type": "info", "msg": msg})
                 ebook_name = Path(session['ebook']).name
-                all_sentences = []
                 global_sent = 0
                 ch_num = 0
                 last_save_time = time.monotonic()
@@ -2194,8 +2194,6 @@ def convert_chapters2audio(session_id:str)->bool:
                                         sentence = sentence.strip()
                                         if any(c.isalnum() for c in sentence):
                                             is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
-                                            if (not is_sml) or (j == len(sentences) - 1):
-                                                all_sentences.append(sentence)
                                             global_sent += 1
                                     t.update(len(sentences))
                                     continue
@@ -2241,8 +2239,6 @@ def convert_chapters2audio(session_id:str)->bool:
                             sentence = sentences[j].strip()
                             if any(c.isalnum() for c in sentence):
                                 is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
-                                if (not is_sml) or (j == len(sentences) - 1):
-                                    all_sentences.append(sentence)
                                 if j >= start_sentence or j in missing_sentences:
                                     if j == start_sentence and start_sentence > 0:
                                         msg = f'*** Resuming from sentence {global_sent} ***'
@@ -2284,8 +2280,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 session['blocks_current'] = blocks_current
                                 return False
                 session['blocks_current'] = blocks_current
-                write_vtt = tts_manager.create_sentences2vtt(all_sentences)
-                return write_vtt
+                return True
         except Exception as e:
             DependencyError(e)
             error = f'convert_chapters2audio() error: {e}'
@@ -2398,12 +2393,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             print(error)
             return False
 
-    def export_audio(combined_audio:str, metadata_file:str, final_file:str)->bool:
-        
+    def export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None)->bool:
+
         def on_progress(p:float)->None:
             if is_gui_process:
                 progress_bar(p / 100.0, desc='Export')
-        
+
         try:
             if session['cancellation_requested']:
                 return False
@@ -2449,7 +2444,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     target_codec = 'opus'
                     target_rate = '48000'
                     cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
-                cmd += ['-map_metadata', '1'] 
+                cmd += ['-map_metadata', '1']
             if session['output_channel'] == 'stereo':
                 cmd += ['-ac', '2']
             else:
@@ -2498,13 +2493,11 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                                 audio['covr'] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
                             if audio:
                                 audio.save()
-                    final_vtt = f"{Path(final_file).stem}.vtt"
-                    proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
-                    final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
-                    if shutil.move(proc_vtt_path, final_vtt_path):
-                        return True
+                    final_vtt = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
+                    build_vtt_file(session, vtt_path=final_vtt, block_indices=block_indices)
+                    return True
                 else:
-                    error = f"{Path(final_file).name} is corrupted or does not exist"
+                    error = f'{Path(final_file).name} is corrupted or does not exist'
                     print(error)
         except Exception as e:
             error = f'Export failed: {e}'
@@ -2587,8 +2580,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                    final_file = os.path.join(session['audiobooks_dir'], (f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}" if needs_split else session['final_name']))
-                    if export_audio(str(merged_audio), str(metadata_file), str(final_file)):
+                    final_file = os.path.join(session['audiobooks_dir'], (
+                        f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
+                        if needs_split else session['final_name']
+                    ))
+                    block_indices = set(kept_blocks[i][0] for i in indices) if needs_split else None
+                    if export_audio(str(merged_audio), str(metadata_file), str(final_file), block_indices=block_indices):
                         exported_files.append(str(final_file))
             else:
                 concat_list = os.path.join(concat_dir, f'concat_list_chapters_1.txt')
@@ -2597,7 +2594,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     for file in chapter_files:
                         if session['cancellation_requested']:
                             return None
-                        path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
+                        path = os.path.join(session['chapters_dir'], file).replace('\\', '/')
                         f.write(f"file '{path}'\n")
                 result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
                 if not result:
