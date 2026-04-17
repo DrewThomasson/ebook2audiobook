@@ -2397,7 +2397,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
         def on_progress(p:float)->None:
             if is_gui_process:
-                progress_bar(p / 100.0, desc='Export')
+                progress_bar(p / 100.0, desc=f'Export Part {part_num}' if part_num is not None else 'Export')
 
         try:
             if session['cancellation_requested']:
@@ -2467,7 +2467,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-y', final_file
                 ]
             is_gui_process = session['is_gui_process']
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg=f'Export part {part_num}' if part_num is not None else 'Export', on_progress=on_progress)
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=on_progress)
             if proc_pipe.result:
                 if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
