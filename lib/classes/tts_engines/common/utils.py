@@ -542,9 +542,7 @@ class TTSUtils:
             if self.params['current_voice'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['current_voice']:
                 current_voice = self._check_xtts_builtin_speakers(self.params['current_voice'], self.speaker)
                 if current_voice:
-                    if current_voice != self.params['current_voice']:
-                        
-                    self.session['voice'] = self.params['current_voice']
+                    self.session['voice'] = self.params['current_voice'] = current_voice
                 else:
                     error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
                     return False, error
