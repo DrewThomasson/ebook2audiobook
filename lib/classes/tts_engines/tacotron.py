@@ -137,20 +137,11 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             with torch.no_grad():
                                 self.engine.to(device)
-                                if device == devices['CPU']['proc']:
+                                with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                                     self.engine.tts_to_file(
                                         text=part,
                                         file_path=tmp_in_wav
                                     )
-                                else:
-                                    with torch.autocast(
-                                        device_type=device,
-                                        dtype=self.amp_dtype
-                                    ):
-                                        self.engine.tts_to_file(
-                                            text=part,
-                                            file_path=tmp_in_wav
-                                        )
                                 self.engine.to(devices['CPU']['proc'])
                             if self.params['current_voice'] in self.params['semitones'].keys():
                                 semitones = self.params['semitones'][self.params['current_voice']]
@@ -206,18 +197,10 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                         else:
                             with torch.no_grad():
                                 self.engine.to(device)
-                                if device == devices['CPU']['proc']:
+                                with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
                                         text=part
                                     )
-                                else:
-                                    with torch.autocast(
-                                        device_type=device,
-                                        dtype=self.amp_dtype
-                                    ):
-                                        audio_part = self.engine.tts(
-                                            text=part
-                                        )
                                 self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
                             src_tensor = self._tensor_type(audio_part)

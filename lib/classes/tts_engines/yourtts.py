@@ -109,22 +109,12 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             speaker_argument = {"speaker": self.speaker}                        
                         with torch.no_grad():
                             self.engine.to(device)
-                            if device == devices['CPU']['proc']:
+                            with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                                 audio_part = self.engine.tts(
                                     text=part,
                                     language=language,
                                     **speaker_argument
                                 )
-                            else:
-                                with torch.autocast(
-                                    device_type=device,
-                                    dtype=self.amp_dtype
-                                ):
-                                    audio_part = self.engine.tts(
-                                        text=part,
-                                        language=language,
-                                        **speaker_argument
-                                    )
                             self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
                             src_tensor = self._tensor_type(audio_part)

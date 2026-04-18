@@ -183,7 +183,7 @@ class TTSUtils:
         is_rocm = bool(getattr(torch.version, 'hip', None))
         is_cuda = bool(getattr(torch.version, 'cuda', None)) and not is_rocm
         quality_mode = bool(using_gpu and enough_vram)
-        amp_dtype = torch.float32
+        amp_dtype = torch.float32  # float32 means: caller should NOT wrap in autocast
         # Default matmul precision (PyTorch >= 2.2)
         try:
             torch.set_float32_matmul_precision('high' if quality_mode else 'medium')
@@ -193,30 +193,20 @@ class TTSUtils:
             return amp_dtype
         # ================= CUDA / Jetson / ROCm =================
         if has_cuda:
+            # --- CUDA health check: fail fast instead of configuring a broken context ---
             try:
                 torch.cuda.manual_seed_all(seed)
+            except Exception as e:
+                print(f"[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32")
+                return torch.float32
+            # --- Device info (fetched once) ---
+            try:
+                cc = torch.cuda.get_device_capability(0)
+                cc_major = cc[0]
             except Exception:
-                pass
-            # Memory pressure handling
-            if hasattr(torch.cuda, 'set_per_process_memory_fraction'):
-                try:
-                    torch.cuda.set_per_process_memory_fraction(0.90 if quality_mode else 0.80)
-                except Exception:
-                    pass
-            # cuDNN base config
-            if hasattr(torch.backends, 'cudnn'):
-                torch.backends.cudnn.enabled = True
-                torch.backends.cudnn.deterministic = not quality_mode
-                torch.backends.cudnn.benchmark = bool(quality_mode)
-            
-            # SDP attention optimization
-            if hasattr(torch.backends, 'cuda'):
-                try:
-                    cc = torch.cuda.get_device_capability(0)
-                    torch.backends.cuda.enable_flash_sdp(cc >= (8, 0))
-                    torch.backends.cuda.enable_mem_efficient_sdp(cc >= (7, 0))
-                except Exception:
-                    pass
+                cc = (0, 0)
+                cc_major = 0
+            tier = gpu_compute_tier(0)  # 'tensor-core' | 'fp16-only' | 'none'
             # Detect Jetson (ARM + CUDA)
             is_jetson = False
             try:
@@ -224,22 +214,42 @@ class TTSUtils:
                 is_jetson = is_cuda and platform.machine() in ('aarch64', 'arm64')
             except Exception:
                 is_jetson = False
-            # TF32 handling
-            tf32_ok = False
-            if is_cuda and not is_jetson:
+            # Memory pressure handling — only throttle on cards with headroom
+            if hasattr(torch.cuda, 'set_per_process_memory_fraction'):
                 try:
-                    cc_major = torch.cuda.get_device_capability(0)[0]
-                    tf32_ok = bool(cc_major >= 8 and quality_mode)
+                    total_gb = torch.cuda.get_device_properties(0).total_memory / 1024**3
+                    if total_gb >= 10:
+                        torch.cuda.set_per_process_memory_fraction(0.90 if quality_mode else 0.80)
+                    # else: let the caching allocator breathe on 6–8 GB cards
                 except Exception:
-                    tf32_ok = False
-            # Disable TF32 explicitly on Jetson + ROCm
-            if is_jetson or is_rocm:
-                tf32_ok = False
+                    pass
+            # cuDNN base config — benchmark=True is bad for TTS (variable-length inputs)
+            if hasattr(torch.backends, 'cudnn'):
+                torch.backends.cudnn.enabled = True
+                torch.backends.cudnn.deterministic = not quality_mode
+                torch.backends.cudnn.benchmark = False
+            # SDP attention — flash + mem-efficient are Ampere+ only; math kernel always on as fallback
+            if hasattr(torch.backends, 'cuda'):
+                try:
+                    torch.backends.cuda.enable_flash_sdp(cc >= (8, 0))
+                    torch.backends.cuda.enable_mem_efficient_sdp(cc >= (8, 0))
+                    torch.backends.cuda.enable_math_sdp(True)
+                except Exception:
+                    pass
+            # TF32 — Ampere+, non-Jetson, non-ROCm, quality mode only
+            tf32_ok = bool(
+                is_cuda and not is_jetson and not is_rocm
+                and cc_major >= 8 and quality_mode
+            )
             # Apply matmul / cuDNN flags
             if hasattr(torch.backends, 'cuda') and hasattr(torch.backends.cuda, 'matmul'):
                 try:
                     torch.backends.cuda.matmul.allow_tf32 = tf32_ok
-                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = bool(quality_mode)
+                    # Reduced-precision reduction is only safe on tensor-core GPUs.
+                    # On GTX 16-series this was a real crash vector.
+                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = (
+                        bool(quality_mode) and tier == 'tensor-core' and cc_major >= 8
+                    )
                 except Exception:
                     pass
             if hasattr(torch.backends, 'cudnn'):
@@ -247,22 +257,30 @@ class TTSUtils:
                     torch.backends.cudnn.allow_tf32 = tf32_ok
                 except Exception:
                     pass
-            # AMP dtype selection
-            # Jetson + ROCm → FP16 only (BF16 unstable / slow)
+            # AMP dtype selection by tier
             if is_jetson or is_rocm:
+                # Jetson + ROCm → FP16 only (BF16 unstable / slow)
                 amp_dtype = torch.float16
-            else:
-                if quality_mode:
+            elif tier == 'tensor-core':
+                # BF16 on Ampere+ when quality is on, otherwise FP16
+                use_bf16 = False
+                if cc_major >= 8 and quality_mode:
                     try:
-                        #if hasattr(torch.cuda, 'is_bf16_supported') and torch.cuda.is_bf16_supported():
-                        #    amp_dtype = torch.bfloat16
-                        #else:
-                        amp_dtype = torch.float16
+                        use_bf16 = bool(
+                            hasattr(torch.cuda, 'is_bf16_supported')
+                            and torch.cuda.is_bf16_supported()
+                        )
                     except Exception:
-                        amp_dtype = torch.float16
-                else:
-                    amp_dtype = torch.float16
-
+                        use_bf16 = False
+                #amp_dtype = torch.bfloat16 if use_bf16 else torch.float16
+                amp_dtype = torch.float16
+            elif tier == 'fp16-only':
+                # GTX 16-series (1660 Super et al.): FP16 autocast destabilises
+                # autoregressive TTS decoders (XTTSv2, YourTTS, ...). Run FP32.
+                amp_dtype = torch.float32
+            else:
+                # tier == 'none' — shouldn't land here with has_cuda, but be safe
+                amp_dtype = torch.float32
             return amp_dtype
         # ================= Apple MPS =================
         if has_mps:
@@ -424,7 +442,7 @@ class TTSUtils:
                         }
                         with torch.no_grad():
                             engine.to(device)
-                            if device == devices['CPU']['proc']:
+                            with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                                 result = engine.inference(
                                     text=default_text.strip(),
                                     language=self.session['language_iso1'],
@@ -432,18 +450,6 @@ class TTSUtils:
                                     speaker_embedding=speaker_embedding,
                                     **fine_tuned_params,
                                 )
-                            else:
-                                with torch.autocast(
-                                    device_type=device,
-                                    dtype=self.amp_dtype
-                                ):
-                                    result = engine.inference(
-                                        text=default_text.strip(),
-                                        language=self.session['language_iso1'],
-                                        gpt_cond_latent=gpt_cond_latent,
-                                        speaker_embedding=speaker_embedding,
-                                        **fine_tuned_params,
-                                    )
                             engine.to(devices['CPU']['proc'])
                         audio_sentence = result.get('wav')
                         if is_audio_data_valid(audio_sentence):
@@ -534,8 +540,12 @@ class TTSUtils:
         if self.params['current_voice'] is not None:
             self.speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['current_voice']))
             if self.params['current_voice'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['current_voice']:
-                self.session['voice'] = self.params['current_voice'] = self._check_xtts_builtin_speakers(self.params['current_voice'], self.speaker)
-                if not self.params['current_voice']:
+                current_voice = self._check_xtts_builtin_speakers(self.params['current_voice'], self.speaker)
+                if current_voice:
+                    if current_voice != self.params['current_voice']:
+                        
+                    self.session['voice'] = self.params['current_voice']
+                else:
                     error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
                     return False, error
         return True, None

@@ -145,7 +145,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         }
                         with torch.no_grad():
                             self.engine.to(device)
-                            if device == devices['CPU']['proc']:
+                            with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                                 result = self.engine.inference(
                                     text=part,
                                     language=self.session['language_iso1'],
@@ -153,18 +153,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                     speaker_embedding=self.params['speaker_embedding'],
                                     **fine_tuned_params
                                 )
-                            else:
-                                with torch.autocast(
-                                    device_type=device,
-                                    dtype=self.amp_dtype
-                                ):
-                                    result = self.engine.inference(
-                                        text=part,
-                                        language=self.session['language_iso1'],
-                                        gpt_cond_latent=self.params['gpt_cond_latent'],
-                                        speaker_embedding=self.params['speaker_embedding'],
-                                        **fine_tuned_params
-                                    )
                             self.engine.to(devices['CPU']['proc'])
                         audio_part = result.get('wav')
                         if is_audio_data_valid(audio_part):

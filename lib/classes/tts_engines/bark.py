@@ -122,26 +122,14 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             speaker_argument['speaker_wav'] = self.params['current_voice']
                         with torch.no_grad():
                             self.engine.to(device)
-                            if device == devices['CPU']['proc']:
+                            with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
                                 audio_part = self.engine.tts(
                                     text=part,
                                     speaker=self.speaker,
                                     voice_dir=pth_voice_dir,
-                                    **fine_tuned_params,
                                     **speaker_argument,
+                                    **fine_tuned_params
                                 )
-                            else:
-                                with torch.autocast(
-                                    device_type=device,
-                                    dtype=self.amp_dtype
-                                ):
-                                    audio_part = self.engine.tts(
-                                        text=part,
-                                        speaker=self.speaker,
-                                        voice_dir=pth_voice_dir,
-                                        **speaker_argument,
-                                        **fine_tuned_params
-                                    )
                             self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
                             src_tensor = self._tensor_type(audio_part)
