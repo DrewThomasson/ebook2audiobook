@@ -16,6 +16,9 @@ class TTSManager:
                 f"Expected one of: {', '.join(TTSRegistry.ENGINES)}"
             )
         self.engine = engine_cls(session)
+    
+    def set_voice(self, block_voice:str|None)->tuple:
+        return self.engine._set_voice(block_voice)
 
     def convert_sentence2audio(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         return self.engine.convert(sentence_file, sentence, **kwargs)

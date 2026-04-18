@@ -391,7 +391,6 @@ class TTSUtils:
             import numpy as np
             from huggingface_hub import hf_hub_download
             voice_parts = Path(current_voice).parts
-            print(f'---------------------------------------voice_parts: {voice_parts} ------------')
             if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
                 return current_voice
             xtts = TTS_ENGINES['XTTSv2']
@@ -533,22 +532,18 @@ class TTSUtils:
         return tmp_path
 
     def _set_voice(self, block_voice:str|None)->tuple:
-        self.params['current_voice'] = (
+        current_voice = (
             block_voice if block_voice is not None 
             else self.models[self.session['fine_tuned']]['voice']
         )
-        if self.params['current_voice'] is not None:
-            self.speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['current_voice']))
-            if self.params['current_voice'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['current_voice']:
-                current_voice = self._check_xtts_builtin_speakers(self.params['current_voice'], self.speaker)
-                if current_voice:
-                    #if current_voice != self.params['current_voice']:
-                        
-                    self.session['voice'] = self.params['current_voice'] = current_voice
-                else:
+        if current_voice is not None:
+            self.speaker = re.sub(r'\.wav$', '', os.path.basename(current_voice))
+            if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:
+                current_voice = self._check_xtts_builtin_speakers(current_voice, self.speaker)
+                if not current_voice:
                     error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
-                    return False, error
-        return True, None
+                    return None, error
+        return current_voice, None
         
     def _split_sentence_on_sml(self, sentence:str)->list[str]:
         parts:list[str] = []
@@ -591,8 +586,8 @@ class TTSUtils:
         elif tag == 'voice':
             if close:
                 self.params['inline_voice'] = None
-                run, error = self._set_voice(self.params['block_voice'])
-                return run, error
+                self.params['block_voice'], error = self._set_voice(self.params['block_voice'])
+                return self.params['block_voice'], error
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
                 return False, error

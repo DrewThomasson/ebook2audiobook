@@ -67,9 +67,11 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
-                    run, error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
-                    if not run:
+                    self.params['current_voice'], error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
+                    if self.params['current_voice'] is None:
                         return False, error
+                    if self.session['voice'] == self.params['block_voice']:
+                        self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
                 if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
@@ -95,8 +97,8 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        run, error = self._convert_sml(part)
-                        if not run:
+                        self.params['block_voice'], error = self._convert_sml(part)
+                        if self.params['block_voice'] is None:
                             return False, error
                         continue
                     if not any(c.isalnum() for c in part):

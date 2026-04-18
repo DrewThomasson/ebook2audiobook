@@ -2140,6 +2140,16 @@ def convert_chapters2audio(session_id:str)->bool:
                 return False
             total_iterations = total_sentences
             if session['ebook']:
+                # Check if each chosen block voice is xttsv eng standard voice and current language
+                # is not eng but in xttsv2 languages. if it is, so start the voice conversion and update
+                # the block voice according to the current language
+                if session['language'] != 'eng':
+                    for x, block in blocks:
+                        block['voice'], error =  tts_manager._set_voice(block['voice'])
+                        if block['voice'] is None:
+                            show_alert(session_id, {"type": "warning", "msg": error})
+                            return False
+                    blocks_current['blocks'] = blocks
                 msg = f'---------<br/>'
                 msg += f"{session['filename_noext']}<br/>"
                 msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
