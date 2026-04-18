@@ -1315,7 +1315,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         if session.get('voice') != selected:
                             voice_previous = session.get('voice')
-                            if not voice_options:
+                            if not voice_options or selected is None:
                                 new_voice = None
                             else:
                                 voice_value = voice_options[0][1]
