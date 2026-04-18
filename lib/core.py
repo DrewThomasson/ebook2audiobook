@@ -2117,6 +2117,17 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = ' '.join(text.split())
     return text
 
+def block_signature(block:dict)->str:
+    return hashlib.sha1(
+        '|'.join((
+            block.get('text', '').strip(),
+            block.get('voice', ''),
+            block.get('tts_engine', ''),
+            block.get('fine_tuned', ''),
+            json.dumps(block.get('sentences', []), sort_keys=True, ensure_ascii=False),
+        )).encode('utf-8')
+    ).hexdigest()
+
 def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
@@ -2124,7 +2135,6 @@ def convert_chapters2audio(session_id:str)->bool:
             tts_manager = TTSManager(session)
             blocks_current = session['blocks_current']
             blocks = blocks_current['blocks']
-            blocks_saved = session['blocks_saved']['blocks']
             block_resume = blocks_current['block_resume']
             sentence_resume = blocks_current['sentence_resume']
             if session['cancellation_requested']:
@@ -2181,14 +2191,8 @@ def convert_chapters2audio(session_id:str)->bool:
                         ch_num += 1
                         sentences = block['sentences']
                         sent_start = global_sent
-                        prev_block = blocks_saved[x] if x < len(blocks_saved) else None
-                        block_changed = (
-                            prev_block is None
-                            or prev_block.get('text', '').strip() != block['text'].strip()
-                            or prev_block.get('voice', '') != block.get('voice', '')
-                            or prev_block.get('tts_engine', '') != block.get('tts_engine', '')
-                            or prev_block.get('fine_tuned', '') != block.get('fine_tuned', '')
-                        )
+                        current_signature = block_signature(block)
+                        block_changed = block.get('block_signature') != current_signature
                         missing_sentences = set()
                         if x < block_resume and not block_changed:
                             msg = f'Chapter {ch_num} (block {x}) — unchanged, skipping'
@@ -2301,6 +2305,9 @@ def convert_chapters2audio(session_id:str)->bool:
                                 show_alert(session_id, {"type": "warning", "msg": error})
                                 session['blocks_current'] = blocks_current
                                 return False
+                            # stamp signature only after the chapter audio was successfully combined
+                            blocks_current['blocks'][x]['block_signature'] = current_signature
+                            session['blocks_current'] = blocks_current
                 session['blocks_current'] = blocks_current
                 return True
         except Exception as e:
