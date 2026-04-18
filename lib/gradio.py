@@ -1309,22 +1309,32 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return gr.update()
 
-            def change_gr_voice_list(session_id:str, selected:str|None)->tuple:
+            def change_gr_voice_list(session_id: str, selected: str | None) -> tuple:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session.get('voice') != selected:
+                            voice_previous = session.get('voice')
                             if not voice_options:
-                                session['voice_previous'] = session.get('voice')
-                                session['voice'] = None
+                                new_voice = None
                             else:
                                 voice_value = voice_options[0][1]
                                 new_voice = next(
                                     (value for label, value in voice_options if value == selected),
                                     voice_value,
                                 )
-                                session['voice_previous'] = session.get('voice')
-                                session['voice'] = new_voice
+                            session['voice_previous'] = voice_previous
+                            session['voice'] = new_voice
+                            # propagate to every block that was tracking the session default
+                            # (blocks with an explicit override — different from voice_previous — stay put)
+                            blocks_current = session['blocks_current']
+                            changed = False
+                            for block in blocks_current.get('blocks', []):
+                                if block.get('voice') == voice_previous:
+                                    block['voice'] = new_voice
+                                    changed = True
+                            if changed:
+                                session['blocks_current'] = blocks_current
                         visible_voice_buttons = session['voice'] is not None
                         return gr.update(value=session['voice']), gr.update(visible=visible_voice_buttons), gr.update(visible=visible_voice_buttons)
                 except Exception as e:
