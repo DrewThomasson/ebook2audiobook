@@ -3310,14 +3310,15 @@ def show_alert(session_id:str|None, state:dict|None)->None:
                     elif state['type'] == 'success':
                         gr.Success(state['msg'])
 
-def exception_alert(session_id:str|None, error:str)->None:
-    print(error.replace('<br/>', '\n'))
-    if session_id is not None:
-        session = context.get_session(session_id)
-        if session and session.get('id', False):
-            session['status'] = status_tags['READY']
-            if session['is_gui_process']:
-                raise gr.Error(error)
+def exception_alert(session_id:str|None, error:str|None)->None:
+    if error is not None:
+        print(error.replace('<br/>', '\n'))
+        if session_id is not None:
+            session = context.get_session(session_id)
+            if session and session.get('id', False):
+                session['status'] = status_tags['READY']
+                if session['is_gui_process']:
+                    raise gr.Error(error)
 
 def get_all_ip_addresses()->list:
     ip_addresses = []
