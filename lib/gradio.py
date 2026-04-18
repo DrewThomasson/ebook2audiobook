@@ -2087,7 +2087,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session['status'] = status_tags['END']
                     session['audiobook_overridden'] = None
-                return gr.update(value='', visible=False), gr.update(visible=True)
+                return gr.update(value='', visible=False)
 
             def click_gr_override_confirm_btn(session_id:str, event:int, audiobook_files_state:bool)->tuple:
                 try:
@@ -2253,7 +2253,7 @@ def build_interface(args:dict)->gr.Blocks:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
                             session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
-                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=False), session['blocks_current']['blocks'], gr.update(value=session['ebook_textarea'])
+                return gr.update(interactive=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=False), session['blocks_current']['blocks'], gr.update(value=session['ebook_textarea'])
 
             def click_gr_blocks_confirm_btn(session_id:str, event:int, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
@@ -2903,9 +2903,9 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_override_cancel_btn.click(
                     fn=click_gr_override_cancel_btn,
                     inputs=[gr_session],
-                    outputs=[gr_modal, gr_group_audiobook_list],
+                    outputs=[gr_modal],
                     show_progress_on=[gr_progress]
-                ),
+                )
                 always=True
             )
             gr_override_confirm_btn.click(
@@ -2942,7 +2942,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_blocks_cancel_btn.click(
                     fn=click_gr_blocks_cancel_btn,
                     inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                    outputs=[gr_convert_btn, gr_group_main, gr_group_blocks, gr_blocks_data, gr_ebook_textarea],
+                    outputs=[gr_convert_btn, gr_group_main, gr_group_audiobook_list, gr_group_blocks, gr_blocks_data, gr_ebook_textarea],
                     show_progress_on=[gr_progress]
                 ),
                 always=True
