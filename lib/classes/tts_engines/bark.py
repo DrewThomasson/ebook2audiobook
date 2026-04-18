@@ -64,10 +64,11 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
+                self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
-                    self.params['current_voice'], error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
+                    self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None:
                         return False, error
                     if self.session['voice'] == self.params['block_voice']:

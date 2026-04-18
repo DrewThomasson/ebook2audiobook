@@ -106,10 +106,11 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     not_supported_punc_pattern = re.compile(r'\p{P}+')
                 else:
                     not_supported_punc_pattern = re.compile(r'["—…¡¿]')
+                self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
-                    self.params['current_voice'], error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
+                    self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None:
                         return False, error
                     if self.session['voice'] == self.params['block_voice']:
