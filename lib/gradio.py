@@ -2905,7 +2905,7 @@ def build_interface(args:dict)->gr.Blocks:
                     inputs=[gr_session],
                     outputs=[gr_modal],
                     show_progress_on=[gr_progress]
-                )
+                ),
                 always=True
             )
             gr_override_confirm_btn.click(
