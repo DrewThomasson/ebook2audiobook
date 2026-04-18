@@ -442,7 +442,7 @@ class TTSUtils:
                         }
                         with torch.no_grad():
                             engine.to(device)
-                            with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
+                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 result = engine.inference(
                                     text=default_text.strip(),
                                     language=self.session['language_iso1'],
@@ -542,6 +542,8 @@ class TTSUtils:
             if self.params['current_voice'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['current_voice']:
                 current_voice = self._check_xtts_builtin_speakers(self.params['current_voice'], self.speaker)
                 if current_voice:
+                    #if current_voice != self.params['current_voice']:
+                        
                     self.session['voice'] = self.params['current_voice'] = current_voice
                 else:
                     error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"

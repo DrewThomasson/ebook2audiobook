@@ -145,7 +145,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         }
                         with torch.no_grad():
                             self.engine.to(device)
-                            with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
+                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 result = self.engine.inference(
                                     text=part,
                                     language=self.session['language_iso1'],

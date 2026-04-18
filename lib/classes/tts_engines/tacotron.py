@@ -137,7 +137,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             with torch.no_grad():
                                 self.engine.to(device)
-                                with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
+                                with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     self.engine.tts_to_file(
                                         text=part,
                                         file_path=tmp_in_wav
@@ -197,7 +197,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                         else:
                             with torch.no_grad():
                                 self.engine.to(device)
-                                with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
+                                with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
                                         text=part
                                     )

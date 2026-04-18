@@ -109,7 +109,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             speaker_argument = {"speaker": self.speaker}                        
                         with torch.no_grad():
                             self.engine.to(device)
-                            with torch.autocast(device, dtype=amp_dtype, enabled=(amp_dtype != torch.float32)):
+                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 audio_part = self.engine.tts(
                                     text=part,
                                     language=language,
