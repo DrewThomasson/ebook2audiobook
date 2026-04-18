@@ -3295,21 +3295,23 @@ def cleanup_models_cache()->None:
         print(error)
 
 def show_alert(session_id:str|None, state:dict|None)->None:
+    print(f'------------------------{state}----------------')
     if state is not None:
-        print(state.get('msg', ' ').replace('<br/>', '\n'))
-        if session_id is not None:
-            session = context.get_session(session_id)
-            if session.get('is_gui_process'):
-                if isinstance(state, dict):
-                    if state['type'] is not None:
-                        if state['type'] == 'error':
-                            raise gr.Error(state['msg'])
-                        elif state['type'] == 'warning':
-                            gr.Warning(state['msg'])
-                        elif state['type'] == 'info':
-                            gr.Info(state['msg'])
-                        elif state['type'] == 'success':
-                            gr.Success(state['msg'])
+        if state.get('msg'):
+            print(state['msg'].replace('<br/>', '\n'))
+            if session_id is not None:
+                session = context.get_session(session_id)
+                if session.get('is_gui_process'):
+                    if isinstance(state, dict):
+                        if state['type'] is not None:
+                            if state['type'] == 'error':
+                                raise gr.Error(state['msg'])
+                            elif state['type'] == 'warning':
+                                gr.Warning(state['msg'])
+                            elif state['type'] == 'info':
+                                gr.Info(state['msg'])
+                            elif state['type'] == 'success':
+                                gr.Success(state['msg'])
 
 def exception_alert(session_id:str|None, error:str|None)->None:
     if error is not None:
