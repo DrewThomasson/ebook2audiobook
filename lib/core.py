@@ -2143,13 +2143,25 @@ def convert_chapters2audio(session_id:str)->bool:
                 # Check if each chosen block voice is xttsv eng standard voice and current language
                 # is not eng but in xttsv2 languages. if it is, so start the voice conversion and update
                 # the block voice according to the current language
-                if session['language'] != 'eng':
-                    for x, block in blocks:
-                        block['voice'], error =  tts_manager._set_voice(block['voice'])
-                        if block['voice'] is None:
-                            show_alert(session_id, {"type": "warning", "msg": error})
+                # Pre-resolve builtin xtts voices from eng/ to the current language folder once, upfront.
+                # Cached per old-path so identical voices across blocks don't re-trigger inference.
+                xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
+                if session['language'] != 'eng' and session['language'] in xtts_languages:
+                    voice_cache = {}
+                    for block in blocks:
+                        old_voice = block.get('voice')
+                        if not old_voice:
+                            continue
+                        if old_voice in voice_cache:
+                            block['voice'] = voice_cache[old_voice]
+                            continue
+                        new_voice, error = tts_manager.set_voice(old_voice)
+                        if new_voice is None:
+                            show_alert(session_id, {'type': 'warning', 'msg': error})
                             return False
-                    blocks_current['blocks'] = blocks
+                        voice_cache[old_voice] = new_voice
+                        block['voice'] = new_voice
+                    session['blocks_current'] = blocks_current
                 msg = f'---------<br/>'
                 msg += f"{session['filename_noext']}<br/>"
                 msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "

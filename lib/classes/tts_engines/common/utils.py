@@ -424,18 +424,18 @@ class TTSUtils:
                         fine_tuned_params = {
                             key.removeprefix('xtts_'): cast_type(self.session[key])
                             for key, cast_type in {
-                                "xtts_temperature": float,
-                                #"xtts_codec_temperature": float,
-                                "xtts_length_penalty": float,
-                                "xtts_num_beams": int,
-                                "xtts_repetition_penalty": float,
-                                #"xtts_cvvp_weight": float,
-                                "xtts_top_k": int,
-                                "xtts_top_p": float,
-                                "xtts_speed": float,
-                                #"xtts_gpt_cond_len": int,
-                                #"xtts_gpt_batch_size": int,
-                                "xtts_enable_text_splitting": bool
+                                'xtts_temperature': float,
+                                #'xtts_codec_temperature': float,
+                                'xtts_length_penalty': float,
+                                'xtts_num_beams': int,
+                                'xtts_repetition_penalty': float,
+                                #'xtts_cvvp_weight': float,
+                                'xtts_top_k': int,
+                                'xtts_top_p': float,
+                                'xtts_speed': float,
+                                #'xtts_gpt_cond_len': int,
+                                #'xtts_gpt_batch_size': int,
+                                'xtts_enable_text_splitting': bool
                             }.items()
                             if self.session.get(key) is not None
                         }
@@ -457,7 +457,22 @@ class TTSUtils:
                             if audio_tensor is not None and audio_tensor.numel() > 0:
                                 # CON is a reserved name on windows
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
-                                new_current_voice = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', current_voice)
+                                # Rebuild the path under the new language folder.
+                                # Works for any old-language → any new-language swap (eng→fra, zho→fra, …),
+                                # not just eng→X. xtts voices are always absolute paths under voices_dir.
+                                voices_root = Path(voices_dir)
+                                try:
+                                    rel = Path(current_voice).relative_to(voices_root)
+                                except ValueError:
+                                    error = f'_check_xtts_builtin_speakers() error: {current_voice} is not under {voices_dir}'
+                                    print(error)
+                                    return False
+                                if len(rel.parts) < 2:
+                                    error = f'_check_xtts_builtin_speakers() error: unexpected voice layout for {current_voice}'
+                                    print(error)
+                                    return False
+                                new_current_voice = str(voices_root.joinpath(lang_dir, *rel.parts[1:]))
+                                os.makedirs(os.path.dirname(new_current_voice), exist_ok=True)
                                 proc_current_voice = new_current_voice.replace('.wav', '_temp.wav')
                                 torchaudio.save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
                                 if normalize_audio(proc_current_voice, new_current_voice, default_audio_proc_samplerate, self.session['is_gui_process']):
@@ -537,9 +552,9 @@ class TTSUtils:
             else self.models[self.session['fine_tuned']]['voice']
         )
         if current_voice is not None:
-            self.speaker = re.sub(r'\.wav$', '', os.path.basename(current_voice))
+            speaker = re.sub(r'\.wav$', '', os.path.basename(current_voice))
             if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:
-                current_voice = self._check_xtts_builtin_speakers(current_voice, self.speaker)
+                current_voice = self._check_xtts_builtin_speakers(current_voice, speaker)
                 if not current_voice:
                     error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
                     return None, error
