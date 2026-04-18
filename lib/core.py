@@ -2167,7 +2167,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             new_voice = old_voice
                         else:
                             new_voice, error = tts_manager.set_voice(old_voice)
-                            if new_voice is None:
+                            if new_voice is None and error is not None:
                                 show_alert(session_id, {'type': 'warning', 'msg': error})
                                 return False
                         voice_cache[old_voice] = new_voice
