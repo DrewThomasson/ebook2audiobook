@@ -2435,11 +2435,11 @@ def build_interface(args:dict)->gr.Blocks:
                     return event.then(
                         fn=lambda s: (
                             enable_components(s) + (1,)
-                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
-                            and context.get_session(s)['ebook_mode'] == ebook_modes['TEXT']
+                            if context.get_session(s).get('status','') in [status_tags['END'], status_tags['READY']]
+                            and context.get_session(s).get('ebook_mode','') == ebook_modes['TEXT']
                             else (
                                 enable_components(s) + (0,)
-                                if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
+                                if context.get_session(s)('status','') in [status_tags['END'], status_tags['READY']]
                                 else [gr.update()] * len(outputs_enable_components) + [0]
                             )
                         ),
