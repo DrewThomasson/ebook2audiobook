@@ -2905,6 +2905,11 @@ def build_interface(args:dict)->gr.Blocks:
                     inputs=[gr_session],
                     outputs=[gr_modal],
                     show_progress_on=[gr_progress]
+                ).then(
+                    fn=restore_audiobook_player,
+                    inputs=[gr_session, gr_audiobook_list],
+                    outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_timer],
+                    show_progress_on=[gr_progress]
                 ),
                 always=True
             )
