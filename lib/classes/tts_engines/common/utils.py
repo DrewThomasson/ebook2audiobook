@@ -254,11 +254,11 @@ class TTSUtils:
             else:
                 if quality_mode:
                     try:
-                        if hasattr(torch.cuda, 'is_bf16_supported') and torch.cuda.is_bf16_supported():
-                            #amp_dtype = torch.bfloat16
-                            amp_dtype = torch.float16
-                        else:
-                            amp_dtype = torch.float16
+                        #if hasattr(torch.cuda, 'is_bf16_supported') and torch.cuda.is_bf16_supported():
+                        #    amp_dtype = torch.bfloat16
+                        #    amp_dtype = torch.float16
+                        #else:
+                        amp_dtype = torch.float16
                     except Exception:
                         amp_dtype = torch.float16
                 else:
@@ -272,9 +272,9 @@ class TTSUtils:
             except Exception:
                 pass
             try:
-                if quality_mode and hasattr(torch.backends.mps, 'is_bf16_supported') and torch.backends.mps.is_bf16_supported():
-                    #amp_dtype = torch.bfloat16
-                    amp_dtype = torch.float16
+                #if quality_mode and hasattr(torch.backends.mps, 'is_bf16_supported') and torch.backends.mps.is_bf16_supported():
+                #    amp_dtype = torch.bfloat16
+                amp_dtype = torch.float16
                 else:
                     amp_dtype = torch.float16
             except Exception:
