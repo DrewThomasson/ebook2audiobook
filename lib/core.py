@@ -3295,7 +3295,7 @@ def cleanup_models_cache()->None:
         print(error)
 
 def show_alert(session_id:str|None, state:dict|None)->None:
-    if state:
+    if state is not None:
         print(state.get('msg', ' ').replace('<br/>', '\n'))
         if session_id is not None:
             session = context.get_session(session_id)
