@@ -2160,15 +2160,16 @@ def convert_chapters2audio(session_id:str)->bool:
                     voice_cache = {}
                     for block in blocks:
                         old_voice = block.get('voice')
-                        if not old_voice:
-                            continue
                         if old_voice in voice_cache:
                             block['voice'] = voice_cache[old_voice]
                             continue
-                        new_voice, error = tts_manager.set_voice(old_voice)
-                        if new_voice is None:
-                            show_alert(session_id, {'type': 'warning', 'msg': error})
-                            return False
+                        if old_voice is None:
+                            new_voice = old_voice
+                        else:
+                            new_voice, error = tts_manager.set_voice(old_voice)
+                            if new_voice is None:
+                                show_alert(session_id, {'type': 'warning', 'msg': error})
+                                return False
                         voice_cache[old_voice] = new_voice
                         block['voice'] = new_voice
                     session['blocks_current'] = blocks_current
