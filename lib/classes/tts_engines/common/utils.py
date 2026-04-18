@@ -256,7 +256,6 @@ class TTSUtils:
                     try:
                         #if hasattr(torch.cuda, 'is_bf16_supported') and torch.cuda.is_bf16_supported():
                         #    amp_dtype = torch.bfloat16
-                        #    amp_dtype = torch.float16
                         #else:
                         amp_dtype = torch.float16
                     except Exception:
@@ -274,9 +273,8 @@ class TTSUtils:
             try:
                 #if quality_mode and hasattr(torch.backends.mps, 'is_bf16_supported') and torch.backends.mps.is_bf16_supported():
                 #    amp_dtype = torch.bfloat16
+                #else:
                 amp_dtype = torch.float16
-                else:
-                    amp_dtype = torch.float16
             except Exception:
                 amp_dtype = torch.float16
             return amp_dtype
