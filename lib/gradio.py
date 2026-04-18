@@ -2087,7 +2087,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     session['status'] = status_tags['END']
                     session['audiobook_overridden'] = None
-                return gr.update(value='', visible=False)
+                return gr.update(value='', visible=False), gr.update(visible=True)
 
             def click_gr_override_confirm_btn(session_id:str, event:int, audiobook_files_state:bool)->tuple:
                 try:
@@ -2903,12 +2903,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_override_cancel_btn.click(
                     fn=click_gr_override_cancel_btn,
                     inputs=[gr_session],
-                    outputs=[gr_modal],
-                    show_progress_on=[gr_progress]
-                ).then(
-                    fn=restore_audiobook_player,
-                    inputs=[gr_session, gr_audiobook_list],
-                    outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_timer],
+                    outputs=[gr_modal, gr_group_audiobook_list],
                     show_progress_on=[gr_progress]
                 ),
                 always=True
