@@ -2117,14 +2117,14 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = ' '.join(text.split())
     return text
 
-def block_signature(block:dict)->str:
+def block_signature(block: dict) -> str:
     return hashlib.sha1(
         '|'.join((
-            block.get('text', '').strip(),
-            block.get('voice', ''),
-            block.get('tts_engine', ''),
-            block.get('fine_tuned', ''),
-            json.dumps(block.get('sentences', []), sort_keys=True, ensure_ascii=False),
+            (block.get('text') or '').strip(),
+            block.get('voice') or '',
+            block.get('tts_engine') or TTS_ENGINES['XTTSv2'],
+            block.get('fine_tuned') or 'internal',
+            json.dumps(block.get('sentences') or [], sort_keys=True, ensure_ascii=False),
         )).encode('utf-8')
     ).hexdigest()
 
