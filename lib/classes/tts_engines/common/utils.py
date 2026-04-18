@@ -551,6 +551,7 @@ class TTSUtils:
             voice if voice is not None 
             else self.models[self.session['fine_tuned']]['voice']
         )
+        print(f'-------------------current_voice: {current_voice}--------------')
         if current_voice is not None:
             speaker = re.sub(r'\.wav$', '', os.path.basename(current_voice))
             if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:
