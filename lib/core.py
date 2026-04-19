@@ -87,7 +87,8 @@ save_session_keys_except = [
 
 file_prefixes = {
     "clone": "__",
-    "saved": "__saved_"
+    "saved": "__saved_",
+    'current': "__current_"
 }
 
 ########### Classes
