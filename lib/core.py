@@ -2161,8 +2161,7 @@ def convert_chapters2audio(session_id:str)->bool:
                     voice_cache[old_voice] = new_voice
                 if new_voice != old_voice:
                     block['voice'] = new_voice
-                    if 'hash' in block:
-                        block['hash'] = block_hash(block)
+                block['hash'] = block_hash(block)
             session['blocks_current'] = blocks_current
 
         # --- headcount ---
