@@ -2130,194 +2130,202 @@ def block_hash(block: dict) -> str:
 
 def convert_chapters2audio(session_id:str)->bool:
     session = context.get_session(session_id)
-    if session and session.get('id', False):
-        try:
-            tts_manager = TTSManager(session)
-            blocks_current = session['blocks_current']
-            blocks = blocks_current['blocks']
-            block_resume = blocks_current['block_resume']
-            sentence_resume = blocks_current['sentence_resume']
-            if session['cancellation_requested']:
-                return False
-            # Check if each chosen block voice is xttsv eng standard voice and current language
-            # is not eng but in xttsv2 languages. if it is, so start the voice conversion and update
-            # the block voice according to the current language
-            # Pre-resolve builtin xtts voices from eng/ to the current language folder once, upfront.
-            # Cached per old-path so identical voices across blocks don't re-trigger inference.
-            xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
-            if session['language'] != 'eng' and session['language'] in xtts_languages:
-                voice_cache = {}
-                for block in blocks:
-                    old_voice = block.get('voice')
-                    if old_voice in voice_cache:
-                        block['voice'] = voice_cache[old_voice]
-                        continue
+    if not (session and session.get('id', False)):
+        return False
+    try:
+        tts_manager = TTSManager(session)
+        blocks_current = session['blocks_current']
+        blocks = blocks_current['blocks']
+        block_resume = blocks_current['block_resume']
+        sentence_resume = blocks_current['sentence_resume']
+        if session['cancellation_requested']:
+            return False
+
+        # --- xtts pre-resolution: swap builtin eng voices for current-language folder ---
+        # Mutates block['voice'] in place. Re-anchors block['hash'] so this internal
+        # rewrite isn't mistaken for a user content change later.
+        xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
+        if session['language'] != 'eng' and session['language'] in xtts_languages:
+            voice_cache = {}
+            for block in blocks:
+                old_voice = block.get('voice')
+                if old_voice in voice_cache:
+                    new_voice = voice_cache[old_voice]
+                else:
                     if old_voice is None:
-                        new_voice = old_voice
+                        new_voice = None
                     else:
                         new_voice, error = tts_manager.set_voice(old_voice)
                         if new_voice is None and error is not None:
                             show_alert(session_id, {'type': 'warning', 'msg': error})
                             return False
                     voice_cache[old_voice] = new_voice
+                if new_voice != old_voice:
                     block['voice'] = new_voice
-                session['blocks_current'] = blocks_current
-            blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
-            total_chapters = len(blocks_kept)
-            if total_chapters == 0:
-                show_alert(session_id, {"type": "warning", "msg": 'No chapters found!'})
-                return False
-            total_sentences = sum(len(b['sentences']) for _, b in blocks_kept)
-            if total_sentences == 0:
-                show_alert(session_id, {"type": "warning", "msg": 'No sentences found!'})
-                return False
-            total_iterations = total_sentences
-            if session['ebook']:
-                msg = f'---------<br/>'
-                msg += f"{session['filename_noext']}<br/>"
-                msg += f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
-                msg += f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
-                msg += f'<br/>---------'
-                show_alert(session_id, {"type": "info", "msg": msg})
-                ebook_name = Path(session['ebook']).name
-                global_sent = 0
-                ch_num = 0
-                last_save_time = time.monotonic()
-                with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
-                    for x, block in blocks_kept:
-                        if session['cancellation_requested']:
-                            session['blocks_current'] = blocks_current
-                            return False
-                        last_save_time = time.monotonic()
-                        ch_num += 1
-                        sentences = block['sentences']
-                        sent_start = global_sent
-                        current_hash = block_hash(block)
-                        block_changed = block.get('hash') != current_hash
-                        missing_sentences = set()
-                        if x < block_resume and not block_changed:
-                            msg = f'Chapter {ch_num} (block {x}) — unchanged, skipping'
-                            print(msg)
-                            chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
-                            if not os.path.exists(chapter_audio_file):
-                                msg = f'Block {x} chapter audio missing, reconverting entire block…'
-                                show_alert(session_id, {"type": "warning", "msg": msg})
-                                block_dir_path = os.path.join(session['sentences_dir'], str(x))
-                                if os.path.isdir(block_dir_path):
-                                    shutil.rmtree(block_dir_path)
-                                start_sentence = 0
-                            else:
-                                block_dir = os.path.join(session['sentences_dir'], str(x))
-                                for j, sentence in enumerate(sentences):
-                                    sentence = sentence.strip()
-                                    if any(c.isalnum() for c in sentence):
-                                        is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
-                                        if (not is_sml) or (j == len(sentences) - 1):
-                                            sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                                            if not os.path.exists(sentence_file):
-                                                missing_sentences.add(j)
-                                if not missing_sentences:
-                                    for j, sentence in enumerate(sentences):
-                                        sentence = sentence.strip()
-                                        if any(c.isalnum() for c in sentence):
-                                            is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
-                                            global_sent += 1
-                                    t.update(len(sentences))
-                                    continue
-                                msg = f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…'
-                                show_alert(session_id, {"type": "warning", "msg": msg})
-                                ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
-                                if os.path.exists(ch_file):
-                                    os.unlink(ch_file)
-                                block_dir_path = os.path.join(session['sentences_dir'], str(x))
-                                if os.path.isdir(block_dir_path):
-                                    shutil.rmtree(block_dir_path)
-                                start_sentence = 0
-                        elif block_changed and x <= block_resume:
-                            msg = f'Chapter {ch_num} (block {x}) — changed, reconverting'
-                            show_alert(session_id, {"type": "info", "msg": msg})
-                            ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
-                            if os.path.exists(ch_file):
-                                os.unlink(ch_file)
-                            block_dir = os.path.join(session['sentences_dir'], str(x))
-                            if os.path.isdir(block_dir):
-                                shutil.rmtree(block_dir)
-                            start_sentence = 0
-                        elif x == block_resume:
-                            if sentence_resume == 0:
-                                block_dir_path = os.path.join(session['sentences_dir'], str(x))
-                                if os.path.isdir(block_dir_path):
-                                    shutil.rmtree(block_dir_path)
-                            start_sentence = sentence_resume
-                        else:
-                            start_sentence = 0
-                        msg = f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…'
-                        show_alert(session_id, {"type": "info", "msg": msg})
-                        block_dir = os.path.join(session['sentences_dir'], str(x))
-                        os.makedirs(block_dir, exist_ok=True)
-                        blocks_current['block_resume'] = x
-                        blocks_current['sentence_resume'] = start_sentence
-                        session['blocks_current'] = blocks_current
-                        save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
-                        converted = False
-                        for j in range(len(sentences)):
-                            if session['cancellation_requested']:
-                                session['blocks_current'] = blocks_current
-                                return False
-                            sentence = sentences[j].strip()
-                            if any(c.isalnum() for c in sentence):
-                                is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
-                                if j >= start_sentence or j in missing_sentences:
-                                    if j == start_sentence and start_sentence > 0:
-                                        msg = f'*** Resuming from sentence {global_sent} ***'
-                                        show_alert(session_id, {"type": "info", "msg": msg})
-                                    sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                                    block_voice = block.get('voice') or session.get('voice')
-                                    run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block_voice)
-                                    if run:
-                                        converted = True
-                                        blocks_current['sentence_resume'] = j
-                                        session['blocks_current'] = blocks_current
-                                        now = time.monotonic()
-                                        if now - last_save_time >= 5:
-                                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
-                                            last_save_time = now
-                                    else:
-                                        show_alert(session_id, {"type": "warning", "msg": error})
-                                        session['blocks_current'] = blocks_current
-                                        return False
-                                global_sent += 1
-                            total_progress = (t.n + 1) / total_iterations
-                            if session['is_gui_process']:
-                                progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
-                            percent = total_progress * 100
-                            t.set_description(f'{percent:.2f}%')
-                            print(f' : {sentence}')
-                            t.update(1)
-                        sent_end = global_sent - 1
-                        msg = f'End of Chapter {ch_num} (block {x})'
-                        show_alert(session_id, {"type": "info", "msg": msg})
-                        if converted or block_changed or missing_sentences:
-                            msg = f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'
-                            show_alert(session_id, {"type": "info", "msg": msg})
-                            chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
-                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
-                            last_save_time = time.monotonic()
-                            combine_result = combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences))
-                            if not combine_result:
-                                error = 'combine_audio_sentences() failed!'
-                                show_alert(session_id, {"type": "warning", "msg": error})
-                                session['blocks_current'] = blocks_current
-                                return False
-                            block['hash'] = current_hash
-                            session['blocks_current'] = blocks_current
-                session['blocks_current'] = blocks_current
-                return True
-        except Exception as e:
-            DependencyError(e)
-            error = f'convert_chapters2audio() error: {e}'
-            exception_alert(session_id, error)
+                    if 'hash' in block:
+                        block['hash'] = block_hash(block)
+            session['blocks_current'] = blocks_current
+
+        # --- headcount ---
+        blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
+        total_chapters = len(blocks_kept)
+        if total_chapters == 0:
+            show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
             return False
+        total_sentences = sum(len(b['sentences']) for _, b in blocks_kept)
+        if total_sentences == 0:
+            show_alert(session_id, {'type': 'warning', 'msg': 'No sentences found!'})
+            return False
+        if not session['ebook']:
+            return False
+
+        # --- helpers ---
+        def _reset_block_artifacts(x:int)->None:
+            '''Delete any existing chapter audio and per-sentence audio for block x.'''
+            ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+            if os.path.exists(ch_file):
+                os.unlink(ch_file)
+            block_dir = os.path.join(session['sentences_dir'], str(x))
+            if os.path.isdir(block_dir):
+                shutil.rmtree(block_dir)
+
+        def _all_sentence_files_present(x:int, sentences:list)->set:
+            '''Return the set of sentence indices whose audio file is missing on disk.'''
+            block_dir = os.path.join(session['sentences_dir'], str(x))
+            missing = set()
+            for j, sentence in enumerate(sentences):
+                sentence = sentence.strip()
+                if any(c.isalnum() for c in sentence):
+                    is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
+                    if (not is_sml) or (j == len(sentences) - 1):
+                        sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
+                        if not os.path.exists(sentence_file):
+                            missing.add(j)
+            return missing
+
+        def _count_sentences_for_progress(sentences:list)->int:
+            '''Number of sentences that count toward global_sent (mirrors the main loop's rule).'''
+            return sum(1 for s in sentences if any(c.isalnum() for c in s.strip()))
+
+        # --- main loop ---
+        ebook_name = Path(session['ebook']).name
+        global_sent = 0
+        ch_num = 0
+        last_save_time = time.monotonic()
+        msg = (f'---------<br/>'
+               f"{session['filename_noext']}<br/>"
+               f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
+               f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
+               f'<br/>---------')
+        show_alert(session_id, {'type': 'info', 'msg': msg})
+
+        with tqdm(total=total_sentences, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
+            for x, block in blocks_kept:
+                if session['cancellation_requested']:
+                    session['blocks_current'] = blocks_current
+                    return False
+                last_save_time = time.monotonic()
+                ch_num += 1
+                sentences = block['sentences']
+                sent_start = global_sent
+                current_hash = block_hash(block)
+                block_changed = block.get('hash') != current_hash
+                missing_sentences = set()
+
+                # --- decide what to do with this block ---
+                if x < block_resume and not block_changed:
+                    chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                    if not os.path.exists(chapter_audio_file):
+                        show_alert(session_id, {'type': 'warning', 'msg': f'Block {x} chapter audio missing, reconverting entire block…'})
+                        _reset_block_artifacts(x)
+                        start_sentence = 0
+                    else:
+                        missing_sentences = _all_sentence_files_present(x, sentences)
+                        if not missing_sentences:
+                            # genuinely skipping — all artifacts present
+                            print(f'Chapter {ch_num} (block {x}) — unchanged, skipping')
+                            global_sent += _count_sentences_for_progress(sentences)
+                            t.update(len(sentences))
+                            continue
+                        show_alert(session_id, {'type': 'warning', 'msg': f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…'})
+                        _reset_block_artifacts(x)
+                        start_sentence = 0
+                elif block_changed and x <= block_resume:
+                    show_alert(session_id, {'type': 'info', 'msg': f'Chapter {ch_num} (block {x}) — changed, reconverting'})
+                    _reset_block_artifacts(x)
+                    start_sentence = 0
+                elif x == block_resume:
+                    if sentence_resume == 0:
+                        block_dir_path = os.path.join(session['sentences_dir'], str(x))
+                        if os.path.isdir(block_dir_path):
+                            shutil.rmtree(block_dir_path)
+                    start_sentence = sentence_resume
+                else:
+                    start_sentence = 0
+
+                # --- convert sentences ---
+                show_alert(session_id, {'type': 'info', 'msg': f'Chapter {ch_num} (block {x}) containing {len(sentences)} sentences…'})
+                block_dir = os.path.join(session['sentences_dir'], str(x))
+                os.makedirs(block_dir, exist_ok=True)
+                blocks_current['block_resume'] = x
+                blocks_current['sentence_resume'] = start_sentence
+                session['blocks_current'] = blocks_current
+                save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+
+                converted = False
+                for j in range(len(sentences)):
+                    if session['cancellation_requested']:
+                        session['blocks_current'] = blocks_current
+                        return False
+                    sentence = sentences[j].strip()
+                    if any(c.isalnum() for c in sentence):
+                        if j >= start_sentence or j in missing_sentences:
+                            if j == start_sentence and start_sentence > 0:
+                                show_alert(session_id, {'type': 'info', 'msg': f'*** Resuming from sentence {global_sent} ***'})
+                            sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
+                            block_voice = block.get('voice') or session.get('voice')
+                            run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block_voice)
+                            if not run:
+                                show_alert(session_id, {'type': 'warning', 'msg': error})
+                                session['blocks_current'] = blocks_current
+                                return False
+                            converted = True
+                            blocks_current['sentence_resume'] = j
+                            session['blocks_current'] = blocks_current
+                            now = time.monotonic()
+                            if now - last_save_time >= 5:
+                                save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                                last_save_time = now
+                        global_sent += 1
+                    total_progress = (t.n + 1) / total_sentences
+                    if session['is_gui_process']:
+                        progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
+                    t.set_description(f'{total_progress * 100:.2f}%')
+                    print(f' : {sentence}')
+                    t.update(1)
+
+                sent_end = global_sent - 1
+                show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
+
+                # --- combine if we actually did work ---
+                if converted or block_changed or missing_sentences:
+                    show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
+                    chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                    save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                    last_save_time = time.monotonic()
+                    if not combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences)):
+                        show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
+                        session['blocks_current'] = blocks_current
+                        return False
+                    block['hash'] = current_hash
+                    session['blocks_current'] = blocks_current
+
+            session['blocks_current'] = blocks_current
+            return True
+    except Exception as e:
+        DependencyError(e)
+        exception_alert(session_id, f'convert_chapters2audio() error: {e}')
+        return False
 
 def combine_audio_sentences(session_id:str, file:str, block_idx:int, sentence_count:int)->bool:
     try:
