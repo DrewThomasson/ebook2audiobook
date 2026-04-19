@@ -2140,7 +2140,7 @@ def convert_chapters2audio(session_id:str)->bool:
         sentence_resume = blocks_current['sentence_resume']
         if session['cancellation_requested']:
             return False
-
+        print(session['blocks_current'])
         # --- xtts pre-resolution: swap builtin eng voices for current-language folder ---
         # Mutates block['voice'] in place. Re-anchors block['hash'] so this internal
         # rewrite isn't mistaken for a user content change later.
