@@ -2212,7 +2212,7 @@ def build_interface(args:dict)->gr.Blocks:
                         new_blocks[idx]['text'] = texts[i]
                 return new_blocks
 
-            def change_saved_blocks(session:DictProxy, page:int, blocks:list[dict], *args)->None:
+            def change_current_blocks(session:DictProxy, page:int, blocks:list[dict], *args)->None:
                 new_blocks = collect_page(page, blocks, *args)
                 blocks_current = session['blocks_current']
                 old_blocks = blocks_current['blocks']
@@ -2228,14 +2228,14 @@ def build_interface(args:dict)->gr.Blocks:
                         b['sentences'] = []
                 blocks_current['blocks'] = new_blocks
                 session['blocks_current'] = blocks_current
-                save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
 
             def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['EDIT']]:
                         session['status'] = status_tags['READY']
-                        change_saved_blocks(session, page, blocks, *args)
+                        change_current_blocks(session, page, blocks, *args)
                         if session['ebook_mode'] == ebook_modes['TEXT']:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
@@ -2248,9 +2248,9 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] in [status_tags['EDIT']]:
                         if not any(b['keep'] and b['text'].strip() for b in blocks):
                             error = 'At least one block must be kept.'
-                            show_alert(session_id, {"type": "warning", "msg": error})
+                            show_alert(session_id, {'type': 'warning', 'msg': error})
                             return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
-                        change_saved_blocks(session, page, blocks, *args)
+                        change_current_blocks(session, page, blocks, *args)
                         if session['ebook_mode'] == ebook_modes['TEXT']:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']

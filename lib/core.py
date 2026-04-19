@@ -622,7 +622,9 @@ def sync_blocks_params(session_id:str)->None:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
             return
-        blocks_saved = session.get('blocks_saved') or {}
+        blocks_saved = session.get('blocks_saved')
+        if not blocks_saved:
+            return
         saved_voice = blocks_saved.get('voice')
         current_voice = session.get('voice')
         if saved_voice == current_voice:
@@ -3093,34 +3095,23 @@ def convert_ebook(args:dict)->tuple:
                                                     }
                                                 if session.get('blocks_orig', {}):
                                                     save_json_blocks(session, json_blocks_orig_file, 'blocks_orig')
-                                            if not session.get('blocks_saved', {}):
-                                                source_blocks = (session.get('blocks_current', {}).get('blocks')
-                                                                 or session['blocks_orig']['blocks'])
-                                                session['blocks_saved'] = {
-                                                    'blocks': copy.deepcopy(source_blocks),
-                                                    'block_resume': 0,
-                                                    'sentence_resume': 0,
-                                                    'voice': session['voice'],
-                                                    'tts_engine': session['tts_engine'],
-                                                    'fine_tuned': session['fine_tuned'],
-                                                }
-                                                save_json_blocks(session, session['blocks_saved_json'], 'blocks_saved')
                                             if not session.get('blocks_current', {}):
                                                 session['blocks_current'] = {
-                                                    'blocks': copy.deepcopy(session['blocks_saved']['blocks']),
-                                                    'block_resume': session['blocks_saved'].get('block_resume', 0),
-                                                    'sentence_resume': session['blocks_saved'].get('sentence_resume', 0),
+                                                    'blocks': copy.deepcopy(session['blocks_orig']['blocks']),
+                                                    'block_resume': 0,
+                                                    'sentence_resume': 0,
                                                 }
                                                 save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
-                                            # --- legacy upgrade: old blocks_saved files won't have session scalars ---
-                                            saved = session['blocks_saved']
-                                            if 'voice' not in saved:
+                                            ######## --- legacy upgrade: old blocks_saved files (if present) won't have session scalars ---
+                                            saved = session.get('blocks_saved')
+                                            if saved and 'voice' not in saved:
                                                 saved['voice'] = session.get('voice')
                                                 saved['tts_engine'] = session.get('tts_engine')
                                                 saved['fine_tuned'] = session.get('fine_tuned')
                                                 session['blocks_saved'] = saved
                                                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_saved')
-                                            if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
+                                            ########
+                                            if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
                                                 sync_blocks_params(session_id)
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
