@@ -2309,8 +2309,9 @@ def convert_chapters2audio(session_id:str)->bool:
                                 show_alert(session_id, {"type": "warning", "msg": error})
                                 session['blocks_current'] = blocks_current
                                 return False
-                        block['hash'] = current_hash
-                        session['blocks_current'] = blocks_current
+                            block['hash'] = current_hash
+                            session['blocks_current'] = blocks_current
+                            print(session['blocks_current']['blocks'][x]['hash'])
                 session['blocks_current'] = blocks_current
                 return True
         except Exception as e:
