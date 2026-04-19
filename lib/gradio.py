@@ -930,7 +930,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
-                            outputs = list(gr.update(interactive=True) for _ in range(18))
+                            outputs = list(gr.update(interactive=True) for _ in range(20))
                             enabled_convert_btn = False
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if session.get('ebook_list'):
@@ -944,7 +944,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'enable_components(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(21))
+                outputs = tuple(gr.update() for _ in range(23))
                 return outputs
 
             def disable_on_voice_upload()->tuple:
@@ -2458,7 +2458,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
-                gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn
+                gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn
             ]
             outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
