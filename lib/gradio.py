@@ -1313,30 +1313,19 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session.get('voice') != selected:
-                            voice_previous = session.get('voice')
-                            if not voice_options or selected is None:
-                                new_voice = None
-                            else:
-                                voice_value = voice_options[0][1]
-                                new_voice = next(
-                                    (value for label, value in voice_options if value == selected),
-                                    voice_value,
-                                )
-                            session['voice_previous'] = voice_previous
-                            session['voice'] = new_voice
-                            # propagate to every block that was tracking the session default
-                            # (blocks with an explicit override — different from voice_previous — stay put)
-                            blocks_current = session['blocks_current']
-                            changed = False
-                            for block in blocks_current.get('blocks', []):
-                                if block.get('voice') == voice_previous:
-                                    block['voice'] = new_voice
-                                    changed = True
-                            if changed:
-                                session['blocks_current'] = blocks_current
-                        visible_voice_buttons = session['voice'] is not None
-                        return gr.update(value=session['voice']), gr.update(visible=visible_voice_buttons), gr.update(visible=visible_voice_buttons)
+                        if session.get('voice') == selected:
+                            return gr.update(), gr.update(), gr.update()
+                        if not voice_options or selected is None:
+                            new_voice = None
+                        else:
+                            voice_value = voice_options[0][1]
+                            new_voice = next(
+                                (value for label, value in voice_options if value == selected),
+                                voice_value,
+                            )
+                        session['voice'] = new_voice
+                        visible_voice_buttons = new_voice is not None
+                        return gr.update(value=new_voice), gr.update(visible=visible_voice_buttons), gr.update(visible=visible_voice_buttons)
                 except Exception as e:
                     error = f'change_gr_voice_list(): {e}'
                     exception_alert(session_id, error)
@@ -1435,7 +1424,6 @@ def build_interface(args:dict)->gr.Blocks:
                                         os.remove(file)
                                     shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
                                     msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
-                                    session['voice_previous'] = session['voice']
                                     if voice_options:
                                         session['voice'] = voice_options[0][1]
                                     else:
@@ -2178,21 +2166,10 @@ def build_interface(args:dict)->gr.Blocks:
                             if session['status'] in [status_tags['EDIT']]:
                                 visible_main = False
                                 visible_blocks = True
-                                ebook_name = ''
-                                blocks = []
                                 page = 0
                                 ebook_name = Path(session['ebook']).stem
                                 blocks_current = session['blocks_current']
                                 blocks = blocks_current['blocks']
-                                current_voice = session.get('voice')
-                                previous_voice = session.get('voice_previous')
-                                if previous_voice is not None:
-                                    for b in blocks:
-                                        if b.get('voice') == previous_voice:
-                                            b['voice'] = current_voice
-                                    blocks_current['blocks'] = blocks
-                                    session['blocks_current'] = blocks_current
-                                    session.pop('voice_previous', None)
                                 page_updates = list(populate_page(session_id, page, blocks))
                                 if session['cancellation_requested']:
                                     visible_main = True

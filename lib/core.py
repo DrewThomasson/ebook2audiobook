@@ -2787,6 +2787,27 @@ def delete_unused_tmp_dirs(session_id:str, output_dir:str, days:int)->None:
                                 error = f'Error deleting {full_dir_path}: {e}'
                                 print(error)
 
+def sync_voice_to_blocks(session_id:str)->None:
+    try:
+        session = context.get_session(session_id)
+        if session and session.get('id', False):
+            voice_previous = session.get('voice_previous')
+            current_voice = session.get('voice')
+            if voice_previous == current_voice:
+                return
+            blocks_current = session['blocks_current']
+            changed = False
+            for block in blocks_current.get('blocks', []):
+                if block.get('voice') == voice_previous:
+                    block['voice'] = current_voice
+                    changed = True
+            if changed:
+                session['blocks_current'] = blocks_current
+            session['voice_previous'] = current_voice
+    except Exception as e:
+        error = f'sync_voice_to_blocks(): {e}'
+        exception_alert(session_id, error)
+
 def get_compatible_tts_engines(language:str)->list[str]:
     return [
         engine
@@ -3080,6 +3101,7 @@ def convert_ebook(args:dict)->tuple:
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
+                                                sync_voice_to_blocks(sessioin_id)
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
