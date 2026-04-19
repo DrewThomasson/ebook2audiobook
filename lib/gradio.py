@@ -2941,7 +2941,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_confirm_btn.click(
                 fn=lambda: (gr.update(interactive=False), gr.update(interactive=False)),
                 outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn],
-                queue=False,
+                queue=False
             ).then(
                 fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
                 inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
