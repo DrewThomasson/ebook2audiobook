@@ -3101,7 +3101,7 @@ def convert_ebook(args:dict)->tuple:
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_saved'])
                                                 save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
                                             if session.get('blocks_orig', {}) and session.get('blocks_saved', {}) and session.get('blocks_current', {}):
-                                                sync_voice_to_blocks(sessioin_id)
+                                                sync_voice_to_blocks(session_id)
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
