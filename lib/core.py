@@ -2117,7 +2117,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = ' '.join(text.split())
     return text
 
-def block_signature(block: dict) -> str:
+def block_hash(block: dict) -> str:
     return hashlib.sha1(
         '|'.join((
             (block.get('text') or '').strip(),
@@ -2192,10 +2192,8 @@ def convert_chapters2audio(session_id:str)->bool:
                         ch_num += 1
                         sentences = block['sentences']
                         sent_start = global_sent
-                        current_signature = block_signature(block)
-                        print(current_signature)
-                        print(block.get('block_signature'))
-                        block_changed = block.get('block_signature') != current_signature
+                        current_hash = block_hash(block)
+                        block_changed = block.get('hash') != current_hash
                         missing_sentences = set()
                         if x < block_resume and not block_changed:
                             msg = f'Chapter {ch_num} (block {x}) — unchanged, skipping'
@@ -2261,6 +2259,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         blocks_current['sentence_resume'] = start_sentence
                         session['blocks_current'] = blocks_current
                         save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                        converted = False
                         for j in range(len(sentences)):
                             if session['cancellation_requested']:
                                 session['blocks_current'] = blocks_current
@@ -2276,6 +2275,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                     block_voice = block.get('voice') or session.get('voice')
                                     run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block_voice)
                                     if run:
+                                        converted = True
                                         blocks_current['sentence_resume'] = j
                                         session['blocks_current'] = blocks_current
                                         now = time.monotonic()
@@ -2297,7 +2297,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         sent_end = global_sent - 1
                         msg = f'End of Chapter {ch_num} (block {x})'
                         show_alert(session_id, {"type": "info", "msg": msg})
-                        if j >= start_sentence or block_changed or missing_sentences:
+                        if converted or block_changed or missing_sentences:
                             msg = f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'
                             show_alert(session_id, {"type": "info", "msg": msg})
                             chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
@@ -2309,8 +2309,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 show_alert(session_id, {"type": "warning", "msg": error})
                                 session['blocks_current'] = blocks_current
                                 return False
-                            # stamp signature only after the chapter audio was successfully combined
-                            blocks_current['blocks'][x]['block_signature'] = current_signature
+                            block['hash'] = current_hash
                             session['blocks_current'] = blocks_current
                 session['blocks_current'] = blocks_current
                 return True
