@@ -2193,6 +2193,8 @@ def convert_chapters2audio(session_id:str)->bool:
                         sentences = block['sentences']
                         sent_start = global_sent
                         current_signature = block_signature(block)
+                        print(current_signature)
+                        print(block.get('block_signature'))
                         block_changed = block.get('block_signature') != current_signature
                         missing_sentences = set()
                         if x < block_resume and not block_changed:
