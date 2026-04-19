@@ -2272,14 +2272,14 @@ def build_interface(args:dict)->gr.Blocks:
                         if not any(b['keep'] and b['text'].strip() for b in blocks):
                             error = 'At least one block must be kept.'
                             show_alert(session_id, {"type": "warning", "msg": error})
-                            return gr.update(), gr.update(), gr.update(), gr.update()
+                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                         change_saved_blocks(session, page, blocks, *args)
                         if session['ebook_mode'] == ebook_modes['TEXT']:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
                             session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
-                        return gr.update(visible=True), gr.update(visible=False), gr.update(value=session['ebook_textarea']), (event + 1)
-                return gr.update(), gr.update(), gr.update(), gr.update()
+                        return gr.update(visible=True), gr.update(visible=False), update_gr_audiobook_list(session_id), gr.update(value=session['ebook_textarea']), (event + 1)
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -2964,7 +2964,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=click_gr_blocks_confirm_btn,
                 inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                outputs=[gr_group_main, gr_group_blocks, gr_ebook_textarea, gr_blocks_event]
+                outputs=[gr_group_main, gr_group_blocks, gr_audiobook_list, gr_ebook_textarea, gr_blocks_event]
             )
             chain_enable(
                 chain_check_override(
