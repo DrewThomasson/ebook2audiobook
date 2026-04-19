@@ -2179,9 +2179,7 @@ def convert_chapters2audio(session_id:str)->bool:
         if not session['ebook']:
             return False
 
-        # --- helpers ---
-        def _reset_block_artifacts(x:int)->None:
-            '''Delete any existing chapter audio and per-sentence audio for block x.'''
+        def _reset_chapter_file(x:int)->None:
             ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
             if os.path.exists(ch_file):
                 os.unlink(ch_file)
@@ -2189,8 +2187,7 @@ def convert_chapters2audio(session_id:str)->bool:
             if os.path.isdir(block_dir):
                 shutil.rmtree(block_dir)
 
-        def _all_sentence_files_present(x:int, sentences:list)->set:
-            '''Return the set of sentence indices whose audio file is missing on disk.'''
+        def _check_block_sentences(x:int, sentences:list)->set:
             block_dir = os.path.join(session['sentences_dir'], str(x))
             missing = set()
             for j, sentence in enumerate(sentences):
@@ -2203,8 +2200,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             missing.add(j)
             return missing
 
-        def _count_sentences_for_progress(sentences:list)->int:
-            '''Number of sentences that count toward global_sent (mirrors the main loop's rule).'''
+        def _count_sentences(sentences:list)->int:
             return sum(1 for s in sentences if any(c.isalnum() for c in s.strip()))
 
         # --- main loop ---
@@ -2237,22 +2233,22 @@ def convert_chapters2audio(session_id:str)->bool:
                     chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                     if not os.path.exists(chapter_audio_file):
                         show_alert(session_id, {'type': 'warning', 'msg': f'Block {x} chapter audio missing, reconverting entire block…'})
-                        _reset_block_artifacts(x)
+                        _reset_chapter_file(x)
                         start_sentence = 0
                     else:
-                        missing_sentences = _all_sentence_files_present(x, sentences)
+                        missing_sentences = _check_block_sentences(x, sentences)
                         if not missing_sentences:
                             # genuinely skipping — all artifacts present
                             print(f'Chapter {ch_num} (block {x}) — unchanged, skipping')
-                            global_sent += _count_sentences_for_progress(sentences)
+                            global_sent += _count_sentences(sentences)
                             t.update(len(sentences))
                             continue
                         show_alert(session_id, {'type': 'warning', 'msg': f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…'})
-                        _reset_block_artifacts(x)
+                        _reset_chapter_file(x)
                         start_sentence = 0
                 elif block_changed and x <= block_resume:
                     show_alert(session_id, {'type': 'info', 'msg': f'Chapter {ch_num} (block {x}) — changed, reconverting'})
-                    _reset_block_artifacts(x)
+                    _reset_chapter_file(x)
                     start_sentence = 0
                 elif x == block_resume:
                     if sentence_resume == 0:
