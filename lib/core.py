@@ -2224,7 +2224,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 sentences = block['sentences']
                 sent_start = global_sent
                 current_hash = block_hash(block)
-                print(f'block {x}: has hash={"hash" in block}, current={current_hash[:8]}, stored={block.get("hash", "NONE")[:8] if block.get("hash") else "NONE"}')
                 block_changed = block.get('hash') != current_hash
                 missing_sentences = set()
 
@@ -3088,6 +3087,7 @@ def convert_ebook(args:dict)->tuple:
                                                         'sentence_resume': 0,
                                                         'blocks': [
                                                             {
+                                                                'hash': None,
                                                                 'expand': False,
                                                                 'keep': True,
                                                                 'text': t,
