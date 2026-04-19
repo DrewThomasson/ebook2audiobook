@@ -2235,8 +2235,7 @@ def convert_chapters2audio(session_id:str)->bool:
                     else:
                         missing_sentences = _check_block_sentences(x, sentences)
                         if not missing_sentences:
-                            # genuinely skipping — all artifacts present
-                            print(f'Chapter {ch_num} (block {x}) — unchanged, skipping')
+                            print(f'Chapter {ch_num} (block {x}) — has all sentences')
                             global_sent += _count_sentences(sentences)
                             t.update(len(sentences))
                             continue
