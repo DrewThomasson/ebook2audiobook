@@ -1341,7 +1341,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'change_gr_voice_list(): {e}'
                     exception_alert(session_id, error)
                 return gr.update(), gr.update(), gr.update()
-    
+
             def click_gr_voice_del_btn(session_id:str, selected:str)->tuple:
                 try:
                     if selected is not None:
