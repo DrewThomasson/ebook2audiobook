@@ -35,7 +35,6 @@ BUILD_DOCKER = 'build_docker'
 # ---------------------------------------------------------------------
 # Python environment references
 # ---------------------------------------------------------------------
-
 min_python_version = (3,10)
 max_python_version = (3,12)
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
@@ -44,7 +43,6 @@ requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 # ---------------------------------------------------------------------
 # Hardware mappings
 # ---------------------------------------------------------------------
-
 devices = {
     "CPU": {"proc": "cpu", "found": True},
     "CUDA": {"proc": "cuda", "found": False},
@@ -101,7 +99,6 @@ jetson_version_range = {"min": (5,1), "max": (6,1)}
 # ---------------------------------------------------------------------
 # Global paths
 # ---------------------------------------------------------------------
-
 root_dir = os.path.dirname(os.path.abspath(__file__))
 tmp_dir = os.path.abspath('tmp')
 run_dir = os.path.abspath('run')
@@ -142,8 +139,8 @@ os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
-os.environ["CUDA_MODULE_LOADING"] = "LAZY"
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
@@ -154,7 +151,6 @@ if DEVICE_SYSTEM == systems['WINDOWS']:
 # ---------------------------------------------------------------------
 # Global settings
 # ---------------------------------------------------------------------
-
 max_upload_size = '6GB' # MB or GB
 tmp_expire = 60 # days
 max_ebook_textarea_length = 1024 # chars
@@ -162,7 +158,6 @@ max_ebook_textarea_length = 1024 # chars
 # ---------------------------------------------------------------------
 # Interface configuration
 # ---------------------------------------------------------------------
-
 interface_host = '0.0.0.0'
 interface_port = 7860
 interface_shared_tmp_expire = 3 # in days
@@ -178,7 +173,6 @@ interface_component_options = {
 # ---------------------------------------------------------------------
 # UI directories
 # ---------------------------------------------------------------------
-
 audiobooks_gradio_dir = os.path.abspath(os.path.join('audiobooks','gui','gradio'))
 audiobooks_host_dir = os.path.abspath(os.path.join('audiobooks','gui','host'))
 audiobooks_cli_dir = os.path.abspath(os.path.join('audiobooks','cli'))
@@ -186,7 +180,6 @@ audiobooks_cli_dir = os.path.abspath(os.path.join('audiobooks','cli'))
 # ---------------------------------------------------------------------
 # files and audio supported formats
 # ---------------------------------------------------------------------
-
 ebook_formats = [
     ".epub", ".mobi", ".azw3", ".fb2", ".lrf", ".rb", ".snb", ".tcr", ".pdf",
     ".txt", ".rtf", ".doc", ".docx", ".html", ".odt", ".azw", ".tiff", ".tif",

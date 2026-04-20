@@ -85,12 +85,15 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
+                self.params['block_voice'] = kwargs.get('block_voice')
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
-                    run, error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
-                    if not run:
+                    self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
+                    if self.params['current_voice'] is None and error is not None:
                         return False, error
+                    if self.session['voice'] == self.params['block_voice']:
+                        self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
                 for part in sentence_parts:
@@ -98,8 +101,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        run, error = self._convert_sml(part)
-                        if not run:
+                        self.params['block_voice'], error = self._convert_sml(part)
+                        if self.params['block_voice'] is None:
                             return False, error
                         continue
                     if not any(c.isalnum() for c in part):
@@ -122,22 +125,12 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             with torch.no_grad():
                                 self.engine.to(device)
-                                if device == devices['CPU']['proc']:
+                                with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     self.engine.tts_to_file(
                                         text=part,
                                         file_path=tmp_in_wav,
                                         **speaker_argument
                                     )
-                                else:
-                                    with torch.autocast(
-                                        device_type=device,
-                                        dtype=self.amp_dtype
-                                    ):
-                                        self.engine.tts_to_file(
-                                            text=part,
-                                            file_path=tmp_in_wav,
-                                            **speaker_argument
-                                        )
                                 self.engine.to(devices['CPU']['proc'])
                             if self.params['current_voice'] in self.params['semitones'].keys():
                                 semitones = self.params['semitones'][self.params['current_voice']]
@@ -193,20 +186,11 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         else:
                             with torch.no_grad():
                                 self.engine.to(device)
-                                if device == devices['CPU']['proc']:
+                                with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
                                         text=part,
                                         **speaker_argument
                                     )
-                                else:
-                                    with torch.autocast(
-                                        device_type=device,
-                                        dtype=self.amp_dtype
-                                    ):
-                                        audio_part = self.engine.tts(
-                                            text=part,
-                                            **speaker_argument
-                                        )
                                 self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
                             src_tensor = self._tensor_type(audio_part)

@@ -64,12 +64,15 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
+                self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
-                    run, error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
-                    if not run:
+                    self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
+                    if self.params['current_voice'] is None and error is not None:
                         return False, error
+                    if self.session['voice'] == self.params['block_voice']:
+                        self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
                 if self.speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
@@ -95,8 +98,8 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        run, error = self._convert_sml(part)
-                        if not run:
+                        self.params['block_voice'], error = self._convert_sml(part)
+                        if self.params['block_voice'] is None:
                             return False, error
                         continue
                     if not any(c.isalnum() for c in part):
@@ -122,26 +125,14 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             speaker_argument['speaker_wav'] = self.params['current_voice']
                         with torch.no_grad():
                             self.engine.to(device)
-                            if device == devices['CPU']['proc']:
+                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 audio_part = self.engine.tts(
                                     text=part,
                                     speaker=self.speaker,
                                     voice_dir=pth_voice_dir,
-                                    **fine_tuned_params,
                                     **speaker_argument,
+                                    **fine_tuned_params
                                 )
-                            else:
-                                with torch.autocast(
-                                    device_type=device,
-                                    dtype=self.amp_dtype
-                                ):
-                                    audio_part = self.engine.tts(
-                                        text=part,
-                                        speaker=self.speaker,
-                                        voice_dir=pth_voice_dir,
-                                        **speaker_argument,
-                                        **fine_tuned_params
-                                    )
                             self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
                             src_tensor = self._tensor_type(audio_part)
