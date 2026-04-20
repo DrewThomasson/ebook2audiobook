@@ -2204,7 +2204,6 @@ def convert_chapters2audio(session_id:str)->bool:
                     voice_cache[old_voice] = new_voice
                 if new_voice != old_voice:
                     block['voice'] = new_voice
-                    block['hash'] = block_hash(block)
             session['blocks_current'] = blocks_current
         blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
         total_chapters = len(blocks_kept)
@@ -3105,7 +3104,7 @@ def convert_ebook(args:dict)->tuple:
                                                     save_json_blocks(session, json_file_key, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
-                                                #sync_blocks_params(session_id)
+                                                sync_blocks_params(session_id)
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
