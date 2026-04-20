@@ -2206,6 +2206,9 @@ def convert_chapters2audio(session_id:str)->bool:
                     block['voice'] = new_voice
             session['blocks_current'] = blocks_current
         saved_by_id = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
+        for b in blocks:
+            sb = saved_by_id.get(b['id'])
+            print(f"id={b['id'][:8]} cur_voice={b.get('voice')!r} saved_voice={sb.get('voice') if sb else None!r}")
         blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
         total_chapters = len(blocks_kept)
         if total_chapters == 0:
