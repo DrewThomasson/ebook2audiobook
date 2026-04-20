@@ -2202,8 +2202,9 @@ def convert_chapters2audio(session_id:str)->bool:
                             show_alert(session_id, {'type': 'warning', 'msg': error})
                             return False
                     voice_cache[old_voice] = new_voice
-                block['voice'] = new_voice
-                block['hash'] = block_hash(block)
+                if new_voice != old_voice:
+                    block['voice'] = new_voice
+                    block['hash'] = block_hash(block)
             session['blocks_current'] = blocks_current
         blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
         total_chapters = len(blocks_kept)
