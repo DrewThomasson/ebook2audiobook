@@ -2224,6 +2224,8 @@ def build_interface(args:dict)->gr.Blocks:
                     if 'fine_tuned' not in b:
                         b['fine_tuned'] = session.get('fine_tuned', '')
                     old_b = old_blocks[idx] if idx < len(old_blocks) else None
+                    if 'id' not in b and old_b is not None:
+                        b['id'] = old_b.get('id')
                     if old_b and old_b.get('text', '').strip() != b.get('text', '').strip():
                         b['sentences'] = []
                 blocks_current['blocks'] = new_blocks

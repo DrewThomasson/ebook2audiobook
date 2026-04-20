@@ -618,7 +618,7 @@ def save_json_blocks(session:DictProxy, file_path:str, key:str)->None:
     except Exception as e:
         print(f"save_json_blocks() error: {e}")
 
-def sync_blocks_params(session_id:str)->None:
+def sync_grlobals_to_blocks(session_id:str)->None:
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
@@ -636,7 +636,7 @@ def sync_blocks_params(session_id:str)->None:
         blocks_current['voice'] = current_voice
         session['blocks_current'] = blocks_current
     except Exception as e:
-        exception_alert(session_id, f'sync_blocks_params(): {e}')
+        exception_alert(session_id, f'sync_grlobals_to_blocks(): {e}')
 
 def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
@@ -2205,6 +2205,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 if new_voice != old_voice:
                     block['voice'] = new_voice
             session['blocks_current'] = blocks_current
+        saved_by_id = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
         blocks_kept = [(i, b) for i, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
         total_chapters = len(blocks_kept)
         if total_chapters == 0:
@@ -2236,7 +2237,9 @@ def convert_chapters2audio(session_id:str)->bool:
                 sentences = block['sentences']
                 sent_start = global_sent
                 current_hash = block_hash(block)
-                block_changed = block.get('hash') != current_hash
+                saved_block = saved_by_id.get(block['id'])
+                saved_hash = block_hash(saved_block) if saved_block else None
+                block_changed = saved_hash != current_hash
                 missing_sentences = set()
                 if x < block_resume and not block_changed:
                     chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
@@ -2315,7 +2318,6 @@ def convert_chapters2audio(session_id:str)->bool:
                         show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
                         session['blocks_current'] = blocks_current
                         return False
-                    block['hash'] = current_hash
                     session['blocks_current'] = blocks_current
             session['blocks_current'] = blocks_current
             session['blocks_saved'] = copy.deepcopy(blocks_current)
@@ -3075,7 +3077,7 @@ def convert_ebook(args:dict)->tuple:
                                                         'fine_tuned': session['fine_tuned'],
                                                         'blocks': [
                                                             {
-                                                                'hash': None,
+                                                                'id': str(uuid.uuid4()),
                                                                 'expand': False,
                                                                 'keep': True,
                                                                 'text': t,
@@ -3104,7 +3106,7 @@ def convert_ebook(args:dict)->tuple:
                                                     save_json_blocks(session, json_file_key, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
-                                                sync_blocks_params(session_id)
+                                                sync_grlobals_to_blocks(session_id)
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
