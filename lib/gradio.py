@@ -1442,15 +1442,15 @@ def build_interface(args:dict)->gr.Blocks:
                                     return gr.update(value='', visible=False), update_gr_custom_model_list(session_id), gr.update(),  gr.update()
                                 elif method == 'confirm_audiobook_del':
                                     selected_name = Path(audiobook).stem
-                                    if os.path.isdir(audiobook):
-                                        shutil.rmtree(selected, ignore_errors=True)
-                                    elif os.path.exists(audiobook):
+                                    count_files = sum(1 for f, _ in audiobook_options if Path(f).stem == selected_name)
+                                    if os.path.exists(audiobook):
                                         os.remove(audiobook)
-                                    vtt_path = Path(audiobook).with_suffix('.vtt')
-                                    if os.path.exists(vtt_path):
-                                        os.remove(vtt_path)
-                                    process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], audiobook).encode()).hexdigest()}")
-                                    shutil.rmtree(process_dir, ignore_errors=True)
+                                    if count_files <= 2:
+                                        vtt_path = Path(audiobook).with_suffix('.vtt')
+                                        if os.path.exists(vtt_path):
+                                            os.remove(vtt_path)
+                                        process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], selected_name).encode()).hexdigest()}")
+                                        shutil.rmtree(process_dir, ignore_errors=True)
                                     msg = f'Audiobook {selected_name} deleted!'
                                     session['audiobook'] = None
                                     show_alert(session_id, {"type": "info", "msg": msg})
