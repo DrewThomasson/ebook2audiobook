@@ -2238,8 +2238,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 sent_start = global_sent
                 current_hash = block_hash(block)
                 block_changed = block.get('hash') != current_hash
-                print(block.get('hash'))
-                print(current_hash)
                 missing_sentences = set()
                 if x < block_resume and not block_changed:
                     chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
@@ -3107,7 +3105,7 @@ def convert_ebook(args:dict)->tuple:
                                                     save_json_blocks(session, json_file_key, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
-                                                sync_blocks_params(session_id)
+                                                #sync_blocks_params(session_id)
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
