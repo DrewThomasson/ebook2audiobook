@@ -2579,7 +2579,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cur_indices = []
                 cur_duration = 0
                 max_part_duration = int(session['output_split_hours']) * 3600
-                needs_split = total_duration > (int(session['output_split_hours']) * 2) * 3600
                 for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
                     if session['cancellation_requested']:
                         return None
@@ -2596,6 +2595,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     part_files.append(cur_part)
                     part_chapter_indices.append(cur_indices)
                 pad_width = len(str(len(part_files)))
+                is_multi_part = len(part_files) > 1
                 for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
                     concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:0{pad_width}d}.txt')
                     with open(concat_list, 'w') as f:
@@ -2613,20 +2613,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                    final_file = os.path.join(session['audiobooks_dir'], (
+                    final_file = os.path.join(
+                        session['audiobooks_dir'],
                         f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
-                        if needs_split else session['final_name']
-                    ))
-                    if needs_split:
-                        final_file = os.path.join(
-                            session['audiobooks_dir'],
-                            f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
-                        )
-                        block_indices = set(kept_blocks[i][0] for i in indices)
-                    else:
-                        assert len(part_files) == 1, 'single-file export expected exactly one part'
-                        final_file = session['final_name']
-                        block_indices = None
+                        if is_multi_part else session['final_name']
+                    )
+                    block_indices = set(kept_blocks[i][0] for i in indices) if is_multi_part else None
                     if export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
                         exported_files.append(str(final_file))
             else:
