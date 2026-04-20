@@ -610,7 +610,7 @@ def save_json_blocks(session:DictProxy, file_path:str, key:str)->None:
     except Exception as e:
         print(f'save_json_blocks() error: {e}')
 
-def sync_grlobals_to_blocks(session_id:str)->None:
+def sync_globals_to_blocks(session_id:str)->None:
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
@@ -628,7 +628,7 @@ def sync_grlobals_to_blocks(session_id:str)->None:
         blocks_current['voice'] = current_voice
         session['blocks_current'] = blocks_current
     except Exception as e:
-        exception_alert(session_id, f'sync_grlobals_to_blocks(): {e}')
+        exception_alert(session_id, f'sync_globals_to_blocks(): {e}')
 
 def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)
@@ -2617,7 +2617,16 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
                         if needs_split else session['final_name']
                     ))
-                    block_indices = set(kept_blocks[i][0] for i in indices) if needs_split else None
+                    if needs_split:
+                        final_file = os.path.join(
+                            session['audiobooks_dir'],
+                            f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
+                        )
+                        block_indices = set(kept_blocks[i][0] for i in indices)
+                    else:
+                        assert len(part_files) == 1, 'single-file export expected exactly one part'
+                        final_file = session['final_name']
+                        block_indices = None
                     if export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
                         exported_files.append(str(final_file))
             else:
@@ -3098,7 +3107,7 @@ def convert_ebook(args:dict)->tuple:
                                                     save_json_blocks(session, json_file_key, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
-                                                sync_grlobals_to_blocks(session_id)
+                                                sync_globals_to_blocks(session_id)
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
