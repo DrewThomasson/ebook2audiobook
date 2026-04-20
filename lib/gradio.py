@@ -1446,7 +1446,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     print(f'----------------{count_files}---------------')
                                     if os.path.exists(audiobook):
                                         os.remove(audiobook)
-                                    if count_files <= 2:
+                                    if count_files <= 1:
                                         vtt_path = Path(audiobook).with_suffix('.vtt')
                                         if os.path.exists(vtt_path):
                                             os.remove(vtt_path)
