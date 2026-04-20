@@ -604,19 +604,11 @@ def load_json_blocks(filepath:str)->list[dict]:
 
 def save_json_blocks(session:DictProxy, file_path:str, key:str)->None:
     try:
-        if key == 'blocks_current':
-            blocks_previous_hash = hash_proxy_dict(MappingProxyType(session['blocks_saved']))
-            blocks_new_hash = hash_proxy_dict(MappingProxyType(session['blocks_current']))
-            if blocks_previous_hash == blocks_new_hash:
-                return
-            session['blocks_saved'] = copy.deepcopy(session['blocks_current'])
-            json_data = session['blocks_saved']
-        else:
-            json_data = session[key]
-        with open(file_path, "w", encoding="utf-8") as f:
+        json_data = session[key]
+        with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(json_data, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        print(f"save_json_blocks() error: {e}")
+        print(f'save_json_blocks() error: {e}')
 
 def sync_grlobals_to_blocks(session_id:str)->None:
     try:

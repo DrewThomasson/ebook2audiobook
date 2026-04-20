@@ -2365,7 +2365,7 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                     elif session.get('status', None) != status_tags['SKIP']:
                         if session.get('status', None) == status_tags['EDIT']:
-                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_current')
+                            save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
                         new_hash = hash_proxy_dict(MappingProxyType(session))
                         if previous_hash == new_hash:
                             yield gr.update(), gr.update(), gr.update()
