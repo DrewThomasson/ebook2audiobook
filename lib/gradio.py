@@ -1443,6 +1443,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 elif method == 'confirm_audiobook_del':
                                     selected_name = Path(audiobook).stem
                                     count_files = sum(1 for f, _ in audiobook_options if Path(f).stem == selected_name)
+                                    print(f'----------------{count_files}---------------')
                                     if os.path.exists(audiobook):
                                         os.remove(audiobook)
                                     if count_files <= 2:
