@@ -2882,14 +2882,14 @@ def convert_ebook(args:dict)->tuple:
             print(f"Processing eBook file: {os.path.basename(session['ebook_src'])}")
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + '.' + session['output_format']
-                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
+                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
-                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
+                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
