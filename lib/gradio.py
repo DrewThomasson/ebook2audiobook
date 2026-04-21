@@ -429,25 +429,6 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_audiobook_vtt, #gr_playback_time {
                     display: none !important;
                 }
-                #gr_blocks_nav button.nav-btn {
-                    width:44px !important;
-                    min-width:44px !important;
-                    max-width:44px !important;
-                    padding:0 !important;
-                }
-                #gr_blocks_nav .nav-header {
-                    overflow:hidden !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    padding-bottom: 10px !important;
-                }
-                #gr_blocks_nav .nav-header p {
-                    margin:0 !important;
-                    white-space:nowrap !important;
-                    overflow:hidden !important;
-                    font-size: 16px !important;
-                }
                 #gr_row_buttons {
                     justify-content: center !important;
                     gap: 100px !important;
@@ -466,6 +447,40 @@ def build_interface(args:dict)->gr.Blocks:
                     width: 100% !important;
                     font-size: 18px !important;
                     font-weight: bold !important;
+                }
+                #gr_blocks_nav {
+                    justify-content: center !important;
+                    align-items: center;
+                    gap: 8px;
+                    flex-wrap: nowrap;
+                }
+                #gr_blocks_nav button.nav-btn {
+                    width:44px !important;
+                    min-width:44px !important;
+                    max-width:44px !important;
+                    padding:0 !important;
+                }
+                #gr_blocks_nav .nav-slot {
+                    flex: 0 0 44px !important;
+                    min-width: 44px !important;
+                    max-width: 44px !important;
+                }
+                #gr_blocks_nav .nav-header {
+                    flex: 0 0 auto !important;
+                    min-width: 0;
+                    overflow:hidden !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    text-align: center;
+                    padding-bottom: 10px !important;
+                }
+                #gr_blocks_nav .nav-header p {
+                    margin:0 !important;
+                    white-space:nowrap !important;
+                    overflow:hidden !important;
+                    text-align: center;
+                    font-size: 16px !important;
                 }
                 ///////////
                 .fade-in {
@@ -796,10 +811,12 @@ def build_interface(args:dict)->gr.Blocks:
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 gr_blocks_markdown = gr.Markdown(elem_id='gr_blocks_markdown', elem_classes=['gr-markdown'], value='')
-                with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
-                    gr_blocks_back_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
+                with gr.Row(elem_id='gr_blocks_nav', elem_classes=['nav-row']) as gr_blocks_nav:
+                    with gr.Column(scale=0, min_width=44, elem_classes=['nav-slot']):
+                        gr_blocks_back_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
                     gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
-                    gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
+                    with gr.Column(scale=0, min_width=44, elem_classes=['nav-slot']):
+                        gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
 
                 block_components = []
                 with gr.Column(elem_id='gr_column_blocks', elem_classes=['gr-col']):
