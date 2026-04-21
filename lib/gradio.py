@@ -1409,7 +1409,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def click_gr_deletion(session_id:str, voice_path:str, custom_model:str, audiobook:str, method:str|None=None)->tuple:
                 try:
-                    nonlocal models
+                    nonlocal models, voice_options
                     if method is not None:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
