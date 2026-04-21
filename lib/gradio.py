@@ -2554,7 +2554,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=lambda: gr.update(value=None),
                 inputs=None,
-                outputs=[gr_voice_file]
+                outputs=[gr_voice_file],
                 show_progress_on=[gr_voice_list]
             ).then(
                 fn=enable_on_voice_upload,
