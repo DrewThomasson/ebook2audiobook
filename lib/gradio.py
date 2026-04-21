@@ -1424,25 +1424,23 @@ def build_interface(args:dict)->gr.Blocks:
                                         os.remove(file)
                                     shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
                                     deleted_voice = session['voice']
-                                    if voice_options:
-                                        session['voice'] = voice_options[0][1]
-                                    else:
-                                        session['voice'] = None
-                                    new_voice = session['voice']
+                                    voice_options[:] = [(label, value) for label, value in voice_options if value != deleted_voice]
+                                    fallback = voice_options[0][1] if voice_options else None
+                                    session['voice'] = fallback
                                     blocks_current = session.get('blocks_current') or {}
                                     changed = False
                                     for block in blocks_current.get('blocks', []):
                                         if block.get('voice') == deleted_voice:
-                                            block['voice'] = new_voice
+                                            block['voice'] = fallback
                                             changed = True
                                     if blocks_current.get('voice') == deleted_voice:
-                                        blocks_current['voice'] = new_voice
+                                        blocks_current['voice'] = fallback
                                         changed = True
                                     if changed:
                                         session['blocks_current'] = blocks_current
                                     sync_globals_to_blocks(session_id)
                                     msg = f'Voice file {re.sub(r".wav$", "", selected_name)} deleted!'
-                                    show_alert(session_id, {"type": "info", "msg": msg})
+                                    show_alert(session_id, {'type': 'info', 'msg': msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                                 elif method == 'confirm_custom_model_del':
                                     selected_name = os.path.basename(custom_model)
