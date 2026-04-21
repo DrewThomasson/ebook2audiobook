@@ -2949,7 +2949,7 @@ def build_interface(args:dict)->gr.Blocks:
                         ).then(
                             fn=edit_blocks,
                             inputs=[gr_session],
-                            outputs=outputs_edit_blocks
+                            outputs=outputs_edit_blocks,
                             show_progress_on=[gr_progress]
                         )
                     )
