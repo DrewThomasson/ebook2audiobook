@@ -2791,7 +2791,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_audiobook_del_btn.click(
                 fn=click_gr_audiobook_del_btn,
                 inputs=[gr_session, gr_audiobook_list],
-                outputs=[gr_modal, gr_data_field_hidden]
+                outputs=[gr_modal, gr_data_field_hidden],
                 show_progress_on=[gr_audiobook_list]
             )
 
