@@ -1439,7 +1439,6 @@ def build_interface(args:dict)->gr.Blocks:
                                         changed = True
                                     if changed:
                                         session['blocks_current'] = blocks_current
-                                    sync_globals_to_blocks(session_id)
                                     msg = f'Voice file {re.sub(r".wav$", "", selected_name)} deleted!'
                                     show_alert(session_id, {'type': 'info', 'msg': msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
