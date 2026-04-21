@@ -2960,7 +2960,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_blocks_cancel_btn.click(
                     fn=lambda: (gr.update(interactive=False), gr.update(interactive=False)),
                     outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn],
-                    show_progress_on=[gr_progress]
+                    show_progress_on=[gr_progress],
                     queue=False
                 ).then(
                     fn=click_gr_blocks_cancel_btn,
@@ -2974,12 +2974,12 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_blocks_confirm_btn.click(
                     fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
                     inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                    outputs=[gr_blocks_data]
+                    outputs=[gr_blocks_data],
                     show_progress_on=[gr_progress]
                 ).then(
                     fn=click_gr_blocks_confirm_btn,
                     inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                    outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_group_main, gr_group_blocks, gr_audiobook_list, gr_ebook_textarea, gr_blocks_event]
+                    outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_group_main, gr_group_blocks, gr_audiobook_list, gr_ebook_textarea, gr_blocks_event],
                     show_progress_on=[gr_progress]
                 )
             )
@@ -3000,23 +3000,23 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_back_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
                 inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn],
                 show_progress_on=[gr_blocks_header]
             ).then(
                 fn=populate_page,
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands]
+                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                 show_progress_on=[gr_blocks_header]
             )
             gr_blocks_next_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
                 inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn],
                 show_progress_on=[gr_blocks_header]
             ).then(
                 fn=populate_page,
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands]
+                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                 show_progress_on=[gr_blocks_header]
             )
             #############
@@ -3056,7 +3056,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=lambda session: update_gr_glassmask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
                 inputs=[gr_session],
-                outputs=[gr_glassmask]
+                outputs=[gr_glassmask],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=None,
