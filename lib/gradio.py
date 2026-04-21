@@ -1426,7 +1426,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
                                     deleted_voice = session['voice']
                                     voice_options[:] = [(label, value) for label, value in voice_options if value != deleted_voice]
-                                    fallback = None if session['tts_engine'] in tts_engines_with_inner_speaker else voice_options[0][1] if voice_options else None
+                                    fallback = None if session['tts_engine'] in tts_engines_with_inner_speaker else default_engine_settings[session['tts_engine']]['voice']
+                                    print(f'-------------------fallback: {fallback}--------------------')
                                     session['voice'] = fallback
                                     blocks_current = session.get('blocks_current') or {}
                                     changed = False
