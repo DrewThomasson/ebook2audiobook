@@ -1409,7 +1409,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def click_gr_deletion(session_id:str, voice_path:str, custom_model:str, audiobook:str, method:str|None=None)->tuple:
                 try:
-                    nonlocal models
+                    nonlocal models, voice_options
                     if method is not None:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
@@ -1423,12 +1423,24 @@ def build_interface(args:dict)->gr.Blocks:
                                     for file in files2remove:
                                         os.remove(file)
                                     shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
-                                    msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
-                                    if voice_options:
-                                        session['voice'] = voice_options[0][1]
-                                    else:
-                                        session['voice'] = None
-                                    show_alert(session_id, {"type": "info", "msg": msg})
+                                    deleted_voice = session['voice']
+                                    voice_options[:] = [(label, value) for label, value in voice_options if value != deleted_voice]
+                                    fallback = voice_options[0][1] if voice_options else None
+                                    session['voice'] = fallback
+                                    blocks_current = session.get('blocks_current') or {}
+                                    changed = False
+                                    for block in blocks_current.get('blocks', []):
+                                        if block.get('voice') == deleted_voice:
+                                            block['voice'] = fallback
+                                            changed = True
+                                    if blocks_current.get('voice') == deleted_voice:
+                                        blocks_current['voice'] = fallback
+                                        changed = True
+                                    if changed:
+                                        session['blocks_current'] = blocks_current
+                                    sync_globals_to_blocks(session_id)
+                                    msg = f'Voice file {re.sub(r".wav$", "", selected_name)} deleted!'
+                                    show_alert(session_id, {'type': 'info', 'msg': msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                                 elif method == 'confirm_custom_model_del':
                                     selected_name = os.path.basename(custom_model)
@@ -1442,15 +1454,17 @@ def build_interface(args:dict)->gr.Blocks:
                                     return gr.update(value='', visible=False), update_gr_custom_model_list(session_id), gr.update(),  gr.update()
                                 elif method == 'confirm_audiobook_del':
                                     selected_name = Path(audiobook).stem
+                                    count_files = sum(1 for f, _ in audiobook_options if Path(f).stem == selected_name)
                                     if os.path.isdir(audiobook):
-                                        shutil.rmtree(selected, ignore_errors=True)
-                                    elif os.path.exists(audiobook):
+                                        shutil.rmtree(audiobook, ignore_errors=True)
+                                    else:
                                         os.remove(audiobook)
-                                    vtt_path = Path(audiobook).with_suffix('.vtt')
-                                    if os.path.exists(vtt_path):
-                                        os.remove(vtt_path)
-                                    process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], audiobook).encode()).hexdigest()}")
-                                    shutil.rmtree(process_dir, ignore_errors=True)
+                                    if count_files <= 1:
+                                        vtt_path = Path(audiobook).with_suffix('.vtt')
+                                        if os.path.exists(vtt_path):
+                                            os.remove(vtt_path)
+                                        process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], selected_name).encode()).hexdigest()}")
+                                        shutil.rmtree(process_dir, ignore_errors=True)
                                     msg = f'Audiobook {selected_name} deleted!'
                                     session['audiobook'] = None
                                     show_alert(session_id, {"type": "info", "msg": msg})
@@ -2251,14 +2265,14 @@ def build_interface(args:dict)->gr.Blocks:
                         if not any(b['keep'] and b['text'].strip() for b in blocks):
                             error = 'At least one block must be kept.'
                             show_alert(session_id, {'type': 'warning', 'msg': error})
-                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                         change_current_blocks(session, page, blocks, *args)
                         if session['ebook_mode'] == ebook_modes['TEXT']:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
                             session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
-                        return gr.update(visible=True), gr.update(visible=False), update_gr_audiobook_list(session_id), gr.update(value=session['ebook_textarea']), (event + 1)
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                        return gr.update(interactive=False), gr.update(interactive=False), gr.update(visible=True), gr.update(visible=False), update_gr_audiobook_list(session_id), gr.update(value=session['ebook_textarea']), (event + 1)
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -2940,18 +2954,16 @@ def build_interface(args:dict)->gr.Blocks:
                 ),
                 always=True
             )
-            gr_blocks_confirm_btn.click(
-                fn=lambda: (gr.update(interactive=False), gr.update(interactive=False)),
-                outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn],
-                queue=False
-            ).then(
-                fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                outputs=[gr_blocks_data]
-            ).then(
-                fn=click_gr_blocks_confirm_btn,
-                inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                outputs=[gr_group_main, gr_group_blocks, gr_audiobook_list, gr_ebook_textarea, gr_blocks_event]
+            chain_enable(
+                gr_blocks_confirm_btn.click(
+                    fn=lambda page, blocks, expands, *args: collect_page(page, blocks, expands, *args),
+                    inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
+                    outputs=[gr_blocks_data]
+                ).then(
+                    fn=click_gr_blocks_confirm_btn,
+                    inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
+                    outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_group_main, gr_group_blocks, gr_audiobook_list, gr_ebook_textarea, gr_blocks_event]
+                )
             )
             chain_enable(
                 chain_check_override(
