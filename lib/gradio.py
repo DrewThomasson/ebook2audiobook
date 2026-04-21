@@ -1427,6 +1427,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         session['voice'] = voice_options[0][1]
                                     else:
                                         session['voice'] = None
+                                    print(f'---------------{voice_path}--------------')
                                     sync_globals_to_blocks(session_id, voice_path)
                                     msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                                     show_alert(session_id, {"type": "info", "msg": msg})
