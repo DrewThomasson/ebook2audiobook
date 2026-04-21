@@ -85,12 +85,15 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
+                self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
-                    run, error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
-                    if not run:
+                    self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
+                    if self.params['current_voice'] is None and error is not None:
                         return False, error
+                    if self.session['voice'] == self.params['block_voice']:
+                        self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
                 for part in sentence_parts:
@@ -98,8 +101,8 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        run, error = self._convert_sml(part)
-                        if not run:
+                        self.params['block_voice'], error = self._convert_sml(part)
+                        if self.params['block_voice'] is None:
                             return False, error
                         continue
                     if not any(c.isalnum() for c in part):
@@ -118,24 +121,13 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                             speaker_argument = {"speaker": self.speaker, "preset": "ultra_fast"}
                         with torch.no_grad():
                             self.engine.to(device)
-                            if device == devices['CPU']['proc']:
+                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 audio_part = self.engine.tts(
                                     text=part,
                                     num_autoregressive_samples=1,
                                     diffusion_iterations=10,
                                     **speaker_argument
                                 )
-                            else:
-                                with torch.autocast(
-                                    device_type=device,
-                                    dtype=self.amp_dtype
-                                ):
-                                    audio_part = self.engine.tts(
-                                        text=part,
-                                        num_autoregressive_samples=1,
-                                        diffusion_iterations=10,
-                                        **speaker_argument
-                                    )
                             self.engine.to(devices['CPU']['proc'])
                         if is_audio_data_valid(audio_part):
                             src_tensor = self._tensor_type(audio_part)

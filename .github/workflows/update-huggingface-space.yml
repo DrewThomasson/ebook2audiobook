@@ -41,7 +41,7 @@ jobs:
           python - <<'EOF'
           import requests
           import os
-          
+
           def check_space_status(space_id):
               url = f"https://huggingface.co/api/spaces/{space_id}/runtime"
               response = requests.get(url)
@@ -53,14 +53,15 @@ jobs:
               else:
                   print(f"Error: {response.status_code}")
                   return "ERROR"
-          
+
           space_id = "${{ github.event.inputs.space_id }}"
           status = check_space_status(space_id)
-          
-          # Set output variables
+
+          # Set output variables using GITHUB_OUTPUT environment file
           is_running = "true" if status == "RUNNING" else "false"
-          print(f"::set-output name=is_running::{is_running}")
-          print(f"::set-output name=space_status::{status}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"is_running={is_running}\n")
+              f.write(f"space_status={status}\n")
           EOF
 
       - name: Report Status

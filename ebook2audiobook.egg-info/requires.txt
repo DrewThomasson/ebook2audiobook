@@ -29,6 +29,7 @@ pydub
 unidecode
 langdetect
 phonemizer
+huggingface_hub>=0.36.2,<1.0
 pandas>=1.0,<3.0
 indic-nlp-library
 stanza==1.10.1

@@ -91,12 +91,15 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
+                self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
-                    run, error = self._set_voice(kwargs.get('block_voice', self.session['voice']))
-                    if not run:
+                    self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
+                    if self.params['current_voice'] is None and error is not None:
                         return False, error
+                    if self.session['voice'] == self.params['block_voice']:
+                        self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
                 for part in sentence_parts:
@@ -104,8 +107,8 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        run, error = self._convert_sml(part)
-                        if not run:
+                        self.params['block_voice'], error = self._convert_sml(part)
+                        if self.params['block_voice'] is None:
                             return False, error
                         continue
                     if not any(c.isalnum() for c in part):
@@ -145,7 +148,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         }
                         with torch.no_grad():
                             self.engine.to(device)
-                            if device == devices['CPU']['proc']:
+                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 result = self.engine.inference(
                                     text=part,
                                     language=self.session['language_iso1'],
@@ -153,18 +156,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                     speaker_embedding=self.params['speaker_embedding'],
                                     **fine_tuned_params
                                 )
-                            else:
-                                with torch.autocast(
-                                    device_type=device,
-                                    dtype=self.amp_dtype
-                                ):
-                                    result = self.engine.inference(
-                                        text=part,
-                                        language=self.session['language_iso1'],
-                                        gpt_cond_latent=self.params['gpt_cond_latent'],
-                                        speaker_embedding=self.params['speaker_embedding'],
-                                        **fine_tuned_params
-                                    )
                             self.engine.to(devices['CPU']['proc'])
                         audio_part = result.get('wav')
                         if is_audio_data_valid(audio_part):

@@ -18,6 +18,87 @@ if TYPE_CHECKING:
     from torch.nn import Module
     from torchaudio.transforms import Resample
 
+def _format_timestamp(seconds:float)->str:
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return f'{int(h):02}:{int(m):02}:{s:06.3f}'
+
+def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->bool:
+    try:
+        import gradio as gr
+        from tqdm import tqdm
+        msg = 'VTT file creation started…'
+        print(msg)
+        if vtt_path is None:
+            vtt_path = os.path.join(session['process_dir'], Path(session['final_name']).stem + '.vtt')
+        audio_sentences_dir = Path(session['sentences_dir'])
+        blocks = session['blocks_current']['blocks']
+        kept_indices = {
+            str(i) for i, b in enumerate(blocks)
+            if b['keep'] and b['text'].strip()
+            and (block_indices is None or i in block_indices)
+        }
+        block_dirs = sorted(
+            [d for d in audio_sentences_dir.iterdir() if d.is_dir() and d.name in kept_indices],
+            key=lambda p: int(p.name)
+        )
+        audio_files = []
+        sentences_to_use = []
+        for block_dir in block_dirs:
+            block_idx = int(block_dir.name)
+            block_files = sorted(
+                block_dir.glob(f'*.{default_audio_proc_format}'),
+                key=lambda p: int(p.stem)
+            )
+            audio_files.extend(block_files)
+            sentences_to_use.extend(blocks[block_idx].get('sentences', []))
+        audio_files_length = len(audio_files)
+        sentences_length = len(sentences_to_use)
+        if audio_files_length != sentences_length:
+            error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {sentences_length} sentences'
+            print(error)
+            return False
+        sentences_total_time = 0.0
+        vtt_blocks = []
+        if session['is_gui_process']:
+            progress_bar = gr.Progress(track_tqdm=False)
+        msg = 'Get duration of each sentence…'
+        print(msg)
+        durations = get_audiolist_duration([str(p) for p in audio_files])
+        msg = 'Create VTT blocks…'
+        print(msg)
+        with tqdm(total=audio_files_length, unit='files') as t:
+            for idx, file in enumerate(audio_files):
+                start_time = sentences_total_time
+                duration = durations.get(os.path.realpath(file), 0.0)
+                end_time = start_time + duration
+                sentences_total_time = end_time
+                start = _format_timestamp(start_time)
+                end = _format_timestamp(end_time)
+                text = re.sub(
+                    r'\s+',
+                    ' ',
+                    SML_TAG_PATTERN.sub('', str(sentences_to_use[idx]))
+                ).strip()
+                vtt_blocks.append(f'{start} --> {end}\n{text}\n')
+                if session['is_gui_process']:
+                    total_progress = (t.n + 1) / audio_files_length
+                    progress_bar(
+                        progress=total_progress,
+                        desc=f'Writing vtt idx {idx}'
+                    )
+                t.update(1)
+        msg = 'Write VTT blocks into file…'
+        print(msg)
+        with open(vtt_path, 'w', encoding='utf-8') as f:
+            f.write('WEBVTT\n\n')
+            f.write('\n'.join(vtt_blocks))
+        return True
+    except Exception as e:
+        error = f'build_vtt_file(): {e}'
+        print(error)
+        return False
+
 class TTSUtils:
 
     def cleanup_memory(self)->None:
@@ -102,7 +183,7 @@ class TTSUtils:
         is_rocm = bool(getattr(torch.version, 'hip', None))
         is_cuda = bool(getattr(torch.version, 'cuda', None)) and not is_rocm
         quality_mode = bool(using_gpu and enough_vram)
-        amp_dtype = torch.float32
+        amp_dtype = torch.float32  # float32 means: caller should NOT wrap in autocast
         # Default matmul precision (PyTorch >= 2.2)
         try:
             torch.set_float32_matmul_precision('high' if quality_mode else 'medium')
@@ -112,30 +193,20 @@ class TTSUtils:
             return amp_dtype
         # ================= CUDA / Jetson / ROCm =================
         if has_cuda:
+            # --- CUDA health check: fail fast instead of configuring a broken context ---
             try:
                 torch.cuda.manual_seed_all(seed)
+            except Exception as e:
+                print(f"[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32")
+                return torch.float32
+            # --- Device info (fetched once) ---
+            try:
+                cc = torch.cuda.get_device_capability(0)
+                cc_major = cc[0]
             except Exception:
-                pass
-            # Memory pressure handling
-            if hasattr(torch.cuda, 'set_per_process_memory_fraction'):
-                try:
-                    torch.cuda.set_per_process_memory_fraction(0.90 if quality_mode else 0.80)
-                except Exception:
-                    pass
-            # cuDNN base config
-            if hasattr(torch.backends, 'cudnn'):
-                torch.backends.cudnn.enabled = True
-                torch.backends.cudnn.deterministic = not quality_mode
-                torch.backends.cudnn.benchmark = bool(quality_mode)
-            
-            # SDP attention optimization
-            if hasattr(torch.backends, 'cuda'):
-                try:
-                    cc = torch.cuda.get_device_capability(0)
-                    torch.backends.cuda.enable_flash_sdp(cc >= (8, 0))
-                    torch.backends.cuda.enable_mem_efficient_sdp(cc >= (7, 0))
-                except Exception:
-                    pass
+                cc = (0, 0)
+                cc_major = 0
+            tier = gpu_compute_tier(0)  # 'tensor-core' | 'fp16-only' | 'none'
             # Detect Jetson (ARM + CUDA)
             is_jetson = False
             try:
@@ -143,22 +214,42 @@ class TTSUtils:
                 is_jetson = is_cuda and platform.machine() in ('aarch64', 'arm64')
             except Exception:
                 is_jetson = False
-            # TF32 handling
-            tf32_ok = False
-            if is_cuda and not is_jetson:
+            # Memory pressure handling — only throttle on cards with headroom
+            if hasattr(torch.cuda, 'set_per_process_memory_fraction'):
                 try:
-                    cc_major = torch.cuda.get_device_capability(0)[0]
-                    tf32_ok = bool(cc_major >= 8 and quality_mode)
+                    total_gb = torch.cuda.get_device_properties(0).total_memory / 1024**3
+                    if total_gb >= 10:
+                        torch.cuda.set_per_process_memory_fraction(0.90 if quality_mode else 0.80)
+                    # else: let the caching allocator breathe on 6–8 GB cards
                 except Exception:
-                    tf32_ok = False
-            # Disable TF32 explicitly on Jetson + ROCm
-            if is_jetson or is_rocm:
-                tf32_ok = False
+                    pass
+            # cuDNN base config — benchmark=True is bad for TTS (variable-length inputs)
+            if hasattr(torch.backends, 'cudnn'):
+                torch.backends.cudnn.enabled = True
+                torch.backends.cudnn.deterministic = not quality_mode
+                torch.backends.cudnn.benchmark = False
+            # SDP attention — flash + mem-efficient are Ampere+ only; math kernel always on as fallback
+            if hasattr(torch.backends, 'cuda'):
+                try:
+                    torch.backends.cuda.enable_flash_sdp(cc >= (8, 0))
+                    torch.backends.cuda.enable_mem_efficient_sdp(cc >= (8, 0))
+                    torch.backends.cuda.enable_math_sdp(True)
+                except Exception:
+                    pass
+            # TF32 — Ampere+, non-Jetson, non-ROCm, quality mode only
+            tf32_ok = bool(
+                is_cuda and not is_jetson and not is_rocm
+                and cc_major >= 8 and quality_mode
+            )
             # Apply matmul / cuDNN flags
             if hasattr(torch.backends, 'cuda') and hasattr(torch.backends.cuda, 'matmul'):
                 try:
                     torch.backends.cuda.matmul.allow_tf32 = tf32_ok
-                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = bool(quality_mode)
+                    # Reduced-precision reduction is only safe on tensor-core GPUs.
+                    # On GTX 16-series this was a real crash vector.
+                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = (
+                        bool(quality_mode) and tier == 'tensor-core' and cc_major >= 8
+                    )
                 except Exception:
                     pass
             if hasattr(torch.backends, 'cudnn'):
@@ -166,23 +257,30 @@ class TTSUtils:
                     torch.backends.cudnn.allow_tf32 = tf32_ok
                 except Exception:
                     pass
-            # AMP dtype selection
-            # Jetson + ROCm → FP16 only (BF16 unstable / slow)
+            # AMP dtype selection by tier
             if is_jetson or is_rocm:
+                # Jetson + ROCm → FP16 only (BF16 unstable / slow)
                 amp_dtype = torch.float16
-            else:
-                if quality_mode:
+            elif tier == 'tensor-core':
+                # BF16 on Ampere+ when quality is on, otherwise FP16
+                use_bf16 = False
+                if cc_major >= 8 and quality_mode:
                     try:
-                        if hasattr(torch.cuda, 'is_bf16_supported') and torch.cuda.is_bf16_supported():
-                            #amp_dtype = torch.bfloat16
-                            amp_dtype = torch.float16
-                        else:
-                            amp_dtype = torch.float16
+                        use_bf16 = bool(
+                            hasattr(torch.cuda, 'is_bf16_supported')
+                            and torch.cuda.is_bf16_supported()
+                        )
                     except Exception:
-                        amp_dtype = torch.float16
-                else:
-                    amp_dtype = torch.float16
-
+                        use_bf16 = False
+                #amp_dtype = torch.bfloat16 if use_bf16 else torch.float16
+                amp_dtype = torch.float16
+            elif tier == 'fp16-only':
+                # GTX 16-series (1660 Super et al.): FP16 autocast destabilises
+                # autoregressive TTS decoders (XTTSv2, YourTTS, ...). Run FP32.
+                amp_dtype = torch.float32
+            else:
+                # tier == 'none' — shouldn't land here with has_cuda, but be safe
+                amp_dtype = torch.float32
             return amp_dtype
         # ================= Apple MPS =================
         if has_mps:
@@ -191,11 +289,10 @@ class TTSUtils:
             except Exception:
                 pass
             try:
-                if quality_mode and hasattr(torch.backends.mps, 'is_bf16_supported') and torch.backends.mps.is_bf16_supported():
-                    #amp_dtype = torch.bfloat16
-                    amp_dtype = torch.float16
-                else:
-                    amp_dtype = torch.float16
+                #if quality_mode and hasattr(torch.backends.mps, 'is_bf16_supported') and torch.backends.mps.is_bf16_supported():
+                #    amp_dtype = torch.bfloat16
+                #else:
+                amp_dtype = torch.float16
             except Exception:
                 amp_dtype = torch.float16
             return amp_dtype
@@ -327,24 +424,24 @@ class TTSUtils:
                         fine_tuned_params = {
                             key.removeprefix('xtts_'): cast_type(self.session[key])
                             for key, cast_type in {
-                                "xtts_temperature": float,
-                                #"xtts_codec_temperature": float,
-                                "xtts_length_penalty": float,
-                                "xtts_num_beams": int,
-                                "xtts_repetition_penalty": float,
-                                #"xtts_cvvp_weight": float,
-                                "xtts_top_k": int,
-                                "xtts_top_p": float,
-                                "xtts_speed": float,
-                                #"xtts_gpt_cond_len": int,
-                                #"xtts_gpt_batch_size": int,
-                                "xtts_enable_text_splitting": bool
+                                'xtts_temperature': float,
+                                #'xtts_codec_temperature': float,
+                                'xtts_length_penalty': float,
+                                'xtts_num_beams': int,
+                                'xtts_repetition_penalty': float,
+                                #'xtts_cvvp_weight': float,
+                                'xtts_top_k': int,
+                                'xtts_top_p': float,
+                                'xtts_speed': float,
+                                #'xtts_gpt_cond_len': int,
+                                #'xtts_gpt_batch_size': int,
+                                'xtts_enable_text_splitting': bool
                             }.items()
                             if self.session.get(key) is not None
                         }
                         with torch.no_grad():
                             engine.to(device)
-                            if device == devices['CPU']['proc']:
+                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 result = engine.inference(
                                     text=default_text.strip(),
                                     language=self.session['language_iso1'],
@@ -352,18 +449,6 @@ class TTSUtils:
                                     speaker_embedding=speaker_embedding,
                                     **fine_tuned_params,
                                 )
-                            else:
-                                with torch.autocast(
-                                    device_type=device,
-                                    dtype=self.amp_dtype
-                                ):
-                                    result = engine.inference(
-                                        text=default_text.strip(),
-                                        language=self.session['language_iso1'],
-                                        gpt_cond_latent=gpt_cond_latent,
-                                        speaker_embedding=speaker_embedding,
-                                        **fine_tuned_params,
-                                    )
                             engine.to(devices['CPU']['proc'])
                         audio_sentence = result.get('wav')
                         if is_audio_data_valid(audio_sentence):
@@ -372,7 +457,22 @@ class TTSUtils:
                             if audio_tensor is not None and audio_tensor.numel() > 0:
                                 # CON is a reserved name on windows
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
-                                new_current_voice = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', current_voice)
+                                # Rebuild the path under the new language folder.
+                                # Works for any old-language → any new-language swap (eng→fra, zho→fra, …),
+                                # not just eng→X. xtts voices are always absolute paths under voices_dir.
+                                voices_root = Path(voices_dir)
+                                try:
+                                    rel = Path(current_voice).relative_to(voices_root)
+                                except ValueError:
+                                    error = f'_check_xtts_builtin_speakers() error: {current_voice} is not under {voices_dir}'
+                                    print(error)
+                                    return False
+                                if len(rel.parts) < 2:
+                                    error = f'_check_xtts_builtin_speakers() error: unexpected voice layout for {current_voice}'
+                                    print(error)
+                                    return False
+                                new_current_voice = str(voices_root.joinpath(lang_dir, *rel.parts[1:]))
+                                os.makedirs(os.path.dirname(new_current_voice), exist_ok=True)
                                 proc_current_voice = new_current_voice.replace('.wav', '_temp.wav')
                                 torchaudio.save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
                                 if normalize_audio(proc_current_voice, new_current_voice, default_audio_proc_samplerate, self.session['is_gui_process']):
@@ -446,19 +546,19 @@ class TTSUtils:
         sf.write(tmp_path,wav_numpy,expected_sr,subtype='PCM_16')
         return tmp_path
 
-    def _set_voice(self, block_voice:str|None)->tuple:
-        self.params['current_voice'] = (
-            block_voice if block_voice is not None 
+    def _set_voice(self, voice:str|None)->tuple:
+        current_voice = (
+            voice if voice is not None 
             else self.models[self.session['fine_tuned']]['voice']
         )
-        if self.params['current_voice'] is not None:
-            self.speaker = re.sub(r'\.wav$', '', os.path.basename(self.params['current_voice']))
-            if self.params['current_voice'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in self.params['current_voice']:
-                self.session['voice'] = self.params['current_voice'] = self._check_xtts_builtin_speakers(self.params['current_voice'], self.speaker)
-                if not self.params['current_voice']:
+        if current_voice is not None:
+            speaker = re.sub(r'\.wav$', '', os.path.basename(current_voice))
+            if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:
+                current_voice = self._check_xtts_builtin_speakers(current_voice, speaker)
+                if not current_voice:
                     error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
-                    return False, error
-        return True, None
+                    return None, error
+        return current_voice, None
         
     def _split_sentence_on_sml(self, sentence:str)->list[str]:
         parts:list[str] = []
@@ -501,8 +601,8 @@ class TTSUtils:
         elif tag == 'voice':
             if close:
                 self.params['inline_voice'] = None
-                run, error = self._set_voice(self.params['block_voice'])
-                return run, error
+                self.params['block_voice'], error = self._set_voice(self.params['block_voice'])
+                return self.params['block_voice'], error
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
                 return False, error
@@ -519,79 +619,3 @@ class TTSUtils:
         else:
             error = 'This SML is not recognized'
             return False, error
-
-    def _format_timestamp(self, seconds:float)->str:
-        m, s = divmod(seconds, 60)
-        h, m = divmod(m, 60)
-        return f'{int(h):02}:{int(m):02}:{s:06.3f}'
-
-    def _build_vtt_file(self, sentences:list)->bool:
-            try:
-                import gradio as gr
-                from tqdm import tqdm
-                msg = 'VTT file creation started…'
-                print(msg)
-                vtt_path = os.path.join(self.session['process_dir'], Path(self.session['final_name']).stem + '.vtt')
-                audio_sentences_dir = Path(self.session['sentences_dir'])
-                blocks = self.session['blocks_current']['blocks']
-                kept_indices = {
-                    str(i) for i, b in enumerate(blocks)
-                    if b['keep'] and b['text'].strip()
-                }
-                block_dirs = sorted(
-                    [d for d in audio_sentences_dir.iterdir() if d.is_dir() and d.name in kept_indices],
-                    key=lambda p: int(p.name)
-                )
-                audio_files = []
-                for block_dir in block_dirs:
-                    block_files = sorted(
-                        block_dir.glob(f'*.{default_audio_proc_format}'),
-                        key=lambda p: int(p.stem)
-                    )
-                    audio_files.extend(block_files)
-                sentences_length = len(sentences)
-                audio_files_length = len(audio_files)
-                if audio_files_length != sentences_length:
-                    error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {sentences_length} sentences'
-                    print(error)
-                    return False
-                sentences_total_time = 0.0
-                vtt_blocks = []
-                if self.session['is_gui_process']:
-                    progress_bar = gr.Progress(track_tqdm=False)
-                msg = 'Get duration of each sentence…'
-                print(msg)
-                durations = get_audiolist_duration([str(p) for p in audio_files])
-                msg = 'Create VTT blocks…'
-                print(msg)
-                with tqdm(total=audio_files_length, unit='files') as t:
-                    for idx, file in enumerate(audio_files):
-                        start_time = sentences_total_time
-                        duration = durations.get(os.path.realpath(file), 0.0)
-                        end_time = start_time + duration
-                        sentences_total_time = end_time
-                        start = self._format_timestamp(start_time)
-                        end = self._format_timestamp(end_time)
-                        text = re.sub(
-                            r'\s+',
-                            ' ',
-                            SML_TAG_PATTERN.sub('', str(sentences[idx]))
-                        ).strip()
-                        vtt_blocks.append(f'{start} --> {end}\n{text}\n')
-                        if self.session['is_gui_process']:
-                            total_progress = (t.n + 1) / audio_files_length
-                            progress_bar(
-                                progress=total_progress,
-                                desc=f'Writing vtt idx {idx}'
-                            )
-                        t.update(1)
-                msg = 'Write VTT blocks into file…'
-                print(msg)
-                with open(vtt_path, 'w', encoding='utf-8') as f:
-                    f.write('WEBVTT\n\n')
-                    f.write('\n'.join(vtt_blocks))
-                return True
-            except Exception as e:
-                error = f'_build_vtt_file(): {e}'
-                print(error)
-                return False
