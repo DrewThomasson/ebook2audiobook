@@ -1423,11 +1423,12 @@ def build_interface(args:dict)->gr.Blocks:
                                     for file in files2remove:
                                         os.remove(file)
                                     shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
-                                    msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                                     if voice_options:
                                         session['voice'] = voice_options[0][1]
                                     else:
                                         session['voice'] = None
+                                    sync_globals_to_blocks(session_id)
+                                    msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                                     show_alert(session_id, {"type": "info", "msg": msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                                 elif method == 'confirm_custom_model_del':
