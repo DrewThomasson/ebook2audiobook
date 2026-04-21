@@ -1427,7 +1427,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     deleted_voice = session['voice']
                                     voice_options[:] = [(label, value) for label, value in voice_options if value != deleted_voice]
                                     fallback = None if session['tts_engine'] in tts_engines_with_inner_speaker else default_engine_settings[session['tts_engine']]['voice']
-                                    print(f'-------------------fallback: {fallback}--------------------')
                                     session['voice'] = fallback
                                     blocks_current = session.get('blocks_current') or {}
                                     changed = False

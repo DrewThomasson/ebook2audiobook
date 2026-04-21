@@ -3125,7 +3125,7 @@ def convert_ebook(args:dict)->tuple:
                                                     save_json_blocks(session, json_file_key, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
-                                                sync_globals_to_blocks(session_id)
+                                                #sync_globals_to_blocks(session_id)
                                                 if session['blocks_preview']:
                                                     msg = f'Chapters preview requested. Select which block to convert:'
                                                     print(msg)
