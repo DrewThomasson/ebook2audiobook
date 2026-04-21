@@ -51,7 +51,12 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->boo
                 key=lambda p: int(p.stem)
             )
             audio_files.extend(block_files)
-            sentences_to_use.extend(blocks[block_idx].get('sentences', []))
+            block_sentences = blocks[block_idx].get('sentences', [])
+            filtered_sentences = [
+                sentence for sentence in block_sentences
+                if any(c.isalnum() for c in str(sentence))
+            ]
+            sentences_to_use.extend(filtered_sentences)
         audio_files_length = len(audio_files)
         sentences_length = len(sentences_to_use)
         if audio_files_length != sentences_length:
