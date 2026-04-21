@@ -2658,7 +2658,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_output_split.select(
                 fn=change_gr_output_split,
                 inputs=[gr_session, gr_output_split],
-                outputs=[gr_row_output_split_hours]
+                outputs=[gr_row_output_split_hours],
                 show_progress_on=[gr_progress]
             )
             gr_output_split_hours.change(
