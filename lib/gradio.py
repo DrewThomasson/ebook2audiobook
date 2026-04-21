@@ -1483,8 +1483,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def update_gr_voice_list(session_id:str)->dict:
                 try:
-                    nonlocal voice_options
-                    nonlocal models
+                    nonlocal models, voice_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         models = load_engine_presets(session['tts_engine'])
@@ -1534,7 +1533,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 for f in Path(session['custom_model_dir']).rglob('*.wav')
                                 if f.is_file()
                             )
-                        if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+                        if session['tts_engine'] in tts_engines_with_inner_speaker:
                             voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                         else:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
