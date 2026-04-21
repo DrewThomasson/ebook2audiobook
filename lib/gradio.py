@@ -2673,7 +2673,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=lambda session_id: disable_components(session_id, exceptions=['gr_session_switch_btn']),
                 inputs=[gr_session_switch_disable_state],
                 outputs=outputs_disable_components,
-                show_progress_on=[gr_session_switch_btn]
+                queue=False
             ).then(
                 fn=lambda: None,
                 inputs=None,
@@ -2899,7 +2899,7 @@ def build_interface(args:dict)->gr.Blocks:
                         fn=disable_components,
                         inputs=[gr_session],
                         outputs=outputs_disable_components,
-                        show_progress_on=[gr_progress]
+                        queue=False
                     )
                 ),
                 always=False
@@ -2927,7 +2927,7 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=disable_components,
                             inputs=[gr_session],
                             outputs=outputs_disable_components,
-                            show_progress_on=[gr_progress]
+                            queue=False
                         ).then(
                             fn=lambda: None,
                             js=f'()=>{{{js_hide_elements}}}'
