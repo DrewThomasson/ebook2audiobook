@@ -1309,12 +1309,10 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return gr.update()
 
-            def change_gr_voice_list(session_id: str, selected: str | None) -> tuple:
+            def change_gr_voice_list(session_id:str, selected:str|None)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session.get('voice') == selected:
-                            return gr.update(), gr.update(), gr.update()
                         if not voice_options or selected is None:
                             new_voice = None
                         else:
@@ -1482,7 +1480,6 @@ def build_interface(args:dict)->gr.Blocks:
                 return  gr.update(value='', visible=False), gr.update(), gr.update(), gr.update()
 
             def update_gr_voice_list(session_id:str)->dict:
-                print(f'---------------------------update_gr_voice_list called-------------------------')
                 try:
                     nonlocal models, voice_options
                     session = context.get_session(session_id)

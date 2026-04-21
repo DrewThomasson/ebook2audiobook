@@ -196,7 +196,6 @@ class TTSUtils:
             pass
         if not using_gpu:
             return amp_dtype
-        # ================= CUDA / Jetson / ROCm =================
         if has_cuda:
             # --- CUDA health check: fail fast instead of configuring a broken context ---
             try:
