@@ -1425,7 +1425,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             pass
                                     shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
                                     deleted_voice = session['voice']
-                                    voice_options[:] = [(i, v) for i, v in voice_options if v != deleted_voice]
                                     fallback = None if session['tts_engine'] in tts_engines_with_inner_speaker else default_engine_settings[session['tts_engine']]['voice']
                                     blocks_current = session.get('blocks_current') or {}
                                     changed = False
@@ -1439,7 +1438,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     if changed:
                                         session['blocks_current'] = blocks_current
                                     session['voice'] = fallback
-                                    sync_globals_to_blocks(session_id)
+                                    voice_options[:] = [(i, v) for i, v in voice_options if v != deleted_voice]
+                                    print(voice_options)
                                     msg = f'Voice file {re.sub(r".wav$", "", selected_name)} deleted!'
                                     show_alert(session_id, {'type': 'info', 'msg': msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
