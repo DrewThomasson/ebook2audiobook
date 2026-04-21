@@ -2926,7 +2926,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_override_confirm_btn.click(
                 fn=click_gr_override_confirm_btn,
                 inputs=[gr_session, gr_event, gr_audiobook_files_state],
-                outputs=[gr_modal, gr_event, gr_audiobook_list, gr_audiobook_files, gr_audiobook_files_state]
+                outputs=[gr_modal, gr_event, gr_audiobook_list, gr_audiobook_files, gr_audiobook_files_state],
                 show_progress_on=[gr_progress]
             )
             chain_enable(
