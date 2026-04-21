@@ -610,27 +610,25 @@ def save_json_blocks(session:DictProxy, file_path:str, key:str)->None:
     except Exception as e:
         print(f'save_json_blocks() error: {e}')
 
-def sync_globals_to_blocks(session_id:str, old_voice:str=None)->None:
+def sync_globals_to_blocks(session_id:str)->None:
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
             return
         blocks_current = session.get('blocks_current') or {}
+        anchor_voice = blocks_current.get('voice')
         current_voice = session.get('voice')
-        if old_voice is None:
-            old_voice = blocks_current.get('voice')
+        if anchor_voice == current_voice:
+            return
         changed = False
         for block in blocks_current.get('blocks', []):
-            if block.get('voice') == old_voice:
+            if block.get('voice') == anchor_voice:
                 block['voice'] = current_voice
                 changed = True
-        if blocks_current.get('voice') == old_voice:
-            blocks_current['voice'] = current_voice
-            changed = True
-        if changed:
-            session['blocks_current'] = blocks_current
+        blocks_current['voice'] = current_voice
+        session['blocks_current'] = blocks_current
     except Exception as e:
-        exception_alert(session_id, f'sync_voice_to_blocks(): {e}')
+        exception_alert(session_id, f'sync_globals_to_blocks(): {e}')
 
 def convert2epub(session_id:str)-> bool:
     session = context.get_session(session_id)

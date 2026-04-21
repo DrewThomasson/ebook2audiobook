@@ -1423,12 +1423,25 @@ def build_interface(args:dict)->gr.Blocks:
                                     for file in files2remove:
                                         os.remove(file)
                                     shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
+                                    deleted_voice = session['voice']
                                     if voice_options:
                                         session['voice'] = voice_options[0][1]
                                     else:
                                         session['voice'] = None
-                                    sync_globals_to_blocks(session_id, voice_path)
-                                    msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
+                                    new_voice = session['voice']
+                                    blocks_current = session.get('blocks_current') or {}
+                                    changed = False
+                                    for block in blocks_current.get('blocks', []):
+                                        if block.get('voice') == deleted_voice:
+                                            block['voice'] = new_voice
+                                            changed = True
+                                    if blocks_current.get('voice') == deleted_voice:
+                                        blocks_current['voice'] = new_voice
+                                        changed = True
+                                    if changed:
+                                        session['blocks_current'] = blocks_current
+                                    sync_globals_to_blocks(session_id)
+                                    msg = f'Voice file {re.sub(r".wav$", "", selected_name)} deleted!'
                                     show_alert(session_id, {"type": "info", "msg": msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                                 elif method == 'confirm_custom_model_del':
