@@ -619,7 +619,7 @@ def sync_globals_to_blocks(session_id:str, old_voice:str=None)->None:
         current_voice = session.get('voice')
         if old_voice is None:
             old_voice = blocks_current.get('voice')
-        if old_voice == current_voice:
+        if old_voice == current_voice and old_voice == blocks_current.get('voice'):
             return
         changed = False
         for block in blocks_current.get('blocks', []):
