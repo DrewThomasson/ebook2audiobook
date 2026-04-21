@@ -1437,6 +1437,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         changed = True
                                     if changed:
                                         session['blocks_current'] = blocks_current
+                                        save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
                                     session['voice'] = fallback
                                     voice_options[:] = [(i, v) for i, v in voice_options if v != deleted_voice]
                                     print(voice_options)
