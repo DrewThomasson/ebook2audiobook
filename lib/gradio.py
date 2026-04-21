@@ -460,10 +460,9 @@ def build_interface(args:dict)->gr.Blocks:
                     max-width:44px !important;
                     padding:0 !important;
                 }
-                #gr_blocks_nav .nav-slot {
-                    flex: 0 0 44px !important;
-                    min-width: 44px !important;
-                    max-width: 44px !important;
+                #gr_blocks_nav button.nav-btn.nav-btn-hidden {
+                    visibility: hidden !important;
+                    pointer-events: none !important;
                 }
                 #gr_blocks_nav .nav-header {
                     flex: 0 0 auto !important;
@@ -811,12 +810,10 @@ def build_interface(args:dict)->gr.Blocks:
 
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 gr_blocks_markdown = gr.Markdown(elem_id='gr_blocks_markdown', elem_classes=['gr-markdown'], value='')
-                with gr.Row(elem_id='gr_blocks_nav', elem_classes=['nav-row']) as gr_blocks_nav:
-                    with gr.Column(scale=0, min_width=44, elem_classes=['nav-slot']):
-                        gr_blocks_back_btn = gr.Button('◀', elem_classes=['nav-btn'], scale=0, min_width=44)
-                    gr_blocks_header = gr.Markdown('', elem_classes=['nav-header'])
-                    with gr.Column(scale=0, min_width=44, elem_classes=['nav-slot']):
-                        gr_blocks_next_btn = gr.Button('▶', elem_classes=['nav-btn'], scale=0, min_width=44)
+                with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
+                    gr_blocks_back_btn = gr.Button('◀', elem_id='gr_blocks_back_btn', elem_classes=['nav-btn'], scale=0, min_width=44)
+                    gr_blocks_header = gr.Markdown('', elem_id='gr_blocks_header', elem_classes=['nav-header'])
+                    gr_blocks_next_btn = gr.Button('▶', elem_id='gr_blocks_next_btn', elem_classes=['nav-btn'], scale=0, min_width=44)
 
                 block_components = []
                 with gr.Column(elem_id='gr_column_blocks', elem_classes=['gr-col']):
@@ -2176,8 +2173,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 updates.append(gr.update())
                                 updates.append(gr.update())
                         end = min(start + page_size, len(blocks))
+                        last_idx = (len(blocks) - 1) // page_size
                         header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
-                        return (*updates, header, expands)
+                        back_btn = gr.update(elem_classes=['nav-btn'] if int(page) > 0 else ['nav-btn', 'nav-btn-hidden'])
+                        next_btn = gr.update(elem_classes=['nav-btn'] if int(page) < last_idx else ['nav-btn', 'nav-btn-hidden'])
+                        return (*updates, header, expands, back_btn, next_btn)
 
             def navigate(page:int, blocks:list[dict], direction:int, *args)->tuple:
                 new_blocks = collect_page(page, blocks, *args)
@@ -3004,20 +3004,20 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_back_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
                 inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
+                outputs=[gr_blocks_data, gr_blocks_page]
             ).then(
                 fn=populate_page,
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands]
+                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands, gr_blocks_back_btn, gr_blocks_next_btn]
             )
             gr_blocks_next_btn.click(
                 fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
                 inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn]
+                outputs=[gr_blocks_data, gr_blocks_page]
             ).then(
                 fn=populate_page,
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
-                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands]
+                outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands, gr_blocks_back_btn, gr_blocks_next_btn]
             )
             #############
             gr_save_session.change(
