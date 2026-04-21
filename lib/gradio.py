@@ -1482,6 +1482,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return  gr.update(value='', visible=False), gr.update(), gr.update(), gr.update()
 
             def update_gr_voice_list(session_id:str)->dict:
+                print(f'---------------------------update_gr_voice_list called-------------------------')
                 try:
                     nonlocal models, voice_options
                     session = context.get_session(session_id)
