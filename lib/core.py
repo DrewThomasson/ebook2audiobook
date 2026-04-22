@@ -3036,6 +3036,7 @@ def convert_ebook(args:dict)->tuple:
                                     blocks_orig = load_json_blocks(session['blocks_orig_json'])
                                     is_changed = False
                                     if blocks_orig:
+                                        '''
                                         blocks = blocks_orig.get('blocks', [])
                                         new_blocks = []
                                         for block in blocks:
@@ -3047,6 +3048,7 @@ def convert_ebook(args:dict)->tuple:
                                             else:
                                                 is_changed = True
                                         blocks_orig['blocks'] = new_blocks
+                                        '''
                                         session['blocks_orig'] = blocks_orig
                                     if is_changed:
                                         save_json_blocks(session_id, 'blocks_orig')
