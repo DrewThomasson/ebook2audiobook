@@ -3058,7 +3058,7 @@ def convert_ebook(args:dict)->tuple:
                                                 blocks = blocks_saved.get('blocks', [])
                                                 new_blocks = []
                                                 for i, block in enumerate(blocks):
-                                                    if block['text']:
+                                                    if block;get('text', ''):
                                                         if i < len(blocks_orig):
                                                             block['id'] = blocks_orig[i]['id']
                                                         new_blocks.append(block)
@@ -3073,7 +3073,7 @@ def convert_ebook(args:dict)->tuple:
                                                 blocks = blocks_current.get('blocks', [])
                                                 new_blocks = []
                                                 for i, block in enumerate(blocks):
-                                                    if block['text']:
+                                                    if block;get('text', ''):
                                                         if i < len(blocks_orig):
                                                             block['id'] = blocks_orig[i]['id']
                                                         new_blocks.append(block)
