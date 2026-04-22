@@ -2155,15 +2155,26 @@ def build_interface(args:dict)->gr.Blocks:
                         header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
                         return (*updates, header, expands)
 
-            def navigate(page:int, blocks:list[dict], direction:int, *args)->tuple:
+            def navigate(session_id:str, page:int, blocks:list[dict], direction:int, *args)->tuple:
                 new_blocks = collect_page(page, blocks, *args)
                 max_page = max((len(new_blocks) - 1) // page_size, 0)
                 new_page = max(0, min(int(page) + direction, max_page))
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        blocks_current = session['blocks_current']
+                        if blocks_current.get('page') != new_page:
+                            blocks_current['page'] = new_page
+                            session['blocks_current'] = blocks_current
+                            save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
+                except Exception as e:
+                    error = f'navigate(): {e}'
+                    exception_alert(session_id, error)
                 return (
                     new_blocks,
                     new_page,
-                    gr.update(interactive=True if new_page > 0 else False),
-                    gr.update(interactive=True if new_page < max_page else False),
+                    gr.update(interactive=new_page > 0),
+                    gr.update(interactive=new_page < max_page),
                 )
 
             def update_blocks_header(page:int, blocks:list[dict])->str:
