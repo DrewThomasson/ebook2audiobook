@@ -98,8 +98,8 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if not part:
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
-                        self.params['block_voice'], error = self._convert_sml(part)
-                        if self.params['block_voice'] is None:
+                        success, error = self._convert_sml(part)
+                        if not success:
                             return False, error
                         continue
                     if not any(c.isalnum() for c in part):
