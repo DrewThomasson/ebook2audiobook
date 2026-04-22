@@ -594,19 +594,22 @@ def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
         error = f'ocr2xhtml error: {e}'
         return False, error
 
-def load_json_blocks(filepath:str)->list[dict]:
+def load_json_blocks(filepath:str)->dict:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         print(f"load_json_blocks() error: {e}")
-        return []
+        return {}
 
-def save_json_blocks(session:DictProxy, file_path:str, key:str)->None:
+def save_json_blocks(session_id:str, key:str)->None:
     try:
-        json_data = session[key]
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(json_data, f, ensure_ascii=False, indent=2)
+        session = context.get_session(session_id)
+        if (session and session.get('id', False)):
+            json_data = session[key]
+            json_path = session[f'{key}_json']
+            with open(json_path, 'w', encoding='utf-8') as f:
+                json.dump(json_data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f'save_json_blocks() error: {e}')
 
@@ -2267,7 +2270,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 blocks_current['block_resume'] = x
                 blocks_current['sentence_resume'] = start_sentence
                 session['blocks_current'] = blocks_current
-                save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
+                save_json_blocks(session_id, 'blocks_current')
                 converted = False
                 for j in range(len(sentences)):
                     if session['cancellation_requested']:
@@ -2290,7 +2293,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             session['blocks_current'] = blocks_current
                             now = time.monotonic()
                             if now - last_save_time >= 5:
-                                save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
+                                save_json_blocks(session_id, 'blocks_current')
                                 last_save_time = now
                         global_sent += 1
                     total_progress = (t.n + 1) / total_sentences
@@ -2304,7 +2307,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 if converted or block_changed or missing_sentences:
                     show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
                     chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
-                    save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
+                    save_json_blocks(session_id, 'blocks_current')
                     last_save_time = time.monotonic()
                     if not combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences)):
                         show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
@@ -2313,7 +2316,7 @@ def convert_chapters2audio(session_id:str)->bool:
                     session['blocks_current'] = blocks_current
             session['blocks_current'] = blocks_current
             session['blocks_saved'] = copy.deepcopy(blocks_current)
-            save_json_blocks(session, session['blocks_saved_json'], 'blocks_saved')
+            save_json_blocks(session_id, 'blocks_saved')
             return True
     except Exception as e:
         DependencyError(e)
@@ -3011,14 +3014,14 @@ def convert_ebook(args:dict)->tuple:
                             else:
                                 show_alert(session_id, {"type": "info", "msg": msg_extra})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
-                            json_blocks_orig_file       = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
+                            session['json_blocks_orig_file'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                             session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                             session['blocks_current_json'] = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
                             checksum, error = compare_checksums(session_id)
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
-                                    for jf in (json_blocks_orig_file, session['blocks_saved_json'], session['blocks_current_json']):
+                                    for jf in (session['json_blocks_orig_file'], session['blocks_saved_json'], session['blocks_current_json']):
                                         if os.path.exists(jf):
                                             os.unlink(jf)
                                     msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
@@ -3027,36 +3030,55 @@ def convert_ebook(args:dict)->tuple:
                                     error = 'convert2epub() failed!'
                             if error is None:
                                 missing_orig_json = True
-                                if os.path.exists(json_blocks_orig_file):
+                                if os.path.exists(session['json_blocks_orig_file']):
                                     missing_orig_json = False
-                                    blocks_orig = load_json_blocks(json_blocks_orig_file)
-                                    orig_changed = False
-                                    if isinstance(blocks_orig, dict):
-                                        for block in blocks_orig.get('blocks', []):
-                                            if not block.get('id'):
-                                                block['id'] = str(uuid.uuid4())
-                                                orig_changed = True
-                                    session['blocks_orig'] = blocks_orig
-                                    if orig_changed:
-                                        save_json_blocks(session, json_blocks_orig_file, 'blocks_orig')
+                                    blocks_orig = load_json_blocks(session['json_blocks_orig_file'])
+                                    is_changed = False
+                                    if blocks_orig:
+                                        blocks = blocks_orig.get('blocks', [])
+                                        new_blocks = []
+                                        for block in blocks:
+                                            if block['text']:
+                                                if not block.get('id'):
+                                                    block['id'] = str(uuid.uuid4())
+                                                    is_changed = True
+                                                new_blocks.append(block)
+                                            else:
+                                                is_changed = True
+                                        blocks_orig['blocks'] = new_blocks
+                                        session['blocks_orig'] = blocks_orig
+                                    if is_changed:
+                                        save_json_blocks(session_id, 'blocks_orig')
                                     if os.path.exists(session['blocks_saved_json']):
                                         blocks_saved = load_json_blocks(session['blocks_saved_json'])
-                                        if orig_changed:
-                                            orig_blocks = blocks_orig.get('blocks', [])
-                                            for i, block in enumerate(blocks_saved.get('blocks', [])):
-                                                if i < len(orig_blocks):
-                                                    block['id'] = orig_blocks[i]['id']
+                                        if blocks_saved:
                                             session['blocks_saved'] = blocks_saved
-                                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_saved')
+                                            if is_changed:
+                                                blocks = blocks_saved.get('blocks', [])
+                                                new_blocks = []
+                                                for i, block in enumerate(blocks):
+                                                    if block['text']:
+                                                        if i < len(blocks_orig):
+                                                            block['id'] = blocks_orig[i]['id']
+                                                        new_blocks.append(block)
+                                                blocks_saved['blocks'] = new_blocks
+                                                session['blocks_saved'] = blocks_saved
+                                                save_json_blocks(session_id, 'blocks_saved')
                                     if os.path.exists(session['blocks_current_json']):
                                         blocks_current = load_json_blocks(session['blocks_current_json'])
-                                        session['blocks_current'] = blocks_current
-                                        if orig_changed:
-                                            orig_blocks = blocks_orig.get('blocks', [])
-                                            for i, block in enumerate(blocks_current.get('blocks', [])):
-                                                if i < len(orig_blocks):
-                                                    block['id'] = orig_blocks[i]['id']
-                                            save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
+                                        if blocks_current:
+                                            session['blocks_current'] = blocks_current
+                                            if is_changed:
+                                                blocks = blocks_current.get('blocks', [])
+                                                new_blocks = []
+                                                for i, block in enumerate(blocks):
+                                                    if block['text']:
+                                                        if i < len(blocks_orig):
+                                                            block['id'] = blocks_orig[i]['id']
+                                                        new_blocks.append(block)
+                                                blocks_current['blocks'] = new_blocks
+                                                session['blocks_current'] = blocks_current
+                                                save_json_blocks(session_id, 'blocks_current')
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
                                     metadata = dict(session['metadata'])
@@ -3107,14 +3129,14 @@ def convert_ebook(args:dict)->tuple:
                                                                 "fine_tuned": session['fine_tuned'],
                                                                 "sentences": [],
                                                             }
-                                                            for t in raw_blocks
+                                                            for t in raw_blocks if t
                                                         ],
                                                     }
                                                 if session.get('blocks_orig', {}):
-                                                    save_json_blocks(session, json_blocks_orig_file, 'blocks_orig')
+                                                    save_json_blocks(session_id, 'blocks_orig')
                                             if not session.get('blocks_current', {}):
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
-                                                save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
+                                                save_json_blocks(session_id, 'blocks_current')
                                             # --- legacy upgrade: old snapshots may lack top-level scalars (TO REMOVE AFTER A WHILE) ---
                                             for key in ('blocks_orig', 'blocks_current', 'blocks_saved'):
                                                 snap = session.get(key)
@@ -3130,8 +3152,8 @@ def convert_ebook(args:dict)->tuple:
                                                         changed = True
                                                     if changed:
                                                         session[key] = snap
-                                                        json_file_key = json_blocks_orig_file if key == 'blocks_orig' else session[f'{key}_json']
-                                                        save_json_blocks(session, json_file_key, key)
+                                                        json_file_key = session['json_blocks_orig_file'] if key == 'blocks_orig' else session[f'{key}_json']
+                                                        save_json_blocks(session_id, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
                                                 sync_globals_to_blocks(session_id)
