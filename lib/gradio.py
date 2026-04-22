@@ -429,17 +429,11 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_audiobook_vtt, #gr_playback_time {
                     display: none !important;
                 }
-                #gr_blocks_nav {
-                    overflow:hidden !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                }
                 #gr_blocks_nav p {
                     white-space:nowrap !important;
                     overflow:hidden !important;
                     font-size: 16px !important;
-                    text-align: center;
+                    text-align: center !important;
                 }
                 #gr_row_buttons {
                     justify-content: center !important;
