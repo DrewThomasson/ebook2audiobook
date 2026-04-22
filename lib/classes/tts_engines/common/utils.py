@@ -610,9 +610,9 @@ class TTSUtils:
             if close:
                 self.params['inline_voice'] = None
                 new_voice, error = self._set_voice(self.params['block_voice'])
-                if new_voice is None:
+                if new_voice is None and error is not None:
                     return False, error
-                self.params['block_voice'] = new_voice
+                self.params['block_voice'] = self.params['current_voice'] = new_voice
                 return True, None
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
