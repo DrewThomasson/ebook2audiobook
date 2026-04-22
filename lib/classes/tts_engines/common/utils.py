@@ -51,7 +51,12 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->boo
                 key=lambda p: int(p.stem)
             )
             audio_files.extend(block_files)
-            sentences_to_use.extend(blocks[block_idx].get('sentences', []))
+            block_sentences = blocks[block_idx].get('sentences', [])
+            filtered_sentences = [
+                sentence for sentence in block_sentences
+                if any(c.isalnum() for c in str(sentence))
+            ]
+            sentences_to_use.extend(filtered_sentences)
         audio_files_length = len(audio_files)
         sentences_length = len(sentences_to_use)
         if audio_files_length != sentences_length:
@@ -191,13 +196,12 @@ class TTSUtils:
             pass
         if not using_gpu:
             return amp_dtype
-        # ================= CUDA / Jetson / ROCm =================
         if has_cuda:
             # --- CUDA health check: fail fast instead of configuring a broken context ---
             try:
                 torch.cuda.manual_seed_all(seed)
             except Exception as e:
-                print(f"[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32")
+                print(f'[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32')
                 return torch.float32
             # --- Device info (fetched once) ---
             try:
@@ -206,7 +210,6 @@ class TTSUtils:
             except Exception:
                 cc = (0, 0)
                 cc_major = 0
-            tier = gpu_compute_tier(0)  # 'tensor-core' | 'fp16-only' | 'none'
             # Detect Jetson (ARM + CUDA)
             is_jetson = False
             try:
@@ -225,15 +228,10 @@ class TTSUtils:
                     pass
             # cuDNN base config — benchmark=True is bad for TTS (variable-length inputs)
             if hasattr(torch.backends, 'cudnn'):
-                torch.backends.cudnn.enabled = True
-                torch.backends.cudnn.deterministic = not quality_mode
-                torch.backends.cudnn.benchmark = False
-            # SDP attention — flash + mem-efficient are Ampere+ only; math kernel always on as fallback
-            if hasattr(torch.backends, 'cuda'):
                 try:
-                    torch.backends.cuda.enable_flash_sdp(cc >= (8, 0))
-                    torch.backends.cuda.enable_mem_efficient_sdp(cc >= (8, 0))
-                    torch.backends.cuda.enable_math_sdp(True)
+                    torch.backends.cudnn.enabled = True
+                    torch.backends.cudnn.deterministic = not quality_mode
+                    torch.backends.cudnn.benchmark = False
                 except Exception:
                     pass
             # TF32 — Ampere+, non-Jetson, non-ROCm, quality mode only
@@ -241,14 +239,21 @@ class TTSUtils:
                 is_cuda and not is_jetson and not is_rocm
                 and cc_major >= 8 and quality_mode
             )
-            # Apply matmul / cuDNN flags
+            # SDP attention — flash + mem-efficient are Ampere+ only; math kernel always on
+            if hasattr(torch.backends, 'cuda'):
+                try:
+                    torch.backends.cuda.enable_flash_sdp(cc_major >= 8)
+                    torch.backends.cuda.enable_mem_efficient_sdp(cc_major >= 8)
+                    torch.backends.cuda.enable_math_sdp(True)
+                except Exception:
+                    pass
+            # Matmul / cuDNN flags
             if hasattr(torch.backends, 'cuda') and hasattr(torch.backends.cuda, 'matmul'):
                 try:
                     torch.backends.cuda.matmul.allow_tf32 = tf32_ok
-                    # Reduced-precision reduction is only safe on tensor-core GPUs.
-                    # On GTX 16-series this was a real crash vector.
+                    # Reduced-precision reduction is only safe on Ampere+ tensor cores.
                     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = (
-                        bool(quality_mode) and tier == 'tensor-core' and cc_major >= 8
+                        bool(quality_mode) and cc_major >= 8
                     )
                 except Exception:
                     pass
@@ -257,14 +262,17 @@ class TTSUtils:
                     torch.backends.cudnn.allow_tf32 = tf32_ok
                 except Exception:
                     pass
-            # AMP dtype selection by tier
+            # ---------- AMP dtype — derived from compute capability, conservative ----------
+            # Default is FP32 (no autocast). We only opt into lower precision when the
+            # hardware tier is unambiguous.
+            amp_dtype = torch.float32
             if is_jetson or is_rocm:
-                # Jetson + ROCm → FP16 only (BF16 unstable / slow)
+                # Jetson + ROCm → FP16 (BF16 unstable / slow on these)
                 amp_dtype = torch.float16
-            elif tier == 'tensor-core':
-                # BF16 on Ampere+ when quality is on, otherwise FP16
+            elif cc_major >= 8:
+                # Ampere+ (RTX 30xx/40xx, A/H/L) — full tensor cores, BF16 available
                 use_bf16 = False
-                if cc_major >= 8 and quality_mode:
+                if quality_mode:
                     try:
                         use_bf16 = bool(
                             hasattr(torch.cuda, 'is_bf16_supported')
@@ -272,15 +280,15 @@ class TTSUtils:
                         )
                     except Exception:
                         use_bf16 = False
-                #amp_dtype = torch.bfloat16 if use_bf16 else torch.float16
+                amp_dtype = torch.bfloat16 if use_bf16 else torch.float16
+            elif cc == (7, 0):
+                # Volta (V100 / Titan V) — real tensor cores, FP16 is safe
                 amp_dtype = torch.float16
-            elif tier == 'fp16-only':
-                # GTX 16-series (1660 Super et al.): FP16 autocast destabilises
-                # autoregressive TTS decoders (XTTSv2, YourTTS, ...). Run FP32.
-                amp_dtype = torch.float32
-            else:
-                # tier == 'none' — shouldn't land here with has_cuda, but be safe
-                amp_dtype = torch.float32
+            # Everything else stays FP32:
+            #   CC 7.5 Turing — RTX 20xx technically has TC, GTX 16xx doesn't.
+            #     Can't tell them apart from capabilities alone, and FP16 destabilises
+            #     autoregressive TTS on GTX 16xx. Safe > fast.
+            #   CC < 7 (Pascal and older) — no usable FP16 path on consumer cards.
             return amp_dtype
         # ================= Apple MPS =================
         if has_mps:
