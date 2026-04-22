@@ -434,11 +434,8 @@ def build_interface(args:dict)->gr.Blocks:
                     display: flex !important;
                     align-items: center !important;
                     justify-content: center !important;
-                    padding-bottom: 10px !important;
                 }
                 #gr_blocks_nav p {
-                    background: red !important;
-                    margin: 5px 0 0 0 !important;
                     white-space:nowrap !important;
                     overflow:hidden !important;
                     font-size: 16px !important;
