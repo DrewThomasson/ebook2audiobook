@@ -3005,8 +3005,8 @@ def build_interface(args:dict)->gr.Blocks:
             )
             ###########
             gr_blocks_back_btn.click(
-                fn=lambda page, blocks, *args: navigate(page, blocks, -1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
+                fn=lambda session_id, page, blocks, *args: navigate(session_id, page, blocks, -1, *args),
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                 outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn],
                 show_progress_on=[gr_blocks_nav]
             ).then(
@@ -3016,8 +3016,8 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_blocks_nav]
             )
             gr_blocks_next_btn.click(
-                fn=lambda page, blocks, *args: navigate(page, blocks, 1, *args),
-                inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
+                fn=lambda session_id, page, blocks, *args: navigate(session_id, page, blocks, 1, *args),
+                inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                 outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn],
                 show_progress_on=[gr_blocks_nav]
             ).then(
