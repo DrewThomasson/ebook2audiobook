@@ -429,6 +429,15 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_audiobook_vtt, #gr_playback_time {
                     display: none !important;
                 }
+                #gr_blocks_nav {
+                    display: grid !important;
+                    grid-template-columns: 44px 1fr 44px !important;
+                    align-items: center;
+                    gap: 8px;
+                    justify-content: center !important;
+                    max-width: max-content;
+                    margin: 0 auto !important;
+                }
                 #gr_blocks_nav button.nav-btn {
                     width:44px !important;
                     min-width:44px !important;
