@@ -3059,7 +3059,7 @@ def convert_ebook(args:dict)->tuple:
                                                 if is_changed:
                                                     blocks = blocks_saved.get('blocks', [])
                                                     for i, block in enumerate(blocks):
-                                                        if i < len(blocks_saved):
+                                                        if i < len(blocks):
                                                             block['id'] = blocks_orig[i]['id']
                                                     blocks_saved['blocks'] = blocks
                                                     session['blocks_saved'] = blocks_saved
@@ -3074,7 +3074,7 @@ def convert_ebook(args:dict)->tuple:
                                                 if is_changed:
                                                     blocks = blocks_current.get('blocks', [])
                                                     for i, block in enumerate(blocks):
-                                                        if i < len(blocks_current):
+                                                        if i < len(blocks):
                                                             block['id'] = blocks_orig[i]['id']
                                                     blocks_current['blocks'] = blocks
                                                     session['blocks_current'] = blocks_current
@@ -3154,7 +3154,6 @@ def convert_ebook(args:dict)->tuple:
                                                         changed = True
                                                     if changed:
                                                         session[key] = snap
-                                                        json_file_key = session['blocks_orig_json'] if key == 'blocks_orig' else session[f'{key}_json']
                                                         save_json_blocks(session_id, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
