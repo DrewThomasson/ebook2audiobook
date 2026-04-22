@@ -3059,7 +3059,7 @@ def convert_ebook(args:dict)->tuple:
                                                 new_blocks = []
                                                 for i, block in enumerate(blocks):
                                                     if block.get('text', ''):
-                                                        if i < len(blocks_orig):
+                                                        if i < len(blocks_saved):
                                                             block['id'] = blocks_orig[i]['id']
                                                         new_blocks.append(block)
                                                 blocks_saved['blocks'] = new_blocks
@@ -3074,7 +3074,7 @@ def convert_ebook(args:dict)->tuple:
                                                 new_blocks = []
                                                 for i, block in enumerate(blocks):
                                                     if block.get('text', ''):
-                                                        if i < len(blocks_orig):
+                                                        if i < len(blocks_current):
                                                             block['id'] = blocks_orig[i]['id']
                                                         new_blocks.append(block)
                                                 blocks_current['blocks'] = new_blocks
@@ -3130,7 +3130,7 @@ def convert_ebook(args:dict)->tuple:
                                                                 "fine_tuned": session['fine_tuned'],
                                                                 "sentences": [],
                                                             }
-                                                            for t in raw_blocks if t
+                                                            for t in raw_blocks
                                                         ],
                                                     }
                                                 if session.get('blocks_orig', {}):
