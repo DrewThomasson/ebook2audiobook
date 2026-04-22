@@ -3035,6 +3035,7 @@ def convert_ebook(args:dict)->tuple:
                                     missing_orig_json = False
                                     blocks_orig = load_json_blocks(session['blocks_orig_json'])
                                     is_changed = False
+                                    is_reset = False
                                     if blocks_orig:
                                         blocks = blocks_orig.get('blocks', [])
                                         new_blocks = []
@@ -3045,40 +3046,40 @@ def convert_ebook(args:dict)->tuple:
                                                     is_changed = True
                                                 new_blocks.append(block)
                                             else:
-                                                is_changed = True
+                                                is_reset = True
                                         blocks_orig['blocks'] = new_blocks
                                         session['blocks_orig'] = blocks_orig
-                                    if is_changed:
+                                    if is_changed or is_reset:
                                         save_json_blocks(session_id, 'blocks_orig')
                                     if os.path.exists(session['blocks_saved_json']):
                                         blocks_saved = load_json_blocks(session['blocks_saved_json'])
                                         if blocks_saved:
                                             session['blocks_saved'] = blocks_saved
-                                            if is_changed:
-                                                blocks = blocks_saved.get('blocks', [])
-                                                new_blocks = []
-                                                for i, block in enumerate(blocks):
-                                                    if block.get('text', ''):
+                                            if is_changed or is_reset:
+                                                if is_changed:
+                                                    blocks = blocks_saved.get('blocks', [])
+                                                    for i, block in enumerate(blocks):
                                                         if i < len(blocks_saved):
                                                             block['id'] = blocks_orig[i]['id']
-                                                        new_blocks.append(block)
-                                                blocks_saved['blocks'] = new_blocks
-                                                session['blocks_saved'] = blocks_saved
+                                                    blocks_saved['blocks'] = blocks
+                                                    session['blocks_saved'] = blocks_saved
+                                                elif is_reset:
+                                                    session['blocks_saved'] = copy.deepcopy(blocks_orig)
                                                 save_json_blocks(session_id, 'blocks_saved')
                                     if os.path.exists(session['blocks_current_json']):
                                         blocks_current = load_json_blocks(session['blocks_current_json'])
                                         if blocks_current:
                                             session['blocks_current'] = blocks_current
-                                            if is_changed:
-                                                blocks = blocks_current.get('blocks', [])
-                                                new_blocks = []
-                                                for i, block in enumerate(blocks):
-                                                    if block.get('text', ''):
+                                            if is_changed or is_reset:
+                                                if is_changed:
+                                                    blocks = blocks_current.get('blocks', [])
+                                                    for i, block in enumerate(blocks):
                                                         if i < len(blocks_current):
                                                             block['id'] = blocks_orig[i]['id']
-                                                        new_blocks.append(block)
-                                                blocks_current['blocks'] = new_blocks
-                                                session['blocks_current'] = blocks_current
+                                                    blocks_current['blocks'] = blocks
+                                                    session['blocks_current'] = blocks_current
+                                                elif is_reset:
+                                                    session['blocks_current'] = copy.deepcopy(blocks_orig)
                                                 save_json_blocks(session_id, 'blocks_current')
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
@@ -3130,7 +3131,7 @@ def convert_ebook(args:dict)->tuple:
                                                                 "fine_tuned": session['fine_tuned'],
                                                                 "sentences": [],
                                                             }
-                                                            for t in raw_blocks
+                                                            for t in raw_blocks if t
                                                         ],
                                                     }
                                                 if session.get('blocks_orig', {}):
