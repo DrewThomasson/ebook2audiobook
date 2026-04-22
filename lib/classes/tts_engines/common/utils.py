@@ -23,7 +23,7 @@ def _format_timestamp(seconds:float)->str:
     h, m = divmod(m, 60)
     return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
-def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->bool:
+def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tuple:
     try:
         import gradio as gr
         from tqdm import tqdm
@@ -33,36 +33,28 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->boo
             vtt_path = os.path.join(session['process_dir'], Path(session['final_name']).stem + '.vtt')
         audio_sentences_dir = Path(session['sentences_dir'])
         blocks = session['blocks_current']['blocks']
-        kept_indices = {
-            str(i) for i, b in enumerate(blocks)
-            if b['keep'] and b['text'].strip()
-            and (block_indices is None or i in block_indices)
-        }
-        block_dirs = sorted(
-            [d for d in audio_sentences_dir.iterdir() if d.is_dir() and d.name in kept_indices],
-            key=lambda p: int(p.name)
-        )
         audio_files = []
         sentences_to_use = []
-        for block_dir in block_dirs:
-            block_idx = int(block_dir.name)
-            block_files = sorted(
-                block_dir.glob(f'*.{default_audio_proc_format}'),
-                key=lambda p: int(p.stem)
-            )
-            audio_files.extend(block_files)
-            block_sentences = blocks[block_idx].get('sentences', [])
-            filtered_sentences = [
-                sentence for sentence in block_sentences
-                if any(c.isalnum() for c in str(sentence))
-            ]
-            sentences_to_use.extend(filtered_sentences)
+        for block in blocks:
+            if not (block['keep'] and block['text'].strip()):
+                continue
+            if block_indices is not None and block['id'] not in block_indices:
+                continue
+            block_dir = audio_sentences_dir / str(block['id'])
+            if not block_dir.is_dir():
+                error = f"Missing audio directory for block id {block['id']}: {block_dir}"
+                return False, error
+            block_sentences = block.get('sentences', [])
+            for sentence_idx, sentence in enumerate(block_sentences):
+                if not any(c.isalnum() for c in str(sentence)):
+                    continue
+                audio_file = block_dir / f'{sentence_idx}.{default_audio_proc_format}'
+                if not audio_file.is_file():
+                    error = f"Missing audio file for block {block['id']}, sentence {sentence_idx}: {audio_file}"
+                    return False, error
+                audio_files.append(audio_file)
+                sentences_to_use.append(sentence)
         audio_files_length = len(audio_files)
-        sentences_length = len(sentences_to_use)
-        if audio_files_length != sentences_length:
-            error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {sentences_length} sentences'
-            print(error)
-            return False
         sentences_total_time = 0.0
         vtt_blocks = []
         if session['is_gui_process']:
@@ -98,11 +90,10 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->boo
         with open(vtt_path, 'w', encoding='utf-8') as f:
             f.write('WEBVTT\n\n')
             f.write('\n'.join(vtt_blocks))
-        return True
+        return True, None
     except Exception as e:
         error = f'build_vtt_file(): {e}'
-        print(error)
-        return False
+        return False, error
 
 class TTSUtils:
 

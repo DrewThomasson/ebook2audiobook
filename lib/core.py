@@ -2531,9 +2531,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             if audio:
                                 audio.save()
                     final_vtt = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
-                    vtt_built = build_vtt_file(session, vtt_path=final_vtt, block_indices=block_indices)
+                    vtt_built, error = build_vtt_file(session, vtt_path=final_vtt, block_indices=block_indices)
                     if not vtt_built:
-                        error = f'Export failed: unable to generate VTT file {Path(final_vtt).name}'
+                        error = f'build_vtt_file() error: {error}'
                         print(error)
                         return False
                     return True
