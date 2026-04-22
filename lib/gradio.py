@@ -2239,26 +2239,25 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_current_blocks(session_id:str, page:int, blocks:list[dict], *args)->None:
                 session = context.get_session(session_id)
-                if not session and session.get('id', False):
-                    return
-                new_blocks = collect_page(page, blocks, *args)
-                blocks_current = session['blocks_current']
-                old_blocks = blocks_current['blocks']
-                for idx, b in enumerate(new_blocks):
-                    if 'voice' not in b:
-                        b['voice'] = session.get('voice')
-                    if 'tts_engine' not in b:
-                        b['tts_engine'] = session.get('tts_engine', '')
-                    if 'fine_tuned' not in b:
-                        b['fine_tuned'] = session.get('fine_tuned', '')
-                    old_b = old_blocks[idx] if idx < len(old_blocks) else None
-                    if 'id' not in b and old_b is not None:
-                        b['id'] = old_b.get('id')
-                    if old_b and old_b.get('text', '').strip() != b.get('text', '').strip():
-                        b['sentences'] = []
-                blocks_current['blocks'] = new_blocks
-                session['blocks_current'] = blocks_current
-                save_json_blocks(session_id, 'blocks_current')
+                if session and session.get('id', False):
+                    new_blocks = collect_page(page, blocks, *args)
+                    blocks_current = session['blocks_current']
+                    old_blocks = blocks_current['blocks']
+                    for idx, b in enumerate(new_blocks):
+                        if 'voice' not in b:
+                            b['voice'] = session.get('voice')
+                        if 'tts_engine' not in b:
+                            b['tts_engine'] = session.get('tts_engine', '')
+                        if 'fine_tuned' not in b:
+                            b['fine_tuned'] = session.get('fine_tuned', '')
+                        old_b = old_blocks[idx] if idx < len(old_blocks) else None
+                        if 'id' not in b and old_b is not None:
+                            b['id'] = old_b.get('id')
+                        if old_b and old_b.get('text', '').strip() != b.get('text', '').strip():
+                            b['sentences'] = []
+                    blocks_current['blocks'] = new_blocks
+                    session['blocks_current'] = blocks_current
+                    save_json_blocks(session_id, 'blocks_current')
 
             def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
