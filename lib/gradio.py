@@ -437,7 +437,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding-bottom: 10px !important;
                 }
                 #gr_blocks_nav p {
-                    margin: 10px 0 !important;
+                    margin: 10px 0 0 0 !important;
                     white-space:nowrap !important;
                     overflow:hidden !important;
                     font-size: 16px !important;
