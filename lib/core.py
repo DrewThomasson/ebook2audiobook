@@ -223,6 +223,7 @@ class SessionContext:
             "blocks_orig": {},
             "blocks_saved": {},
             "blocks_current": {},
+            "blocks_orig_json": None,
             "blocks_saved_json": None,
             "blocks_current_json": None,
             "duration": 0,
@@ -3014,14 +3015,14 @@ def convert_ebook(args:dict)->tuple:
                             else:
                                 show_alert(session_id, {"type": "info", "msg": msg_extra})
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
-                            session['json_blocks_orig_file'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
+                            session['blocks_orig_json'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                             session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                             session['blocks_current_json'] = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
                             checksum, error = compare_checksums(session_id)
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
-                                    for jf in (session['json_blocks_orig_file'], session['blocks_saved_json'], session['blocks_current_json']):
+                                    for jf in (session['blocks_orig_json'], session['blocks_saved_json'], session['blocks_current_json']):
                                         if os.path.exists(jf):
                                             os.unlink(jf)
                                     msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
@@ -3030,9 +3031,9 @@ def convert_ebook(args:dict)->tuple:
                                     error = 'convert2epub() failed!'
                             if error is None:
                                 missing_orig_json = True
-                                if os.path.exists(session['json_blocks_orig_file']):
+                                if os.path.exists(session['blocks_orig_json']):
                                     missing_orig_json = False
-                                    blocks_orig = load_json_blocks(session['json_blocks_orig_file'])
+                                    blocks_orig = load_json_blocks(session['blocks_orig_json'])
                                     is_changed = False
                                     if blocks_orig:
                                         blocks = blocks_orig.get('blocks', [])
@@ -3152,7 +3153,7 @@ def convert_ebook(args:dict)->tuple:
                                                         changed = True
                                                     if changed:
                                                         session[key] = snap
-                                                        json_file_key = session['json_blocks_orig_file'] if key == 'blocks_orig' else session[f'{key}_json']
+                                                        json_file_key = session['blocks_orig_json'] if key == 'blocks_orig' else session[f'{key}_json']
                                                         save_json_blocks(session_id, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
@@ -3328,6 +3329,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "blocks_orig": {},
         "blocks_saved": {},
         "blocks_current": {},
+        "blocks_orig_json": None,
         "blocks_saved_json": None,
         "blocks_current_json": None,
         "audiobook_overridden": None,
