@@ -3050,12 +3050,12 @@ def convert_ebook(args:dict)->tuple:
                                             save_json_blocks(session, session['blocks_saved_json'], 'blocks_saved')
                                     if os.path.exists(session['blocks_current_json']):
                                         blocks_current = load_json_blocks(session['blocks_current_json'])
+                                        session['blocks_current'] = blocks_current
                                         if orig_changed:
                                             orig_blocks = blocks_orig.get('blocks', [])
                                             for i, block in enumerate(blocks_current.get('blocks', [])):
                                                 if i < len(orig_blocks):
                                                     block['id'] = orig_blocks[i]['id']
-                                            session['blocks_current'] = blocks_current
                                             save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
