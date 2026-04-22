@@ -2148,10 +2148,10 @@ def build_interface(args:dict)->gr.Blocks:
                 max_page = max((len(new_blocks) - 1) // page_size, 0)
                 new_page = max(0, min(int(page) + direction, max_page))
                 return (
-                    blocks,
+                    new_blocks,
                     new_page,
                     gr.update(visible=True if new_page > 0 else 'hidden'),
-                    gr.update(visible=True if new_page < last_idx else 'hidden'),
+                    gr.update(visible=True if new_page < max_page else 'hidden'),
                 )
 
             def update_blocks_header(page:int, blocks:list[dict])->str:
