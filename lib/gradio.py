@@ -2179,10 +2179,12 @@ def build_interface(args:dict)->gr.Blocks:
                             if session['status'] in [status_tags['EDIT']]:
                                 visible_main = False
                                 visible_blocks = True
-                                page = 0
                                 ebook_name = Path(session['ebook']).stem
                                 blocks_current = session['blocks_current']
                                 blocks = blocks_current['blocks']
+                                # restore saved page, clamp in case blocks shrank or page_size changed
+                                max_page = max((len(blocks) - 1) // page_size, 0)
+                                page = max(0, min(int(blocks_current.get('page', 0)), max_page))
                                 page_updates = list(populate_page(session_id, page, blocks))
                                 if session['cancellation_requested']:
                                     visible_main = True
@@ -2191,8 +2193,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr.update(value=ebook_name),
                                     gr.update(visible=visible_main), gr.update(visible=visible_blocks),
                                     blocks, page,
-                                    gr.update(interactive=False),
-                                    gr.update(interactive=len(blocks) > page_size),
+                                    gr.update(interactive=page > 0),
+                                    gr.update(interactive=page < max_page),
                                     *page_updates
                                 )
                                 return result

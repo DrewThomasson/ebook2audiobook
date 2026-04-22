@@ -3089,21 +3089,22 @@ def convert_ebook(args:dict)->tuple:
                                                 raw_blocks = get_blocks(session_id, epubBook)
                                                 if raw_blocks:
                                                     session['blocks_orig'] = {
-                                                        'block_resume': 0,
-                                                        'sentence_resume': 0,
-                                                        'voice': session['voice'],
-                                                        'tts_engine': session['tts_engine'],
-                                                        'fine_tuned': session['fine_tuned'],
-                                                        'blocks': [
+                                                        "page": 0,
+                                                        "block_resume": 0,
+                                                        "sentence_resume": 0,
+                                                        "voice": session['voice'],
+                                                        "tts_engine": session['tts_engine'],
+                                                        "fine_tuned": session['fine_tuned'],
+                                                        "blocks": [
                                                             {
-                                                                'id': str(uuid.uuid4()),
-                                                                'expand': False,
-                                                                'keep': True,
-                                                                'text': t,
-                                                                'voice': session['voice'],
-                                                                'tts_engine': session['tts_engine'],
-                                                                'fine_tuned': session['fine_tuned'],
-                                                                'sentences': [],
+                                                                "id": str(uuid.uuid4()),
+                                                                "expand": False,
+                                                                "keep": True,
+                                                                "text": t,
+                                                                "voice": session['voice'],
+                                                                "tts_engine": session['tts_engine'],
+                                                                "fine_tuned": session['fine_tuned'],
+                                                                "sentences": [],
                                                             }
                                                             for t in raw_blocks
                                                         ],
@@ -3116,13 +3117,20 @@ def convert_ebook(args:dict)->tuple:
                                             # --- legacy upgrade: old snapshots may lack top-level scalars (TO REMOVE AFTER A WHILE) ---
                                             for key in ('blocks_orig', 'blocks_current', 'blocks_saved'):
                                                 snap = session.get(key)
-                                                if snap and 'voice' not in snap:
-                                                    snap['voice'] = session.get('voice')
-                                                    snap['tts_engine'] = session.get('tts_engine')
-                                                    snap['fine_tuned'] = session.get('fine_tuned')
-                                                    session[key] = snap
-                                                    json_file_key = json_blocks_orig_file if key == 'blocks_orig' else session[f'{key}_json']
-                                                    save_json_blocks(session, json_file_key, key)
+                                                if snap:
+                                                    changed = False
+                                                    if 'voice' not in snap:
+                                                        snap['voice'] = session.get('voice')
+                                                        snap['tts_engine'] = session.get('tts_engine')
+                                                        snap['fine_tuned'] = session.get('fine_tuned')
+                                                        changed = True
+                                                    if 'page' not in snap:
+                                                        snap['page'] = 0
+                                                        changed = True
+                                                    if changed:
+                                                        session[key] = snap
+                                                        json_file_key = json_blocks_orig_file if key == 'blocks_orig' else session[f'{key}_json']
+                                                        save_json_blocks(session, json_file_key, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
                                                 sync_globals_to_blocks(session_id)
