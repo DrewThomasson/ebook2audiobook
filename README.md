@@ -1,4 +1,4 @@
-# 📚 ebook2audiobook
+# 📚 ebook2audiobook (E2A)
 CPU/GPU Converter from E-Book to audiobook with chapters and metadata<br/>
 using advanced TTS engines and much more.<br/>
 Supports voice cloning and 1158 languages!
