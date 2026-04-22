@@ -2237,7 +2237,10 @@ def build_interface(args:dict)->gr.Blocks:
                         new_blocks[idx]['text'] = texts[i]
                 return new_blocks
 
-            def change_current_blocks(session:DictProxy, page:int, blocks:list[dict], *args)->None:
+            def change_current_blocks(session_id:str, page:int, blocks:list[dict], *args)->None:
+                session = context.get_session(session_id)
+                if not session and session.get('id', False):
+                    return
                 new_blocks = collect_page(page, blocks, *args)
                 blocks_current = session['blocks_current']
                 old_blocks = blocks_current['blocks']
@@ -2262,7 +2265,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['EDIT']]:
                         session['status'] = status_tags['READY']
-                        change_current_blocks(session, page, blocks, *args)
+                        change_current_blocks(session_id, page, blocks, *args)
                         if session['ebook_mode'] == ebook_modes['TEXT']:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
@@ -2277,7 +2280,7 @@ def build_interface(args:dict)->gr.Blocks:
                             error = 'At least one block must be kept.'
                             show_alert(session_id, {'type': 'warning', 'msg': error})
                             return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
-                        change_current_blocks(session, page, blocks, *args)
+                        change_current_blocks(session_id, page, blocks, *args)
                         if session['ebook_mode'] == ebook_modes['TEXT']:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
