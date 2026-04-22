@@ -429,6 +429,12 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_audiobook_vtt, #gr_playback_time {
                     display: none !important;
                 }
+                #gr_blocks_nav {
+                    overflow:hidden !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                }
                 #gr_blocks_nav p {
                     white-space:nowrap !important;
                     overflow:hidden !important;
@@ -784,9 +790,9 @@ def build_interface(args:dict)->gr.Blocks:
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 gr_blocks_markdown = gr.Markdown(elem_id='gr_blocks_markdown', elem_classes=['gr-markdown'], value='')
                 with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
-                    gr_blocks_back_btn = gr.Button('◀', elem_id='gr_blocks_back_btn', scale=1)
+                    gr_blocks_back_btn = gr.Button('◀', elem_id='gr_blocks_back_btn', interactive=False, scale=1)
                     gr_blocks_header = gr.Markdown('', elem_id='gr_blocks_header')
-                    gr_blocks_next_btn = gr.Button('▶', elem_id='gr_blocks_next_btn', scale=1)
+                    gr_blocks_next_btn = gr.Button('▶', elem_id='gr_blocks_next_btn', interactive=False, scale=1)
 
                 block_components = []
                 with gr.Column(elem_id='gr_column_blocks', elem_classes=['gr-col']):
@@ -2156,8 +2162,8 @@ def build_interface(args:dict)->gr.Blocks:
                 return (
                     new_blocks,
                     new_page,
-                    gr.update(),
-                    gr.update()
+                    gr.update(interactive=True if new_page > 0 else False),
+                    gr.update(interactive=True if new_page < max_page else False),
                 )
 
             def update_blocks_header(page:int, blocks:list[dict])->str:
