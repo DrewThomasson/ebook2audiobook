@@ -2191,8 +2191,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr.update(value=ebook_name),
                                     gr.update(visible=visible_main), gr.update(visible=visible_blocks),
                                     blocks, page,
-                                    gr.update(visible=False),
-                                    gr.update(visible=len(blocks) > page_size),
+                                    gr.update(interactive=False),
+                                    gr.update(interactive=len(blocks) > page_size),
                                     *page_updates
                                 )
                                 return result
