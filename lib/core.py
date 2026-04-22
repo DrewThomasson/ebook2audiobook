@@ -3059,7 +3059,7 @@ def convert_ebook(args:dict)->tuple:
                                                 if is_changed:
                                                     blocks = blocks_saved.get('blocks', [])
                                                     for i, block in enumerate(blocks):
-                                                        if i < len(blocks):
+                                                        if i < len(blocks_orig['blocks']):
                                                             block['id'] = blocks_orig[i]['id']
                                                     blocks_saved['blocks'] = blocks
                                                     session['blocks_saved'] = blocks_saved
@@ -3074,7 +3074,7 @@ def convert_ebook(args:dict)->tuple:
                                                 if is_changed:
                                                     blocks = blocks_current.get('blocks', [])
                                                     for i, block in enumerate(blocks):
-                                                        if i < len(blocks):
+                                                        if i < len(blocks_orig['blocks']):
                                                             block['id'] = blocks_orig[i]['id']
                                                     blocks_current['blocks'] = blocks
                                                     session['blocks_current'] = blocks_current
