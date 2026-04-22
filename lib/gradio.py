@@ -430,13 +430,10 @@ def build_interface(args:dict)->gr.Blocks:
                     display: none !important;
                 }
                 #gr_blocks_nav {
-                    display: grid !important;
-                    grid-template-columns: 44px 1fr 44px !important;
+                    justify-content: center !important;
                     align-items: center;
                     gap: 8px;
-                    justify-content: center !important;
-                    max-width: max-content;
-                    margin: 0 auto !important;
+                    flex-wrap: nowrap;
                 }
                 #gr_blocks_nav button.nav-btn {
                     width:44px !important;
@@ -2176,9 +2173,10 @@ def build_interface(args:dict)->gr.Blocks:
                 max_page = max((len(new_blocks) - 1) // page_size, 0)
                 new_page = max(0, min(int(page) + direction, max_page))
                 return (
-                    new_blocks, new_page,
-                    gr.update(visible=new_page > 0),
-                    gr.update(visible=new_page < max_page)
+                    blocks,
+                    new_page,
+                    gr.update(visible=True if new_page > 0 else 'hidden'),
+                    gr.update(visible=True if new_page < last_idx else 'hidden'),
                 )
 
             def update_blocks_header(page:int, blocks:list[dict])->str:
