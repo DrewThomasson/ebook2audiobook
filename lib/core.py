@@ -3154,7 +3154,6 @@ def convert_ebook(args:dict)->tuple:
                                                         changed = True
                                                     if changed:
                                                         session[key] = snap
-                                                        json_file_key = session['blocks_orig_json'] if key == 'blocks_orig' else session[f'{key}_json']
                                                         save_json_blocks(session_id, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):

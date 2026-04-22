@@ -2239,7 +2239,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_current_blocks(session_id:str, page:int, blocks:list[dict], *args)->None:
                 session = context.get_session(session_id)
-                if not session and session.get('id', False):
+                if session and session.get('id', False):
                     return
                 new_blocks = collect_page(page, blocks, *args)
                 blocks_current = session['blocks_current']
