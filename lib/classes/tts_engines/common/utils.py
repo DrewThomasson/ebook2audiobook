@@ -609,8 +609,11 @@ class TTSUtils:
         elif tag == 'voice':
             if close:
                 self.params['inline_voice'] = None
-                self.params['block_voice'], error = self._set_voice(self.params['block_voice'])
-                return self.params['block_voice'], error
+                new_voice, error = self._set_voice(self.params['block_voice'])
+                if new_voice is None:
+                    return False, error
+                self.params['block_voice'] = new_voice
+                return True, None
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
                 return False, error
