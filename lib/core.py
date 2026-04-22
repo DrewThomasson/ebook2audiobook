@@ -3032,7 +3032,7 @@ def convert_ebook(args:dict)->tuple:
                                     blocks_orig = load_json_blocks(json_blocks_orig_file)
                                     orig_changed = False
                                     if isinstance(blocks_orig, dict):
-                                        for block in blocks_orig['blocks']:
+                                        for block in blocks_orig.get('blocks', []):
                                             if not block.get('id'):
                                                 block['id'] = str(uuid.uuid4())
                                                 orig_changed = True
