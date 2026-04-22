@@ -429,6 +429,20 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_audiobook_vtt, #gr_playback_time {
                     display: none !important;
                 }
+                #gr_blocks_nav {
+                    overflow:hidden !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    padding-bottom: 10px !important;
+                }
+                #gr_blocks_nav p {
+                    margin: 10px 0 !important;
+                    white-space:nowrap !important;
+                    overflow:hidden !important;
+                    font-size: 16px !important;
+                    text-align: center;
+                }
                 #gr_row_buttons {
                     justify-content: center !important;
                     gap: 100px !important;
@@ -778,9 +792,9 @@ def build_interface(args:dict)->gr.Blocks:
             with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes='gr-group-main') as gr_group_blocks:
                 gr_blocks_markdown = gr.Markdown(elem_id='gr_blocks_markdown', elem_classes=['gr-markdown'], value='')
                 with gr.Row(elem_id='gr_blocks_nav') as gr_blocks_nav:
-                    gr_blocks_back_btn = gr.Button('◀', elem_id='gr_blocks_back_btn', elem_classes=['nav-btn'])
-                    gr_blocks_header = gr.Markdown('', elem_id='gr_blocks_header', elem_classes=['nav-header'])
-                    gr_blocks_next_btn = gr.Button('▶', elem_id='gr_blocks_next_btn', elem_classes=['nav-btn'])
+                    gr_blocks_back_btn = gr.Button('◀', elem_id='gr_blocks_back_btn')
+                    gr_blocks_header = gr.Markdown('', elem_id='gr_blocks_header'])
+                    gr_blocks_next_btn = gr.Button('▶', elem_id='gr_blocks_next_btn')
 
                 block_components = []
                 with gr.Column(elem_id='gr_column_blocks', elem_classes=['gr-col']):
