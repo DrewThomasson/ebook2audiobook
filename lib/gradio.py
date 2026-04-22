@@ -430,10 +430,13 @@ def build_interface(args:dict)->gr.Blocks:
                     display: none !important;
                 }
                 #gr_blocks_nav {
-                    justify-content: center !important;
+                    display: grid !important;
+                    grid-template-columns: 44px 1fr 44px !important;
                     align-items: center;
                     gap: 8px;
-                    flex-wrap: nowrap;
+                    justify-content: center !important;
+                    max-width: max-content;
+                    margin: 0 auto !important;
                 }
                 #gr_blocks_nav button.nav-btn {
                     width:44px !important;
