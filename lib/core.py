@@ -3131,7 +3131,7 @@ def convert_ebook(args:dict)->tuple:
                                                                 "fine_tuned": session['fine_tuned'],
                                                                 "sentences": [],
                                                             }
-                                                            for t in raw_blocks
+                                                            for t in raw_blocks if t
                                                         ],
                                                     }
                                                 if session.get('blocks_orig', {}):
