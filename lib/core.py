@@ -3039,7 +3039,7 @@ def convert_ebook(args:dict)->tuple:
                                         blocks = blocks_orig.get('blocks', [])
                                         new_blocks = []
                                         for block in blocks:
-                                            if block['text']:
+                                            if any(c.isalnum() for c in block.get('text','')):
                                                 if not block.get('id'):
                                                     block['id'] = str(uuid.uuid4())
                                                     is_changed = True
