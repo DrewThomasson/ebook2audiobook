@@ -1433,7 +1433,6 @@ def build_interface(args:dict)->gr.Blocks:
                                         save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
                                     session['voice'] = fallback
                                     voice_options[:] = [(i, v) for i, v in voice_options if v != deleted_voice]
-                                    print(voice_options)
                                     msg = f'Voice file {re.sub(r".wav$", "", selected_name)} deleted!'
                                     show_alert(session_id, {'type': 'info', 'msg': msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)

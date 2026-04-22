@@ -3031,12 +3031,12 @@ def convert_ebook(args:dict)->tuple:
                                     missing_orig_json = False
                                     blocks_orig = load_json_blocks(json_blocks_orig_file)
                                     orig_changed = False
-                                    for block in blocks_orig.get('blocks', {}):
+                                    for block in blocks_orig.get('blocks', []):
                                         if not block.get('id'):
                                             block['id'] = str(uuid.uuid4())
                                             orig_changed = True
                                     if orig_changed:
-                                        save_json_blocks(session, json_blocks_orig_file, blocks_orig)
+                                        save_json_blocks(session, json_blocks_orig_file, 'blocks_orig')
                                     session['blocks_orig'] = blocks_orig
                                     if os.path.exists(session['blocks_saved_json']):
                                         blocks_saved = load_json_blocks(session['blocks_saved_json'])
@@ -3045,7 +3045,7 @@ def convert_ebook(args:dict)->tuple:
                                             for i, block in enumerate(blocks_saved.get('blocks', [])):
                                                 if i < len(orig_blocks):
                                                     block['id'] = orig_blocks[i]['id']
-                                            save_json_blocks(session, session['blocks_saved_json'], blocks_saved)
+                                            save_json_blocks(session, session['blocks_saved_json'], 'blocks_saved')
                                         session['blocks_saved'] = blocks_saved
                                     if os.path.exists(session['blocks_current_json']):
                                         blocks_current = load_json_blocks(session['blocks_current_json'])
@@ -3054,7 +3054,7 @@ def convert_ebook(args:dict)->tuple:
                                             for i, block in enumerate(blocks_current.get('blocks', [])):
                                                 if i < len(orig_blocks):
                                                     block['id'] = orig_blocks[i]['id']
-                                            save_json_blocks(session, session['blocks_current_json'], blocks_current)
+                                            save_json_blocks(session, session['blocks_current_json'], 'blocks_current')
                                         session['blocks_current'] = blocks_current
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
