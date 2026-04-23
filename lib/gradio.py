@@ -2953,7 +2953,8 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=start_conversion,
                             inputs=inputs_start_conversion,
                             outputs=[gr_progress],
-                            show_progress_on=[gr_progress]
+                            show_progress_on=[gr_progress],
+                            js='()=>{window.load_vtt();}'
                         ).then(
                             fn=edit_blocks,
                             inputs=[gr_session],
