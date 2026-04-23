@@ -2794,11 +2794,6 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=[gr_audiobook_files, gr_audiobook_files_state],
                 show_progress_on=[gr_audiobook_list],
-            )
-            gr_audiobook_player.change(
-                fn=None,
-                inputs=None,
-                outputs=None,
                 js='()=>{window.load_vtt();}'
             )
             gr_audiobook_del_btn.click(
