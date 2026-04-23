@@ -3469,6 +3469,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             gr_audiobook_sentence.style.padding = "7px 0 7px 0";
                                             gr_audiobook_sentence.style.lineHeight = "14px";
                                             const txt = gr_audiobook_vtt.value;
+                                            alert(txt);
                                             if(txt == ""){
                                                 gr_audiobook_sentence.value = "…";
                                             }else{
