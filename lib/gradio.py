@@ -1199,6 +1199,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['duration'] = float(audio_info['duration'])
                                 with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                                     vtt_content = f.read()
+                                print(vtt_content)
                                 return gr.update(value=0.0), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
                             else:
                                 error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
@@ -2796,9 +2797,9 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_audiobook_list],
             ).then(
                 fn=None,
-                inputs=gr_audiobook_vtt,
+                inputs=None,
                 outputs=None,
-                js='(vtt_content)=>{window.load_vtt(vtt_content);}'
+                js='()=>{window.load_vtt();}'
             )
             gr_audiobook_del_btn.click(
                 fn=click_gr_audiobook_del_btn,
@@ -3454,7 +3455,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 }
                             }
                             if(typeof(window.load_vtt) !== "function"){
-                                window.load_vtt = (vtt_content)=>{
+                                window.load_vtt = ()=>{
                                     try{
                                         gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
@@ -3467,11 +3468,11 @@ def build_interface(args:dict)->gr.Blocks:
                                             gr_audiobook_sentence.style.margin = "0";
                                             gr_audiobook_sentence.style.padding = "7px 0 7px 0";
                                             gr_audiobook_sentence.style.lineHeight = "14px";
-                                            //const txt = gr_audiobook_vtt.value;
-                                            if(vtt_content == ""){
+                                            const txt = gr_audiobook_vtt.value;
+                                            if(txt == ""){
                                                 gr_audiobook_sentence.value = "…";
                                             }else{
-                                                parseVTT(vtt_content);
+                                                parseVTT(txt);
                                             }
                                         }
                                     }catch(e){
