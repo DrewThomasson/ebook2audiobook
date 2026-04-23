@@ -1199,7 +1199,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['duration'] = float(audio_info['duration'])
                                 with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                                     vtt_content = f.read()
-                                print(vtt_content)
                                 return gr.update(value=0.0), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
                             else:
                                 error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
@@ -2795,7 +2794,8 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=[gr_audiobook_files, gr_audiobook_files_state],
                 show_progress_on=[gr_audiobook_list],
-            ).then(
+            )
+            gr_audiobook_player.change(
                 fn=None,
                 inputs=None,
                 outputs=None,
