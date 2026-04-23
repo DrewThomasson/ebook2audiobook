@@ -451,7 +451,7 @@ def hash_proxy_dict(proxy_dict:Any)->str:
         data = {k: v for k, v in dict(proxy_dict).items() if k not in save_session_keys_except}
     except Exception:
         data = {}
-    data_str = json.dumps(data, sort_keys=True, default=str)
+    data_str = json.dumps(data, default=str)
     return hashlib.md5(data_str.encode('utf-8')).hexdigest()
 
 def compare_checksums(session_id:str)->tuple[bool, str|None]:
@@ -2141,7 +2141,7 @@ def block_hash(block: dict) -> str:
             block.get('voice') or '',
             block.get('tts_engine') or TTS_ENGINES['XTTSv2'],
             block.get('fine_tuned') or 'internal',
-            json.dumps(block.get('sentences') or [], sort_keys=True, ensure_ascii=False),
+            json.dumps(block.get('sentences') or [], ensure_ascii=False),
         )).encode('utf-8')
     ).hexdigest()
 
