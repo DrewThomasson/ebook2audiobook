@@ -2999,15 +2999,15 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_session],
                             outputs=[gr_progress, gr_dummy_bool],
                             show_progress_on=[gr_progress],
-                        ).then(
-                            fn=None,
-                            inputs=None,
-                            outputs=None,
-                            js='()=>{window.load_vtt();}'
                         )
                     )
                 ),
                 always=True
+            ).then(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='()=>{window.load_vtt();}'
             )
             ###########
             gr_blocks_back_btn.click(
