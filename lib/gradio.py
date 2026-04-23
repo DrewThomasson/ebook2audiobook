@@ -3454,34 +3454,29 @@ def build_interface(args:dict)->gr.Blocks:
                                     return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
                                 }
                             }
-                            if(typeof(window.load_vtt) !== 'function'){
+                            if(typeof(window.load_vtt) !== "function"){
                                 window.load_vtt = ()=>{
                                     try{
-                                        const gr_audiobook_vtt = gr_root.querySelector('#gr_audiobook_vtt textarea');
-                                        const gr_audiobook_sentence = gr_root.querySelector('#gr_audiobook_sentence textarea');
-                                        if(!gr_audiobook_sentence) return;
-                                        gr_audiobook_sentence.style.fontSize = '14px';
-                                        gr_audiobook_sentence.style.fontWeight = 'bold';
-                                        gr_audiobook_sentence.style.width = '100%';
-                                        gr_audiobook_sentence.style.height = 'auto';
-                                        gr_audiobook_sentence.style.textAlign = 'center';
-                                        gr_audiobook_sentence.style.margin = '0';
-                                        gr_audiobook_sentence.style.padding = '7px 0 7px 0';
-                                        gr_audiobook_sentence.style.lineHeight = '14px';
-                                        gr_audiobook_sentence.value = '…';
-                                        gr_audiobook_sentence.dispatchEvent(new Event('input', { bubbles: true }));
-                                        const txt = gr_audiobook_vtt.value;
-                                        if(txt === ''){
-                                            return;
-                                        }
-                                        parseVTT(txt);
-                                        // 2) force cue re-evaluation immediately, don't wait for audio to move
-                                        const gr_audio = gr_root.querySelector('#gr_audiobook_player audio'); // adjust id
-                                        if(gr_audio){
-                                            gr_audio.dispatchEvent(new Event('timeupdate'));
+                                        gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
+                                        gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                        if(gr_audiobook_sentence){
+                                            gr_audiobook_sentence.style.fontSize = "14px";
+                                            gr_audiobook_sentence.style.fontWeight = "bold";
+                                            gr_audiobook_sentence.style.width = "100%";
+                                            gr_audiobook_sentence.style.height = "auto";
+                                            gr_audiobook_sentence.style.textAlign = "center";
+                                            gr_audiobook_sentence.style.margin = "0";
+                                            gr_audiobook_sentence.style.padding = "7px 0 7px 0";
+                                            gr_audiobook_sentence.style.lineHeight = "14px";
+                                            const txt = gr_audiobook_vtt.value;
+                                            if(txt == ""){
+                                                gr_audiobook_sentence.value = "…";
+                                            }else{
+                                                parseVTT(txt);
+                                            }
                                         }
                                     }catch(e){
-                                        console.warn('load_vtt error:', e);
+                                        console.warn("load_vtt error:", e);
                                     }
                                 };
                             }
