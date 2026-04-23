@@ -2794,12 +2794,11 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=None,
                 outputs=[gr_audiobook_files, gr_audiobook_files_state],
                 show_progress_on=[gr_audiobook_list],
-            )
-            gr_audiobook_vtt.change(
+            ).then(
                 fn=None,
-                inputs=None,
+                inputs=gr_audiobook_vtt,
                 outputs=None,
-                js='()=>{window.load_vtt();}'
+                js='(vtt_content)=>{window.load_vtt(vtt_content);}'
             )
             gr_audiobook_del_btn.click(
                 fn=click_gr_audiobook_del_btn,
@@ -3455,7 +3454,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 }
                             }
                             if(typeof(window.load_vtt) !== "function"){
-                                window.load_vtt = ()=>{
+                                window.load_vtt = (vtt_content)=>{
                                     try{
                                         gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
@@ -3468,12 +3467,11 @@ def build_interface(args:dict)->gr.Blocks:
                                             gr_audiobook_sentence.style.margin = "0";
                                             gr_audiobook_sentence.style.padding = "7px 0 7px 0";
                                             gr_audiobook_sentence.style.lineHeight = "14px";
-                                            const txt = gr_audiobook_vtt.value;
-                                            alert(txt);
-                                            if(txt == ""){
+                                            //const txt = gr_audiobook_vtt.value;
+                                            if(vtt_content == ""){
                                                 gr_audiobook_sentence.value = "…";
                                             }else{
-                                                parseVTT(txt);
+                                                parseVTT(vtt_content);
                                             }
                                         }
                                     }catch(e){
