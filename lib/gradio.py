@@ -2790,9 +2790,9 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt],
                 show_progress_on=[gr_audiobook_list]
             ).then(
-                fn=lambda: (gr.update(visible=False, value=None), False, gr.update(value='...')),
+                fn=lambda: (gr.update(visible=False, value=None), False),
                 inputs=None,
-                outputs=[gr_audiobook_files, gr_audiobook_files_state, gr_audiobook_sentence],
+                outputs=[gr_audiobook_files, gr_audiobook_files_state],
                 show_progress_on=[gr_audiobook_list],
             )
             gr_audiobook_vtt.change(
