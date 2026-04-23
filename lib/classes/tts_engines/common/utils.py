@@ -35,14 +35,14 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
         blocks = session['blocks_current']['blocks']
         audio_files = []
         sentences_to_use = []
-        for block in blocks:
+        for i, block in enumerate(blocks):
             if not (block['keep'] and block['text'].strip()):
                 continue
-            if block_indices is not None and block['id'] not in block_indices:
+            if block_indices is not None and i not in block_indices:
                 continue
             block_dir = audio_sentences_dir / str(block['id'])
             if not block_dir.is_dir():
-                error = f"Missing audio directory for block id {block['id']}: {block_dir}"
+                error = f"Missing audio directory for block {i} (id {block['id']}): {block_dir}"
                 return False, error
             block_sentences = block.get('sentences', [])
             for sentence_idx, sentence in enumerate(block_sentences):
@@ -50,7 +50,7 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                     continue
                 audio_file = block_dir / f'{sentence_idx}.{default_audio_proc_format}'
                 if not audio_file.is_file():
-                    error = f"Missing audio file for block {block['id']}, sentence {sentence_idx}: {audio_file}"
+                    error = f"Missing audio file for block {i} (id {block['id']}), sentence {sentence_idx}: {audio_file}"
                     return False, error
                 audio_files.append(audio_file)
                 sentences_to_use.append(sentence)
