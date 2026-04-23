@@ -2953,7 +2953,8 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=start_conversion,
                             inputs=inputs_start_conversion,
                             outputs=[gr_progress],
-                            show_progress_on=[gr_progress]
+                            show_progress_on=[gr_progress],
+                            js='()=>{window.load_vtt();}'
                         ).then(
                             fn=edit_blocks,
                             inputs=[gr_session],
@@ -2998,7 +2999,8 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=finalize_audiobook,
                             inputs=[gr_session],
                             outputs=[gr_progress, gr_dummy_bool],
-                            show_progress_on=[gr_progress]
+                            show_progress_on=[gr_progress],
+                            js='()=>{window.load_vtt();}'
                         )
                     )
                 ),
@@ -3464,7 +3466,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             gr_audiobook_sentence.style.padding = "7px 0 7px 0";
                                             gr_audiobook_sentence.style.lineHeight = "14px";
                                             const txt = gr_audiobook_vtt.value;
-                                            console.log(txt);
                                             if(txt == ""){
                                                 gr_audiobook_sentence.value = "…";
                                             }else{
