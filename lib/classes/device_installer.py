@@ -959,7 +959,7 @@ class DeviceInstaller():
         if op == '<': return left < right
         return False
 
-    def install_python_packages(self)->int:
+def install_python_packages(self)->int:
         if not os.path.exists(requirements_file):
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
@@ -972,12 +972,26 @@ class DeviceInstaller():
                     pkg = line.strip()
                     if not pkg or not re.search(r'[a-zA-Z0-9]', pkg):
                         continue
-                    if re.split(r"[<>=!\[]", pkg, 1)[0].lower() in {'torch', 'torchaudio'}:
+                    if '#' in pkg:
+                        pkg = pkg.split('#', 1)[0].strip()
+                        if not pkg:
+                            continue
+                    head = re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower()
+                    if head in {'torch', 'torchaudio'}:
                         continue
                     packages.append(pkg)
             missing_packages = []
             for package in packages:
                 raw_pkg = package.strip()
+                if ';' in raw_pkg:
+                    pkg_part, marker_part = raw_pkg.split(';', 1)
+                    marker_part = marker_part.strip()
+                    try:
+                        if not self.eval_marker(marker_part):
+                            continue
+                    except Exception as e:
+                        print(f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}')
+                    raw_pkg = pkg_part.strip()
                 clean_pkg = re.sub(r'\[.*?\]', '', raw_pkg)
                 local_path = None
                 pkg_name = None
@@ -990,15 +1004,6 @@ class DeviceInstaller():
                     else:
                         pkg_base = re.split(r'[<>=!]', clean_pkg, maxsplit=1)[0].strip()
                         pkg_name = pkg_base
-                if ';' in raw_pkg:
-                    pkg_part, marker_part = raw_pkg.split(';', 1)
-                    marker_part = marker_part.strip()
-                    try:
-                        if not self.eval_marker(marker_part):
-                            continue
-                    except Exception as e:
-                        print(f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}')
-                    raw_pkg = pkg_part.strip()
                 if 'git+' in raw_pkg or '://' in raw_pkg:
                     spec = importlib.util.find_spec(pkg_name)
                     if spec is None:
@@ -1112,6 +1117,14 @@ class DeviceInstaller():
         return 0
           
     def install_device_packages(self, device_info_str:str)->int:
+        def _needs_reinstall():
+            if not torch_version_current_full:
+                return True
+            if tag == devices['CPU']['proc']:
+                return torch_version_current_base != torch_version_matrix
+            if non_standard_tag is None:
+                return current_tag != tag
+            return non_standard_tag != tag
         try:
             if device_info_str:
                 device_info = json.loads(device_info_str)
@@ -1128,11 +1141,12 @@ class DeviceInstaller():
                     if torch_version_current_full:
                         m = re.search(r'\+(.+)$', torch_version_current_full)
                         current_tag = m.group(1) if m else None
-                        non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
+                        non_standard_match = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
+                        non_standard_tag = non_standard_match.group(0) if non_standard_match else None
                         torch_version_current_base = torch_version_current_full.split('+',1)[0]
                     if device_info['os'] == 'macosx_11_0' and device_info['arch'] == 'x86_64':
                         torch_version_matrix = torch_version_current_base = '2.2.2'
-                    if not torch_version_current_full or (tag == devices['CPU']['proc'] and torch_version_current_base != torch_version_matrix) or (tag != devices['CPU']['proc'] and ((non_standard_tag is None and current_tag != tag) or (non_standard_tag is not None and non_standard_tag != tag))):
+                    if _needs_reinstall():
                         try:
                             msg = f"Installing the right library packages for {device_info['name']}…"
                             print(msg)
