@@ -709,13 +709,14 @@ function check_conda {
 		fi
 	fi
 	if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+		model="other"
 		if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then
 			PYTHON_VERSION="3.11"
 		else
 			if [[ -r /proc/device-tree/model ]]; then
 				# Detect Jetson and select correct Python version
-				MODEL="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
-				if [[ "$MODEL" == *jetson* ]]; then
+				model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
+				if [[ "$model" == *jetson* ]]; then
 					PYTHON_VERSION="3.10"
 				fi
 			else
@@ -739,7 +740,7 @@ function check_conda {
 		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION pip -y || return 1
 		source "$CONDA_ENV" || return 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
-		if [[ "${OSTYPE-}" != darwin* && "$MODEL" == *jetson* ]]; then
+		if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
 			# needed gfortran to compile pip scipy pkg
 			conda install -c conda-forge gfortran -y || return 1
 		fi
