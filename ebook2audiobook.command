@@ -685,10 +685,15 @@ function check_conda {
 			rm -f "$installer_path"
 			if [[ -f "$CONDA_HOME/bin/conda" ]]; then
 				if [[ ! -f "$HOME/.condarc" ]]; then
-					$CONDA_HOME/bin/conda config --set auto_activate false
+					$CONDA_HOME/bin/conda config --set auto_activate_base false
 				fi
 				[[ -f "$config_path" ]] || touch "$config_path"
-				[[ "$CONDA_HOME" == "$HOME/Miniforge3" ]] && grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
+				if [[ "$CONDA_HOME" == "$HOME/Miniforge3" ]]; then
+					if ! grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path"; then
+						echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
+					fi
+					source "$config_path"
+				fi
 				[[ "$CONDA_HOME" == "$HOME/Miniforge3" ]] && source "$config_path"
 				echo -e "\e[32m=============== Miniforge3 OK! ===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
@@ -710,8 +715,6 @@ function check_conda {
 			# Detect Jetson and select correct Python version
 			MODEL="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
 			if [[ "$MODEL" == *jetson* ]]; then
-				# needed gfortran to compile pip scipy pkg
-				conda install -c conda-forge gfortran
 				PYTHON_VERSION="3.10"
 			fi
 		else
@@ -731,9 +734,14 @@ function check_conda {
 		conda update --all -y
 		conda clean --index-cache -y
 		conda clean --packages --tarballs -y
-		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y || return 1
+		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION pip -y || return 1
 		source "$CONDA_ENV" || return 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
+		if [[ "$MODEL" == *jetson* ]]; then
+			# needed gfortran to compile pip scipy pkg
+			conda install -p "$SCRIPT_DIR/$PYTHON_ENV" -c conda-forge gfortran -y
+			PYTHON_VERSION="3.10"
+		fi
 		install_python_packages || return 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
