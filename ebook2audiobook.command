@@ -711,21 +711,23 @@ function check_conda {
 	if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
 		if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then
 			PYTHON_VERSION="3.11"
-		elif [[ -r /proc/device-tree/model ]]; then
-			# Detect Jetson and select correct Python version
-			MODEL="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
-			if [[ "$MODEL" == *jetson* ]]; then
-				PYTHON_VERSION="3.10"
-			fi
 		else
-			compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
-			case $? in
-				1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;;
-			esac
-			compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
-			case $? in
-				2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
-			esac
+			if [[ -r /proc/device-tree/model ]]; then
+				# Detect Jetson and select correct Python version
+				MODEL="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
+				if [[ "$MODEL" == *jetson* ]]; then
+					PYTHON_VERSION="3.10"
+				fi
+			else
+				compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
+				case $? in
+					1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;;
+				esac
+				compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
+				case $? in
+					2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
+				esac
+			fi
 		fi
 		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION…\e[0m"
 		chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
@@ -737,10 +739,9 @@ function check_conda {
 		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION pip -y || return 1
 		source "$CONDA_ENV" || return 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
-		if [[ "$MODEL" == *jetson* ]]; then
+		if [[ "${OSTYPE-}" != darwin* && "$MODEL" == *jetson* ]]; then
 			# needed gfortran to compile pip scipy pkg
-			conda install -p "$SCRIPT_DIR/$PYTHON_ENV" -c conda-forge gfortran -y
-			PYTHON_VERSION="3.10"
+			conda install -c conda-forge gfortran -y || return 1
 		fi
 		install_python_packages || return 1
 		conda deactivate > /dev/null 2>&1
