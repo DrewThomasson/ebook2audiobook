@@ -1036,11 +1036,26 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                         error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
                         show_alert(session_id, {"type": "warning", "msg": error})
                         return []
-                    parts = re.split(r'\[(?i)chapter\]', text)
-                    for part in parts:
-                        part = part.strip()
-                        if part:
-                            blocks.append(part)
+                    if re.search(r'\[/chapter\]', text, flags=re.IGNORECASE):
+                        matches = re.finditer(r'\[chapter(?:[:=]([^\]]+))?\](.*?)\[/chapter\]', text, flags=re.DOTALL | re.IGNORECASE)
+                        for m in matches:
+                            title = (m.group(1) or '').strip()
+                            content = m.group(2).strip()
+                            if title:
+                                content = f"{title}. {content}"
+                            if content:
+                                blocks.append(content)
+                    else:
+                        parts = re.split(r'\[chapter(?:[:=]([^\]]+))?\]', text, flags=re.IGNORECASE)
+                        if parts[0].strip():
+                            blocks.append(parts[0].strip())
+                        for idx in range(1, len(parts), 2):
+                            title = parts[idx]
+                            content = parts[idx+1].strip() if idx+1 < len(parts) else ""
+                            if title and title.strip():
+                                content = f"{title.strip()}. {content}"
+                            if content:
+                                blocks.append(content)
             if len(blocks) == 0:
                 error = 'No blocks found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
