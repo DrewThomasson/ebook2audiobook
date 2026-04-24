@@ -1,5 +1,20 @@
+[chapter:Introduction]
 Hello there, and welcome to this audio test. [break] My name is David Attenborough, and I will be your guide through this remarkable demonstration. [pause] In the natural world, silence speaks volumes. [pause:2] But now, let us hear from someone else entirely.
+[/chapter]
+
+[chapter:McGonagall's Review]
 [voice:voices/eng/elder/female/ProfessorMcgonagall.wav] Ah yes, quite right. I am Professor McGonagall, and I must say, this SML tag system is rather impressive. [break] One must appreciate precision in all things, including timed pauses. [pause] Now pay close attention, because we are about to hear from yet another voice. [/voice]
+[/chapter]
+
+[chapter:ASMR Experience]
 [voice:voices/eng/elder/male/JohnButlerASMR.wav] Hey there, welcome in. [break] Just take a deep breath, and relax. [pause:1] Everything is going to be just fine. [pause] I hope that felt as smooth as it sounded. [/voice]
+[/chapter]
+
+[chapter:The Migration]
 [voice:voices/eng/elder/male/DavidAttenborough.wav] And so we return, full circle, to where we began. [break] The great migration of voices, across this humble text file, is complete. [pause:2] Extraordinary. [/voice]
+[/chapter]
+
+[chapter]
 And that, my friend, is the default voice once more, wrapping up this complete SML tag test. [break] Every tag has been exercised. [pause] Test complete.
+	
+[/chapter]
