@@ -534,6 +534,9 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
+                .accordion-block-even > button, .accordion-block-odd > button {
+                    padding: 12px 0 12px 0 !important;
+                }
                 .accordion-block-even, .accordion-block-even div label textarea, .accordion-block-even .wrap {
                     background: var(--table-even-background-fill) !important;
                 }
@@ -572,6 +575,7 @@ def build_interface(args:dict)->gr.Blocks:
                 .accordion-block-reset {
                     margin-left: 30px !important;
                     margin-right: 30px !important;
+                    border-radius: 9px !important;
                 }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
