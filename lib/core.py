@@ -1036,7 +1036,11 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                         error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
                         show_alert(session_id, {"type": "warning", "msg": error})
                         return []
-                    blocks.append(text)
+                    parts = re.split(r'\[(?i)chapter\]', text)
+                    for part in parts:
+                        part = part.strip()
+                        if part:
+                            blocks.append(part)
             if len(blocks) == 0:
                 error = 'No blocks found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
@@ -2310,7 +2314,7 @@ def convert_chapters2audio(session_id:str)->bool:
                     chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                     save_json_blocks(session_id, 'blocks_current')
                     last_save_time = time.monotonic()
-                    if not combine_audio_sentences(session_id, chapter_audio_file, x, len(sentences)):
+                    if not combine_audio_sentences(session_id, chapter_audio_file, x, sentences):
                         show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
                         session['blocks_current'] = blocks_current
                         return False
@@ -2324,7 +2328,7 @@ def convert_chapters2audio(session_id:str)->bool:
         exception_alert(session_id, f'convert_chapters2audio() error: {e}')
         return False
 
-def combine_audio_sentences(session_id:str, file:str, block_idx:int, sentence_count:int)->bool:
+def combine_audio_sentences(session_id:str, file:str, block_idx:int, sentences:list)->bool:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
@@ -2335,12 +2339,18 @@ def combine_audio_sentences(session_id:str, file:str, block_idx:int, sentence_co
         ext = f'.{default_audio_proc_format}'
         missing = []
         selected_files = []
-        for i in range(sentence_count):
+        for i, sentence in enumerate(sentences):
             path = os.path.join(block_dir, f'{i}{ext}')
-            if os.path.exists(path):
-                selected_files.append(path)
-            else:
-                missing.append(i)
+            sentence = sentence.strip()
+            if any(c.isalnum() for c in sentence):
+                is_sml = bool(SML_TAG_PATTERN.fullmatch(sentence))
+                if (not is_sml) or (i == len(sentences) - 1):
+                    if os.path.exists(path):
+                        selected_files.append(path)
+                    else:
+                        missing.append(i)
+                elif os.path.exists(path):
+                    selected_files.append(path)
         if missing:
             error = f'Missing sentence files in block {block_idx}: {missing}'
             print(error)
