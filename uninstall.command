@@ -164,9 +164,9 @@ for item in "$SCRIPT_DIR"/* "$SCRIPT_DIR"/.*; do
 	name="${item##*/}"
 	[[ "$name" == "." || "$name" == ".." ]] && continue
 	[[ "$name" == "$SCRIPT_NAME" ]] && continue
-	echo "$name"
+	echo "-> $item"
 	if [[ -n "$item" && "$item" != "/" ]]; then
-		rm -rf "$item" 2>/dev/null || true
+		rm -rfv "$item"
 	fi
 done
 
