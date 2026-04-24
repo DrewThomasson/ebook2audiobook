@@ -182,7 +182,7 @@ for item in "$SCRIPT_DIR"/* "$SCRIPT_DIR"/.*; do
 	[[ "$name" == "$SCRIPT_NAME" ]] && continue
 	echo "-> $item"
 	if [[ -n "$item" && "$item" != "/" ]]; then
-		/bin/rm -rfv "$item"
+		/bin/rm -rf "$item"
 	fi
 done
 
