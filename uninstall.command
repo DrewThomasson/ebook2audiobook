@@ -115,13 +115,27 @@ if [[ -f "$INSTALLED_LOG" ]] && grep -iqF "Miniforge3" "$INSTALLED_LOG"; then
 fi
 
 # =========================================================
-# MINIFORGE REMOVAL (FAST, GUARDED)
+# SAFE PATH CLEANUP
 # =========================================================
-if [[ "$REMOVE_CONDA" -eq 1 && -n "$CONDA_HOME" && "$CONDA_HOME" != "/" ]]; then
-	echo "$CONDA_HOME"
-	rm -rf "$CONDA_HOME" 2>/dev/null || true
-	remove_from_path "$CONDA_BIN_PATH"
-fi
+remove_from_path() {
+	local target="$1"
+	local new_path=""
+	local rest="${PATH:-}"
+	local p
+	while [[ -n "$rest" ]]; do
+		if [[ "$rest" == *:* ]]; then
+			p="${rest%%:*}"
+			rest="${rest#*:}"
+		else
+			p="$rest"
+			rest=""
+		fi
+		[[ "$p" == "$target" ]] && continue
+		new_path="${new_path:+$new_path:}$p"
+	done
+	PATH="$new_path"
+	export PATH
+}
 
 # =========================================================
 # FAST DELETE HEAVY REPO DIRS (NO LISTING)
