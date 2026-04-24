@@ -1164,8 +1164,8 @@ class DeviceInstaller():
                                     torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                     subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torch_pkg])
                                     subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torchaudio_pkg])
-                                    subprocess.check_call([sys.executable,'-m','pip','install','--force','--no-binary=scikit-learn','scikit-learn'])
-                                    subprocess.check_call([sys.executable,'-m','pip','install','--force','--no-cache-dir','--no-binary=scipy','scipy'])
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--force-reinstall','--no-cache-dir','scikit-learn'])
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--force-reinstall','--no-cache-dir','scipy'])
                                 elif device_info['name'] == devices['MPS']['proc']:
                                     torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
                                     torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
