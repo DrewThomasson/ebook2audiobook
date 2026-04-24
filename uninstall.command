@@ -71,12 +71,28 @@ fi
 # =========================================================
 remove_from_path() {
 	local target="$1"
-	IFS=':' read -r -a parts <<< "${PATH:-}"
-	PATH=""
-	for p in "${parts[@]}"; do
+	# Refuse to operate on empty or dangerous targets
+	[[ -z "$target" ]] && return 0
+	case "$target" in
+		/|/bin|/usr/bin|/sbin|/usr/sbin|/usr/local/bin) return 0 ;;
+	esac
+
+	local new_path=""
+	local rest="${PATH:-}"
+	local p
+	while [[ -n "$rest" ]]; do
+		if [[ "$rest" == *:* ]]; then
+			p="${rest%%:*}"
+			rest="${rest#*:}"
+		else
+			p="$rest"
+			rest=""
+		fi
+		[[ -z "$p" ]] && continue
 		[[ "$p" == "$target" ]] && continue
-		PATH="${PATH:+$PATH:}$p"
+		new_path="${new_path:+$new_path:}$p"
 	done
+	PATH="$new_path"
 	export PATH
 }
 
@@ -166,7 +182,7 @@ for item in "$SCRIPT_DIR"/* "$SCRIPT_DIR"/.*; do
 	[[ "$name" == "$SCRIPT_NAME" ]] && continue
 	echo "-> $item"
 	if [[ -n "$item" && "$item" != "/" ]]; then
-		rm -rfv "$item"
+		/bin/rm -rfv "$item"
 	fi
 done
 
