@@ -153,13 +153,18 @@ done
 echo
 echo "Cleaning repository content..."
 
+# Make unmatched globs expand to nothing instead of erroring (zsh) or staying literal (bash)
+if [[ -n "${ZSH_VERSION:-}" ]]; then
+	setopt local_options null_glob
+else
+	shopt -s nullglob 2>/dev/null || true
+fi
+
 for item in "$SCRIPT_DIR"/* "$SCRIPT_DIR"/.*; do
-	name="$(basename "$item")"
-	[[ "$name" == "*" || "$name" == "." || "$name" == ".." ]] && continue
+	name="${item##*/}"
+	[[ "$name" == "." || "$name" == ".." ]] && continue
 	[[ "$name" == "$SCRIPT_NAME" ]] && continue
-
 	echo "$name"
-
 	if [[ -n "$item" && "$item" != "/" ]]; then
 		rm -rf "$item" 2>/dev/null || true
 	fi
