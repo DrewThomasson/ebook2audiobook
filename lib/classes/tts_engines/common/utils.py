@@ -186,6 +186,7 @@ class TTSUtils:
                 w = torch.zeros(1, 1, 3, 3)
                 torch.nn.functional.conv2d(x, w)
             except RuntimeError:
+                print('NNPACK needs AVX > 2.0. disabling it.')
                 torch.backends.nnpack.enabled = False
         # Default matmul precision (PyTorch >= 2.2)
         try:
@@ -199,7 +200,8 @@ class TTSUtils:
             try:
                 torch.cuda.manual_seed_all(seed)
             except Exception as e:
-                print(f'[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32')
+                error = f'[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32'
+                print(error)
                 return torch.float32
             # --- Device info (fetched once) ---
             try:
@@ -331,7 +333,8 @@ class TTSUtils:
                     loaded_tts[key] = engine
                 return engine
         except Exception as e:
-            print(f'_load_api() error: {e}')
+            error = f'_load_api() error: {e}'
+            print(error)
             return None
             
 
