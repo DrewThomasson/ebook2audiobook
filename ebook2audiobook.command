@@ -717,7 +717,7 @@ function check_conda {
 				# Detect Jetson and select correct Python version
 				model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
 				if [[ "$model" == *jetson* ]]; then
-					PYTHON_VERSION="3.10"
+					PYTHON_VERSION="$MIN_PYTHON_VERSION"
 				fi
 			else
 				compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
@@ -853,7 +853,7 @@ function build_docker_image {
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
-		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="3.10" ;;
+		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="$MIN_PYTHON_VERSION" ;;
 		xpu)		cmd_options="--device=/dev/dri" ;;
 	esac
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"

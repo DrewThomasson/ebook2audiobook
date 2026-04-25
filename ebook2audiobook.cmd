@@ -767,7 +767,7 @@ if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--gpus all"
 ) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
     set "cmd_options=--runtime nvidia --gpus all"
-    set "py_vers=3.10"
+    set "py_vers=%MIN_PYTHON_VERSION%"
 ) else if /i "%DEVICE_TAG:~0,8%"=="rocm" (
     set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
