@@ -185,6 +185,7 @@ class TTSUtils:
                 x = torch.zeros(1, 1, 4, 4)
                 w = torch.zeros(1, 1, 3, 3)
                 torch.nn.functional.conv2d(x, w)
+                print('NNPACK needs AVX xxxxxxxxxxxxxxxxxxxxxxxxxx')
             except RuntimeError:
                 print('NNPACK needs AVX > 2.0. disabling it.')
                 torch.backends.nnpack.enabled = False
