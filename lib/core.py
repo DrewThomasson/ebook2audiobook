@@ -2201,7 +2201,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 if new_voice != old_voice:
                     block['voice'] = new_voice
             session['blocks_current'] = blocks_current
-        blocks_saved = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
+        prev_blocks = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
@@ -2216,6 +2216,7 @@ def convert_chapters2audio(session_id:str)->bool:
         global_sent = 0
         ch_num = 0
         last_save_time = time.monotonic()
+        baseline_initialized = False
         msg = (f'---------<br/>'
                f"{session['filename_noext']}<br/>"
                f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
@@ -2229,17 +2230,15 @@ def convert_chapters2audio(session_id:str)->bool:
                 if session['cancellation_requested']:
                     session['blocks_current'] = blocks_current
                     return False
-                block_changed = False
                 last_save_time = time.monotonic()
                 ch_num += 1
                 block_id = block['id']
                 sentences = block['sentences']
                 sent_start = global_sent
                 current_hash = block_hash(block)
-                block_ref = blocks_saved.get(block_id) if blocks_saved else None
+                block_ref = prev_blocks.get(block_id)
                 hash_ref = block_hash(block_ref) if block_ref else None
-                if block_ref is not None and hash_ref is not None:
-                    block_changed = hash_ref != current_hash
+                block_changed = bool(prev_blocks) and hash_ref != current_hash
                 missing_sentences = set()
                 if x < block_resume and not block_changed:
                     chapter_audio_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
@@ -2296,6 +2295,10 @@ def convert_chapters2audio(session_id:str)->bool:
                             converted = True
                             blocks_current['sentence_resume'] = j
                             session['blocks_current'] = blocks_current
+                            if not baseline_initialized:
+                                session['blocks_saved'] = copy.deepcopy(blocks_current)
+                                save_json_blocks(session_id, 'blocks_saved')
+                                baseline_initialized = True
                             now = time.monotonic()
                             if now - last_save_time >= 5:
                                 save_json_blocks(session_id, 'blocks_current')
@@ -2319,7 +2322,10 @@ def convert_chapters2audio(session_id:str)->bool:
                         session['blocks_current'] = blocks_current
                         return False
                     session['blocks_current'] = blocks_current
+            blocks_current['block_resume'] = 0
+            blocks_current['sentence_resume'] = 0
             session['blocks_current'] = blocks_current
+            save_json_blocks(session_id, 'blocks_current')
             session['blocks_saved'] = copy.deepcopy(blocks_current)
             save_json_blocks(session_id, 'blocks_saved')
             return True
