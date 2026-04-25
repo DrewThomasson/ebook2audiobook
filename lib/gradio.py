@@ -535,7 +535,7 @@ def build_interface(args:dict)->gr.Blocks:
                     cursor: pointer !important;
                 }
                 .accordion-block-even > button, .accordion-block-odd > button {
-                    padding: 12px 0 12px 0 !important;
+                    padding: 10px 0 10px 0 !important;
                 }
                 .accordion-block-even, .accordion-block-even div label textarea, .accordion-block-even .wrap {
                     background: var(--table-even-background-fill) !important;
