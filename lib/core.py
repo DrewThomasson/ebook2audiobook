@@ -1266,7 +1266,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
             if stanza_nlp:
-                msg = 'Converting dates and years to words…'
+                msg = 'Converting dates, years, maths signs and numbers to words…'
                 print(msg)
                 re_ordinal = re.compile(
                     r'(?<!\w)(0?[1-9]|[12][0-9]|3[01])(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)',
