@@ -181,13 +181,20 @@ class TTSUtils:
         quality_mode = bool(using_gpu and enough_vram)
         amp_dtype = torch.float32  # float32 means: caller should NOT wrap in autocast
         if hasattr(torch.backends, 'nnpack'):
-            try:
-                x = torch.zeros(1, 1, 4, 4)
-                w = torch.zeros(1, 1, 3, 3)
-                torch.nn.functional.conv2d(x, w)
-                print('NNPACK needs AVX xxxxxxxxxxxxxxxxxxxxxxxxxx')
-            except RuntimeError:
-                print('NNPACK needs AVX > 2.0. disabling it.')
+            nnpack_ok = True
+            if sys.platform == systems['LINUX']:
+                try:
+                    with open('/proc/cpuinfo', 'r') as f:
+                        nnpack_ok = False
+                        for line in f:
+                            if line.startswith('flags'):
+                                nnpack_ok = 'avx2' in line and 'sse4_1' in line
+                                break
+                except OSError:
+                    pass
+            if not nnpack_ok:
+                msg = 'NNPACK needs AVX > 2.0. disabling it.'
+                print(msg)
                 torch.backends.nnpack.enabled = False
         # Default matmul precision (PyTorch >= 2.2)
         try:
