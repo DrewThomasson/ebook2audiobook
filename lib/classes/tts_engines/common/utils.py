@@ -182,11 +182,9 @@ class TTSUtils:
         amp_dtype = torch.float32  # float32 means: caller should NOT wrap in autocast
         if hasattr(torch.backends, 'nnpack'):
             try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
-                    x = torch.zeros(1, 1, 4, 4)
-                    w = torch.zeros(1, 1, 3, 3)
-                    torch._C._nn.conv2d(x, w, None, (1, 1), (0, 0), (1, 1), 1)
+                x = torch.zeros(1, 1, 4, 4)
+                w = torch.zeros(1, 1, 3, 3)
+                torch.nn.functional.conv2d(x, w)
             except RuntimeError:
                 torch.backends.nnpack.enabled = False
         # Default matmul precision (PyTorch >= 2.2)
