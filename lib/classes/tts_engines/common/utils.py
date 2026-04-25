@@ -480,7 +480,7 @@ class TTSUtils:
                                 new_current_voice = str(voices_root.joinpath(lang_dir, *rel.parts[1:]))
                                 os.makedirs(os.path.dirname(new_current_voice), exist_ok=True)
                                 proc_current_voice = new_current_voice.replace('.wav', '_temp.wav')
-                                torchaudio.save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
+                                torchaudio.save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate'])
                                 if normalize_audio(proc_current_voice, new_current_voice, default_audio_proc_samplerate, self.session['is_gui_process']):
                                     del audio_sentence, sourceTensor, audio_tensor
                                     Path(proc_current_voice).unlink(missing_ok=True)
