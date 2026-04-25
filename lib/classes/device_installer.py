@@ -1152,7 +1152,7 @@ class DeviceInstaller():
                             msg = f"Installing the right library packages for {device_info['name']}…"
                             print(msg)
                             if tag == devices['CPU']['proc']:
-                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}'])
+                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--index-url',f'{default_pytorch_url}/cpu'])
                             else:
                                 os_env = device_info['os']
                                 arch = device_info['arch']
@@ -1174,7 +1174,7 @@ class DeviceInstaller():
                                     torchaudio_pkg = f'{url}/cpu/torchaudio-{torch_version_matrix}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
                                     subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torch_pkg,torchaudio_pkg])
                                 else:
-                                    subprocess.check_call([sys.executable,'-m','pip','install','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--force-reinstall','--index-url',f'https://download.pytorch.org/whl/{tag}'])
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--force-reinstall','--index-url',f'{default_pytorch_url}/{tag}'])
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
