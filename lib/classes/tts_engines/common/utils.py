@@ -180,22 +180,6 @@ class TTSUtils:
         is_cuda = bool(getattr(torch.version, 'cuda', None)) and not is_rocm
         quality_mode = bool(using_gpu and enough_vram)
         amp_dtype = torch.float32  # float32 means: caller should NOT wrap in autocast
-        if hasattr(torch.backends, 'nnpack'):
-            nnpack_ok = True
-            if sys.platform == systems['LINUX']:
-                try:
-                    with open('/proc/cpuinfo', 'r') as f:
-                        nnpack_ok = False
-                        for line in f:
-                            if line.startswith('flags'):
-                                nnpack_ok = 'avx2' in line and 'sse4_1' in line
-                                break
-                except OSError:
-                    pass
-            if not nnpack_ok:
-                msg = 'NNPACK needs AVX > 2.0. disabling it.'
-                print(msg)
-                torch.backends.nnpack.enabled = False
         # Default matmul precision (PyTorch >= 2.2)
         try:
             torch.set_float32_matmul_precision('high' if quality_mode else 'medium')
