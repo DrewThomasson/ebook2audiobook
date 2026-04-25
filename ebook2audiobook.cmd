@@ -480,7 +480,7 @@ if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		goto :failed
 	)
 	if not exist "%SAFE_USERPROFILE%\.condarc" (
-		call conda config --set auto_activate false
+		call conda config --set auto_activate_base false
 	)
 	call conda update --all -y
 	call conda clean --index-cache -y
@@ -583,8 +583,8 @@ if "%CURRENT_ENV%"=="" (
         call conda update --all -y
         call conda clean --index-cache -y
         call conda clean --packages --tarballs -y
-        call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
-        call conda activate base
+		call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
+        ::call conda activate base
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
         call :install_python_packages
         if errorlevel 1 goto :failed
