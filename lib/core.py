@@ -2229,6 +2229,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 if session['cancellation_requested']:
                     session['blocks_current'] = blocks_current
                     return False
+                block_changed = False
                 last_save_time = time.monotonic()
                 ch_num += 1
                 block_id = block['id']
@@ -2237,7 +2238,8 @@ def convert_chapters2audio(session_id:str)->bool:
                 current_hash = block_hash(block)
                 block_ref = blocks_saved.get(block_id) if blocks_saved else None
                 hash_ref = block_hash(block_ref) if block_ref else None
-                block_changed = hash_ref != current_hash and blocks_saved is not None and block_ref is not None else False
+                if block_ref is not None and hash_ref is not None:
+                    block_changed = hash_ref != current_hash
                 missing_sentences = set()
                 if x < block_resume and not block_changed:
                     chapter_audio_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
