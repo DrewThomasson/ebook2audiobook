@@ -451,7 +451,7 @@ def hash_proxy_dict(proxy_dict:Any)->str:
         data = {k: v for k, v in dict(proxy_dict).items() if k not in save_session_keys_except}
     except Exception:
         data = {}
-    data_str = json.dumps(data, default=str)
+    data_str = json.dumps(data, default=str, sort_keys=True)
     return hashlib.md5(data_str.encode('utf-8')).hexdigest()
 
 def compare_checksums(session_id:str)->tuple[bool, str|None]:

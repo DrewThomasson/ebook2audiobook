@@ -327,7 +327,7 @@ class TTSUtils:
         except Exception as e:
             error = f'_load_api() error: {e}'
             print(error)
-            return None
+            raise
             
 
     def _load_checkpoint(self,**kwargs:Any)->Any:
