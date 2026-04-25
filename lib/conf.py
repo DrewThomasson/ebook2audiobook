@@ -79,6 +79,7 @@ torch_matrix = {
     "rocm6.1":   {"url": default_pytorch_url, "base": "2.6.0", "last": "2.6.0"},
     "rocm6.2":   {"url": default_pytorch_url, "base": "2.5.1", "last": "2.5.1"},
     "rocm6.2.4": {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
+    "rocm6.3":   {"url": default_pytorch_url, "base": "2.7.1", "last": "2.9.1"},
     "rocm7.0":   {"url": default_pytorch_url, "base": "2.10.0", "last": "2.10.0"},
     "rocm7.1":   {"url": default_pytorch_url, "base": "2.11.0", "last": "2.11.0"},
     "rocm7.2":   {"url": default_pytorch_url, "base": "2.11.0", "last": "2.11.0"},
