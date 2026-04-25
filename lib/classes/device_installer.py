@@ -1133,7 +1133,8 @@ class DeviceInstaller():
                     tag = device_info.get('tag')
                     if tag in ['unknown','unsupported']:
                         return 0
-                    torch_version_matrix = torch_matrix[tag]['base']
+                    key = 'last' if self.python_version >= (3, 12) else 'base'
+                    torch_version_matrix = torch_matrix[tag].get(key) or torch_matrix[tag]['base']
                     torch_version_current_full = self.get_package_version('torch')
                     torch_version_current_base = None
                     current_tag = None
