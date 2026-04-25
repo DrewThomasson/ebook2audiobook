@@ -156,7 +156,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             return False, error
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
-                    torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'], format=default_audio_proc_format)
+                    torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
                     del segment_tensor
                     self.cleanup_memory()
                     self.audio_segments = []

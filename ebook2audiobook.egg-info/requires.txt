@@ -29,16 +29,21 @@ pydub
 unidecode
 langdetect
 phonemizer
-huggingface_hub>=0.36.2,<1.0
-pandas>=1.0,<3.0
 indic-nlp-library
+argostranslate==1.11.0
 stanza==1.10.1
-pyannote-audio==3.4.0
-argostranslate==1.10.0
+pandas>=1.0,<3.0
 gradio==5.49.1
-torch==2.7.1
-torchaudio==2.7.1
-transformers==4.57.6
+pyannote-audio==3.4.0; python_version < '3.12'
+pyannote-audio>=4.0.0; python_version >= '3.12'
+huggingface_hub>=0.36.2,<1.0; python_version < '3.12'
+huggingface_hub>=1.0; python_version >= '3.12'
+torch==2.7.1; python_version < '3.12'
+torch==2.11.0; python_version >= '3.12'
+torchaudio==2.7.1; python_version < '3.12'
+torchaudio==2.11.0; python_version >= '3.12'
+transformers==4.57.6; python_version < '3.12'
+transformers>=5.0.0; python_version >= '3.12'
 coqui-tts[languages]==0.27.5
 ext/py/num2words
 ext/py/demucs

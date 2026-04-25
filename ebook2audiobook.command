@@ -685,10 +685,15 @@ function check_conda {
 			rm -f "$installer_path"
 			if [[ -f "$CONDA_HOME/bin/conda" ]]; then
 				if [[ ! -f "$HOME/.condarc" ]]; then
-					$CONDA_HOME/bin/conda config --set auto_activate false
+					$CONDA_HOME/bin/conda config --set auto_activate_base false
 				fi
 				[[ -f "$config_path" ]] || touch "$config_path"
-				[[ "$CONDA_HOME" == "$HOME/Miniforge3" ]] && grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
+				if [[ "$CONDA_HOME" == "$HOME/Miniforge3" ]]; then
+					if ! grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path"; then
+						echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
+					fi
+					source "$config_path"
+				fi
 				[[ "$CONDA_HOME" == "$HOME/Miniforge3" ]] && source "$config_path"
 				echo -e "\e[32m=============== Miniforge3 OK! ===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
@@ -704,25 +709,26 @@ function check_conda {
 		fi
 	fi
 	if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+		model="other"
 		if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then
 			PYTHON_VERSION="3.11"
-		elif [[ -r /proc/device-tree/model ]]; then
-			# Detect Jetson and select correct Python version
-			MODEL="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
-			if [[ "$MODEL" == *jetson* ]]; then
-				# needed gfortran to compile pip scipy pkg
-				conda install -c conda-forge gfortran
-				PYTHON_VERSION="3.10"
-			fi
 		else
-			compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
-			case $? in
-				1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;;
-			esac
-			compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
-			case $? in
-				2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
-			esac
+			if [[ -r /proc/device-tree/model ]]; then
+				# Detect Jetson and select correct Python version
+				model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
+				if [[ "$model" == *jetson* ]]; then
+					PYTHON_VERSION="$MIN_PYTHON_VERSION"
+				fi
+			else
+				compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
+				case $? in
+					1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;;
+				esac
+				compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
+				case $? in
+					2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
+				esac
+			fi
 		fi
 		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION…\e[0m"
 		chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
@@ -731,9 +737,13 @@ function check_conda {
 		conda update --all -y
 		conda clean --index-cache -y
 		conda clean --packages --tarballs -y
-		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y || return 1
+		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION pip -y || return 1
 		source "$CONDA_ENV" || return 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
+		if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
+			# needed gfortran to compile pip scipy pkg
+			conda install -c conda-forge gfortran -y || return 1
+		fi
 		install_python_packages || return 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
@@ -843,7 +853,7 @@ function build_docker_image {
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
-		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="3.10" ;;
+		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="$MIN_PYTHON_VERSION" ;;
 		xpu)		cmd_options="--device=/dev/dri" ;;
 	esac
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"

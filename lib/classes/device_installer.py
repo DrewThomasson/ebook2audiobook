@@ -972,12 +972,26 @@ class DeviceInstaller():
                     pkg = line.strip()
                     if not pkg or not re.search(r'[a-zA-Z0-9]', pkg):
                         continue
-                    if re.split(r"[<>=!\[]", pkg, 1)[0].lower() in {'torch', 'torchaudio'}:
+                    if '#' in pkg:
+                        pkg = pkg.split('#', 1)[0].strip()
+                        if not pkg:
+                            continue
+                    head = re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower()
+                    if head in {'torch', 'torchaudio'}:
                         continue
                     packages.append(pkg)
             missing_packages = []
             for package in packages:
                 raw_pkg = package.strip()
+                if ';' in raw_pkg:
+                    pkg_part, marker_part = raw_pkg.split(';', 1)
+                    marker_part = marker_part.strip()
+                    try:
+                        if not self.eval_marker(marker_part):
+                            continue
+                    except Exception as e:
+                        print(f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}')
+                    raw_pkg = pkg_part.strip()
                 clean_pkg = re.sub(r'\[.*?\]', '', raw_pkg)
                 local_path = None
                 pkg_name = None
@@ -990,15 +1004,6 @@ class DeviceInstaller():
                     else:
                         pkg_base = re.split(r'[<>=!]', clean_pkg, maxsplit=1)[0].strip()
                         pkg_name = pkg_base
-                if ';' in raw_pkg:
-                    pkg_part, marker_part = raw_pkg.split(';', 1)
-                    marker_part = marker_part.strip()
-                    try:
-                        if not self.eval_marker(marker_part):
-                            continue
-                    except Exception as e:
-                        print(f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}')
-                    raw_pkg = pkg_part.strip()
                 if 'git+' in raw_pkg or '://' in raw_pkg:
                     spec = importlib.util.find_spec(pkg_name)
                     if spec is None:
@@ -1112,6 +1117,14 @@ class DeviceInstaller():
         return 0
           
     def install_device_packages(self, device_info_str:str)->int:
+        def _needs_reinstall():
+            if not torch_version_current_full:
+                return True
+            if tag == devices['CPU']['proc']:
+                return torch_version_current_base != torch_version_matrix
+            if non_standard_tag is None:
+                return current_tag != tag
+            return non_standard_tag != tag
         try:
             if device_info_str:
                 device_info = json.loads(device_info_str)
@@ -1120,7 +1133,8 @@ class DeviceInstaller():
                     tag = device_info.get('tag')
                     if tag in ['unknown','unsupported']:
                         return 0
-                    torch_version_matrix = torch_matrix[tag]['base']
+                    key = 'last' if self.python_version >= (3, 12) else 'base'
+                    torch_version_matrix = torch_matrix[tag].get(key) or torch_matrix[tag]['base']
                     torch_version_current_full = self.get_package_version('torch')
                     torch_version_current_base = None
                     current_tag = None
@@ -1128,16 +1142,17 @@ class DeviceInstaller():
                     if torch_version_current_full:
                         m = re.search(r'\+(.+)$', torch_version_current_full)
                         current_tag = m.group(1) if m else None
-                        non_standard_tag = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
+                        non_standard_match = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
+                        non_standard_tag = non_standard_match.group(0) if non_standard_match else None
                         torch_version_current_base = torch_version_current_full.split('+',1)[0]
                     if device_info['os'] == 'macosx_11_0' and device_info['arch'] == 'x86_64':
                         torch_version_matrix = torch_version_current_base = '2.2.2'
-                    if not torch_version_current_full or (tag == devices['CPU']['proc'] and torch_version_current_base != torch_version_matrix) or (tag != devices['CPU']['proc'] and ((non_standard_tag is None and current_tag != tag) or (non_standard_tag is not None and non_standard_tag != tag))):
+                    if _needs_reinstall():
                         try:
                             msg = f"Installing the right library packages for {device_info['name']}…"
                             print(msg)
                             if tag == devices['CPU']['proc']:
-                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}'])
+                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--index-url',f'{default_pytorch_url}/cpu'])
                             else:
                                 os_env = device_info['os']
                                 arch = device_info['arch']
@@ -1150,8 +1165,8 @@ class DeviceInstaller():
                                     torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                     subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torch_pkg])
                                     subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torchaudio_pkg])
-                                    subprocess.check_call([sys.executable,'-m','pip','install','--force','--no-binary=scikit-learn','scikit-learn'])
-                                    subprocess.check_call([sys.executable,'-m','pip','install','--force','--no-cache-dir','--no-binary=scipy','scipy'])
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--force-reinstall','--no-cache-dir','scikit-learn'])
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--force-reinstall','--no-cache-dir','scipy'])
                                 elif device_info['name'] == devices['MPS']['proc']:
                                     torch_tag_py = f'cp{default_py_major}{default_py_minor}-none'
                                     torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
@@ -1159,7 +1174,7 @@ class DeviceInstaller():
                                     torchaudio_pkg = f'{url}/cpu/torchaudio-{torch_version_matrix}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
                                     subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torch_pkg,torchaudio_pkg])
                                 else:
-                                    subprocess.check_call([sys.executable,'-m','pip','install','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--force-reinstall','--index-url',f'https://download.pytorch.org/whl/{tag}'])
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--force-reinstall','--index-url',f'{default_pytorch_url}/{tag}'])
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)

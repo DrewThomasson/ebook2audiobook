@@ -64,32 +64,36 @@ default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a perman
 
 torch_matrix = {
     # CPU
-    "cpu":       {"url": None, "base": ((lambda m:m.group(1) if m else '')(re.search(r'(?m)^\s*torch\s*==\s*([0-9]+\.[0-9]+\.[0-9]+)',open(requirements_file).read())))},
+    "cpu":       {"url": None, "base": "2.7.1", "last": "2.11.0"},
     # CUDA
-    "cu118":     {"url": default_pytorch_url, "base": "2.7.1"},
-    "cu121":     {"url": default_pytorch_url, "base": "2.5.1"},
-    "cu124":     {"url": default_pytorch_url, "base": "2.6.0"},
-    "cu126":     {"url": default_pytorch_url, "base": "2.7.1"},
-    "cu128":     {"url": default_pytorch_url, "base": "2.7.1"},
+    "cu118":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.7.1"},
+    "cu121":     {"url": default_pytorch_url, "base": "2.5.1", "last": "2.5.1"},
+    "cu124":     {"url": default_pytorch_url, "base": "2.6.0", "last": "2.6.0"},
+    "cu126":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
+    "cu128":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
+    "cu129":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
+    "cu130":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
     # ROCm
-    "rocm5.7":   {"url": default_pytorch_url, "base": "2.3.1"},
-    "rocm6.0":   {"url": default_pytorch_url, "base": "2.4.1"},
-    "rocm6.1":   {"url": default_pytorch_url, "base": "2.6.0"},
-    "rocm6.2":   {"url": default_pytorch_url, "base": "2.5.1"},
-    "rocm6.2.4": {"url": default_pytorch_url, "base": "2.7.1"},
-    "rocm6.3":   {"url": default_pytorch_url, "base": "2.7.1"},
+    "rocm5.7":   {"url": default_pytorch_url, "base": "2.3.1", "last": "2.3.1"},
+    "rocm6.0":   {"url": default_pytorch_url, "base": "2.4.1", "last": "2.4.1"},
+    "rocm6.1":   {"url": default_pytorch_url, "base": "2.6.0", "last": "2.6.0"},
+    "rocm6.2":   {"url": default_pytorch_url, "base": "2.5.1", "last": "2.5.1"},
+    "rocm6.2.4": {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
+    "rocm7.0":   {"url": default_pytorch_url, "base": "2.10.0", "last": "2.10.0"},
+    "rocm7.1":   {"url": default_pytorch_url, "base": "2.11.0", "last": "2.11.0"},
+    "rocm7.2":   {"url": default_pytorch_url, "base": "2.11.0", "last": "2.11.0"},
     # MPS
-    "mps":       {"url": default_pytorch_url, "base": "2.7.1"},
+    "mps":       {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
     # XPU
-    "xpu":       {"url": default_pytorch_url, "base": "2.7.1"},
+    "xpu":       {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
     # JETSON
-    "jetson51":  {"url": default_jetson_url, "base": "2.4.1"},
-    "jetson60":  {"url": default_jetson_url, "base": "2.4.0"},
-    "jetson61":  {"url": default_jetson_url, "base": "2.5.0"}
+    "jetson51":  {"url": default_jetson_url, "base": "2.4.1", "last": "2.4.1"},
+    "jetson60":  {"url": default_jetson_url, "base": "2.4.0", "last": "2.4.0"},
+    "jetson61":  {"url": default_jetson_url, "base": "2.5.0", "last": "2.5.0"}
 }
 
-cuda_version_range = {"min": (11,8), "max": (12,8)}
-rocm_version_range = {"min": (5,7), "max": (6,3)}
+cuda_version_range = {"min": (11,8), "max": (13,0)}
+rocm_version_range = {"min": (5,7), "max": (7,2)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
 jetson_version_range = {"min": (5,1), "max": (6,1)}
@@ -145,6 +149,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
+os.environ['TORCH_CPP_LOG_LEVEL'] = 'ERROR'
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
 
