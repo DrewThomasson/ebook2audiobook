@@ -1,4 +1,4 @@
-import os, sys, threading, gc, ctypes, shutil, tempfile, regex as re
+import os, sys, threading, gc, ctypes, shutil, tempfile, warnings, regex as re
 
 from typing import Any, Union, Dict, TYPE_CHECKING
 from cryptography.fernet import Fernet
@@ -180,6 +180,15 @@ class TTSUtils:
         is_cuda = bool(getattr(torch.version, 'cuda', None)) and not is_rocm
         quality_mode = bool(using_gpu and enough_vram)
         amp_dtype = torch.float32  # float32 means: caller should NOT wrap in autocast
+        if hasattr(torch.backends, 'nnpack'):
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    x = torch.zeros(1, 1, 4, 4)
+                    w = torch.zeros(1, 1, 3, 3)
+                    torch._C._nn.conv2d(x, w, None, (1, 1), (0, 0), (1, 1), 1)
+            except RuntimeError:
+                torch.backends.nnpack.enabled = False
         # Default matmul precision (PyTorch >= 2.2)
         try:
             torch.set_float32_matmul_precision('high' if quality_mode else 'medium')
