@@ -2238,6 +2238,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 block_ref = blocks_saved.get(block_id)
                 hash_ref = block_hash(block_ref) if block_ref else None
                 block_changed = hash_ref != current_hash
+                print(f'blocks_saved keys: {list(blocks_saved.keys())[:5]}, looking for {block_id}')
                 missing_sentences = set()
                 if x < block_resume and not block_changed:
                     chapter_audio_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
