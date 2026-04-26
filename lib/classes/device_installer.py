@@ -1165,7 +1165,7 @@ class DeviceInstaller():
                                 subprocess.check_call([sys.executable,'-m','pip','install','--force-reinstall','--no-cache-dir','scikit-learn'])
                                 subprocess.check_call([sys.executable,'-m','pip','install','--force-reinstall','--no-cache-dir','scipy'])
                             elif device_info['name'] == devices['MPS']['proc']:
-                                torch_tag_py = f'cp{default_py_major}{default_py_minor}-none' if torch_version_current_base <= self.version_tuple(torch_matrix[tag]['base']) else f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
+                                torch_tag_py = f'cp{default_py_major}{default_py_minor}-none' if self.version_tuple(torch_version_current_base) <= self.version_tuple(torch_matrix[tag]['base']) else f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                 torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
                                 torch_pkg = f'{url}/cpu/torch-{torch_version_matrix}-{torch_tag_py}-{os_env}_{arch}.whl'
                                 torchaudio_pkg = f'{url}/cpu/torchaudio-{torch_version_matrix}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
