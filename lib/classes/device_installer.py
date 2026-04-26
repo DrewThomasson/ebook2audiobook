@@ -759,8 +759,6 @@ class DeviceInstaller():
                             tag = f'cu{current[0]}{current[1]}'  # still index 0/1, ignore patch
                 else:
                     msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
-                else:
-                    msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
 
                 # 4) PyTorch fallback (only helps if a CUDA-enabled torch is already installed)
                 if not devices['CUDA']['found']:
@@ -1212,10 +1210,14 @@ class DeviceInstaller():
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scikit-learn'])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scipy'])
-                            elif device_info['name'] == devices['JETSON']['proc'] and self.system == systems['WINDOWS']:
-                                if version
+                            elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
                                 url = default_pytorch_amd_url
-                                tag_dir = 
+                                py_major, py_minor = device_info['pyvenv']
+                                tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
+                                extra_tag_url = torch_matrix[tag].get('extra_tag', '').replace('+', '%2B')
+                                torch_pkg = f'{url}/{tag}/torch-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
+                                torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', torch_pkg, torchaudio_pkg])
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag

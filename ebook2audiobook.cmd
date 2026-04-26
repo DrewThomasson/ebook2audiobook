@@ -62,7 +62,7 @@ set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=cmake rustup calibre ffmpeg mediainfo nodejs espeak-ng sox tesseract"
+set "HOST_PROGRAMS=cmake rustup calibre ffmpeg-shared mediainfo nodejs espeak-ng sox tesseract"
 :: tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_PROGRAMS=curl ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
@@ -342,6 +342,7 @@ for %%p in (%HOST_PROGRAMS%) do (
     set "_FOUND=0"
     if "%%p"=="nodejs"  set "prog=node"
     if "%%p"=="calibre" set "prog=ebook-convert"
+	if "%%p"=="ffmpeg-shared" set "prog=ffmpeg"
     if "%%p"=="rustup" (
         if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_FOUND=1"
     )
@@ -525,6 +526,9 @@ for %%p in (%missing_prog_array%) do (
 	if "%%p"=="nodejs" (
 		set "prog=node"
 	)
+	if "%%p"=="ffmpeg-shared" (
+		set "prog=node"
+	)
 	if "%%p"=="rustup" (
 		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
 			set "_RUSTUP_PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin"
@@ -562,7 +566,7 @@ if defined CONDA_DEFAULT_ENV (
 if defined VIRTUAL_ENV (
     set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
-for /f "delims=" %%i in ('where.exe python') do (
+for /f "delims=" %%i in ('where.exe python 2^>nul') do (
     if defined CONDA_PREFIX (
         if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
             set "CURRENT_ENV=%CONDA_PREFIX%"
