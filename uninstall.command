@@ -67,36 +67,6 @@ if [[ -t 0 ]]; then
 fi
 
 # =========================================================
-# SAFE PATH CLEANUP
-# =========================================================
-remove_from_path() {
-	local target="$1"
-	# Refuse to operate on empty or dangerous targets
-	[[ -z "$target" ]] && return 0
-	case "$target" in
-		/|/bin|/usr/bin|/sbin|/usr/sbin|/usr/local/bin) return 0 ;;
-	esac
-
-	local new_path=""
-	local rest="${PATH:-}"
-	local p
-	while [[ -n "$rest" ]]; do
-		if [[ "$rest" == *:* ]]; then
-			p="${rest%%:*}"
-			rest="${rest#*:}"
-		else
-			p="$rest"
-			rest=""
-		fi
-		[[ -z "$p" ]] && continue
-		[[ "$p" == "$target" ]] && continue
-		new_path="${new_path:+$new_path:}$p"
-	done
-	PATH="$new_path"
-	export PATH
-}
-
-# =========================================================
 # macOS SHORTCUT CLEANUP (NO TESTS, GUARDED)
 # =========================================================
 if [[ "${OSTYPE:-}" == darwin* ]]; then
@@ -135,6 +105,11 @@ fi
 # =========================================================
 remove_from_path() {
 	local target="$1"
+	# Refuse to operate on empty or dangerous targets
+	[[ -z "$target" ]] && return 0
+	case "$target" in
+		/|/bin|/usr/bin|/sbin|/usr/sbin|/usr/local/bin) return 0 ;;
+	esac
 	local new_path=""
 	local rest="${PATH:-}"
 	local p
@@ -146,6 +121,7 @@ remove_from_path() {
 			p="$rest"
 			rest=""
 		fi
+		[[ -z "$p" ]] && continue
 		[[ "$p" == "$target" ]] && continue
 		new_path="${new_path:+$new_path:}$p"
 	done

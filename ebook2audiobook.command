@@ -692,9 +692,11 @@ function check_conda {
 					if ! grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path"; then
 						echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
 					fi
-					source "$config_path"
+					case ":$PATH:" in
+						*":$HOME/Miniforge3/bin:"*) ;;
+						*) export PATH="$HOME/Miniforge3/bin:$PATH" ;;
+					esac
 				fi
-				[[ "$CONDA_HOME" == "$HOME/Miniforge3" ]] && source "$config_path"
 				echo -e "\e[32m=============== Miniforge3 OK! ===============\e[0m"
 					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
 						echo "Miniforge3" >> "$INSTALLED_LOG"
