@@ -1152,11 +1152,12 @@ class DeviceInstaller():
                             msg = f"Installing the right library packages for {device_info['name']}…"
                             print(msg)
                             if tag == devices['CPU']['proc']:
-                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--index-url',f'{default_pytorch_url}/{tag}'])
+                                url = default_pytorch_url
+                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--force-reinstall','--index-url',f'{url}/{tag}'])
                             else:
                                 os_env = device_info['os']
                                 arch = device_info['arch']
-                                url = torch_matrix[tag]['url']
+                                url = default_jetson_url
                                 toolkit_version = ''.join(c for c in tag if c.isdigit())
                                 if device_info['name'] == devices['JETSON']['proc']:
                                     py_major, py_minor = device_info['pyvenv']
@@ -1174,7 +1175,8 @@ class DeviceInstaller():
                                     torchaudio_pkg = f'{url}/cpu/torchaudio-{torch_version_matrix}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
                                     subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torch_pkg,torchaudio_pkg])
                                 else:
-                                    subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--force-reinstall','--index-url',f'{default_pytorch_url}/{tag}'])
+                                    url = default_pytorch_url
+                                    subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--force-reinstall','--index-url',f'{url}/{tag}'])
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
