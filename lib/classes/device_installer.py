@@ -591,7 +591,7 @@ class DeviceInstaller():
                                 parts = torch_hip_ver.split('.')
                                 major = parts[0]
                                 minor = parts[1] if len(parts) > 1 else 0
-                                tag = f'rocm{major}{minor}'
+                                tag = f'rocm{major}.{minor}'
                             msg = ''
                     except Exception:
                         pass
