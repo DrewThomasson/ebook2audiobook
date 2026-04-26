@@ -1130,7 +1130,7 @@ class DeviceInstaller():
                 device_info = json.loads(device_info_str)
                 if device_info:
                     print(f'---> Hardware detected: {device_info}')
-                    tag = device_info.get('tag')
+                    tag = 'cpu' if device_info['name'] == devices['MPS']['proc'] else device_info.get('tag')
                     if tag in ['unknown','unsupported']:
                         return 0
                     key = 'last' if self.python_version >= (3, 12) else 'base'
@@ -1165,8 +1165,6 @@ class DeviceInstaller():
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scikit-learn'])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scipy'])
                             else:
-                                if device_info['name'] == devices['MPS']['proc']:
-                                    tag = 'cpu'
                                 url = default_pytorch_url
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--force-reinstall', '--index-url', f'{url}/{tag}'])
                         except subprocess.CalledProcessError as e:
