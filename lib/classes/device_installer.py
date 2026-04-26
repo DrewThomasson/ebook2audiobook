@@ -1153,26 +1153,22 @@ class DeviceInstaller():
                             print(msg)
                             os_env = device_info['os']
                             arch = device_info['arch']
-                            url = default_jetson_url
                             toolkit_version = ''.join(c for c in tag if c.isdigit())
                             if device_info['name'] == devices['JETSON']['proc']:
+                                url = default_jetson_url
                                 py_major, py_minor = device_info['pyvenv']
                                 tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                 torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                 torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torch_pkg])
-                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torchaudio_pkg])
-                                subprocess.check_call([sys.executable,'-m','pip','install','--force-reinstall','--no-cache-dir','scikit-learn'])
-                                subprocess.check_call([sys.executable,'-m','pip','install','--force-reinstall','--no-cache-dir','scipy'])
-                            elif device_info['name'] == devices['MPS']['proc']:
-                                torch_tag_py = f'cp{default_py_major}{default_py_minor}-none' if self.version_tuple(torch_version_current_base) <= self.version_tuple(torch_matrix[tag]['base']) else f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
-                                torchaudio_tag_py = f'cp{default_py_major}{default_py_minor}-cp{default_py_major}{default_py_minor}'
-                                torch_pkg = f'{url}/cpu/torch-{torch_version_matrix}-{torch_tag_py}-{os_env}_{arch}.whl'
-                                torchaudio_pkg = f'{url}/cpu/torchaudio-{torch_version_matrix}-{torchaudio_tag_py}-{os_env}_{arch}.whl'
-                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',torch_pkg,torchaudio_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scikit-learn'])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scipy'])
                             else:
+                                if device_info['name'] == devices['MPS']['proc']:
+                                    tag = 'cpu'
                                 url = default_pytorch_url
-                                subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','--no-cache-dir',f'torch=={torch_version_matrix}',f'torchaudio=={torch_version_matrix}','--force-reinstall','--index-url',f'{url}/{tag}'])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--force-reinstall', '--index-url', f'{url}/{tag}'])
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
@@ -1181,12 +1177,12 @@ class DeviceInstaller():
                             error = f'Error while installing torch package: {e}'
                             print(error)
                             return 1
-                    if device_info['os'] == 'linux' and ('jetpack' in device_info.get('note','').lower() or device_info['name'] == devices['JETSON']['proc']):
+                    if device_info['os'] == 'linux' and ('jetpack' in device_info.get('note', '').lower() or device_info['name'] == devices['JETSON']['proc']):
                         libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
                         if os.path.exists(libgomp_src):
-                            libs_dir = os.path.join('python_env','lib',f'python{sys.version_info.major}.{sys.version_info.minor}','site-packages','scikit_learn.libs')
+                            libs_dir = os.path.join('python_env', 'lib', f'python{sys.version_info.major}.{sys.version_info.minor}', 'site-packages', 'scikit_learn.libs')
                             if os.path.isdir(libs_dir):
-                                for libgomp_dst in glob(os.path.join(libs_dir,'libgomp*')):
+                                for libgomp_dst in glob(os.path.join(libs_dir, 'libgomp*')):
                                     if os.path.islink(libgomp_dst):
                                         if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
                                             continue
