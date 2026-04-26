@@ -370,7 +370,7 @@ class TTSUtils:
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
             print(error)
-            return None
+            raise
 
     def _load_engine_zs(self)->Any:
         try:
