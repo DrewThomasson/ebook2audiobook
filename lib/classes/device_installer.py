@@ -573,10 +573,10 @@ class DeviceInstaller():
                         devices['ROCM']['found'] = True
                         name = devices['ROCM']['proc']
                         if cmp == 1:
-                            tag = f'rocm{max_tuple[0]}{max_tuple[1]}'
-                            msg = f'ROCm {version} > tested max {max_ver}; using rocm{max_tuple[0]}{max_tuple[1]} torch build.'
+                            tag = f'rocm{max_tuple[0]}.{max_tuple[1]}'
+                            msg = f'ROCm {version} > tested max {max_ver}; using rocm{max_tuple[0]}.{max_tuple[1]} torch build.'
                         else:
-                            tag = f'rocm{current[0]}{current[1]}'
+                            tag = f'rocm{current[0]}.{current[1]}'
                 else:
                     msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
 
