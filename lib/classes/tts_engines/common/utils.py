@@ -1,4 +1,4 @@
-import os, sys, threading, gc, ctypes, shutil, tempfile, regex as re
+import os, sys, threading, gc, ctypes, shutil, tempfile, warnings, regex as re
 
 from typing import Any, Union, Dict, TYPE_CHECKING
 from cryptography.fernet import Fernet
@@ -23,7 +23,7 @@ def _format_timestamp(seconds:float)->str:
     h, m = divmod(m, 60)
     return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
-def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->bool:
+def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tuple:
     try:
         import gradio as gr
         from tqdm import tqdm
@@ -33,36 +33,28 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->boo
             vtt_path = os.path.join(session['process_dir'], Path(session['final_name']).stem + '.vtt')
         audio_sentences_dir = Path(session['sentences_dir'])
         blocks = session['blocks_current']['blocks']
-        kept_indices = {
-            str(i) for i, b in enumerate(blocks)
-            if b['keep'] and b['text'].strip()
-            and (block_indices is None or i in block_indices)
-        }
-        block_dirs = sorted(
-            [d for d in audio_sentences_dir.iterdir() if d.is_dir() and d.name in kept_indices],
-            key=lambda p: int(p.name)
-        )
         audio_files = []
         sentences_to_use = []
-        for block_dir in block_dirs:
-            block_idx = int(block_dir.name)
-            block_files = sorted(
-                block_dir.glob(f'*.{default_audio_proc_format}'),
-                key=lambda p: int(p.stem)
-            )
-            audio_files.extend(block_files)
-            block_sentences = blocks[block_idx].get('sentences', [])
-            filtered_sentences = [
-                sentence for sentence in block_sentences
-                if any(c.isalnum() for c in str(sentence))
-            ]
-            sentences_to_use.extend(filtered_sentences)
+        for i, block in enumerate(blocks):
+            if not (block['keep'] and block['text'].strip()):
+                continue
+            if block_indices is not None and i not in block_indices:
+                continue
+            block_dir = audio_sentences_dir / str(block['id'])
+            if not block_dir.is_dir():
+                error = f"Missing audio directory for block {i} (id {block['id']}): {block_dir}"
+                return False, error
+            block_sentences = block.get('sentences', [])
+            for sentence_idx, sentence in enumerate(block_sentences):
+                if not any(c.isalnum() for c in str(sentence)):
+                    continue
+                audio_file = block_dir / f'{sentence_idx}.{default_audio_proc_format}'
+                if not audio_file.is_file():
+                    error = f"Missing audio file for block {i} (id {block['id']}), sentence {sentence_idx}: {audio_file}"
+                    return False, error
+                audio_files.append(audio_file)
+                sentences_to_use.append(sentence)
         audio_files_length = len(audio_files)
-        sentences_length = len(sentences_to_use)
-        if audio_files_length != sentences_length:
-            error = f'Audio/sentence mismatch: {audio_files_length} audio files vs {sentences_length} sentences'
-            print(error)
-            return False
         sentences_total_time = 0.0
         vtt_blocks = []
         if session['is_gui_process']:
@@ -98,11 +90,10 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->boo
         with open(vtt_path, 'w', encoding='utf-8') as f:
             f.write('WEBVTT\n\n')
             f.write('\n'.join(vtt_blocks))
-        return True
+        return True, None
     except Exception as e:
         error = f'build_vtt_file(): {e}'
-        print(error)
-        return False
+        return False, error
 
 class TTSUtils:
 
@@ -201,7 +192,8 @@ class TTSUtils:
             try:
                 torch.cuda.manual_seed_all(seed)
             except Exception as e:
-                print(f'[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32')
+                error = f'[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32'
+                print(error)
                 return torch.float32
             # --- Device info (fetched once) ---
             try:
@@ -318,19 +310,25 @@ class TTSUtils:
         return amp_dtype
 
     def _load_api(self, key:str, model_path:str)->Any:
-        with _lock:
-            from TTS.api import TTS as TTSEngine
-            engine = loaded_tts.get(key)
-            if not engine:
-                engine = TTSEngine(model_path)
-            if not engine:
-                raise RuntimeError("TTSEngine returned None")
-            vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
-            self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-            models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
-            if self.session['free_vram_gb'] > models_loaded_size_gb:
-                loaded_tts[key] = engine
-            return engine
+        try:
+            with _lock:
+                from TTS.api import TTS as TTSEngine
+                engine = loaded_tts.get(key)
+                if not engine:
+                    engine = TTSEngine(model_path)
+                if not engine:
+                    raise RuntimeError("TTSEngine returned None")
+                vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
+                self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
+                if self.session['free_vram_gb'] > models_loaded_size_gb:
+                    loaded_tts[key] = engine
+                return engine
+        except Exception as e:
+            error = f'_load_api() error: {e}'
+            print(error)
+            raise
+            
 
     def _load_checkpoint(self,**kwargs:Any)->Any:
         try:
@@ -372,7 +370,7 @@ class TTSUtils:
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
             print(error)
-            return None
+            raise
 
     def _load_engine_zs(self)->Any:
         try:
@@ -482,7 +480,7 @@ class TTSUtils:
                                 new_current_voice = str(voices_root.joinpath(lang_dir, *rel.parts[1:]))
                                 os.makedirs(os.path.dirname(new_current_voice), exist_ok=True)
                                 proc_current_voice = new_current_voice.replace('.wav', '_temp.wav')
-                                torchaudio.save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate'], format='wav')
+                                torchaudio.save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate'])
                                 if normalize_audio(proc_current_voice, new_current_voice, default_audio_proc_samplerate, self.session['is_gui_process']):
                                     del audio_sentence, sourceTensor, audio_tensor
                                     Path(proc_current_voice).unlink(missing_ok=True)

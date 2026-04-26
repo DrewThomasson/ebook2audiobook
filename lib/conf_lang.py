@@ -1682,7 +1682,7 @@ language_mapping = {
     "lem": {"name": "Nomaande", "native_name": "Nomaande", "max_chars": 142, "script": "latin"},
     "not": {"name": "Nomatsigenga", "native_name": "Nomatsigenga", "max_chars": 142, "script": "latin"},
     "nhu": {"name": "Noone", "native_name": "Noone", "max_chars": 182, "script": "latin"},
-    "nob": {"name": "Norwegian Bokmål", "native_name": "norsk bokmål", "max_chars": 182, "script": "latin"},
+    #"nob": {"name": "Norwegian Bokmål", "native_name": "norsk bokmål", "max_chars": 182, "script": "latin"},
     "bud": {"name": "Ntcham", "native_name": "Ntcham", "max_chars": 142, "script": "latin"},
     "nus": {"name": "Nuer", "native_name": "Nuer", "max_chars": 182, "script": "latin"},
     "yas": {"name": "Nugunu", "native_name": "Nugunu", "max_chars": 142, "script": "latin"},
