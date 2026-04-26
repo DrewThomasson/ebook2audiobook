@@ -64,33 +64,33 @@ default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a perman
 
 torch_matrix = {
     # CPU
-    "cpu":       {"url": None, "base": "2.7.1", "last": "2.11.0"},
+    "cpu":       {"base": "2.7.1", "last": "2.11.0"},
     # CUDA
-    "cu118":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.7.1"},
-    "cu121":     {"url": default_pytorch_url, "base": "2.5.1", "last": "2.5.1"},
-    "cu124":     {"url": default_pytorch_url, "base": "2.6.0", "last": "2.6.0"},
-    "cu126":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
-    "cu128":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
-    "cu129":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
-    "cu130":     {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
+    "cu118":     {"base": "2.7.1", "last": "2.7.1"},
+    "cu121":     {"base": "2.5.1", "last": "2.5.1"},
+    "cu124":     {"base": "2.6.0", "last": "2.6.0"},
+    "cu126":     {"base": "2.7.1", "last": "2.11.0"},
+    "cu128":     {"base": "2.7.1", "last": "2.11.0"},
+    "cu129":     {"base": "2.7.1", "last": "2.11.0"},
+    "cu130":     {"base": "2.7.1", "last": "2.11.0"},
     # ROCm
-    "rocm5.7":   {"url": default_pytorch_url, "base": "2.3.1", "last": "2.3.1"},
-    "rocm6.0":   {"url": default_pytorch_url, "base": "2.4.1", "last": "2.4.1"},
-    "rocm6.1":   {"url": default_pytorch_url, "base": "2.6.0", "last": "2.6.0"},
-    "rocm6.2":   {"url": default_pytorch_url, "base": "2.5.1", "last": "2.5.1"},
-    "rocm6.2.4": {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
-    "rocm6.3":   {"url": default_pytorch_url, "base": "2.7.1", "last": "2.9.1"},
-    "rocm7.0":   {"url": default_pytorch_url, "base": "2.10.0", "last": "2.10.0"},
-    "rocm7.1":   {"url": default_pytorch_url, "base": "2.11.0", "last": "2.11.0"},
-    "rocm7.2":   {"url": default_pytorch_url, "base": "2.11.0", "last": "2.11.0"},
+    "rocm5.7":   {"base": "2.3.1", "last": "2.3.1"},
+    "rocm6.0":   {"base": "2.4.1", "last": "2.4.1"},
+    "rocm6.1":   {"base": "2.6.0", "last": "2.6.0"},
+    "rocm6.2":   {"base": "2.5.1", "last": "2.5.1"},
+    "rocm6.2.4": {"base": "2.7.1", "last": "2.11.0"},
+    "rocm6.3":   {"base": "2.7.1", "last": "2.9.1"},
+    "rocm7.0":   {"base": "2.10.0", "last": "2.10.0"},
+    "rocm7.1":   {"base": "2.11.0", "last": "2.11.0"},
+    "rocm7.2":   {"base": "2.11.0", "last": "2.11.0"},
     # MPS
-    "mps":       {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
+    "mps":       {"base": "2.7.1", "last": "2.11.0"},
     # XPU
-    "xpu":       {"url": default_pytorch_url, "base": "2.7.1", "last": "2.11.0"},
+    "xpu":       {"base": "2.7.1", "last": "2.11.0"},
     # JETSON
-    "jetson51":  {"url": default_jetson_url, "base": "2.4.1", "last": "2.4.1"},
-    "jetson60":  {"url": default_jetson_url, "base": "2.4.0", "last": "2.4.0"},
-    "jetson61":  {"url": default_jetson_url, "base": "2.5.0", "last": "2.5.0"}
+    "jetson51":  {"base": "2.4.1", "last": "2.4.1"},
+    "jetson60":  {"base": "2.4.0", "last": "2.4.0"},
+    "jetson61":  {"base": "2.5.0", "last": "2.5.0"}
 }
 
 cuda_version_range = {"min": (11,8), "max": (13,0)}
