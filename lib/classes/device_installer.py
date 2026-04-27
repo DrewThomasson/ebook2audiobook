@@ -64,13 +64,17 @@ class DeviceInstaller():
         elif mode == BUILD_DOCKER:
             name, tag, msg = self.check_hardware
             os_env = 'manylinux_2_28'
-            pyvenv = list(sys.version_info[:2])
+            pyvenv = list(max_python_version)
             pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
             arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
-            tag = 'cpu' if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else tag
+            if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
+                name = tag = devices['CPU']['proc']
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
-            with open('.device_info.json', 'w', encoding='utf-8') as f:
-                json.dump(device_info, f)
+            try:
+                with open('.device_info.json', 'w', encoding='utf-8') as f:
+                    json.dump(device_info, f)
+            except OSError as e:
+                print(f'warning: could not write .device_info.json: {e}', file=sys.stderr)
             return json.dumps(device_info)
         return ''
         
@@ -1217,7 +1221,7 @@ class DeviceInstaller():
                                 extra_tag_url = torch_matrix[tag].get('extra_tag', '').replace('+', '%2B')
                                 torch_pkg = f'{url}/{tag}/torch-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
                                 torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', torch_pkg, torchaudio_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torch_pkg, torchaudio_pkg])
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag

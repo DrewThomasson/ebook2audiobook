@@ -115,7 +115,7 @@ class VoiceExtractor:
             msg = 'Extracting Voice…'
             if self.is_gui_process:
                 self.progress_bar(0.0, desc=msg)
-            device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
+            device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
             model = get_model(name="htdemucs")
             model.to(device)
             model.eval()
