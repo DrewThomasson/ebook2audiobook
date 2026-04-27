@@ -37,8 +37,8 @@ class DeviceInstaller():
     def check_device_info(self, mode:str)->str:
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
-            arch = self.check_arch
-            pyvenv = list(sys.version_info[:2])
+            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
+            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
                 device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
@@ -64,8 +64,7 @@ class DeviceInstaller():
         elif mode == BUILD_DOCKER:
             name, tag, msg = self.check_hardware
             os_env = 'manylinux_2_28'
-            pyvenv = list(max_python_version)
-            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
+            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
             arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
             if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
