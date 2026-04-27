@@ -72,7 +72,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
-                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else self.session['device']
+                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
                 language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
