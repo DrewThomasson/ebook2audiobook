@@ -962,11 +962,14 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple([gr.update(interactive=False) for _ in range(11)])
                 return outputs + (gr.update(visible=False), gr.update(visible='hidden'))
 
-            def enable_on_custom_upload(custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
+            def enable_on_custom_upload(session_id:str, custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
                 outputs = tuple([gr.update(interactive=True) for _ in range(10)])
-                enabled_convert_btn = True if ebook_data or ebook_textarea else False
-                visible_custom_del_btn = True if custom_model is not None else False
-                return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=True), gr.update(visible=visible_custom_del_btn))
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    enabled_convert_btn = True if ebook_data or ebook_textarea else False
+                    visible_custom_del_btn = True if session['custom_model'] is not None else False
+                    return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=True), gr.update(visible=visible_custom_del_btn))
+                return outputs + (gr.update(), gr.update(), gr.update())
 
             def show_gr_modal(type:str, msg:str)->str:
                 return f'''
@@ -2641,7 +2644,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_custom_model_list]
             ).then(
                 fn=enable_on_custom_upload,
-                inputs=[gr_custom_model_list, gr_ebook_src, gr_ebook_textarea],
+                inputs=[gr_session, gr_custom_model_list, gr_ebook_src, gr_ebook_textarea],
                 outputs=outputs_on_custom_upload,
                 show_progress_on=[gr_custom_model_list]
             )
