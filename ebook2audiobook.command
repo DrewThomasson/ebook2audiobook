@@ -751,7 +751,7 @@ function check_conda {
 			echo "check_device_info() error: result is empty"
 			exit 1
 		fi
-		install_device_packages "$DOCKER_DEVICE_STR" || exit 1
+		install_device_packages "$DEVICE_INFO_STR" || exit 1
 		install_python_packages || return 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
