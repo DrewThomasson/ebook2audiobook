@@ -2155,7 +2155,12 @@ def convert_chapters2audio(session_id:str)->bool:
         if os.path.isdir(block_dir):
             shutil.rmtree(block_dir)
 
-    def _check_block_sentences(block_id:str, sentences:list)->set:
+    def _check_block_sentences(block_id:str, x:int, sentences:list)->set:
+        # If the final combined chapter audio already exists, treat block as complete
+        # even if individual sentence files were lost (e.g. after a power cut)
+        chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+        if os.path.exists(chapter_audio_file):
+            return set()
         block_dir = os.path.join(session['sentences_dir'], block_id)
         missing = set()
         for j, sentence in enumerate(sentences):
@@ -2240,14 +2245,18 @@ def convert_chapters2audio(session_id:str)->bool:
                 hash_ref = block_hash(block_ref) if block_ref else None
                 block_changed = bool(prev_blocks) and hash_ref != current_hash
                 missing_sentences = set()
-                if x < block_resume and not block_changed:
-                    chapter_audio_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
-                    if not os.path.exists(chapter_audio_file):
-                        show_alert(session_id, {'type': 'warning', 'msg': f'Block {x} chapter audio missing, reconverting entire block…'})
-                        _reset_chapter_file(block_id)
-                        start_sentence = 0
-                    else:
-                        missing_sentences = _check_block_sentences(block_id, sentences)
+                if not block_changed:
+                    chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
+                    if os.path.exists(chapter_audio_file):
+                        # Chapter .flac already exists and block is unchanged — skip entirely.
+                        # This handles resume after power cuts where sentence files are gone
+                        # but the combined chapter audio survived.
+                        print(f'Chapter {ch_num} (block {x}) — chapter audio exists, skipping')
+                        global_sent += _count_sentences(sentences)
+                        t.update(len(sentences))
+                        continue
+                    elif x < block_resume:
+                        missing_sentences = _check_block_sentences(block_id, x, sentences)
                         if not missing_sentences:
                             print(f'Chapter {ch_num} (block {x}) — has all sentences')
                             global_sent += _count_sentences(sentences)
