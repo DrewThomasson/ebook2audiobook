@@ -1221,7 +1221,7 @@ class DeviceInstaller():
                                 extra_tag_url = torch_matrix[tag].get('extra_tag', '').replace('+', '%2B')
                                 torch_pkg = f'{url}/{tag}/torch-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
                                 torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--no-deps', torch_pkg, torchaudio_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torch_pkg, torchaudio_pkg])
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag

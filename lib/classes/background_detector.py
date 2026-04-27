@@ -59,7 +59,7 @@ class BackgroundDetector:
         import torch, librosa
         pyannote_patch()
         from pyannote.audio import Model
-        from pyannote.audio.pipelines import VoiceActivityDetection 
+        from pyannote.audio.pipelines import VoiceActivityDetection
         self.device = torch.device(
             'cuda' if torch.cuda.is_available()
             else 'xpu' if hasattr(torch, 'xpu') and torch.xpu.is_available()
