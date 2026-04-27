@@ -2147,8 +2147,8 @@ def block_hash(block: dict) -> str:
 
 def convert_chapters2audio(session_id:str)->bool:
 
-    def _reset_chapter_file(block_id:str)->None:
-        ch_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
+    def _reset_chapter_file(block_id:str, x:int)->None:
+        ch_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
         if os.path.exists(ch_file):
             os.unlink(ch_file)
         block_dir = os.path.join(session['sentences_dir'], block_id)
@@ -2263,11 +2263,13 @@ def convert_chapters2audio(session_id:str)->bool:
                             t.update(len(sentences))
                             continue
                         show_alert(session_id, {'type': 'warning', 'msg': f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…'})
-                        _reset_chapter_file(block_id)
+                        _reset_chapter_file(block_id, x)
+                        start_sentence = 0
+                    else:
                         start_sentence = 0
                 elif block_changed and x <= block_resume:
                     show_alert(session_id, {'type': 'info', 'msg': f'Chapter {ch_num} (block {x}) — changed, reconverting'})
-                    _reset_chapter_file(block_id)
+                    _reset_chapter_file(block_id, x)
                     start_sentence = 0
                 elif x == block_resume:
                     if sentence_resume == 0:
@@ -2323,7 +2325,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
                 if converted or block_changed or missing_sentences:
                     show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
-                    chapter_audio_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
+                    chapter_audio_file = os.path.join(session['chapters_dir'], f'{x}.{default_audio_proc_format}')
                     save_json_blocks(session_id, 'blocks_current')
                     last_save_time = time.monotonic()
                     if not combine_audio_sentences(session_id, chapter_audio_file, block_id, len(sentences)):
