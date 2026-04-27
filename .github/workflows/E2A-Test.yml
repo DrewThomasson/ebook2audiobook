@@ -263,13 +263,13 @@ jobs:
 
           $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
 
-      - name: English TORTOISE Custom-Voice headless batch test
+      - name: English TORTOISE Custom-Voice headless single test
         shell: bash
         run: |
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
-          $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine TORTOISE --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TORTOISE
+          $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing/test1.txt" --tts_engine TORTOISE --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TORTOISE
 
       - name: English GLOWTTS Custom-Voice headless batch test
         shell: bash
