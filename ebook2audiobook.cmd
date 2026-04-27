@@ -339,22 +339,39 @@ exit /b 0
 setlocal EnableDelayedExpansion
 for %%p in (%HOST_PROGRAMS%) do (
     set "prog=%%p"
-    set "_FOUND=0"
+    set "_found=0"
     if "%%p"=="nodejs"  set "prog=node"
     if "%%p"=="calibre" set "prog=ebook-convert"
-	if "%%p"=="ffmpeg-shared" set "prog=ffmpeg"
-    if "%%p"=="rustup" (
-        if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_FOUND=1"
+    if "%%p"=="ffmpeg-shared" (
+        set "prog=ffmpeg"
+        call :ensure_ffmpeg_shared
     )
-    if "!_FOUND!"=="0" (
+    if "%%p"=="rustup" (
+        if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_found=1"
+    )
+    if "!_found!"=="0" (
         where.exe /Q !prog! >nul 2>&1
         if errorlevel 1 set "missing_prog_array=!missing_prog_array! %%p"
     )
 )
 endlocal & set "missing_prog_array=%missing_prog_array%"
-if not "%missing_prog_array%"=="" (
-    exit /b 1
-)
+if not "%missing_prog_array%"=="" exit /b 1
+exit /b 0
+
+:ensure_ffmpeg_shared
+setlocal
+if not exist "%INSTALLED_LOG%" exit /b 0
+findstr /x /c:"ffmpeg-shared" "%INSTALLED_LOG%" >nul 2>&1 && exit /b 0
+findstr /x /c:"ffmpeg" "%INSTALLED_LOG%" >nul 2>&1 || exit /b 0
+echo [!!] static ffmpeg detected, swapping to ffmpeg-shared...
+call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
+call scoop install ffmpeg-shared || (echo [xx] install failed & exit /b 1)
+set "tmp_file=%INSTALLED_LOG%.tmp"
+findstr /v /x /c:"ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%"
+>>"%tmp_file%" echo ffmpeg-shared
+move /y "%tmp_file%" "%INSTALLED_LOG%" >nul
+echo [ok] swap complete, .installed updated.
+endlocal
 exit /b 0
 
 :install_python
