@@ -5,7 +5,7 @@ ARG PYTHON_VERSION=3.12
 # ============================================================
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-ARG APP_VERSION=26.4.25
+ARG APP_VERSION=26.4.26
 ARG DEVICE_TAG=cu128
 ARG DOCKER_DEVICE_STR='{"name": "cu128", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"

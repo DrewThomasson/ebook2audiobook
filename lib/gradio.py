@@ -963,7 +963,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return outputs + (gr.update(visible=False), gr.update(visible='hidden'))
 
             def enable_on_custom_upload(custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
-                outputs = tuple([gr.update(interactive=True) for _ in range(11)])
+                outputs = tuple([gr.update(interactive=True) for _ in range(10)])
                 enabled_convert_btn = True if ebook_data or ebook_textarea else False
                 visible_custom_del_btn = True if custom_model is not None else False
                 return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=True), gr.update(visible=visible_custom_del_btn))
@@ -1082,8 +1082,8 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_ebook_src = True
                         visible_row_split_hours = True if session['output_split'] else False
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
-                        visible_voice_buttons = session.get('voice') is not None
-                        visible_custom_del_btn = session.get('custom_model') is not None
+                        visible_voice_buttons = True if session.get('voice') else False
+                        visible_custom_del_btn = True if session.get('custom_model') else False
                         voice_file = session.get('voice')
                         return (
                             gr.update(visible=visible_ebook_src, value=ebook_data),
@@ -1695,10 +1695,9 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session.get('custom_model') != selected:
-                            session['custom_model'] = selected
-                            if selected is not None:
-                                session['voice'] = os.path.join(selected, f'{os.path.basename(selected)}.wav')
+                        session['custom_model'] = selected
+                        if selected is not None:
+                            session['voice'] = os.path.join(selected, f'{os.path.basename(selected)}.wav')
                         visible_fine_tuned = session['custom_model'] is None
                         visible_del_btn = session['custom_model'] is not None
                         return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(session_id)

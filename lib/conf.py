@@ -60,37 +60,41 @@ default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
 
 default_pytorch_url = 'https://download.pytorch.org/whl'
+default_pytorch_amd_url = 'https://repo.radeon.com/rocm/windows'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a permanent website where to upload the jetpack torch
 
 torch_matrix = {
     # CPU
-    "cpu":       {"base": "2.7.1", "last": "2.11.0"},
+    "cpu":       {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0"},
     # CUDA
-    "cu118":     {"base": "2.7.1", "last": "2.7.1"},
-    "cu121":     {"base": "2.5.1", "last": "2.5.1"},
-    "cu124":     {"base": "2.6.0", "last": "2.6.0"},
-    "cu126":     {"base": "2.7.1", "last": "2.11.0"},
-    "cu128":     {"base": "2.7.1", "last": "2.11.0"},
-    "cu129":     {"base": "2.7.1", "last": "2.11.0"},
-    "cu130":     {"base": "2.7.1", "last": "2.11.0"},
+    "cu118":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.7.1", "extra_tag": ""},
+    "cu121":     {"compat": list(systems.values()), "base": "2.5.1", "last": "2.5.1", "extra_tag": ""},
+    "cu124":     {"compat": list(systems.values()), "base": "2.6.0", "last": "2.6.0", "extra_tag": ""},
+    "cu126":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
+    "cu128":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
+    "cu129":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
+    "cu130":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
     # ROCm
-    "rocm5.7":   {"base": "2.3.1", "last": "2.3.1"},
-    "rocm6.0":   {"base": "2.4.1", "last": "2.4.1"},
-    "rocm6.1":   {"base": "2.6.0", "last": "2.6.0"},
-    "rocm6.2":   {"base": "2.5.1", "last": "2.5.1"},
-    "rocm6.2.4": {"base": "2.7.1", "last": "2.11.0"},
-    "rocm6.3":   {"base": "2.7.1", "last": "2.9.1"},
-    "rocm7.0":   {"base": "2.10.0", "last": "2.10.0"},
-    "rocm7.1":   {"base": "2.11.0", "last": "2.11.0"},
-    "rocm7.2":   {"base": "2.11.0", "last": "2.11.0"},
+    "rocm5.7":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.3.1", "last": "2.3.1", "extra_tag": ""},
+    "rocm6.0":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.4.1", "last": "2.4.1", "extra_tag": ""},
+    "rocm6.1":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.6.0", "last": "2.6.0", "extra_tag": ""},
+    "rocm6.2":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.5.1", "last": "2.5.1", "extra_tag": ""},
+    "rocm6.2.4": {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
+    "rocm6.3":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.7.1", "last": "2.9.1", "extra_tag": ""},
+    "rocm7.0":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.10.0", "last": "2.10.0", "extra_tag": ""},
+    "rocm7.1":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.11.0", "last": "2.11.0", "extra_tag": ""},
+    "rocm7.2":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.11.0", "last": "2.11.0", "extra_tag": ""},
+    "rocm-rel-7.1.1": {"compat": [systems['WINDOWS']], "base": "2.9.0", "last": "2.9.0", "extra_tag": "+rocmsdk20251116"},
+    "rocm-rel-7.2":   {"compat": [systems['WINDOWS']], "base": "2.9.1", "last": "2.9.1", "extra_tag": "+rocmsdk20260116"},
+    "rocm-rel-7.2.1": {"compat": [systems['WINDOWS']], "base": "2.9.1", "last": "2.9.1", "extra_tag": "+rocm7.2.1"},
     # MPS
-    "mps":       {"base": "2.7.1", "last": "2.11.0"},
+    "mps":       {"compat": [systems['MACOS']], "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
     # XPU
-    "xpu":       {"base": "2.7.1", "last": "2.11.0"},
+    "xpu":       {"compat": [systems['LINUX'], systems['WINDOWS']], "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
     # JETSON
-    "jetson51":  {"base": "2.4.1", "last": "2.4.1"},
-    "jetson60":  {"base": "2.4.0", "last": "2.4.0"},
-    "jetson61":  {"base": "2.5.0", "last": "2.5.0"}
+    "jetson51":  {"compat": [systems['LINUX']], "base": "2.4.1", "last": "2.4.1", "extra_tag": ""},
+    "jetson60":  {"compat": [systems['LINUX']], "base": "2.4.0", "last": "2.4.0", "extra_tag": ""},
+    "jetson61":  {"compat": [systems['LINUX']], "base": "2.5.0", "last": "2.5.0", "extra_tag": ""}
 }
 
 cuda_version_range = {"min": (11,8), "max": (13,0)}

@@ -41,7 +41,7 @@ class VoiceExtractor:
 
     def _convert2wav(self)->tuple[bool, str]:
         try:
-            msg = 'Convert to WAV...'
+            msg = 'Convert to WAV…'
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
@@ -71,8 +71,9 @@ class VoiceExtractor:
 
     def _detect_background(self)->tuple[bool,bool,str]:
         try:
-            from lib.classes.background_detector import BackgroundDetector
-            msg = 'Detecting if any background noise or music...'
+            from lib.classes.background_detector import pyannote_patch, BackgroundDetector
+            pyannote_patch()
+            msg = 'Detecting if any background noise or music…'
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
@@ -81,7 +82,7 @@ class VoiceExtractor:
             if report:
                 print(report)
                 if status:
-                    msg = 'Background detected...'
+                    msg = 'Background detected…'
                 else:
                     msg = 'No background detected'
                 return True, status, msg
@@ -111,7 +112,7 @@ class VoiceExtractor:
         try:
             system = self.session['system']
             last_percent = 0.0
-            msg = 'Extracting Voice...'
+            msg = 'Extracting Voice…'
             if self.is_gui_process:
                 self.progress_bar(0.0, desc=msg)
             device = devices['CUDA']['proc'] if self.session['device'] in ['cuda', 'jetson'] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
@@ -165,7 +166,7 @@ class VoiceExtractor:
 
 
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
-        msg = "Removing empty audio..."
+        msg = "Removing empty audio…"
         print(msg)
         if self.is_gui_process:
             self.progress_bar(0, desc=msg)
@@ -198,12 +199,12 @@ class VoiceExtractor:
             )
             total_duration = len(audio)
             min_required_duration = 20000 if self.session["tts_engine"] == TTS_ENGINES["BARK"] else 12000
-            msg = "Removing long pauses..."
+            msg = "Removing long pauses…"
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(0, desc=msg)
             if total_duration <= min_required_duration:
-                msg = f"Audio is only {total_duration / 1000:.2f}s long; skipping audio trimming..."
+                msg = f"Audio is only {total_duration / 1000:.2f}s long; skipping audio trimming…"
                 return True, msg
             if total_duration > min_required_duration * 2:
                 window = min_required_duration
@@ -251,7 +252,7 @@ class VoiceExtractor:
 
     def normalize_audio(self, src_file:str, proc_file:str, dst_file:str)->tuple[bool, str]:
         try:
-            msg = 'Normalize audio...'
+            msg = 'Normalize audio…'
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(0, desc=msg)
