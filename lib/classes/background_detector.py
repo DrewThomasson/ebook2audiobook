@@ -60,7 +60,12 @@ class BackgroundDetector:
         pyannote_patch()
         from pyannote.audio import Model
         from pyannote.audio.pipelines import VoiceActivityDetection
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device(
+            'cuda' if torch.cuda.is_available()
+            else 'xpu' if hasattr(torch, 'xpu') and torch.xpu.is_available()
+            else 'mps' if torch.backends.mps.is_available()
+            else 'cpu'
+        )
         key = self.device.type
         if key in _pipeline_cache:
             pipeline = _pipeline_cache[key]

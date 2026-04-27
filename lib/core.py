@@ -115,11 +115,14 @@ class SessionTracker:
 
     def start_session(self, session_id:str)->bool:
         with self.lock:
+            if session_id not in context.sessions:
+                return False
             session = context.get_session(session_id)
             session['status'] = status_tags['READY']
-            #self.blocks_autosave.register(session_id)
             return True
-        return False
+     def end_session(self, session_id:str, socket_hash:str)->None:
+         #self.blocks_autosave.unregister(session_id)
+         active_sessions.discard(socket_hash)
 
     def end_session(self, session_id:str, socket_hash:str)->None:
         #self.blocks_autosave.unregister(session_id)
