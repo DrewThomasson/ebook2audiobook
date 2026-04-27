@@ -1167,14 +1167,18 @@ class DeviceInstaller():
         return 0
           
     def install_device_packages(self, device_info_str:str)->int:
+
         def _needs_reinstall():
             if not torch_version_current_full:
                 return True
             if tag == devices['CPU']['proc']:
-                return torch_version_current_base != torch_version_matrix
+                if torch_version_current_base != torch_version_matrix:
+                    return True
+                return current_tag is not None and current_tag != devices['CPU']['proc']
             if non_standard_tag is None:
                 return current_tag != tag
             return non_standard_tag != tag
+
         try:
             if device_info_str:
                 device_info = json.loads(device_info_str)
