@@ -71,7 +71,8 @@ class VoiceExtractor:
 
     def _detect_background(self)->tuple[bool,bool,str]:
         try:
-            from lib.classes.background_detector import BackgroundDetector
+            from lib.classes.background_detector import pyannote_patch, BackgroundDetector
+            pyannote_patch()
             msg = 'Detecting if any background noise or music...'
             print(msg)
             if self.is_gui_process:
