@@ -31,7 +31,7 @@ langdetect
 phonemizer
 indic-nlp-library
 argostranslate==1.11.0
-stanza==1.10.1
+stanza==1.11.1
 pandas>=1.0,<3.0
 gradio==5.49.1
 pyannote-audio==3.4.0; python_version < '3.12'
