@@ -1,17 +1,16 @@
 import threading
+
 from lib.conf import tts_dir
 from lib.conf_models import default_voice_detection_model
 
 _pipeline_cache = {}
 _pipeline_lock = threading.Lock()
 
-
 def pyannote_patch()->None:
     '''Restore APIs removed in torchaudio >=2.9 that pyannote.audio's
     transitive deps (speechbrain, asteroid-filterbanks, silero-vad, ...)
     still call at import time. pyannote.audio 4.x itself moved to
     torchcodec, but those upstream packages haven't.
-
     Idempotent: safe to call from both app entrypoint and lazy paths.
     '''
     import torchaudio
@@ -42,7 +41,6 @@ def pyannote_patch()->None:
                 self.bits_per_sample = bits_per_sample
                 self.encoding = encoding
         torchaudio.AudioMetaData = _AudioMetaData
-
 
 class BackgroundDetector:
     def __init__(self, wav_file: str)->None:
