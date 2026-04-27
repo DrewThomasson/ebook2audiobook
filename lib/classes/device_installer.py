@@ -138,12 +138,10 @@ class DeviceInstaller():
                 return m.group(1)
             m = re.search(r'rocm\s*version\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
             if m:
-                parts = m.group(1).split('.')
-                return f'{parts[0]}.{parts[1] if len(parts) > 1 else 0}'
+                return m.group(1)  # CHANGED: keep full version, don't truncate to major.minor
             m = re.search(r'hip\s*version\s*([0-9]+(?:\.[0-9]+){0,2})', text, re.IGNORECASE)
             if m:
-                parts = m.group(1).split('.')
-                return f'{parts[0]}.{parts[1] if len(parts) > 1 else 0}'
+                return m.group(1)  # CHANGED: keep full version
             m = re.search(r'(oneapi|xpu)\s*(toolkit\s*)?version\s*([0-9]+(?:\.[0-9]+)?)', text, re.IGNORECASE)
             if m:
                 return m.group(3)
@@ -152,22 +150,31 @@ class DeviceInstaller():
         def version_classify(version_str:Union[str, None], version_range:dict)->tuple:
             # Returns (cmp, current_tuple, min_tuple, max_tuple)
             # cmp: -1 = below min, 0 = in range, 1 = above max, None = parse fail / unranged
+            # current_tuple is (major, minor, patch) — patch defaults to 0
             if version_str is None:
                 return (None, None, None, None)
-            min_tuple = tuple(version_range.get('min', (0, 0)))
-            max_tuple = tuple(version_range.get('max', (0, 0)))
+            min_raw = tuple(version_range.get('min', (0, 0)))
+            max_raw = tuple(version_range.get('max', (0, 0)))
+            # Pad min/max to 3-tuples for consistent comparison
+            min_tuple = min_raw + (0,) * (3 - len(min_raw)) if len(min_raw) < 3 else min_raw[:3]
+            max_tuple = max_raw + (0,) * (3 - len(max_raw)) if len(max_raw) < 3 else max_raw[:3]
             try:
                 parts = version_str.split('.')
                 major = int(parts[0])
                 minor = int(parts[1]) if len(parts) > 1 else 0
+                patch = int(parts[2]) if len(parts) > 2 else 0
             except (ValueError, IndexError):
                 return (None, None, min_tuple, max_tuple)
-            current = (major, minor)
-            if min_tuple == (0, 0) and max_tuple == (0, 0):
+            current = (major, minor, patch)
+            if min_tuple == (0, 0, 0) and max_tuple == (0, 0, 0):
                 return (0, current, min_tuple, max_tuple)
-            if min_tuple != (0, 0) and current < min_tuple:
+            # Compare on (major, minor) only for the range check — patch doesn't gate
+            current_mm = (major, minor)
+            min_mm = min_tuple[:2]
+            max_mm = max_tuple[:2]
+            if min_mm != (0, 0) and current_mm < min_mm:
                 return (-1, current, min_tuple, max_tuple)
-            if max_tuple != (0, 0) and current > max_tuple:
+            if max_mm != (0, 0) and current_mm > max_mm:
                 return (1, current, min_tuple, max_tuple)
             return (0, current, min_tuple, max_tuple)
 
@@ -410,11 +417,17 @@ class DeviceInstaller():
             # ============================================================
             elif has_rocm() and has_amd_gpu_pci():
 
-                def _normalize_version(v:str)->str:
-                    m = re.search(r'\d+\.\d+(?:\.\d+)?', v or '')
-                    return m.group(0) if m else ''
+                def _normalize_version(v:str)->tuple:
+                    '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
+                    m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
+                    if not m:
+                        return ()
+                    major = int(m.group(1))
+                    minor = int(m.group(2))
+                    patch = int(m.group(3)) if m.group(3) else 0
+                    return (major, minor, patch)
 
-                version = ''
+                version = ()
                 msg = ''
                 hip_device_count = 0
 
@@ -473,16 +486,18 @@ class DeviceInstaller():
                             if v >= 10000000:
                                 major = v // 10000000
                                 minor = (v % 10000000) // 100000
+                                patch = v % 100000
                             elif v >= 100:
                                 major = v // 100
                                 minor = (v % 100) // 10
+                                patch = 0
                             else:
-                                major = v
-                                minor = 0
+                                major, minor, patch = v, 0, 0
                             if hip_device_count > 0:
-                                version = f'{major}.{minor}'
+                                version = (major, minor, patch)
                             else:
-                                msg = f'HIP runtime present ({major}.{minor}) but no devices.'
+                                ver_disp = f'{major}.{minor}.{patch}' if patch else f'{major}.{minor}'
+                                msg = f'HIP runtime present ({ver_disp}) but no devices.'
                 except (OSError, AttributeError):
                     pass
 
@@ -559,24 +574,41 @@ class DeviceInstaller():
                                                 pass
                                 if version:
                                     break
-
-                # Version comparison + tag assignment (tolerant: accept > max, clamp tag)
                 if version:
-                    cmp, current, min_tuple, max_tuple = version_classify(version, rocm_version_range)
-                    min_ver = '.'.join(str(p) for p in min_tuple)
-                    max_ver = '.'.join(str(p) for p in max_tuple)
+                    version_str = '.'.join(str(p) for p in version)
+                    cmp, current, min_tuple, max_tuple = version_classify(version_str, rocm_version_range)
+                    # min_ver / max_ver: strip trailing .0 for display (range tuples are major.minor)
+                    min_ver = f'{min_tuple[0]}.{min_tuple[1]}'
+                    max_ver = f'{max_tuple[0]}.{max_tuple[1]}'
                     if cmp == -1:
-                        msg = f'ROCm {version} < min {min_ver}. Please upgrade.'
+                        msg = f'ROCm {version_str} < min {min_ver}. Please upgrade.'
                     elif cmp is None:
                         msg = 'ROCm GPU detected but version unparseable.'
                     else:
                         devices['ROCM']['found'] = True
                         name = devices['ROCM']['proc']
+                        compat_versions = []
+                        for t, entry in torch_matrix.items():
+                            if self.system not in entry['compat'] or not t.startswith('rocm'):
+                                continue
+                            ver_str = t[len('rocm-rel-'):] if t.startswith('rocm-rel-') else t[len('rocm'):]
+                            tag_ver = _normalize_version(ver_str)
+                            if not tag_ver:
+                                continue
+                            compat_versions.append(tag_ver)
+                        tag = None
+                        if compat_versions:
+                            le_versions = [v for v in compat_versions if v <= version]
+                            if le_versions:
+                                matched = max(le_versions)
+                                if self.system == systems['WINDOWS']:
+                                    tag = f'rocm-rel-{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm-rel-{matched[0]}.{matched[1]}'
+                                else:
+                                    tag = f'rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm{matched[0]}.{matched[1]}'
                         if cmp == 1:
-                            tag = f'rocm{max_tuple[0]}{max_tuple[1]}'
-                            msg = f'ROCm {version} > tested max {max_ver}; using rocm{max_tuple[0]}{max_tuple[1]} torch build.'
-                        else:
-                            tag = f'rocm{current[0]}{current[1]}'
+                            msg = f'ROCm {version_str} > tested max {max_ver}; using {tag} torch build.' if tag else f'ROCm {version_str} detected but no compatible torch build for this OS.'
+                        elif not tag:
+                            msg = f'ROCm {version_str} detected but no compatible torch build for this OS.'
                 else:
                     msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
 
@@ -586,12 +618,26 @@ class DeviceInstaller():
                         import torch
                         if torch.cuda.is_available() and hasattr(torch.version, 'hip') and torch.version.hip:
                             devices['ROCM']['found'] = True
-                            torch_hip_ver = _normalize_version(torch.version.hip)
-                            if torch_hip_ver:
-                                parts = torch_hip_ver.split('.')
-                                major = parts[0]
-                                minor = parts[1] if len(parts) > 1 else 0
-                                tag = f'rocm{major}{minor}'
+                            version = _normalize_version(torch.version.hip)
+                            if version:
+                                compat_versions = []
+                                for t, entry in torch_matrix.items():
+                                    if self.system not in entry['compat'] or not t.startswith('rocm'):
+                                        continue
+                                    ver_str = t[len('rocm-rel-'):] if t.startswith('rocm-rel-') else t[len('rocm'):]
+                                    tag_ver = _normalize_version(ver_str)
+                                    if not tag_ver:
+                                        continue
+                                    compat_versions.append(tag_ver)
+                                tag = None
+                                if compat_versions:
+                                    le_versions = [v for v in compat_versions if v <= version]
+                                    if le_versions:
+                                        matched = max(le_versions)
+                                        if self.system == systems['WINDOWS']:
+                                            tag = f'rocm-rel-{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm-rel-{matched[0]}.{matched[1]}'
+                                        else:
+                                            tag = f'rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm{matched[0]}.{matched[1]}'
                             msg = ''
                     except Exception:
                         pass
@@ -697,8 +743,8 @@ class DeviceInstaller():
                 # but torch build tag clamps at max (cu128) so we install a real wheel.
                 if version:
                     cmp, current, min_tuple, max_tuple = version_classify(version, cuda_version_range)
-                    min_ver = '.'.join(str(p) for p in min_tuple)
-                    max_ver = '.'.join(str(p) for p in max_tuple)
+                    min_ver = f'{min_tuple[0]}.{min_tuple[1]}'
+                    max_ver = f'{max_tuple[0]}.{max_tuple[1]}'
                     if cmp == -1:
                         msg = f'CUDA {version} < min {min_ver}. Please upgrade.'
                     elif cmp is None:
@@ -710,7 +756,7 @@ class DeviceInstaller():
                             tag = f'cu{max_tuple[0]}{max_tuple[1]}'
                             msg = f'CUDA {version} > tested max {max_ver}; using cu{max_tuple[0]}{max_tuple[1]} torch build.'
                         else:
-                            tag = f'cu{current[0]}{current[1]}'
+                            tag = f'cu{current[0]}{current[1]}'  # still index 0/1, ignore patch
                 else:
                     msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
 
@@ -1164,6 +1210,14 @@ class DeviceInstaller():
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scikit-learn'])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scipy'])
+                            elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
+                                url = default_pytorch_amd_url
+                                py_major, py_minor = device_info['pyvenv']
+                                tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
+                                extra_tag_url = torch_matrix[tag].get('extra_tag', '').replace('+', '%2B')
+                                torch_pkg = f'{url}/{tag}/torch-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
+                                torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', torch_pkg, torchaudio_pkg])
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
