@@ -119,7 +119,6 @@ class SessionTracker:
             session['status'] = status_tags['READY']
             #self.blocks_autosave.register(session_id)
             return True
-        return False
 
     def end_session(self, session_id:str, socket_hash:str)->None:
         #self.blocks_autosave.unregister(session_id)
