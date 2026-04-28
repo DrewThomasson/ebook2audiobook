@@ -342,16 +342,16 @@ for %%p in (%HOST_PROGRAMS%) do (
     set "_found=0"
     if "%%p"=="nodejs"  set "prog=node"
     if "%%p"=="calibre" set "prog=ebook-convert"
-    if "%%p"=="ffmpeg-shared" (
-        set "prog=ffmpeg"
-        call :ensure_ffmpeg_shared
-    )
+    if "%%p"=="ffmpeg-shared" set "prog=ffmpeg"
     if "%%p"=="rustup" (
         if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_found=1"
     )
     if "!_found!"=="0" (
         where.exe /Q !prog! >nul 2>&1
         if errorlevel 1 set "missing_prog_array=!missing_prog_array! %%p"
+		if "!prog!"=="ffmpeg" (
+			call :ensure_ffmpeg_shared
+		)
     )
 )
 endlocal & set "missing_prog_array=%missing_prog_array%"
