@@ -1266,7 +1266,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
             if stanza_nlp:
-                msg = 'Converting dates, years, math signs and numbers to words…'
+                msg = 'Converting dates and years to words…'
                 print(msg)
                 re_ordinal = re.compile(
                     r'(?<!\w)(0?[1-9]|[12][0-9]|3[01])(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)',
@@ -3049,11 +3049,14 @@ def convert_ebook(args:dict)->tuple:
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
-                                    for jf in (session['blocks_orig_json'], session['blocks_saved_json'], session['blocks_current_json']):
-                                        if os.path.exists(jf):
-                                            os.unlink(jf)
-                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
-                                    print(msg)
+                                    if os.path.exists(session['epub_path']):
+                                        for jf in (session['blocks_orig_json'], session['blocks_saved_json'], session['blocks_current_json']):
+                                            if os.path.exists(jf):
+                                                os.unlink(jf)
+                                        msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
+                                        print(msg)
+                                    else:
+                                        error = f"convert2epub() {session['epub_path']} does not exists! check write permissions."
                                 else:
                                     error = 'convert2epub() error: could not convert to epub file!'
                             if error is None:

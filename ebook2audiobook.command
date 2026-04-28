@@ -746,6 +746,12 @@ function check_conda {
 			# needed gfortran to compile pip scipy pkg
 			conda install -c conda-forge gfortran -y || return 1
 		fi
+		DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
+		if [[ "$DEVICE_INFO_STR" == "" ]]; then
+			echo "check_device_info() error: result is empty"
+			exit 1
+		fi
+		install_device_packages "$DEVICE_INFO_STR" || exit 1
 		install_python_packages || return 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
@@ -986,8 +992,8 @@ EOF
 				exit 1
 			fi
 			printf '%s' "$DOCKER_DEVICE_STR" > .device_info.json
-			install_python_packages || exit 1
 			install_device_packages "$DOCKER_DEVICE_STR" || exit 1
+			install_python_packages || exit 1
 			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
