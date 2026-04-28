@@ -544,7 +544,7 @@ for %%p in (%missing_prog_array%) do (
 		set "prog=node"
 	)
 	if "%%p"=="ffmpeg-shared" (
-		set "prog=node"
+		set "prog=ffmpeg"
 	)
 	if "%%p"=="rustup" (
 		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
