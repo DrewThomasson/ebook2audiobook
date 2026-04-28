@@ -545,6 +545,12 @@ for %%p in (%missing_prog_array%) do (
 	)
 	if "%%p"=="ffmpeg-shared" (
 		set "prog=ffmpeg"
+		if exist "%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin\ffmpeg.exe" (
+			set "_FFMPEG_PATH=%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
+			echo !PATH! | findstr /i /c:"!_FFMPEG_PATH!" >nul 2>&1 || (
+				set "PATH=!_FFMPEG_PATH!;!PATH!"
+			)
+		)
 	)
 	if "%%p"=="rustup" (
 		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
