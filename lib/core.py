@@ -3056,7 +3056,7 @@ def convert_ebook(args:dict)->tuple:
                                         msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
                                         print(msg)
                                     else:
-                                        error = 'convert2epub() session['epub_path'] does not exists! check write permissions.'
+                                        error = f"convert2epub() {session['epub_path']} does not exists! check write permissions."
                                 else:
                                     error = 'convert2epub() error: could not convert to epub file!'
                             if error is None:
