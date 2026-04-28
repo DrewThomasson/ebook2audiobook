@@ -583,7 +583,9 @@ class DeviceInstaller():
                     # min_ver / max_ver: strip trailing .0 for display (range tuples are major.minor)
                     min_ver = f'{min_tuple[0]}.{min_tuple[1]}'
                     max_ver = f'{max_tuple[0]}.{max_tuple[1]}'
-                    if cmp == -1:
+                    if self.system == systems['WINDOWS'] and version < max_tuple:
+                        msg = f'ROCm {version_str} on Windows; needs to be upgraded to {max_ver}.x.'
+                    elif cmp == -1:
                         msg = f'ROCm {version_str} < min {min_ver}. Please upgrade.'
                     elif cmp is None:
                         msg = 'ROCm GPU detected but version unparseable.'
@@ -623,7 +625,12 @@ class DeviceInstaller():
                             devices['ROCM']['found'] = True
                             version = _normalize_version(torch.version.hip)
                             if version:
-                                compat_versions = []
+                                if self.system == systems['WINDOWS'] and version < tuple(rocm_version_range['max']):
+                                    devices['ROCM']['found'] = False
+                                    max_ver = f"{rocm_version_range['max'][0]}.{rocm_version_range['max'][1]}"
+                                    msg = f'ROCm {".".join(str(p) for p in version)} on Windows; needs to be upgraded to {max_ver}.x.'
+                                else:
+                                    compat_versions = []
                                 for t, entry in torch_matrix.items():
                                     if self.system not in entry['compat'] or not t.startswith('rocm'):
                                         continue
@@ -1222,6 +1229,19 @@ class DeviceInstaller():
                                 py_major, py_minor = device_info['pyvenv']
                                 tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                 extra_tag_url = torch_matrix[tag].get('extra_tag', '').replace('+', '%2B')
+                                # rocm_sdk is required by torch ROCm wheels on Windows; install it first if missing
+                                import importlib.util
+                                if importlib.util.find_spec('rocm_sdk') is None:
+                                    rocm_ver = tag[len('rocm-rel-'):] if tag.startswith('rocm-rel-') else tag
+                                    sdk_pkgs = [
+                                        f'{url}/{tag}/rocm_sdk_core-{rocm_ver}-py3-none-{os_env}_{arch}.whl',
+                                        f'{url}/{tag}/rocm_sdk_devel-{rocm_ver}-py3-none-{os_env}_{arch}.whl',
+                                        f'{url}/{tag}/rocm_sdk_libraries_custom-{rocm_ver}-py3-none-{os_env}_{arch}.whl',
+                                        f'{url}/{tag}/rocm-{rocm_ver}.tar.gz',
+                                    ]
+                                    msg = f'Installing ROCm SDK {rocm_ver}…'
+                                    print(msg)
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', *sdk_pkgs])
                                 torch_pkg = f'{url}/{tag}/torch-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
                                 torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torch_pkg, torchaudio_pkg])

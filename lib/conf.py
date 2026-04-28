@@ -84,8 +84,6 @@ torch_matrix = {
     "rocm7.0":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.10.0", "last": "2.10.0", "extra_tag": ""},
     "rocm7.1":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.11.0", "last": "2.11.0", "extra_tag": ""},
     "rocm7.2":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.11.0", "last": "2.11.0", "extra_tag": ""},
-    "rocm-rel-7.1.1": {"compat": [systems['WINDOWS']], "base": "2.9.0", "last": "2.9.0", "extra_tag": "+rocmsdk20251116"},
-    "rocm-rel-7.2":   {"compat": [systems['WINDOWS']], "base": "2.9.1", "last": "2.9.1", "extra_tag": "+rocmsdk20260116"},
     "rocm-rel-7.2.1": {"compat": [systems['WINDOWS']], "base": "2.9.1", "last": "2.9.1", "extra_tag": "+rocm7.2.1"},
     # MPS
     "mps":       {"compat": [systems['MACOS']], "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
