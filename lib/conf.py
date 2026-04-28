@@ -65,7 +65,7 @@ default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a perman
 
 torch_matrix = {
     # CPU
-    "cpu":       {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": "+cpu"},
+    "cpu":       {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
     # CUDA
     "cu118":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.7.1", "extra_tag": ""},
     "cu121":     {"compat": list(systems.values()), "base": "2.5.1", "last": "2.5.1", "extra_tag": ""},
