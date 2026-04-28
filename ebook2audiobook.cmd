@@ -561,8 +561,6 @@ for %%p in (%missing_prog_array%) do (
 		if errorlevel 1 (
 			echo %%p>>"%INSTALLED_LOG%"
 		)
-	) else if exist "%SCOOP_APPS%\%%p\current" (
-		echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
 	) else (
 		echo %ESC%[31m=============== %%p failed.%ESC%[0m
 		goto :failed
