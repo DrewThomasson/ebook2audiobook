@@ -37,8 +37,8 @@ class DeviceInstaller():
     def check_device_info(self, mode:str)->str:
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
-            arch = self.check_arch
-            pyvenv = list(sys.version_info[:2])
+            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
+            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
                 device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
@@ -64,8 +64,7 @@ class DeviceInstaller():
         elif mode == BUILD_DOCKER:
             name, tag, msg = self.check_hardware
             os_env = 'manylinux_2_28'
-            pyvenv = list(max_python_version)
-            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else pyvenv
+            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
             arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
             if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
@@ -1167,14 +1166,18 @@ class DeviceInstaller():
         return 0
           
     def install_device_packages(self, device_info_str:str)->int:
+
         def _needs_reinstall():
             if not torch_version_current_full:
                 return True
             if tag == devices['CPU']['proc']:
-                return torch_version_current_base != torch_version_matrix
+                if torch_version_current_base != torch_version_matrix:
+                    return True
+                return current_tag is not None and current_tag != devices['CPU']['proc']
             if non_standard_tag is None:
                 return current_tag != tag
             return non_standard_tag != tag
+
         try:
             if device_info_str:
                 device_info = json.loads(device_info_str)

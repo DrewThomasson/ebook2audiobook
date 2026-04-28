@@ -342,16 +342,16 @@ for %%p in (%HOST_PROGRAMS%) do (
     set "_found=0"
     if "%%p"=="nodejs"  set "prog=node"
     if "%%p"=="calibre" set "prog=ebook-convert"
-    if "%%p"=="ffmpeg-shared" (
-        set "prog=ffmpeg"
-        call :ensure_ffmpeg_shared
-    )
+    if "%%p"=="ffmpeg-shared" set "prog=ffmpeg"
     if "%%p"=="rustup" (
         if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_found=1"
     )
     if "!_found!"=="0" (
         where.exe /Q !prog! >nul 2>&1
         if errorlevel 1 set "missing_prog_array=!missing_prog_array! %%p"
+		if "!prog!"=="ffmpeg" (
+			call :ensure_ffmpeg_shared
+		)
     )
 )
 endlocal & set "missing_prog_array=%missing_prog_array%"
@@ -544,7 +544,13 @@ for %%p in (%missing_prog_array%) do (
 		set "prog=node"
 	)
 	if "%%p"=="ffmpeg-shared" (
-		set "prog=node"
+		set "prog=ffmpeg"
+		if exist "%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin\ffmpeg.exe" (
+			set "_FFMPEG_PATH=%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
+			echo !PATH! | findstr /i /c:"!_FFMPEG_PATH!" >nul 2>&1 || (
+				set "PATH=!_FFMPEG_PATH!;!PATH!"
+			)
+		)
 	)
 	if "%%p"=="rustup" (
 		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
@@ -566,7 +572,7 @@ for %%p in (%missing_prog_array%) do (
 		goto :failed
 	)
 )
-endlocal
+endlocal & set "PATH=%PATH%"
 call "%PS_EXE%" %PS_ARGS% -Command "$cp=[System.Environment]::GetEnvironmentVariable('Path','User'); $np=$cp; @('%SCOOP_SHIMS%','%SCOOP_APPS%','%CONDA_PATH%','%NODE_PATH%') | Where-Object {$_ -and $cp -notlike ('*'+$_+'*')} | ForEach-Object {$np+=(';'+$_)}; [System.Environment]::SetEnvironmentVariable('Path',$np,'User')"
 set "missing_prog_array="
 goto :main
@@ -607,6 +613,11 @@ if "%CURRENT_ENV%"=="" (
 		call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
         ::call conda activate base
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+		call :check_device_info %SCRIPT_MODE%
+        if errorlevel 1 goto :failed
+		echo -------------------------------- %DEVICE_INFO_STR%
+		call :install_device_packages "%DEVICE_INFO_STR%"
+		if errorlevel 1 goto :failed
         call :install_python_packages
         if errorlevel 1 goto :failed
 		call conda deactivate >nul && call conda deactivate >nul
@@ -939,6 +950,7 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
             if errorlevel 1 goto :failed
+			call :install_device_packages
             if "!DEVICE_TAG!"=="" (
                 call :json_get tag
                 if errorlevel 1 goto :failed
