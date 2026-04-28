@@ -507,17 +507,12 @@ if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 )
 goto :restart_script
 
-:refresh_path
-for /f "usebackq delims=" %%a in (`"%PS_EXE%" %PS_ARGS% -NoProfile -Command "[Environment]::ExpandEnvironmentVariables(([Environment]::GetEnvironmentVariable('Path','Machine')+';'+[Environment]::GetEnvironmentVariable('Path','User')))"`) do set "PATH=%%a"
-exit /b 0
-
 :install_programs
 echo Installing missing programs…
 setlocal EnableDelayedExpansion
 for %%p in (%missing_prog_array%) do (
 	set "prog=%%p"
 	call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
-	call :refresh_path
 	if "%%p"=="tesseract" (
 		where.exe /Q !prog!
 		if not errorlevel 1 (
@@ -566,6 +561,8 @@ for %%p in (%missing_prog_array%) do (
 		if errorlevel 1 (
 			echo %%p>>"%INSTALLED_LOG%"
 		)
+	) else if exist "%SCOOP_APPS%\%%p\current" (
+		echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
 	) else (
 		echo %ESC%[31m=============== %%p failed.%ESC%[0m
 		goto :failed
