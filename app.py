@@ -252,8 +252,8 @@ SML tags available:
             print(error)
             sys.exit(1)
         result = manager.install_python_packages()
-            if result == 1:
-                sys.exit(1)
+        if result == 1:
+            sys.exit(1)
         if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
             error = 'WARNING: shared DLLs not found. aborting…'
             print(error)
