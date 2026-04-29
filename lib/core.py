@@ -2179,16 +2179,17 @@ def convert_chapters2audio(session_id:str)->bool:
     if not (session and session.get('id', False)):
         return False
     try:
+        if session['cancellation_requested']:
+            return False
         tts_manager = TTSManager(session)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
+        prev_blocks = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
         block_resume = blocks_current['block_resume']
         sentence_resume = blocks_current['sentence_resume']
-        if session['cancellation_requested']:
-            return False
-        prev_blocks = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
         xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
         if session['language'] != 'eng' and session['language'] in xtts_languages:
+            is_voice_changed = False
             voice_cache = {}
             for block in blocks:
                 old_voice = block.get('voice')
@@ -2204,8 +2205,12 @@ def convert_chapters2audio(session_id:str)->bool:
                             return False
                     voice_cache[old_voice] = new_voice
                 if new_voice != old_voice:
+                    is_voice_changed = True
                     block['voice'] = new_voice
-            session['blocks_current'] = blocks_current
+                    prev_blocks[block['id']]['voice'] = new_voice
+            if is_voice_changed:
+                session['blocks_current'] = blocks_current
+                session['blocks_saved']['blocks'] = prev_blocks
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
@@ -2299,12 +2304,12 @@ def convert_chapters2audio(session_id:str)->bool:
                             converted = True
                             blocks_current['sentence_resume'] = j
                             session['blocks_current'] = blocks_current
+                            now = time.monotonic()
                             if not baseline_initialized:
                                 session['blocks_saved'] = copy.deepcopy(blocks_current)
                                 save_json_blocks(session_id, 'blocks_saved')
                                 baseline_initialized = True
-                            now = time.monotonic()
-                            if now - last_save_time >= 5:
+                            elif now - last_save_time >= 5:
                                 save_json_blocks(session_id, 'blocks_current')
                                 last_save_time = now
                         global_sent += 1
