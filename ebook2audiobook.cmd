@@ -987,7 +987,7 @@ if defined arguments.help (
 		if errorlevel 1 goto :install_programs
 		call :check_conda
 		if errorlevel 1 goto :install_conda
-		if errorlevel 2 goto :failed
+		if errorlevel 2 exit /b 1
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 		if errorlevel 1 goto :failed
         call :check_sitecustomized
