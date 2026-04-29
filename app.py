@@ -1,4 +1,4 @@
-import argparse, socket, multiprocessing, sys, uuid, copy, warnings
+import argparse, socket, shutil, multiprocessing, sys, uuid, copy, warnings
 
 from pathlib import Path
 
