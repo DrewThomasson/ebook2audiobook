@@ -246,12 +246,13 @@ SML tags available:
         
         from lib.classes.device_installer import DeviceInstaller
         manager = DeviceInstaller()
+        device_info_str = manager.check_device_info(args['script_mode'])
+        if manager.install_device_packages(device_info_str) == 1:
+            error = f'Error: Could not installed device packages!'
+            print(error)
+            sys.exit(1)
         result = manager.install_python_packages()
-        if result == 0:
-            device_info_str = manager.check_device_info(args['script_mode'])
-            if manager.install_device_packages(device_info_str) == 1:
-                error = f'Error: Could not installed device packages!'
-                print(error)
+            if result == 1:
                 sys.exit(1)
         if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
             error = 'WARNING: shared DLLs not found. aborting…'
