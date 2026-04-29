@@ -2191,6 +2191,7 @@ def convert_chapters2audio(session_id:str)->bool:
         if session['language'] != 'eng' and session['language'] in xtts_languages:
             is_voice_changed = False
             voice_cache = {}
+            prev_blocks_by_id = {pb['id']: pb for pb in prev_blocks}
             for block in blocks:
                 old_voice = block.get('voice')
                 if old_voice in voice_cache:
@@ -2207,7 +2208,9 @@ def convert_chapters2audio(session_id:str)->bool:
                 if new_voice != old_voice:
                     is_voice_changed = True
                     block['voice'] = new_voice
-                    prev_blocks[block['id']]['voice'] = new_voice
+                    prev_block = prev_blocks_by_id.get(block['id'])
+                    if prev_block is not None:
+                        prev_block['voice'] = new_voice
             if is_voice_changed:
                 session['blocks_current'] = blocks_current
                 session['blocks_saved']['blocks'] = prev_blocks
