@@ -626,7 +626,7 @@ if "%CURRENT_ENV%"=="" (
 ) else (
     echo Current python virtual environment detected: %CURRENT_ENV%. 
     echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-    goto :failed
+    exit /b 1
 )
 exit /b 0
 
@@ -1007,6 +1007,7 @@ echo =============== ebook2audiobook is not correctly installed.
 where.exe /Q conda && (
     call conda deactivate >nul && call conda deactivate >nul
 )
+exit /b 1
 
 :quit
 set "CODE=%~1"
