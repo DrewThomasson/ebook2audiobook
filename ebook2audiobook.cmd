@@ -1007,7 +1007,7 @@ echo =============== ebook2audiobook is not correctly installed.
 where.exe /Q conda && (
     call conda deactivate >nul && call conda deactivate >nul
 )
-exit /b 1
+exit 1
 
 :quit
 set "CODE=%~1"
