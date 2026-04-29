@@ -1025,7 +1025,7 @@ if not errorlevel 1 (
     exit 0
 )
 start "%APP_NAME%" cmd /k "cd /d "%SAFE_SCRIPT_DIR%" & call %APP_FILE% %ARGS%"
-exit 0
+exit /b 0
 
 :restart_script_admin
 echo Restarting script as Administrator…
