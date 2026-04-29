@@ -1007,7 +1007,6 @@ echo =============== ebook2audiobook is not correctly installed.
 where.exe /Q conda && (
     call conda deactivate >nul && call conda deactivate >nul
 )
-exit 0
 
 :quit
 set "CODE=%~1"
@@ -1025,6 +1024,7 @@ if not errorlevel 1 (
     exit 0
 )
 start "%APP_NAME%" cmd /k "cd /d "%SAFE_SCRIPT_DIR%" & call %APP_FILE% %ARGS%"
+exit 0
 
 :restart_script_admin
 echo Restarting script as Administrator…
