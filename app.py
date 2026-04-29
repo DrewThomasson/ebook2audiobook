@@ -70,6 +70,21 @@ def kill_previous_instances(script_name: str):
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
 
+def register_dlls()->str|bool:
+    candidates = [
+        Path(os.environ['USERPROFILE']) / 'scoop' / 'apps' / 'ffmpeg-shared' / 'current' / 'bin',
+        Path(os.environ.get('PROGRAMFILES', r'C:\Program Files')) / 'ffmpeg' / 'bin',
+        Path(os.environ.get('LOCALAPPDATA', '')) / 'Microsoft' / 'WinGet' / 'Links',
+    ]
+    found = shutil.which('ffmpeg')
+    if found:
+        candidates.append(Path(found).parent)
+    for p in candidates:
+        if p and p.is_dir() and any(p.glob('avcodec-*.dll')):
+            os.add_dll_directory(str(p))
+            return str(p)
+    return False
+
 def main()->None:
     wsl_cmd = ''
     wsl_extra = ''
@@ -229,18 +244,22 @@ SML tags available:
 
         print(f"v{prog_version} {args['script_mode']} mode")
         
-        if args['script_mode'] in [NATIVE, BUILD_DOCKER, FULL_DOCKER]:
-            from lib.classes.device_installer import DeviceInstaller
-            manager = DeviceInstaller()
-            result = manager.install_python_packages()
-            if result == 0:
-                device_info_str = manager.check_device_info(args['script_mode'])
-                if manager.install_device_packages(device_info_str) == 1:
-                    error = f'Error: Could not installed device packages!'
-                    print(error)
-                    sys.exit(1)
+        from lib.classes.device_installer import DeviceInstaller
+        manager = DeviceInstaller()
+        result = manager.install_python_packages()
+        if result == 0:
+            device_info_str = manager.check_device_info(args['script_mode'])
+            if manager.install_device_packages(device_info_str) == 1:
+                error = f'Error: Could not installed device packages!'
+                print(error)
+                sys.exit(1)
+        if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
+            error = 'WARNING: shared DLLs not found. aborting…'
+            print(error)
+            sys.exit(1)
 
         import lib.core as c
+
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
