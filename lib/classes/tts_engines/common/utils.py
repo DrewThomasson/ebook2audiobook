@@ -261,6 +261,11 @@ class TTSUtils:
             if is_jetson or is_rocm:
                 # Jetson + ROCm → FP16 (BF16 unstable / slow on these)
                 amp_dtype = torch.float16
+            elif cc_major >= 12:
+                # Blackwell (RTX 50xx) — hardware supports BF16/FP8/FP4,
+                # but coqui-tts XTTSv2 does not yet support BFloat16.
+                # Fall back to FP16 until coqui-tts adds BF16 support.
+                amp_dtype = torch.float16
             elif cc_major >= 8:
                 # Ampere+ (RTX 30xx/40xx, A/H/L) — full tensor cores, BF16 available
                 use_bf16 = False
