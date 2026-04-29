@@ -1248,7 +1248,22 @@ class DeviceInstaller():
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', 'torchcodec', '--force-reinstall', '--index-url', f'{url}/{tag_dir}'])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--force-reinstall', '--index-url', f'{url}/{tag_dir}'])
+                            # torchcodec routing on download.pytorch.org:
+                            #   - macOS arm64: bare wheels under /whl/cpu (resolves via tag_dir=cpu, like torch/torchaudio)
+                            #   - Linux x86_64 / Windows amd64: +cpu wheels from 0.11.1 onwards under /whl/cpu;
+                            #     +cuXXX under /whl/<cuXXX>
+                            #   - Linux aarch64: NO torchcodec wheels on the PyTorch index at all -> must come from PyPI
+                            # PyPI default since torchcodec 0.11.1 is the CPU wheel, so PyPI is a safe fallback.
+                            # --no-deps prevents torchcodec from yanking torch back to a different variant.
+                            torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
+                            if device_info['os'] == 'manylinux_2_28' and arch == 'aarch64':
+                                pass  # PyPI (no --index-url)
+                            elif tag.startswith('cu'):
+                                torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{tag}']
+                            else:
+                                torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{tag_dir}']
+                            subprocess.check_call(torchcodec_cmd)
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
