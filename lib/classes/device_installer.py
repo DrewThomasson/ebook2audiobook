@@ -1250,16 +1250,14 @@ class DeviceInstaller():
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--force-reinstall', '--index-url', f'{url}/{tag_dir}'])
                             # torchcodec is only needed (and only available) for torch >= 2.9.0 — earlier
-                            # torch/torchaudio releases have their own audio I/O backends and don't depend
-                            # on torchcodec, so skip the install entirely on older matrix entries.
+                            # torch/torchaudio releases ship their own audio I/O backends.
                             # Routing on download.pytorch.org for >= 2.9.0:
                             #   - macOS arm64: bare wheels under /whl/cpu (via tag_dir=cpu, like torch/torchaudio)
                             #   - Linux x86_64 / Windows amd64: +cpu wheels from 0.11.1 onwards under /whl/cpu;
                             #     +cuXXX under /whl/<cuXXX>
                             #   - Linux aarch64: NO torchcodec wheels on the PyTorch index -> PyPI fallback
-                            #     (PyPI default since 0.11.1 is the CPU wheel)
                             # --no-deps prevents torchcodec from yanking torch back to a different variant.
-                            if tuple(int(p) for p in torch_version_matrix.split('.')[:2]) >= (2, 9):
+                            if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
                                 torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
                                 if device_info['os'] == 'manylinux_2_28' and device_info['arch'] == 'aarch64':
                                     pass  # PyPI (no --index-url)
