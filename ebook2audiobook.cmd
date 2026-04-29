@@ -626,7 +626,7 @@ if "%CURRENT_ENV%"=="" (
 ) else (
     echo Current python virtual environment detected: %CURRENT_ENV%. 
     echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-    exit /b 1
+    exit /b 2
 )
 exit /b 0
 
@@ -987,6 +987,7 @@ if defined arguments.help (
 		if errorlevel 1 goto :install_programs
 		call :check_conda
 		if errorlevel 1 goto :install_conda
+		if errorlevel 2 goto :failed
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 		if errorlevel 1 goto :failed
         call :check_sitecustomized
