@@ -2182,6 +2182,7 @@ def convert_chapters2audio(session_id:str)->bool:
         sentence_resume = blocks_current['sentence_resume']
         if session['cancellation_requested']:
             return False
+        prev_blocks = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
         xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
         if session['language'] != 'eng' and session['language'] in xtts_languages:
             voice_cache = {}
@@ -2201,7 +2202,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 if new_voice != old_voice:
                     block['voice'] = new_voice
             session['blocks_current'] = blocks_current
-        prev_blocks = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
