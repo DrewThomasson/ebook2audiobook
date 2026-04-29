@@ -1202,7 +1202,11 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                     text_list.append(payload.strip())
                 elif typ in ('break', 'pause'):
                     if prev_typ != typ:
-                        text_list.append(sml_token(typ))
+                        token = sml_token(typ)
+                        if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
+                            text_list[-1] = text_list[-1] + token
+                        else:
+                            text_list.append(token)
                 elif typ == 'table':
                     table = payload
                     if table in handled_tables:
