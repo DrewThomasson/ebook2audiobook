@@ -2178,6 +2178,7 @@ def convert_chapters2audio(session_id:str)->bool:
         while True:
             item = q.get()
             if item is None:
+                q.task_done()
                 break
             j, sentence, sentence_file = item
             try:
@@ -2329,7 +2330,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 save_json_blocks(session_id, 'blocks_current')
 
                 # -------------------------
-                # 🚀 STREAMING TTS QUEUE
+                # 🚀 STREAMING TTS PIPELINE
                 # -------------------------
                 q = queue.Queue()
                 results = {}
@@ -2351,10 +2352,11 @@ def convert_chapters2audio(session_id:str)->bool:
                             q.put((j, sentence, sentence_file))
                             active_jobs += 1
 
-                for _ in range(active_jobs):
-                    q.task_done()
-
+                # stop worker
                 q.put(None)
+
+                # wait for all jobs
+                q.join()
                 worker.join()
 
                 converted = False
