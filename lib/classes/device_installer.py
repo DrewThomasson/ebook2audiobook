@@ -1166,7 +1166,8 @@ class DeviceInstaller():
             elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
                 numpy_pkg = 'numpy<2.4.0'
             if numpy_pkg is not None:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'py-cpuinfo', numpy_pkg])
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'py-cpuinfo'])
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', numpy_pkg])
             return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
