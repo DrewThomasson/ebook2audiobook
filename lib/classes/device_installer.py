@@ -1160,21 +1160,19 @@ class DeviceInstaller():
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'numpy<2.4.0'])
                 else:
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'numpy'])
-
             elif torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'numpy<2'])
-
             elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'numpy<2.4.0'])
-            return 0
+            return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
             print(error)
-            return 1
+            return False
         except Exception as e:
             error = f'Error while installing numpy package: {e}'
             print(error)
-            return 1
+            return False
           
     def check_dictionary(self)->bool:
         import unidic
