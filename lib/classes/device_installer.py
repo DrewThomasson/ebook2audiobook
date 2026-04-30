@@ -10,6 +10,7 @@ class DeviceInstaller():
     
     def __init__(self):
         self.system = sys.platform
+        self.arch = self.check_arch
         self.python_version = sys.version_info[:2]
         self.python_version_tuple = sys.version_info
 
@@ -38,7 +39,7 @@ class DeviceInstaller():
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
             pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
-            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
+            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.arch
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
                 device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
@@ -65,7 +66,7 @@ class DeviceInstaller():
             name, tag, msg = self.check_hardware
             os_env = 'manylinux_2_28'
             pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
-            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
+            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.arch
             if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
@@ -93,7 +94,7 @@ class DeviceInstaller():
         return 'unknown'
 
     def detect_arch_tag(self)->str:
-        m=platform.machine().lower()
+        m = platform.machine().lower()
         if m in ('x86_64','amd64'):
             return m
         if m in ('aarch64','arm64'):
@@ -1021,7 +1022,7 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
-        if sys.platform == 'darwin' and platform.machine() == 'x86_64':
+        if self.system == systems['MACOS'] and platform.machine() == 'x86_64':
             overrides['numba'] = 'numba==0.62.0'
         try:
             with open(requirements_file, 'r') as f:
