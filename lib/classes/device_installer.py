@@ -1237,6 +1237,7 @@ class DeviceInstaller():
                             os_env = device_info['os']
                             arch = device_info['arch']
                             toolkit_version = ''.join(c for c in tag if c.isdigit())
+                            tag_dir = tag
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
                                 py_major, py_minor = device_info['pyvenv']
@@ -1283,7 +1284,7 @@ class DeviceInstaller():
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
                                 torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
                                 if (device_info['os'] == 'manylinux_2_28' and device_info['arch'] == 'aarch64') or (tag == devices['XPU']['proc']) or (tag == devices['ROCM']['proc']):
-                                    pass  # PyPI fallback — no aarch64 torchcodec on any PyTorch index
+                                    pass
                                 else:
                                     # Same index as torch: cpu / cuXXX / xpu / rocmX.Y
                                     # tag_dir already maps MPS -> cpu (macOS arm64 uses bare wheels there)
