@@ -29,6 +29,7 @@ langdetect
 phonemizer
 indic-nlp-library
 pytesseract
+numba
 torchvggish
 stanza==1.10.1
 argostranslate==1.11.0
