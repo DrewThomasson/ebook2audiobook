@@ -28,7 +28,7 @@ services:
   ebook2audiobook-gpu:
     extends:
       service: ebook2audiobook
-    image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}
+    image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cu130}
     build:
       args:
         DEVICE_TAG: ${DEVICE_TAG:-cu130}
