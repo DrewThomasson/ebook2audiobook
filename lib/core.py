@@ -868,7 +868,6 @@ def convert2epub(session_id:str)-> bool:
                     ebook_convert, file_input, session['epub_path'],
                     '--input-encoding=utf-8',
                     '--output-profile=generic_eink',
-                    #'--epub-version=3',
                     '--flow-size=0',
                     '--chapter-mark=pagebreak',
                     '--page-breaks-before',
