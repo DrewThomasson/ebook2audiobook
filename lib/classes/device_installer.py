@@ -1020,6 +1020,9 @@ class DeviceInstaller():
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
             return 1
+        overrides = {}
+        if sys.platform == 'darwin' and platform.machine() == 'x86_64':
+            overrides['numba'] = 'numba==0.62.0'
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
@@ -1035,6 +1038,8 @@ class DeviceInstaller():
                     head = re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower()
                     if head in {'torch', 'torchaudio'}:
                         continue
+                    if head in overrides:
+                        pkg = overrides[head]
                     packages.append(pkg)
             missing_packages = []
             for package in packages:
