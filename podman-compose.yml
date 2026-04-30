@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.4.30}
+        APP_VERSION: ${APP_VERSION:-26.5.1}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
         BUILDAH_FORMAT: docker
     working_dir: /app
