@@ -151,17 +151,17 @@ jobs:
             -t "$CPU_TAG_3" \
             --push . 
 
-      # ==================== CUDA 12.8 Build (linux/amd64 only) ====================
-      - name: Build and Push CUDA 12.8 Docker Image
+      # ==================== CUDA 13.0 Build (linux/amd64 only) ====================
+      - name: Build and Push CUDA 13.0 Docker Image
         run: |
           cd ~/E2ADockerBuild/ebook2audiobook
-          CUDA_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cu128"
-          CUDA_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cu128"
-          CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu128"
+          CUDA_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cu130"
+          CUDA_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cu130"
+          CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu130"
           CUDA_TAG_4="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest"
           docker buildx build --pull --platform linux/amd64 \
-            --build-arg DEVICE_TAG=cu128 \
-            --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "CUDA 12.8"}' \
+            --build-arg DEVICE_TAG=cu130 \
+            --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu130", "note": "CUDA 13.0"}' \
             -t "$CUDA_TAG_1" \
             -t "$CUDA_TAG_2" \
             -t "$CUDA_TAG_3" \
