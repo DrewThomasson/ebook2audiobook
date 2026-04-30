@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.4.28}
+        APP_VERSION: ${APP_VERSION:-26.4.30}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
     working_dir: /app
     entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
@@ -23,13 +23,13 @@ services:
     profiles: [cpu]
 
   ebook2audiobook-gpu:
-    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cu128}
+    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cu130}
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.4.28}
-        DEVICE_TAG: ${DEVICE_TAG:-cu128}
+        APP_VERSION: ${APP_VERSION:-26.4.30}
+        DEVICE_TAG: ${DEVICE_TAG:-cu130}
     working_dir: /app
     entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
     tty: true

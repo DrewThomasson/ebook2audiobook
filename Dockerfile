@@ -5,9 +5,9 @@ ARG PYTHON_VERSION=3.12
 # ============================================================
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-ARG APP_VERSION=26.4.28
-ARG DEVICE_TAG=cu128
-ARG DOCKER_DEVICE_STR='{"name": "cu128", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu128", "note": "default device"}'
+ARG APP_VERSION=26.4.30
+ARG DEVICE_TAG=cu130
+ARG DOCKER_DEVICE_STR='{"name": "cu130", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu130", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
