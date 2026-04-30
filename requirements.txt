@@ -1,4 +1,3 @@
-py-cpuinfo
 cryptography
 tqdm
 regex

@@ -31,6 +31,11 @@ class DeviceInstaller():
         machine = platform.machine().lower()
         if machine not in ('x86_64', 'amd64', 'x86'):
             return True
+        try:
+            import cpuinfo
+        except ImportError:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', 'py-cpuinfo'])
+            import cpuinfo
         from cpuinfo import get_cpu_info
         flags = set(get_cpu_info().get('flags', []))
         return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
@@ -95,9 +100,7 @@ class DeviceInstaller():
 
     def detect_arch_tag(self)->str:
         m = platform.machine().lower()
-        if m in ('x86_64','amd64'):
-            return m
-        if m in ('aarch64','arm64'):
+        if m in ('x86_64','amd64','aarch64','arm64'):
             return m
         return 'unknown'
 
@@ -1166,7 +1169,6 @@ class DeviceInstaller():
             elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
                 numpy_pkg = 'numpy<2.4.0'
             if numpy_pkg is not None:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'py-cpuinfo'])
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', numpy_pkg])
             return True
         except subprocess.CalledProcessError as e:
