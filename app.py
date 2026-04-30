@@ -70,20 +70,20 @@ def kill_previous_instances(script_name: str):
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
 
-def register_dlls()->str|bool:
-    candidates = [
-        Path(os.environ['USERPROFILE']) / 'scoop' / 'apps' / 'ffmpeg-shared' / 'current' / 'bin',
-        Path(os.environ.get('PROGRAMFILES', r'C:\Program Files')) / 'ffmpeg' / 'bin',
-        Path(os.environ.get('LOCALAPPDATA', '')) / 'Microsoft' / 'WinGet' / 'Links',
-    ]
-    found = shutil.which('ffmpeg')
-    if found:
-        candidates.append(Path(found).parent)
-    for p in candidates:
-        if p and p.is_dir() and any(p.glob('avcodec-*.dll')):
-            os.add_dll_directory(str(p))
-            return str(p)
-    return False
+#def register_dlls()->str|bool:
+#    candidates = [
+#        Path(os.environ['USERPROFILE']) / 'scoop' / 'apps' / 'ffmpeg-shared' / 'current' / 'bin',
+#        Path(os.environ.get('PROGRAMFILES', r'C:\Program Files')) / 'ffmpeg' / 'bin',
+#        Path(os.environ.get('LOCALAPPDATA', '')) / 'Microsoft' / 'WinGet' / 'Links',
+#    ]
+#    found = shutil.which('ffmpeg')
+#    if found:
+#        candidates.append(Path(found).parent)
+#    for p in candidates:
+#        if p and p.is_dir() and any(p.glob('avcodec-*.dll')):
+#            os.add_dll_directory(str(p))
+#            return str(p)
+#    return False
 
 def main()->None:
     wsl_cmd = ''
@@ -254,10 +254,10 @@ SML tags available:
         result = manager.install_python_packages()
         if result == 1:
             sys.exit(1)
-        if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
-            error = 'WARNING: shared DLLs not found. aborting…'
-            print(error)
-            sys.exit(1)
+        #if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
+        #    error = 'WARNING: shared DLLs not found. aborting…'
+        #    print(error)
+        #    sys.exit(1)
 
         import lib.core as c
 
