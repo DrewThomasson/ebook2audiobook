@@ -2183,7 +2183,8 @@ def convert_chapters2audio(session_id:str)->bool:
         tts_manager = TTSManager(session)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
-        prev_blocks = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
+        blocks_saved = session['blocks_saved']
+        prev_blocks = blocks_saved.get('blocks', [])
         block_resume = blocks_current['block_resume']
         sentence_resume = blocks_current['sentence_resume']
         xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
