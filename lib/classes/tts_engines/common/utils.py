@@ -361,6 +361,7 @@ class TTSUtils:
             import torchaudio
             import numpy as np
             from huggingface_hub import hf_hub_download
+            torchaudio.set_audio_backend('ffmpeg')
             voice_parts = Path(current_voice).parts
             if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
                 return current_voice

@@ -1283,17 +1283,17 @@ class DeviceInstaller():
                             #   - XPU: NO torchcodec XPU wheels -> PyPI fallback
                             #   - ROCm (Windows + Linux): NO torchcodec ROCm wheels -> +cpu wheels under /whl/cpu
                             # --no-deps prevents torchcodec from yanking torch back to a different variant.
-                            if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
-                                torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
-                                if (device_info['os'] == 'manylinux_2_28' and device_info['arch'] == 'aarch64') or (tag == devices['XPU']['proc']):
-                                    pass
-                                else:
-                                    # Same index as torch: cpu / cuXXX
-                                    # tag_dir already maps MPS -> cpu (macOS arm64 uses bare wheels there)
-                                    # ROCm forced to cpu since no ROCm torchcodec wheels are published
-                                    torchcodec_tag_dir = 'cpu' if device_info['name'] == devices['ROCM']['proc'] else tag_dir
-                                    torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{torchcodec_tag_dir}']
-                                subprocess.check_call(torchcodec_cmd)
+                            #if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
+                            #    torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
+                            #    if (device_info['os'] == 'manylinux_2_28' and device_info['arch'] == 'aarch64') or (tag == devices['XPU']['proc']):
+                            #        pass
+                            #    else:
+                            #        # Same index as torch: cpu / cuXXX
+                            #        # tag_dir already maps MPS -> cpu (macOS arm64 uses bare wheels there)
+                            #        # ROCm forced to cpu since no ROCm torchcodec wheels are published
+                            #        torchcodec_tag_dir = 'cpu' if device_info['name'] == devices['ROCM']['proc'] else tag_dir
+                            #        torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{torchcodec_tag_dir}']
+                            #    subprocess.check_call(torchcodec_cmd)
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
