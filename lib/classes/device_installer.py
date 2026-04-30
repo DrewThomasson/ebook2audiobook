@@ -1265,11 +1265,11 @@ class DeviceInstaller():
                             # --no-deps prevents torchcodec from yanking torch back to a different variant.
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
                                 torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
-                                if device_info['os'] == 'manylinux_2_28' and device_info['arch'] == 'aarch64':
-                                    pass  # PyPI (no --index-url)
-                                elif tag.startswith('cu'):
-                                    torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{tag}']
+                                if (device_info['os'] == 'manylinux_2_28' and device_info['arch'] == 'aarch64') or (tag == devices['XPU']['proc']) or (tag == devices['ROCM']['proc']):
+                                    pass  # PyPI fallback — no aarch64 torchcodec on any PyTorch index
                                 else:
+                                    # Same index as torch: cpu / cuXXX / xpu / rocmX.Y
+                                    # tag_dir already maps MPS -> cpu (macOS arm64 uses bare wheels there)
                                     torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{tag_dir}']
                                 subprocess.check_call(torchcodec_cmd)
                         except subprocess.CalledProcessError as e:
