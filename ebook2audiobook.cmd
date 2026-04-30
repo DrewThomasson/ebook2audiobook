@@ -85,7 +85,8 @@ set "CONDA_PATH=%CONDA_HOME%\condabin"
 set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
-set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%"
+set "FFMPEG_BIN=%USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
+set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
@@ -625,7 +626,7 @@ if "%CURRENT_ENV%"=="" (
 ) else (
     echo Current python virtual environment detected: %CURRENT_ENV%. 
     echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-    goto :failed
+    exit /b 2
 )
 exit /b 0
 
@@ -985,6 +986,7 @@ if defined arguments.help (
 		call :check_programs
 		if errorlevel 1 goto :install_programs
 		call :check_conda
+		if errorlevel 2 goto :eof
 		if errorlevel 1 goto :install_conda
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 		if errorlevel 1 goto :failed

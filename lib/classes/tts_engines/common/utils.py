@@ -188,6 +188,7 @@ class TTSUtils:
         if not using_gpu:
             return amp_dtype
         if has_cuda:
+            amp_dtype = torch.float16
             # --- CUDA health check: fail fast instead of configuring a broken context ---
             try:
                 torch.cuda.manual_seed_all(seed)
@@ -254,47 +255,11 @@ class TTSUtils:
                     torch.backends.cudnn.allow_tf32 = tf32_ok
                 except Exception:
                     pass
-            # ---------- AMP dtype — derived from compute capability, conservative ----------
-            # Default is FP32 (no autocast). We only opt into lower precision when the
-            # hardware tier is unambiguous.
-            amp_dtype = torch.float32
-            if is_jetson or is_rocm:
-                # Jetson + ROCm → FP16 (BF16 unstable / slow on these)
-                amp_dtype = torch.float16
-            elif cc_major >= 8:
-                # Ampere+ (RTX 30xx/40xx, A/H/L) — full tensor cores, BF16 available
-                use_bf16 = False
-                if quality_mode:
-                    try:
-                        use_bf16 = bool(
-                            hasattr(torch.cuda, 'is_bf16_supported')
-                            and torch.cuda.is_bf16_supported()
-                        )
-                    except Exception:
-                        use_bf16 = False
-                amp_dtype = torch.bfloat16 if use_bf16 else torch.float16
-            elif cc == (7, 0):
-                # Volta (V100 / Titan V) — real tensor cores, FP16 is safe
-                amp_dtype = torch.float16
-            # Everything else stays FP32:
-            #   CC 7.5 Turing — RTX 20xx technically has TC, GTX 16xx doesn't.
-            #     Can't tell them apart from capabilities alone, and FP16 destabilises
-            #     autoregressive TTS on GTX 16xx. Safe > fast.
-            #   CC < 7 (Pascal and older) — no usable FP16 path on consumer cards.
             return amp_dtype
         # ================= Apple MPS =================
         if has_mps:
-            try:
-                torch.mps.manual_seed(seed)
-            except Exception:
-                pass
-            try:
-                #if quality_mode and hasattr(torch.backends.mps, 'is_bf16_supported') and torch.backends.mps.is_bf16_supported():
-                #    amp_dtype = torch.bfloat16
-                #else:
-                amp_dtype = torch.float16
-            except Exception:
-                amp_dtype = torch.float16
+            torch.mps.manual_seed(seed)
+            amp_dtype = torch.float16
             return amp_dtype
         # ================= Intel XPU =================
         if has_xpu:

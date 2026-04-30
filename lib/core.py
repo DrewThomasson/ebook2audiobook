@@ -868,7 +868,7 @@ def convert2epub(session_id:str)-> bool:
                     ebook_convert, file_input, session['epub_path'],
                     '--input-encoding=utf-8',
                     '--output-profile=generic_eink',
-                    '--epub-version=3',
+                    #'--epub-version=3',
                     '--flow-size=0',
                     '--chapter-mark=pagebreak',
                     '--page-breaks-before',
@@ -1202,7 +1202,11 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                     text_list.append(payload.strip())
                 elif typ in ('break', 'pause'):
                     if prev_typ != typ:
-                        text_list.append(sml_token(typ))
+                        token = sml_token(typ)
+                        if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
+                            text_list[-1] = text_list[-1] + token
+                        else:
+                            text_list.append(token)
                 elif typ == 'table':
                     table = payload
                     if table in handled_tables:
@@ -2175,15 +2179,17 @@ def convert_chapters2audio(session_id:str)->bool:
     if not (session and session.get('id', False)):
         return False
     try:
+        if session['cancellation_requested']:
+            return False
         tts_manager = TTSManager(session)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
+        prev_blocks = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
         block_resume = blocks_current['block_resume']
         sentence_resume = blocks_current['sentence_resume']
-        if session['cancellation_requested']:
-            return False
         xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
         if session['language'] != 'eng' and session['language'] in xtts_languages:
+            is_voice_changed = False
             voice_cache = {}
             for block in blocks:
                 old_voice = block.get('voice')
@@ -2199,9 +2205,16 @@ def convert_chapters2audio(session_id:str)->bool:
                             return False
                     voice_cache[old_voice] = new_voice
                 if new_voice != old_voice:
+                    is_voice_changed = True
                     block['voice'] = new_voice
-            session['blocks_current'] = blocks_current
-        prev_blocks = {b['id']: b for b in (session.get('blocks_saved') or {}).get('blocks', [])}
+                    if prev_blocks:
+                        prev_blocks[block['id']]['voice'] = new_voice
+            if is_voice_changed:
+                session['blocks_current'] = blocks_current
+                if prev_blocks:
+                    blocks_saved = session['blocks_saved']
+                    blocks_saved['blocks'] = prev_blocks
+                    session['blocks_saved'] = blocks_saved
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
@@ -2295,12 +2308,12 @@ def convert_chapters2audio(session_id:str)->bool:
                             converted = True
                             blocks_current['sentence_resume'] = j
                             session['blocks_current'] = blocks_current
+                            now = time.monotonic()
                             if not baseline_initialized:
                                 session['blocks_saved'] = copy.deepcopy(blocks_current)
                                 save_json_blocks(session_id, 'blocks_saved')
                                 baseline_initialized = True
-                            now = time.monotonic()
-                            if now - last_save_time >= 5:
+                            elif now - last_save_time >= 5:
                                 save_json_blocks(session_id, 'blocks_current')
                                 last_save_time = now
                         global_sent += 1
@@ -3433,5 +3446,5 @@ def get_all_ip_addresses()->list:
     for interface, addresses in psutil.net_if_addrs().items():
         for address in addresses:
             if address.family in [socket.AF_INET, socket.AF_INET6]:
-                ip_addresses.append(address.address) 
+                ip_addresses.append(address.address)
     return ip_addresses

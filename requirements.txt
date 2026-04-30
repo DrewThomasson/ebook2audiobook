@@ -1,7 +1,6 @@
 cryptography
 py-cpuinfo
 tqdm
-torchvggish
 regex
 docker
 ebooklib
@@ -13,7 +12,6 @@ beautifulsoup4
 nagisa
 pymupdf
 pymupdf-layout
-pytesseract
 unidic
 hangul-romanize
 iso639-lang
@@ -30,6 +28,9 @@ unidecode
 langdetect
 phonemizer
 indic-nlp-library
+pytesseract
+numba
+torchvggish
 stanza==1.10.1
 argostranslate==1.11.0
 pandas>=1.0,<3.0
