@@ -1,5 +1,5 @@
-cryptography
 py-cpuinfo
+cryptography
 tqdm
 regex
 docker
