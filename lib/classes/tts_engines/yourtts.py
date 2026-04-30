@@ -71,7 +71,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             import torchaudio
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
-            torchaudio.set_audio_backend('ffmpeg')
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
                 language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
