@@ -1144,7 +1144,7 @@ class DeviceInstaller():
         except Exception as e:
             print(f'install_python_packages() error: {e}')
             return 1
-          
+
     def check_numpy(self)->bool:
         try:
             try:
