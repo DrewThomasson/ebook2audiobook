@@ -1153,17 +1153,20 @@ class DeviceInstaller():
             torch_version = self.get_package_version('torch')
             torch_version_base = self.version_tuple(torch_version)
             min_cpu_baseline = self.cpu_baseline
+            numpy_pkg = None
             if numpy_version is None:
                 if torch_version_base <= self.version_tuple('2.2.2'):
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'py-cpuinfo', 'numpy<2'])
+                    numpy_pkg = 'numpy<2'
                 elif not min_cpu_baseline:
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'py-cpuinfo', 'numpy<2.4.0'])
+                    numpy_pkg = 'numpy<2.4.0'
                 else:
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'py-cpuinfo', 'numpy'])
+                    numpy_pkg = 'numpy'
             elif torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'py-cpuinfo', 'numpy<2'])
+                numpy_pkg = 'numpy<2'
             elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'py-cpuinfo', 'numpy<2.4.0'])
+                numpy_pkg = 'numpy<2.4.0'
+            if numpy_pkg is not None:
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force-reinstall', 'py-cpuinfo', numpy_pkg])
             return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
