@@ -10,6 +10,7 @@ class DeviceInstaller():
     
     def __init__(self):
         self.system = sys.platform
+        self.arch = self.check_arch
         self.python_version = sys.version_info[:2]
         self.python_version_tuple = sys.version_info
 
@@ -38,7 +39,7 @@ class DeviceInstaller():
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
             pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
-            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
+            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.arch
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
                 device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
@@ -65,7 +66,7 @@ class DeviceInstaller():
             name, tag, msg = self.check_hardware
             os_env = 'manylinux_2_28'
             pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
-            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.check_arch
+            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.arch
             if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
@@ -93,7 +94,7 @@ class DeviceInstaller():
         return 'unknown'
 
     def detect_arch_tag(self)->str:
-        m=platform.machine().lower()
+        m = platform.machine().lower()
         if m in ('x86_64','amd64'):
             return m
         if m in ('aarch64','arm64'):
@@ -583,7 +584,9 @@ class DeviceInstaller():
                     # min_ver / max_ver: strip trailing .0 for display (range tuples are major.minor)
                     min_ver = f'{min_tuple[0]}.{min_tuple[1]}'
                     max_ver = f'{max_tuple[0]}.{max_tuple[1]}'
-                    if cmp == -1:
+                    if self.system == systems['WINDOWS'] and version < max_tuple:
+                        msg = f'ROCm {version_str} on Windows; needs to be upgraded to {max_ver}.x.'
+                    elif cmp == -1:
                         msg = f'ROCm {version_str} < min {min_ver}. Please upgrade.'
                     elif cmp is None:
                         msg = 'ROCm GPU detected but version unparseable.'
@@ -623,7 +626,12 @@ class DeviceInstaller():
                             devices['ROCM']['found'] = True
                             version = _normalize_version(torch.version.hip)
                             if version:
-                                compat_versions = []
+                                if self.system == systems['WINDOWS'] and version < tuple(rocm_version_range['max']):
+                                    devices['ROCM']['found'] = False
+                                    max_ver = f"{rocm_version_range['max'][0]}.{rocm_version_range['max'][1]}"
+                                    msg = f'ROCm {".".join(str(p) for p in version)} on Windows; needs to be upgraded to {max_ver}.x.'
+                                else:
+                                    compat_versions = []
                                 for t, entry in torch_matrix.items():
                                     if self.system not in entry['compat'] or not t.startswith('rocm'):
                                         continue
@@ -1013,6 +1021,9 @@ class DeviceInstaller():
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
             return 1
+        overrides = {}
+        if self.system == systems['MACOS'] and self.arch == 'x86_64':
+            overrides['numba'] = 'numba==0.62.0'
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
@@ -1028,6 +1039,8 @@ class DeviceInstaller():
                     head = re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower()
                     if head in {'torch', 'torchaudio'}:
                         continue
+                    if head in overrides:
+                        pkg = overrides[head]
                     packages.append(pkg)
             missing_packages = []
             for package in packages:
@@ -1222,6 +1235,19 @@ class DeviceInstaller():
                                 py_major, py_minor = device_info['pyvenv']
                                 tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                 extra_tag_url = torch_matrix[tag].get('extra_tag', '').replace('+', '%2B')
+                                # rocm_sdk is required by torch ROCm wheels on Windows; install it first if missing
+                                import importlib.util
+                                if importlib.util.find_spec('rocm_sdk') is None:
+                                    rocm_ver = tag[len('rocm-rel-'):] if tag.startswith('rocm-rel-') else tag
+                                    sdk_pkgs = [
+                                        f'{url}/{tag}/rocm_sdk_core-{rocm_ver}-py3-none-{os_env}_{arch}.whl',
+                                        f'{url}/{tag}/rocm_sdk_devel-{rocm_ver}-py3-none-{os_env}_{arch}.whl',
+                                        f'{url}/{tag}/rocm_sdk_libraries_custom-{rocm_ver}-py3-none-{os_env}_{arch}.whl',
+                                        f'{url}/{tag}/rocm-{rocm_ver}.tar.gz',
+                                    ]
+                                    msg = f'Installing ROCm SDK {rocm_ver}…'
+                                    print(msg)
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', *sdk_pkgs])
                                 torch_pkg = f'{url}/{tag}/torch-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
                                 torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torch_pkg, torchaudio_pkg])
@@ -1229,6 +1255,23 @@ class DeviceInstaller():
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--force-reinstall', '--index-url', f'{url}/{tag_dir}'])
+                            # torchcodec is only needed (and only available) for torch >= 2.9.0 — earlier
+                            # torch/torchaudio releases ship their own audio I/O backends.
+                            # Routing on download.pytorch.org for >= 2.9.0:
+                            #   - macOS arm64: bare wheels under /whl/cpu (via tag_dir=cpu, like torch/torchaudio)
+                            #   - Linux x86_64 / Windows amd64: +cpu wheels from 0.11.1 onwards under /whl/cpu;
+                            #     +cuXXX under /whl/<cuXXX>
+                            #   - Linux aarch64: NO torchcodec wheels on the PyTorch index -> PyPI fallback
+                            # --no-deps prevents torchcodec from yanking torch back to a different variant.
+                            if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
+                                torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
+                                if device_info['os'] == 'manylinux_2_28' and device_info['arch'] == 'aarch64':
+                                    pass  # PyPI (no --index-url)
+                                elif tag.startswith('cu'):
+                                    torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{tag}']
+                                else:
+                                    torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{tag_dir}']
+                                subprocess.check_call(torchcodec_cmd)
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
