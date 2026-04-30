@@ -17,8 +17,8 @@ authors = [
     { name = "Drew Thomasson" }
 ]
 dependencies = [
-    "cryptography",
     "py-cpuinfo",
+    "cryptography",
     "tqdm",
     "regex",
     "docker",
