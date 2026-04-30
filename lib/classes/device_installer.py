@@ -1022,7 +1022,7 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
-        if self.system == systems['MACOS'] and platform.machine() == 'x86_64':
+        if self.system == systems['MACOS'] and self.arch == 'x86_64':
             overrides['numba'] = 'numba==0.62.0'
         try:
             with open(requirements_file, 'r') as f:
