@@ -1220,6 +1220,8 @@ class DeviceInstaller():
                     torch_version_current_base = None
                     current_tag = None
                     non_standard_tag = None
+                    if not self.check_numpy():
+                        return 1
                     if torch_version_current_full:
                         m = re.search(r'\+(.+)$', torch_version_current_full)
                         current_tag = m.group(1) if m else None
@@ -1310,8 +1312,6 @@ class DeviceInstaller():
                                     msg = 'Create symlink to use OS libgomp.'
                                     print(msg)
                                     os.symlink(libgomp_src, libgomp_dst)
-                    if not self.check_numpy():
-                        return 1
                     return 0
                 else:
                     error = 'install_device_packages() error: device_info_str is empty'
