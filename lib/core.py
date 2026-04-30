@@ -2207,12 +2207,14 @@ def convert_chapters2audio(session_id:str)->bool:
                 if new_voice != old_voice:
                     is_voice_changed = True
                     block['voice'] = new_voice
-                    prev_blocks[block['id']]['voice'] = new_voice
+                    if prev_blocks:
+                        prev_blocks[block['id']]['voice'] = new_voice
             if is_voice_changed:
                 session['blocks_current'] = blocks_current
-                blocks_saved = session['blocks_saved']
-                blocks_saved['blocks'] = prev_blocks
-                session['blocks_saved'] = blocks_saved
+                if prev_blocks:
+                    blocks_saved = session['blocks_saved']
+                    blocks_saved['blocks'] = prev_blocks
+                    session['blocks_saved'] = blocks_saved
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
