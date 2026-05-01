@@ -483,7 +483,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] [Make a ios app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] Audiobookshelf integration
-- [ ] 
+
 #### Extra Options
 - [ ] Ebook Translation option
 - [x] Output format choicec
@@ -494,7 +494,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Denoise any reference audio for upload voice cloning,
 - [x] Custom model upload (XTTSv2 only for now. more on request)
 - [ ]  Add Portuguese Xttsv2 model fine tuned for EU portuguese
-- [ ]  
+
 #### TTS engines
 - [x] XTTSv2
 - [x] Bark
