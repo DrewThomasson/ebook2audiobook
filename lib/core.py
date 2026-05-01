@@ -2162,7 +2162,7 @@ def convert_chapters2audio(session_id:str)->bool:
         block_dir = os.path.join(session['sentences_dir'], block_id)
         missing = set()
         for j in valid_idx:
-            is_sml = bool(SML_TAG_PATTERN.fullmatch(sentences[j].strip()))
+            is_sml = bool(SML_TAG_PATTERN.fullmatch(sentences[j]))
             if (not is_sml) or (j == last_idx):
                 sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                 if not os.path.exists(sentence_file):
@@ -2215,7 +2215,7 @@ def convert_chapters2audio(session_id:str)->bool:
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
             return False
-        total_sentences = sum(len(b['sentences']) for b in blocks if b['keep'] and b['text'].strip())
+        total_sentences = sum(_count_sentences(b['sentences']) for b in blocks if b['keep'] and b['text'].strip())
         if total_sentences == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No sentences found!'})
             return False
