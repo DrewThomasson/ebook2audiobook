@@ -2177,6 +2177,7 @@ def convert_chapters2audio(session_id:str)->bool:
     try:
         if session['cancellation_requested']:
             return False
+        print(f'*********** Session: {session_id} **************\n{session_info}')
         tts_manager = TTSManager(session)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
@@ -2920,7 +2921,6 @@ def convert_ebook(args:dict)->tuple:
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
-                print(f'*********** Session: {session_id} **************\n{session_info}')
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
