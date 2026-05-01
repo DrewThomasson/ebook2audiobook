@@ -115,7 +115,9 @@ ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
-tempfile.tempdir = run_dir
+_tmp_override = os.environ.get('E2A_TMPDIR', '/tmp/e2a')
+os.makedirs(_tmp_override, exist_ok=True)
+tempfile.tempdir = _tmp_override
 
 # ---------------------------------------------------------------------
 # Environment setup
@@ -128,7 +130,7 @@ os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
 os.environ['CALIBRE_TEMP_DIR'] = run_dir
 os.environ['CALIBRE_CACHE_DIRECTORY'] = run_dir
 os.environ['CALIBRE_CONFIG_DIRECTORY'] = run_dir
-os.environ['TMPDIR'] = run_dir
+os.environ['TMPDIR'] = _tmp_override
 os.environ['GRADIO_DEBUG'] = '0'
 os.environ['DO_NOT_TRACK'] = 'True'
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir

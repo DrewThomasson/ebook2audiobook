@@ -1,0 +1,171 @@
+================================================================================
+02 - PATCHES applied to upstream files
+================================================================================
+
+These patches were needed to get the upstream project working on this Arch
+Linux box at this install path. If you `git pull` and any of the touched files
+change, re-apply the patches (or expect the original symptoms in 05).
+
+--------------------------------------------------------------------------------
+PATCH 1 - System dep: python-mechanize
+--------------------------------------------------------------------------------
+File:       (system, not in repo)
+Why:        Arch's calibre package does NOT pull python-mechanize as a hard
+            dependency, but Calibre's bundled metadata-sources code imports
+            mechanize on every ebook-convert startup. Without it, ebook-convert
+            fails with:
+
+                ModuleNotFoundError: No module named 'mechanize'
+
+            ebook2audiobook captures stderr but doesn't print it, so the only
+            visible symptom is the cryptic Gradio warning:
+
+                convert2epub() <path> does not exists! check write permissions.
+
+Fix:        sudo pacman -S python-mechanize
+
+--------------------------------------------------------------------------------
+PATCH 2 - ebook2audiobook.sh: TMPDIR override
+--------------------------------------------------------------------------------
+File:       ebook2audiobook.sh, line 29
+Why:        The install path is ~86 chars. Linux's AF_UNIX sun_path caps at
+            108 chars. multiprocessing.Manager creates a socket named
+            pymp-XXXX/listener-XXXX inside the project's run/ dir, overflowing
+            the limit and crashing startup with:
+
+                OSError: AF_UNIX path too long
+
+Original:   export TMPDIR="$SCRIPT_DIR/run"
+Patched:    export TMPDIR="${E2A_TMPDIR:-/tmp/e2a}"
+            mkdir -p "$TMPDIR"
+
+--------------------------------------------------------------------------------
+PATCH 3 - lib/conf.py: TMPDIR override (Python layer)
+--------------------------------------------------------------------------------
+File:       lib/conf.py, lines 118 and 131
+Why:        The bash export from PATCH 2 alone wasn't enough — conf.py
+            unconditionally overwrites both tempfile.tempdir and
+            os.environ['TMPDIR'] back to the project's run/ dir during import.
+
+Patched line 118:
+    _tmp_override = os.environ.get('E2A_TMPDIR', '/tmp/e2a')
+    os.makedirs(_tmp_override, exist_ok=True)
+    tempfile.tempdir = _tmp_override
+
+Patched line 131:
+    os.environ['TMPDIR'] = _tmp_override
+
+Note:       run_dir itself is left alone — Calibre cache and Gradio cache
+            still live under the project tree. Only tempfile / TMPDIR move.
+
+--------------------------------------------------------------------------------
+PATCH 4 - ebook2audiobook.sh: LD_LIBRARY_PATH for CUDA libs
+--------------------------------------------------------------------------------
+File:       ebook2audiobook.sh, after line 1027 (after `conda activate`)
+Why:        The pip nvidia-* wheels drop their .so files under
+            python_env/lib/python3.12/site-packages/nvidia/*/lib, which is NOT
+            on the dynamic linker's search path. torchcodec calls
+            ctypes.CDLL("libnppicc.so.13") by bare name, and without
+            LD_LIBRARY_PATH set BEFORE Python starts, the loader can't find
+            it. Symptom:
+
+                OSError: libnppicc.so.13: cannot open shared object file
+
+Patched (right after `conda activate "$SCRIPT_DIR/$PYTHON_ENV"`):
+    _nvlibs=""
+    for _d in "$SCRIPT_DIR/$PYTHON_ENV/lib/python"*/site-packages/nvidia/*/lib; do
+        [ -d "$_d" ] && _nvlibs="${_nvlibs:+$_nvlibs:}$_d"
+    done
+    [ -n "$_nvlibs" ] && export LD_LIBRARY_PATH="$_nvlibs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    unset _d _nvlibs
+
+--------------------------------------------------------------------------------
+PATCH 5 - lib/core.py: PATH for ebook-convert subprocess
+--------------------------------------------------------------------------------
+File:       lib/core.py, around line 885 (inside convert2epub)
+Why:        Calibre's /usr/bin/ebook-convert has shebang `#!/usr/bin/env python3`.
+            When subprocess.run() is called from inside the conda env, PATH
+            starts with python_env/bin, so `env python3` resolves to the
+            conda env's Python 3.12 — which doesn't have python-mechanize
+            (only system Python 3.14 does). Result: ebook-convert crashes
+            (see PATCH 1 for the visible symptom).
+
+Original:   result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding='utf-8'
+            )
+            print(result.stdout)
+            return True
+
+Patched:    ec_env = {**os.environ, 'PATH': '/usr/bin:' + os.environ.get('PATH', '')}
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding='utf-8',
+                env=ec_env
+            )
+            if result.returncode != 0:
+                print(f'[ebook-convert] returncode={result.returncode}')
+                print(f'[ebook-convert STDERR]\n{result.stderr}')
+            print(result.stdout)
+            return True
+
+--------------------------------------------------------------------------------
+PATCH 6 - ebook2audiobook.sh: auto-install nvidia-npp on CUDA installs
+--------------------------------------------------------------------------------
+File:       ebook2audiobook.sh, inside check_conda() right after
+            install_python_packages
+Why:        Upstream installer pulls cuBLAS / cuFFT / cuDNN / cuSPARSE etc.
+            but NOT NPP (NVIDIA Performance Primitives). torchcodec needs
+            libnppicc.so.13 from the npp wheel.
+Patched:    Added a CUDA-conditional pip install of nvidia-npp during the
+            initial env build, so a fresh install or env rebuild includes
+            it automatically — no manual step required:
+
+                if [[ "$(json_get tag 2>/dev/null)" == cu* ]]; then
+                    python3 -m pip install --no-cache-dir 'nvidia-npp>=13.0,<14' \
+                        || return 1
+                fi
+
+Wheel size: ~136 MB. Only runs on CUDA/JETSON installs (tag starts with "cu").
+            For ROCM/MPS/XPU/CPU installs the npp wheel isn't needed.
+
+Manual install (if env exists already without npp, e.g. patch was applied
+after the env was built):
+    source ~/Miniforge3/etc/profile.d/conda.sh
+    conda activate "/mnt/applications/Linux Applications/_Handy Scripts/ebook2audiobook/python_env"
+    pip install 'nvidia-npp>=13.0,<14'
+
+--------------------------------------------------------------------------------
+PATCH 7 - ebook2audiobook.sh: interactive Tesseract OCR language picker
+--------------------------------------------------------------------------------
+File:       ebook2audiobook.sh, end of install_programs() (after the
+            program install loop, before check_required_programs)
+Why:        Upstream installs only one Tesseract language pack matching the
+            system locale. For OCR'ing scanned PDFs in other languages you
+            need extra `tesseract-data-<code>` packs (Arch naming).
+Patched:    Pacman-only block that prints a numbered menu of 16 common OCR
+            languages with sizes, and lets the user pick by number, "all",
+            or skip with blank/none. Skipped automatically if stdin is not
+            a TTY (headless mode), so CI runs aren't blocked.
+
+Languages offered: fra, deu, spa, ita, por, rus, jpn, chi_sim, chi_tra,
+                   ara, kor, nld, swe, hin, tur, pol  (~125 MB total).
+
+Manual install of any one later:
+    sudo pacman -S tesseract-data-<code>     (e.g. tesseract-data-fra)
+
+--------------------------------------------------------------------------------
+ADDED FILE - start.sh
+--------------------------------------------------------------------------------
+File:       start.sh (new)
+Purpose:    Convenience launcher. Starts ebook2audiobook.sh in the background,
+            waits for port 7860 to listen, opens http://0.0.0.0:7860/ in the
+            default browser, and forwards Ctrl+C to the server.
+
+================================================================================

@@ -26,7 +26,8 @@ export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
 export TTS_CACHE="$SCRIPT_DIR/models"
 export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
-export TMPDIR="$SCRIPT_DIR/run"
+export TMPDIR="${E2A_TMPDIR:-/tmp/e2a}"
+mkdir -p "$TMPDIR"
 export APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 export DEVICE_TAG="${DEVICE_TAG:-}"
 export CONDA_HOME="$HOME/Miniforge3"
@@ -644,6 +645,57 @@ EOF
 			fi
 		fi
 	done
+	# Extra Tesseract OCR language packs (Arch-only, interactive). Upstream
+	# installs only the system-locale pack; offer per-language selection of
+	# common world languages so multi-lingual PDF OCR works without re-running
+	# pacman later. Skip the prompt entirely if stdin isn't a TTY (headless / CI).
+	if command -v pacman &>/dev/null && [ -t 0 ]; then
+		_TC=(fra deu spa ita por rus jpn chi_sim chi_tra ara kor nld swe hin tur pol)
+		_TN=("French" "German" "Spanish" "Italian" "Portuguese" "Russian" \
+		     "Japanese" "Chinese Simplified" "Chinese Traditional" "Arabic" \
+		     "Korean" "Dutch" "Swedish" "Hindi" "Turkish" "Polish")
+		_TS=("5.2" "5.9" "7.0" "5.8" "5.7" "7.3" "14" "17" "23" "1.6" "6.1" \
+		     "8.6" "5.5" "1.4" "6.7" "7.1") # MB rounded
+		echo
+		echo "Optional: install extra Tesseract OCR language packs"
+		echo "(needed only for OCR'ing scanned PDFs in these languages)"
+		echo
+		printf "  %2s) %-9s %-22s %sMB\n" "#" "code" "language" "size"
+		for i in "${!_TC[@]}"; do
+			printf "  %2d) %-9s %-22s %sMB\n" "$((i+1))" "${_TC[$i]}" "${_TN[$i]}" "${_TS[$i]}"
+		done
+		echo
+		echo "Enter numbers (comma or space separated, e.g. '1,3,7'), 'all', or blank to skip:"
+		read -r _ocr_ans
+		_picks=()
+		case "${_ocr_ans,,}" in
+			""|n|no|none|skip) ;;
+			a|all) _picks=("${_TC[@]}") ;;
+			*)
+				# Parse: tokens separated by comma/space, each must be 1..N
+				IFS=', ' read -r -a _toks <<< "$_ocr_ans"
+				for t in "${_toks[@]}"; do
+					if [[ "$t" =~ ^[0-9]+$ ]] && (( t >= 1 && t <= ${#_TC[@]} )); then
+						_picks+=("${_TC[$((t-1))]}")
+					else
+						echo "  ignoring invalid entry: $t"
+					fi
+				done
+				;;
+		esac
+		if (( ${#_picks[@]} > 0 )); then
+			_pkgs=()
+			for c in "${_picks[@]}"; do _pkgs+=("tesseract-data-$c"); done
+			echo "Installing: ${_pkgs[*]}"
+			$SUDO pacman -S --needed --noconfirm "${_pkgs[@]}" || \
+				echo -e "\e[33mWarning: some tesseract-data packs failed to install\e[0m"
+			unset _pkgs
+		else
+			echo "Skipping extra OCR language packs. Install any later with:"
+			echo "  sudo pacman -S tesseract-data-<code>     (e.g. tesseract-data-fra)"
+		fi
+		unset _ocr_ans _picks _toks _TC _TN _TS t c i
+	fi
 	if check_required_programs "${HOST_PROGRAMS[@]}"; then
 		return 0
 	else
@@ -753,6 +805,12 @@ function check_conda {
 		fi
 		install_device_packages "$DEVICE_INFO_STR" || exit 1
 		install_python_packages || return 1
+		# nvidia-npp ships libnppicc.so.13 etc that torchcodec needs for audio
+		# decoding; the upstream torch/cuda install set doesn't include it.
+		if [[ "$(json_get tag 2>/dev/null)" == cu* ]]; then
+			echo -e "\e[33mInstalling nvidia-npp (required for torchcodec on CUDA)…\e[0m"
+			python3 -m pip install --no-cache-dir 'nvidia-npp>=13.0,<14' || return 1
+		fi
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
 	fi
@@ -1024,6 +1082,14 @@ EOF
 		check_conda || { echo -e "\e[31m=============== check_conda() failed.\e[0m"; exit 1; }
 		source "$CONDA_ENV" || exit 1
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m=============== conda activate failed.\e[0m"; exit 1; }
+		# torchcodec dlopens libnppicc.so.13 etc. by bare name; pip nvidia-* wheels
+		# install them under site-packages/nvidia/*/lib which isn't on the linker path.
+		_nvlibs=""
+		for _d in "$SCRIPT_DIR/$PYTHON_ENV/lib/python"*/site-packages/nvidia/*/lib; do
+			[ -d "$_d" ] && _nvlibs="${_nvlibs:+$_nvlibs:}$_d"
+		done
+		[ -n "$_nvlibs" ] && export LD_LIBRARY_PATH="$_nvlibs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+		unset _d _nvlibs
 		check_sitecustomized || exit 1
 		check_desktop_app || exit 1
 		python -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1

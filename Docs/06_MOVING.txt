@@ -1,0 +1,91 @@
+================================================================================
+06 - MOVING the project to a new location
+================================================================================
+
+WHAT MOVES CLEANLY
+------------------
+All my patches and added files use $SCRIPT_DIR (auto-resolved at runtime) or
+absolute /tmp/e2a, with NO hardcoded install path. So these all relocate fine:
+
+  - The repo source (lib/, components/, ext/, app.py, scripts, etc.)
+  - models/             (downloaded TTS / NLP / OCR caches)
+  - voices/             (reference WAVs)
+  - audiobooks/         (your output)
+  - ebooks/             (your input library, if any)
+  - Docs/               (this folder)
+  - start.sh            (uses BASH_SOURCE-relative SCRIPT_DIR)
+
+External pieces that stay put:
+  - ~/Miniforge3/       Conda installation, lives in $HOME — unaffected.
+  - /tmp/e2a            Recreated on next launch; nothing to migrate.
+
+WHAT DOES NOT MOVE CLEANLY
+--------------------------
+The conda env at python_env/ is the problem.
+
+It was created with `conda create --prefix "$SCRIPT_DIR/python_env"`, which
+makes it a "prefix" env. Prefix envs bake the absolute install path into:
+  - console-script shebangs (bin/pip, bin/conda, etc.)
+  - conda-meta/history
+  - some compiled-extension RPATHs
+
+Pure-Python imports usually still work after a move, but CUDA / torch
+binaries can crash subtly. The safe move is to delete and recreate the env.
+
+RECOMMENDED PROCEDURE
+---------------------
+
+  1. Stop the server if it is running:
+        Ctrl+C in the start.sh terminal
+        (or)  pkill -f ebook2audiobook
+
+  2. Move the project folder:
+        mv "/mnt/applications/Linux Applications/_Handy Scripts/ebook2audiobook" \
+           /new/path/
+
+  3. Delete the conda env (it'll be recreated automatically):
+        rm -rf /new/path/ebook2audiobook/python_env
+
+  4. Re-run the installer — sees no env, rebuilds at the new location.
+     PATCH 6 (nvidia-npp install) is now folded into the installer itself,
+     so this is the only step needed:
+        cd /new/path/ebook2audiobook
+        ./ebook2audiobook.sh
+
+     This downloads ~5 GB of wheels (including nvidia-npp on CUDA installs)
+     and takes 10-30 minutes.
+
+  5. Test:
+        cd /new/path/ebook2audiobook
+        ./start.sh
+     Convert a small text file to verify end-to-end.
+
+PATH-LENGTH NOTES
+-----------------
+The TMPDIR / AF_UNIX patches (PATCHES 2 and 3) are needed because the
+current install path is ~86 chars. They use absolute /tmp/e2a, so:
+
+  - Move to a SHORTER path: patches become unnecessary but stay harmless.
+    No need to revert them — leave them in.
+  - Move to an EVEN LONGER path: patches still work; /tmp/e2a remains short.
+
+The cleanest way to avoid path-length pain entirely is a path under 80 chars,
+e.g. /opt/ebook2audiobook or ~/ebook2audiobook.
+
+WHAT IF I DON'T WANT TO REBUILD THE ENV?
+----------------------------------------
+You can try moving the env in place — for pure-Python uses it often works.
+If you want to attempt this:
+
+  1. After step 2 above, before deleting python_env, try launching:
+        cd /new/path/ebook2audiobook && ./start.sh
+
+  2. If you get errors mentioning the OLD path, give up and delete + rebuild
+     (steps 3-5).
+
+  3. If everything works, you've gotten lucky and saved 30 minutes. Re-test
+     a CUDA conversion to confirm — that's where breakage usually shows up.
+
+Prefer the rebuild. It's deterministic.
+
+================================================================================

@@ -1,0 +1,73 @@
+================================================================================
+03 - USAGE: launching, the UI, and where output goes
+================================================================================
+
+LAUNCHING
+---------
+Easiest way:
+    cd /mnt/applications/Linux\ Applications/_Handy\ Scripts/_Workshop/ebook2audiobook
+    ./start.sh
+
+start.sh:
+  - Starts ebook2audiobook.sh in the background.
+  - Polls 127.0.0.1:7860 until the server answers.
+  - Opens http://0.0.0.0:7860/ in your default browser.
+  - Forwards Ctrl+C to the server for clean shutdown.
+  - If port 7860 already has a server, just opens the browser and exits.
+
+Direct launch (without auto-open):
+    ./ebook2audiobook.sh
+
+Headless mode (no browser, command-line only):
+    ./ebook2audiobook.sh --headless --ebook /path/to/book.epub --language eng
+
+THE WEB UI
+----------
+Default tab is the conversion form. Set in order:
+
+  1. Ebook file       Drag-and-drop or click to upload. Supported: txt, epub,
+                      pdf, mobi, azw3, fb2, doc, docx, html, rtf, etc.
+
+  2. Language         Defaults to English. Affects sentence splitting, OCR
+                      language pack, and which voice library is shown.
+
+  3. Voice            Choose from voices/<lang>/<age>/<gender>/. Use the play
+                      button (▶) to preview. See 04 for descriptions.
+                      Custom voice: drag a 6-10s clean WAV into the upload box.
+
+  4. Processor        CPU / CUDA. Default CUDA on this box (RTX 4070 Ti).
+
+  5. Output Format    m4b (default, audiobook with chapters) or mp3, flac, etc.
+
+  6. Channel          Mono (default) or stereo.
+
+Click the big green button to start. Progress shows in the Status panel.
+Warnings/errors appear in the top-right toast area.
+
+OUTPUT
+------
+Final files land in:
+    audiobooks/<sessionUUID>/<book-name>.m4b   (or chosen format)
+
+Per-session intermediates are under:
+    tmp/proc-<sessionUUID>/<filehash>/         (epub, chapters/, jpg cover, vtt)
+
+If a conversion is interrupted, you can resume by re-uploading the same file
+or by passing --session <UUID> in headless mode.
+
+PERFORMANCE TIPS
+----------------
+  - First run downloads models (~2 GB) on top of the install. Subsequent runs
+    are much faster.
+  - GPU vs CPU: CUDA is roughly 10-30x faster than CPU for XTTSv2.
+  - VRAM use: ~3 GB during inference for XTTSv2. The 4070 Ti has 12 GB so
+    no concern.
+  - Avoid scanned-image PDFs unless you really mean it — OCR per page is slow.
+    Native-text PDFs and EPUB are much faster.
+
+STOPPING
+--------
+  - Ctrl+C in the start.sh terminal: clean shutdown.
+  - From another terminal:  pkill -f ebook2audiobook.sh
+
+================================================================================

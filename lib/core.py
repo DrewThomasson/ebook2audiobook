@@ -882,13 +882,18 @@ def convert2epub(session_id:str)-> bool:
                 cmd += ['--title', title]
             if author:
                 cmd += ['--authors', author]
+            ec_env = {**os.environ, 'PATH': '/usr/bin:' + os.environ.get('PATH', '')}
             result = subprocess.run(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                encoding='utf-8'
+                encoding='utf-8',
+                env=ec_env
             )
+            if result.returncode != 0:
+                print(f'[ebook-convert] returncode={result.returncode}')
+                print(f'[ebook-convert STDERR]\n{result.stderr}')
             print(result.stdout)
             return True
         except subprocess.CalledProcessError as e:

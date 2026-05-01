@@ -1,0 +1,99 @@
+================================================================================
+05 - TROUBLESHOOTING: known errors and their fixes
+================================================================================
+
+Errors are listed roughly in the order they were hit during initial setup.
+If something on this list breaks again, check that the corresponding patch
+in Docs/02_PATCHES.txt is still in place after any `git pull`.
+
+--------------------------------------------------------------------------------
+SYMPTOM:    OSError: AF_UNIX path too long
+SOURCE:     multiprocessing/connection.py at startup
+CAUSE:      Project install path too long; multiprocessing.Manager socket
+            path overflows 108-char Linux limit.
+FIX:        See PATCHES 2 and 3. /tmp/e2a is the chosen short tmpdir.
+            Override per-run: E2A_TMPDIR=/some/short/path ./start.sh
+
+--------------------------------------------------------------------------------
+SYMPTOM:    convert2epub() <path>/__file.epub does not exists!
+            check write permissions.   (in the Gradio UI top-right toast)
+SOURCE:     lib/core.py — convert2epub() found no output file
+CAUSE 1:    python-mechanize missing on the system.
+FIX 1:      sudo pacman -S python-mechanize     (PATCH 1)
+CAUSE 2:    ebook-convert running under conda env Python (3.12) which lacks
+            mechanize. Hits even when system mechanize is installed.
+FIX 2:      lib/core.py prepends /usr/bin to PATH for the subprocess
+            (PATCH 5). If the patch was reverted, the symptom returns.
+DIAGNOSIS:  After PATCH 5, the terminal shows the ACTUAL Calibre stderr
+            on failure. Without the patch, you only see the cryptic toast.
+
+--------------------------------------------------------------------------------
+SYMPTOM:    OSError: libnppicc.so.13: cannot open shared object file
+            (or similar libnpp* / libcublas* / libcudnn* errors)
+SOURCE:     torchcodec / torch ctypes.CDLL during XTTS audio decoding
+CAUSE 1:    nvidia-npp wheel not installed in the conda env.
+FIX 1:      Activate env, then: pip install 'nvidia-npp>=13.0,<14'  (PATCH 6)
+CAUSE 2:    NPP installed but its lib dir not on LD_LIBRARY_PATH.
+FIX 2:      ebook2audiobook.sh prepends nvidia/*/lib dirs after conda
+            activate (PATCH 4). LD_LIBRARY_PATH must be set BEFORE Python
+            starts; setting it inside Python is too late.
+
+--------------------------------------------------------------------------------
+SYMPTOM:    ModuleNotFoundError: No module named 'mechanize'
+SOURCE:     ebook-convert process
+CAUSE:      See "convert2epub() ... does not exists" above. Same root cause.
+FIX:        PATCHES 1 and 5.
+
+--------------------------------------------------------------------------------
+SYMPTOM:    Browser shows nothing at http://0.0.0.0:7860/
+            but server log says "Running on local URL"
+CAUSE:      0.0.0.0 is a bind address, not always a valid client URL.
+FIX:        Use http://localhost:7860/ or http://127.0.0.1:7860/ instead.
+            Brave/Chrome usually accept 0.0.0.0 anyway by redirecting.
+
+--------------------------------------------------------------------------------
+SYMPTOM:    "Server already running on :7860" when you didn't start one
+CAUSE:      A previous server didn't shut down cleanly; orphan Python
+            process holding the port.
+FIX:        pkill -f ebook2audiobook   (or specifically: pkill -f app.py)
+            Then restart with ./start.sh
+
+--------------------------------------------------------------------------------
+SYMPTOM:    pacman -S calibre installs successfully but ebook-convert
+            crashes immediately
+CAUSE:      Missing optional Python deps Calibre uses (mechanize is the
+            most common). Other less common ones include lxml conflicts.
+FIX:        sudo pacman -S python-mechanize first.
+            If still broken, check with /usr/bin/python3 -c "import mechanize"
+            and inspect ebook-convert traceback directly:
+                /usr/bin/ebook-convert <input> <output>
+
+--------------------------------------------------------------------------------
+SYMPTOM:    Conversion stops at "Computing speaker latents…" with no error
+CAUSE:      Usually a CUDA OOM that wasn't surfaced clearly. Check
+            `nvidia-smi` while a conversion is running.
+FIX:        Switch the Processor dropdown to CPU for one run to confirm,
+            then either close other GPU apps or wait — the 4070 Ti's
+            12 GB is plenty for XTTSv2 alone.
+
+--------------------------------------------------------------------------------
+SYMPTOM:    "Character xx not found in the vocabulary." warnings during TTS
+CAUSE:      Source text contains glyphs the XTTS model wasn't trained on
+            (special punctuation, emoji, exotic accents).
+FIX:        Cosmetic only — the model will skip or hallucinate those
+            glyphs. Pre-process the input ebook to strip/replace them
+            if quality matters.
+
+--------------------------------------------------------------------------------
+SYMPTOM:    Gradio UI loads but Voices dropdown is empty
+CAUSE:      Selected Language has no voices/<lang3>/ entries.
+FIX:        Switch to English (most populated), or upload a custom WAV via
+            the Voices upload box.
+
+--------------------------------------------------------------------------------
+SYMPTOM:    First conversion is very slow even on a small file
+CAUSE:      First-run downloads: stanza NER model (~150 MB), XTTSv2 model
+            (~1.9 GB), Coqui speakers file. One-time only.
+FIX:        Wait. Subsequent runs reuse the cached models from ./models/.
+
+================================================================================

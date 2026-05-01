@@ -19,3 +19,8 @@ models/*
 !audiobooks/cli/.gitkeep
 !audiobooks/gui/gradio/.gitkeep
 !audiobooks/gui/host/.gitkeep
+
+# local-patches additions
+.installed
+/nul
+/ Moving.txt

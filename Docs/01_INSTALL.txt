@@ -1,0 +1,63 @@
+================================================================================
+01 - INSTALL: what was installed and where
+================================================================================
+
+INSTALL METHOD
+--------------
+Native (script-managed conda env), NOT Docker. Docker isn't installed on this
+machine; the project's own ebook2audiobook.sh handles Miniforge3 + a per-project
+conda env automatically.
+
+DIRECTORY LAYOUT
+----------------
+Project root:
+    /mnt/applications/Linux Applications/_Handy Scripts/_Workshop/ebook2audiobook/
+
+Inside the project:
+    python_env/     conda env, Python 3.12, all pip deps
+    models/         downloaded TTS / NLP / OCR models (TTS_CACHE)
+    voices/         reference WAVs for XTTSv2 voice cloning
+    ebooks/         drop input ebooks here
+    audiobooks/     final audiobook output
+    tmp/            per-session conversion working dirs
+    run/            still present but tempfile.tempdir is now /tmp/e2a (see 02)
+    Docs/           this folder
+    start.sh        local launcher (auto-opens browser)
+
+External:
+    ~/Miniforge3/   conda installation (shared, not part of project)
+    /tmp/e2a/       runtime tempdir for AF_UNIX sockets (see 02)
+
+PYTHON VERSION
+--------------
+System Python is 3.14, which is too new for the TTS stack. The script clamps
+the env to MAX 3.12 and creates ./python_env/ via Miniforge3. Always use the
+project's Python, never system Python, for anything related to this project.
+
+SYSTEM PACKAGES (pacman)
+------------------------
+Pre-installed via pacman so the script's interactive sudo prompts are skipped:
+
+    cmake curl pkg-config xcb-util-cursor calibre ffmpeg mediainfo nodejs
+    espeak-ng cargo rust sox tesseract tesseract-data-eng python-mechanize
+
+Note the Arch-specific names:
+    tesseract-data-eng     (not tesseract-ocr-eng)
+    python-mechanize       (NOT pulled by the calibre package — required, see 02)
+
+CUDA
+----
+Hardware auto-detected as CUDA. The installer pulled torch + a slate of
+nvidia-* CUDA 13 wheels (cuBLAS, cuDNN, cuFFT, cuSPARSE, etc.) into the
+conda env. NVIDIA NPP was NOT pulled and had to be added manually:
+
+    pip install 'nvidia-npp>=13.0,<14'   (~136 MB, see 02)
+
+DISK USE
+--------
+Approx. sizes after first end-to-end run:
+    python_env/        ~7-8 GB    (torch + CUDA libs dominate)
+    models/            ~2 GB      (XTTSv2 + stanza + tessdata as needed)
+    Total project      ~10-12 GB
+
+================================================================================
