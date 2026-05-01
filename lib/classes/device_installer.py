@@ -1146,11 +1146,12 @@ class DeviceInstaller():
     def check_numpy(self)->bool:
         try:
             numpy_version = self.get_package_version('numpy') or None
-            numpy_version_base = self.version_tuple(numpy_version) or None
-            torch_version = self.get_package_version('torch')
-            torch_version_base = self.version_tuple(torch_version)
+            torch_version = self.get_package_version('torch') or None
             min_cpu_baseline = self.cpu_baseline
             numpy_pkg = None
+            if torch_version is None:
+                return False
+            torch_version_base = self.version_tuple(torch_version)
             if numpy_version is None:
                 if torch_version_base <= self.version_tuple('2.2.2'):
                     numpy_pkg = 'numpy<2'
@@ -1158,12 +1159,14 @@ class DeviceInstaller():
                     numpy_pkg = 'numpy<2.4.0'
                 else:
                     numpy_pkg = 'numpy'
-            elif torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
-                numpy_pkg = 'numpy<2'
-            elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
-                numpy_pkg = 'numpy<2.4.0'
-            if numpy_pkg is not None:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', '--force-reinstall', numpy_pkg])
+            else:
+                numpy_version_base = self.version_tuple(numpy_version)
+                if torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
+                    numpy_pkg = 'numpy<2'
+                elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
+                    numpy_pkg = 'numpy<2.4.0'
+                if numpy_pkg is not None:
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', '--force-reinstall', numpy_pkg])
             return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
