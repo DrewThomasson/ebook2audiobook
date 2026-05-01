@@ -23,6 +23,7 @@ mutagen
 PyOpenGL
 phonemizer-fork
 pydub
+soundfile
 unidecode
 langdetect
 phonemizer
