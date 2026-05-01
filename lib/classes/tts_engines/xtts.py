@@ -117,7 +117,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         trim_audio_buffer = 0.006
                         if part.endswith("'"):
                             part = part[:-1]
-                        part = part.replace('.', ' ;\n')
+                        part = part.replace('.', ';\n')
                         if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
                             self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
                         else:
