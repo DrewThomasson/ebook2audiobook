@@ -410,8 +410,8 @@ class TTSUtils:
                             }.items()
                             if self.session.get(key) is not None
                         }
+                        engine.to(device)
                         with torch.no_grad():
-                            engine.to(device)
                             with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 result = engine.inference(
                                     text=default_text.strip(),
@@ -420,8 +420,10 @@ class TTSUtils:
                                     speaker_embedding=speaker_embedding,
                                     **fine_tuned_params,
                                 )
-                            engine.to(devices['CPU']['proc'])
+                        engine.to(devices['CPU']['proc'])
                         audio_sentence = result.get('wav')
+                        if torch.is_tensor(audio_sentence):
+                            audio_sentence = audio_sentence.detach().cpu()
                         if is_audio_data_valid(audio_sentence):
                             sourceTensor = self._tensor_type(audio_sentence)
                             audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
@@ -445,7 +447,12 @@ class TTSUtils:
                                 new_current_voice = str(voices_root.joinpath(lang_dir, *rel.parts[1:]))
                                 os.makedirs(os.path.dirname(new_current_voice), exist_ok=True)
                                 proc_current_voice = new_current_voice.replace('.wav', '_temp.wav')
-                                torchaudio.save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate'])
+                                #torchaudio.save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate'])
+                                if not self.audio_save(proc_current_voice, audio_tensor, default_engine_settings[xtts]['samplerate']):
+                                    error = f'audio_save() error: cannot save {proc_current_voice}'
+                                    print(error)
+                                    Path(proc_current_voice).unlink(missing_ok=True)
+                                    return False
                                 if normalize_audio(proc_current_voice, new_current_voice, default_audio_proc_samplerate, self.session['is_gui_process']):
                                     del audio_sentence, sourceTensor, audio_tensor
                                     Path(proc_current_voice).unlink(missing_ok=True)
@@ -593,3 +600,23 @@ class TTSUtils:
         else:
             error = 'This SML is not recognized'
             return False, error
+            
+    def audio_save(self, sentence_file, segment_tensor:torch.Tensor, samplerate:int)->bool:
+        import soundfile as sf
+        formats = {"wav": "FLOAT", "flac": "PCM_24", "ogg": "VORBIS"}
+        path = os.fspath(sentence_file)
+        fmt = os.path.splitext(path)[1].lstrip('.').lower()
+        if fmt not in formats:
+            raise ValueError(f'audio_save: format {fmt!r} not in {tuple(formats)}')
+        audio_np = segment_tensor.detach().cpu().numpy().squeeze(0)
+        try:
+            sf.write(path, audio_np, samplerate, subtype=formats[fmt])
+        except Exception as e:
+            # remove any partial file from a failed write
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+            raise RuntimeError(f'audio_save({path}): {e}') from e
+        return True
