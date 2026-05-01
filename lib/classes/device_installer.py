@@ -31,9 +31,8 @@ class DeviceInstaller():
         machine = platform.machine().lower()
         if machine not in ('x86_64', 'amd64', 'x86'):
             return True
-        try:
-            self.get_package_version('py-cpuinfo')
-        except ImportError:
+        cpuinfo_version = self.get_package_version('py-cpuinfo')
+        if not cpuinfo_version:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', 'py-cpuinfo'])
         from cpuinfo import get_cpu_info
         flags = set(get_cpu_info().get('flags', []))
@@ -1146,12 +1145,8 @@ class DeviceInstaller():
 
     def check_numpy(self)->bool:
         try:
-            try:
-                numpy_version = self.get_package_version('numpy')
-                numpy_version_base = self.version_tuple(numpy_version)
-            except Exception:
-                numpy_version = None
-                numpy_version_base = None
+            numpy_version = self.get_package_version('numpy') or None
+            numpy_version_base = self.version_tuple(numpy_version) or None
             torch_version = self.get_package_version('torch')
             torch_version_base = self.version_tuple(torch_version)
             min_cpu_baseline = self.cpu_baseline
