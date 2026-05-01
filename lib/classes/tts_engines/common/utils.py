@@ -524,6 +524,26 @@ class TTSUtils:
         sf.write(tmp_path,wav_numpy,expected_sr,subtype='PCM_16')
         return tmp_path
 
+    def _resample_audiodata(self,wav_data,source_sr:int,expected_sr:int)->Any:
+        import torch
+        import numpy as np
+        if isinstance(wav_data,list):
+            wav_data = np.asarray(wav_data,dtype=np.float32)
+        if isinstance(wav_data,np.ndarray):
+            waveform = torch.from_numpy(wav_data).float()
+        elif isinstance(wav_data,torch.Tensor):
+            waveform = wav_data.float()
+        else:
+            raise TypeError(f'unsupported wav_data type: {type(wav_data)}')
+        if waveform.ndim==1:
+            waveform = waveform.unsqueeze(0)
+        if waveform.size(0)>1:
+            waveform = waveform.mean(dim=0,keepdim=True)
+        if source_sr!=expected_sr:
+            resampler = self._get_resampler(source_sr,expected_sr)
+            waveform = resampler(waveform)
+        return waveform.squeeze(0).cpu().numpy()
+
     def _set_voice(self, voice:str|None)->tuple:
         current_voice = (
             voice if voice is not None 
