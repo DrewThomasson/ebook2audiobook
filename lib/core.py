@@ -2244,7 +2244,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 block_id = block['id']
                 sentences = block['sentences']
                 block_len = len(sentences)
-                valid_idx = [i for i,s in enumerate(sentences) if any(c.isalnum() for c in s.strip())]
+                valid_idx = {i for i,s in enumerate(sentences) if any(c.isalnum() for c in s.strip())}
                 last_idx = block_len - 1
                 sent_start = global_sent
                 current_hash = block_hash(block)
@@ -2307,12 +2307,12 @@ def convert_chapters2audio(session_id:str)->bool:
                                 save_json_blocks(session_id, 'blocks_current')
                                 last_save_time = now
                         global_sent += 1
-                    total_progress = (t.n + 1) / total_sentences
-                    if session['is_gui_process']:
-                        progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
-                    t.set_description(f'{total_progress * 100:.2f}%')
-                    print(f' : {sentence}')
-                    t.update(1)
+                        total_progress = (t.n + 1) / total_sentences
+                        if session['is_gui_process']:
+                            progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
+                        t.set_description(f'{total_progress * 100:.2f}%')
+                        print(f' : {sentence}')
+                        t.update(1)
                 sent_end = global_sent - 1
                 show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
                 if converted or block_changed or missing_sentences:
