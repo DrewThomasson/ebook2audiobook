@@ -85,12 +85,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 #pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
                 self.engine.synthesizer.voice_dir = pth_voice_dir
                 fine_tuned_params = {
-                    key.removeprefix('bark_'): cast_type(self.session[key])
-                    for key, cast_type in {
-                        'bark_text_temp': float,
-                        'bark_waveform_temp': float
-                    }.items()
-                    if self.session.get(key) is not None
+
                 }
                 self.audio_segments = []
                 self.engine.to(device)
