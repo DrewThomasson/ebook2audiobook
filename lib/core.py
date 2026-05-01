@@ -2162,7 +2162,7 @@ def convert_chapters2audio(session_id:str)->bool:
         block_dir = os.path.join(session['sentences_dir'], block_id)
         missing = set()
         for j in valid_idx:
-            is_sml = bool(SML_TAG_PATTERN.fullmatch(sentences[j]))
+            is_sml = bool(SML_TAG_PATTERN.fullmatch(sentences[j].strip()))
             if (not is_sml) or (j == last_idx):
                 sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                 if not os.path.exists(sentence_file):
