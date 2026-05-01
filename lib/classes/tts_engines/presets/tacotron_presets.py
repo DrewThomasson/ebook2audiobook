@@ -12,7 +12,7 @@ models = {
         "voice": default_engine_settings[TTS_ENGINES['TACOTRON2']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['TACOTRON2']]['files'],
         "samplerate": {
-            "mai/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate'],
+            "mai/tacotron2-DDC": 24000,
             "thorsten/tacotron2-DDC": 24000,
             "ljspeech/tacotron2-DDC": default_engine_settings[TTS_ENGINES['TACOTRON2']]['samplerate']
         },
