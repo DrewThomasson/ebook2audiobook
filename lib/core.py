@@ -2920,6 +2920,7 @@ def convert_ebook(args:dict)->tuple:
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
+                print(f'*********** Session: {session_id} **************\n{session_info}')
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
