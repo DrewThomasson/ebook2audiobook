@@ -416,14 +416,14 @@ class TTSUtils:
                         }
                         engine.to(device)
                         with torch.no_grad():
-                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                result = engine.inference(
-                                    text=default_text.strip(),
-                                    language=self.session['language_iso1'],
-                                    gpt_cond_latent=gpt_cond_latent,
-                                    speaker_embedding=speaker_embedding,
-                                    **fine_tuned_params,
-                                )
+                            #with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                            result = engine.inference(
+                                text=default_text.strip(),
+                                language=self.session['language_iso1'],
+                                gpt_cond_latent=gpt_cond_latent,
+                                speaker_embedding=speaker_embedding,
+                                **fine_tuned_params,
+                            )
                         engine.to(devices['CPU']['proc'])
                         audio_sentence = result.get('wav')
                         if torch.is_tensor(audio_sentence):
