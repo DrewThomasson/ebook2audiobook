@@ -143,6 +143,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             if part.endswith("'"):
                                 part = part[:-1]
                             part = re.sub(not_supported_punc_pattern, ' ', part).strip()
+                            samplerate = self.params['samplerate']
                             if use_zs:
                                 tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                                 tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
@@ -183,9 +184,9 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                         return False, error
                                 else:
                                     tmp_out_wav = tmp_in_wav
-                                self.params['samplerate'] = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
-                                source_wav = self._resample_wav(tmp_out_wav, self.params['samplerate'])
-                                target_wav = self._resample_wav(self.params['current_voice'], self.params['samplerate'])
+                                samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
+                                source_wav = self._resample_wav(tmp_out_wav, samplerate)
+                                target_wav = self._resample_wav(self.params['current_voice'], samplerate)
                                 audio_part = self.engine_zs.voice_conversion(
                                     source_wav=source_wav,
                                     target_wav=target_wav

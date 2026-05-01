@@ -502,13 +502,29 @@ class TTSUtils:
             )
         return self.resampler_cache[key]
 
-    def _resample_wav(self,wav_path:str,expected_sr:int)->str:
+    def _resample_wav(self,wav_input,expected_sr:int,source_sr:int=None)->str:
         import torchaudio
         import soundfile as sf
         import torch
-        waveform,orig_sr = torchaudio.load(wav_path)
-        if orig_sr==expected_sr and waveform.size(0)==1:
-            return wav_path
+        import numpy as np
+        if isinstance(wav_input,str):
+            waveform,orig_sr = torchaudio.load(wav_input)
+            if orig_sr==expected_sr and waveform.size(0)==1:
+                return wav_input
+        else:
+            if source_sr is None:
+                raise ValueError('source_sr is required when wav_input is audio data')
+            if isinstance(wav_input,list):
+                wav_input = np.asarray(wav_input,dtype=np.float32)
+            if isinstance(wav_input,np.ndarray):
+                waveform = torch.from_numpy(wav_input).float()
+            elif isinstance(wav_input,torch.Tensor):
+                waveform = wav_input.float()
+            else:
+                raise TypeError(f'unsupported wav_input type: {type(wav_input)}')
+            if waveform.ndim==1:
+                waveform = waveform.unsqueeze(0)
+            orig_sr = source_sr
         if waveform.size(0)>1:
             waveform = waveform.mean(dim=0,keepdim=True)
         if orig_sr!=expected_sr:
