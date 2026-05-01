@@ -149,14 +149,14 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                 else:
                                     self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], load_sr=24000, sound_norm_refs=True)
                                 self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
-                            #with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                            result = self.engine.inference(
-                                text=part,
-                                language=self.session['language_iso1'],
-                                gpt_cond_latent=self.params['gpt_cond_latent'],
-                                speaker_embedding=self.params['speaker_embedding'],
-                                **fine_tuned_params
-                            )
+                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                result = self.engine.inference(
+                                    text=part,
+                                    language=self.session['language_iso1'],
+                                    gpt_cond_latent=self.params['gpt_cond_latent'],
+                                    speaker_embedding=self.params['speaker_embedding'],
+                                    **fine_tuned_params
+                                )
                             audio_part = result.get('wav')
                             if torch.is_tensor(audio_part):
                                 audio_part = audio_part.detach().cpu()
