@@ -2215,7 +2215,7 @@ def convert_chapters2audio(session_id:str)->bool:
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
             return False
-        total_sentences = sum(_count_sentences(b['sentences']) for b in blocks if b['keep'] and b['text'].strip())
+        total_sentences = sum(len(b['sentences']) for b in blocks if b['keep'] and b['text'].strip())
         if total_sentences == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No sentences found!'})
             return False
