@@ -153,7 +153,7 @@ os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
 os.environ['TORCH_CPP_LOG_LEVEL'] = 'ERROR'
-os.environ['MIOPEN_FIND_MODE'] = 'NORMAL'
+os.environ['MIOPEN_FIND_MODE'] = 'FAST'
 os.environ['MIOPEN_FIND_ENFORCE'] = 'SEARCH_DB_UPDATE'
 os.environ['MIOPEN_LOG_LEVEL'] = '3'
 if DEVICE_SYSTEM == systems['WINDOWS']:
