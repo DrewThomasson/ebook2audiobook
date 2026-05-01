@@ -170,9 +170,9 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                         return False, error
                                 else:
                                     tmp_out_wav = tmp_in_wav
-                                self.params['samplerate'] = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
-                                source_wav = self._resample_wav(tmp_out_wav, self.params['samplerate'])
-                                target_wav = self._resample_wav(self.params['current_voice'], self.params['samplerate'])
+                                samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
+                                source_wav = self._resample_wav(tmp_out_wav, samplerate)
+                                target_wav = self._resample_wav(self.params['current_voice'], samplerate)
                                 audio_part = self.engine_zs.voice_conversion(
                                     source_wav=source_wav,
                                     target_wav=target_wav
@@ -183,6 +183,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     os.remove(tmp_out_wav)
                                 if os.path.exists(source_wav):
                                     os.remove(source_wav)
+                                audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate']) 
                             else:
                                 with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(

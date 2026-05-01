@@ -143,7 +143,6 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             if part.endswith("'"):
                                 part = part[:-1]
                             part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                            samplerate = self.params['samplerate']
                             if use_zs:
                                 tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                                 tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
@@ -197,6 +196,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                     os.remove(tmp_out_wav)
                                 if os.path.exists(source_wav):
                                     os.remove(source_wav)
+                                audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
                             else:
                                 with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
