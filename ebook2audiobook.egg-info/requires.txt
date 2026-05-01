@@ -23,6 +23,7 @@ pythainlp
 mutagen
 PyOpenGL
 phonemizer-fork
+num2words2
 pydub
 soundfile
 unidecode
@@ -43,5 +44,4 @@ huggingface_hub>=1.0; python_version >= '3.12'
 transformers==4.57.6; python_version < '3.12'
 transformers>=5.0.0; python_version >= '3.12'
 coqui-tts[languages]==0.27.5
-ext/py/num2words
 ext/py/demucs
