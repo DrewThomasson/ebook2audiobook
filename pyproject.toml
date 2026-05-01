@@ -18,6 +18,7 @@ authors = [
 ]
 dependencies = [
     "cryptography",
+	"py-cpuinfo",
     "tqdm",
     "regex",
     "docker",

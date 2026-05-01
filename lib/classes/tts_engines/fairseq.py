@@ -186,7 +186,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                     error = f'part_tensor not valid'
                                     return False, error
                             else:
-                                error = f'audio_sentence not valid'
+                                error = f'audio_part not valid'
                                 return False, error
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
