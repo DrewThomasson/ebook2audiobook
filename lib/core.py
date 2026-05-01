@@ -28,7 +28,7 @@ from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy, SyncManager
 from stanza.pipeline.core import Pipeline, DownloadMethod
-from num2words import num2words
+from num2words2 import num2words
 from pathlib import Path
 from PIL import Image
 from pydub import AudioSegment
@@ -1822,7 +1822,6 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
         n = int(m.group(1))
         if is_num2words_compat:
             try:
-                from num2words import num2words
                 return num2words(n, to='ordinal', lang=(lang_iso1 or 'en'))
             except Exception:
                 pass
