@@ -127,7 +127,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             if self.speaker not in self.engine.speakers:
                                 self.engine.to(devices['CPU']['proc']) # TODO: to remove once coqui-tts bug fixed
                                 speaker_argument['speaker_wav'] = self.params['current_voice']
-                            else:
+                            if os.path.exists(os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth'))
                                 self.engine.to(device) # TODO: to remove once coqui-tts bug fixed
                             with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 audio_part = self.engine.tts(
