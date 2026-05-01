@@ -94,7 +94,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if self.session.get(key) is not None
                 }
                 self.audio_segments = []
-                self.engine.to(device)
                 with torch.no_grad():
                     for part in sentence_parts:
                         part = part.strip()
@@ -127,6 +126,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             if self.speaker not in self.engine.speakers:
                                 speaker_argument['speaker_wav'] = self.params['current_voice']
                             with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                self.engine.to(device)
                                 audio_part = self.engine.tts(
                                     text=part,
                                     speaker=self.speaker,
