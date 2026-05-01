@@ -55,24 +55,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         error = 'load_engine(): engine is None'
         raise RuntimeError(error)
 
-    #### TO REMOVE ONCE coqui-tts bug fixed
-    def _ensure_bark_voice_device(self, voice_dir, speaker, target_device):
-        '''Return the device Bark must run on to synthesize this voice.
-        CPU if the cloned voice isn't on disk yet (avoids the CUDA->numpy
-        bug in coqui-tts <= 0.27.5 voice cloning); target_device otherwise.
-        First-time stat per (voice_dir, speaker) is cached on self.'''
-        cache = self.__dict__.setdefault('_bark_voice_ready', set())
-        key = (voice_dir, speaker)
-        if key in cache:
-            return target_device
-        if any(
-            os.path.exists(os.path.join(voice_dir, f'{speaker}{ext}'))
-            for ext in ('.npz', '.pth')
-        ):
-            cache.add(key)
-            return target_device
-        return devices['CPU']['proc']
-
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
@@ -144,10 +126,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             speaker_argument = {}
                             if self.speaker not in self.engine.speakers:
                                 speaker_argument['speaker_wav'] = self.params['current_voice']
-                                needs_device = self._ensure_bark_voice_device(pth_voice_dir, self.speaker, device)
-                            else:
-                                needs_device = device
-
                             if next(self.engine.parameters()).device != torch.device(needs_device):
                                 self.engine.to(needs_device)
                             #with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
