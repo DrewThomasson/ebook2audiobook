@@ -601,7 +601,7 @@ class TTSUtils:
             error = 'This SML is not recognized'
             return False, error
             
-    def audio_save(self, sentence_file, segment_tensor:torch.Tensor, samplerate:int)->bool:
+    def audio_save(self, sentence_file, segment_tensor:any, samplerate:int)->bool:
         import soundfile as sf
         formats = {"wav": "FLOAT", "flac": "PCM_24", "ogg": "VORBIS"}
         path = os.fspath(sentence_file)
