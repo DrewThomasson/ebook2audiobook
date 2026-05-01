@@ -223,8 +223,12 @@ class TTSUtils:
             if hasattr(torch.backends, 'cudnn'):
                 try:
                     torch.backends.cudnn.enabled = True
-                    torch.backends.cudnn.deterministic = not quality_mode
-                    torch.backends.cudnn.benchmark = False
+                    if is_rocm:
+                        torch.backends.cudnn.benchmark = True
+                        torch.backends.cudnn.deterministic = False
+                    else:
+                        torch.backends.cudnn.deterministic = not quality_mode
+                        torch.backends.cudnn.benchmark = False
                 except Exception:
                     pass
             # TF32 — Ampere+, non-Jetson, non-ROCm, quality mode only
