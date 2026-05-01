@@ -1210,8 +1210,7 @@ class DeviceInstaller():
 
         try:
             if device_info_str:
-                #device_info = json.loads(device_info_str)
-                device_info = {'name': 'rocm', 'os': 'win', 'arch': 'amd64', 'pyvenv': [3, 12], 'tag': 'rocm-rel-7.2.1', 'note': ''}
+                device_info = json.loads(device_info_str)
                 if device_info:
                     print(f'---> Hardware detected: {device_info}')
                     tag = device_info.get('tag')
