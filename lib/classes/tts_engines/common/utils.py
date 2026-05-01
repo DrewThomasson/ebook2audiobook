@@ -502,29 +502,13 @@ class TTSUtils:
             )
         return self.resampler_cache[key]
 
-    def _resample_wav(self,wav_input,expected_sr:int,source_sr:int=None)->str:
+    def _resample_wav(self,wav_path:str,expected_sr:int)->str:
         import torchaudio
         import soundfile as sf
         import torch
-        import numpy as np
-        if isinstance(wav_input,str):
-            waveform,orig_sr = torchaudio.load(wav_input)
-            if orig_sr==expected_sr and waveform.size(0)==1:
-                return wav_input
-        else:
-            if source_sr is None:
-                raise ValueError('source_sr is required when wav_input is audio data')
-            if isinstance(wav_input,list):
-                wav_input = np.asarray(wav_input,dtype=np.float32)
-            if isinstance(wav_input,np.ndarray):
-                waveform = torch.from_numpy(wav_input).float()
-            elif isinstance(wav_input,torch.Tensor):
-                waveform = wav_input.float()
-            else:
-                raise TypeError(f'unsupported wav_input type: {type(wav_input)}')
-            if waveform.ndim==1:
-                waveform = waveform.unsqueeze(0)
-            orig_sr = source_sr
+        waveform,orig_sr = torchaudio.load(wav_path)
+        if orig_sr==expected_sr and waveform.size(0)==1:
+            return wav_path
         if waveform.size(0)>1:
             waveform = waveform.mean(dim=0,keepdim=True)
         if orig_sr!=expected_sr:
@@ -539,6 +523,26 @@ class TTSUtils:
         tmp_fh.close()
         sf.write(tmp_path,wav_numpy,expected_sr,subtype='PCM_16')
         return tmp_path
+
+    def _resample_audiodata(self,wav_data,source_sr:int,expected_sr:int)->Any:
+        import torch
+        import numpy as np
+        if isinstance(wav_data,list):
+            wav_data = np.asarray(wav_data,dtype=np.float32)
+        if isinstance(wav_data,np.ndarray):
+            waveform = torch.from_numpy(wav_data).float()
+        elif isinstance(wav_data,torch.Tensor):
+            waveform = wav_data.float()
+        else:
+            raise TypeError(f'unsupported wav_data type: {type(wav_data)}')
+        if waveform.ndim==1:
+            waveform = waveform.unsqueeze(0)
+        if waveform.size(0)>1:
+            waveform = waveform.mean(dim=0,keepdim=True)
+        if source_sr!=expected_sr:
+            resampler = self._get_resampler(source_sr,expected_sr)
+            waveform = resampler(waveform)
+        return waveform.squeeze(0).cpu().numpy()
 
     def _set_voice(self, voice:str|None)->tuple:
         current_voice = (
