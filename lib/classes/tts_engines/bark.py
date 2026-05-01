@@ -94,6 +94,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if self.session.get(key) is not None
                 }
                 self.audio_segments = []
+                #self.engine.to(device) # TODO: uncomment once coqui-tts bug solved
                 with torch.no_grad():
                     for part in sentence_parts:
                         part = part.strip()
