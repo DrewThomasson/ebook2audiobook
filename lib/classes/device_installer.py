@@ -31,11 +31,6 @@ class DeviceInstaller():
         machine = platform.machine().lower()
         if machine not in ('x86_64', 'amd64', 'x86'):
             return True
-        try:
-            import cpuinfo
-        except ImportError:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', 'py-cpuinfo'])
-            import cpuinfo
         from cpuinfo import get_cpu_info
         flags = set(get_cpu_info().get('flags', []))
         return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
