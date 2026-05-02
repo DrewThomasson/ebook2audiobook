@@ -416,14 +416,14 @@ class TTSUtils:
                         }
                         engine.to(device)
                         with torch.no_grad():
-                            #with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                            result = engine.inference(
-                                text=default_text.strip(),
-                                language=self.session['language_iso1'],
-                                gpt_cond_latent=gpt_cond_latent,
-                                speaker_embedding=speaker_embedding,
-                                **fine_tuned_params,
-                            )
+                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                result = engine.inference(
+                                    text=default_text.strip(),
+                                    language=self.session['language_iso1'],
+                                    gpt_cond_latent=gpt_cond_latent,
+                                    speaker_embedding=speaker_embedding,
+                                    **fine_tuned_params,
+                                )
                         engine.to(devices['CPU']['proc'])
                         audio_sentence = result.get('wav')
                         if torch.is_tensor(audio_sentence):
@@ -603,10 +603,10 @@ class TTSUtils:
         elif tag == 'voice':
             if close:
                 self.params['inline_voice'] = None
-                new_voice, error = self._set_voice(self.params['block_voice'])
-                if new_voice is None and error is not None:
+                voice_orig, error = self._set_voice(self.params['block_voice'])
+                if voice_orig is None and error is not None:
                     return False, error
-                self.params['block_voice'] = self.params['current_voice'] = new_voice
+                self.params['block_voice'] = self.params['current_voice'] = voice_orig
                 return True, None
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
