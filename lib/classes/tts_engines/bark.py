@@ -63,7 +63,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
-                self.engine.to(devices['CPU']['proc'])
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
@@ -156,6 +155,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             else:
                                 error = f'audio_part not valid'
                                 return False, error
+                self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
@@ -163,7 +163,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error
                     del segment_tensor
-                    self.engine.to(devices['CPU']['proc'])
                     self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
