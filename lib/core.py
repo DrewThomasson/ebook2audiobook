@@ -2203,6 +2203,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             show_alert(session_id, {'type': 'warning', 'msg': error})
                             return False
                     voice_cache[old_voice] = new_voice
+                print(f'voice: ----------------------- {new_voice} ---------------')
                 if new_voice != old_voice:
                     is_voice_changed = True
                     block['voice'] = new_voice
