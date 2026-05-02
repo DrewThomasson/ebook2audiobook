@@ -2211,6 +2211,7 @@ def convert_chapters2audio(session_id:str)->bool:
             if is_voice_changed:
                 blocks_saved['blocks'] = list(prev_blocks.values())
                 session['blocks_saved'] = blocks_saved
+                session['blocks_current'] = blocks_current
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
@@ -2280,6 +2281,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 os.makedirs(block_dir, exist_ok=True)
                 blocks_current['block_resume'] = x
                 blocks_current['sentence_resume'] = start_sentence
+                session['blocks_current'] = blocks_current
                 save_json_blocks(session_id, 'blocks_current')
                 converted = False
                 block_voice = block.get('voice') or session.get('voice')
@@ -2300,10 +2302,12 @@ def convert_chapters2audio(session_id:str)->bool:
                             blocks_current['sentence_resume'] = j
                             now = time.monotonic()
                             if not baseline_initialized:
+                                session['blocks_current'] = blocks_current
                                 session['blocks_saved'] = copy.deepcopy(blocks_current)
                                 save_json_blocks(session_id, 'blocks_saved')
                                 baseline_initialized = True
                             elif now - last_save_time >= 5:
+                                session['blocks_current'] = blocks_current
                                 save_json_blocks(session_id, 'blocks_current')
                                 last_save_time = now
                         global_sent += 1
@@ -2317,11 +2321,15 @@ def convert_chapters2audio(session_id:str)->bool:
                 show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
                 if converted or block_changed or missing_sentences:
                     show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
+                    session['blocks_current'] = blocks_current
                     save_json_blocks(session_id, 'blocks_current')
                     last_save_time = time.monotonic()
                     if not combine_audio_sentences(session_id, chapter_audio_file, block_id, block_len):
                         show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
                         return False
+            blocks_current['block_resume'] = 0
+            blocks_current['sentence_resume'] = 0
+            session['blocks_current'] = blocks_current
             save_json_blocks(session_id, 'blocks_current')
             session['blocks_saved'] = copy.deepcopy(blocks_current)
             save_json_blocks(session_id, 'blocks_saved')
