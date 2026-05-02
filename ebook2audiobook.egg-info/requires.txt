@@ -6,6 +6,13 @@ docker
 ebooklib
 python-pptx
 python-docx
+diffq
+lameenc
+museval
+openunmix
+submitit
+treetable
+dora-search
 fastapi
 hf_xet
 beautifulsoup4
