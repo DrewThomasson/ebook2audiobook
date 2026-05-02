@@ -183,7 +183,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     os.remove(tmp_out_wav)
                                 if os.path.exists(source_wav):
                                     os.remove(source_wav)
-                                audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate']) 
+                                audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
                             else:
                                 with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
