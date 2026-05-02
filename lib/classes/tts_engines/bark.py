@@ -63,6 +63,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
+                self.engine.to(devices['CPU']['proc'])
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
@@ -93,7 +94,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if self.session.get(key) is not None
                 }
                 self.audio_segments = []
-                self.engine.to(device)
+                #self.engine.to(device) # TODO: uncomment once coqui-tts bug solved
                 with torch.no_grad():
                     for part in sentence_parts:
                         part = part.strip()
@@ -125,14 +126,14 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             speaker_argument = {}
                             if self.speaker not in self.engine.speakers:
                                 speaker_argument['speaker_wav'] = self.params['current_voice']
-                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                audio_part = self.engine.tts(
-                                    text=part,
-                                    speaker=self.speaker,
-                                    voice_dir=pth_voice_dir,
-                                    **speaker_argument,
-                                    **fine_tuned_params
-                                )
+                            #with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                            audio_part = self.engine.tts(
+                                text=part,
+                                speaker=self.speaker,
+                                voice_dir=pth_voice_dir,
+                                **speaker_argument,
+                                **fine_tuned_params
+                            )
                             if torch.is_tensor(audio_part):
                                 audio_part = audio_part.detach().cpu()
                             if is_audio_data_valid(audio_part):

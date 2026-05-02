@@ -2177,14 +2177,15 @@ def convert_chapters2audio(session_id:str)->bool:
     try:
         if session['cancellation_requested']:
             return False
+        print(f'*********** Session: {session_id} **************\n{session_info}')
         tts_manager = TTSManager(session)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
+        block_resume = blocks_current['block_resume']
+        sentence_resume = blocks_current['sentence_resume']
         blocks_saved = session['blocks_saved']
         prev_blocks_list = blocks_saved.get('blocks', [])
         prev_blocks = {b['id']: b for b in prev_blocks_list} if isinstance(prev_blocks_list, list) else prev_blocks_list
-        block_resume = blocks_current['block_resume']
-        sentence_resume = blocks_current['sentence_resume']
         xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
         if session['language'] != 'eng' and session['language'] in xtts_languages:
             is_voice_changed = False
@@ -2205,11 +2206,17 @@ def convert_chapters2audio(session_id:str)->bool:
                 if new_voice != old_voice:
                     is_voice_changed = True
                     block['voice'] = new_voice
-                    if block['id'] in prev_blocks:
-                        prev_blocks[block['id']]['voice'] = new_voice
+                    if blocks_saved:
+                        if block['id'] in prev_blocks:
+                            prev_blocks[block['id']]['voice'] = new_voice
             if is_voice_changed:
-                blocks_saved['blocks'] = list(prev_blocks.values())
-                session['blocks_saved'] = blocks_saved
+                if blocks_saved:
+                    blocks_saved['blocks'] = list(prev_blocks.values())
+                    session['blocks_saved'] = blocks_saved
+                    save_json_blocks(session_id, 'blocks_saved')
+                blocks_current['blocks'] = blocks
+                session['blocks_current'] = blocks_current
+                save_json_blocks(session_id, 'blocks_current')
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
@@ -2279,6 +2286,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 os.makedirs(block_dir, exist_ok=True)
                 blocks_current['block_resume'] = x
                 blocks_current['sentence_resume'] = start_sentence
+                session['blocks_current'] = blocks_current
                 save_json_blocks(session_id, 'blocks_current')
                 converted = False
                 block_voice = block.get('voice') or session.get('voice')
@@ -2299,10 +2307,12 @@ def convert_chapters2audio(session_id:str)->bool:
                             blocks_current['sentence_resume'] = j
                             now = time.monotonic()
                             if not baseline_initialized:
+                                session['blocks_current'] = blocks_current
                                 session['blocks_saved'] = copy.deepcopy(blocks_current)
                                 save_json_blocks(session_id, 'blocks_saved')
                                 baseline_initialized = True
                             elif now - last_save_time >= 5:
+                                session['blocks_current'] = blocks_current
                                 save_json_blocks(session_id, 'blocks_current')
                                 last_save_time = now
                         global_sent += 1
@@ -2316,6 +2326,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
                 if converted or block_changed or missing_sentences:
                     show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
+                    session['blocks_current'] = blocks_current
                     save_json_blocks(session_id, 'blocks_current')
                     last_save_time = time.monotonic()
                     if not combine_audio_sentences(session_id, chapter_audio_file, block_id, block_len):
@@ -2323,6 +2334,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         return False
             blocks_current['block_resume'] = 0
             blocks_current['sentence_resume'] = 0
+            session['blocks_current'] = blocks_current
             save_json_blocks(session_id, 'blocks_current')
             session['blocks_saved'] = copy.deepcopy(blocks_current)
             save_json_blocks(session_id, 'blocks_saved')
