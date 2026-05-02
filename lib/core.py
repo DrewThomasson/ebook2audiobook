@@ -1471,7 +1471,7 @@ def get_sentences(session_id:str, text:str)->list|None:
 
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
-            rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
+            rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))})[\uE000-\uF8FF]*)(?=\s|$)",
             re.DOTALL
         )
         hard_list = split_inclusive(text, hard_pattern)
@@ -1575,7 +1575,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                     break
                 if final_list:
                     prev = final_list[-1]
-                    if clean_len(prev) + cur_len <= max_chars:
+                    if clean_len(prev) + cur_len <= max_chars and not (prev and ord(prev[-1]) >= sml_escape_tag):
                         final_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
                         i = j
                         continue
@@ -2124,7 +2124,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
     # Reduce multiple consecutive punctuations hard
-    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
+    text = re.sub(rf'(\s*({pattern})\s*)([\uE000-\uF8FF])?', lambda m: m.group(2) + (m.group(3) or '') + ' ' if m.group(2) else m.group(0), text).strip()
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split_soft_set))
     # Reduce multiple consecutive punctuations soft
