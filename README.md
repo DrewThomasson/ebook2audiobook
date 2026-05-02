@@ -461,14 +461,165 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    (It doesn't have zero-shot voice cloning though, and is Siri quality voices, but it is much faster on cpu).
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode,
    add `--help` parameter at the end of the docker run command for more information.
-- "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
+- "I'm getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
    we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
 
+## ***** ROADMAP *****
+- All Features open to public Contributions ⭐
+- Any help from people speaking any of the supported languages to help us improve the models ⭐
+- [x] Preview Blocks/Chapters before to start the conversion
+- [ ] Parallel sentences conversion with workers
+- [ ] Edit by sentence converted for surgical text change
+- [x] SML tags integration for voice, pause, break, and more changes 
+- [x] -h -help parameter info in different languages
+- [x] OCR scanning for PDF / JPG / BMP / PNG / TIFF
+- [x] Notebooks Folder [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
+- [x] Make Chinese text splitting not split words and improve pause timing [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
+- [x] Dockerfile
+- [x] Docker compose
+- [x] Podman compose   
+- [x] Kaggle Notebook
+- [x] Google Colab Notebook
+- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] Audiobookshelf integration
 
-## What we need help with! 🙌 
-## [Roadmap and Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
-- Any help from people speaking any of the supported languages to help us improve the models
-  
+#### Extra Options
+- [ ] Ebook Translation option
+- [x] Output format choices
+- [x] Batch ebook folder
+- [x] Multiprocessing conversion
+- [x] Batch ebook folder conversion
+- [x] GPU Device detection
+- [x] Denoise any reference audio for upload voice cloning,
+- [x] Custom model upload (XTTSv2 only for now. more on request)
+- [ ]  Add Portuguese Xttsv2 model fine tuned for EU portuguese
+
+#### TTS engines
+- [x] XTTSv2
+- [x] Bark
+- [x] Fairseq
+- [x] VITS
+- [x] Tacotron2
+- [x] YourTTS
+- [x] Tortoise
+- [x] GlowTTS
+- [ ] Piper-TTS
+- [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
+- [ ] Kokoro-TTS
+- [ ] Orpheus-TTS
+- [ ] Zonos
+- [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
+- [ ] Style-TTS2
+- [ ] GPT-SoVITS
+- [ ] F5-TTS (https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/38#issuecomment-2453224267)
+- [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
+- [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
+- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
+- [ ] Speedy-Speech
+- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
+- [ ] Align-TTS
+- [ ] Delightful-TTS
+- [ ] Spark-TTS
+
+#### Readme Translation
+- [ ] Arabic (ara)
+- [ ] Chinese (zho)
+- [x] English (eng)
+- [ ] Spanish (spa)
+- [ ] French (fra)
+- [ ] German (deu)
+- [ ] Italian (ita)
+- [ ] Portuguese (por)
+- [ ] Polish (pol)
+- [ ] Turkish (tur)
+- [ ] Russian (rus)
+- [ ] Dutch (nld)
+- [ ] Czech (ces)
+- [ ] Japanese (jpn)
+- [ ] Hindi (hin)
+- [ ] Bengali (ben)
+- [ ] Hungarian (hun)
+- [ ] Korean (kor)
+- [ ] Vietnamese (vie)
+- [ ] Swedish (swe)
+- [ ] Persian (fas)
+- [ ] Yoruba (yor)
+- [ ] Swahili (swa)
+- [ ] Indonesian (ind)
+- [ ] Slovak (slk)
+- [ ] Croatian (hrv)   
+
+#### 🐍 OS Compatibility
+- [x] 🍎 Mac Intel x86
+- [x] 🪟 Windows x86
+- [x] 🐧 Linux x86
+- [x] 🖥️🍏 Apple Silicon Mac
+- [x] 🪟💪 ARM Windows
+- [x] 🐧💪 ARM Linux
+
+**********
+
+## Extra Overkill for training models and such (All supported Coqui-tts models and piper-tts in one easy command) 
+- For info about this @DrewThomasson, he is currently working on the development of this, [work-in-progress-repo here](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [ ] Make a easy to use training gui for all coqui-tts models in the ljspeech format training recipes [here from coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+
+## Auto-testing scripts for development
+
+- [x] #1804
+
+## Python Code normalization information for contributors
+- no blank line between code, unless between functions and classes.
+- single quote used for all key unless for dict() and json. dict['key'] always called with single quote
+- 4 spaces indentation, not tab at all
+- strict typing for all functions and its arguments declaration and return values
+- no space between the argument and its typing, no space between the function, the "->" and the return value
+
+Example:
+
+```python
+import json
+from typing import Optional
+
+def get_user(user_id:int, users:list[dict])->Optional[dict]:
+    for user in users:
+        if user['id'] == user_id:
+            return user
+    return None
+
+def summarize(user:dict)->str:
+    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
+
+def to_json(user:dict)->str:
+    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
+
+users:list = [
+    dict(id=1, name='alice', email='alice@example.com', role='admin', is_active=True),
+    dict(id=2, name='bob', email='bob@example.com', role='editor', is_active=False),
+    dict(id=3, name='carol', email='carol@example.com', role='viewer', is_active=True),
+]
+config = {
+    "max_users": 100,
+    "default_role": "viewer",
+    "allow_signup": True,
+}
+roles = ['admin', 'editor', 'viewer']
+found = get_user(1, users)
+if found:
+    print(summarize(found))
+    print(found['email'])
+    print(to_json(found))
+if config['default_role'] in roles:
+    print(config['default_role'])
+```
+
+## Hardware donation for beta tests wanted
+We accept any kind of hardware to test our development like:
+- Nvidia supporting cuda >= 11.8
+- XPU intel cards
+- ROCm AMD cards supporting ROCm >=5.7
+
+@DrewThomasson if you want to help out at all! 😃
 <!--
 ## Do you need to rent a GPU to boost service from us?
 - A poll is open here https://github.com/DrewThomasson/ebook2audiobook/discussions/889
