@@ -2212,6 +2212,8 @@ def convert_chapters2audio(session_id:str)->bool:
                 blocks_saved['blocks'] = list(prev_blocks.values())
                 session['blocks_saved'] = blocks_saved
                 session['blocks_current'] = blocks_current
+                save_json_blocks(session_id, 'blocks_saved')
+                save_json_blocks(session_id, 'blocks_current')
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
