@@ -212,6 +212,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             else:
                                 error = f'audio_part not valid'
                                 return False, error
+                self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
@@ -219,9 +220,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error
                     del segment_tensor
-                    self.engine.to(devices['CPU']['proc'])
-                    if use_zs:
-                        self.engine_zs.to(devices['CPU']['proc'])
                     self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
