@@ -223,8 +223,12 @@ class TTSUtils:
             if hasattr(torch.backends, 'cudnn'):
                 try:
                     torch.backends.cudnn.enabled = True
-                    torch.backends.cudnn.deterministic = not quality_mode
-                    torch.backends.cudnn.benchmark = False
+                    if is_rocm:
+                        torch.backends.cudnn.benchmark = True
+                        torch.backends.cudnn.deterministic = False
+                    else:
+                        torch.backends.cudnn.deterministic = not quality_mode
+                        torch.backends.cudnn.benchmark = False
                 except Exception:
                     pass
             # TF32 — Ampere+, non-Jetson, non-ROCm, quality mode only
@@ -363,7 +367,8 @@ class TTSUtils:
             from huggingface_hub import hf_hub_download
             voice_parts = Path(current_voice).parts
             if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
-                return current_voice
+                if os.path.exists(current_voice):
+                    return current_voice
             xtts = TTS_ENGINES['XTTSv2']
             if self.session['language'] in default_engine_settings[xtts].get('languages', {}):
                 default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
@@ -391,7 +396,7 @@ class TTSUtils:
                         if speaker in default_engine_settings[xtts]['voices'].keys():
                             gpt_cond_latent, speaker_embedding = self.xtts_speakers[default_engine_settings[xtts]['voices'][speaker]].values()
                         else:
-                            gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[current_voice], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)
+                            gpt_cond_latent, speaker_embedding = engine.get_conditioning_latents(audio_path=[current_voice], load_sr=24000, sound_norm_refs=True)
                         fine_tuned_params = {
                             key.removeprefix('xtts_'): cast_type(self.session[key])
                             for key, cast_type in {
@@ -599,10 +604,10 @@ class TTSUtils:
         elif tag == 'voice':
             if close:
                 self.params['inline_voice'] = None
-                new_voice, error = self._set_voice(self.params['block_voice'])
-                if new_voice is None and error is not None:
+                voice_orig, error = self._set_voice(self.params['block_voice'])
+                if voice_orig is None and error is not None:
                     return False, error
-                self.params['block_voice'] = self.params['current_voice'] = new_voice
+                self.params['block_voice'] = self.params['current_voice'] = voice_orig
                 return True, None
             if not value:
                 error = '_convert_sml() error: voice tag must specify a voice path value'

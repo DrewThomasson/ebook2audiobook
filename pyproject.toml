@@ -18,7 +18,7 @@ authors = [
 ]
 dependencies = [
     "cryptography",
-	"py-cpuinfo",
+    "py-cpuinfo",
     "tqdm",
     "regex",
     "docker",
@@ -42,14 +42,14 @@ dependencies = [
     "mutagen",
     "PyOpenGL",
     "phonemizer-fork",
-	"num2words2",
+    "num2words2",
     "pydub",
-	"soundfile",
+    "soundfile",
     "unidecode",
     "langdetect",
     "phonemizer",
     "indic-nlp-library",
-	"numba",
+    "numba",
     "pytesseract",
     "torchvggish",
     "stanza==1.10.1",
@@ -62,8 +62,7 @@ dependencies = [
     "huggingface_hub>=1.0; python_version >= '3.12'",
     "transformers==4.57.6; python_version < '3.12'",
     "transformers>=5.0.0; python_version >= '3.12'",
-    "coqui-tts[languages]==0.27.5",
-	"ext/py/demucs"
+    "coqui-tts[languages]==0.27.5"
 ]
 readme = "README.md"
 requires-python = ">3.9,<3.13"

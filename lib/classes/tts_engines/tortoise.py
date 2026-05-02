@@ -121,13 +121,13 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                                 speaker_argument = {"speaker_wav": [speaker_wav], "speaker": self.speaker}
                             else:
                                 speaker_argument = {"speaker": self.speaker, "preset": "ultra_fast"}
-                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                audio_part = self.engine.tts(
-                                    text=part,
-                                    num_autoregressive_samples=1,
-                                    diffusion_iterations=10,
-                                    **speaker_argument
-                                )
+                            #with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                            audio_part = self.engine.tts(
+                                text=part,
+                                num_autoregressive_samples=1,
+                                diffusion_iterations=10,
+                                **speaker_argument
+                            )
                             if torch.is_tensor(audio_part):
                                 audio_part = audio_part.detach().cpu()
                             if is_audio_data_valid(audio_part):

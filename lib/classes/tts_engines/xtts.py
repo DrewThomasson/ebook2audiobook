@@ -90,6 +90,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
+                self.engine.to(devices['CPU']['proc'])
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
@@ -146,7 +147,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                 if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
                                     self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
                                 else:
-                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], librosa_trim_db=30, load_sr=24000, sound_norm_refs=True)
+                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], load_sr=24000, sound_norm_refs=True)
                                 self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
                             with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 result = self.engine.inference(
@@ -184,7 +185,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error
                     del segment_tensor
-                    self.engine.to(devices['CPU']['proc'])
                     self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):

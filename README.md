@@ -461,7 +461,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    (It doesn't have zero-shot voice cloning though, and is Siri quality voices, but it is much faster on cpu).
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode,
    add `--help` parameter at the end of the docker run command for more information.
-- "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
+- "I'm getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
    we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
 
 ## ***** ROADMAP *****
@@ -478,15 +478,15 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Dockerfile
 - [x] Docker compose
 - [x] Podman compose   
-- [x] Kaggel Notebook
+- [x] Kaggle Notebook
 - [x] Google Colab Notebook
-- [ ] [Make a ios app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] Audiobookshelf integration
 
 #### Extra Options
 - [ ] Ebook Translation option
-- [x] Output format choicec
+- [x] Output format choices
 - [x] Batch ebook folder
 - [x] Multiprocessing conversion
 - [x] Batch ebook folder conversion
