@@ -6,7 +6,6 @@ docker
 ebooklib
 python-pptx
 python-docx
-diffq
 lameenc
 museval
 openunmix
