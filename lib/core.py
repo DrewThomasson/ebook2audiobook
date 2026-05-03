@@ -3031,6 +3031,9 @@ def convert_ebook(args:dict)->tuple:
                             if not devices['ROCM']['found']:
                                 session['device'] = devices['CPU']['proc']
                                 msg += f'ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            else:
+                                os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
+                                os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
                         elif session['device'] == devices['XPU']['proc']:
                             if not devices['XPU']['found']:
                                 session['device'] = devices['CPU']['proc']
