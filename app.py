@@ -304,7 +304,6 @@ SML tags available:
             if specified_input > 1:
                 error = 'Error: You can only specify one of --ebook, --ebooks_dir, or --text in headless mode.'
             else:
-                print(f"-----------------------session.get('voice'): {args}-------------")
                 if args.get('voice'):
                     if os.path.exists(args['voice']):
                         args['voice'] = os.path.abspath(args['voice'])
