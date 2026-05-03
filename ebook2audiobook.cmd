@@ -368,14 +368,13 @@ exit /b 0
 setlocal
 set "ffmpeg_pkg=none"
 set "tmp_file=%INSTALLED_LOG%.tmp"
-if exist "%SCOOP_ROOT%\apps\ffmpeg-shared\current\bin\avcodec-*.dll" (
+if exist "%SCOOP_HOME%\apps\ffmpeg-shared\current\bin\avcodec-*.dll" (
     set 'ffmpeg_pkg=shared'
-) else if exist "%SCOOP_ROOT%\apps\ffmpeg\current\bin\ffmpeg.exe" (
+) else if exist "%SCOOP_HOME%\apps\ffmpeg\current\bin\ffmpeg.exe" (
     set 'ffmpeg_pkg=static'
 ) else (
 	exit /b 0
 )
-echo --------------------- %ffmpeg_pkg%
 if "%ffmpeg_pkg%"=="static" (
 	echo [!!] static ffmpeg detected, swapping to ffmpeg-shared...
 	call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
