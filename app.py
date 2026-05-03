@@ -311,7 +311,8 @@ SML tags available:
             if specified_input > 1:
                 error = 'Error: You can only specify one of --ebook, --ebooks_dir, or --text in headless mode.'
             else:
-                if args.get('voice', None) is not None:
+                print(f"-----------------------session.get('voice'): {args.get('voice')}-------------")
+                if args.get('voice'):
                     if os.path.exists(args['voice']):
                         args['voice'] = os.path.abspath(args['voice'])
                 if args.get('custom_model', None) is not None:
