@@ -297,13 +297,6 @@ SML tags available:
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
-            engine_setting_keys = {engine: list(settings.keys()) for engine, settings in default_engine_settings.items()}
-            valid_model_keys = engine_setting_keys.get(args['tts_engine'], [])
-            renamed_args = {}
-            for key in valid_model_keys:
-                if key in args:
-                    renamed_args[f"{args['tts_engine']}_{key}"] = args.pop(key)
-            args.update(renamed_args)
             specified_input = sum(
                 args.get(k, None) is not None
                 for k in ('ebook', 'ebooks_dir', 'text')
