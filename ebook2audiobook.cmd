@@ -340,7 +340,6 @@ exit /b 0
 :check_programs
 setlocal EnableDelayedExpansion
 for %%p in (%HOST_PROGRAMS%) do (
-	echo ----------------- check %%p
     set "prog=%%p"
     set "_found=0"
     if "%%p"=="nodejs"  set "prog=node"
@@ -350,6 +349,7 @@ for %%p in (%HOST_PROGRAMS%) do (
         if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_found=1"
     )
     if "!_found!"=="0" (
+		echo ---------------------- !_found!
         where.exe /Q !prog! >nul 2>&1
         if errorlevel 1 (
 			set "missing_prog_array=!missing_prog_array! %%p"
