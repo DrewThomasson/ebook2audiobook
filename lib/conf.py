@@ -147,15 +147,18 @@ os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostran
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:True,max_split_size_mb:128'
 os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
 os.environ['TORCH_CPP_LOG_LEVEL'] = 'ERROR'
-os.environ['MIOPEN_FIND_MODE'] = 'FAST'
-os.environ['MIOPEN_FIND_ENFORCE'] = 'SEARCH_DB_UPDATE'
+os.environ['MIOPEN_FIND_MODE'] = '3'
+os.environ['MIOPEN_FIND_ENFORCE'] = '1'
 os.environ['MIOPEN_LOG_LEVEL'] = '3'
+os.environ['MIOPEN_DEBUG_CONV_IMPLICIT_GEMM'] = '0'
+os.environ['HSA_NO_SCRATCH_RECLAIM'] = '0'
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
 

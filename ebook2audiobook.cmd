@@ -86,6 +86,7 @@ set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\eSpeak NG\espeak-ng-da
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
 set "FFMPEG_BIN=%USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
+set "FFMPEG_VARIANT=none"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
@@ -361,17 +362,24 @@ exit /b 0
 
 :ensure_ffmpeg_shared
 setlocal
-if not exist "%INSTALLED_LOG%" exit /b 0
-findstr /x /c:"ffmpeg-shared" "%INSTALLED_LOG%" >nul 2>&1 && exit /b 0
-findstr /x /c:"ffmpeg" "%INSTALLED_LOG%" >nul 2>&1 || exit /b 0
-echo [!!] static ffmpeg detected, swapping to ffmpeg-shared...
-call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
-call scoop install ffmpeg-shared || (echo [xx] install failed & exit /b 1)
+set "ffmpeg_pkg=none"
 set "tmp_file=%INSTALLED_LOG%.tmp"
-findstr /v /x /c:"ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%"
->>"%tmp_file%" echo ffmpeg-shared
-move /y "%tmp_file%" "%INSTALLED_LOG%" >nul
-echo [ok] swap complete, .installed updated.
+if exist "%SCOOP_ROOT%\apps\ffmpeg-shared\current\bin\avcodec-*.dll" (
+    set 'ffmpeg_pkg=shared'
+) else if exist "%SCOOP_ROOT%\apps\ffmpeg\current\bin\ffmpeg.exe" (
+    set 'ffmpeg_pkg=static'
+) else (
+	exit /b 0
+)
+if "%ffmpeg_pkg%"=="static" (
+	echo [!!] static ffmpeg detected, swapping to ffmpeg-shared...
+	call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
+	call scoop install ffmpeg-shared || (echo [xx] install failed & exit /b 1)
+	findstr /v /x /c:"ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%"
+	>>"%tmp_file%" echo ffmpeg-shared
+	move /y "%tmp_file%" "%INSTALLED_LOG%" >nul
+	echo [ok] swap complete, .installed updated.
+)
 endlocal
 exit /b 0
 
