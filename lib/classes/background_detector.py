@@ -81,6 +81,8 @@ class BackgroundDetector:
                 )
                 pipeline = VoiceActivityDetection(segmentation=model)
                 if pipeline:
+                    torch.backends.cuda.matmul.allow_tf32 = True
+                    torch.backends.cudnn.allow_tf32 = True
                     pipeline.instantiate({
                         "min_duration_on": 0.0,
                         "min_duration_off": 0.0
@@ -88,8 +90,6 @@ class BackgroundDetector:
                     pipeline.to(self.device)
                     _pipeline_cache[key] = pipeline
         if pipeline:
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
             y, sr = librosa.load(self.wav_file, sr=16000, mono=True)
             waveform = torch.from_numpy(y).float().unsqueeze(0)
             return pipeline, waveform, sr
