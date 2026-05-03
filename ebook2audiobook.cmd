@@ -350,9 +350,12 @@ for %%p in (%HOST_PROGRAMS%) do (
     )
     if "!_found!"=="0" (
         where.exe /Q !prog! >nul 2>&1
-        if errorlevel 1 set "missing_prog_array=!missing_prog_array! %%p"
-		if "!prog!"=="ffmpeg" (
-			call :ensure_ffmpeg_shared
+        if errorlevel 1 (
+			set "missing_prog_array=!missing_prog_array! %%p"
+		) else (
+			if "%%p"=="ffmpeg" (
+				call :check_ffmpeg_shared
+			)
 		)
     )
 )
@@ -360,7 +363,7 @@ endlocal & set "missing_prog_array=%missing_prog_array%"
 if not "%missing_prog_array%"=="" exit /b 1
 exit /b 0
 
-:ensure_ffmpeg_shared
+:check_ffmpeg_shared
 setlocal
 set "ffmpeg_pkg=none"
 set "tmp_file=%INSTALLED_LOG%.tmp"
@@ -371,6 +374,7 @@ if exist "%SCOOP_ROOT%\apps\ffmpeg-shared\current\bin\avcodec-*.dll" (
 ) else (
 	exit /b 0
 )
+echo --------------------- %ffmpeg_pkg%
 if "%ffmpeg_pkg%"=="static" (
 	echo [!!] static ffmpeg detected, swapping to ffmpeg-shared...
 	call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
