@@ -349,12 +349,11 @@ for %%p in (%HOST_PROGRAMS%) do (
         if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_found=1"
     )
     if "!_found!"=="0" (
-		echo ---------------------- !_found!
         where.exe /Q !prog! >nul 2>&1
         if errorlevel 1 (
 			set "missing_prog_array=!missing_prog_array! %%p"
 		) else (
-			if "%%p"=="ffmpeg" (
+			if "%%p"=="ffmpeg-shared" (
 				call :check_ffmpeg_shared
 			)
 		)
