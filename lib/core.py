@@ -2289,6 +2289,8 @@ def convert_chapters2audio(session_id:str)->bool:
                 session['blocks_current'] = blocks_current
                 save_json_blocks(session_id, 'blocks_current')
                 converted = False
+                print(f"-------------------block.get('voice'): {block.get('voice')}")
+                print(f"-------------------session.get('voice'): {session.get('voice')}")
                 block_voice = block.get('voice') or session.get('voice')
                 for j in range(block_len):
                     if session['cancellation_requested']:
