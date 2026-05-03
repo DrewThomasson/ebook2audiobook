@@ -33,6 +33,8 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             #random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
+            self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
+            self.language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
             self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -60,6 +62,19 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 raise RuntimeError(error)
             msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
+            engine.to(self.device)
+            with torch.inference_mode():
+                samples = [
+                    "Short warmup sentence.",
+                    "This is a slightly longer warmup sentence to change tensor shapes."
+                ]
+                for s in samples:
+                    _ = engine.tts(
+                        text=s,
+                        speaker_wav=default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2'],
+                        language='en',
+                    )
+            _ = torch.zeros((256, 256), device=self.device)
             return engine
         except Exception as e:
             error = 'load_engine(): engine is None'
@@ -72,8 +87,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             #import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
-                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
-                language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[—]')
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
@@ -87,59 +100,59 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
-                self.engine.to(device)
-                with torch.no_grad():
-                    for part in sentence_parts:
-                        part = part.strip()
-                        if not part:
-                            continue
-                        if SML_TAG_PATTERN.fullmatch(part):
-                            success, error = self._convert_sml(part)
-                            if not success:
-                                return False, error
-                            continue
-                        if not any(c.isalnum() for c in part):
-                            continue
-                        else:
-                            trim_audio_buffer = 0.002
-                            if part.endswith("'"):
-                                part = part[:-1]
-                            part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                            speaker_argument = {}
-                            if self.params['current_voice'] is not None:
-                                speaker_wav = self.params['current_voice']
-                                speaker_argument = {"speaker_wav": speaker_wav}
+                self.engine.to(self.device)
+                with torch.inference_mode():
+                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                        for part in sentence_parts:
+                            part = part.strip()
+                            if not part:
+                                continue
+                            if SML_TAG_PATTERN.fullmatch(part):
+                                success, error = self._convert_sml(part)
+                                if not success:
+                                    return False, error
+                                continue
+                            if not any(c.isalnum() for c in part):
+                                continue
                             else:
-                                self.speaker = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
-                                speaker_argument = {"speaker": self.speaker}
-                            with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                trim_audio_buffer = 0.002
+                                if part.endswith("'"):
+                                    part = part[:-1]
+                                part = re.sub(not_supported_punc_pattern, ' ', part).strip()
+                                speaker_argument = {}
+                                if self.params['current_voice'] is not None:
+                                    speaker_wav = self.params['current_voice']
+                                    speaker_argument = {"speaker_wav": speaker_wav}
+                                else:
+                                    self.speaker = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
+                                    speaker_argument = {"speaker": self.speaker}
                                 audio_part = self.engine.tts(
                                     text=part,
-                                    language=language,
+                                    language=self.language,
                                     **speaker_argument
                                 )
-                            if torch.is_tensor(audio_part):
-                                audio_part = audio_part.detach().cpu()
-                            if is_audio_data_valid(audio_part):
-                                src_tensor = self._tensor_type(audio_part)
-                                part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                                if part_tensor is not None and part_tensor.numel() > 0:
-                                    if part[-1].isalnum() or part[-1] == '—':
-                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                    self.audio_segments.append(part_tensor)
-                                    del part_tensor
-                                    """
-                                    if not re.search(r'\w$', part, flags=re.UNICODE):
-                                        silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                        break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                        self.audio_segments.append(break_tensor.clone())
-                                    """
+                                if torch.is_tensor(audio_part):
+                                    audio_part = audio_part.detach().cpu()
+                                if is_audio_data_valid(audio_part):
+                                    src_tensor = self._tensor_type(audio_part)
+                                    part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
+                                    if part_tensor is not None and part_tensor.numel() > 0:
+                                        if part[-1].isalnum() or part[-1] == '—':
+                                            part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                        self.audio_segments.append(part_tensor)
+                                        del part_tensor
+                                        """
+                                        if not re.search(r'\w$', part, flags=re.UNICODE):
+                                            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                            break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
+                                            self.audio_segments.append(break_tensor.clone())
+                                        """
+                                    else:
+                                        error = f'part_tensor not valid'
+                                        return False, error
                                 else:
-                                    error = f'part_tensor not valid'
+                                    error = f'audio_part not valid'
                                     return False, error
-                            else:
-                                error = f'audio_part not valid'
-                                return False, error
                 self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
