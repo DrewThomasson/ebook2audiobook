@@ -340,6 +340,7 @@ exit /b 0
 :check_programs
 setlocal EnableDelayedExpansion
 for %%p in (%HOST_PROGRAMS%) do (
+	echo ----------------- check %%p
     set "prog=%%p"
     set "_found=0"
     if "%%p"=="nodejs"  set "prog=node"
