@@ -66,6 +66,8 @@ class BackgroundDetector:
             else 'mps' if torch.backends.mps.is_available()
             else 'cpu'
         )
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
         key = self.device.type
         if key in _pipeline_cache:
             pipeline = _pipeline_cache[key]
