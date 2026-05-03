@@ -63,19 +63,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                 raise RuntimeError(error)
             msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
-            engine.to(self.device)
-            with torch.inference_mode():
-                samples = [
-                    "Short warmup sentence.",
-                    "This is a slightly longer warmup sentence to change tensor shapes."
-                ]
-                for s in samples:
-                    _ = engine.tts(
-                        text=s,
-                        speaker_wav=default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2'],
-                        language='en',
-                    )
-            _ = torch.zeros((256, 256), device=self.device)
             return engine
         except Exception as e:
             error = 'load_engine(): engine is None'
