@@ -375,13 +375,13 @@ if exist "%SCOOP_HOME%\apps\ffmpeg-shared\current\bin\avcodec-*.dll" (
 	exit /b 0
 )
 if "%ffmpeg_pkg%"=="static" (
-	echo [!!] static ffmpeg detected, swapping to ffmpeg-shared...
+	echo Static ffmpeg detected, swapping to ffmpeg-shared…
 	call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
 	call scoop install ffmpeg-shared || (echo [xx] install failed & exit /b 1)
 	findstr /v /x /c:"ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%"
 	>>"%tmp_file%" echo ffmpeg-shared
 	move /y "%tmp_file%" "%INSTALLED_LOG%" >nul
-	echo [ok] swap complete, .installed updated.
+	echo swap complete, .installed updated.
 )
 endlocal
 exit /b 0
