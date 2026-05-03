@@ -41,6 +41,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             raise ValueError(error)
 
     def load_engine(self)->Any:
+        import torch
         msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
         print(msg)
         self.cleanup_memory()

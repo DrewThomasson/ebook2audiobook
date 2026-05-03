@@ -66,8 +66,6 @@ class BackgroundDetector:
             else 'mps' if torch.backends.mps.is_available()
             else 'cpu'
         )
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
         key = self.device.type
         if key in _pipeline_cache:
             pipeline = _pipeline_cache[key]
@@ -88,6 +86,8 @@ class BackgroundDetector:
                     pipeline.to(self.device)
                     _pipeline_cache[key] = pipeline
         if pipeline:
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
             y, sr = librosa.load(self.wav_file, sr=16000, mono=True)
             waveform = torch.from_numpy(y).float().unsqueeze(0)
             return pipeline, waveform, sr
