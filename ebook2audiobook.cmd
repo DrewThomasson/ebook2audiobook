@@ -354,6 +354,7 @@ for %%p in (%HOST_PROGRAMS%) do (
 			set "missing_prog_array=!missing_prog_array! %%p"
 		) else (
 			if "%%p"=="ffmpeg-shared" (
+				echo call check_ffmpeg_shared
 				call :check_ffmpeg_shared
 			)
 		)
