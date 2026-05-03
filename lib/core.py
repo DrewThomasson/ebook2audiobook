@@ -2905,7 +2905,7 @@ def convert_ebook(args:dict)->tuple:
             session['tts_engine'] = str(args['tts_engine']) if args.get('tts_engine') is not None else str(get_compatible_tts_engines(args['language'])[0])
             session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if args['custom_model'] is not None else None
             session['fine_tuned'] = str(args['fine_tuned'])
-            session['voice'] = str(args['voice']) if args.get('voice') is not None else None
+            session['voice'] = args.get('voice', None)
             session['xtts_temperature'] =  float(args['xtts_temperature'])
             session['xtts_length_penalty'] = float(args['xtts_length_penalty'])
             session['xtts_num_beams'] = int(args['xtts_num_beams'])
@@ -2975,7 +2975,7 @@ def convert_ebook(args:dict)->tuple:
                                     error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                             except ModuleNotFoundError as e:
                                 error = f"No presets module for TTS engine '{session['tts_engine']}': {e}"
-                    if session['voice'] is not None:
+                    if session.get('voice'):
                         voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
                         voice_name = get_sanitized(voice_name)
                         final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
