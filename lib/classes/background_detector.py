@@ -1,4 +1,4 @@
-import threading
+import threading, warnings
 
 from lib.conf import tts_dir
 from lib.conf_models import default_voice_detection_model
