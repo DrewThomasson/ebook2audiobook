@@ -550,10 +550,7 @@ class TTSUtils:
         return waveform.squeeze(0).cpu().numpy()
 
     def _set_voice(self, voice:str|None)->tuple:
-        current_voice = (
-            voice if voice is not None 
-            else self.models[self.session['fine_tuned']]['voice']
-        )
+        current_voice = (voice if voice is not None else self.models[self.session['fine_tuned']]['voice'])
         if current_voice is not None:
             speaker = re.sub(r'\.wav$', '', os.path.basename(current_voice))
             if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:

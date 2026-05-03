@@ -86,6 +86,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                 device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
+                print(f"==============self.params['block_voice']: {self.params['block_voice']}")
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
@@ -143,8 +144,6 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 if self.params['current_voice'] in self.params['semitones'].keys():
                                     semitones = self.params['semitones'][self.params['current_voice']]
                                 else:
-                                    print(f"====================self.params['current_voice']: {self.params['current_voice']}")
-                                    print(f'====================tmp_in_wav: {tmp_in_wav}')
                                     current_voice_gender = detect_gender(self.params['current_voice'])
                                     voice_builtin_gender = detect_gender(tmp_in_wav)
                                     msg = f'Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}'
