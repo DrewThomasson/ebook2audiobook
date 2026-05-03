@@ -60,6 +60,7 @@ class BackgroundDetector:
         pyannote_patch()
         from pyannote.audio import Model
         from pyannote.audio.pipelines import VoiceActivityDetection
+        from pyannote.audio.utils.reproducibility import ReproducibilityWarning
         warnings.filterwarnings('ignore', category=ReproducibilityWarning)
         self.device = torch.device(
             'cuda' if torch.cuda.is_available()
