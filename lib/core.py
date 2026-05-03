@@ -2289,8 +2289,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 session['blocks_current'] = blocks_current
                 save_json_blocks(session_id, 'blocks_current')
                 converted = False
-                print(f"-------------------block.get('voice'): {block.get('voice')}")
-                print(f"-------------------session.get('voice'): {session.get('voice')}")
                 block_voice = block.get('voice') or session.get('voice')
                 for j in range(block_len):
                     if session['cancellation_requested']:
@@ -2977,7 +2975,6 @@ def convert_ebook(args:dict)->tuple:
                                     error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                             except ModuleNotFoundError as e:
                                 error = f"No presets module for TTS engine '{session['tts_engine']}': {e}"
-                    print(f"-----------------------session.get('voice'): {session.get('voice')}-------------")
                     if session.get('voice'):
                         voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
                         voice_name = get_sanitized(voice_name)
