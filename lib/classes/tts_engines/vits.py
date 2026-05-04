@@ -90,6 +90,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
+                #not_supported_punc_pattern = re.compile(r'[.:—]')
                 self.params['block_voice'] = kwargs.get('block_voice')
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
@@ -124,6 +125,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         trim_audio_buffer = 0.004
                         if part.endswith("'"):
                             part = part[:-1]
+                        #part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         speaker_argument = {}
                         if self.language == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
                             if self.language in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
