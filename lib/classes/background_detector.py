@@ -1,6 +1,6 @@
 import threading, warnings
 
-from lib.conf import tts_dir
+from lib.conf import tts_dir, devices
 from lib.conf_models import default_voice_detection_model
 
 _pipeline_cache = {}
@@ -81,8 +81,9 @@ class BackgroundDetector:
                 )
                 pipeline = VoiceActivityDetection(segmentation=model)
                 if pipeline:
-                    torch.backends.cuda.matmul.allow_tf32 = True
-                    torch.backends.cudnn.allow_tf32 = True
+                    if self.device == 'cuda' and not devices['JETSON']['found']:
+                        torch.backends.cuda.matmul.allow_tf32 = True
+                        torch.backends.cudnn.allow_tf32 = True
                     pipeline.instantiate({
                         "min_duration_on": 0.0,
                         "min_duration_off": 0.0
