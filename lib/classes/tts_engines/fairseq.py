@@ -154,7 +154,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                             speaker_argument = {}
                             audio_part = self.engine_zs.voice_conversion(
                                 source_wav=source_wav,
-                                target_wav=targget_wav,
+                                target_wav=target_wav,
                                 **speaker_argument
                             )
                             if os.path.exists(tmp_in_wav):
