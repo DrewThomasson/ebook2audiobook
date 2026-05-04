@@ -87,7 +87,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
-                self.engine.to(self.device)
+                #self.engine.to(self.device)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -116,6 +116,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                 audio_part = self.engine.tts(
                                     text=part,
                                     language=self.language,
+                                    gpu=self.device,
                                     **speaker_argument
                                 )
                         if torch.is_tensor(audio_part):
