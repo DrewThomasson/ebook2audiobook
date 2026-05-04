@@ -644,3 +644,8 @@ class TTSUtils:
                     pass
             raise RuntimeError(f'audio_save({path}): {e}') from e
         return True
+
+    def log_exception(self,where:str, e:Exception)->str:
+        import traceback
+        traceback.print_exc()
+        return f'{where}: {e}'
