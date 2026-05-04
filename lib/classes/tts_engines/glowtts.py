@@ -238,7 +238,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                 return False, error
         except Exception as e:
             self.cleanup_memory()
-            return False, return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
+            return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:
         if self._build_vtt_file(all_sentences):
