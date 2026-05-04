@@ -140,7 +140,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         else:
                             error = f'audio_part not valid'
                             return False, error
-                self.engine.to(devices['CPU']['proc'])
+                #self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
