@@ -84,7 +84,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                not_supported_punc_pattern = re.compile(r'[.:—]')
+                not_supported_punc_pattern = re.compile(r'[.:—,\!;?]')
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
