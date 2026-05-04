@@ -212,12 +212,10 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                     print(f'[vcter] {k}: {p.device if p is not None else "no params"}')
 
 
-                            import traceback
-                            try:
-                                audio_part = self.engine_zs.voice_conversion(source_wav=source_wav, target_wav=target_wav)
-                            except Exception:
-                                traceback.print_exc()
-                                raise
+                            audio_part = self.engine_zs.voice_conversion(
+                                source_wav=source_wav,
+                                target_wav=target_wav
+                            )
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
