@@ -50,9 +50,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine = self.load_engine()
-            self.engine.to(self.device)
-            self.engine_zs = self._load_engine_zs()
-            self.engine_zs.to(self.device)
+            self.engine_zs = self._load_engine_zs(self.device)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
@@ -69,6 +67,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 #    raise NotImplementedError(msg)
                 self.tts_key = self.model_path
                 engine = self._load_api(self.tts_key, self.model_path)
+                engine.to(self.device)
             if engine:
                 msg = f"TTS {self.tts_key} Loaded!"
                 print(msg)
