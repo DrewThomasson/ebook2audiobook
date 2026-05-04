@@ -64,15 +64,19 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             engine = loaded_tts.get(self.tts_key)
             if not engine:
                 #if self.session['custom_model'] is not None:
-                #    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                #    raise NotImplementedError(msg)
+                #    error = f"{self.session['tts_engine']} custom model not implemented yet!"
+                #    raise NotImplementedError(error)
                 self.tts_key = self.model_path
-                engine = self._load_api(self.tts_key, self.model_path, self.device)
+                try:
+                    engine = self._load_api(self.tts_key, self.model_path, self.device)
+                except Exception as e:
+                    error = 'load_engine(): _load_api() failed'
+                    raise RuntimeError(error) from e
             if engine:
-                msg = f"TTS {self.tts_key} Loaded!"
+                msg = f'TTS {self.tts_key} Loaded!'
                 print(msg)
                 return engine
-            error = "load_engine(): engine is None"
+            error = 'load_engine(): engine is None'
             raise RuntimeError(error)
         except Exception as e:
             error = f"load_engine() error: {e}"
