@@ -279,34 +279,11 @@ class TTSUtils:
         try:
             with _lock:
                 from TTS.api import TTS as TTSEngine
-                import torch
-                import torch.nn as nn
                 engine = loaded_tts.get(key)
-                is_cuda = str(device).startswith('cuda')
                 if not engine:
-                    engine = TTSEngine(model_path, gpu=is_cuda)
-                    if is_cuda:
-                        engine = engine.to(device)
+                    engine = TTSEngine(model_path).to(device)
                 if not engine:
-                    raise RuntimeError('TTSEngine returned None')
-                target_dev = torch.device(device)
-                for syn_attr in ('synthesizer', 'voice_converter'):
-                    syn = getattr(engine, syn_attr, None)
-                    if syn is None:
-                        continue
-                    syn.use_cuda = is_cuda
-                    for _, m in syn.named_modules():
-                        m.to(device)
-                        m.eval()
-                        for pname, p in list(m.named_parameters(recurse=False)):
-                            if p.device != target_dev:
-                                with torch.no_grad():
-                                    new_p = nn.Parameter(p.data.to(device), requires_grad=p.requires_grad)
-                                setattr(m, pname, new_p)
-                        for bname, b in list(m.named_buffers(recurse=False)):
-                            if b.device != target_dev:
-                                persistent = bname not in m._non_persistent_buffers_set
-                                m.register_buffer(bname, b.to(device), persistent=persistent)
+                    raise RuntimeError("TTSEngine returned None")
                 vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                 self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                 models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
