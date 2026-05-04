@@ -175,8 +175,8 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                             source_wav = self._resample_wav(tmp_out_wav, samplerate)
                             target_wav = self._resample_wav(self.params['current_voice'], samplerate)
                             speaker_argument = {}
-                            if self.speaker not in self.engine_zs.speakers:
-                                speaker_argument['target_wav'] = self.params['current_voice']
+                            if (self.engine_zs.speakers is not None and self.speaker not in self.engine_zs.speakers) or self.engine_zs.speakers is None:
+                                speaker_argument['target_wav'] = target_wav
                             audio_part = self.engine_zs.voice_conversion(
                                 source_wav=source_wav,
                                 speaker=self.speaker,
