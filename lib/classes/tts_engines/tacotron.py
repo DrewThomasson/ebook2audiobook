@@ -18,16 +18,16 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones":{}}
             tts_engine = self.session.get('tts_engine')
-            language = self.session.get('language')
+            self.language = self.session.get('language')
             fine_tuned = self.session.get('fine_tuned')
             if tts_engine not in default_engine_settings:
                 error = f'Invalid tts_engine {tts_engine}.'
                 raise ValueError(error)
             engine_langs = default_engine_settings[tts_engine].get('languages', {})
-            if language not in engine_langs:
-                error = f'Language {language} not supported by engine {tts_engine}.'
+            if self.language not in engine_langs:
+                error = f'Language {self.language} not supported by engine {tts_engine}.'
                 raise ValueError(error)
-            iso_dir = engine_langs[language]
+            iso_dir = engine_langs[self.language]
             if fine_tuned not in self.models:
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
                 raise ValueError(error)
@@ -39,10 +39,10 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             sub_dict = model_cfg['sub']
             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
-                iso_dir = language
+                iso_dir = self.language
                 sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
-                error = f'{tts_engine} checkpoint for {language} not found.'
+                error = f'{tts_engine} checkpoint for {self.language} not found.'
                 raise KeyError(error)
             self.params['samplerate'] = model_cfg['samplerate'][sub]
             self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
@@ -51,6 +51,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             #random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
+            self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine = self.load_engine()
             self.engine_zs = self._load_engine_zs()
         except Exception as e:
@@ -100,9 +101,8 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             #import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
-                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                if self.session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                if self.language in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                     not_supported_punc_pattern = re.compile(r'\p{P}+')
                 else:
                     not_supported_punc_pattern = re.compile(r'["—…¡¿]')
@@ -123,9 +123,9 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
-                self.engine.to(device)
+                self.engine.to(self.device)
                 if use_zs:
-                    self.engine_zs.to(device)
+                    self.engine_zs.to(self.device)
                 with torch.no_grad():
                     for part in sentence_parts:
                         part = part.strip()
@@ -146,7 +146,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             if use_zs:
                                 tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                                 tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
-                                with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     self.engine.tts_to_file(
                                         text=part,
                                         file_path=tmp_in_wav
@@ -198,7 +198,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                     os.remove(source_wav)
                                 audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
                             else:
-                                with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
                                         text=part
                                     )

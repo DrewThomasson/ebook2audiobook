@@ -34,6 +34,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.engine = self.load_engine()
+            self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine_zs = self._load_engine_zs()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -68,7 +69,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
-                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 not_supported_punc_pattern = re.compile(r'[.:—]')
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
@@ -88,9 +88,9 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
-                self.engine.to(device)
+                self.engine.to(self.device)
                 if use_zs:
-                    self.engine_zs.to(device)
+                    self.engine_zs.to(self.device)
                 with torch.no_grad():
                     for part in sentence_parts:
                         part = part.strip()
@@ -111,7 +111,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                             if use_zs:
                                 tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                                 tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
-                                with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     self.engine.tts_to_file(
                                         text=part,
                                         file_path=tmp_in_wav
@@ -163,7 +163,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                     os.remove(source_wav)
                                 audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
                             else:
-                                with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
                                         text=part
                                     )
