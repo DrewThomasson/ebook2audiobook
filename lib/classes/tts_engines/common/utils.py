@@ -279,54 +279,11 @@ class TTSUtils:
         try:
             with _lock:
                 from TTS.api import TTS as TTSEngine
-                import torch.nn as nn
                 engine = loaded_tts.get(key)
                 if not engine:
                     engine = TTSEngine(model_path).to(device)
                 if not engine:
-                    raise RuntimeError('TTSEngine returned None')
-                is_cuda = str(device).startswith('cuda')
-                for syn_attr in ('synthesizer', 'voice_converter'):
-                    syn = getattr(engine, syn_attr, None)
-                    if syn is None:
-                        continue
-                    syn.use_cuda = is_cuda
-                    seen = set()
-                    stack = []
-                    for attr in ('tts_model', 'vocoder_model', 'vc_model'):
-                        mdl = getattr(syn, attr, None)
-                        if mdl is not None:
-                            stack.append(mdl)
-                    spk = getattr(syn, 'speaker_manager', None)
-                    enc = getattr(spk, 'encoder', None) if spk is not None else None
-                    if enc is not None:
-                        stack.append(enc)
-                    while stack:
-                        mdl = stack.pop()
-                        if id(mdl) in seen:
-                            continue
-                        seen.add(id(mdl))
-                        if isinstance(mdl, nn.Module):
-                            mdl.to(device)
-                            mdl.eval()
-                        for v in vars(mdl).values():
-                            if isinstance(v, nn.Module) and id(v) not in seen:
-                                stack.append(v)
-                    if hasattr(syn, 'voice_conversion'):
-                        if not hasattr(syn, '_orig_voice_conversion'):
-                            syn._orig_voice_conversion = syn.voice_conversion
-                        def _vc_pinned(*a, _syn=syn, _dev=device, _orig=syn._orig_voice_conversion, **kw):
-                            vc = getattr(_syn, 'vc_model', None)
-                            if vc is not None:
-                                if isinstance(vc, nn.Module):
-                                    vc.to(_dev)
-                                    vc.eval()
-                                for _v in vars(vc).values():
-                                    if isinstance(_v, nn.Module):
-                                        _v.to(_dev)
-                                        _v.eval()
-                            return _orig(*a, **kw)
-                        syn.voice_conversion = _vc_pinned
+                    raise RuntimeError("TTSEngine returned None")
                 vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                 self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                 models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
