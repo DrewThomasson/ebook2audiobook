@@ -319,8 +319,12 @@ class TTSUtils:
     def _load_checkpoint(self,**kwargs:Any)->Any:
         try:
             with _lock:
+                import torch
+                import torch.nn as nn
                 key = kwargs.get('key')
                 engine = loaded_tts.get(key, False)
+                device = kwargs.get('device', 'cpu')
+                target_dev = torch.device(device)
                 if not engine:
                     engine_name = kwargs.get('tts_engine', None)
                     from TTS.tts.configs.xtts_config import XttsConfig
@@ -328,15 +332,12 @@ class TTSUtils:
                     checkpoint_path = kwargs.get('checkpoint_path')
                     config_path = kwargs.get('config_path', None)
                     vocab_path = kwargs.get('vocab_path', None)
-                    device = kwargs.get('device', 'cpu')
                     if not checkpoint_path or not os.path.exists(checkpoint_path):
                         error = f'Missing or invalid checkpoint_path: {checkpoint_path}'
                         raise FileNotFoundError(error)
-                        return False
                     if not config_path or not os.path.exists(config_path):
                         error = f'Missing or invalid config_path: {config_path}'
                         raise FileNotFoundError(error)
-                        return False
                     config = XttsConfig()
                     config.models_dir = os.path.join('models','tts')
                     config.load_json(config_path)
@@ -349,6 +350,19 @@ class TTSUtils:
                     )
                 if engine:
                     engine.to(device)
+                    engine.eval()
+                    for _, m in engine.named_modules():
+                        m.to(device)
+                        m.eval()
+                        for pname, p in list(m.named_parameters(recurse=False)):
+                            if p.device != target_dev:
+                                with torch.no_grad():
+                                    new_p = nn.Parameter(p.data.to(device), requires_grad=p.requires_grad)
+                                setattr(m, pname, new_p)
+                        for bname, b in list(m.named_buffers(recurse=False)):
+                            if b.device != target_dev:
+                                persistent = bname not in m._non_persistent_buffers_set
+                                m.register_buffer(bname, b.to(device), persistent=persistent)
                     vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                     self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
