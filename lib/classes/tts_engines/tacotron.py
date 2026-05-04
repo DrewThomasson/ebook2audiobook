@@ -249,7 +249,9 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 return False, error
         except Exception as e:
+            import traceback
             self.cleanup_memory()
+            traceback.print_exc()
             error = f'Tacotron2.convert(): {e}'
             return False, error
 

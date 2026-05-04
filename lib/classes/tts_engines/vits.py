@@ -239,8 +239,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 return False, error
         except Exception as e:
-            self.cleanup_memory()
             import traceback
+            self.cleanup_memory()
             traceback.print_exc()
             error = f'Vits.convert(): {e}'
             return False, error
