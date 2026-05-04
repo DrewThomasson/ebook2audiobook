@@ -51,26 +51,30 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             raise ValueError(error)
 
     def load_engine(self)->Any:
-        msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
-        print(msg)
-        self.cleanup_memory()
-        engine = loaded_tts.get(self.tts_key)
-        if not engine:
-            #if self.session['custom_model'] is not None:
-            #    error = f"{self.session['tts_engine']} custom model not implemented yet!"
-            #    raise NotImplementedError(error)
-            self.tts_key = self.model_path
-            try:
-                engine = self._load_api(self.tts_key, self.model_path, self.device)
-            except Exception as e:
-                error = 'load_engine(): _load_api() failed'
-                raise RuntimeError(error) from e
-        if engine:
-            msg = f'TTS {self.tts_key} Loaded!'
+        try:
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
-            return engine
-        error = 'load_engine(): engine is None'
-        raise RuntimeError(error)
+            self.cleanup_memory()
+            engine = loaded_tts.get(self.tts_key)
+            if not engine:
+                #if self.session['custom_model'] is not None:
+                #    error = f"{self.session['tts_engine']} custom model not implemented yet!"
+                #    raise NotImplementedError(error)
+                self.tts_key = self.model_path
+                try:
+                    engine = self._load_api(self.tts_key, self.model_path, self.device)
+                except Exception as e:
+                    error = 'load_engine(): _load_api() failed'
+                    raise RuntimeError(error) from e
+            if engine:
+                msg = f'TTS {self.tts_key} Loaded!'
+                print(msg)
+                return engine
+            error = 'load_engine(): engine is None'
+            raise RuntimeError(error)
+        except Exception as e:
+            error = f"load_engine() error: {e}"
+            raise RuntimeError(error) from e
 
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
