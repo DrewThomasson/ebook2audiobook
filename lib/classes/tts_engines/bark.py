@@ -130,7 +130,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 text=part,
                                 speaker=self.speaker,
                                 voice_dir=pth_voice_dir,
-                                grpu=self.device,
+                                grpu='cpu',
                                 **speaker_argument,
                                 **fine_tuned_params
                             )
