@@ -103,9 +103,9 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 if use_zs:
                     proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                     os.makedirs(proc_dir, exist_ok=True)
-                self.engine.to(self.device)
-                if use_zs:
-                    self.engine_zs.to(self.device)
+                #self.engine.to(self.device)
+                #if use_zs:
+                    #self.engine_zs.to(self.device)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -175,7 +175,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             target_wav = self._resample_wav(self.params['current_voice'], samplerate)
                             audio_part = self.engine_zs.voice_conversion(
                                 source_wav=source_wav,
-                                target_wav=target_wav
+                                target_wav=target_wav,
+                                gpu=self.device
                             )
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
