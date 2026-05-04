@@ -123,6 +123,9 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
+                if use_zs:
+                    proc_dir = os.path.join(self.session['voice_dir'], 'proc')
+                    os.makedirs(proc_dir, exist_ok=True)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
