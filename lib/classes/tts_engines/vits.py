@@ -66,8 +66,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 #    msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 #    raise NotImplementedError(msg)
                 self.tts_key = self.model_path
-                engine = self._load_api(self.tts_key, self.model_path)
-                engine.to(self.device)
+                engine = self._load_api(self.tts_key, self.model_path, self.device)
             if engine:
                 msg = f"TTS {self.tts_key} Loaded!"
                 print(msg)
@@ -104,9 +103,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 if use_zs:
                     proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                     os.makedirs(proc_dir, exist_ok=True)
-                #self.engine.to(self.device)
-                #if use_zs:
-                    #self.engine_zs.to(self.device)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -214,7 +210,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         else:
                             error = f'audio_part not valid'
                             return False, error
-                #self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
