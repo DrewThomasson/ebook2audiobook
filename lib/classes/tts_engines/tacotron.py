@@ -10,6 +10,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
+            self.speaker = None
             self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
@@ -116,6 +117,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     if self.session['voice'] == self.params['block_voice']:
                         self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
+                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                 os.makedirs(proc_dir, exist_ok=True)
                 self.audio_segments = []
@@ -186,35 +188,13 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
                             source_wav = self._resample_wav(tmp_out_wav, samplerate)
                             target_wav = self._resample_wav(self.params['current_voice'], samplerate)
-
-                            import torch.nn as _nn
-                            vc = self.engine_zs.voice_converter.vc_model
-                            print(f'[zs] use_cuda={self.engine_zs.voice_converter.use_cuda}')
-                            print(f'[zs] vc_model class={vc.__class__.__name__}')
-                            for n, m in vc.named_modules():
-                                params = list(m.parameters(recurse=False))
-                                if params:
-                                    print(f'[zs] {n or "<root>"}: {params[0].device}')
-                            for k, v in vars(vc).items():
-                                if isinstance(v, _nn.Module):
-                                    continue
-                                if hasattr(v, '__dict__'):
-                                    for kk, vv in vars(v).items():
-                                        if isinstance(vv, _nn.Module):
-                                            p = next(vv.parameters(), None)
-                                            print(f'[zs] WRAPPED {k}.{kk}: {p.device if p is not None else "no params"}')
-
-                            vcter = self.engine_zs.voice_converter
-                            print(f'[vcter] keys: {list(vars(vcter).keys())}')
-                            for k, v in vars(vcter).items():
-                                if isinstance(v, _nn.Module):
-                                    p = next(v.parameters(), None)
-                                    print(f'[vcter] {k}: {p.device if p is not None else "no params"}')
-
-
+                            speaker_argument = {}
+                            if self.speaker not in self.engine.speakers:
+                                speaker_argument['target_wav'] = self.params['current_voice']
                             audio_part = self.engine_zs.voice_conversion(
                                 source_wav=source_wav,
-                                target_wav=target_wav
+                                speaker=self.speaker,
+                                **speaker_argument
                             )
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
