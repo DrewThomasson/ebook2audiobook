@@ -181,31 +181,11 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             speaker_argument = {}
                             if (self.engine_zs.speakers is not None and self.speaker not in self.engine_zs.speakers) or self.engine_zs.speakers is None:
                                 speaker_argument['target_wav'] = target_wav
-                            import torch.nn as _nn
-                            import traceback as _tb
-                            vcter = self.engine_zs.voice_converter
-                            non_cuda = []
-                            for n, m in vcter.named_modules():
-                                for pn, p in m.named_parameters(recurse=False):
-                                    if p.device.type != 'cuda':
-                                        non_cuda.append(f'param {n}.{pn} -> {p.device}')
-                                for bn, b in m.named_buffers(recurse=False):
-                                    if b.device.type != 'cuda':
-                                        non_cuda.append(f'buffer {n}.{bn} -> {b.device}')
-                            print(f'[pre-call] non-cuda: {len(non_cuda)}')
-                            for s in non_cuda[:50]:
-                                print(f'  {s}')
-                            print(f'[pre-call] source_wav={source_wav}')
-                            print(f'[pre-call] target_wav exists in args: {"target_wav" in speaker_argument}')
-                            try:
-                                audio_part = self.engine_zs.voice_conversion(
-                                    source_wav=source_wav,
-                                    speaker=self.speaker,
-                                    **speaker_argument
-                                )
-                            except Exception:
-                                _tb.print_exc()
-                                raise
+                            audio_part = self.engine_zs.voice_conversion(
+                                source_wav=source_wav,
+                                speaker=self.speaker,
+                                **speaker_argument
+                            )
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
@@ -260,6 +240,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 return False, error
         except Exception as e:
             self.cleanup_memory()
+            import traceback
+            traceback.print_exc()
             error = f'Vits.convert(): {e}'
             return False, error
 
