@@ -531,56 +531,61 @@ class TTSUtils:
         else:
             raise TypeError(f'_tensor_type() error: Unsupported type for audio_data: {type(audio_data)}')
             
-    def _get_resampler(self,orig_sr:int,target_sr:int)->'Resample':
+    def _get_resampler(self, orig_sr:int, target_sr:int, device:'torch.device|str'='cpu')->'Resample':
+        import torch
         import torchaudio
-        key=(orig_sr,target_sr)
+        dev = torch.device(device) if not isinstance(device, torch.device) else device
+        key = (orig_sr, target_sr, str(dev))
         if key not in self.resampler_cache:
-            self.resampler_cache[key]=torchaudio.transforms.Resample(
-                orig_freq = orig_sr,new_freq = target_sr
-            )
+            resampler = torchaudio.transforms.Resample(
+                orig_freq = orig_sr, new_freq = target_sr
+            ).to(dev)
+            resampler.eval()
+            self.resampler_cache[key] = resampler
         return self.resampler_cache[key]
 
-    def _resample_wav(self,wav_path:str,expected_sr:int)->str:
+    def _resample_wav(self, wav_path:str, expected_sr:int)->str:
         import torchaudio
         import soundfile as sf
         import torch
-        waveform,orig_sr = torchaudio.load(wav_path)
+        waveform, orig_sr = torchaudio.load(wav_path)
         if orig_sr==expected_sr and waveform.size(0)==1:
             return wav_path
         if waveform.size(0)>1:
-            waveform = waveform.mean(dim=0,keepdim=True)
+            waveform = waveform.mean(dim=0, keepdim=True)
         if orig_sr!=expected_sr:
-            resampler = self._get_resampler(orig_sr,expected_sr)
+            resampler = self._get_resampler(orig_sr, expected_sr, waveform.device)
             waveform = resampler(waveform)
         wav_tensor = waveform.squeeze(0)
         wav_numpy = wav_tensor.cpu().numpy()
-        resample_tmp = os.path.join(self.session['process_dir'], 'tmp')
-        os.makedirs(resample_tmp, exist_ok=True)
-        tmp_fh = tempfile.NamedTemporaryFile(dir=resample_tmp, suffix='.wav', delete=False)
+        resample_tmp = os.path.join(self.session['process_dir'],  'tmp')
+        os.makedirs(resample_tmp,  exist_ok=True)
+        tmp_fh = tempfile.NamedTemporaryFile(dir=resample_tmp,  suffix='.wav',  delete=False)
         tmp_path = tmp_fh.name
         tmp_fh.close()
-        sf.write(tmp_path,wav_numpy,expected_sr,subtype='PCM_16')
+        sf.write(tmp_path, wav_numpy, expected_sr, subtype='PCM_16')
         return tmp_path
 
-    def _resample_audiodata(self,wav_data,source_sr:int,expected_sr:int)->Any:
+    def _resample_audiodata(self, wav_data, source_sr:int, expected_sr:int)->Any:
         import torch
         import numpy as np
-        if isinstance(wav_data,list):
-            wav_data = np.asarray(wav_data,dtype=np.float32)
-        if isinstance(wav_data,np.ndarray):
+        if isinstance(wav_data, list):
+            wav_data = np.asarray(wav_data, dtype=np.float32)
+        if isinstance(wav_data, np.ndarray):
             waveform = torch.from_numpy(wav_data).float()
-        elif isinstance(wav_data,torch.Tensor):
+        elif isinstance(wav_data, torch.Tensor):
             waveform = wav_data.float()
         else:
             raise TypeError(f'unsupported wav_data type: {type(wav_data)}')
         if waveform.ndim==1:
             waveform = waveform.unsqueeze(0)
         if waveform.size(0)>1:
-            waveform = waveform.mean(dim=0,keepdim=True)
+            waveform = waveform.mean(dim=0, keepdim=True)
         if source_sr!=expected_sr:
-            resampler = self._get_resampler(source_sr,expected_sr)
+            resampler = self._get_resampler(source_sr, expected_sr, waveform.device)
             waveform = resampler(waveform)
         return waveform.squeeze(0).cpu().numpy()
+
 
     def _set_voice(self, voice:str|None)->tuple:
         current_voice = (voice if voice is not None else self.models[self.session['fine_tuned']]['voice'])
