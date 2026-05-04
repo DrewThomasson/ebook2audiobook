@@ -136,6 +136,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     self.engine.tts_to_file(
                                         text=part,
                                         file_path=tmp_in_wav,
+                                        gpu=self.device,
                                         **speaker_argument
                                     )
                             if self.params['current_voice'] in self.params['semitones'].keys():
@@ -190,6 +191,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
                                         text=part,
+                                        gpu=self.device,
                                         **speaker_argument
                                     )
                         if torch.is_tensor(audio_part):
