@@ -87,7 +87,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
-                #self.engine.to(self.device)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -140,7 +139,6 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         else:
                             error = f'audio_part not valid'
                             return False, error
-                #self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])

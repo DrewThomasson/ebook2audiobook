@@ -93,7 +93,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if self.session.get(key) is not None
                 }
                 self.audio_segments = []
-                #self.engine.to(self.device) # TODO: uncomment once coqui-tts bug solved
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -130,7 +129,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 text=part,
                                 speaker=self.speaker,
                                 voice_dir=pth_voice_dir,
-                                gpu=self.device,
                                 **speaker_argument,
                                 **fine_tuned_params
                             )
@@ -156,7 +154,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         else:
                             error = f'audio_part not valid'
                             return False, error
-                #self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
