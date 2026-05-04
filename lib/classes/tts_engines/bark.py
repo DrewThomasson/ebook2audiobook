@@ -171,7 +171,9 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 return False, error
         except Exception as e:
+            import traceback
             self.cleanup_memory()
+            traceback.print_exc()
             error = f'Bark.convert(): {e}'
             return False, error
 

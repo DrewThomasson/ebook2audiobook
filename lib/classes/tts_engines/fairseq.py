@@ -224,7 +224,9 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 return False, error
         except Exception as e:
+            import traceback
             self.cleanup_memory()
+            traceback.print_exc()
             error = f'Fairseq.convert(): {e}'
             return False, error
 
