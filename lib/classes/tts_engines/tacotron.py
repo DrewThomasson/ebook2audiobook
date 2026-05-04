@@ -186,6 +186,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
                             source_wav = self._resample_wav(tmp_out_wav, samplerate)
                             target_wav = self._resample_wav(self.params['current_voice'], samplerate)
+
                             import torch.nn as _nn
                             vc = self.engine_zs.voice_converter.vc_model
                             print(f'[zs] use_cuda={self.engine_zs.voice_converter.use_cuda}')
@@ -202,10 +203,21 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                         if isinstance(vv, _nn.Module):
                                             p = next(vv.parameters(), None)
                                             print(f'[zs] WRAPPED {k}.{kk}: {p.device if p is not None else "no params"}')
-                            audio_part = self.engine_zs.voice_conversion(
-                                source_wav=source_wav,
-                                target_wav=target_wav
-                            )
+
+                            vcter = self.engine_zs.voice_converter
+                            print(f'[vcter] keys: {list(vars(vcter).keys())}')
+                            for k, v in vars(vcter).items():
+                                if isinstance(v, _nn.Module):
+                                    p = next(v.parameters(), None)
+                                    print(f'[vcter] {k}: {p.device if p is not None else "no params"}')
+
+
+                            import traceback
+                            try:
+                                audio_part = self.engine_zs.voice_conversion(source_wav=source_wav, target_wav=target_wav)
+                            except Exception:
+                                traceback.print_exc()
+                                raise
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
