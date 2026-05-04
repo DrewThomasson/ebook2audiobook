@@ -51,7 +51,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             #    raise NotImplementedError(error)
             self.tts_key = self.model_path
             try:
-                engine = self._load_api(self.tts_key, self.model_path)
+                engine = self._load_api(self.tts_key, self.model_path, self.device)
             except Exception as e:
                 error = 'load_engine(): _load_api() failed'
                 raise RuntimeError(error) from e
