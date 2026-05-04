@@ -279,6 +279,7 @@ class TTSUtils:
         try:
             with _lock:
                 from TTS.api import TTS as TTSEngine
+                import torch.nn as nn
                 engine = loaded_tts.get(key)
                 if not engine:
                     engine = TTSEngine(model_path).to(device)
@@ -287,18 +288,27 @@ class TTSUtils:
                 syn = getattr(engine, 'synthesizer', None)
                 if syn is not None:
                     syn.use_cuda = str(device).startswith('cuda')
-                    for attr in ('tts_model', 'vocoder_model'):
+                    seen = set()
+                    stack = []
+                    for attr in ('tts_model', 'vocoder_model', 'vc_model'):
                         mdl = getattr(syn, attr, None)
-                        if mdl is None:
-                            continue
-                        mdl = mdl.to(device)
-                        mdl.eval()
-                        setattr(syn, attr, mdl)
+                        if mdl is not None:
+                            stack.append(mdl)
                     spk = getattr(syn, 'speaker_manager', None)
                     enc = getattr(spk, 'encoder', None) if spk is not None else None
                     if enc is not None:
-                        enc.to(device)
-                        enc.eval()
+                        stack.append(enc)
+                    while stack:
+                        mdl = stack.pop()
+                        if id(mdl) in seen:
+                            continue
+                        seen.add(id(mdl))
+                        if isinstance(mdl, nn.Module):
+                            mdl.to(device)
+                            mdl.eval()
+                        for v in vars(mdl).values():
+                            if isinstance(v, nn.Module) and id(v) not in seen:
+                                stack.append(v)
                 vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                 self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                 models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
@@ -365,6 +375,18 @@ class TTSUtils:
             if engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
                 msg = f'ZeroShot {self.tts_zs_key} Loaded!'
+
+                import torch.nn as nn
+                for path, mdl in [(p, getattr(engine_zs.synthesizer, p, None)) for p in ('tts_model', 'vocoder_model', 'vc_model')]:
+                    if mdl is None:
+                        continue
+                    devs = {str(p.device) for p in mdl.parameters()}
+                    print(f'[zs] {path} param devices: {devs}')
+                    for sub_name, sub in mdl.named_children():
+                        if isinstance(sub, nn.Module):
+                            sd = {str(p.device) for p in sub.parameters()}
+                            print(f'[zs]   {path}.{sub_name}: {sd}')
+
                 return engine_zs
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
