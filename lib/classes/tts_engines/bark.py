@@ -123,6 +123,17 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         speaker_argument = {}
                         if (self.engine.speakers is not None and self.speaker not in self.engine.speakers) or self.engine.speakers is None:
                             speaker_argument['speaker_wav'] = self.params['current_voice']
+                        import torchaudio as _ta
+                        import torch as _t
+                        print(f'[bark-pre] current_voice={self.params["current_voice"]}')
+                        print(f'[bark-pre] speaker={self.speaker}')
+                        print(f'[bark-pre] pth_voice_dir={pth_voice_dir}')
+                        _a, _s = _ta.load(self.params['current_voice'])
+                        print(f'[bark-pre] voice load: shape={tuple(_a.shape)} ndim={_a.ndim} sr={_s} dtype={_a.dtype}')
+                        print(f'[bark-pre] bark target_sr={self.engine.synthesizer.tts_model.config.sample_rate}')
+                        print(f'[bark-pre] cache files in pth_voice_dir: {os.listdir(pth_voice_dir) if os.path.exists(pth_voice_dir) else "missing"}')
+                        print(f'[bark-pre] speaker_argument={speaker_argument}')
+                        print(f'[bark-pre] engine.speakers={self.engine.speakers}')
                         with torch.inference_mode():
                             #with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                             audio_part = self.engine.tts(
