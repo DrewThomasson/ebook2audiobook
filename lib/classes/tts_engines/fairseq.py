@@ -88,9 +88,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
-                #self.engine.to(self.device)
-                if use_zs:
-                    self.engine_zs.to(self.device)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -114,8 +111,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     self.engine.tts_to_file(
                                         text=part,
-                                        file_path=tmp_in_wav,
-                                        gpu=self.device
+                                        file_path=tmp_in_wav
                                     )
                             if self.params['current_voice'] in self.params['semitones'].keys():
                                 semitones = self.params['semitones'][self.params['current_voice']]
@@ -166,8 +162,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         else:
                             with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 audio_part = self.engine.tts(
-                                    text=part,
-                                    gpu=self.device
+                                    text=part
                                 )
                         if torch.is_tensor(audio_part):
                             audio_part = audio_part.detach().cpu()
@@ -191,7 +186,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         else:
                             error = f'audio_part not valid'
                             return False, error
-                #self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
