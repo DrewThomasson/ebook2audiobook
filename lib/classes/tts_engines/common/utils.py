@@ -275,26 +275,40 @@ class TTSUtils:
             return torch.float16
         return amp_dtype
 
-    def _load_api(self, key:str, model_path:str, device:str)->Any:
-        try:
-            with _lock:
-                from TTS.api import TTS as TTSEngine
-                engine = loaded_tts.get(key)
-                if not engine:
-                    engine = TTSEngine(model_path).to(device)
-                if not engine:
-                    raise RuntimeError("TTSEngine returned None")
-                vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
-                self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-                models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
-                if self.session['free_vram_gb'] > models_loaded_size_gb:
-                    loaded_tts[key] = engine
-                return engine
-        except Exception as e:
-            error = f'_load_api() error: {e}'
-            print(error)
-            raise
-            
+def _load_api(self, key:str, model_path:str, device:str)->Any:
+    try:
+        with _lock:
+            from TTS.api import TTS as TTSEngine
+            engine = loaded_tts.get(key)
+            if not engine:
+                engine = TTSEngine(model_path).to(device)
+            if not engine:
+                raise RuntimeError('TTSEngine returned None')
+            syn = getattr(engine, 'synthesizer', None)
+            if syn is not None:
+                syn.use_cuda = str(device).startswith('cuda')
+                for attr in ('tts_model', 'vocoder_model'):
+                    mdl = getattr(syn, attr, None)
+                    if mdl is None:
+                        continue
+                    mdl = mdl.to(device)
+                    mdl.eval()
+                    setattr(syn, attr, mdl)
+                spk = getattr(syn, 'speaker_manager', None)
+                enc = getattr(spk, 'encoder', None) if spk is not None else None
+                if enc is not None:
+                    enc.to(device)
+                    enc.eval()
+            vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
+            self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+            models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
+            if self.session['free_vram_gb'] > models_loaded_size_gb:
+                loaded_tts[key] = engine
+            return engine
+    except Exception as e:
+        error = f'_load_api() error: {e}'
+        print(error)
+        raise
 
     def _load_checkpoint(self,**kwargs:Any)->Any:
         try:
