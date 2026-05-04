@@ -346,7 +346,6 @@ class TTSUtils:
             engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not engine_zs:
                 engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
-                engine_zs.to(device)
             if engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
                 msg = f'ZeroShot {self.tts_zs_key} Loaded!'
