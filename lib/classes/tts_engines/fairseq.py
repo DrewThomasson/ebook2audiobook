@@ -83,13 +83,14 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
-                proc_dir = os.path.join(self.session['voice_dir'], 'proc')
-                os.makedirs(proc_dir, exist_ok=True)
                 self.audio_segments = []
                 use_zs = self.params['current_voice'] is not None
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
+                if use_zs:
+                    proc_dir = os.path.join(self.session['voice_dir'], 'proc')
+                    os.makedirs(proc_dir, exist_ok=True)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -151,7 +152,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                             source_wav = self._resample_wav(tmp_out_wav, samplerate)
                             target_wav = self._resample_wav(self.params['current_voice'], samplerate)
                             speaker_argument = {}
-                            print(f'-----------------------self.speaker: {self.speaker}--------------')
                             if self.speaker not in self.engine_zs.speakers:
                                 speaker_argument['target_wav'] = self.params['current_voice']
                             audio_part = self.engine_zs.voice_conversion(
