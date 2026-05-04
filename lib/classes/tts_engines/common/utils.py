@@ -338,7 +338,7 @@ class TTSUtils:
             print(error)
             raise
 
-    def _load_engine_zs(self)->Any:
+    def _load_engine_zs(self, device:str)->Any:
         try:
             msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
@@ -346,6 +346,7 @@ class TTSUtils:
             engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not engine_zs:
                 engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
+                engine_zs.to(device)
             if engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
                 msg = f'ZeroShot {self.tts_zs_key} Loaded!'
