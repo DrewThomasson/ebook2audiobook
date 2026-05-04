@@ -176,10 +176,11 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 os.remove(source_wav)
                             audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
                         else:
-                            with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                audio_part = self.engine.tts(
-                                    text=part
-                                )
+                            with torch.inference_mode():
+                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                    audio_part = self.engine.tts(
+                                        text=part
+                                    )
                         if torch.is_tensor(audio_part):
                             audio_part = audio_part.detach().cpu()
                         if is_audio_data_valid(audio_part):
