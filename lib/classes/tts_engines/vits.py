@@ -50,7 +50,9 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine = self.load_engine()
+            self.engine.to(self.device)
             self.engine_zs = self._load_engine_zs()
+            self.engine_zs.to(self.device)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
@@ -136,7 +138,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     self.engine.tts_to_file(
                                         text=part,
                                         file_path=tmp_in_wav,
-                                        gpu=self.device,
                                         **speaker_argument
                                     )
                             if self.params['current_voice'] in self.params['semitones'].keys():
@@ -176,8 +177,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             target_wav = self._resample_wav(self.params['current_voice'], samplerate)
                             audio_part = self.engine_zs.voice_conversion(
                                 source_wav=source_wav,
-                                target_wav=target_wav,
-                                gpu=self.device
+                                target_wav=target_wav
                             )
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
@@ -191,7 +191,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
                                         text=part,
-                                        gpu=self.device,
                                         **speaker_argument
                                     )
                         if torch.is_tensor(audio_part):
@@ -216,7 +215,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         else:
                             error = f'audio_part not valid'
                             return False, error
-                self.engine.to(devices['CPU']['proc'])
+                #self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
