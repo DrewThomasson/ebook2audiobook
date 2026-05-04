@@ -103,9 +103,6 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                 if use_zs:
                     proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                     os.makedirs(proc_dir, exist_ok=True)
-                self.engine.to(self.device)
-                if use_zs:
-                    self.engine_zs.to(self.device)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -138,7 +135,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     self.engine.tts_to_file(
                                         text=part_ipa,
-                                        file_path=tmp_in_wav,
+                                        file_path=tmp_in_wav
                                     )
                             if self.params['current_voice'] in self.params['semitones'].keys():
                                 semitones = self.params['semitones'][self.params['current_voice']]
@@ -214,7 +211,6 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                         else:
                             error = f'audio_part not valid'
                             return False, error
-                self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
