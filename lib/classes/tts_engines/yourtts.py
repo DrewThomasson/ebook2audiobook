@@ -60,6 +60,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             if engine is None:
                 error = '_load_api() returned None'
                 raise RuntimeError(error)
+            engine.to(self.device)
             msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
             return engine
@@ -115,8 +116,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 audio_part = self.engine.tts(
                                     text=part,
-                                    language=self.language,
-                                    gpu=self.device,
+                                    language=self.language,,
                                     **speaker_argument
                                 )
                         if torch.is_tensor(audio_part):
