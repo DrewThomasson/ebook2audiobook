@@ -153,7 +153,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                             target_wav = self._resample_wav(self.params['current_voice'], samplerate)
                             speaker_argument = {}
                             if (self.engine_zs.speakers is not None and self.speaker not in self.engine_zs.speakers) or self.engine_zs.speakers is None:
-                                speaker_argument['target_wav'] = self.params['current_voice']
+                                speaker_argument['target_wav'] = target_wav
                             audio_part = self.engine_zs.voice_conversion(
                                 source_wav=source_wav,
                                 speaker=self.speaker,

@@ -121,7 +121,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
                         speaker_argument = {}
-                        if self.speaker not in self.engine.speakers:
+                        if (self.engine.speakers is not None and self.speaker not in self.engine.speakers) or self.engine.speakers is None:
                             speaker_argument['speaker_wav'] = self.params['current_voice']
                         with torch.inference_mode():
                             #with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
