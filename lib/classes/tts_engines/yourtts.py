@@ -56,11 +56,10 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             error = f"Invalid fine_tuned model '{self.session['fine_tuned']}'"
             raise KeyError(error) from e
         try:
-            engine = self._load_api(self.tts_key, model_path)
+            engine = self._load_api(self.tts_key, model_path, self.device)
             if engine is None:
                 error = '_load_api() returned None'
                 raise RuntimeError(error)
-            engine.to(self.device)
             msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
             return engine
