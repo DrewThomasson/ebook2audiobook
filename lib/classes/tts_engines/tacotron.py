@@ -186,6 +186,22 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                             samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
                             source_wav = self._resample_wav(tmp_out_wav, samplerate)
                             target_wav = self._resample_wav(self.params['current_voice'], samplerate)
+                            import torch.nn as _nn
+                            vc = self.engine_zs.voice_converter.vc_model
+                            print(f'[zs] use_cuda={self.engine_zs.voice_converter.use_cuda}')
+                            print(f'[zs] vc_model class={vc.__class__.__name__}')
+                            for n, m in vc.named_modules():
+                                params = list(m.parameters(recurse=False))
+                                if params:
+                                    print(f'[zs] {n or "<root>"}: {params[0].device}')
+                            for k, v in vars(vc).items():
+                                if isinstance(v, _nn.Module):
+                                    continue
+                                if hasattr(v, '__dict__'):
+                                    for kk, vv in vars(v).items():
+                                        if isinstance(vv, _nn.Module):
+                                            p = next(vv.parameters(), None)
+                                            print(f'[zs] WRAPPED {k}.{kk}: {p.device if p is not None else "no params"}')
                             audio_part = self.engine_zs.voice_conversion(
                                 source_wav=source_wav,
                                 target_wav=target_wav
