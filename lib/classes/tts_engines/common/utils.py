@@ -496,13 +496,17 @@ class TTSUtils:
         else:
             raise TypeError(f'_tensor_type() error: Unsupported type for audio_data: {type(audio_data)}')
             
-    def _get_resampler(self,orig_sr:int,target_sr:int)->'Resample':
+    def _get_resampler(self,orig_sr:int,target_sr:int,device:'torch.device|str'='cpu')->'Resample':
+        import torch
         import torchaudio
-        key=(orig_sr,target_sr)
+        dev = torch.device(device) if not isinstance(device,torch.device) else device
+        key = (orig_sr,target_sr,str(dev))
         if key not in self.resampler_cache:
-            self.resampler_cache[key]=torchaudio.transforms.Resample(
+            resampler = torchaudio.transforms.Resample(
                 orig_freq = orig_sr,new_freq = target_sr
-            )
+            ).to(dev)
+            resampler.eval()
+            self.resampler_cache[key] = resampler
         return self.resampler_cache[key]
 
     def _resample_wav(self,wav_path:str,expected_sr:int)->str:
@@ -515,7 +519,7 @@ class TTSUtils:
         if waveform.size(0)>1:
             waveform = waveform.mean(dim=0,keepdim=True)
         if orig_sr!=expected_sr:
-            resampler = self._get_resampler(orig_sr,expected_sr)
+            resampler = self._get_resampler(orig_sr,expected_sr,waveform.device)
             waveform = resampler(waveform)
         wav_tensor = waveform.squeeze(0)
         wav_numpy = wav_tensor.cpu().numpy()
@@ -543,7 +547,7 @@ class TTSUtils:
         if waveform.size(0)>1:
             waveform = waveform.mean(dim=0,keepdim=True)
         if source_sr!=expected_sr:
-            resampler = self._get_resampler(source_sr,expected_sr)
+            resampler = self._get_resampler(source_sr,expected_sr,waveform.device)
             waveform = resampler(waveform)
         return waveform.squeeze(0).cpu().numpy()
 
