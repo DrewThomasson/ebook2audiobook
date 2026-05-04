@@ -80,7 +80,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
         try:
             import torch
             import torchaudio
-            import numpy as np
+            #import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
