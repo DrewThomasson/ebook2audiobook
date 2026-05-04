@@ -126,104 +126,105 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 self.engine.to(self.device)
                 if use_zs:
                     self.engine_zs.to(self.device)
-                with torch.no_grad():
-                    for part in sentence_parts:
-                        part = part.strip()
-                        if not part:
-                            continue
-                        if SML_TAG_PATTERN.fullmatch(part):
-                            success, error = self._convert_sml(part)
-                            if not success:
-                                return False, error
-                            continue
-                        if not any(c.isalnum() for c in part):
-                            continue
-                        else:
-                            trim_audio_buffer = 0.004
-                            if part.endswith("'"):
-                                part = part[:-1]
-                            part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                            if use_zs:
-                                tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
-                                tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
+                for part in sentence_parts:
+                    part = part.strip()
+                    if not part:
+                        continue
+                    if SML_TAG_PATTERN.fullmatch(part):
+                        success, error = self._convert_sml(part)
+                        if not success:
+                            return False, error
+                        continue
+                    if not any(c.isalnum() for c in part):
+                        continue
+                    else:
+                        trim_audio_buffer = 0.004
+                        if part.endswith("'"):
+                            part = part[:-1]
+                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()
+                        if use_zs:
+                            tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
+                            tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
+                            with torch.inference_mode():
                                 with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     self.engine.tts_to_file(
                                         text=part,
                                         file_path=tmp_in_wav
                                     )
-                                if self.params['current_voice'] in self.params['semitones'].keys():
-                                    semitones = self.params['semitones'][self.params['current_voice']]
-                                else:
-                                    current_voice_gender = detect_gender(self.params['current_voice'])
-                                    voice_builtin_gender = detect_gender(tmp_in_wav)
-                                    msg = f'Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}'
-                                    print(msg)
-                                    if voice_builtin_gender != current_voice_gender:
-                                        semitones = -4 if current_voice_gender == 'male' else 4
-                                        msg = f'Adapting builtin voice frequencies from the clone voice…'
-                                        print(msg)
-                                    else:
-                                        semitones = 0
-                                    self.params['semitones'][self.params['current_voice']] = semitones
-                                if semitones > 0:
-                                    try:
-                                        cmd = [
-                                            shutil.which('sox'), tmp_in_wav,
-                                            '-r', str(self.params['samplerate']), tmp_out_wav,
-                                            'pitch', str(semitones * 100)
-                                        ]
-                                        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                    except subprocess.CalledProcessError as e:
-                                        error = f'Subprocess error: {e.stderr}'
-                                        DependencyError(error)
-                                        return False, error
-                                    except FileNotFoundError as e:
-                                        error = f'File not found: {e}'
-                                        DependencyError(error)
-                                        return False, error
-                                else:
-                                    tmp_out_wav = tmp_in_wav
-                                samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
-                                source_wav = self._resample_wav(tmp_out_wav, samplerate)
-                                target_wav = self._resample_wav(self.params['current_voice'], samplerate)
-                                audio_part = self.engine_zs.voice_conversion(
-                                    source_wav=source_wav,
-                                    target_wav=target_wav
-                                )
-                                if os.path.exists(tmp_in_wav):
-                                    os.remove(tmp_in_wav)
-                                if os.path.exists(tmp_out_wav):
-                                    os.remove(tmp_out_wav)
-                                if os.path.exists(source_wav):
-                                    os.remove(source_wav)
-                                audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
+                            if self.params['current_voice'] in self.params['semitones'].keys():
+                                semitones = self.params['semitones'][self.params['current_voice']]
                             else:
+                                current_voice_gender = detect_gender(self.params['current_voice'])
+                                voice_builtin_gender = detect_gender(tmp_in_wav)
+                                msg = f'Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}'
+                                print(msg)
+                                if voice_builtin_gender != current_voice_gender:
+                                    semitones = -4 if current_voice_gender == 'male' else 4
+                                    msg = f'Adapting builtin voice frequencies from the clone voice…'
+                                    print(msg)
+                                else:
+                                    semitones = 0
+                                self.params['semitones'][self.params['current_voice']] = semitones
+                            if semitones > 0:
+                                try:
+                                    cmd = [
+                                        shutil.which('sox'), tmp_in_wav,
+                                        '-r', str(self.params['samplerate']), tmp_out_wav,
+                                        'pitch', str(semitones * 100)
+                                    ]
+                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                except subprocess.CalledProcessError as e:
+                                    error = f'Subprocess error: {e.stderr}'
+                                    DependencyError(error)
+                                    return False, error
+                                except FileNotFoundError as e:
+                                    error = f'File not found: {e}'
+                                    DependencyError(error)
+                                    return False, error
+                            else:
+                                tmp_out_wav = tmp_in_wav
+                            samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
+                            source_wav = self._resample_wav(tmp_out_wav, samplerate)
+                            target_wav = self._resample_wav(self.params['current_voice'], samplerate)
+                            audio_part = self.engine_zs.voice_conversion(
+                                source_wav=source_wav,
+                                target_wav=target_wav
+                            )
+                            if os.path.exists(tmp_in_wav):
+                                os.remove(tmp_in_wav)
+                            if os.path.exists(tmp_out_wav):
+                                os.remove(tmp_out_wav)
+                            if os.path.exists(source_wav):
+                                os.remove(source_wav)
+                            audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
+                        else:
+                            with torch.inference_mode():
                                 with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     audio_part = self.engine.tts(
                                         text=part
                                     )
-                            if torch.is_tensor(audio_part):
-                                audio_part = audio_part.detach().cpu()
-                            if is_audio_data_valid(audio_part):
-                                src_tensor = self._tensor_type(audio_part)
-                                part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                                if part_tensor is not None and part_tensor.numel() > 0:
-                                    if part[-1].isalnum() or part[-1] == '—':
-                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                    self.audio_segments.append(part_tensor)
-                                    del part_tensor
-                                    """
-                                    if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                        silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                        break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                        self.audio_segments.append(break_tensor.clone())
-                                    """
-                                else:
-                                    error = f'part_tensor not valid'
-                                    return False, error
+                        if torch.is_tensor(audio_part):
+                            audio_part = audio_part.detach().cpu()
+                        if is_audio_data_valid(audio_part):
+                            src_tensor = self._tensor_type(audio_part)
+                            part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
+                            if part_tensor is not None and part_tensor.numel() > 0:
+                                if part[-1].isalnum() or part[-1] == '—':
+                                    part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                self.audio_segments.append(part_tensor)
+                                del part_tensor
+                                """
+                                if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
+                                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                    break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
+                                    self.audio_segments.append(break_tensor.clone())
+                                """
                             else:
-                                error = f'audio_part not valid'
+                                error = f'part_tensor not valid'
                                 return False, error
+                        else:
+                            error = f'audio_part not valid'
+                            return False, error
                 self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
