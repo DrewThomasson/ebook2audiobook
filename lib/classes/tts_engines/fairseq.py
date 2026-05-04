@@ -224,11 +224,8 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 return False, error
         except Exception as e:
-            import traceback
             self.cleanup_memory()
-            traceback.print_exc()
-            error = f'Fairseq.convert(): {e}'
-            return False, error
+            return False, return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:
         if self._build_vtt_file(all_sentences):
