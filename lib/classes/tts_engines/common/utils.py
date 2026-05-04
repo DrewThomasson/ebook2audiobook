@@ -309,6 +309,22 @@ class TTSUtils:
                         for v in vars(mdl).values():
                             if isinstance(v, nn.Module) and id(v) not in seen:
                                 stack.append(v)
+                    if hasattr(syn, 'voice_conversion') and not getattr(syn, '_dev_pinned', False):
+                        _orig_vc_call = syn.voice_conversion
+                        _pin_dev = device
+                        def _vc_pinned(*a, **kw):
+                            vc = getattr(syn, 'vc_model', None)
+                            if vc is not None:
+                                if isinstance(vc, nn.Module):
+                                    vc.to(_pin_dev)
+                                    vc.eval()
+                                for _v in vars(vc).values():
+                                    if isinstance(_v, nn.Module):
+                                        _v.to(_pin_dev)
+                                        _v.eval()
+                            return _orig_vc_call(*a, **kw)
+                        syn.voice_conversion = _vc_pinned
+                        syn._dev_pinned = True
                 vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                 self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                 models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
@@ -375,18 +391,6 @@ class TTSUtils:
             if engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
                 msg = f'ZeroShot {self.tts_zs_key} Loaded!'
-
-                import torch.nn as nn
-                for path, mdl in [(p, getattr(engine_zs.synthesizer, p, None)) for p in ('tts_model', 'vocoder_model', 'vc_model')]:
-                    if mdl is None:
-                        continue
-                    devs = {str(p.device) for p in mdl.parameters()}
-                    print(f'[zs] {path} param devices: {devs}')
-                    for sub_name, sub in mdl.named_children():
-                        if isinstance(sub, nn.Module):
-                            sd = {str(p.device) for p in sub.parameters()}
-                            print(f'[zs]   {path}.{sub_name}: {sd}')
-
                 return engine_zs
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
