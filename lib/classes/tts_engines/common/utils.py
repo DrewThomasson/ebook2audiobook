@@ -281,7 +281,7 @@ class TTSUtils:
                 from TTS.api import TTS as TTSEngine
                 engine = loaded_tts.get(key)
                 if not engine:
-                    engine = TTSEngine(model_path).to(device)
+                    engine = TTSEngine(model_path,gpu=True).to(device)
                 if not engine:
                     raise RuntimeError("TTSEngine returned None")
                 vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
