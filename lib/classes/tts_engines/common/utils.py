@@ -306,8 +306,9 @@ class TTSUtils:
                     from TTS.tts.configs.xtts_config import XttsConfig
                     from TTS.tts.models.xtts import Xtts
                     checkpoint_path = kwargs.get('checkpoint_path')
-                    config_path = kwargs.get('config_path',None)
-                    vocab_path = kwargs.get('vocab_path',None)
+                    config_path = kwargs.get('config_path', None)
+                    vocab_path = kwargs.get('vocab_path', None)
+                    device = kwargs.get('device', 'cpu')
                     if not checkpoint_path or not os.path.exists(checkpoint_path):
                         error = f'Missing or invalid checkpoint_path: {checkpoint_path}'
                         raise FileNotFoundError(error)
@@ -325,8 +326,9 @@ class TTSUtils:
                         checkpoint_path = checkpoint_path,
                         vocab_path = vocab_path,
                         eval = True
-                    ) 
+                    )
                 if engine:
+                    engine.to(device)
                     vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                     self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)

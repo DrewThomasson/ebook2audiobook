@@ -50,7 +50,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine = self.load_engine()
-            self.engine_zs = self._load_engine_zs()
+            self.engine_zs = self._load_engine_zs(self.device)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)

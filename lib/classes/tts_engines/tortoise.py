@@ -65,7 +65,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             #    raise NotImplementedError(error)
             self.tts_key = self.model_path
             try:
-                engine = self._load_api(self.tts_key, self.model_path)
+                engine = self._load_api(self.tts_key, self.model_path, self.device)
             except Exception as e:
                 error = 'load_engine(): _load_api() failed'
                 raise RuntimeError(error) from e
@@ -96,7 +96,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                         self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
-                self.engine.to(self.device)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -150,7 +149,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                         else:
                             error = f'audio_part not valid'
                             return False, error
-                self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])

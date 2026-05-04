@@ -33,9 +33,9 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             #random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
-            self.engine = self.load_engine()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
-            self.engine_zs = self._load_engine_zs()
+            self.engine = self.load_engine()
+            self.engine_zs = self._load_engine_zs(self.device)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
