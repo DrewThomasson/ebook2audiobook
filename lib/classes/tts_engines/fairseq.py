@@ -18,6 +18,15 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones": {}}
+            self.language = self.session.get('language')
+            tts_engine = self.session.get('tts_engine')
+            if tts_engine not in default_engine_settings:
+                error = f'Invalid tts_engine {tts_engine}.'
+                raise ValueError(error)
+            engine_langs = default_engine_settings[tts_engine].get('languages', {})
+            if self.language not in engine_langs:
+                error = f'Language {self.language} not supported by engine {tts_engine}.'
+                raise ValueError(error)
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
@@ -28,7 +37,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                     error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
                     raise ValueError(error)
             self.params['samplerate'] = model_cfg['samplerate']
-            self.model_path = model_cfg['repo'].replace('[lang]', self.session['language'])
+            self.model_path = model_cfg['repo'].replace('[lang]', self.language)
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
