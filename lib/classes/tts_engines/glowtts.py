@@ -18,9 +18,8 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones": {}, "samplerate": None}
-            tts_engine = self.session.get('tts_engine')
             self.language = self.session.get('language')
-            fine_tuned = self.session.get('fine_tuned')
+            tts_engine = self.session.get('tts_engine')
             if tts_engine not in default_engine_settings:
                 error = f'Invalid tts_engine {tts_engine}.'
                 raise ValueError(error)
@@ -28,7 +27,8 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
             if self.language not in engine_langs:
                 error = f'Language {self.language} not supported by engine {tts_engine}.'
                 raise ValueError(error)
-            iso_dir = engine_langs[self.language]
+            
+            fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
                 raise ValueError(error)
@@ -38,6 +38,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                     error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
                     raise ValueError(error)
             sub_dict = model_cfg['sub']
+            iso_dir = engine_langs[self.language]
             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
                 error = f'{tts_engine} checkpoint for {self.language} not found.'
