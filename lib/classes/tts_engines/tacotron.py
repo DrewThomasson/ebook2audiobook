@@ -53,7 +53,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine = self.load_engine()
-            self.engine_zs = self._load_engine_zs()
+            self.engine_zs = self._load_engine_zs(self.device)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
@@ -69,7 +69,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             #    raise NotImplementedError(error)
             self.tts_key = self.model_path
             try:
-                engine = self._load_api(self.tts_key, self.model_path)
+                engine = self._load_api(self.tts_key, self.model_path, self.device)
             except Exception as e:
                 error = 'load_engine(): _load_api() failed'
                 raise RuntimeError(error) from e
@@ -123,9 +123,6 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
-                self.engine.to(self.device)
-                if use_zs:
-                    self.engine_zs.to(self.device)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -225,7 +222,6 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                         else:
                             error = f'audio_part not valid'
                             return False, error
-                self.engine.to(devices['CPU']['proc'])
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
