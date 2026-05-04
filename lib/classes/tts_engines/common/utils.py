@@ -279,11 +279,23 @@ class TTSUtils:
         try:
             with _lock:
                 from TTS.api import TTS as TTSEngine
+                import torch.nn as nn
                 engine = loaded_tts.get(key)
+                is_cuda = str(device).startswith('cuda')
                 if not engine:
-                    engine = TTSEngine(model_path).to(device)
+                    engine = TTSEngine(model_path, gpu=is_cuda)
+                    if is_cuda:
+                        engine = engine.to(device)
                 if not engine:
-                    raise RuntimeError("TTSEngine returned None")
+                    raise RuntimeError('TTSEngine returned None')
+                for syn_attr in ('synthesizer', 'voice_converter'):
+                    syn = getattr(engine, syn_attr, None)
+                    if syn is None:
+                        continue
+                    syn.use_cuda = is_cuda
+                    for _, m in syn.named_modules():
+                        m.to(device)
+                        m.eval()
                 vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                 self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                 models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
