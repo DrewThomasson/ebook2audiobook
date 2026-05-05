@@ -24,7 +24,7 @@ def pyannote_patch()->None:
             except Exception:
                 pass
             try:
-                import soundfile  # noqa: F401
+                import soundfile
                 backends.append('soundfile')
             except Exception:
                 pass
@@ -79,7 +79,8 @@ class BackgroundDetector:
                     default_voice_detection_model,
                     cache_dir=tts_dir
                 )
-                pipeline = VoiceActivityDetection(segmentation=model)
+                batch_size = 1 if devices['JETSON']['found'] else 32
+                pipeline = VoiceActivityDetection(segmentation=model, batch_size=batch_size)
                 if pipeline:
                     if key == devices['CUDA']['proc'] and not devices['JETSON']['found']:
                         torch.backends.cuda.matmul.allow_tf32 = True
