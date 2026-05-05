@@ -378,7 +378,11 @@ if "%ffmpeg_pkg%"=="static" (
 	echo Static ffmpeg detected, swapping to ffmpeg-shared…
 	call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
 	call scoop install ffmpeg-shared || (echo [xx] install failed & exit /b 1)
-	findstr /v /x /c:"ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%"
+ 	if exist "%INSTALLED_LOG%" (
+ 		findstr /v /x /c:"ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%" 2>nul
+ 	) else (
+ 		type nul > "%tmp_file%"
+ 	)
 	>>"%tmp_file%" echo ffmpeg-shared
 	move /y "%tmp_file%" "%INSTALLED_LOG%" >nul
 	echo swap complete, .installed updated.
