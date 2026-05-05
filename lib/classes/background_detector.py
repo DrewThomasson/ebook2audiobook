@@ -98,29 +98,54 @@ class BackgroundDetector:
         return None, None, None
 
     def detect(self, vad_ratio_thresh:float=0.05)->tuple[bool, dict[str, float|bool]]:
+        import gc, torch
         pipeline, waveform, sr = self._get_props()
-        if (
-            pipeline is not None
-            and waveform is not None
-            and waveform.numel() > 0
-            and sr is not None
-            and sr > 0
-        ):
-            file = {
-                "waveform": waveform,
-                "sample_rate": sr
-            }
-            annotation = pipeline(file)
-            speech_time = sum(
-                segment.end - segment.start
-                for segment in annotation.itersegments()
-            )
-            non_speech_ratio = 1.0 - (
-                speech_time / self.total_duration if self.total_duration > 0 else 0.0
-            )
-            background_detected = non_speech_ratio > vad_ratio_thresh
-            return background_detected, {
-                "non_speech_ratio": non_speech_ratio,
-                "background_detected": background_detected
-            }
-        return False, {}
+        try:
+            if (
+                pipeline is not None
+                and waveform is not None
+                and waveform.numel() > 0
+                and sr is not None
+                and sr > 0
+            ):
+                file = {
+                    "waveform": waveform,
+                    "sample_rate": sr
+                }
+                annotation = pipeline(file)
+                speech_time = sum(
+                    segment.end - segment.start
+                    for segment in annotation.itersegments()
+                )
+                non_speech_ratio = 1.0 - (
+                    speech_time / self.total_duration if self.total_duration > 0 else 0.0
+                )
+                background_detected = non_speech_ratio > vad_ratio_thresh
+                return background_detected, {
+                    "non_speech_ratio": non_speech_ratio,
+                    "background_detected": background_detected
+                }
+            return False, {}
+        finally:
+            with _pipeline_lock:
+                for p in list(_pipeline_cache.values()):
+                    try:
+                        p.to('cpu')
+                    except Exception:
+                        pass
+                _pipeline_cache.clear()
+            pipeline = waveform = sr = None
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+            if hasattr(torch, 'xpu') and torch.xpu.is_available():
+                try:
+                    torch.xpu.empty_cache()
+                except Exception:
+                    pass
+            if torch.backends.mps.is_available():
+                try:
+                    torch.mps.empty_cache()
+                except Exception:
+                    pass
