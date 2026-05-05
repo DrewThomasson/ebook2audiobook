@@ -13,7 +13,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.speaker = None
             self.tts_key = self.session['model_cache']
             #self.pth_voice_file = None
-            self.resampler_cache = {}
+            self.resampled_wav_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
@@ -182,7 +182,13 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         speaker_argument = {}
                         if (self.engine.speakers is not None and self.speaker not in self.engine.speakers) or self.engine.speakers is None:
                             bark_sr = self.engine.synthesizer.tts_model.config.sample_rate
-                            speaker_argument['speaker_wav'] = self._resample_wav(self.params['current_voice'], bark_sr)
+                            voice_path = self.params['current_voice']
+                            cache_key = (voice_path, bark_sr)
+                            resampled_wav = self.resampled_wav_cache.get(cache_key)
+                            if resampled_wav is None or not os.path.exists(resampled_wav):
+                                resampled_wav = self._resample_wav(voice_path, bark_sr)
+                                self.resampled_wav_cache[cache_key] = resampled_wav
+                            speaker_argument['speaker_wav'] = resampled_wav
                         with torch.inference_mode():
                             #with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                             audio_part = self.engine.tts(
