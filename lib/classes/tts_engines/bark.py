@@ -39,6 +39,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             error = f'__init__() error: {e}'
             raise ValueError(error)
             
+    ############ TO REMOVE ONCE COQUI-TTS FIXED ################
     def _patch_bark_voice_gen(self, engine)->None:
         '''Two coqui bugs in bark's voice path:
         1. _generate_voice passes a CUDA tensor to transformers' EncodecFeatureExtractor.
@@ -93,6 +94,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             return voice
         bark_model.clone_voice = _clone_voice_on_device
         bark_model._voice_gen_patched = True
+    ##################################
 
     def load_engine(self)->Any:
         msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
