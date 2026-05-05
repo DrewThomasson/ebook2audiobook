@@ -40,14 +40,16 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             raise ValueError(error)
             
     def _patch_bark_voice_gen(self, engine)->None:
-        '''Coqui's Bark._generate_voice passes a CUDA tensor to the transformers
-        EncodecFeatureExtractor, which calls np.asarray() and fails. Wrap the
-        method to .cpu() the audio for the processor only, keeping the rest of
-        the pipeline on device.
+        '''Two coqui bugs in bark's voice path:
+        1. _generate_voice passes a CUDA tensor to transformers' EncodecFeatureExtractor.
+        2. load_voice_file uses map_location='cpu' unconditionally, then torch.cat
+           blows up against on-device encoded_text.
+        Wrap both methods to keep tensors on bark_model.device throughout.
         '''
         bark_model = engine.synthesizer.tts_model
         if getattr(bark_model, '_voice_gen_patched', False):
             return
+        # --- patch 1: _generate_voice (cpu-safe processor path) ---
         def _generate_voice_cpu_safe(speaker_wav):
             import torch
             import torchaudio
@@ -80,6 +82,16 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 'fine_prompt': codes
             }
         bark_model._generate_voice = _generate_voice_cpu_safe
+        # --- patch 2: clone_voice/load_voice_file (migrate cached tensors to device) ---
+        orig_clone_voice = bark_model.clone_voice
+        def _clone_voice_on_device(speaker_wav, speaker_id=None, voice_dir=None, **kw):
+            voice = orig_clone_voice(speaker_wav, speaker_id=speaker_id, voice_dir=voice_dir, **kw)
+            import torch
+            for k, v in list(voice.items()):
+                if isinstance(v, torch.Tensor) and v.device != bark_model.device:
+                    voice[k] = v.to(bark_model.device)
+            return voice
+        bark_model.clone_voice = _clone_voice_on_device
         bark_model._voice_gen_patched = True
 
     def load_engine(self)->Any:
