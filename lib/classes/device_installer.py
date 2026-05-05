@@ -1235,6 +1235,7 @@ class DeviceInstaller():
                             arch = device_info['arch']
                             toolkit_version = ''.join(c for c in tag if c.isdigit())
                             tag_dir = tag
+                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'filelock', 'jinja2', 'fsspec', 'networkx', 'sympy'])
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
                                 py_major, py_minor = device_info['pyvenv']
