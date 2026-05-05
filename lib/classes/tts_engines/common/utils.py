@@ -1,4 +1,4 @@
-import os, sys, threading, gc, ctypes, shutil, tempfile, time, warnings, regex as re
+import os, sys, threading, gc, ctypes, shutil, tempfile, warnings, regex as re
 
 from typing import Any, Union, Dict, TYPE_CHECKING
 from cryptography.fernet import Fernet
@@ -255,7 +255,6 @@ class TTSUtils:
                     torch.backends.cudnn.allow_tf32 = tf32_ok
                 except Exception:
                     pass
-            time.sleep(1)
             return amp_dtype
         # ================= Apple MPS =================
         if has_mps:
