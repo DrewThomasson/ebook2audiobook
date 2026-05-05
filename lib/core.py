@@ -3030,7 +3030,7 @@ def convert_ebook(args:dict)->tuple:
                         detected_free_vram_gb = vram_dict.get('free_vram_gb', 0)
                         session['free_vram_gb'] = detected_free_vram_gb
                         if session['free_vram_gb'] == 0:
-                            msg_extra += "<br/>Memory capacity not detected! restrict to {session['free_vram_gb']}GB max"
+                            msg_extra += f"<br/>Memory capacity not detected! restrict to {session['free_vram_gb']}GB max"
                         else:
                             msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
                             if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
