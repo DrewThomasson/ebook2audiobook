@@ -46,6 +46,11 @@ class DeviceInstaller():
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
                 device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
+                try:
+                    with open(device_info_json, 'w', encoding='utf-8') as f:
+                        json.dump(device_info, f)
+                except OSError as e:
+                    print(f'warning: could not write .device_info.json: {e}', file=sys.stderr)
                 return json.dumps(device_info)
         elif mode == FULL_DOCKER:
             device_info = None

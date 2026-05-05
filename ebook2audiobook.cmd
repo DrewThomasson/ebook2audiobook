@@ -620,6 +620,7 @@ for /f "delims=" %%i in ('where.exe python 2^>nul') do (
 )
 if "%CURRENT_ENV%"=="" (
     if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+		setlocal enabledelayedexpansion
         echo Creating ./python_env version %PYTHON_VERSION%…
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda update -n base -c conda-forge conda -y
@@ -631,12 +632,11 @@ if "%CURRENT_ENV%"=="" (
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 		call :check_device_info %SCRIPT_MODE%
         if errorlevel 1 exit /b 1
-		echo -------------------------------- %DEVICE_INFO_STR%
-		call :install_device_packages "%DEVICE_INFO_STR%"
+		call :install_device_packages "!DEVICE_INFO_STR!"
 		if errorlevel 1 exit /b 1
         call :install_python_packages
         if errorlevel 1 exit /b 1
-		call conda deactivate >nul && call conda deactivate >nul
+		endlocal
     )
 ) else (
     echo Current python virtual environment detected: %CURRENT_ENV%. 
