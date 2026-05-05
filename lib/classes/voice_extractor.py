@@ -21,7 +21,7 @@ class VoiceExtractor:
         session_device = str(session.get('device', 'CPU')).upper()
         resolved_device_name = 'CUDA' if session_device in {'CUDA', 'ROCM', 'JETSON'} else session_device
         resolved_device = devices.get(resolved_device_name, devices['CPU'])
-        self.device = resolved_device['proc'] if resolved_device.get('found')
+        self.device = resolved_device['proc'] if resolved_device.get('found') else devices['CPU']['proc']
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir,'htdemucs', voice_name)
         self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
