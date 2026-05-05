@@ -630,12 +630,12 @@ if "%CURRENT_ENV%"=="" (
         ::call conda activate base
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 		call :check_device_info %SCRIPT_MODE%
-        if errorlevel 1 goto :failed
+        if errorlevel 1 exit /b 1
 		echo -------------------------------- %DEVICE_INFO_STR%
 		call :install_device_packages "%DEVICE_INFO_STR%"
-		if errorlevel 1 goto :failed
+		if errorlevel 1 exit /b 1
         call :install_python_packages
-        if errorlevel 1 goto :failed
+        if errorlevel 1 exit /b 1
 		call conda deactivate >nul && call conda deactivate >nul
     )
 ) else (
