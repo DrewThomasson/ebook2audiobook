@@ -1026,32 +1026,32 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     print(error)
                     return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
-			try:
-				with zipfile.ZipFile(session['epub_path'], 'r') as zf:
-					zip_names = set(zf.namelist())
-					zip_basenames = {os.path.basename(n): n for n in zip_names}
-					for doc_idx, doc in enumerate(all_docs):
-						text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
-						if text is None:
-							error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
-							show_alert(session_id, {"type": "warning", "msg": error})
-							return []
-						blocks.append(text)
-			finally:
-				if stanza_nlp:
-					import gc, torch
-					try:
-						cache_key = session.get('stanza_cache')
-						if cache_key:
-							loaded_tts.pop(cache_key, None)
-						session['stanza_cache'] = None
-					except Exception:
-						pass
-					stanza_nlp = None
-					gc.collect()
-					if torch.cuda.is_available():
-						torch.cuda.empty_cache()
-						torch.cuda.ipc_collect()
+            try:
+                with zipfile.ZipFile(session['epub_path'], 'r') as zf:
+                    zip_names = set(zf.namelist())
+                    zip_basenames = {os.path.basename(n): n for n in zip_names}
+                    for doc_idx, doc in enumerate(all_docs):
+                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
+                        if text is None:
+                            error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
+                            show_alert(session_id, {"type": "warning", "msg": error})
+                            return []
+                        blocks.append(text)
+            finally:
+                if stanza_nlp:
+                    import gc, torch
+                    try:
+                        cache_key = session.get('stanza_cache')
+                        if cache_key:
+                            loaded_tts.pop(cache_key, None)
+                        session['stanza_cache'] = None
+                    except Exception:
+                        pass
+                    stanza_nlp = None
+                    gc.collect()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                        torch.cuda.ipc_collect()
             if len(blocks) == 0:
                 error = 'No blocks found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
