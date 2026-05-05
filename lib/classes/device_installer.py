@@ -1200,6 +1200,9 @@ class DeviceInstaller():
     def install_device_packages(self, device_info_str:str)->int:
 
         def _needs_reinstall():
+            print(f"--------------torch_version_current_full: {torch_version_current_full}-----------")
+            print(f"--------------torch_version_current_base: {torch_version_current_base}-----------")
+            print(f"--------------current_tag: {current_tag}------------")
             if not torch_version_current_full:
                 return True
             if tag == devices['CPU']['proc']:
