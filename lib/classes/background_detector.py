@@ -81,7 +81,7 @@ class BackgroundDetector:
                 )
                 pipeline = VoiceActivityDetection(segmentation=model)
                 if pipeline:
-                    if self.device == 'cuda' and not devices['JETSON']['found']:
+                    if key == devices['CUDA']['proc'] and not devices['JETSON']['found']:
                         torch.backends.cuda.matmul.allow_tf32 = True
                         torch.backends.cudnn.allow_tf32 = True
                     pipeline.instantiate({
