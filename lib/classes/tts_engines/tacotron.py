@@ -20,7 +20,6 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             self.params = {"semitones":{}}
             self.language = self.session.get('language')
             tts_engine = self.session.get('tts_engine')
-            
             if tts_engine not in default_engine_settings:
                 error = f'Invalid tts_engine {tts_engine}.'
                 raise ValueError(error)
