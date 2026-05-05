@@ -1011,7 +1011,16 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                             (session['device'] == devices['XPU']['proc'] and devices['XPU']['found']) or
                             (session['device'] == devices['JETSON']['proc'] and devices['JETSON']['found'])
                         ) else False
-                        stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
+                        # only use mwt if the language supports it
+                        stanza_lang = session['language_iso1']
+                        stanza_has_mwt = False
+                        try:
+                            stanza_resources = stanza.resources.common.load_resources_json(os.getenv('STANZA_RESOURCES_DIR', stanza.resources.common.DEFAULT_MODEL_DIR))
+                            stanza_has_mwt = 'mwt' in stanza_resources.get(stanza_lang, {})
+                        except Exception:
+                            pass
+                        stanza_processors = 'tokenize,mwt,ner' if stanza_has_mwt else 'tokenize,ner'
+                        stanza_nlp = stanza.Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
                         if stanza_nlp:
                             session['stanza_cache'] = stanza_model
                             loaded_tts[stanza_model] = stanza_nlp
