@@ -223,12 +223,8 @@ class TTSUtils:
             if hasattr(torch.backends, 'cudnn'):
                 try:
                     torch.backends.cudnn.enabled = True
-                    if is_rocm:
-                        torch.backends.cudnn.benchmark = True
-                        torch.backends.cudnn.deterministic = False
-                    else:
-                        torch.backends.cudnn.deterministic = not quality_mode
-                        torch.backends.cudnn.benchmark = False
+                    torch.backends.cudnn.benchmark = False
+                    torch.backends.cudnn.deterministic = not quality_mode
                 except Exception:
                     pass
             # TF32 — Ampere+, non-Jetson, non-ROCm, quality mode only
@@ -278,15 +274,36 @@ class TTSUtils:
             return torch.float16
         return amp_dtype
 
-    def _load_api(self, key:str, model_path:str)->Any:
+    def _load_api(self, key:str, model_path:str, device:str)->Any:
         try:
             with _lock:
                 from TTS.api import TTS as TTSEngine
+                import torch
+                import torch.nn as nn
                 engine = loaded_tts.get(key)
+                target_dev = torch.device(device)
+                is_accel = target_dev.type != 'cpu'
                 if not engine:
-                    engine = TTSEngine(model_path)
+                    engine = TTSEngine(model_path).to(device)
                 if not engine:
-                    raise RuntimeError("TTSEngine returned None")
+                    raise RuntimeError('TTSEngine returned None')
+                for syn_attr in ('synthesizer', 'voice_converter'):
+                    syn = getattr(engine, syn_attr, None)
+                    if syn is None:
+                        continue
+                    syn.use_cuda = is_accel
+                    for _, m in syn.named_modules():
+                        m.to(device)
+                        m.eval()
+                        for pname, p in list(m.named_parameters(recurse=False)):
+                            if p.device != target_dev:
+                                with torch.no_grad():
+                                    new_p = nn.Parameter(p.data.to(device), requires_grad=p.requires_grad)
+                                setattr(m, pname, new_p)
+                        for bname, b in list(m.named_buffers(recurse=False)):
+                            if b.device != target_dev:
+                                persistent = bname not in m._non_persistent_buffers_set
+                                m.register_buffer(bname, b.to(device), persistent=persistent)
                 vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                 self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                 models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
@@ -297,28 +314,29 @@ class TTSUtils:
             error = f'_load_api() error: {e}'
             print(error)
             raise
-            
 
     def _load_checkpoint(self,**kwargs:Any)->Any:
         try:
             with _lock:
+                import torch
+                import torch.nn as nn
                 key = kwargs.get('key')
                 engine = loaded_tts.get(key, False)
+                device = kwargs.get('device', 'cpu')
+                target_dev = torch.device(device)
                 if not engine:
                     engine_name = kwargs.get('tts_engine', None)
                     from TTS.tts.configs.xtts_config import XttsConfig
                     from TTS.tts.models.xtts import Xtts
                     checkpoint_path = kwargs.get('checkpoint_path')
-                    config_path = kwargs.get('config_path',None)
-                    vocab_path = kwargs.get('vocab_path',None)
+                    config_path = kwargs.get('config_path', None)
+                    vocab_path = kwargs.get('vocab_path', None)
                     if not checkpoint_path or not os.path.exists(checkpoint_path):
                         error = f'Missing or invalid checkpoint_path: {checkpoint_path}'
                         raise FileNotFoundError(error)
-                        return False
                     if not config_path or not os.path.exists(config_path):
                         error = f'Missing or invalid config_path: {config_path}'
                         raise FileNotFoundError(error)
-                        return False
                     config = XttsConfig()
                     config.models_dir = os.path.join('models','tts')
                     config.load_json(config_path)
@@ -328,8 +346,22 @@ class TTSUtils:
                         checkpoint_path = checkpoint_path,
                         vocab_path = vocab_path,
                         eval = True
-                    ) 
+                    )
                 if engine:
+                    engine.to(device)
+                    engine.eval()
+                    for _, m in engine.named_modules():
+                        m.to(device)
+                        m.eval()
+                        for pname, p in list(m.named_parameters(recurse=False)):
+                            if p.device != target_dev:
+                                with torch.no_grad():
+                                    new_p = nn.Parameter(p.data.to(device), requires_grad=p.requires_grad)
+                                setattr(m, pname, new_p)
+                        for bname, b in list(m.named_buffers(recurse=False)):
+                            if b.device != target_dev:
+                                persistent = bname not in m._non_persistent_buffers_set
+                                m.register_buffer(bname, b.to(device), persistent=persistent)
                     vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                     self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
@@ -341,14 +373,14 @@ class TTSUtils:
             print(error)
             raise
 
-    def _load_engine_zs(self)->Any:
+    def _load_engine_zs(self, device:str)->Any:
         try:
             msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
             self.cleanup_memory()
             engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not engine_zs:
-                engine_zs = self._load_api(self.tts_zs_key, default_vc_model)
+                engine_zs = self._load_api(self.tts_zs_key, default_vc_model, device)
             if engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
                 msg = f'ZeroShot {self.tts_zs_key} Loaded!'
@@ -498,56 +530,61 @@ class TTSUtils:
         else:
             raise TypeError(f'_tensor_type() error: Unsupported type for audio_data: {type(audio_data)}')
             
-    def _get_resampler(self,orig_sr:int,target_sr:int)->'Resample':
+    def _get_resampler(self, orig_sr:int, target_sr:int, device:'torch.device|str'='cpu')->'Resample':
+        import torch
         import torchaudio
-        key=(orig_sr,target_sr)
+        dev = torch.device(device) if not isinstance(device, torch.device) else device
+        key = (orig_sr, target_sr, str(dev))
         if key not in self.resampler_cache:
-            self.resampler_cache[key]=torchaudio.transforms.Resample(
-                orig_freq = orig_sr,new_freq = target_sr
-            )
+            resampler = torchaudio.transforms.Resample(
+                orig_freq = orig_sr, new_freq = target_sr
+            ).to(dev)
+            resampler.eval()
+            self.resampler_cache[key] = resampler
         return self.resampler_cache[key]
 
-    def _resample_wav(self,wav_path:str,expected_sr:int)->str:
+    def _resample_wav(self, wav_path:str, expected_sr:int)->str:
         import torchaudio
         import soundfile as sf
         import torch
-        waveform,orig_sr = torchaudio.load(wav_path)
+        waveform, orig_sr = torchaudio.load(wav_path)
         if orig_sr==expected_sr and waveform.size(0)==1:
             return wav_path
         if waveform.size(0)>1:
-            waveform = waveform.mean(dim=0,keepdim=True)
+            waveform = waveform.mean(dim=0, keepdim=True)
         if orig_sr!=expected_sr:
-            resampler = self._get_resampler(orig_sr,expected_sr)
+            resampler = self._get_resampler(orig_sr, expected_sr, waveform.device)
             waveform = resampler(waveform)
         wav_tensor = waveform.squeeze(0)
         wav_numpy = wav_tensor.cpu().numpy()
-        resample_tmp = os.path.join(self.session['process_dir'], 'tmp')
-        os.makedirs(resample_tmp, exist_ok=True)
-        tmp_fh = tempfile.NamedTemporaryFile(dir=resample_tmp, suffix='.wav', delete=False)
+        resample_tmp = os.path.join(self.session['process_dir'],  'tmp')
+        os.makedirs(resample_tmp,  exist_ok=True)
+        tmp_fh = tempfile.NamedTemporaryFile(dir=resample_tmp,  suffix='.wav',  delete=False)
         tmp_path = tmp_fh.name
         tmp_fh.close()
-        sf.write(tmp_path,wav_numpy,expected_sr,subtype='PCM_16')
+        sf.write(tmp_path, wav_numpy, expected_sr, subtype='PCM_16')
         return tmp_path
 
-    def _resample_audiodata(self,wav_data,source_sr:int,expected_sr:int)->Any:
+    def _resample_audiodata(self, wav_data, source_sr:int, expected_sr:int)->Any:
         import torch
         import numpy as np
-        if isinstance(wav_data,list):
-            wav_data = np.asarray(wav_data,dtype=np.float32)
-        if isinstance(wav_data,np.ndarray):
+        if isinstance(wav_data, list):
+            wav_data = np.asarray(wav_data, dtype=np.float32)
+        if isinstance(wav_data, np.ndarray):
             waveform = torch.from_numpy(wav_data).float()
-        elif isinstance(wav_data,torch.Tensor):
+        elif isinstance(wav_data, torch.Tensor):
             waveform = wav_data.float()
         else:
             raise TypeError(f'unsupported wav_data type: {type(wav_data)}')
         if waveform.ndim==1:
             waveform = waveform.unsqueeze(0)
         if waveform.size(0)>1:
-            waveform = waveform.mean(dim=0,keepdim=True)
+            waveform = waveform.mean(dim=0, keepdim=True)
         if source_sr!=expected_sr:
-            resampler = self._get_resampler(source_sr,expected_sr)
+            resampler = self._get_resampler(source_sr, expected_sr, waveform.device)
             waveform = resampler(waveform)
         return waveform.squeeze(0).cpu().numpy()
+
 
     def _set_voice(self, voice:str|None)->tuple:
         current_voice = (voice if voice is not None else self.models[self.session['fine_tuned']]['voice'])
@@ -642,3 +679,8 @@ class TTSUtils:
                     pass
             raise RuntimeError(f'audio_save({path}): {e}') from e
         return True
+
+    def log_exception(self,where:str, e:Exception)->str:
+        import traceback
+        traceback.print_exc()
+        return f'{where}: {e}'
