@@ -3000,21 +3000,7 @@ def convert_ebook(args:dict)->tuple:
                         shutil.copy(session['ebook_src'], session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
-                        msg_extra = ''
-                        vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
-                        print(f'vram_dict: {vram_dict}')
-                        total_vram_gb = vram_dict.get('total_vram_gb', 0)
-                        session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-                        if session['free_vram_gb'] == 0:
-                            session['free_vram_gb'] = 1.0
-                            msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
-                        else:
-                            msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
-                            if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
-                                msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
-                            if session['free_vram_gb'] > 4.0:
-                                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
+                        msg_extra = ''                      
                         if session['device'] == devices['CUDA']['proc']:
                             if not devices['CUDA']['found']:
                                 session['device'] = devices['CPU']['proc']
@@ -3031,10 +3017,27 @@ def convert_ebook(args:dict)->tuple:
                             if not devices['ROCM']['found']:
                                 session['device'] = devices['CPU']['proc']
                                 msg += f'ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            else:
+                                os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
+                                os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
                         elif session['device'] == devices['XPU']['proc']:
                             if not devices['XPU']['found']:
                                 session['device'] = devices['CPU']['proc']
                                 msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
+                        vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
+                        print(f'vram_dict: {vram_dict}')
+                        total_vram_gb = vram_dict.get('total_vram_gb', 0)
+                        session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                        if session['free_vram_gb'] == 0:
+                            session['free_vram_gb'] = 1.0
+                            msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
+                        else:
+                            msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
+                            if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
+                                msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
+                            if session['free_vram_gb'] > 4.0:
+                                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'False'  
                         if session['tts_engine'] == TTS_ENGINES['BARK']:
                             if session['free_vram_gb'] < 12.0:
                                 os.environ['SUNO_OFFLOAD_CPU'] = "True"
