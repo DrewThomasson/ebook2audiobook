@@ -1,6 +1,6 @@
-import threading
+import threading, warnings
 
-from lib.conf import tts_dir
+from lib.conf import tts_dir, devices
 from lib.conf_models import default_voice_detection_model
 
 _pipeline_cache = {}
@@ -60,6 +60,8 @@ class BackgroundDetector:
         pyannote_patch()
         from pyannote.audio import Model
         from pyannote.audio.pipelines import VoiceActivityDetection
+        from pyannote.audio.utils.reproducibility import ReproducibilityWarning
+        warnings.filterwarnings('ignore', category=ReproducibilityWarning)
         self.device = torch.device(
             'cuda' if torch.cuda.is_available()
             else 'xpu' if hasattr(torch, 'xpu') and torch.xpu.is_available()
@@ -79,6 +81,9 @@ class BackgroundDetector:
                 )
                 pipeline = VoiceActivityDetection(segmentation=model)
                 if pipeline:
+                    if key == devices['CUDA']['proc'] and not devices['JETSON']['found']:
+                        torch.backends.cuda.matmul.allow_tf32 = True
+                        torch.backends.cudnn.allow_tf32 = True
                     pipeline.instantiate({
                         "min_duration_on": 0.0,
                         "min_duration_off": 0.0
