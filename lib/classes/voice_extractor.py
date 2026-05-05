@@ -88,6 +88,9 @@ class VoiceExtractor:
                 else:
                     msg = 'No background detected'
                 return True, status, msg
+            else:
+                error = 'detector.detect() could not analyze the audio file'
+                return False, False, error
         except Exception as e:
             error = f'_detect_background() error: {e}'
             print(error)
