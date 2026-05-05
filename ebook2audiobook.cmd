@@ -421,6 +421,8 @@ del "%TEMP%\install_scoop.ps1" >nul 2>&1
 if errorlevel 1 (
     net session >nul 2>&1
     if not errorlevel 1 (
+		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+		if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
         goto :restart_script
     )
     goto :failed
@@ -435,8 +437,6 @@ goto :restart_script
 :install_scoop_buckets
 call "%PS_EXE%" %PS_ARGS% -Command "$WarningPreference='SilentlyContinue'; scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions"
 call git config --global credential.helper
-findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
 del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
 echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
 exit /b 0
