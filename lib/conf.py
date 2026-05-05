@@ -52,13 +52,12 @@ devices = {
     "JETSON": {"proc": "jetson", "found": False},
 }
 
+device_info_json = '.device_info.json'
+
 default_device = devices['CPU']['proc']
-
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
-
 default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
-
 default_pytorch_url = 'https://download.pytorch.org/whl'
 default_pytorch_amd_url = 'https://repo.radeon.com/rocm/windows'
 default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a permanent website where to upload the jetpack torch

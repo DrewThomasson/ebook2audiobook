@@ -49,9 +49,9 @@ class DeviceInstaller():
                 return json.dumps(device_info)
         elif mode == FULL_DOCKER:
             device_info = None
-            if os.path.isfile('.device_info.json'):
+            if os.path.isfile(device_info_json):
                 try:
-                    with open('.device_info.json', 'r', encoding='utf-8') as f:
+                    with open(device_info_json, 'r', encoding='utf-8') as f:
                         device_info = json.load(f)
                 except (OSError, json.JSONDecodeError):
                     pass
@@ -74,7 +74,7 @@ class DeviceInstaller():
                 name = tag = devices['CPU']['proc']
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
             try:
-                with open('.device_info.json', 'w', encoding='utf-8') as f:
+                with open(device_info_json, 'w', encoding='utf-8') as f:
                     json.dump(device_info, f)
             except OSError as e:
                 print(f'warning: could not write .device_info.json: {e}', file=sys.stderr)
