@@ -1002,7 +1002,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     stanza_model = f"stanza-{session['language_iso1']}"
                     stanza_nlp = loaded_tts.get(stanza_model, False)
                     if stanza_nlp:
-                        msg = f"NLP model {stanza_model} loaded!"
+                        msg = f"NLP model {stanza_model} loaded."
                         print(msg)
                     else:
                         use_gpu = True if (
