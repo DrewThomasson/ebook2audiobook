@@ -38,6 +38,49 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
+            
+    def _patch_bark_voice_gen(self, engine)->None:
+        '''Coqui's Bark._generate_voice passes a CUDA tensor to the transformers
+        EncodecFeatureExtractor, which calls np.asarray() and fails. Wrap the
+        method to .cpu() the audio for the processor only, keeping the rest of
+        the pipeline on device.
+        '''
+        bark_model = engine.synthesizer.tts_model
+        if getattr(bark_model, '_voice_gen_patched', False):
+            return
+        def _generate_voice_cpu_safe(speaker_wav):
+            import torch
+            import torchaudio
+            from TTS.tts.layers.bark.hubert.hubert_manager import HubertManager
+            from TTS.tts.layers.bark.hubert.kmeans_hubert import CustomHubert
+            from TTS.tts.layers.bark.hubert.tokenizer import HubertTokenizer
+            audio, sr = torchaudio.load(speaker_wav)
+            audio = torchaudio.transforms.Resample(sr, bark_model.config.sample_rate)(audio).to(bark_model.device)
+            inputs = bark_model.processor(
+                raw_audio=audio.squeeze(0).cpu(),
+                sampling_rate=bark_model.config.sample_rate,
+                return_tensors='pt'
+            )
+            input_values = inputs['input_values'].to(bark_model.device)
+            padding_mask = inputs['padding_mask'].to(bark_model.device)
+            codes = bark_model.encodec.encode(input_values, padding_mask, bark_model.encodec_bandwidth)[0][0, 0]
+            hubert_manager = HubertManager()
+            hubert_manager.make_sure_tokenizer_installed(model_path=bark_model.config.LOCAL_MODEL_PATHS['hubert_tokenizer'])
+            hubert_model = CustomHubert().to(bark_model.device)
+            tokenizer = HubertTokenizer.load_from_checkpoint(
+                bark_model.config.LOCAL_MODEL_PATHS['hubert_tokenizer'],
+                map_location=bark_model.device
+            )
+            with torch.inference_mode():
+                semantic_vectors = hubert_model.forward(audio, input_sample_hz=bark_model.config.sample_rate)
+            semantic_tokens = tokenizer.get_token(semantic_vectors)
+            return {
+                'semantic_prompt': semantic_tokens,
+                'coarse_prompt': codes[:2, :],
+                'fine_prompt': codes
+            }
+        bark_model._generate_voice = _generate_voice_cpu_safe
+        bark_model._voice_gen_patched = True
 
     def load_engine(self)->Any:
         msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
@@ -45,10 +88,12 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         self.cleanup_memory()
         engine = loaded_tts.get(self.tts_key)
         if not engine:
-            #if self.session['custom_model'] is not None:
-            #    error = f"{self.session['tts_engine']} custom model not implemented yet!"
-            #    raise NotImplementedError(error)
-            engine = self._load_api(self.tts_key, self.model_path, self.device) # self.device, Waiting coqui-tts dev fix with cuda
+            engine = self._load_api(self.tts_key, self.model_path, self.device)
+            try:
+                self._patch_bark_voice_gen(engine)
+            except Exception as e:
+                error = f'load_engine(): bark voice-gen patch failed: {e}'
+                raise RuntimeError(error) from e
         if engine:
             msg = f'TTS {self.tts_key} Loaded!'
             print(msg)
