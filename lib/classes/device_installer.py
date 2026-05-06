@@ -437,6 +437,8 @@ class DeviceInstaller():
                     patch = int(m.group(3)) if m.group(3) else 0
                     return (major, minor, patch)
 
+                os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
+                os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
                 version = ()
                 msg = ''
                 hip_device_count = 0
