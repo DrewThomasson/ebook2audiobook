@@ -46,12 +46,17 @@ class DeviceInstaller():
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
                 device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
+                try:
+                    with open(device_info_json, 'w', encoding='utf-8') as f:
+                        json.dump(device_info, f)
+                except OSError as e:
+                    print(f'warning: could not write .device_info.json: {e}', file=sys.stderr)
                 return json.dumps(device_info)
         elif mode == FULL_DOCKER:
             device_info = None
-            if os.path.isfile('.device_info.json'):
+            if os.path.isfile(device_info_json):
                 try:
-                    with open('.device_info.json', 'r', encoding='utf-8') as f:
+                    with open(device_info_json, 'r', encoding='utf-8') as f:
                         device_info = json.load(f)
                 except (OSError, json.JSONDecodeError):
                     pass
@@ -74,7 +79,7 @@ class DeviceInstaller():
                 name = tag = devices['CPU']['proc']
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
             try:
-                with open('.device_info.json', 'w', encoding='utf-8') as f:
+                with open(device_info_json, 'w', encoding='utf-8') as f:
                     json.dump(device_info, f)
             except OSError as e:
                 print(f'warning: could not write .device_info.json: {e}', file=sys.stderr)
@@ -432,6 +437,8 @@ class DeviceInstaller():
                     patch = int(m.group(3)) if m.group(3) else 0
                     return (major, minor, patch)
 
+                os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
+                os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
                 version = ()
                 msg = ''
                 hip_device_count = 0
@@ -1194,16 +1201,46 @@ class DeviceInstaller():
           
     def install_device_packages(self, device_info_str:str)->int:
 
+        def _tag_ok(installed_tag):
+            # CPU index: '/whl/cpu' -> bare on macOS, '+cpu' on linux/windows; both are fine
+            if tag == devices['CPU']['proc']:
+                return installed_tag is None or installed_tag == devices['CPU']['proc']
+            # MPS: installed from '/whl/cpu' on macOS arm64 -> bare wheels
+            if device_info['name'] == devices['MPS']['proc']:
+                return installed_tag is None
+            # ROCm Windows (TheRock): matrix key is 'rocm-rel-X.Y.Z' (kept distinct from
+            # the linux 'rocmX.Y' keys) but the wheel's local version drops '-rel-',
+            # e.g. tag='rocm-rel-7.2.1' -> '+rocm7.2.1' (optionally with a build suffix).
+            if device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
+                wheel_tag = tag.replace('-rel-', '')
+                return installed_tag == wheel_tag or (installed_tag is not None and installed_tag.startswith(f'{wheel_tag}-'))
+            # CUDA, XPU, ROCm Linux, Jetson: must be exactly '+<tag>'
+            # (a pure hex local version means a custom/dev build -> reinstall)
+            return installed_tag == tag
+
         def _needs_reinstall():
+            # torch: base version + local tag must match what we'd install for this device
             if not torch_version_current_full:
                 return True
-            if tag == devices['CPU']['proc']:
-                if torch_version_current_base != torch_version_matrix:
-                    return True
-                return current_tag is not None and current_tag != devices['CPU']['proc']
-            if non_standard_tag is None:
-                return current_tag != tag
-            return non_standard_tag != tag
+            if torch_version_current_base != torch_version_matrix:
+                return True
+            if not _tag_ok(current_tag):
+                return True
+            # torchaudio: base version + local tag must match what we'd install for this device
+            torchaudio_full = self.get_package_version('torchaudio')
+            if not torchaudio_full:
+                return True
+            torchaudio_base = torchaudio_full.split('+', 1)[0]
+            if torchaudio_base != torch_version_matrix:
+                return True
+            m_ta = re.search(r'\+(.+)$', torchaudio_full)
+            torchaudio_tag = m_ta.group(1) if m_ta else None
+            if not _tag_ok(torchaudio_tag):
+                return True
+            # torchcodec: presence only (when torch >= 2.9 needs it)
+            if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and not self.get_package_version('torchcodec'):
+                return True
+            return False
 
         try:
             if device_info_str:
@@ -1235,6 +1272,7 @@ class DeviceInstaller():
                             arch = device_info['arch']
                             toolkit_version = ''.join(c for c in tag if c.isdigit())
                             tag_dir = tag
+                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'filelock', 'jinja2', 'fsspec', 'networkx', 'sympy'])
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
                                 py_major, py_minor = device_info['pyvenv']
@@ -1248,8 +1286,8 @@ class DeviceInstaller():
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
                                 url = default_pytorch_amd_url
                                 py_major, py_minor = device_info['pyvenv']
+                                norm_tag = tag.replace('-rel-', '')
                                 tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
-                                extra_tag_url = torch_matrix[tag].get('extra_tag', '').replace('+', '%2B')
                                 # rocm_sdk is required by torch ROCm wheels on Windows; install it first if missing
                                 import importlib.util
                                 if importlib.util.find_spec('rocm_sdk') is None:
@@ -1263,8 +1301,8 @@ class DeviceInstaller():
                                     msg = f'Installing ROCm SDK {rocm_ver}…'
                                     print(msg)
                                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', *sdk_pkgs])
-                                torch_pkg = f'{url}/{tag}/torch-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
-                                torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_matrix}{extra_tag_url}-{tag_py}-{os_env}_{arch}.whl'
+                                torch_pkg = f'{url}/{tag}/torch-{torch_version_matrix}%2B{norm_tag}-{tag_py}-{os_env}_{arch}.whl'
+                                torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_matrix}%2B{norm_tag}-{tag_py}-{os_env}_{arch}.whl'
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torch_pkg, torchaudio_pkg])
                             else:
                                 url = default_pytorch_url
