@@ -591,9 +591,9 @@ def to_json(user:dict)->str:
     return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
 
 users:list = [
-    dict(id=1, name='alice', email='alice@example.com', role='admin', is_active=True),
-    dict(id=2, name='bob', email='bob@example.com', role='editor', is_active=False),
-    dict(id=3, name='carol', email='carol@example.com', role='viewer', is_active=True),
+    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
+    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
+    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
 ]
 config = {
     "max_users": 100,
