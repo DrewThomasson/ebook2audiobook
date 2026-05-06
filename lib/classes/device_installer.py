@@ -1246,7 +1246,6 @@ class DeviceInstaller():
             if device_info_str:
                 device_info = json.loads(device_info_str)
                 if device_info:
-                    print(f"DEBUG: os={device_info['os']!r} arch={device_info['arch']!r} archs.X86_64={archs['X86_64']!r} target={torch_version_matrix} current={torch_version_current_base}")
                     print(f'---> Hardware detected: {device_info}')
                     tag = device_info.get('tag')
                     if tag in ['unknown','unsupported']:
@@ -1270,6 +1269,7 @@ class DeviceInstaller():
                         non_standard_match = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                         non_standard_tag = non_standard_match.group(0) if non_standard_match else None
                         torch_version_current_base = torch_version_current_full.split('+',1)[0]
+                    print(f"DEBUG: os={device_info['os']!r} arch={device_info['arch']!r} archs.X86_64={archs['X86_64']!r} target={torch_version_matrix} current={torch_version_current_base}")
                     if _needs_reinstall():
                         try:
                             msg = f"Installing the right library packages for {device_info['name']}…"
