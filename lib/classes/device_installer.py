@@ -1199,16 +1199,46 @@ class DeviceInstaller():
           
     def install_device_packages(self, device_info_str:str)->int:
 
+        def _tag_ok(installed_tag):
+            # CPU index: '/whl/cpu' -> bare on macOS, '+cpu' on linux/windows; both are fine
+            if tag == devices['CPU']['proc']:
+                return installed_tag is None or installed_tag == devices['CPU']['proc']
+            # MPS: installed from '/whl/cpu' on macOS arm64 -> bare wheels
+            if device_info['name'] == devices['MPS']['proc']:
+                return installed_tag is None
+            # ROCm Windows (TheRock): matrix key is 'rocm-rel-X.Y.Z' (kept distinct from
+            # the linux 'rocmX.Y' keys) but the wheel's local version drops '-rel-',
+            # e.g. tag='rocm-rel-7.2.1' -> '+rocm7.2.1' (optionally with a build suffix).
+            if device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
+                wheel_tag = tag.replace('-rel-', '')
+                return installed_tag == wheel_tag or (installed_tag is not None and installed_tag.startswith(f'{wheel_tag}-'))
+            # CUDA, XPU, ROCm Linux, Jetson: must be exactly '+<tag>'
+            # (a pure hex local version means a custom/dev build -> reinstall)
+            return installed_tag == tag
+
         def _needs_reinstall():
+            # torch: base version + local tag must match what we'd install for this device
             if not torch_version_current_full:
                 return True
-            if tag == devices['CPU']['proc']:
-                if torch_version_current_base != torch_version_matrix:
-                    return True
-                return current_tag is not None and current_tag != devices['CPU']['proc']
-            if non_standard_tag is None:
-                return current_tag != tag
-            return non_standard_tag != tag
+            if torch_version_current_base != torch_version_matrix:
+                return True
+            if not _tag_ok(current_tag):
+                return True
+            # torchaudio: base version + local tag must match what we'd install for this device
+            torchaudio_full = self.get_package_version('torchaudio')
+            if not torchaudio_full:
+                return True
+            torchaudio_base = torchaudio_full.split('+', 1)[0]
+            if torchaudio_base != torch_version_matrix:
+                return True
+            m_ta = re.search(r'\+(.+)$', torchaudio_full)
+            torchaudio_tag = m_ta.group(1) if m_ta else None
+            if not _tag_ok(torchaudio_tag):
+                return True
+            # torchcodec: presence only (when torch >= 2.9 needs it)
+            if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and not self.get_package_version('torchcodec'):
+                return True
+            return False
 
         try:
             if device_info_str:
