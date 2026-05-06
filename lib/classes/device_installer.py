@@ -1253,6 +1253,12 @@ class DeviceInstaller():
                     key = 'last' if self.python_version >= (3, 12) else 'base'
                     torch_version_matrix = torch_matrix[tag].get(key) or torch_matrix[tag]['base']
                     torchcodec_version_matrix = torch_matrix[tag]['codec']
+                    # macOS Intel was dropped from torch wheels after 2.2.2 — pin it before
+                    # any version comparison happens, otherwise _needs_reinstall() compares
+                    # against the matrix's 'last' and triggers an unnecessary reinstall.
+                    if device_info['os'] == 'macosx_11_0' and device_info['arch'] == archs['X86_64']:
+                        torch_version_matrix = '2.2.2'
+                        torchcodec_version_matrix = ''  # 2.2.2 < 2.9, no torchcodec
                     torch_version_current_full = self.get_package_version('torch')
                     torch_version_current_base = None
                     current_tag = None
@@ -1263,8 +1269,6 @@ class DeviceInstaller():
                         non_standard_match = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                         non_standard_tag = non_standard_match.group(0) if non_standard_match else None
                         torch_version_current_base = torch_version_current_full.split('+',1)[0]
-                    if device_info['os'] == 'macosx_11_0' and device_info['arch'] == archs['X86_64']:
-                        torch_version_matrix = torch_version_current_base = '2.2.2'
                     if _needs_reinstall():
                         try:
                             msg = f"Installing the right library packages for {device_info['name']}…"
