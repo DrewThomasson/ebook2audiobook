@@ -103,7 +103,7 @@ class DeviceInstaller():
 
     def detect_arch_tag(self)->str:
         m = platform.machine().upper()
-        return arch_map.get(m, 'unknown')
+        return archs.get(m, 'unknown')
 
     def detect_device(self)->str:
 
