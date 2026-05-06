@@ -101,11 +101,11 @@ class DeviceInstaller():
             return 'manylinux_2_28'
         return 'unknown'
 
-    def detect_arch_tag(self)->str:
+    def detect_arch_tag(self) -> str:
         m = platform.machine().lower()
-        if m in list(archs.values):
+        if m in archs.values():
             return m
-        return 'unknown'
+        return 'unknown''
 
     def detect_device(self)->str:
 
