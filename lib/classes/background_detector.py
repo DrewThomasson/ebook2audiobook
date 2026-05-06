@@ -105,7 +105,7 @@ class BackgroundDetector:
             if DEVICE_SYSTEM == systems['WINDOWS']:
                 torch.backends.cudnn.enabled = False
         self.device = torch.device(
-            'cuda' if torch.cuda.is_available() and getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM != systems['WINDOWS']
+            'cuda' if (torch.cuda.is_available() and getattr(torch.version, 'hip', None) is None) or (getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM != systems['WINDOWS'])
             else 'xpu' if hasattr(torch, 'xpu') and torch.xpu.is_available()
             else 'mps' if torch.backends.mps.is_available()
             else 'cpu'
