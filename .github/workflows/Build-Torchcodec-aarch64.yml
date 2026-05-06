@@ -111,3 +111,4 @@ jobs:
         run: |
           TAG=$(gh release view --json tagName -q .tagName)
           gh release upload "$TAG" wheels/torchcodec-*.whl --clobber
+          # TODO: needs as result torchcodec+cpu-cp312-cp312-manylinux_2_28_aarch64.whl
