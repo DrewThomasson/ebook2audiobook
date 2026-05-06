@@ -1319,7 +1319,9 @@ class DeviceInstaller():
                             #   - ROCm (Windows + Linux): NO torchcodec ROCm wheels -> +cpu wheels under /whl/cpu
                             # --no-deps prevents torchcodec from yanking torch back to a different variant.
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
-                                torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
+                                url = default_pytorch_url
+                                tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', f'torchcodec=={torchcodec_version_matrix}', '--force-reinstall', '--no-deps', '--index-url', f'{url}/{tag_dir}']]
                                 if (device_info['os'] in ['manylinux_2_28', 'linux'] and device_info['arch'] == 'aarch64') or (tag == devices['XPU']['proc']):
                                     pass
                                 else:
