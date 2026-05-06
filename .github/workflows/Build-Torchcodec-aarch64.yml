@@ -1,8 +1,10 @@
 name: Build torchcodec aarch64 wheel
-
-# Native aarch64 build on GitHub-hosted runners. Free for public repos.
-# Produces: torchcodec-0.11.1+cpu-cp312-cp312-linux_aarch64.whl
-
+# Native aarch64 build inside manylinux_2_28_aarch64 (AlmaLinux 8 + DTS).
+# Mirrors the official torchcodec build: BUILD_AGAINST_ALL_FFMPEG_FROM_S3=1
+# fetches non-GPL ffmpeg headers for versions 4-8 from S3 and compiles five
+# library sets, so the wheel works with any user-installed ffmpeg in [4, 8].
+# CPU-only build also serves XPU users via the intel/torchlib-xpu plugin.
+# Produces: torchcodec-0.11.1+cpu-cp312-cp312-manylinux_2_28_aarch64.whl
 on:
   workflow_dispatch:
     inputs:
@@ -14,6 +16,10 @@ on:
         description: 'torch ABI to link against (must be 2.11.x for torchcodec 0.11.x)'
         type: string
         default: '2.11.0'
+      smoke_ffmpeg_version:
+        description: 'ffmpeg version to install for the import smoke test (any 4-8)'
+        type: string
+        default: '6.1.1'
       build_version:
         description: 'BUILD_VERSION stamp for the wheel'
         type: string
@@ -22,49 +28,74 @@ on:
         description: 'Attach wheel to the latest release (else artifact only)'
         type: boolean
         default: false
-
 jobs:
   build:
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 30
+    timeout-minutes: 90
+    container:
+      image: quay.io/pypa/manylinux_2_28_aarch64
     steps:
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install FFmpeg dev libraries and build tools
+        run: echo '/opt/python/cp312-cp312/bin' >> "$GITHUB_PATH"
+      - name: Install build tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            git cmake ninja-build pkg-config build-essential \
-            libavdevice-dev libavfilter-dev libavformat-dev \
-            libavcodec-dev libavutil-dev libswresample-dev libswscale-dev
-
+          dnf install -y \
+            git cmake ninja-build pkgconfig \
+            yasm nasm \
+            zlib-devel bzip2-devel xz-devel
+      - name: Cache smoke-test ffmpeg
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: /opt/ffmpeg
+          key: ffmpeg-${{ inputs.smoke_ffmpeg_version }}-manylinux_2_28-aarch64-v1
+      - name: Build smoke-test ffmpeg ${{ inputs.smoke_ffmpeg_version }}
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: |
+          # Used only at smoke-test time so torchcodec's runtime dlopen probe
+          # finds something. Not linked into the wheel itself; that's handled
+          # by BUILD_AGAINST_ALL_FFMPEG_FROM_S3 fetching all 5 ffmpeg majors.
+          curl -fL "https://ffmpeg.org/releases/ffmpeg-${{ inputs.smoke_ffmpeg_version }}.tar.xz" \
+            -o ffmpeg.tar.xz
+          tar xf ffmpeg.tar.xz
+          cd "ffmpeg-${{ inputs.smoke_ffmpeg_version }}"
+          ./configure \
+            --prefix=/opt/ffmpeg \
+            --enable-shared \
+            --disable-static \
+            --disable-doc \
+            --disable-programs \
+            --disable-network \
+            --disable-encoders \
+            --disable-muxers \
+            --disable-filters \
+            --disable-protocols \
+            --enable-protocol=file \
+            --enable-protocol=pipe
+          make -j"$(nproc)"
+          make install
       - name: Install torch ABI and build helpers
         run: |
           python -m pip install --upgrade pip wheel
           python -m pip install \
             "torch==${{ inputs.torch_version }}" \
             "pybind11>=2.12" \
-            "setuptools>=61.0"
-
+            "setuptools>=61.0" \
+            auditwheel patchelf
       - name: Clone torchcodec @ ${{ inputs.torchcodec_ref }}
         run: |
           git clone --depth 1 --branch '${{ inputs.torchcodec_ref }}' \
             https://github.com/meta-pytorch/torchcodec.git src
-
       - name: Patch pyproject.toml build deps
         working-directory: src
         run: |
           sed -i 's|requires *= *\["setuptools>=61.0"\]|requires = ["setuptools>=61.0", "torch", "pybind11"]|g' pyproject.toml
           cat pyproject.toml | head -30
-
-      - name: Build wheel
+      - name: Build wheel (raw linux_aarch64, all 5 ffmpeg majors)
         working-directory: src
         env:
           ENABLE_CUDA: '0'
-          BUILD_AGAINST_ALL_FFMPEG_FROM_S3: '0'
+          BUILD_AGAINST_ALL_FFMPEG_FROM_S3: '1'
           I_CONFIRM_THIS_IS_NOT_A_LICENSE_VIOLATION: '1'
           BUILD_VERSION: ${{ inputs.build_version }}
         run: |
@@ -72,30 +103,56 @@ jobs:
             --no-build-isolation \
             --no-deps \
             --no-binary=torchcodec \
-            --wheel-dir=../wheels \
+            --wheel-dir=../wheels-raw \
             --verbose
-
+      - name: Repair to manylinux_2_28_aarch64
+        run: |
+          # Exclude every ffmpeg soname for majors 4-8 across all lib families.
+          # torchcodec dlopens the user's ffmpeg at runtime; bundling our
+          # build-time copy would override that and break the multi-version
+          # mechanism. Also exclude torch libs (user-supplied via installed
+          # torch). auditwheel repair will refuse the wheel if any glibc
+          # symbol newer than 2.28 leaked in — that's the real manylinux check.
+          mkdir -p wheels
+          auditwheel repair wheels-raw/torchcodec-*.whl \
+            --plat manylinux_2_28_aarch64 \
+            --wheel-dir wheels \
+            --exclude 'libavcodec.so.*' \
+            --exclude 'libavformat.so.*' \
+            --exclude 'libavutil.so.*' \
+            --exclude 'libavfilter.so.*' \
+            --exclude 'libavdevice.so.*' \
+            --exclude 'libswresample.so.*' \
+            --exclude 'libswscale.so.*' \
+            --exclude 'libc10.so' \
+            --exclude 'libtorch.so' \
+            --exclude 'libtorch_cpu.so' \
+            --exclude 'libtorch_python.so'
+          ls -la wheels/
       - name: Verify wheel
         run: |
-          ls -la wheels/
           python - <<'PY'
-          import glob, zipfile, sys
+          import glob, zipfile
           whl = glob.glob('wheels/torchcodec-*.whl')
           assert whl, 'no wheel produced'
           w = whl[0]
           print('wheel:', w)
-          assert 'linux_aarch64' in w, f'wrong arch tag: {w}'
+          assert 'manylinux_2_28_aarch64' in w, f'wrong platform tag: {w}'
           with zipfile.ZipFile(w) as z:
               sos = [n for n in z.namelist() if n.endswith('.so')]
               print('shared objects:', sos)
-              assert sos, 'no native extension'
+              # Expect 5 libtorchcodec_core{4..8}.so (one per ffmpeg major).
+              # If only 1 is present, BUILD_AGAINST_ALL_FFMPEG_FROM_S3 silently
+              # no-op'd (S3 unreachable, license confirm dropped, etc).
+              cores = [n for n in sos if 'libtorchcodec_core' in n]
+              assert len(cores) == 5, f'expected 5 core libs (one per ffmpeg major), got: {cores}'
           PY
-
       - name: Smoke-test import
+        env:
+          LD_LIBRARY_PATH: /opt/ffmpeg/lib
         run: |
           python -m pip install wheels/torchcodec-*.whl
           python -c "import torchcodec; print('torchcodec', torchcodec.__version__)"
-
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
@@ -103,7 +160,11 @@ jobs:
           path: wheels/torchcodec-*.whl
           retention-days: 90
           if-no-files-found: error
-
+      - name: Install GitHub CLI
+        if: ${{ inputs.attach_to_release }}
+        run: |
+          dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+          dnf install -y gh
       - name: Attach wheel to latest release
         if: ${{ inputs.attach_to_release }}
         env:
@@ -111,4 +172,3 @@ jobs:
         run: |
           TAG=$(gh release view --json tagName -q .tagName)
           gh release upload "$TAG" wheels/torchcodec-*.whl --clobber
-          # TODO: needs as result torchcodec+cpu-cp312-cp312-manylinux_2_28_aarch64.whl
