@@ -544,10 +544,11 @@ class TTSUtils:
         return self.resampler_cache[key]
 
     def _resample_wav(self, wav_path:str, expected_sr:int)->str:
-        import torchaudio
         import soundfile as sf
+        import numpy as np
         import torch
-        waveform, orig_sr = torchaudio.load(wav_path)
+        data, orig_sr = sf.read(wav_path, dtype='float32', always_2d=True)
+        waveform = torch.from_numpy(data.T).contiguous()
         if orig_sr==expected_sr and waveform.size(0)==1:
             return wav_path
         if waveform.size(0)>1:
@@ -584,7 +585,6 @@ class TTSUtils:
             resampler = self._get_resampler(source_sr, expected_sr, waveform.device)
             waveform = resampler(waveform)
         return waveform.squeeze(0).cpu().numpy()
-
 
     def _set_voice(self, voice:str|None)->tuple:
         current_voice = (voice if voice is not None else self.models[self.session['fine_tuned']]['voice'])
