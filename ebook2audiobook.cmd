@@ -421,12 +421,12 @@ del "%TEMP%\install_scoop.ps1" >nul 2>&1
 if errorlevel 1 (
     net session >nul 2>&1
     if not errorlevel 1 (
-		findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-		if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
         goto :restart_script
     )
     goto :failed
 )
+findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
