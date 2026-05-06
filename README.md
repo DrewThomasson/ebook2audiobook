@@ -493,7 +493,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU Device detection
 - [x] Denoise any reference audio for upload voice cloning,
 - [x] Custom model upload (XTTSv2 only for now. more on request)
-- [ ]  Add Portuguese Xttsv2 model fine tuned for EU portuguese
+- [ ]  Add Portuguese Xttsv2 model fine tuned for EU portuguese (help wanted)
 
 #### TTS engines
 - [x] XTTSv2
