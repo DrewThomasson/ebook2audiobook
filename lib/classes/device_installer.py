@@ -103,8 +103,7 @@ class DeviceInstaller():
 
     def detect_arch_tag(self)->str:
         m = platform.machine().lower()
-        print(archs)
-        if m in archs:
+        if m in list(archs.values):
             return m
         return 'unknown'
 
