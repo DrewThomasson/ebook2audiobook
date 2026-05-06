@@ -618,31 +618,29 @@ for /f "delims=" %%i in ('where.exe python 2^>nul') do (
         )
     )
 )
-if "%CURRENT_ENV%"=="" (
-    if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-        echo Creating ./python_env version %PYTHON_VERSION%…
-        call "%CONDA_HOME%\Scripts\activate.bat"
-        call conda update -n base -c conda-forge conda -y
-        call conda update --all -y
-        call conda clean --index-cache -y
-        call conda clean --packages --tarballs -y
-		call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
-        ::call conda activate base
-        call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-		call :check_device_info %SCRIPT_MODE%
-        if errorlevel 1 goto :failed
-		echo -------------------------------- %DEVICE_INFO_STR%
-		call :install_device_packages "%DEVICE_INFO_STR%"
-		if errorlevel 1 goto :failed
-        call :install_python_packages
-        if errorlevel 1 goto :failed
-		call conda deactivate >nul && call conda deactivate >nul
-    )
-) else (
-    echo Current python virtual environment detected: %CURRENT_ENV%. 
+if not "%CURRENT_ENV%"=="" (
+    echo Current python virtual environment detected: %CURRENT_ENV%.
     echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
     exit /b 2
 )
+if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" exit /b 0
+echo Creating ./python_env version %PYTHON_VERSION%…
+call "%CONDA_HOME%\Scripts\activate.bat"
+call conda update -n base -c conda-forge conda -y
+call conda update --all -y
+call conda clean --index-cache -y
+call conda clean --packages --tarballs -y
+call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
+call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+call :check_device_info %SCRIPT_MODE%
+if errorlevel 1 goto :failed
+echo -------------------------------- %DEVICE_INFO_STR%
+set "DEVICE_INFO_PASS=%DEVICE_INFO_STR%"
+call :install_device_packages
+if errorlevel 1 goto :failed
+call :install_python_packages
+if errorlevel 1 goto :failed
+call conda deactivate >nul && call conda deactivate >nul
 exit /b 0
 
 :check_wsl
@@ -728,7 +726,7 @@ exit /b 0
 :check_device_info
 set "ARG=%~1"
 for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
-if "%DEVICE_INFO_STR%"=="" (
+if not defined DEVICE_INFO_STR (
 	echo DEVICE_INFO_STR is empty
 	exit /b 1
 )
@@ -753,9 +751,7 @@ echo Installing python dependencies…
 exit /b %errorlevel%
 
 :install_device_packages
-set "arg=%~1"
-"%PS_EXE%" %PS_ARGS% -Command ^
-"python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(r'%arg%'))\""
+python -c "import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_PASS','')))"
 exit /b %errorlevel%
 
 :check_sitecustomized
@@ -966,6 +962,7 @@ if defined arguments.help (
             if errorlevel 1 goto :failed
             call :check_device_info %SCRIPT_MODE%
             if errorlevel 1 goto :failed
+			set "DEVICE_INFO_PASS=!DEVICE_INFO_STR!"
 			call :install_device_packages
             if "!DEVICE_TAG!"=="" (
                 call :json_get tag
