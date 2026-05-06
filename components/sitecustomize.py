@@ -27,10 +27,10 @@ def warn(msg: str) -> None:
     if debug:
         print(f'[sitecustomize] {msg}')
 
-# ─────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────
 # SAFETY MODE → skip entirely during PyTorch/CMake builds
 # (but DO NOT exit Python — just skip logic)
-# ─────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────
 inactive = any(os.environ.get(v) == '1' for v in [
     'TORCH_BUILD', 'PYTORCH_BUILD', 'DISABLE_SITECUSTOMIZE'
 ])
