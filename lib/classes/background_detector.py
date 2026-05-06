@@ -97,8 +97,14 @@ class BackgroundDetector:
         from pyannote.audio.pipelines import VoiceActivityDetection
         from pyannote.audio.utils.reproducibility import ReproducibilityWarning
         warnings.filterwarnings('ignore', category=ReproducibilityWarning)
+        # MIOpen on Windows ROCm fails to JIT pyannote's dropout kernel
+        # (miopenStatusUnknownError). On ROCm builds, torch.backends.cudnn
+        # maps to MIOpen; disabling it routes ops to native ATen kernels.
+        # Cost is negligible for VAD-sized models.
+        if getattr(torch.version, 'hip', None) is not None:
+            torch.backends.cudnn.enabled = False
         self.device = torch.device(
-            'cuda' if torch.cuda.is_available()
+            'cuda' if torch.cuda.is_available() and getattr(torch.version, 'hip', None) is None
             else 'xpu' if hasattr(torch, 'xpu') and torch.xpu.is_available()
             else 'mps' if torch.backends.mps.is_available()
             else 'cpu'
@@ -113,6 +119,7 @@ class BackgroundDetector:
                         default_voice_detection_model,
                         cache_dir=tts_dir
                     )
+                    model.eval()
                     batch_size = 1 if devices['JETSON']['found'] else 32
                     pipeline = VoiceActivityDetection(segmentation=model, batch_size=batch_size)
                     if key == devices['CUDA']['proc'] and not devices['JETSON']['found']:
@@ -145,7 +152,8 @@ class BackgroundDetector:
                     "waveform": waveform,
                     "sample_rate": sr
                 }
-                annotation = pipeline(file)
+                with torch.inference_mode():
+                    annotation = pipeline(file)
                 speech_time = sum(
                     segment.end - segment.start
                     for segment in annotation.itersegments()
