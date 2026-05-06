@@ -117,6 +117,36 @@ if patch_enabled:
 
     sys.meta_path.insert(0, TransformersHook())
     warn('active (lazy transformers patch mode)')
+    
+    # ─────────────────────────────────────────────────────
+    # Replace torchaudio.load with a soundfile-backed shim.
+    # torchaudio >=2.9 routes load() through torchcodec, whose
+    # bundled DLLs fail to link against PyTorch ROCm/Windows
+    # builds (WinError 127). Patched eagerly because torchaudio
+    # is small and the patch must be live before any third-party
+    # module (Coqui TTS knnvc, etc.) calls torchaudio.load.
+    # ─────────────────────────────────────────────────────
+    try:
+        import torchaudio, soundfile as sf, torch
+
+        def _load_via_soundfile(uri, frame_offset:int=0, num_frames:int=-1,
+                               normalize:bool=True, channels_first:bool=True,
+                               **_ignored):
+            start = int(frame_offset) if frame_offset else 0
+            frames = -1 if (num_frames is None or num_frames<0) else int(num_frames)
+            dtype = 'float32' if normalize else 'int16'
+            data, sr = sf.read(uri, start=start, frames=frames,
+                               dtype=dtype, always_2d=True)
+            tensor = torch.from_numpy(data)
+            if channels_first:
+                tensor = tensor.T.contiguous()
+            return tensor, sr
+
+        if getattr(torchaudio.load, '__name__', '') != '_load_via_soundfile':
+            torchaudio.load = _load_via_soundfile
+            warn('patched torchaudio.load → soundfile (bypass torchcodec)')
+    except Exception as e:
+        warn(f'torchaudio.load patch skipped: {e!r}')
 
 else:
     warn('loaded but inactive (no patches applied)')
