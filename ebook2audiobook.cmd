@@ -768,22 +768,10 @@ if "%site_packages_path%"=="" (
     exit /b 1
 )
 set "dst_pyfile=%site_packages_path%\sitecustomize.py"
-if not exist "%dst_pyfile%" (
-    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
-    if errorlevel 1 (
-        echo %ESC%[31m=============== sitecustomize.py hook error: copy failed.%ESC%[0m
-        exit /b 1
-    )
-    exit /b 0
-)
-for %%I in ("%src_pyfile%") do set "src_time=%%~tI"
-for %%I in ("%dst_pyfile%") do set "dst_time=%%~tI"
-if "%src_time%" GTR "%dst_time%" (
-    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
-    if errorlevel 1 (
-        echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
-        exit /b 1
-    )
+xcopy /d /y "%src_pyfile%" "%dst_pyfile%*" >nul 2>&1
+if errorlevel 1 (
+    echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
+    exit /b 1
 )
 exit /b 0
 
