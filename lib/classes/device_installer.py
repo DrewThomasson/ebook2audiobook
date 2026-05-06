@@ -105,7 +105,7 @@ class DeviceInstaller():
         m = platform.machine().lower()
         if m in archs.values():
             return m
-        return 'unknown''
+        return 'unknown'
 
     def detect_device(self)->str:
 
