@@ -78,9 +78,10 @@ def pyannote_patch()->None:
         pass
 
 class BackgroundDetector:
-    def __init__(self, wav_file: str)->None:
+    def __init__(self, wav_file:str, device:str)->None:
         self.wav_file = wav_file
-        self.device = None
+        self.device = device
+        self.torch_device = None
         self.total_duration = self._get_duration()
 
     def _get_duration(self)->float:
@@ -104,13 +105,13 @@ class BackgroundDetector:
         if getattr(torch.version, 'hip', None) is not None:
             if DEVICE_SYSTEM == systems['WINDOWS']:
                 torch.backends.cudnn.enabled = False
-        self.device = torch.device(
-            'cuda' if (torch.cuda.is_available() and getattr(torch.version, 'hip', None) is None) or (getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM != systems['WINDOWS'])
-            else 'xpu' if hasattr(torch, 'xpu') and torch.xpu.is_available()
-            else 'mps' if torch.backends.mps.is_available()
-            else 'cpu'
+        self.torch_device = torch.device(
+            devices['CUDA']['proc'] if (self.device == devices['CUDA']['proc'] and getattr(torch.version, 'hip', None) is None) or (getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM != systems['WINDOWS'])
+            else devices['XPU']['proc'] if hasattr(torch, devices['XPU']['proc']) and torch.xpu.is_available()
+            else devices['MPS']['proc'] if torch.backends.mps.is_available()
+            else devices['CPU']['proc']
         )
-        key = self.device.type
+        key = self.torch_device.type
         pipeline = _pipeline_cache.get(key)
         if pipeline is None:
             with _pipeline_lock:
@@ -130,7 +131,7 @@ class BackgroundDetector:
                         "min_duration_on": 0.0,
                         "min_duration_off": 0.0
                     })
-                    pipeline.to(self.device)
+                    pipeline.to(self.torch_device)
                     _pipeline_cache[key] = pipeline
         if pipeline:
             y, sr = librosa.load(self.wav_file, sr=16000, mono=True)
