@@ -29,7 +29,7 @@ class DeviceInstaller():
     @cached_property
     def cpu_baseline(self)->bool:
         machine = platform.machine().lower()
-        if machine not in ('x86_64', 'amd64', 'x86'):
+        if machine not in (archs['X86_64'], archs['AMD64']):
             return True
         cpuinfo_version = self.get_package_version('py-cpuinfo')
         if not cpuinfo_version:
@@ -42,7 +42,7 @@ class DeviceInstaller():
         if mode == NATIVE:
             name, tag, msg = self.check_hardware
             pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
-            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.arch
+            arch = archs['AARCH64'] if name in [devices['JETSON']['proc']] else self.arch
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
                 device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
@@ -74,7 +74,7 @@ class DeviceInstaller():
             name, tag, msg = self.check_hardware
             os_env = 'manylinux_2_28'
             pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
-            arch = 'aarch64' if name in [devices['JETSON']['proc']] else self.arch
+            arch = archs['AARCH64'] if name in [devices['JETSON']['proc']] else self.arch
             if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
@@ -103,7 +103,7 @@ class DeviceInstaller():
 
     def detect_arch_tag(self)->str:
         m = platform.machine().lower()
-        if m in ('x86_64','amd64','aarch64','arm64'):
+        if m in archs:
             return m
         return 'unknown'
 
@@ -399,7 +399,7 @@ class DeviceInstaller():
             # ============================================================
             # JETSON
             # ============================================================
-            if arch in ('aarch64','arm64') and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
+            if arch in (archs['AARCH64'],archs['ARM64']) and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
                 raw = tegra_version()
                 jp_code, msg = jetpack_version(raw)
                 if jp_code not in ('unsupported', 'unknown'):
@@ -601,18 +601,18 @@ class DeviceInstaller():
                     else:
                         devices['ROCM']['found'] = True
                         name = devices['ROCM']['proc']
-                        compat_versions = []
+                        os_versions = []
                         for t, entry in torch_matrix.items():
-                            if self.system not in entry['compat'] or not t.startswith('rocm'):
+                            if self.system not in entry['os'] or not t.startswith('rocm'):
                                 continue
                             ver_str = t[len('rocm-rel-'):] if t.startswith('rocm-rel-') else t[len('rocm'):]
                             tag_ver = _normalize_version(ver_str)
                             if not tag_ver:
                                 continue
-                            compat_versions.append(tag_ver)
+                            os_versions.append(tag_ver)
                         tag = None
-                        if compat_versions:
-                            le_versions = [v for v in compat_versions if v <= version]
+                        if os_versions:
+                            le_versions = [v for v in os_versions if v <= version]
                             if le_versions:
                                 matched = max(le_versions)
                                 if self.system == systems['WINDOWS']:
@@ -639,18 +639,18 @@ class DeviceInstaller():
                                     max_ver = f"{rocm_version_range['max'][0]}.{rocm_version_range['max'][1]}"
                                     msg = f'ROCm {".".join(str(p) for p in version)} on Windows; needs to be upgraded to {max_ver}.x.'
                                 else:
-                                    compat_versions = []
+                                    os_versions = []
                                 for t, entry in torch_matrix.items():
-                                    if self.system not in entry['compat'] or not t.startswith('rocm'):
+                                    if self.system not in entry['os'] or not t.startswith('rocm'):
                                         continue
                                     ver_str = t[len('rocm-rel-'):] if t.startswith('rocm-rel-') else t[len('rocm'):]
                                     tag_ver = _normalize_version(ver_str)
                                     if not tag_ver:
                                         continue
-                                    compat_versions.append(tag_ver)
+                                    os_versions.append(tag_ver)
                                 tag = None
-                                if compat_versions:
-                                    le_versions = [v for v in compat_versions if v <= version]
+                                if os_versions:
+                                    le_versions = [v for v in os_versions if v <= version]
                                     if le_versions:
                                         matched = max(le_versions)
                                         if self.system == systems['WINDOWS']:
@@ -961,7 +961,7 @@ class DeviceInstaller():
             # ============================================================
             # APPLE MPS
             # ============================================================
-            elif self.system == systems['MACOS'] and arch in ('arm64', 'aarch64'):
+            elif self.system == systems['MACOS'] and arch in (archs['ARM64'], archs['AARCH64']):
                 devices['MPS']['found'] = True
                 name = devices['MPS']['proc']
                 tag = devices['MPS']['proc']
@@ -1030,7 +1030,7 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
-        if self.system == systems['MACOS'] and self.arch == 'x86_64':
+        if self.system == systems['MACOS'] and self.arch == archs['X86_64']:
             overrides['numba'] = 'numba==0.62.0'
         try:
             with open(requirements_file, 'r') as f:
@@ -1263,7 +1263,7 @@ class DeviceInstaller():
                         non_standard_match = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                         non_standard_tag = non_standard_match.group(0) if non_standard_match else None
                         torch_version_current_base = torch_version_current_full.split('+',1)[0]
-                    if device_info['os'] == 'macosx_11_0' and device_info['arch'] == 'x86_64':
+                    if device_info['os'] == 'macosx_11_0' and device_info['arch'] == archs['X86_64']:
                         torch_version_matrix = torch_version_current_base = '2.2.2'
                     if _needs_reinstall():
                         try:
@@ -1309,30 +1309,23 @@ class DeviceInstaller():
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--force-reinstall', '--index-url', f'{url}/{tag_dir}'])
-                            # torchcodec is only needed (and only available) for torch >= 2.9.0 — earlier
-                            # torch/torchaudio releases ship their own audio I/O backends.
-                            # Routing on download.pytorch.org for >= 2.9.0:
-                            #   - macOS arm64: bare wheels under /whl/cpu (via tag_dir=cpu, like torch/torchaudio)
-                            #   - Linux x86_64 / Windows amd64: +cpu wheels from 0.11.1 onwards under /whl/cpu;
-                            #     +cuXXX under /whl/<cuXXX>
-                            #   - Linux aarch64: NO torchcodec wheels on the PyTorch index -> PyPI fallback
-                            #   - XPU: NO torchcodec XPU wheels -> PyPI fallback
-                            #   - ROCm (Windows + Linux): NO torchcodec ROCm wheels -> +cpu wheels under /whl/cpu
-                            # --no-deps prevents torchcodec from yanking torch back to a different variant.
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
-                                if torchcodec_version_matrix == '' and tag not in [devices['CPU']['proc'], devices['XPU']['proc']]:
-                                    torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
+                                is_cpu_aarch64_linux = (
+                                    tag == devices['CPU']['proc']
+                                    and device_info['os'] in ('manylinux_2_28', 'linux')
+                                    and device_info['arch'] == archs['AARCH64']
+                                )
+                                has_native_codec = (
+                                    device_info['name'] == devices['CUDA']['proc']
+                                    and self.system != systems['WINDOWS']
+                                ) or tag == devices['CPU']['proc']
+                                if is_cpu_aarch64_linux:
+                                    torchcodec_index_url = f'{default_torchcodec_arm_url}/{tag_dir}'
+                                elif has_native_codec:
+                                    torchcodec_index_url = f'{default_pytorch_url}/{tag_dir}'
                                 else:
-                                    if device_info['os'] in ['manylinux_2_28', 'linux'] and device_info['arch'] == 'aarch64':
-                                        url = default_torchcodec_arm_url
-                                    torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir', f'torchcodec=={torchcodec_version_matrix}', '--force-reinstall', '--no-deps', '--index-url', f'{url}/{tag_dir}']
-                                    # Same index as torch: cpu / cuXXX
-                                    # tag_dir already maps MPS -> cpu (macOS arm64 uses bare wheels there)
-                                    # ROCm forced to cpu since no ROCm torchcodec wheels are published
-                                    # no rocm and no cuda torchcodec windows for now
-                                    torchcodec_tag_dir = 'cpu' if (device_info['name'] == devices['ROCM']['proc']) or (device_info['name'] == devices['CUDA']['proc'] and self.system == systems['WINDOWS']) else tag_dir
-                                    torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{torchcodec_tag_dir}']
-                                subprocess.check_call(torchcodec_cmd)
+                                    torchcodec_index_url = f'{default_pytorch_url}/cpu'
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url])
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
