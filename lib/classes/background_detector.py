@@ -1,6 +1,6 @@
 import threading, warnings
 
-from lib.conf import tts_dir, devices
+from lib.conf import DEVICE_SYSTEM, systems, tts_dir, devices
 from lib.conf_models import default_voice_detection_model
 
 _pipeline_cache = {}
@@ -102,9 +102,10 @@ class BackgroundDetector:
         # maps to MIOpen; disabling it routes ops to native ATen kernels.
         # Cost is negligible for VAD-sized models.
         if getattr(torch.version, 'hip', None) is not None:
-            torch.backends.cudnn.enabled = False
+            if DEVICE_SYSTEM == systems['WINDOWS']:
+                torch.backends.cudnn.enabled = False
         self.device = torch.device(
-            'cuda' if torch.cuda.is_available() and getattr(torch.version, 'hip', None) is None
+            'cuda' if torch.cuda.is_available() and getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM != systems['WINDOWS']
             else 'xpu' if hasattr(torch, 'xpu') and torch.xpu.is_available()
             else 'mps' if torch.backends.mps.is_available()
             else 'cpu'
