@@ -169,26 +169,3 @@ class BackgroundDetector:
                     "background_detected": background_detected
                 }
             return False, {}
-        finally:
-            with _pipeline_lock:
-                for p in list(_pipeline_cache.values()):
-                    try:
-                        p.to('cpu')
-                    except Exception:
-                        pass
-                _pipeline_cache.clear()
-            pipeline = waveform = sr = None
-            gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
-            if hasattr(torch, 'xpu') and torch.xpu.is_available():
-                try:
-                    torch.xpu.empty_cache()
-                except Exception:
-                    pass
-            if torch.backends.mps.is_available():
-                try:
-                    torch.mps.empty_cache()
-                except Exception:
-                    pass
