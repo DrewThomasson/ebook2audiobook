@@ -620,26 +620,26 @@ for /f "delims=" %%i in ('where.exe python 2^>nul') do (
 )
 if "%CURRENT_ENV%"=="" (
     if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-		setlocal enabledelayedexpansion
-        echo Creating ./python_env version %PYTHON_VERSION%…
+        setlocal enabledelayedexpansion
+        echo Creating ./python_env version %PYTHON_VERSION%...
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda update -n base -c conda-forge conda -y
         call conda update --all -y
         call conda clean --index-cache -y
         call conda clean --packages --tarballs -y
-		call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
-        ::call conda activate base
+        call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
+        rem call conda activate base
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-		call :check_device_info %SCRIPT_MODE%
-        if errorlevel 1 exit /b 1
-		call :install_device_packages "!DEVICE_INFO_STR!"
-		if errorlevel 1 exit /b 1
+        call :check_device_info %SCRIPT_MODE%
+        if errorlevel 1 (endlocal & exit /b 1)
+        call :install_device_packages "!DEVICE_INFO_STR!"
+        if errorlevel 1 (endlocal & exit /b 1)
         call :install_python_packages
-        if errorlevel 1 exit /b 1
-		endlocal
+        if errorlevel 1 (endlocal & exit /b 1)
+        endlocal
     )
 ) else (
-    echo Current python virtual environment detected: %CURRENT_ENV%. 
+    echo Current python virtual environment detected: %CURRENT_ENV%.
     echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
     exit /b 2
 )
