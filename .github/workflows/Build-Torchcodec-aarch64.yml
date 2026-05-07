@@ -32,18 +32,21 @@ jobs:
     steps:
       - name: Set up Python 3.12
         run: echo '/opt/python/cp312-cp312/bin' >> "$GITHUB_PATH"
+
       - name: Install build tools
         run: |
           dnf install -y \
             git cmake ninja-build pkgconfig \
             yasm nasm \
             zlib-devel bzip2-devel xz-devel
+
       - name: Cache smoke-test ffmpeg
         id: cache-ffmpeg
         uses: actions/cache@v4
         with:
           path: /opt/ffmpeg
           key: ffmpeg-${{ inputs.smoke_ffmpeg_version }}-manylinux_2_28-aarch64-v1
+
       - name: Build smoke-test ffmpeg ${{ inputs.smoke_ffmpeg_version }}
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: |
@@ -69,8 +72,12 @@ jobs:
             --enable-protocol=pipe
           make -j"$(nproc)"
           make install
+
       - name: Install torch ABI and build helpers
         run: |
+          # torch from the CPU index — default PyPI ships the CUDA wheel for
+          # aarch64 since 2.5+ (Grace/GH200), and its TorchConfig.cmake then
+          # forces find_package(CUDA) which fails in this container.
           python -m pip install --upgrade pip wheel
           python -m pip install \
             --index-url https://download.pytorch.org/whl/cpu \
@@ -79,15 +86,33 @@ jobs:
             "pybind11>=2.12" \
             "setuptools>=61.0" \
             auditwheel patchelf
+
       - name: Clone torchcodec @ ${{ inputs.torchcodec_ref }}
         run: |
           git clone --depth 1 --branch '${{ inputs.torchcodec_ref }}' \
             https://github.com/meta-pytorch/torchcodec.git src
+
       - name: Patch pyproject.toml build deps
         working-directory: src
         run: |
+          # Defense in depth — only consulted if anyone ever drops
+          # --no-build-isolation. With it, this is a no-op.
           sed -i 's|requires *= *\["setuptools>=61.0"\]|requires = ["setuptools>=61.0", "torch", "pybind11"]|g' pyproject.toml
           cat pyproject.toml | head -30
+
+      - name: Stub libpython for CMake FindPython3 (manylinux has no shared libpython)
+        run: |
+          # manylinux cp312 ships a static interpreter; CMake's FindPython3
+          # therefore can't satisfy Development.Embed and torchcodec's CMake
+          # references Python3_LIBRARY directly. Drop in an empty .so so the
+          # configure step succeeds. The link step is fine — building a shared
+          # lib on Linux allows undefined symbols by default, and auditwheel
+          # would exclude libpython from the wheel anyway. At runtime the real
+          # interpreter resolves the symbols, which is the correct model for
+          # Python C extensions in the first place.
+          gcc -shared -nostdlib -o /opt/python/cp312-cp312/lib/libpython3.12.so -xc /dev/null
+          ls -la /opt/python/cp312-cp312/lib/libpython3.12.so
+
       - name: Build wheel (raw linux_aarch64, all 5 ffmpeg majors)
         working-directory: src
         env:
@@ -96,6 +121,9 @@ jobs:
           I_CONFIRM_THIS_IS_NOT_A_LICENSE_VIOLATION: '1'
           BUILD_VERSION: ${{ inputs.build_version }}
         run: |
+          # pip-installed pybind11 ships its CMake config under
+          # pybind11.get_cmake_dir(); CMake doesn't search there by default.
+          # CMAKE_PREFIX_PATH (env-var form) is the canonical way to add it.
           export CMAKE_PREFIX_PATH="$(python -c 'import pybind11; print(pybind11.get_cmake_dir())')${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
           pip wheel . \
             --no-build-isolation \
@@ -103,14 +131,16 @@ jobs:
             --no-binary=torchcodec \
             --wheel-dir=../wheels-raw \
             --verbose
+
       - name: Repair to manylinux_2_28_aarch64
         run: |
           # Exclude every ffmpeg soname for majors 4-8 across all lib families.
           # torchcodec dlopens the user's ffmpeg at runtime; bundling our
           # build-time copy would override that and break the multi-version
           # mechanism. Also exclude torch libs (user-supplied via installed
-          # torch). auditwheel repair will refuse the wheel if any glibc
-          # symbol newer than 2.28 leaked in — that's the real manylinux check.
+          # torch) and libpython (the build-step stub — must never ride along).
+          # auditwheel repair will refuse the wheel if any glibc symbol newer
+          # than 2.28 leaked in — that's the real manylinux check.
           mkdir -p wheels
           auditwheel repair wheels-raw/torchcodec-*.whl \
             --plat manylinux_2_28_aarch64 \
@@ -125,8 +155,10 @@ jobs:
             --exclude 'libc10.so' \
             --exclude 'libtorch.so' \
             --exclude 'libtorch_cpu.so' \
-            --exclude 'libtorch_python.so'
+            --exclude 'libtorch_python.so' \
+            --exclude 'libpython3.*.so*'
           ls -la wheels/
+
       - name: Verify wheel
         run: |
           python - <<'PY'
@@ -144,13 +176,19 @@ jobs:
               # no-op'd (S3 unreachable, license confirm dropped, etc).
               cores = [n for n in sos if 'libtorchcodec_core' in n]
               assert len(cores) == 5, f'expected 5 core libs (one per ffmpeg major), got: {cores}'
+              # Belt-and-braces: ensure the build-step libpython stub didn't
+              # sneak past auditwheel.
+              assert not any('libpython' in n for n in sos), \
+                f'libpython leaked into wheel: {sos}'
           PY
+
       - name: Smoke-test import
         env:
           LD_LIBRARY_PATH: /opt/ffmpeg/lib
         run: |
           python -m pip install wheels/torchcodec-*.whl
           python -c "import torchcodec; print('torchcodec', torchcodec.__version__)"
+
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
@@ -158,11 +196,13 @@ jobs:
           path: wheels/torchcodec-*.whl
           retention-days: 90
           if-no-files-found: error
+
       - name: Install GitHub CLI
         if: ${{ inputs.attach_to_release }}
         run: |
           dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
           dnf install -y gh
+
       - name: Attach wheel to latest release
         if: ${{ inputs.attach_to_release }}
         env:
