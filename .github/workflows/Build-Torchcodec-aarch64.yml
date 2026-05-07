@@ -80,8 +80,7 @@ jobs:
           # forces find_package(CUDA) which fails in this container.
           python -m pip install --upgrade pip wheel
           python -m pip install \
-            --index-url https://pypi.org/simple \
-            --extra-index-url https://download.pytorch.org/whl/cpu \
+            --index-url https://download.pytorch.org/whl/cpu \
             "torch==${{ inputs.torch_version }}"
           python -m pip install \
             "pybind11>=2.12" \
@@ -150,7 +149,8 @@ jobs:
           # and write proper $ORIGIN-relative RPATHs into the repaired wheel.
           mkdir -p wheels
           TMP=$(mktemp -d)
-          unzip -q wheels-raw/torchcodec-*.whl -d "$TMP"
+          trap 'rm -rf "$TMP"' EXIT
+          python -m zipfile -e wheels-raw/torchcodec-*.whl "$TMP"
           export LD_LIBRARY_PATH="$TMP/torchcodec${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
           auditwheel repair wheels-raw/torchcodec-*.whl \
             --plat manylinux_2_28_aarch64 \
@@ -167,13 +167,12 @@ jobs:
             --exclude 'libtorch_cpu.so' \
             --exclude 'libtorch_python.so' \
             --exclude 'libpython3.*.so*'
-          rm -rf "$TMP"
           ls -la wheels/
 
       - name: Verify wheel
         run: |
           python - <<'PY'
-          import glob, zipfile
+          import glob, re, zipfile
           whl = glob.glob('wheels/torchcodec-*.whl')
           assert whl, 'no wheel produced'
           w = whl[0]
@@ -182,11 +181,16 @@ jobs:
           with zipfile.ZipFile(w) as z:
               sos = [n for n in z.namelist() if n.endswith('.so')]
               print('shared objects:', sos)
-              # Expect 5 libtorchcodec_core{4..8}.so (one per ffmpeg major).
-              # If only 1 is present, BUILD_AGAINST_ALL_FFMPEG_FROM_S3 silently
-              # no-op'd (S3 unreachable, license confirm dropped, etc).
-              cores = [n for n in sos if 'libtorchcodec_core' in n]
-              assert len(cores) == 5, f'expected 5 core libs (one per ffmpeg major), got: {cores}'
+              # Expect ffmpeg majors 4-8 across the core libs (one per major).
+              # auditwheel may also vendor hashed copies into torchcodec.libs/;
+              # collapse to the set of majors so duplicates don't trip us.
+              # If only {4} (or any single-element set) is present, then
+              # BUILD_AGAINST_ALL_FFMPEG_FROM_S3 silently no-op'd (S3
+              # unreachable, license confirm dropped, etc).
+              majors = {int(m.group(1)) for n in sos
+                        if (m := re.search(r'libtorchcodec_core(\d+)', n))}
+              assert majors == {4, 5, 6, 7, 8}, \
+                f'expected ffmpeg majors 4-8, got: {sorted(majors)}'
               # Belt-and-braces: ensure the build-step libpython stub didn't
               # sneak past auditwheel.
               assert not any('libpython' in n for n in sos), \
