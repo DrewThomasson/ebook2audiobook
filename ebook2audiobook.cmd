@@ -768,7 +768,17 @@ if "%site_packages_path%"=="" (
     exit /b 1
 )
 set "dst_pyfile=%site_packages_path%\sitecustomize.py"
-xcopy /d /y "%src_pyfile%" "%dst_pyfile%*" >nul 2>&1
+if not exist "%dst_pyfile%" (
+    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+    if errorlevel 1 (
+        echo %ESC%[31m=============== sitecustomize.py hook error: copy failed.%ESC%[0m
+        exit /b 1
+    )
+    exit /b 0
+)
+:: xcopy /d only overwrites when source is newer than destination
+:: destination ends with '\' so xcopy treats it as a directory, no F/D prompt, no wildcard target
+xcopy /d /y "%src_pyfile%" "%site_packages_path%\" >nul
 if errorlevel 1 (
     echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
     exit /b 1
