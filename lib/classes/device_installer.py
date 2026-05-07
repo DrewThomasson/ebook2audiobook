@@ -599,7 +599,7 @@ class DeviceInstaller():
                     else:
                         devices['ROCM']['found'] = True
                         name = devices['ROCM']['proc']
-                        os_versions = []
+                        compat_versions = []
                         for t, entry in torch_matrix.items():
                             if self.system not in entry['os'] or not t.startswith('rocm'):
                                 continue
@@ -607,10 +607,10 @@ class DeviceInstaller():
                             tag_ver = _normalize_version(ver_str)
                             if not tag_ver:
                                 continue
-                            os_versions.append(tag_ver)
+                            compat_versions.append(tag_ver)
                         tag = None
-                        if os_versions:
-                            le_versions = [v for v in os_versions if v <= version]
+                        if compat_versions:
+                            le_versions = [v for v in compat_versions if v <= version]
                             if le_versions:
                                 matched = max(le_versions)
                                 if self.system == systems['WINDOWS']:
@@ -637,7 +637,7 @@ class DeviceInstaller():
                                     max_ver = f"{rocm_version_range['max'][0]}.{rocm_version_range['max'][1]}"
                                     msg = f'ROCm {".".join(str(p) for p in version)} on Windows; needs to be upgraded to {max_ver}.x.'
                                 else:
-                                    os_versions = []
+                                    compat_versions = []
                                 for t, entry in torch_matrix.items():
                                     if self.system not in entry['os'] or not t.startswith('rocm'):
                                         continue
@@ -645,10 +645,10 @@ class DeviceInstaller():
                                     tag_ver = _normalize_version(ver_str)
                                     if not tag_ver:
                                         continue
-                                    os_versions.append(tag_ver)
+                                    compat_versions.append(tag_ver)
                                 tag = None
-                                if os_versions:
-                                    le_versions = [v for v in os_versions if v <= version]
+                                if compat_versions:
+                                    le_versions = [v for v in compat_versions if v <= version]
                                     if le_versions:
                                         matched = max(le_versions)
                                         if self.system == systems['WINDOWS']:
@@ -1280,8 +1280,8 @@ class DeviceInstaller():
                                 url = default_jetson_url
                                 py_major, py_minor = device_info['pyvenv']
                                 tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
-                                torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                torch_pkg = f"{url}/jetson-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                torchaudio_pkg = f"{url}/jetson-v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', torch_pkg])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', torchaudio_pkg])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scikit-learn'])
