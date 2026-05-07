@@ -600,18 +600,37 @@ def create_db_blocks(db_path:str)->None:
     with sqlite3.connect(db_path) as conn:
         conn.execute('PRAGMA journal_mode=WAL')
         conn.execute('PRAGMA synchronous=NORMAL')
+        conn.execute('PRAGMA foreign_keys=ON')
         conn.executescript('''
-            CREATE TABLE IF NOT EXISTS meta (
-                field TEXT PRIMARY KEY,
-                value TEXT
+            CREATE TABLE IF NOT EXISTS stamp (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                page INTEGER,
+                block_resume INTEGER,
+                sentence_resume INTEGER,
+                voice TEXT,
+                tts_engine TEXT,
+                fine_tuned TEXT
             );
             CREATE TABLE IF NOT EXISTS blocks (
                 id TEXT PRIMARY KEY,
-                position INTEGER NOT NULL,
-                hash TEXT NOT NULL,
-                data TEXT NOT NULL
+                idx INTEGER NOT NULL,
+                expand INTEGER NOT NULL,
+                keep INTEGER NOT NULL,
+                text TEXT NOT NULL,
+                voice TEXT,
+                tts_engine TEXT,
+                fine_tuned TEXT
             );
-            CREATE INDEX IF NOT EXISTS idx_blocks_position ON blocks(position);
+            CREATE TABLE IF NOT EXISTS sentences (
+                block_id TEXT NOT NULL,
+                idx INTEGER NOT NULL,
+                text TEXT NOT NULL,
+                PRIMARY KEY (block_id, idx),
+                FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_blocks_idx ON blocks(idx);
+            INSERT OR IGNORE INTO stamp (id, page, block_resume, sentence_resume, voice, tts_engine, fine_tuned)
+            VALUES (1, 0, 0, 0, NULL, NULL, NULL);
         ''')
 
 def load_db_blocks(db_path:str)->dict:
@@ -619,18 +638,69 @@ def load_db_blocks(db_path:str)->dict:
         if not os.path.exists(db_path):
             return {}
         with sqlite3.connect(db_path) as conn:
-            result = {}
-            for field, value in conn.execute('SELECT field, value FROM meta'):
-                result[field] = json.loads(value) if value is not None else None
-            result['blocks'] = [
-                json.loads(row[0])
-                for row in conn.execute('SELECT data FROM blocks ORDER BY position')
-            ]
-            return result
+            conn.execute('PRAGMA foreign_keys=ON')
+            stamp_row = conn.execute(
+                'SELECT page, block_resume, sentence_resume, voice, tts_engine, fine_tuned FROM stamp WHERE id=1'
+            ).fetchone()
+            if stamp_row is None:
+                return {}
+            page, block_resume, sentence_resume, voice, tts_engine, fine_tuned = stamp_row
+            sentences_by_block = {}
+            for block_id, text in conn.execute('SELECT block_id, text FROM sentences ORDER BY block_id, idx'):
+                sentences_by_block.setdefault(block_id, []).append(text)
+            blocks = []
+            for row in conn.execute('SELECT id, expand, keep, text, voice, tts_engine, fine_tuned FROM blocks ORDER BY idx'):
+                bid, expand, keep, text, b_voice, b_tts_engine, b_fine_tuned = row
+                blocks.append({
+                    'id': bid,
+                    'expand': bool(expand),
+                    'keep': bool(keep),
+                    'text': text,
+                    'voice': b_voice,
+                    'tts_engine': b_tts_engine,
+                    'fine_tuned': b_fine_tuned,
+                    'sentences': sentences_by_block.get(bid, []),
+                })
+            return {
+                'page': page,
+                'block_resume': block_resume,
+                'sentence_resume': sentence_resume,
+                'voice': voice,
+                'tts_engine': tts_engine,
+                'fine_tuned': fine_tuned,
+                'blocks': blocks,
+            }
     except Exception as e:
-        error = f'load_blocks_db() error: {e}'
+        error = f'load_db_blocks() error: {e}'
         print(error)
         return {}
+
+def save_db_stamp(session_id:str)->None:
+    try:
+        session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return
+        data = session['blocks_current']
+        if not data:
+            return
+        db_path = session['blocks_current_db']
+        create_db_blocks(db_path)
+        with sqlite3.connect(db_path) as conn:
+            conn.execute(
+                'UPDATE stamp SET page=?, block_resume=?, sentence_resume=?, voice=?, tts_engine=?, fine_tuned=? WHERE id=1',
+                (
+                    data.get('page'),
+                    data.get('block_resume'),
+                    data.get('sentence_resume'),
+                    data.get('voice'),
+                    data.get('tts_engine'),
+                    data.get('fine_tuned'),
+                )
+            )
+            conn.commit()
+    except Exception as e:
+        error = f'save_db_stamp() error: {e}'
+        print(error)
 
 def save_db_blocks(session_id:str)->None:
     try:
@@ -641,43 +711,55 @@ def save_db_blocks(session_id:str)->None:
         if not data:
             return
         db_path = session['blocks_current_db']
-        create_blocks_db(db_path)
+        create_db_blocks(db_path)
         with sqlite3.connect(db_path) as conn:
-            for field, value in data.items():
-                if field == 'blocks':
-                    continue
-                value_str = json.dumps(value, ensure_ascii=False)
-                conn.execute(
-                    'INSERT INTO meta (field, value) VALUES (?, ?) '
-                    'ON CONFLICT(field) DO UPDATE SET value=excluded.value '
-                    'WHERE meta.value IS NOT excluded.value',
-                    (field, value_str)
+            conn.execute('PRAGMA foreign_keys=ON')
+            conn.execute(
+                'UPDATE stamp SET page=?, block_resume=?, sentence_resume=?, voice=?, tts_engine=?, fine_tuned=? WHERE id=1',
+                (
+                    data.get('page'),
+                    data.get('block_resume'),
+                    data.get('sentence_resume'),
+                    data.get('voice'),
+                    data.get('tts_engine'),
+                    data.get('fine_tuned'),
                 )
-            existing = dict(conn.execute('SELECT id, hash FROM blocks').fetchall())
+            )
             new_blocks = data.get('blocks', [])
-            new_ids = set()
-            for position, block in enumerate(new_blocks):
-                block_id = block['id']
-                new_ids.add(block_id)
-                payload = json.dumps(block, ensure_ascii=False)
-                h = hashlib.sha1(payload.encode('utf-8')).hexdigest()
-                if existing.get(block_id) == h:
-                    conn.execute(
-                        'UPDATE blocks SET position=? WHERE id=? AND position!=?',
-                        (position, block_id, position)
-                    )
-                else:
-                    conn.execute(
-                        'INSERT INTO blocks (id, position, hash, data) VALUES (?, ?, ?, ?) '
-                        'ON CONFLICT(id) DO UPDATE SET position=excluded.position, hash=excluded.hash, data=excluded.data',
-                        (block_id, position, h, payload)
-                    )
-            removed = set(existing.keys()) - new_ids
+            new_ids = {b['id'] for b in new_blocks}
+            existing_ids = {row[0] for row in conn.execute('SELECT id FROM blocks')}
+            removed = existing_ids - new_ids
             if removed:
                 conn.executemany('DELETE FROM blocks WHERE id=?', [(rid,) for rid in removed])
+            for idx, block in enumerate(new_blocks):
+                block_id = block['id']
+                conn.execute(
+                    'INSERT INTO blocks (id, idx, expand, keep, text, voice, tts_engine, fine_tuned) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?) '
+                    'ON CONFLICT(id) DO UPDATE SET '
+                    'idx=excluded.idx, expand=excluded.expand, keep=excluded.keep, text=excluded.text, '
+                    'voice=excluded.voice, tts_engine=excluded.tts_engine, fine_tuned=excluded.fine_tuned',
+                    (
+                        block_id,
+                        idx,
+                        1 if block.get('expand') else 0,
+                        1 if block.get('keep') else 0,
+                        block.get('text', ''),
+                        block.get('voice'),
+                        block.get('tts_engine'),
+                        block.get('fine_tuned'),
+                    )
+                )
+                conn.execute('DELETE FROM sentences WHERE block_id=?', (block_id,))
+                sentences = block.get('sentences', [])
+                if sentences:
+                    conn.executemany(
+                        'INSERT INTO sentences (block_id, idx, text) VALUES (?, ?, ?)',
+                        [(block_id, i, s) for i, s in enumerate(sentences)]
+                    )
             conn.commit()
     except Exception as e:
-        error = f'save_blocks_db() error: {e}'
+        error = f'save_db_blocks() error: {e}'
         print(error)
 
 def load_json_blocks(filepath:str)->dict:
@@ -3165,13 +3247,13 @@ def convert_ebook(args:dict)->tuple:
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             session['blocks_orig_json'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                             session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
-                            session['blocks_current_db'] = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
+                            session['blocks_current_json'] = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
                             checksum, error = compare_checksums(session_id)
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
                                     if os.path.exists(session['epub_path']):
-                                        for jf in (session['blocks_orig_json'], session['blocks_saved_json'], session['blocks_current_db']):
+                                        for jf in (session['blocks_orig_json'], session['blocks_saved_json'], session['blocks_current_json']):
                                             if os.path.exists(jf):
                                                 os.unlink(jf)
                                         msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
@@ -3217,8 +3299,8 @@ def convert_ebook(args:dict)->tuple:
                                                 elif is_reset:
                                                     session['blocks_saved'] = copy.deepcopy(blocks_orig)
                                                 save_json_blocks(session_id, 'blocks_saved')
-                                    if os.path.exists(session['blocks_current_db']):
-                                        blocks_current = load_json_blocks(session['blocks_current_db'])
+                                    if os.path.exists(session['blocks_current_json']):
+                                        blocks_current = load_json_blocks(session['blocks_current_json'])
                                         if blocks_current:
                                             session['blocks_current'] = blocks_current
                                             if is_changed or is_reset:
