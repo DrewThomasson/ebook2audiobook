@@ -169,3 +169,34 @@ class BackgroundDetector:
                     "background_detected": background_detected
                 }
             return False, {}
+        finally:
+            # Park cached pipelines on CPU so they don't hold accelerator memory
+            # while Demucs (or other heavy models) loads later in extract_voice().
+            # Keep them in _pipeline_cache so subsequent detect() calls can reuse
+            # them without reloading from disk; _get_props() is expected to call
+            # .to(self.torch_device) on retrieval.
+            with _pipeline_lock:
+                for p in _pipeline_cache.values():
+                    try:
+                        p.to('cpu')
+                    except Exception:
+                        pass
+            # Drop local refs to free any short-lived tensors / annotations
+            pipeline = waveform = sr = None
+            gc.collect()
+            if torch.cuda.is_available():
+                try:
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
+                except Exception:
+                    pass
+            if hasattr(torch, 'xpu') and torch.xpu.is_available():
+                try:
+                    torch.xpu.empty_cache()
+                except Exception:
+                    pass
+            if torch.backends.mps.is_available():
+                try:
+                    torch.mps.empty_cache()
+                except Exception:
+                    pass
