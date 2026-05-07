@@ -5,7 +5,7 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
+import argparse, asyncio, csv, fnmatch, sqlite3, hashlib, io, json, math, os, pytesseract, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, psutil, requests, stanza, importlib, queue
@@ -225,7 +225,7 @@ class SessionContext:
             "blocks_current": {},
             "blocks_orig_json": None,
             "blocks_saved_json": None,
-            "blocks_current_json": None,
+            "blocks_current_db": None,
             "duration": 0,
             "playback_time": 0,
             "playback_volume": 0,
@@ -595,12 +595,98 @@ def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
         error = f'ocr2xhtml error: {e}'
         return False, error
 
+def create_db_blocks(db_path:str)->None:
+    os.makedirs(os.path.dirname(db_path) or '.', exist_ok=True)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute('PRAGMA journal_mode=WAL')
+        conn.execute('PRAGMA synchronous=NORMAL')
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS meta (
+                field TEXT PRIMARY KEY,
+                value TEXT
+            );
+            CREATE TABLE IF NOT EXISTS blocks (
+                id TEXT PRIMARY KEY,
+                position INTEGER NOT NULL,
+                hash TEXT NOT NULL,
+                data TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_blocks_position ON blocks(position);
+        ''')
+
+def load_db_blocks(db_path:str)->dict:
+    try:
+        if not os.path.exists(db_path):
+            return {}
+        with sqlite3.connect(db_path) as conn:
+            result = {}
+            for field, value in conn.execute('SELECT field, value FROM meta'):
+                result[field] = json.loads(value) if value is not None else None
+            result['blocks'] = [
+                json.loads(row[0])
+                for row in conn.execute('SELECT data FROM blocks ORDER BY position')
+            ]
+            return result
+    except Exception as e:
+        error = f'load_blocks_db() error: {e}'
+        print(error)
+        return {}
+
+def save_db_blocks(session_id:str)->None:
+    try:
+        session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return
+        data = session['blocks_current']
+        if not data:
+            return
+        db_path = session['blocks_current_db']
+        create_blocks_db(db_path)
+        with sqlite3.connect(db_path) as conn:
+            for field, value in data.items():
+                if field == 'blocks':
+                    continue
+                value_str = json.dumps(value, ensure_ascii=False)
+                conn.execute(
+                    'INSERT INTO meta (field, value) VALUES (?, ?) '
+                    'ON CONFLICT(field) DO UPDATE SET value=excluded.value '
+                    'WHERE meta.value IS NOT excluded.value',
+                    (field, value_str)
+                )
+            existing = dict(conn.execute('SELECT id, hash FROM blocks').fetchall())
+            new_blocks = data.get('blocks', [])
+            new_ids = set()
+            for position, block in enumerate(new_blocks):
+                block_id = block['id']
+                new_ids.add(block_id)
+                payload = json.dumps(block, ensure_ascii=False)
+                h = hashlib.sha1(payload.encode('utf-8')).hexdigest()
+                if existing.get(block_id) == h:
+                    conn.execute(
+                        'UPDATE blocks SET position=? WHERE id=? AND position!=?',
+                        (position, block_id, position)
+                    )
+                else:
+                    conn.execute(
+                        'INSERT INTO blocks (id, position, hash, data) VALUES (?, ?, ?, ?) '
+                        'ON CONFLICT(id) DO UPDATE SET position=excluded.position, hash=excluded.hash, data=excluded.data',
+                        (block_id, position, h, payload)
+                    )
+            removed = set(existing.keys()) - new_ids
+            if removed:
+                conn.executemany('DELETE FROM blocks WHERE id=?', [(rid,) for rid in removed])
+            conn.commit()
+    except Exception as e:
+        error = f'save_blocks_db() error: {e}'
+        print(error)
+
 def load_json_blocks(filepath:str)->dict:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        print(f"load_json_blocks() error: {e}")
+        error = f"load_json_blocks() error: {e}"
+        print(error)
         return {}
 
 def save_json_blocks(session_id:str, key:str)->None:
@@ -3079,13 +3165,13 @@ def convert_ebook(args:dict)->tuple:
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             session['blocks_orig_json'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                             session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
-                            session['blocks_current_json'] = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
+                            session['blocks_current_db'] = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
                             checksum, error = compare_checksums(session_id)
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
                                     if os.path.exists(session['epub_path']):
-                                        for jf in (session['blocks_orig_json'], session['blocks_saved_json'], session['blocks_current_json']):
+                                        for jf in (session['blocks_orig_json'], session['blocks_saved_json'], session['blocks_current_db']):
                                             if os.path.exists(jf):
                                                 os.unlink(jf)
                                         msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
@@ -3131,8 +3217,8 @@ def convert_ebook(args:dict)->tuple:
                                                 elif is_reset:
                                                     session['blocks_saved'] = copy.deepcopy(blocks_orig)
                                                 save_json_blocks(session_id, 'blocks_saved')
-                                    if os.path.exists(session['blocks_current_json']):
-                                        blocks_current = load_json_blocks(session['blocks_current_json'])
+                                    if os.path.exists(session['blocks_current_db']):
+                                        blocks_current = load_json_blocks(session['blocks_current_db'])
                                         if blocks_current:
                                             session['blocks_current'] = blocks_current
                                             if is_changed or is_reset:
@@ -3396,7 +3482,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "blocks_current": {},
         "blocks_orig_json": None,
         "blocks_saved_json": None,
-        "blocks_current_json": None,
+        "blocks_current_db": None,
         "audiobook_overridden": None,
         "metadata": {
             "title": None, 
