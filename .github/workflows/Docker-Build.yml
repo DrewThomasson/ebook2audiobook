@@ -136,20 +136,41 @@ jobs:
           echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}"
           echo "GIT_HASH=${GIT_HASH}"
           echo "RELEASE_TAG=${RELEASE_TAG}"
-      # ==================== CPU Build (linux/amd64 + linux/arm64) ====================
-      - name:  Build and Push CPU Docker Image
+
+      # ==================== CPU Build x86_64 (linux/amd64) ====================
+      - name: Build and Push CPU Docker Image (x86_64)
         run: |
           cd ~/E2ADockerBuild/ebook2audiobook
-          CPU_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cpu"
-          CPU_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cpu"
-          CPU_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cpu"
-          docker buildx build --pull --platform linux/amd64,linux/arm64 \
+          CPU_AMD64_TAG="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cpu-amd64"
+          docker buildx build --pull --platform linux/amd64 \
             --build-arg DEVICE_TAG=cpu \
-            --build-arg DOCKER_DEVICE_STR='{"name":  "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag":  "cpu", "note": "CPU only"}' \
-            -t "$CPU_TAG_1" \
-            -t "$CPU_TAG_2" \
-            -t "$CPU_TAG_3" \
-            --push . 
+            --build-arg DOCKER_DEVICE_STR='{"name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "CPU only"}' \
+            -t "$CPU_AMD64_TAG" \
+            --push .
+
+      # ==================== CPU Build aarch64 (linux/arm64) ====================
+      - name: Build and Push CPU Docker Image (aarch64)
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          CPU_ARM64_TAG="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cpu-arm64"
+          docker buildx build --pull --platform linux/arm64 \
+            --build-arg DEVICE_TAG=cpu \
+            --build-arg DOCKER_DEVICE_STR='{"name": "cpu", "os": "manylinux_2_28", "arch": "aarch64", "pyvenv": [3, 12], "tag": "cpu", "note": "CPU only"}' \
+            -t "$CPU_ARM64_TAG" \
+            --push .
+
+      # ==================== CPU Multi-Arch Manifest ====================
+      - name: Create CPU Multi-Arch Manifest
+        run: |
+          CPU_AMD64_TAG="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cpu-amd64"
+          CPU_ARM64_TAG="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cpu-arm64"
+          for TAG in \
+            "${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cpu" \
+            "${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cpu" \
+            "${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cpu"
+          do
+            docker buildx imagetools create -t "$TAG" "$CPU_AMD64_TAG" "$CPU_ARM64_TAG"
+          done
 
       # ==================== CUDA 13.0 Build (linux/amd64 only) ====================
       - name: Build and Push CUDA 13.0 Docker Image
@@ -182,4 +203,3 @@ jobs:
         run: |
           docker system prune -af --volumes
           docker buildx prune -af
-            
