@@ -1320,7 +1320,7 @@ class DeviceInstaller():
                                     and self.system != systems['WINDOWS']
                                 ) or tag == devices['CPU']['proc']
                                 if is_cpu_aarch64_linux:
-                                    torchcodec_index_url = f"{default_torchcodec_arm_url}/torchcodec-{arch}-{tag_py}/torchcodec-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
+                                    torchcodec_index_url = f"{default_torchcodec_arm_url}/torchcodec-{arch}-{tag_py}/torchcodec-{torchcodec_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
                                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torchcodec_index_url])
                                 else:
                                     if has_native_codec:
