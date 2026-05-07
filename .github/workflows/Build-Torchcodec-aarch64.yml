@@ -73,7 +73,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel
           python -m pip install \
-            "torch==${{ inputs.torch_version }}" \
+            --index-url https://download.pytorch.org/whl/cpu \
+            "torch==${{ inputs.torch_version }}"
+          python -m pip install \
             "pybind11>=2.12" \
             "setuptools>=61.0" \
             auditwheel patchelf
@@ -94,6 +96,7 @@ jobs:
           I_CONFIRM_THIS_IS_NOT_A_LICENSE_VIOLATION: '1'
           BUILD_VERSION: ${{ inputs.build_version }}
         run: |
+          export CMAKE_PREFIX_PATH="$(python -c 'import pybind11; print(pybind11.get_cmake_dir())')${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
           pip wheel . \
             --no-build-isolation \
             --no-deps \
