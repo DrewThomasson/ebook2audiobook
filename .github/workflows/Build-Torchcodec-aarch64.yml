@@ -1,9 +1,4 @@
 name: Build torchcodec aarch64 wheel
-# Native aarch64 build inside manylinux_2_28_aarch64 (AlmaLinux 8 + DTS).
-# Mirrors the official torchcodec build: BUILD_AGAINST_ALL_FFMPEG_FROM_S3=1
-# fetches non-GPL ffmpeg headers for versions 4-8 from S3 and compiles five
-# library sets, so the wheel works with any user-installed ffmpeg in [4, 8].
-# CPU-only build also serves XPU users via the intel/torchlib-xpu plugin.
 # Produces: torchcodec-0.11.1+cpu-cp312-cp312-manylinux_2_28_aarch64.whl
 on:
   workflow_dispatch:
