@@ -1275,11 +1275,11 @@ class DeviceInstaller():
                             arch = device_info['arch']
                             toolkit_version = ''.join(c for c in tag if c.isdigit())
                             tag_dir = tag
+                            py_major, py_minor = device_info['pyvenv']
+                            tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'filelock', 'jinja2', 'fsspec', 'networkx', 'sympy'])
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
-                                py_major, py_minor = device_info['pyvenv']
-                                tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                 torch_pkg = f"{url}/torch-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                 torchaudio_pkg = f"{url}/torchaudio-v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', torch_pkg])
@@ -1288,9 +1288,7 @@ class DeviceInstaller():
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scipy'])
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
                                 url = default_pytorch_amd_url
-                                py_major, py_minor = device_info['pyvenv']
                                 norm_tag = tag.replace('-rel-', '')
-                                tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                 # rocm_sdk is required by torch ROCm wheels on Windows; install it first if missing
                                 import importlib.util
                                 if importlib.util.find_spec('rocm_sdk') is None:
