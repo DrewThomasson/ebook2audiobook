@@ -67,7 +67,7 @@ default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
 default_pytorch_url = 'https://download.pytorch.org/whl'
 default_pytorch_amd_url = 'https://repo.radeon.com/rocm/windows'
-default_torchcodec_arm_url = ''
+default_torchcodec_arm_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download'
 default_jetson_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download'
 
 torch_matrix = {

@@ -1280,8 +1280,8 @@ class DeviceInstaller():
                                 url = default_jetson_url
                                 py_major, py_minor = device_info['pyvenv']
                                 tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
-                                torch_pkg = f"{url}/jetson-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                torchaudio_pkg = f"{url}/jetson-v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                torch_pkg = f"{url}/torch-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                torchaudio_pkg = f"{url}/torchaudio-v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', torch_pkg])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', torchaudio_pkg])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scikit-learn'])
@@ -1322,12 +1322,14 @@ class DeviceInstaller():
                                     and self.system != systems['WINDOWS']
                                 ) or tag == devices['CPU']['proc']
                                 if is_cpu_aarch64_linux:
-                                    torchcodec_index_url = f'{default_torchcodec_arm_url}/{tag_dir}'
-                                elif has_native_codec:
-                                    torchcodec_index_url = f'{default_pytorch_url}/{tag_dir}'
+                                    torchcodec_index_url = f"{default_torchcodec_arm_url}/torchcodec-v{torchcodec_version_matrix}/torchcodec-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torchcodec_index_url])
                                 else:
-                                    torchcodec_index_url = f'{default_pytorch_url}/cpu'
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url])
+                                    if has_native_codec:
+                                        torchcodec_index_url = f'{default_pytorch_url}/{tag_dir}'
+                                    else:
+                                        torchcodec_index_url = f'{default_pytorch_url}/cpu'
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url])
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
