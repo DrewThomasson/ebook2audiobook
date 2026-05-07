@@ -132,6 +132,36 @@ jobs:
             --wheel-dir=../wheels-raw \
             --verbose
 
+      - name: Strip stale libpython3.12.so DT_NEEDED from raw wheel
+        run: |
+          # The build-step stub libpython left DT_NEEDED entries in the
+          # custom_ops/pybind_ops .so files (the linker recorded the explicit
+          # -lpython3.12 from Python3_LIBRARY). auditwheel --exclude prevents
+          # *bundling* libpython but doesn't strip the entry — at runtime the
+          # loader on the install machine then fails because manylinux's
+          # statically linked interpreter doesn't ship a libpython3.12.so.
+          # patchelf --remove-needed cleans the entries before auditwheel so
+          # the repaired wheel has no dangling reference. The --exclude in
+          # the repair step stays as defense in depth.
+          TMP_RAW=$(mktemp -d)
+          trap 'rm -rf "$TMP_RAW"' EXIT
+          RAW=$(ls wheels-raw/torchcodec-*.whl)
+          python -m zipfile -e "$RAW" "$TMP_RAW"
+          stripped=0
+          for so in $(find "$TMP_RAW" -name '*.so'); do
+            if patchelf --print-needed "$so" 2>/dev/null | grep -qx 'libpython3\.12\.so'; then
+              echo "stripping libpython3.12.so from $so"
+              patchelf --remove-needed libpython3.12.so "$so"
+              stripped=$((stripped + 1))
+            fi
+          done
+          echo "stripped libpython from $stripped shared object(s)"
+          test "$stripped" -gt 0 || { echo "expected >=1 .so to reference libpython3.12.so; build/link assumptions changed"; exit 1; }
+          # Repack the raw wheel in place; `wheel pack` recomputes RECORD.
+          rm "$RAW"
+          python -m wheel pack "$TMP_RAW" --dest-dir wheels-raw/
+          ls -la wheels-raw/
+
       - name: Repair to manylinux_2_28_aarch64
         run: |
           # Exclude every ffmpeg soname for majors 4-8 across all lib families.
@@ -147,10 +177,26 @@ jobs:
           # inside the wheel, so unpack the raw wheel to a temp dir and put
           # it on LD_LIBRARY_PATH; auditwheel will then resolve the siblings
           # and write proper $ORIGIN-relative RPATHs into the repaired wheel.
+          #
+          # We also strip DT_NEEDED libpython3.12.so from the custom_ops*
+          # and pybind_ops* libs here. The build-time libpython stub satisfied
+          # CMake's link step but left a DT_NEEDED entry behind; manylinux's
+          # libpython isn't reachable from the .so's own RPATH at runtime, so
+          # ctypes.CDLL fails. Python C extensions resolve Python symbols via
+          # the loading interpreter, not via DT_NEEDED, so the entry is dead
+          # weight. patchelf --remove-needed before auditwheel sees the wheel.
           mkdir -p wheels
           TMP=$(mktemp -d)
           trap 'rm -rf "$TMP"' EXIT
           python -m zipfile -e wheels-raw/torchcodec-*.whl "$TMP"
+          for so in "$TMP"/torchcodec/*.so; do
+            if patchelf --print-needed "$so" 2>/dev/null | grep -q '^libpython3\.'; then
+              echo "patchelf: removing DT_NEEDED libpython3.12.so from $(basename "$so")"
+              patchelf --remove-needed libpython3.12.so "$so"
+            fi
+          done
+          rm -f wheels-raw/torchcodec-*.whl
+          python -m wheel pack "$TMP" --dest-dir wheels-raw
           export LD_LIBRARY_PATH="$TMP/torchcodec${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
           auditwheel repair wheels-raw/torchcodec-*.whl \
             --plat manylinux_2_28_aarch64 \
