@@ -10,6 +10,13 @@ systems = {
     "WINDOWS": "win32"
 }
 
+archs = {
+    "AMD64": "amd64",
+    "X86_64": "x86_64",
+    "AARCH64": "aarch64",
+    "ARM64": "arm64"
+}
+
 cli_options = [
     '--script_mode', '--docker_mode', '--session', '--share', '--headless', 
     '--ebook', '--ebooks_dir', '--text', '--language', '--voice', '--device', '--tts_engine', 
@@ -60,38 +67,39 @@ default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
 default_pytorch_url = 'https://download.pytorch.org/whl'
 default_pytorch_amd_url = 'https://repo.radeon.com/rocm/windows'
-default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a permanent website where to upload the jetpack torch
+default_torchcodec_arm_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download'
+default_jetson_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download'
 
 torch_matrix = {
     # CPU
-    "cpu":       {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0"},
+    "cpu":       {"os": list(systems.values()), "arch": list(archs.values()), "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     # CUDA
-    "cu118":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.7.1"},
-    "cu121":     {"compat": list(systems.values()), "base": "2.5.1", "last": "2.5.1"},
-    "cu124":     {"compat": list(systems.values()), "base": "2.6.0", "last": "2.6.0"},
-    "cu126":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0"},
-    "cu128":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0"},
-    "cu129":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0"},
-    "cu130":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0"},
+    "cu118":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.7.1",  "codec": ""},
+    "cu121":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.5.1", "last": "2.5.1",  "codec": ""},
+    "cu124":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.6.0", "last": "2.6.0",  "codec": ""},
+    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
+    "cu128":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.9.0", "codec": "0.7.0"},
+    "cu129":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.9.0", "codec": "0.7.0"},
+    "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     # ROCm
-    "rocm5.7":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.3.1", "last": "2.3.1"},
-    "rocm6.0":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.4.1", "last": "2.4.1"},
-    "rocm6.1":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.6.0", "last": "2.6.0"},
-    "rocm6.2":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.5.1", "last": "2.5.1"},
-    "rocm6.2.4": {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.7.1", "last": "2.11.0"},
-    "rocm6.3":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.7.1", "last": "2.9.1"},
-    "rocm7.0":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.10.0", "last": "2.10.0"},
-    "rocm7.1":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.11.0", "last": "2.11.0"},
-    "rocm7.2":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.11.0", "last": "2.11.0"},
-    "rocm-rel-7.2.1": {"compat": [systems['WINDOWS']], "base": "2.9.1", "last": "2.9.1"},
+    "rocm5.7":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.3.1",  "last": "2.3.1",  "codec": ""},
+    "rocm6.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.4.1",  "last": "2.4.1",  "codec": ""},
+    "rocm6.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.6.0",  "last": "2.6.0",  "codec": ""},
+    "rocm6.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.5.1",  "last": "2.5.1",  "codec": ""},
+    "rocm6.2.4": {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.7.1",  "last": "2.7.1",  "codec": ""},
+    "rocm6.3":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.7.1",  "last": "2.9.1",  "codec": "0.9.0"},
+    "rocm7.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.10.0", "last": "2.10.0", "codec": "0.10.0"},
+    "rocm7.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.11.0", "codec": "0.11.1"},
+    "rocm7.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.11.0", "codec": "0.11.1"},
+    "rocm-rel-7.2.1": {"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.9.1",  "last": "2.9.1",  "codec": "0.11.1"},
     # MPS
-    "mps":       {"compat": [systems['MACOS']], "base": "2.7.1", "last": "2.11.0"},
+    "mps":       {"os": [systems['MACOS']], "arch": [archs['ARM64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     # XPU
-    "xpu":       {"compat": [systems['LINUX'], systems['WINDOWS']], "base": "2.7.1", "last": "2.11.0"},
+    "xpu":       {"os": [systems['LINUX'], systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     # JETSON
-    "jetson51":  {"compat": [systems['LINUX']], "base": "2.4.1", "last": "2.4.1"},
-    "jetson60":  {"compat": [systems['LINUX']], "base": "2.4.0", "last": "2.4.0"},
-    "jetson61":  {"compat": [systems['LINUX']], "base": "2.5.0", "last": "2.5.0"}
+    "jetson51":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.4.1", "last": "2.4.1", "codec": ""},
+    "jetson60":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.4.0", "last": "2.4.0", "codec": ""},
+    "jetson61":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.5.0", "last": "2.5.0", "codec": ""},
 }
 
 cuda_version_range = {"min": (11,8), "max": (13,0)}
