@@ -620,26 +620,26 @@ for /f "delims=" %%i in ('where.exe python 2^>nul') do (
 )
 if "%CURRENT_ENV%"=="" (
     if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-		setlocal enabledelayedexpansion
-        echo Creating ./python_env version %PYTHON_VERSION%…
+        setlocal enabledelayedexpansion
+        echo Creating ./python_env version %PYTHON_VERSION%...
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda update -n base -c conda-forge conda -y
         call conda update --all -y
         call conda clean --index-cache -y
         call conda clean --packages --tarballs -y
-		call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
-        ::call conda activate base
+        call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
+        rem call conda activate base
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-		call :check_device_info %SCRIPT_MODE%
-        if errorlevel 1 exit /b 1
-		call :install_device_packages "!DEVICE_INFO_STR!"
-		if errorlevel 1 exit /b 1
+        call :check_device_info %SCRIPT_MODE%
+        if errorlevel 1 (endlocal & exit /b 1)
+        call :install_device_packages "!DEVICE_INFO_STR!"
+        if errorlevel 1 (endlocal & exit /b 1)
         call :install_python_packages
-        if errorlevel 1 exit /b 1
-		endlocal
+        if errorlevel 1 (endlocal & exit /b 1)
+        endlocal
     )
 ) else (
-    echo Current python virtual environment detected: %CURRENT_ENV%. 
+    echo Current python virtual environment detected: %CURRENT_ENV%.
     echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
     exit /b 2
 )
@@ -768,7 +768,17 @@ if "%site_packages_path%"=="" (
     exit /b 1
 )
 set "dst_pyfile=%site_packages_path%\sitecustomize.py"
-xcopy /d /y "%src_pyfile%" "%dst_pyfile%*" >nul 2>&1
+if not exist "%dst_pyfile%" (
+    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
+    if errorlevel 1 (
+        echo %ESC%[31m=============== sitecustomize.py hook error: copy failed.%ESC%[0m
+        exit /b 1
+    )
+    exit /b 0
+)
+:: xcopy /d only overwrites when source is newer than destination
+:: destination ends with '\' so xcopy treats it as a directory, no F/D prompt, no wildcard target
+xcopy /d /y "%src_pyfile%" "%site_packages_path%\" >nul
 if errorlevel 1 (
     echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
     exit /b 1

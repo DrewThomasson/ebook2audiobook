@@ -73,7 +73,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel
           python -m pip install \
-            "torch==${{ inputs.torch_version }}" \
+            --index-url https://download.pytorch.org/whl/cpu \
+            "torch==${{ inputs.torch_version }}"
+          python -m pip install \
             "pybind11>=2.12" \
             "setuptools>=61.0" \
             auditwheel patchelf
