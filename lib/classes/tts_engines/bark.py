@@ -12,7 +12,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.speakers_path = None
             self.speaker = None
             self.tts_key = self.session['model_cache']
-            #self.pth_voice_file = None
             self.resampler_cache = {}
             self.resampled_wav_cache = {}
             self.audio_segments = []
@@ -142,7 +141,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 pth_voice_dir = os.path.join(bark_dir, self.speaker)
                 if not os.path.exists(pth_voice_dir):
                     os.makedirs(pth_voice_dir, exist_ok=True)
-                #pth_voice_file = os.path.join(bark_dir, self.speaker, f'{self.speaker}.pth')
                 self.engine.synthesizer.voice_dir = pth_voice_dir
                 fine_tuned_params = {
                     key.removeprefix('bark_'): cast_type(self.session[key])
