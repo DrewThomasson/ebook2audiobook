@@ -545,7 +545,6 @@ class TTSUtils:
 
     def _resample_wav(self, wav_path:str, expected_sr:int)->str:
         import soundfile as sf
-        import numpy as np
         import torch
         data, orig_sr = sf.read(wav_path, dtype='float32', always_2d=True)
         waveform = torch.from_numpy(data.T).contiguous()
