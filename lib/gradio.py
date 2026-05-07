@@ -1434,7 +1434,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         changed = True
                                     if changed:
                                         session['blocks_current'] = blocks_current
-                                        save_json_blocks(session_id, 'blocks_current')
+                                        save_db_blocks(session_id)
                                     session['voice'] = fallback
                                     voice_options[:] = [(i, v) for i, v in voice_options if v != deleted_voice]
                                     msg = f'Voice file {re.sub(r".wav$", "", selected_name)} deleted!'
@@ -2168,7 +2168,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if blocks_current.get('page') != new_page:
                             blocks_current['page'] = new_page
                             session['blocks_current'] = blocks_current
-                            save_json_blocks(session_id, 'blocks_current')
+                            save_db_stamp(session_id)
                 except Exception as e:
                     error = f'navigate(): {e}'
                     exception_alert(session_id, error)
@@ -2260,7 +2260,7 @@ def build_interface(args:dict)->gr.Blocks:
                             b['sentences'] = []
                     blocks_current['blocks'] = new_blocks
                     session['blocks_current'] = blocks_current
-                    save_json_blocks(session_id, 'blocks_current')
+                    save_db_blocks(session_id)
 
             def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
@@ -2395,7 +2395,7 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                     elif session.get('status', None) != status_tags['SKIP']:
                         if session.get('status', None) == status_tags['EDIT']:
-                            save_json_blocks(session_id, 'blocks_current')
+                            save_db_blocks(session_id)
                         new_hash = hash_proxy_dict(MappingProxyType(session))
                         if previous_hash == new_hash:
                             yield gr.update(), gr.update(), gr.update()
