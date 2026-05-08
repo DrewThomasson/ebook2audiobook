@@ -1,0 +1,273 @@
+name: Build torchcodec aarch64 wheel
+# Produces: torchcodec-0.11.1+cpu-cp312-cp312-manylinux_2_28_aarch64.whl
+on:
+  workflow_dispatch:
+    inputs:
+      torchcodec_ref:
+        description: 'torchcodec git ref (tag/branch/sha)'
+        type: string
+        default: 'v0.11.1'
+      torch_version:
+        description: 'torch ABI to link against (must be 2.11.x for torchcodec 0.11.x)'
+        type: string
+        default: '2.11.0'
+      smoke_ffmpeg_version:
+        description: 'ffmpeg version to install for the import smoke test (any 4-8)'
+        type: string
+        default: '6.1.1'
+      build_version:
+        description: 'BUILD_VERSION stamp for the wheel'
+        type: string
+        default: '0.11.1+cpu'
+      attach_to_release:
+        description: 'Attach wheel to the latest release (else artifact only)'
+        type: boolean
+        default: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    container:
+      image: quay.io/pypa/manylinux_2_28_aarch64
+    steps:
+      - name: Set up Python 3.12
+        run: echo '/opt/python/cp312-cp312/bin' >> "$GITHUB_PATH"
+
+      - name: Install build tools
+        run: |
+          dnf install -y \
+            git cmake ninja-build pkgconfig \
+            yasm nasm \
+            zlib-devel bzip2-devel xz-devel
+
+      - name: Cache smoke-test ffmpeg
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: /opt/ffmpeg
+          key: ffmpeg-${{ inputs.smoke_ffmpeg_version }}-manylinux_2_28-aarch64-v1
+
+      - name: Build smoke-test ffmpeg ${{ inputs.smoke_ffmpeg_version }}
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: |
+          # Used only at smoke-test time so torchcodec's runtime dlopen probe
+          # finds something. Not linked into the wheel itself; that's handled
+          # by BUILD_AGAINST_ALL_FFMPEG_FROM_S3 fetching all 5 ffmpeg majors.
+          curl -fL "https://ffmpeg.org/releases/ffmpeg-${{ inputs.smoke_ffmpeg_version }}.tar.xz" \
+            -o ffmpeg.tar.xz
+          tar xf ffmpeg.tar.xz
+          cd "ffmpeg-${{ inputs.smoke_ffmpeg_version }}"
+          ./configure \
+            --prefix=/opt/ffmpeg \
+            --enable-shared \
+            --disable-static \
+            --disable-doc \
+            --disable-programs \
+            --disable-network \
+            --disable-encoders \
+            --disable-muxers \
+            --disable-filters \
+            --disable-protocols \
+            --enable-protocol=file \
+            --enable-protocol=pipe
+          make -j"$(nproc)"
+          make install
+
+      - name: Install torch ABI and build helpers
+        run: |
+          # torch from the CPU index — default PyPI ships the CUDA wheel for
+          # aarch64 since 2.5+ (Grace/GH200), and its TorchConfig.cmake then
+          # forces find_package(CUDA) which fails in this container.
+          python -m pip install --upgrade pip wheel
+          python -m pip install \
+            --index-url https://download.pytorch.org/whl/cpu \
+            "torch==${{ inputs.torch_version }}"
+          python -m pip install \
+            "pybind11>=2.12" \
+            "setuptools>=61.0" \
+            auditwheel patchelf
+
+      - name: Clone torchcodec @ ${{ inputs.torchcodec_ref }}
+        run: |
+          git clone --depth 1 --branch '${{ inputs.torchcodec_ref }}' \
+            https://github.com/meta-pytorch/torchcodec.git src
+
+      - name: Patch pyproject.toml build deps
+        working-directory: src
+        run: |
+          # Defense in depth — only consulted if anyone ever drops
+          # --no-build-isolation. With it, this is a no-op.
+          sed -i 's|requires *= *\["setuptools>=61.0"\]|requires = ["setuptools>=61.0", "torch", "pybind11"]|g' pyproject.toml
+          cat pyproject.toml | head -30
+
+      - name: Stub libpython for CMake FindPython3 (manylinux has no shared libpython)
+        run: |
+          # manylinux cp312 ships a static interpreter; CMake's FindPython3
+          # therefore can't satisfy Development.Embed and torchcodec's CMake
+          # references Python3_LIBRARY directly. Drop in an empty .so so the
+          # configure step succeeds. The link step is fine — building a shared
+          # lib on Linux allows undefined symbols by default, and auditwheel
+          # would exclude libpython from the wheel anyway. At runtime the real
+          # interpreter resolves the symbols, which is the correct model for
+          # Python C extensions in the first place.
+          gcc -shared -nostdlib -o /opt/python/cp312-cp312/lib/libpython3.12.so -xc /dev/null
+          ls -la /opt/python/cp312-cp312/lib/libpython3.12.so
+
+      - name: Build wheel (raw linux_aarch64, all 5 ffmpeg majors)
+        working-directory: src
+        env:
+          ENABLE_CUDA: '0'
+          BUILD_AGAINST_ALL_FFMPEG_FROM_S3: '1'
+          I_CONFIRM_THIS_IS_NOT_A_LICENSE_VIOLATION: '1'
+          BUILD_VERSION: ${{ inputs.build_version }}
+        run: |
+          # pip-installed pybind11 ships its CMake config under
+          # pybind11.get_cmake_dir(); CMake doesn't search there by default.
+          # CMAKE_PREFIX_PATH (env-var form) is the canonical way to add it.
+          export CMAKE_PREFIX_PATH="$(python -c 'import pybind11; print(pybind11.get_cmake_dir())')${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
+          pip wheel . \
+            --no-build-isolation \
+            --no-deps \
+            --no-binary=torchcodec \
+            --wheel-dir=../wheels-raw \
+            --verbose
+
+      - name: Strip stale libpython3.12.so DT_NEEDED from raw wheel
+        run: |
+          # The build-step stub libpython left DT_NEEDED entries in the
+          # custom_ops/pybind_ops .so files (the linker recorded the explicit
+          # -lpython3.12 from Python3_LIBRARY). auditwheel --exclude prevents
+          # *bundling* libpython but doesn't strip the entry — at runtime the
+          # loader on the install machine then fails because manylinux's
+          # statically linked interpreter doesn't ship a libpython3.12.so.
+          # patchelf --remove-needed cleans the entries before auditwheel so
+          # the repaired wheel has no dangling reference. The --exclude in
+          # the repair step stays as defense in depth.
+          TMP_RAW=$(mktemp -d)
+          trap 'rm -rf "$TMP_RAW"' EXIT
+          RAW=$(ls wheels-raw/torchcodec-*.whl)
+          python -m zipfile -e "$RAW" "$TMP_RAW"
+          stripped=0
+          for so in $(find "$TMP_RAW" -name '*.so'); do
+            if patchelf --print-needed "$so" 2>/dev/null | grep -qx 'libpython3\.12\.so'; then
+              echo "stripping libpython3.12.so from $so"
+              patchelf --remove-needed libpython3.12.so "$so"
+              stripped=$((stripped + 1))
+            fi
+          done
+          echo "stripped libpython from $stripped shared object(s)"
+          test "$stripped" -gt 0 || { echo "expected >=1 .so to reference libpython3.12.so; build/link assumptions changed"; exit 1; }
+          # Repack the raw wheel in place; `wheel pack` recomputes RECORD.
+          rm "$RAW"
+          python -m wheel pack "$TMP_RAW" --dest-dir wheels-raw/
+          ls -la wheels-raw/
+
+      - name: Repair to manylinux_2_28_aarch64
+        run: |
+          # Exclude every ffmpeg soname for majors 4-8 across all lib families.
+          # torchcodec dlopens the user's ffmpeg at runtime; bundling our
+          # build-time copy would override that and break the multi-version
+          # mechanism. Also exclude torch libs (user-supplied via installed
+          # torch) and libpython (the build-step stub — must never ride along).
+          # auditwheel repair will refuse the wheel if any glibc symbol newer
+          # than 2.28 leaked in — that's the real manylinux check.
+          #
+          # libtorchcodec_custom_ops{4..8}.so each DT_NEEDED their sibling
+          # libtorchcodec_core{4..8}.so. auditwheel's lddtree doesn't peek
+          # inside the wheel, so unpack the raw wheel to a temp dir and put
+          # it on LD_LIBRARY_PATH; auditwheel will then resolve the siblings
+          # and write proper $ORIGIN-relative RPATHs into the repaired wheel.
+          #
+          # We also strip DT_NEEDED libpython3.12.so from the custom_ops*
+          # and pybind_ops* libs here. The build-time libpython stub satisfied
+          # CMake's link step but left a DT_NEEDED entry behind; manylinux's
+          # libpython isn't reachable from the .so's own RPATH at runtime, so
+          # ctypes.CDLL fails. Python C extensions resolve Python symbols via
+          # the loading interpreter, not via DT_NEEDED, so the entry is dead
+          # weight. patchelf --remove-needed before auditwheel sees the wheel.
+          mkdir -p wheels
+          TMP=$(mktemp -d)
+          trap 'rm -rf "$TMP"' EXIT
+          python -m zipfile -e wheels-raw/torchcodec-*.whl "$TMP"
+          for so in "$TMP"/torchcodec/*.so; do
+            if patchelf --print-needed "$so" 2>/dev/null | grep -q '^libpython3\.'; then
+              echo "patchelf: removing DT_NEEDED libpython3.12.so from $(basename "$so")"
+              patchelf --remove-needed libpython3.12.so "$so"
+            fi
+          done
+          rm -f wheels-raw/torchcodec-*.whl
+          python -m wheel pack "$TMP" --dest-dir wheels-raw
+          export LD_LIBRARY_PATH="$TMP/torchcodec${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          auditwheel repair wheels-raw/torchcodec-*.whl \
+            --plat manylinux_2_28_aarch64 \
+            --wheel-dir wheels \
+            --exclude 'libavcodec.so.*' \
+            --exclude 'libavformat.so.*' \
+            --exclude 'libavutil.so.*' \
+            --exclude 'libavfilter.so.*' \
+            --exclude 'libavdevice.so.*' \
+            --exclude 'libswresample.so.*' \
+            --exclude 'libswscale.so.*' \
+            --exclude 'libc10.so' \
+            --exclude 'libtorch.so' \
+            --exclude 'libtorch_cpu.so' \
+            --exclude 'libtorch_python.so' \
+            --exclude 'libpython3.*.so*'
+          ls -la wheels/
+
+      - name: Verify wheel
+        run: |
+          python - <<'PY'
+          import glob, re, zipfile
+          whl = glob.glob('wheels/torchcodec-*.whl')
+          assert whl, 'no wheel produced'
+          w = whl[0]
+          print('wheel:', w)
+          assert 'manylinux_2_28_aarch64' in w, f'wrong platform tag: {w}'
+          with zipfile.ZipFile(w) as z:
+              sos = [n for n in z.namelist() if n.endswith('.so')]
+              print('shared objects:', sos)
+              # Expect ffmpeg majors 4-8 across the core libs (one per major).
+              # auditwheel may also vendor hashed copies into torchcodec.libs/;
+              # collapse to the set of majors so duplicates don't trip us.
+              # If only {4} (or any single-element set) is present, then
+              # BUILD_AGAINST_ALL_FFMPEG_FROM_S3 silently no-op'd (S3
+              # unreachable, license confirm dropped, etc).
+              majors = {int(m.group(1)) for n in sos
+                        if (m := re.search(r'libtorchcodec_core(\d+)', n))}
+              assert majors == {4, 5, 6, 7, 8}, \
+                f'expected ffmpeg majors 4-8, got: {sorted(majors)}'
+              # Belt-and-braces: ensure the build-step libpython stub didn't
+              # sneak past auditwheel.
+              assert not any('libpython' in n for n in sos), \
+                f'libpython leaked into wheel: {sos}'
+          PY
+
+      - name: Smoke-test import
+        env:
+          LD_LIBRARY_PATH: /opt/ffmpeg/lib
+        run: |
+          python -m pip install wheels/torchcodec-*.whl
+          python -c "import torchcodec; print('torchcodec', torchcodec.__version__)"
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: torchcodec-aarch64-wheel
+          path: wheels/torchcodec-*.whl
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Install GitHub CLI
+        if: ${{ inputs.attach_to_release }}
+        run: |
+          dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+          dnf install -y gh
+
+      - name: Attach wheel to latest release
+        if: ${{ inputs.attach_to_release }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=$(gh release view --json tagName -q .tagName)
+          gh release upload "$TAG" wheels/torchcodec-*.whl --clobber

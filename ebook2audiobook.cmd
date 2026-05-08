@@ -86,6 +86,7 @@ set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\eSpeak NG\espeak-ng-da
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
 set "FFMPEG_BIN=%USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
+set "FFMPEG_VARIANT=none"
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
@@ -349,9 +350,12 @@ for %%p in (%HOST_PROGRAMS%) do (
     )
     if "!_found!"=="0" (
         where.exe /Q !prog! >nul 2>&1
-        if errorlevel 1 set "missing_prog_array=!missing_prog_array! %%p"
-		if "!prog!"=="ffmpeg" (
-			call :ensure_ffmpeg_shared
+        if errorlevel 1 (
+			set "missing_prog_array=!missing_prog_array! %%p"
+		) else (
+			if "%%p"=="ffmpeg-shared" (
+				call :check_ffmpeg_shared
+			)
 		)
     )
 )
@@ -359,19 +363,30 @@ endlocal & set "missing_prog_array=%missing_prog_array%"
 if not "%missing_prog_array%"=="" exit /b 1
 exit /b 0
 
-:ensure_ffmpeg_shared
+:check_ffmpeg_shared
 setlocal
-if not exist "%INSTALLED_LOG%" exit /b 0
-findstr /x /c:"ffmpeg-shared" "%INSTALLED_LOG%" >nul 2>&1 && exit /b 0
-findstr /x /c:"ffmpeg" "%INSTALLED_LOG%" >nul 2>&1 || exit /b 0
-echo [!!] static ffmpeg detected, swapping to ffmpeg-shared...
-call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
-call scoop install ffmpeg-shared || (echo [xx] install failed & exit /b 1)
+set "ffmpeg_pkg=none"
 set "tmp_file=%INSTALLED_LOG%.tmp"
-findstr /v /x /c:"ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%"
->>"%tmp_file%" echo ffmpeg-shared
-move /y "%tmp_file%" "%INSTALLED_LOG%" >nul
-echo [ok] swap complete, .installed updated.
+if exist "%SCOOP_HOME%\apps\ffmpeg-shared\current\bin\avcodec-*.dll" (
+    set "ffmpeg_pkg=shared"
+) else if exist "%SCOOP_HOME%\apps\ffmpeg\current\bin\ffmpeg.exe" (
+    set "ffmpeg_pkg=static"
+) else (
+	exit /b 0
+)
+if "%ffmpeg_pkg%"=="static" (
+	echo Static ffmpeg detected, swapping to ffmpeg-shared…
+	call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
+	call scoop install ffmpeg-shared || (echo [xx] install failed & exit /b 1)
+ 	if exist "%INSTALLED_LOG%" (
+ 		findstr /v /x /c:"ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%" 2>nul
+ 	) else (
+ 		type nul > "%tmp_file%"
+ 	)
+	>>"%tmp_file%" echo ffmpeg-shared
+	move /y "%tmp_file%" "%INSTALLED_LOG%" >nul
+	echo swap complete, .installed updated.
+)
 endlocal
 exit /b 0
 
@@ -410,6 +425,8 @@ if errorlevel 1 (
     )
     goto :failed
 )
+findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
@@ -420,8 +437,6 @@ goto :restart_script
 :install_scoop_buckets
 call "%PS_EXE%" %PS_ARGS% -Command "$WarningPreference='SilentlyContinue'; scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions"
 call git config --global credential.helper
-findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
 del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
 echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
 exit /b 0
@@ -605,26 +620,26 @@ for /f "delims=" %%i in ('where.exe python 2^>nul') do (
 )
 if "%CURRENT_ENV%"=="" (
     if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-        echo Creating ./python_env version %PYTHON_VERSION%…
+        setlocal enabledelayedexpansion
+        echo Creating ./python_env version %PYTHON_VERSION%...
         call "%CONDA_HOME%\Scripts\activate.bat"
         call conda update -n base -c conda-forge conda -y
         call conda update --all -y
         call conda clean --index-cache -y
         call conda clean --packages --tarballs -y
-		call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
-        ::call conda activate base
+        call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
+        rem call conda activate base
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-		call :check_device_info %SCRIPT_MODE%
-        if errorlevel 1 goto :failed
-		echo -------------------------------- %DEVICE_INFO_STR%
-		call :install_device_packages "%DEVICE_INFO_STR%"
-		if errorlevel 1 goto :failed
+        call :check_device_info %SCRIPT_MODE%
+        if errorlevel 1 (endlocal & exit /b 1)
+        call :install_device_packages "!DEVICE_INFO_STR!"
+        if errorlevel 1 (endlocal & exit /b 1)
         call :install_python_packages
-        if errorlevel 1 goto :failed
-		call conda deactivate >nul && call conda deactivate >nul
+        if errorlevel 1 (endlocal & exit /b 1)
+        endlocal
     )
 ) else (
-    echo Current python virtual environment detected: %CURRENT_ENV%. 
+    echo Current python virtual environment detected: %CURRENT_ENV%.
     echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
     exit /b 2
 )
@@ -761,14 +776,12 @@ if not exist "%dst_pyfile%" (
     )
     exit /b 0
 )
-for %%I in ("%src_pyfile%") do set "src_time=%%~tI"
-for %%I in ("%dst_pyfile%") do set "dst_time=%%~tI"
-if "%src_time%" GTR "%dst_time%" (
-    copy /y "%src_pyfile%" "%dst_pyfile%" >nul
-    if errorlevel 1 (
-        echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
-        exit /b 1
-    )
+:: xcopy /d only overwrites when source is newer than destination
+:: destination ends with '\' so xcopy treats it as a directory, no F/D prompt, no wildcard target
+xcopy /d /y "%src_pyfile%" "%site_packages_path%\" >nul
+if errorlevel 1 (
+    echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
+    exit /b 1
 )
 exit /b 0
 

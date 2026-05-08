@@ -493,7 +493,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU Device detection
 - [x] Denoise any reference audio for upload voice cloning,
 - [x] Custom model upload (XTTSv2 only for now. more on request)
-- [ ]  Add Portuguese Xttsv2 model fine tuned for EU portuguese
+- [ ]  Add Portuguese Xttsv2 model fine tuned for EU portuguese (help wanted)
 
 #### TTS engines
 - [x] XTTSv2
@@ -564,9 +564,6 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - For info about this @DrewThomasson, he is currently working on the development of this, [work-in-progress-repo here](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 - [ ] Make a easy to use training gui for all coqui-tts models in the ljspeech format training recipes [here from coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
 
-## Auto-testing scripts for development
-
-- [x] #1804
 
 ## Python Code normalization information for contributors
 - no blank line between code, unless between functions and classes.
@@ -594,9 +591,9 @@ def to_json(user:dict)->str:
     return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
 
 users:list = [
-    dict(id=1, name='alice', email='alice@example.com', role='admin', is_active=True),
-    dict(id=2, name='bob', email='bob@example.com', role='editor', is_active=False),
-    dict(id=3, name='carol', email='carol@example.com', role='viewer', is_active=True),
+    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
+    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
+    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
 ]
 config = {
     "max_users": 100,

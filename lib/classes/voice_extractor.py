@@ -18,6 +18,10 @@ class VoiceExtractor:
         self.session = session
         self.voice_file = voice_file
         self.voice_name = voice_name
+        session_device = str(session.get('device', 'CPU')).upper()
+        resolved_device_name = 'CUDA' if session_device in {'CUDA', 'ROCM', 'JETSON'} else session_device
+        resolved_device = devices.get(resolved_device_name, devices['CPU'])
+        self.device = resolved_device['proc'] if resolved_device.get('found') else devices['CPU']['proc']
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir,'htdemucs', voice_name)
         self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
@@ -77,8 +81,8 @@ class VoiceExtractor:
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
-            detector = BackgroundDetector(wav_file = self.wav_file)
-            status, report = detector.detect(vad_ratio_thresh = 0.15)
+            detector = BackgroundDetector(wav_file=self.wav_file, device=self.device)
+            status, report = detector.detect(vad_ratio_thresh=0.27)
             if report:
                 print(report)
                 if status:
@@ -86,6 +90,9 @@ class VoiceExtractor:
                 else:
                     msg = 'No background detected'
                 return True, status, msg
+            else:
+                error = 'detector.detect() could not analyze the audio file'
+                return False, False, error
         except Exception as e:
             error = f'_detect_background() error: {e}'
             print(error)
@@ -115,9 +122,8 @@ class VoiceExtractor:
             msg = 'Extracting Voice…'
             if self.is_gui_process:
                 self.progress_bar(0.0, desc=msg)
-            device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device'] if devices[self.session['device'].upper()]['found'] else devices['CPU']['proc']
             model = get_model(name="htdemucs")
-            model.to(device)
+            model.to(self.device)
             model.eval()
             audio_result = AudioFile(self.wav_file).read(
                 streams=0,
@@ -130,13 +136,13 @@ class VoiceExtractor:
                 wav = audio_result
             if wav.dim() == 2:
                 wav = wav.unsqueeze(0)
-            wav = wav.to(device)
+            wav = wav.to(self.device)
             total_length = wav.shape[-1]
             progress_state = {"current": 0}
             result = apply_model(
                 model,
                 wav,
-                device=device,
+                device=self.device,
                 split=True,
                 progress=False,
                 callback=demucs_callback,
@@ -148,6 +154,8 @@ class VoiceExtractor:
             sources = result[0] if isinstance(result, (tuple, list)) else result
             vocals_idx = model.sources.index("vocals")
             vocals = sources[0, vocals_idx]
+            if vocals.dim() > 1 and vocals.shape[0] > 1:
+                vocals = vocals.mean(dim=0, keepdim=True)
             audio_np = vocals.detach().cpu().numpy()
             audio_np = audio_np.T
             audio_np = (audio_np * 32767.0).clip(-32768, 32767).astype("int16")

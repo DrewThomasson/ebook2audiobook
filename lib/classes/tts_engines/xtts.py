@@ -70,6 +70,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
             self.resampler_cache = {}
+            self.resampled_wav_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"latent_embedding":{}}
@@ -88,6 +89,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             #random.seed(seed)
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
+            self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -107,7 +109,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
                         vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][2])
                         self.tts_key = f'{self.session["tts_engine"]}-{self.session["custom_model"]}'
-                        engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
+                        engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
                     except Exception as e:
                         error = f'load_engine(): custom checkpoint loading failed: {e}'
                         raise RuntimeError(error) from e
@@ -123,7 +125,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][0]}', cache_dir=self.cache_dir)
                         checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][1]}', cache_dir=self.cache_dir)
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][2]}', cache_dir=self.cache_dir)
-                        engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
+                        engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
                     except Exception as e:
                         error = f'load_engine(): HuggingFace checkpoint loading failed: {e}'
                         raise RuntimeError(error) from e
@@ -144,7 +146,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
-                device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
@@ -176,40 +177,39 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                 }
                 self.audio_segments = []
                 _artifacts_dir = os.path.join(self.session.get('sentences_dir', ''), 'artifacts')
-                self.engine.to(device)
-                with torch.no_grad():
-                    for part in sentence_parts:
-                        part = part.strip()
-                        if not part:
-                            continue
-                        if SML_TAG_PATTERN.fullmatch(part):
-                            success, error = self._convert_sml(part)
-                            if not success:
-                                return False, error
-                            continue
-                        if not any(c.isalnum() for c in part):
-                            continue
+                for part in sentence_parts:
+                    part = part.strip()
+                    if not part:
+                        continue
+                    if SML_TAG_PATTERN.fullmatch(part):
+                        success, error = self._convert_sml(part)
+                        if not success:
+                            return False, error
+                        continue
+                    if not any(c.isalnum() for c in part):
+                        continue
+                    else:
+                        trim_audio_buffer = 0.006
+                        if part.endswith("'"):
+                            part = part[:-1]
+                        part = part.replace('.', ';\n')
+                        #part = part.replace(',', ';')
+                        if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
+                            self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
                         else:
-                            trim_audio_buffer = 0.006
-                            if part.endswith("'"):
-                                part = part[:-1]
-                            part = part.replace('.', ';\n')
-                            #part = part.replace(',', ';')
-                            if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
-                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
+                            msg = 'Computing speaker latents…'
+                            print(msg)
+                            if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
                             else:
-                                msg = 'Computing speaker latents…'
-                                print(msg)
-                                if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
-                                else:
-                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], load_sr=44100, sound_norm_refs=True)
-                                self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
-                            print(f' -> MODEL: {part!r}')
-                            _attempt = 0
-                            _retry_params = dict(fine_tuned_params)
-                            while True:
-                                with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], load_sr=44100, sound_norm_refs=True)
+                            self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
+                        print(f' -> MODEL: {part!r}')
+                        _attempt = 0
+                        _retry_params = dict(fine_tuned_params)
+                        while True:
+                            with torch.inference_mode():
+                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     result = self.engine.inference(
                                         text=part,
                                         language=self.session['language_iso1'],
@@ -217,41 +217,40 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                         speaker_embedding=self.params['speaker_embedding'],
                                         **_retry_params
                                     )
-                                audio_part = result.get('wav')
-                                if torch.is_tensor(audio_part):
-                                    audio_part = audio_part.detach().cpu()
-                                if not _has_loop_artifact(audio_part, self.params['samplerate']):
-                                    break
-                                #_save_artifact(audio_part, self.params['samplerate'], part, _attempt, _artifacts_dir, sentence_file)
-                                _attempt += 1
-                                _retry_params['repetition_penalty'] = min(
-                                    fine_tuned_params.get('repetition_penalty', 5.0) + _attempt * 1.0, 20.0
-                                )
-                                _retry_params['temperature'] = min(
-                                    fine_tuned_params.get('temperature', 0.1) + _attempt * 0.05, 1.0
-                                )
-                                if _retry_params['repetition_penalty'] >= 20.0:
-                                    print('Loop artifact persists after max retries, using anyway…')
-                                    break
-                            if is_audio_data_valid(audio_part):
-                                src_tensor = self._tensor_type(audio_part)
-                                part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                                if part_tensor is not None and part_tensor.numel() > 0:
-                                    if part[-1].isalnum() or part[-1] == '—':
-                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                    self.audio_segments.append(part_tensor)
-                                    del part_tensor
-                                    if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                        silence_time = 0.5
-                                        break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                        self.audio_segments.append(break_tensor.clone())
-                                else:
-                                    error = f'part_tensor not valid'
-                                    return False, error
+                            audio_part = result.get('wav')
+                            if torch.is_tensor(audio_part):
+                                audio_part = audio_part.detach().cpu()
+                            if not _has_loop_artifact(audio_part, self.params['samplerate']):
+                                break
+                            #_save_artifact(audio_part, self.params['samplerate'], part, _attempt, _artifacts_dir, sentence_file)
+                            _attempt += 1
+                            _retry_params['repetition_penalty'] = min(
+                                fine_tuned_params.get('repetition_penalty', 5.0) + _attempt * 1.0, 20.0
+                            )
+                            _retry_params['temperature'] = min(
+                                fine_tuned_params.get('temperature', 0.1) + _attempt * 0.05, 1.0
+                            )
+                            if _retry_params['repetition_penalty'] >= 20.0:
+                                print('Loop artifact persists after max retries, using anyway…')
+                                break
+                        if is_audio_data_valid(audio_part):
+                            src_tensor = self._tensor_type(audio_part)
+                            part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
+                            if part_tensor is not None and part_tensor.numel() > 0:
+                                if part[-1].isalnum() or part[-1] == '—':
+                                    part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                self.audio_segments.append(part_tensor)
+                                del part_tensor
+                                if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
+                                    silence_time = 0.5
+                                    break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
+                                    self.audio_segments.append(break_tensor.clone())
                             else:
-                                error = f'audio_part not valid'
+                                error = f'part_tensor not valid'
                                 return False, error
-                self.engine.to(devices['CPU']['proc'])
+                        else:
+                            error = f'audio_part not valid'
+                            return False, error
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
@@ -270,8 +269,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                 return False, error
         except Exception as e:
             self.cleanup_memory()
-            error = f'Xttsv2.convert(): {e}'
-            return False, error
+            return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:
         if self._build_vtt_file(all_sentences):

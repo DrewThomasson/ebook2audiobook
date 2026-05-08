@@ -5,7 +5,7 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract, gc
+import argparse, asyncio, csv, fnmatch, sqlite3, hashlib, io, json, math, os, pytesseract, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, psutil, requests, stanza, importlib, queue
@@ -225,7 +225,7 @@ class SessionContext:
             "blocks_current": {},
             "blocks_orig_json": None,
             "blocks_saved_json": None,
-            "blocks_current_json": None,
+            "blocks_current_db": None,
             "duration": 0,
             "playback_time": 0,
             "playback_volume": 0,
@@ -595,12 +595,180 @@ def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
         error = f'ocr2xhtml error: {e}'
         return False, error
 
+def create_db_blocks(db_path:str)->None:
+    os.makedirs(os.path.dirname(db_path) or '.', exist_ok=True)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute('PRAGMA journal_mode=WAL')
+        conn.execute('PRAGMA synchronous=NORMAL')
+        conn.execute('PRAGMA foreign_keys=ON')
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS stamp (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                page INTEGER,
+                block_resume INTEGER,
+                sentence_resume INTEGER,
+                voice TEXT,
+                tts_engine TEXT,
+                fine_tuned TEXT
+            );
+            CREATE TABLE IF NOT EXISTS blocks (
+                id TEXT PRIMARY KEY,
+                idx INTEGER NOT NULL,
+                expand INTEGER NOT NULL,
+                keep INTEGER NOT NULL,
+                text TEXT NOT NULL,
+                voice TEXT,
+                tts_engine TEXT,
+                fine_tuned TEXT
+            );
+            CREATE TABLE IF NOT EXISTS sentences (
+                block_id TEXT NOT NULL,
+                idx INTEGER NOT NULL,
+                text TEXT NOT NULL,
+                PRIMARY KEY (block_id, idx),
+                FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_blocks_idx ON blocks(idx);
+            INSERT OR IGNORE INTO stamp (id, page, block_resume, sentence_resume, voice, tts_engine, fine_tuned)
+            VALUES (1, 0, 0, 0, NULL, NULL, NULL);
+        ''')
+
+def load_db_blocks(db_path:str)->dict:
+    try:
+        if not os.path.exists(db_path):
+            return {}
+        with sqlite3.connect(db_path) as conn:
+            conn.execute('PRAGMA foreign_keys=ON')
+            stamp_row = conn.execute(
+                'SELECT page, block_resume, sentence_resume, voice, tts_engine, fine_tuned FROM stamp WHERE id=1'
+            ).fetchone()
+            if stamp_row is None:
+                return {}
+            page, block_resume, sentence_resume, voice, tts_engine, fine_tuned = stamp_row
+            sentences_by_block = {}
+            for block_id, text in conn.execute('SELECT block_id, text FROM sentences ORDER BY block_id, idx'):
+                sentences_by_block.setdefault(block_id, []).append(text)
+            blocks = []
+            for row in conn.execute('SELECT id, expand, keep, text, voice, tts_engine, fine_tuned FROM blocks ORDER BY idx'):
+                bid, expand, keep, text, b_voice, b_tts_engine, b_fine_tuned = row
+                blocks.append({
+                    'id': bid,
+                    'expand': bool(expand),
+                    'keep': bool(keep),
+                    'text': text,
+                    'voice': b_voice,
+                    'tts_engine': b_tts_engine,
+                    'fine_tuned': b_fine_tuned,
+                    'sentences': sentences_by_block.get(bid, []),
+                })
+            return {
+                'page': page,
+                'block_resume': block_resume,
+                'sentence_resume': sentence_resume,
+                'voice': voice,
+                'tts_engine': tts_engine,
+                'fine_tuned': fine_tuned,
+                'blocks': blocks,
+            }
+    except Exception as e:
+        error = f'load_db_blocks() error: {e}'
+        print(error)
+        return {}
+
+def save_db_stamp(session_id:str)->None:
+    try:
+        session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return
+        data = session['blocks_current']
+        if not data:
+            return
+        db_path = session['blocks_current_db']
+        create_db_blocks(db_path)
+        with sqlite3.connect(db_path) as conn:
+            conn.execute(
+                'UPDATE stamp SET page=?, block_resume=?, sentence_resume=?, voice=?, tts_engine=?, fine_tuned=? WHERE id=1',
+                (
+                    data.get('page'),
+                    data.get('block_resume'),
+                    data.get('sentence_resume'),
+                    data.get('voice'),
+                    data.get('tts_engine'),
+                    data.get('fine_tuned'),
+                )
+            )
+            conn.commit()
+    except Exception as e:
+        error = f'save_db_stamp() error: {e}'
+        print(error)
+
+def save_db_blocks(session_id:str)->None:
+    try:
+        session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return
+        data = session['blocks_current']
+        if not data:
+            return
+        db_path = session['blocks_current_db']
+        create_db_blocks(db_path)
+        with sqlite3.connect(db_path) as conn:
+            conn.execute('PRAGMA foreign_keys=ON')
+            conn.execute(
+                'UPDATE stamp SET page=?, block_resume=?, sentence_resume=?, voice=?, tts_engine=?, fine_tuned=? WHERE id=1',
+                (
+                    data.get('page'),
+                    data.get('block_resume'),
+                    data.get('sentence_resume'),
+                    data.get('voice'),
+                    data.get('tts_engine'),
+                    data.get('fine_tuned'),
+                )
+            )
+            new_blocks = data.get('blocks', [])
+            new_ids = {b['id'] for b in new_blocks}
+            existing_ids = {row[0] for row in conn.execute('SELECT id FROM blocks')}
+            removed = existing_ids - new_ids
+            if removed:
+                conn.executemany('DELETE FROM blocks WHERE id=?', [(rid,) for rid in removed])
+            for idx, block in enumerate(new_blocks):
+                block_id = block['id']
+                conn.execute(
+                    'INSERT INTO blocks (id, idx, expand, keep, text, voice, tts_engine, fine_tuned) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?) '
+                    'ON CONFLICT(id) DO UPDATE SET '
+                    'idx=excluded.idx, expand=excluded.expand, keep=excluded.keep, text=excluded.text, '
+                    'voice=excluded.voice, tts_engine=excluded.tts_engine, fine_tuned=excluded.fine_tuned',
+                    (
+                        block_id,
+                        idx,
+                        1 if block.get('expand') else 0,
+                        1 if block.get('keep') else 0,
+                        block.get('text', ''),
+                        block.get('voice'),
+                        block.get('tts_engine'),
+                        block.get('fine_tuned'),
+                    )
+                )
+                conn.execute('DELETE FROM sentences WHERE block_id=?', (block_id,))
+                sentences = block.get('sentences', [])
+                if sentences:
+                    conn.executemany(
+                        'INSERT INTO sentences (block_id, idx, text) VALUES (?, ?, ?)',
+                        [(block_id, i, s) for i, s in enumerate(sentences)]
+                    )
+            conn.commit()
+    except Exception as e:
+        error = f'save_db_blocks() error: {e}'
+        print(error)
+
 def load_json_blocks(filepath:str)->dict:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        print(f"load_json_blocks() error: {e}")
+        error = f"load_json_blocks() error: {e}"
+        print(error)
         return {}
 
 def save_json_blocks(session_id:str, key:str)->None:
@@ -1002,7 +1170,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     stanza_model = f"stanza-{session['language_iso1']}"
                     stanza_nlp = loaded_tts.get(stanza_model, False)
                     if stanza_nlp:
-                        msg = f"NLP model {stanza_model} loaded!"
+                        msg = f"NLP model {stanza_model} loaded."
                         print(msg)
                     else:
                         use_gpu = True if (
@@ -1011,7 +1179,16 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                             (session['device'] == devices['XPU']['proc'] and devices['XPU']['found']) or
                             (session['device'] == devices['JETSON']['proc'] and devices['JETSON']['found'])
                         ) else False
-                        stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
+                        # only use mwt if the language supports it
+                        stanza_lang = session['language_iso1']
+                        stanza_has_mwt = False
+                        try:
+                            stanza_resources = stanza.resources.common.load_resources_json(os.getenv('STANZA_RESOURCES_DIR', stanza.resources.common.DEFAULT_MODEL_DIR))
+                            stanza_has_mwt = 'mwt' in stanza_resources.get(stanza_lang, {})
+                        except Exception:
+                            pass
+                        stanza_processors = 'tokenize,mwt,ner' if stanza_has_mwt else 'tokenize,ner'
+                        stanza_nlp = stanza.Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
                         if stanza_nlp:
                             session['stanza_cache'] = stanza_model
                             loaded_tts[stanza_model] = stanza_nlp
@@ -1026,16 +1203,32 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     print(error)
                     return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
-            with zipfile.ZipFile(session['epub_path'], 'r') as zf:
-                zip_names = set(zf.namelist())
-                zip_basenames = {os.path.basename(n): n for n in zip_names}
-                for doc_idx, doc in enumerate(all_docs):
-                    text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
-                    if text is None:
-                        error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
-                        show_alert(session_id, {"type": "warning", "msg": error})
-                        return []
-                    blocks.append(text)
+            try:
+                with zipfile.ZipFile(session['epub_path'], 'r') as zf:
+                    zip_names = set(zf.namelist())
+                    zip_basenames = {os.path.basename(n): n for n in zip_names}
+                    for doc_idx, doc in enumerate(all_docs):
+                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
+                        if text is None:
+                            error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
+                            show_alert(session_id, {"type": "warning", "msg": error})
+                            return []
+                        blocks.append(text)
+            finally:
+                if stanza_nlp:
+                    import gc, torch
+                    try:
+                        cache_key = session.get('stanza_cache')
+                        if cache_key:
+                            loaded_tts.pop(cache_key, None)
+                        session['stanza_cache'] = None
+                    except Exception:
+                        pass
+                    stanza_nlp = None
+                    gc.collect()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                        torch.cuda.ipc_collect()
             if len(blocks) == 0:
                 error = 'No blocks found! possible reason: file corrupted or need to convert images to text with OCR'
                 print(error)
@@ -2255,7 +2448,7 @@ def convert_chapters2audio(session_id:str)->bool:
                     save_json_blocks(session_id, 'blocks_saved')
                 blocks_current['blocks'] = blocks
                 session['blocks_current'] = blocks_current
-                save_json_blocks(session_id, 'blocks_current')
+                save_db_blocks(session_id)
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
             show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
@@ -2326,7 +2519,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 blocks_current['block_resume'] = x
                 blocks_current['sentence_resume'] = start_sentence
                 session['blocks_current'] = blocks_current
-                save_json_blocks(session_id, 'blocks_current')
+                save_db_stamp(session_id)
                 converted = False
                 block_voice = block.get('voice') or session.get('voice')
                 for j in range(block_len):
@@ -2352,7 +2545,7 @@ def convert_chapters2audio(session_id:str)->bool:
                                 baseline_initialized = True
                             elif now - last_save_time >= 5:
                                 session['blocks_current'] = blocks_current
-                                save_json_blocks(session_id, 'blocks_current')
+                                save_db_stamp(session_id)
                                 last_save_time = now
                         global_sent += 1
                         total_progress = (t.n + 1) / total_sentences
@@ -2366,7 +2559,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 if converted or block_changed or missing_sentences:
                     show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
                     session['blocks_current'] = blocks_current
-                    save_json_blocks(session_id, 'blocks_current')
+                    save_db_stamp(session_id)
                     last_save_time = time.monotonic()
                     if not combine_audio_sentences(session_id, chapter_audio_file, block_id, block_len):
                         show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
@@ -2374,7 +2567,7 @@ def convert_chapters2audio(session_id:str)->bool:
             blocks_current['block_resume'] = 0
             blocks_current['sentence_resume'] = 0
             session['blocks_current'] = blocks_current
-            save_json_blocks(session_id, 'blocks_current')
+            save_db_stamp(session_id)
             session['blocks_saved'] = copy.deepcopy(blocks_current)
             save_json_blocks(session_id, 'blocks_saved')
             return True
@@ -3039,21 +3232,7 @@ def convert_ebook(args:dict)->tuple:
                         shutil.copy(session['ebook_src'], session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
-                        msg_extra = ''
-                        vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
-                        print(f'vram_dict: {vram_dict}')
-                        total_vram_gb = vram_dict.get('total_vram_gb', 0)
-                        session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-                        if session['free_vram_gb'] == 0:
-                            session['free_vram_gb'] = 1.0
-                            msg_extra += '<br/>Memory capacity not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>Memory detected with {session['free_vram_gb']}GB"
-                        else:
-                            msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
-                            if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
-                                msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
-                            if session['free_vram_gb'] > 4.0:
-                                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
+                        msg_extra = ''                      
                         if session['device'] == devices['CUDA']['proc']:
                             if not devices['CUDA']['found']:
                                 session['device'] = devices['CPU']['proc']
@@ -3074,6 +3253,20 @@ def convert_ebook(args:dict)->tuple:
                             if not devices['XPU']['found']:
                                 session['device'] = devices['CPU']['proc']
                                 msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
+                        vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
+                        print(f'vram_dict: {vram_dict}')
+                        total_vram_gb = vram_dict.get('total_vram_gb', 0)
+                        detected_free_vram_gb = vram_dict.get('free_vram_gb', 0)
+                        session['free_vram_gb'] = detected_free_vram_gb
+                        if session['free_vram_gb'] == 0:
+                            msg_extra += f"<br/>Memory capacity not detected! restrict to {session['free_vram_gb']}GB max"
+                        else:
+                            msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
+                            if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
+                                msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
+                            if session['free_vram_gb'] > 4.0:
+                                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'False'  
                         if session['tts_engine'] == TTS_ENGINES['BARK']:
                             if session['free_vram_gb'] < 12.0:
                                 os.environ['SUNO_OFFLOAD_CPU'] = "True"
@@ -3093,15 +3286,19 @@ def convert_ebook(args:dict)->tuple:
                             session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                             session['blocks_orig_json'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                             session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
-                            session['blocks_current_json'] = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.json")
+                            session['blocks_current_db']   = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.db")
                             checksum, error = compare_checksums(session_id)
                             if not checksum or not os.path.exists(session['epub_path']):
                                 result_epub = convert2epub(session_id)
                                 if result_epub:
                                     if os.path.exists(session['epub_path']):
-                                        for jf in (session['blocks_orig_json'], session['blocks_saved_json'], session['blocks_current_json']):
+                                        for jf in (session['blocks_orig_json'], session['blocks_saved_json']):
                                             if os.path.exists(jf):
                                                 os.unlink(jf)
+                                        db = session['blocks_current_db']
+                                        for f in (db, db + '-wal', db + '-shm'):
+                                            if os.path.exists(f):
+                                                os.unlink(f)
                                         msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
                                         print(msg)
                                     else:
@@ -3145,8 +3342,8 @@ def convert_ebook(args:dict)->tuple:
                                                 elif is_reset:
                                                     session['blocks_saved'] = copy.deepcopy(blocks_orig)
                                                 save_json_blocks(session_id, 'blocks_saved')
-                                    if os.path.exists(session['blocks_current_json']):
-                                        blocks_current = load_json_blocks(session['blocks_current_json'])
+                                    if os.path.exists(session['blocks_current_db']):
+                                        blocks_current = load_db_blocks(session['blocks_current_db'])
                                         if blocks_current:
                                             session['blocks_current'] = blocks_current
                                             if is_changed or is_reset:
@@ -3159,7 +3356,7 @@ def convert_ebook(args:dict)->tuple:
                                                     session['blocks_current'] = blocks_current
                                                 elif is_reset:
                                                     session['blocks_current'] = copy.deepcopy(blocks_orig)
-                                                save_json_blocks(session_id, 'blocks_current')
+                                                save_db_blocks(session_id)
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                                 if epubBook:
                                     metadata = dict(session['metadata'])
@@ -3217,7 +3414,7 @@ def convert_ebook(args:dict)->tuple:
                                                     save_json_blocks(session_id, 'blocks_orig')
                                             if not session.get('blocks_current', {}):
                                                 session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
-                                                save_json_blocks(session_id, 'blocks_current')
+                                                save_db_blocks(session_id)
                                             # --- legacy upgrade: old snapshots may lack top-level scalars (TO REMOVE AFTER A WHILE) ---
                                             for key in ('blocks_orig', 'blocks_current', 'blocks_saved'):
                                                 snap = session.get(key)
@@ -3233,7 +3430,10 @@ def convert_ebook(args:dict)->tuple:
                                                         changed = True
                                                     if changed:
                                                         session[key] = snap
-                                                        save_json_blocks(session_id, key)
+                                                        if key == 'blocks_current':
+                                                            save_db_blocks(session_id)
+                                                        else:
+                                                            save_json_blocks(session_id, key)
                                             # --------------------------------#
                                             if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
                                                 sync_globals_to_blocks(session_id)
@@ -3410,7 +3610,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "blocks_current": {},
         "blocks_orig_json": None,
         "blocks_saved_json": None,
-        "blocks_current_json": None,
+        "blocks_current_db": None,
         "audiobook_overridden": None,
         "metadata": {
             "title": None, 

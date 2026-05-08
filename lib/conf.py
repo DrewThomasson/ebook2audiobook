@@ -10,6 +10,13 @@ systems = {
     "WINDOWS": "win32"
 }
 
+archs = {
+    "AMD64": "amd64",
+    "X86_64": "x86_64",
+    "AARCH64": "aarch64",
+    "ARM64": "arm64"
+}
+
 cli_options = [
     '--script_mode', '--docker_mode', '--session', '--share', '--headless', 
     '--ebook', '--ebooks_dir', '--text', '--language', '--voice', '--device', '--tts_engine', 
@@ -52,47 +59,47 @@ devices = {
     "JETSON": {"proc": "jetson", "found": False},
 }
 
+device_info_json = '.device_info.json'
+
 default_device = devices['CPU']['proc']
-
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
-
 default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
-
 default_pytorch_url = 'https://download.pytorch.org/whl'
 default_pytorch_amd_url = 'https://repo.radeon.com/rocm/windows'
-default_jetson_url = 'https://www.e-blokos.com/whl/jetson' # TODO: find a permanent website where to upload the jetpack torch
+default_torchcodec_arm_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download'
+default_jetson_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download'
 
 torch_matrix = {
     # CPU
-    "cpu":       {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
+    "cpu":       {"os": list(systems.values()), "arch": list(archs.values()), "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     # CUDA
-    "cu118":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.7.1", "extra_tag": ""},
-    "cu121":     {"compat": list(systems.values()), "base": "2.5.1", "last": "2.5.1", "extra_tag": ""},
-    "cu124":     {"compat": list(systems.values()), "base": "2.6.0", "last": "2.6.0", "extra_tag": ""},
-    "cu126":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
-    "cu128":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
-    "cu129":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
-    "cu130":     {"compat": list(systems.values()), "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
+    "cu118":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.7.1",  "codec": ""},
+    "cu121":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.5.1", "last": "2.5.1",  "codec": ""},
+    "cu124":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.6.0", "last": "2.6.0",  "codec": ""},
+    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
+    "cu128":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.9.0", "codec": "0.7.0"},
+    "cu129":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.9.0", "codec": "0.7.0"},
+    "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     # ROCm
-    "rocm5.7":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.3.1", "last": "2.3.1", "extra_tag": ""},
-    "rocm6.0":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.4.1", "last": "2.4.1", "extra_tag": ""},
-    "rocm6.1":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.6.0", "last": "2.6.0", "extra_tag": ""},
-    "rocm6.2":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.5.1", "last": "2.5.1", "extra_tag": ""},
-    "rocm6.2.4": {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
-    "rocm6.3":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.7.1", "last": "2.9.1", "extra_tag": ""},
-    "rocm7.0":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.10.0", "last": "2.10.0", "extra_tag": ""},
-    "rocm7.1":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.11.0", "last": "2.11.0", "extra_tag": ""},
-    "rocm7.2":   {"compat": [systems['LINUX'], systems['MACOS']], "base": "2.11.0", "last": "2.11.0", "extra_tag": ""},
-    "rocm-rel-7.2.1": {"compat": [systems['WINDOWS']], "base": "2.9.1", "last": "2.9.1", "extra_tag": "+rocm7.2.1"},
+    "rocm5.7":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.3.1",  "last": "2.3.1",  "codec": ""},
+    "rocm6.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.4.1",  "last": "2.4.1",  "codec": ""},
+    "rocm6.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.6.0",  "last": "2.6.0",  "codec": ""},
+    "rocm6.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.5.1",  "last": "2.5.1",  "codec": ""},
+    "rocm6.2.4": {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.7.1",  "last": "2.7.1",  "codec": ""},
+    "rocm6.3":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.7.1",  "last": "2.9.1",  "codec": "0.9.0"},
+    "rocm7.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.10.0", "last": "2.10.0", "codec": "0.10.0"},
+    "rocm7.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.11.0", "codec": "0.11.1"},
+    "rocm7.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.11.0", "codec": "0.11.1"},
+    "rocm-rel-7.2.1": {"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.9.1",  "last": "2.9.1",  "codec": "0.11.1"},
     # MPS
-    "mps":       {"compat": [systems['MACOS']], "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
+    "mps":       {"os": [systems['MACOS']], "arch": [archs['ARM64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     # XPU
-    "xpu":       {"compat": [systems['LINUX'], systems['WINDOWS']], "base": "2.7.1", "last": "2.11.0", "extra_tag": ""},
+    "xpu":       {"os": [systems['LINUX'], systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     # JETSON
-    "jetson51":  {"compat": [systems['LINUX']], "base": "2.4.1", "last": "2.4.1", "extra_tag": ""},
-    "jetson60":  {"compat": [systems['LINUX']], "base": "2.4.0", "last": "2.4.0", "extra_tag": ""},
-    "jetson61":  {"compat": [systems['LINUX']], "base": "2.5.0", "last": "2.5.0", "extra_tag": ""}
+    "jetson51":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.4.1", "last": "2.4.1", "codec": ""},
+    "jetson60":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.4.0", "last": "2.4.0", "codec": ""},
+    "jetson61":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.5.0", "last": "2.5.0", "codec": ""},
 }
 
 cuda_version_range = {"min": (11,8), "max": (13,0)}
@@ -147,15 +154,18 @@ os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostran
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:True'
 os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
 os.environ['TORCH_CPP_LOG_LEVEL'] = 'ERROR'
-os.environ['MIOPEN_FIND_MODE'] = 'FAST'
-os.environ['MIOPEN_FIND_ENFORCE'] = 'SEARCH_DB_UPDATE'
-os.environ['MIOPEN_LOG_LEVEL'] = '3'
+os.environ['MIOPEN_FIND_MODE'] = '2'
+os.environ['MIOPEN_FIND_ENFORCE'] = '0'
+os.environ['MIOPEN_LOG_LEVEL'] = '2'
+os.environ['MIOPEN_DEBUG_CONV_IMPLICIT_GEMM'] = '0'
+os.environ['HSA_NO_SCRATCH_RECLAIM'] = '0'
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
 
