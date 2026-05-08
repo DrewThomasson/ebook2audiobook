@@ -403,7 +403,7 @@ def extract_custom_model(session_id)->str|None:
                 msg = f'Extracting files to {model_path}…'
                 with tqdm(total=files_length, unit='files') as t:
                     for f in files:
-                        base_f = os.path.basename(f).lower()
+                        base_f = os.path.basename(f)
                         if base_f in required_files_lc:
                             out_path = os.path.join(model_path, base_f)
                             with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
