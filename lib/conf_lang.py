@@ -1,4 +1,4 @@
-import os
+import os, re
 
 install_info = r'''
 After the first run, you are free to use your command line with:
@@ -51,6 +51,7 @@ punctuation_switch = {
 
     # Ellipsis (causes extreme long pauses in TTS)
     '...': '…',  # standard triple dots replaced with Unicode ellipsis (U+2026)
+    '. . .': '…',  # standard triple dots replaced with Unicode ellipsis (U+2026)
 
     # Misinterpreted punctuation that can lead to hallucinations
     '‽': '?',    # Interrobang (U+200D) -> Replace with "?"
@@ -150,6 +151,10 @@ punctuation_split_soft = [
     '໌', 'ໍ'
 ]
 punctuation_split_soft_set = set(punctuation_split_soft)
+
+scene_break_pattern = re.compile(
+    r'^[\s\*\u2022\u25c6\u2666\u2014\u2013\-\~\#\=\+\.\|\u2665\u2663\u2660\u00b7\u2605\u2606]+$'
+)
 
 chars_remove = [
     '\\', '|', '©', '®', '™',

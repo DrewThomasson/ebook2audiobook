@@ -1125,7 +1125,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         if session and session.get('id', False):
             lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
             heading_tags = [f'h{i}' for i in range(1, 5)]
-            break_tags = ['br', 'p', 'span']
+            break_tags = ['br', 'p']
             pause_tags = ['div']
             proc_tags = heading_tags + break_tags + pause_tags
             doc_body = doc.get_body_content()
@@ -1154,6 +1154,9 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             # remove scripts/styles
             for tag in soup(['script', 'style']):
                 tag.decompose()
+            for tag in body.find_all(['span', 'em', 'strong', 'i', 'b', 'a', 'small', 'sub', 'sup']):
+                tag.unwrap()
+            body.smooth()
             if not body.get_text(strip=True):
                 images = body.find_all('img') + body.find_all('image')
                 if images and zf:
@@ -1231,11 +1234,20 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 else:
                     text = payload.strip()
                     if text:
-                        text_list.append(text)
+                        if scene_break_pattern.fullmatch(text):
+                            sml_tail_re = re.compile('(' + '|'.join(re.escape(v['static']) for v in TTS_SML.values() if 'static' in v) + r')+$')
+                            if text_list:
+                                text_list[-1] = sml_tail_re.sub(sml_token('pause'), text_list[-1])
+                            else:
+                                text_list.append(sml_token('pause'))
+                            prev_typ = 'break'
+                            continue
+                        else:
+                            text_list.append(text)
                 prev_typ = typ
             msg = f'Flattening as raw text…'
             print(msg)
-            max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
+            max_chars = int(language_mapping[lang]['max_chars'] * 0.9)
             clean_list = []
             i = 0
             while i < len(text_list):
@@ -1269,6 +1281,11 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text = break_between_alnum_re.sub(' ', text)
             # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
+            if sml_blocks and sml_blocks[0] == '[break]':
+                sml_blocks[0] = '[pause]'
+            if sml_blocks and sml_blocks[-1] == '[break]':
+                sml_blocks[-1] = '[pause]'
+
             if stanza_nlp:
                 msg = 'Converting dates and years to words…'
                 print(msg)
@@ -1456,22 +1473,50 @@ def get_sentences(session_id:str, text:str)->list|None:
             if buffer:
                 yield buffer
 
+    def _split_mid(t: str, sc: str) -> list[str]:
+        pos = [m.end() for m in re.finditer(re.escape(sc) + r'(?=\s|$)', t)]
+        if not pos:
+            return [t]
+        best = min(pos, key=lambda p: abs(p - len(t) // 2))
+        l, r = t[:best].strip(), t[best:].strip()
+        if not l or not r:
+            return [t]
+        return [l, r]
+
+    def _normalize_soft(s: str) -> list[str]:
+        s = s.strip()
+        if not s:
+            return []
+
+        if len(strip_escaped_sml(s)) <= max_chars:
+            return [s]
+
+        for sc in punctuation_split_hard_set.union(punctuation_split_hard_set):
+            parts = _split_mid(s, sc)
+            if len(parts) > 1:
+                out = []
+                for p in parts:
+                    out.extend(_normalize_soft(p))
+                return out
+        return [s]
+
     try:
         session = context.get_session(session_id)
         if not session:
             return None
 
         lang, tts_engine = session['language'], session['tts_engine']
-        max_chars = int(language_mapping[lang]['max_chars'] / 2)
+        max_chars = int(language_mapping[lang]['max_chars'] * 0.9)
 
         # escape all SML tags to not be touched by any text treatment
         text, sml_blocks = escape_sml(text)
+        pause_escape_chars = frozenset(chr(sml_escape_tag + i) for i, s in enumerate(sml_blocks) if s == '[pause]')
 
         assert not SML_TAG_PATTERN.search(text)
 
-        # PASS 1 — hard punctuation
+        # PASS 1 — paragraph
         hard_pattern = re.compile(
-            rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))})[\uE000-\uF8FF]*)(?=\s|$)",
+            rf"(.*?[{re.escape(''.join(chr(sml_escape_tag + i) for i in range(len(sml_blocks))))}]+)",
             re.DOTALL
         )
         hard_list = split_inclusive(text, hard_pattern)
@@ -1480,10 +1525,6 @@ def get_sentences(session_id:str, text:str)->list|None:
         hard_list = [s.strip() for s in hard_list if s.strip()]
 
         # PASS 2 — soft punctuation
-        soft_pattern = re.compile(
-            rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_soft_set))}))(?=\s|$)",
-            re.DOTALL
-        )
         soft_list = []
         i = 0
         n = len(hard_list)
@@ -1502,22 +1543,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                     i += 1
             else:
                 i += 1
-            if len(strip_escaped_sml(s)) <= max_chars:
-                soft_list.append(s)
-                continue
-            parts = split_inclusive(s, soft_pattern)
-            if parts:
-                valid = False
-                for p in parts:
-                    if len(strip_escaped_sml(p.strip())) <= max_chars:
-                        valid = True
-                        break
-                if valid:
-                    soft_list.extend([p.strip() for p in parts if p.strip()])
-                else:
-                    soft_list.append(s)
-            else:
-                soft_list.append(s)
+            soft_list.extend(_normalize_soft(s))
 
         # PASS 3 — space split (last resort)
         last_list = []
@@ -1547,7 +1573,7 @@ def get_sentences(session_id:str, text:str)->list|None:
 
         # PASS 4 — merge very short rows
         final_list = []
-        merge_max_chars = int((max_chars / 2) / 3)
+        merge_max_chars = int(language_mapping[lang]['max_chars'] / 5)
         i = 0
         n = len(last_list)
         while i < n:
@@ -1562,23 +1588,32 @@ def get_sentences(session_id:str, text:str)->list|None:
             cur_len = clean_len(cur)
             if cur_len <= merge_max_chars:
                 j = i + 1
-                while j < n:
+                merge_count = 1
+                while j < n and merge_count < 2:
                     nxt = last_list[j].strip()
-                    if not nxt:
+                    if not nxt or clean_len(nxt) < 1:
                         j += 1
                         continue
-                    if cur_len + clean_len(nxt) <= max_chars:
-                        cur = cur.rstrip() + ' ' + nxt.lstrip()
+                    if cur_len + clean_len(nxt) < max_chars and not any(c in pause_escape_chars for c in cur):
+                        cur = strip_escaped_sml(cur.rstrip()) + ' ' + nxt.lstrip()
                         cur_len = clean_len(cur)
                         j += 1
+                        merge_count += 1
                         continue
                     break
-                if final_list:
+                if final_list and merge_count < 2:
                     prev = final_list[-1]
-                    if clean_len(prev) + cur_len <= max_chars and not (prev and ord(prev[-1]) >= sml_escape_tag):
-                        final_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
+                    if clean_len(prev) + cur_len < max_chars and not any(c in pause_escape_chars for c in prev):
+                        final_list[-1] = strip_escaped_sml(prev.rstrip()) + ' ' + cur.lstrip()
                         i = j
+                        merge_count += 1
                         continue
+                if j < n and merge_count < 2:
+                    nxt = last_list[j].strip()
+                    if nxt and clean_len(nxt) + cur_len < max_chars and not any(c in pause_escape_chars for c in cur):
+                        cur = strip_escaped_sml(cur.rstrip()) + ' ' + nxt.lstrip()
+                        j += 1
+                        merge_count += 1
                 final_list.append(cur)
                 i = j
                 continue
@@ -1989,6 +2024,10 @@ def foreign2latin(text:str, base_lang:str)->str:
         key:str = f'__TTS_MARKER_{i}__'
         protected[key] = m.group(0)
         text = text.replace(m.group(0), key)
+    for i, ch in enumerate(sorted(set(c for c in text if 0xE000 <= ord(c) <= 0xF8FF))):
+        key = f'__SML_ESC_{i}__'
+        protected[key] = ch
+        text = text.replace(ch, key)
     tokens:list[str] = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
     buf:list[str] = []
     for t in tokens:
