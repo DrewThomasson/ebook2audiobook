@@ -27,6 +27,9 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
+        ## Engines whose 'internal' fine-tuned preset accepts a user-uploaded ZIP.
+        ## XTTSv2 uses ref.wav voice cloning; VITS/FAIRSEQ use built-in speakers (see tts_engines_with_inner_speaker).
+        tts_engines_with_custom_model = (TTS_ENGINES['XTTSv2'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'])
         js_hide_elements = 'document.querySelector("#ebook_textarea_toolbar")?.remove();'
         js_show_elements = 'window.gr_ebook_textarea_counter();'
         theme = gr.themes.Origin(
@@ -1081,7 +1084,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 enabled_convert_btn = True
                             visible_ebook_src = True
                         visible_row_split_hours = True if session['output_split'] else False
-                        visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
+                        visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
                         visible_voice_buttons = True if session.get('voice') else False
                         visible_custom_del_btn = True if session.get('custom_model') else False
                         voice_file = session.get('voice')
@@ -1671,7 +1674,9 @@ def build_interface(args:dict)->gr.Blocks:
                                     model = extract_custom_model(session_id)
                                     if model is not None:
                                         session['custom_model'] = model
-                                        session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')
+                                        ## Inner-speaker engines (VITS, FAIRSEQ) carry their own speakers — no companion .wav inside the model dir.
+                                        if session['tts_engine'] not in tts_engines_with_inner_speaker:
+                                            session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')
                                         msg = f'{os.path.basename(model)} added to the custom models list'
                                         state['type'] = 'success'
                                         state['msg'] = msg
@@ -1696,7 +1701,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         session['custom_model'] = selected
-                        if selected is not None:
+                        if selected is not None and session['tts_engine'] not in tts_engines_with_inner_speaker:
                             session['voice'] = os.path.join(selected, f'{os.path.basename(selected)}.wav')
                         visible_fine_tuned = session['custom_model'] is None
                         visible_del_btn = session['custom_model'] is not None
@@ -1716,34 +1721,28 @@ def build_interface(args:dict)->gr.Blocks:
                             session['voice'] = None if session['voice'] == default_engine_settings[session['tts_engine']]['voice'] else session['voice']
                             session['tts_engine'] = engine
                             session['fine_tuned'] = default_fine_tuned
-                            visible_bark = False
-                            visible_xtts = False
-                            if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                                visible_custom_model = True if session['fine_tuned'] == 'internal' else False
-                                visible_xtts = visible_gr_tab_xtts_params
-                                return (
-                                    gr.update(value=show_rating(session['tts_engine'])), 
-                                    gr.update(visible=visible_xtts),
-                                    gr.update(visible=False),
-                                    gr.update(visible=visible_custom_model),
-                                    update_gr_fine_tuned_list(session_id),
-                                    gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"),
-                                    update_gr_custom_model_list(session_id),
-                                    gr.update(value=f"My {session['tts_engine']} Custom Models")
-                                )
+                            visible_xtts = visible_gr_tab_xtts_params if session['tts_engine'] == TTS_ENGINES['XTTSv2'] else False
+                            visible_bark = visible_gr_tab_bark_params if session['tts_engine'] == TTS_ENGINES['BARK'] else False
+                            supports_custom = session['tts_engine'] in tts_engines_with_custom_model
+                            visible_custom_model = supports_custom and session['fine_tuned'] == 'internal'
+                            if supports_custom:
+                                file_label = f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"
+                                custom_model_list_update = update_gr_custom_model_list(session_id)
+                                custom_model_label_value = f"My {session['tts_engine']} Custom Models"
                             else:
-                                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    visible_bark = visible_gr_tab_bark_params
-                                return (
-                                    gr.update(value=show_rating(session['tts_engine'])),
-                                    gr.update(visible=False),
-                                    gr.update(visible=visible_bark), 
-                                    gr.update(visible=False),
-                                    update_gr_fine_tuned_list(session_id),
-                                    gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"),
-                                    gr.update(),
-                                    gr.update(value='')
-                                )
+                                file_label = f"*Upload Custom Model not available for {session['tts_engine']}"
+                                custom_model_list_update = gr.update()
+                                custom_model_label_value = ''
+                            return (
+                                gr.update(value=show_rating(session['tts_engine'])),
+                                gr.update(visible=visible_xtts),
+                                gr.update(visible=visible_bark),
+                                gr.update(visible=visible_custom_model),
+                                update_gr_fine_tuned_list(session_id),
+                                gr.update(label=file_label),
+                                custom_model_list_update,
+                                gr.update(value=custom_model_label_value)
+                            )
                 except Exception as e:
                     error = f'change_gr_tts_engine_list(): {e}'
                     exception_alert(session_id, error)
@@ -1757,7 +1756,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if session.get('fine_tuned') != selected:
                                 session['fine_tuned'] = selected
                                 if selected == 'internal':
-                                    visible_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in [TTS_ENGINES['XTTSv2']] else False
+                                    visible_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
                                 else:
                                     visible_custom_model = False
                                     session['voice'] = models[session['fine_tuned']]['voice']
