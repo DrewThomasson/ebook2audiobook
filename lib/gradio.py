@@ -27,9 +27,6 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
-        ## Engines whose 'internal' fine-tuned preset accepts a user-uploaded ZIP.
-        ## XTTSv2 uses ref.wav voice cloning; VITS/FAIRSEQ use built-in speakers (see tts_engines_with_inner_speaker).
-        tts_engines_with_custom_model = (TTS_ENGINES['XTTSv2'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'])
         js_hide_elements = 'document.querySelector("#ebook_textarea_toolbar")?.remove();'
         js_show_elements = 'window.gr_ebook_textarea_counter();'
         theme = gr.themes.Origin(
@@ -1674,7 +1671,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     model = extract_custom_model(session_id)
                                     if model is not None:
                                         session['custom_model'] = model
-                                        ## Inner-speaker engines (VITS, FAIRSEQ) carry their own speakers — no companion .wav inside the model dir.
                                         if session['tts_engine'] not in tts_engines_with_inner_speaker:
                                             session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')
                                         msg = f'{os.path.basename(model)} added to the custom models list'
