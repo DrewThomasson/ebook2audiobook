@@ -25,6 +25,12 @@ dependencies = [
     "ebooklib",
     "python-pptx",
     "python-docx",
+    "lameenc",
+    "museval",
+    "openunmix",
+    "submitit",
+    "treetable",
+    "dora-search",
     "fastapi",
     "hf_xet",
     "beautifulsoup4",
@@ -42,12 +48,14 @@ dependencies = [
     "mutagen",
     "PyOpenGL",
     "phonemizer-fork",
+    "num2words2",
     "pydub",
+    "soundfile",
     "unidecode",
     "langdetect",
     "phonemizer",
     "indic-nlp-library",
-	"numba",
+    "numba",
     "pytesseract",
     "torchvggish",
     "stanza==1.10.1",
@@ -60,7 +68,8 @@ dependencies = [
     "huggingface_hub>=1.0; python_version >= '3.12'",
     "transformers==4.57.6; python_version < '3.12'",
     "transformers>=5.0.0; python_version >= '3.12'",
-    "coqui-tts[languages]==0.27.5"
+    "coqui-tts[languages]==0.27.5",
+    "demucs"
 ]
 readme = "README.md"
 requires-python = ">3.9,<3.13"

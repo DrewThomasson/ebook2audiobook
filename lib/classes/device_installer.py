@@ -31,6 +31,9 @@ class DeviceInstaller():
         machine = platform.machine().lower()
         if machine not in ('x86_64', 'amd64', 'x86'):
             return True
+        cpuinfo_version = self.get_package_version('py-cpuinfo')
+        if not cpuinfo_version:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', 'py-cpuinfo'])
         from cpuinfo import get_cpu_info
         flags = set(get_cpu_info().get('flags', []))
         return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
@@ -95,9 +98,7 @@ class DeviceInstaller():
 
     def detect_arch_tag(self)->str:
         m = platform.machine().lower()
-        if m in ('x86_64','amd64'):
-            return m
-        if m in ('aarch64','arm64'):
+        if m in ('x86_64','amd64','aarch64','arm64'):
             return m
         return 'unknown'
 
@@ -1130,7 +1131,7 @@ class DeviceInstaller():
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
                 for raw_pkg in missing_packages:
                     try:
-                        cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir']
+                        cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir']
                         cmd.append(raw_pkg)
                         subprocess.check_call(cmd)
                     except subprocess.CalledProcessError as e:
@@ -1141,27 +1142,40 @@ class DeviceInstaller():
         except Exception as e:
             print(f'install_python_packages() error: {e}')
             return 1
-          
+
     def check_numpy(self)->bool:
         try:
-            numpy_version = self.get_package_version('numpy')
-            torch_version = self.get_package_version('torch')
-            numpy_version_base = self.version_tuple(numpy_version)
-            torch_version_base = self.version_tuple(torch_version)
+            numpy_version = self.get_package_version('numpy') or None
+            torch_version = self.get_package_version('torch') or None
             min_cpu_baseline = self.cpu_baseline
-            if torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force', 'numpy<2'])
-            elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', '--force', 'numpy<2.4.0'])
+            numpy_pkg = None
+            if torch_version is None:
+                return False
+            torch_version_base = self.version_tuple(torch_version)
+            if numpy_version is None:
+                if torch_version_base <= self.version_tuple('2.2.2'):
+                    numpy_pkg = 'numpy<2'
+                elif not min_cpu_baseline:
+                    numpy_pkg = 'numpy<2.4.0'
+                else:
+                    numpy_pkg = 'numpy'
+            else:
+                numpy_version_base = self.version_tuple(numpy_version)
+                if torch_version_base <= self.version_tuple('2.2.2') and numpy_version_base >= self.version_tuple('2.0.0'):
+                    numpy_pkg = 'numpy<2'
+                elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
+                    numpy_pkg = 'numpy<2.4.0'
+            if numpy_pkg is not None:
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', '--force-reinstall', numpy_pkg])
             return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
             print(error)
-            return 1
+            return False
         except Exception as e:
             error = f'Error while installing numpy package: {e}'
             print(error)
-            return 1
+            return False
           
     def check_dictionary(self)->bool:
         import unidic
@@ -1220,14 +1234,15 @@ class DeviceInstaller():
                             os_env = device_info['os']
                             arch = device_info['arch']
                             toolkit_version = ''.join(c for c in tag if c.isdigit())
+                            tag_dir = tag
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
                                 py_major, py_minor = device_info['pyvenv']
                                 tag_py = f'cp{py_major}{py_minor}-cp{py_major}{py_minor}'
                                 torch_pkg = f"{url}/v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
                                 torchaudio_pkg = f"{url}/v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{os_env}_{arch}.whl"
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torch_pkg])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', torchaudio_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', torch_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', torchaudio_pkg])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scikit-learn'])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scipy'])
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
@@ -1254,7 +1269,7 @@ class DeviceInstaller():
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--force-reinstall', '--index-url', f'{url}/{tag_dir}'])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--force-reinstall', '--index-url', f'{url}/{tag_dir}'])
                             # torchcodec is only needed (and only available) for torch >= 2.9.0 — earlier
                             # torch/torchaudio releases ship their own audio I/O backends.
                             # Routing on download.pytorch.org for >= 2.9.0:
@@ -1262,15 +1277,20 @@ class DeviceInstaller():
                             #   - Linux x86_64 / Windows amd64: +cpu wheels from 0.11.1 onwards under /whl/cpu;
                             #     +cuXXX under /whl/<cuXXX>
                             #   - Linux aarch64: NO torchcodec wheels on the PyTorch index -> PyPI fallback
+                            #   - XPU: NO torchcodec XPU wheels -> PyPI fallback
+                            #   - ROCm (Windows + Linux): NO torchcodec ROCm wheels -> +cpu wheels under /whl/cpu
                             # --no-deps prevents torchcodec from yanking torch back to a different variant.
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
                                 torchcodec_cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchcodec']
-                                if device_info['os'] == 'manylinux_2_28' and device_info['arch'] == 'aarch64':
-                                    pass  # PyPI (no --index-url)
-                                elif tag.startswith('cu'):
-                                    torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{tag}']
+                                if (device_info['os'] == 'manylinux_2_28' and device_info['arch'] == 'aarch64') or (tag == devices['XPU']['proc']):
+                                    pass
                                 else:
-                                    torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{tag_dir}']
+                                    # Same index as torch: cpu / cuXXX
+                                    # tag_dir already maps MPS -> cpu (macOS arm64 uses bare wheels there)
+                                    # ROCm forced to cpu since no ROCm torchcodec wheels are published
+                                    # no rocm and no cuda torchcodec windows for now
+                                    torchcodec_tag_dir = 'cpu' if (device_info['name'] in [devices['ROCM']['proc'], devices['JETSON']['proc']]) or (device_info['name'] == devices['CUDA']['proc'] and self.system == systems['WINDOWS']) else tag_dir
+                                    torchcodec_cmd += ['--index-url', f'{default_pytorch_url}/{torchcodec_tag_dir}']
                                 subprocess.check_call(torchcodec_cmd)
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'

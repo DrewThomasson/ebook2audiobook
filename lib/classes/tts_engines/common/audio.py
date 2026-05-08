@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     from torch import Tensor
 
 def detect_gender(voice_path:str)->str|None:
+    if not voice_path or not os.path.isfile(voice_path):
+        error = f'detect_gender() error: {voice_path} does not exist!'
+        print(error)
+        return None
     try:
         import numpy as np
         from scipy.signal import find_peaks
