@@ -118,7 +118,7 @@ default_engine_settings = {
         "samplerate": 24000,
         "text_temp": 0.22,
         "waveform_temp": 0.44,
-        "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
+        "files": [],
         "voice": default_speaker,
         "speakers_path": os.path.join(voices_dir, '__bark'),
         "voices": {
@@ -172,7 +172,7 @@ default_engine_settings = {
     TTS_ENGINES['TORTOISE']: {
         "languages": {"eng": "en"},
         "samplerate": 24000,
-        "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
+        "files": [],
         "voice": default_speaker,
         "voices": {},
         "rating": {"VRAM": 3, "CPU": 2, "RAM": 4, "Realism": 4}
@@ -197,7 +197,7 @@ default_engine_settings = {
     TTS_ENGINES['GLOWTTS']: {
         "languages": {"eng": "en", "ukr": "uk", "tur": "tr", "ita": "it", "fas": "fa", "bel": "be"},
         "samplerate": 22050,
-        "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
+        "files": [],
         "voice": None,
         "voices": {},
         "rating": {"VRAM": 1, "CPU": 4, "RAM": 2, "Realism": 3}
@@ -205,14 +205,14 @@ default_engine_settings = {
     TTS_ENGINES['TACOTRON2']: {
         "languages": {"deu": "de", "eng": "en", "fra": "fr", "spa": "es"},
         "samplerate": 22050,
-        "files": ['config.json', 'model_file.pth', 'vocoder_config'],
+        "files": [],
         "voice": None,
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 3}
     },
     TTS_ENGINES['YOURTTS']: {
         "languages": {"eng": "en", "fra": "fr", "por": "pt"},
         "samplerate": 16000,
-        "files": ['config.json', 'model_file.pth'],
+        "files": [],
         "voice": None,
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
