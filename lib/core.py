@@ -399,12 +399,11 @@ def extract_custom_model(session_id)->str|None:
                 tts_dir = session['tts_engine']
                 model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
                 os.makedirs(model_path, exist_ok=True)
-                required_files_lc = set(x.lower() for x in required_files)
                 msg = f'Extracting files to {model_path}…'
                 with tqdm(total=files_length, unit='files') as t:
                     for f in files:
                         base_f = os.path.basename(f)
-                        if base_f in required_files_lc:
+                        if base_f in required_files:
                             out_path = os.path.join(model_path, base_f)
                             with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
                                 shutil.copyfileobj(src, dst)
