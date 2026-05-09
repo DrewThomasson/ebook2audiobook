@@ -928,6 +928,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
                             outputs = list(gr.update(interactive=True) for _ in range(20))
+                            visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             enabled_convert_btn = False
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if session.get('ebook_list'):
@@ -937,7 +938,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     enabled_convert_btn = True
                             elif session['ebook_mode'] == ebook_modes['TEXT']:
                                 enabled_convert_btn = True
-                            return tuple(outputs) + (gr.update(visible=False), gr.update(value=''), gr.update(interactive=enabled_convert_btn))
+                            return tuple(outputs) + (gr.update(visible=visible_custom_model_del_btn), gr.update(value=''), gr.update(interactive=enabled_convert_btn))
                 except Exception as e:
                     error = f'enable_components(): {e}'
                     exception_alert(session_id, error)
@@ -1699,9 +1700,9 @@ def build_interface(args:dict)->gr.Blocks:
                         session['custom_model'] = selected
                         if selected is not None and session['tts_engine'] not in tts_engines_with_inner_speaker:
                             session['voice'] = os.path.join(selected, f'{os.path.basename(selected)}.wav')
-                        visible_fine_tuned = session['custom_model'] is None
-                        visible_del_btn = session['custom_model'] is not None
-                        return gr.update(visible=visible_fine_tuned), gr.update(visible=visible_del_btn), update_gr_voice_list(session_id)
+                        visible_fine_tuned = True if session['custom_model'] is None else False
+                        visible_del_btn = True if session['custom_model'] is not None else False
+                        return gr.update(visible=visible_fine_tuned), update_gr_voice_list(session_id), gr.update(visible=visible_del_btn)
                 except Exception as e:
                     error = f'change_gr_custom_model_list(): {e}'
                     exception_alert(session_id, error)
@@ -2642,7 +2643,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_custom_model_list.change(
                 fn=change_gr_custom_model_list,
                 inputs=[gr_session, gr_custom_model_list],
-                outputs=[gr_fine_tuned_list, gr_custom_model_del_btn, gr_voice_list],
+                outputs=[gr_fine_tuned_list, gr_voice_list, gr_custom_model_del_btn],
                 show_progress_on=[gr_progress]
             )
             gr_custom_model_del_btn.click(
