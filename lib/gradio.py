@@ -965,8 +965,8 @@ def build_interface(args:dict)->gr.Blocks:
             def enable_on_custom_upload(custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
                 outputs = tuple([gr.update(interactive=True) for _ in range(10)])
                 enabled_convert_btn = True if ebook_data or ebook_textarea else False
-                visible_custom_del_btn = True if custom_model is not None else False
-                return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=True), gr.update(visible=visible_custom_del_btn))
+                visible_custom_model_del_btn = True if custom_model is not None else False
+                return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=True), gr.update(visible=visible_custom_model_del_btn))
 
             def show_gr_modal(type:str, msg:str)->str:
                 return f'''
@@ -1048,7 +1048,6 @@ def build_interface(args:dict)->gr.Blocks:
                 )
 
             def restore_interface(session_id:str, req:gr.Request)->tuple:
-                print('restore_interface called')
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
@@ -1084,8 +1083,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_row_split_hours = True if session['output_split'] else False
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
                         visible_voice_buttons = True if session.get('voice') else False
-                        print(f"-------------------session.get('custom_model'): {session.get('custom_model')}----------------")
-                        visible_custom_del_btn = True if session.get('custom_model') else False
+                        visible_custom_model_del_btn = bool(session['custom_model'])
                         voice_file = session.get('voice')
                         return (
                             gr.update(visible=visible_ebook_src, value=ebook_data),
@@ -1109,7 +1107,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=voice_file),
                             gr.update(visible=visible_voice_buttons),
                             gr.update(visible=visible_voice_buttons),
-                            gr.update(visible=visible_custom_del_btn)
+                            gr.update(visible=visible_custom_model_del_btn)
                         )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
