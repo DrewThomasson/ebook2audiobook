@@ -1048,6 +1048,7 @@ def build_interface(args:dict)->gr.Blocks:
                 )
 
             def restore_interface(session_id:str, req:gr.Request)->tuple:
+                print('restore_interface called')
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
