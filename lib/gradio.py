@@ -938,7 +938,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     enabled_convert_btn = True
                             elif session['ebook_mode'] == ebook_modes['TEXT']:
                                 enabled_convert_btn = True
-                            return tuple(outputs) + (gr.update(visible=visible_custom_model_del_btn), gr.update(value=''), gr.update(interactive=enabled_convert_btn))
+                            return tuple(outputs) + (gr.update(interactive=True, visible=visible_custom_model_del_btn), gr.update(value=''), gr.update(interactive=enabled_convert_btn))
                 except Exception as e:
                     error = f'enable_components(): {e}'
                     exception_alert(session_id, error)
