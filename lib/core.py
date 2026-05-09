@@ -1683,7 +1683,8 @@ def get_sentences(session_id:str, text:str)->list|None:
         if len(strip_escaped_sml(s)) <= max_chars:
             return [s]
 
-        for sc in punctuation_split_hard_set.union(punctuation_split_hard_set):
+        punctuation_split = punctuation_split_hard + punctuation_split_soft
+        for sc in punctuation_split:
             parts = _split_mid(s, sc)
             if len(parts) > 1:
                 out = []
