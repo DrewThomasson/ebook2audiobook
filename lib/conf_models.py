@@ -180,7 +180,7 @@ default_engine_settings = {
     TTS_ENGINES['VITS']: {
         "languages": {"ben": "bn", "bul": "bg", "cat": "ca", "ces": "cs", "dan": "da", "deu": "de", "ell": "el", "eng": "en", "est": "et", "ewe": "ewe", "fas": "fa", "fin": "fi", "fra": "fr", "gle": "ga", "hau": "hau", "hrv": "hr", "hun": "hu", "ita": "it", "lav": "lv", "lin": "lin", "lit": "lt", "mlt": "mt", "nld": "nl", "pol": "pl", "por": "pt", "rom": "ro", "slk": "sk", "sln": "sl", "spa": "es", "swe": "sv", "tw_akuapem": "tw_akuapem", "tw_asante": "tw_asante", "ukr": "uk", "yor": "yor"},
         "samplerate": 22050,
-        "files": ["best_model.pth", "config.json"],
+        "files": ["config.json", "best_model.pth"],
         "voice": None,
         "voices": {},
         "rating": {"VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
