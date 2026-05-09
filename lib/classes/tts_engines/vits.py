@@ -137,12 +137,13 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             part = part[:-1]
                         #part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         speaker_argument = {}
-                        if self.language == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
-                            if self.language in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
-                                speaker_argument = {"speaker": "p262"}
-                        elif self.language == 'cat' and 'custom/vits' in self.models['internal']['sub']:
-                            if self.language in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
-                                speaker_argument = {"speaker": "09901"}
+                        if not self.session.get('custom_model'):
+                            if self.language == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
+                                if self.language in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
+                                    speaker_argument = {"speaker": "p262"}
+                            elif self.language == 'cat' and 'custom/vits' in self.models['internal']['sub']:
+                                if self.language in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
+                                    speaker_argument = {"speaker": "09901"}
                         if use_zs:
                             tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                             tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
