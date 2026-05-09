@@ -1083,6 +1083,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_row_split_hours = True if session['output_split'] else False
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
                         visible_voice_buttons = True if session.get('voice') else False
+                        print(f"-------------------session.get('custom_model'): {session.get('custom_model')}----------------")
                         visible_custom_del_btn = True if session.get('custom_model') else False
                         voice_file = session.get('voice')
                         return (
