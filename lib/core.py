@@ -180,8 +180,8 @@ class SessionContext:
             "language_iso1": None,
             "voice": None,
             "voice_dir": None,
-            "voice_map": {},                # per-file voice override map (DIRECTORY mode); abs_path -> voice_path|None
-            "ebook_selected": None,         # abs_path of currently-clicked file in DIRECTORY mode (UI-only)
+            "voice_map": {},
+            "ebook_selected": None,
             "custom_model": None,
             "custom_model_dir": None,
             "output_dir": None,
@@ -3582,6 +3582,8 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
+        "ebook_selected": None,
+        "voice_map": {},
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
