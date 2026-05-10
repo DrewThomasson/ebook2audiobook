@@ -644,21 +644,20 @@ if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 		echo Detected incomplete %PYTHON_ENV% — removing and recreating...
 		rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 	)
-	setlocal enabledelayedexpansion
 	echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION%...
 	call "%CONDA_HOME%\Scripts\activate.bat"
 	call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" -c conda-forge python=%PYTHON_VERSION% pip -y
-	if errorlevel 1 (endlocal & exit /b 3)
+	if errorlevel 1 exit /b 3
 	call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 	call :check_device_info %SCRIPT_MODE%
-	if errorlevel 1 (endlocal & exit /b 3)
-	call :install_device_packages "!DEVICE_INFO_STR!"
-	if errorlevel 1 (endlocal & exit /b 3)
+	if errorlevel 1 exit /b 3
+	call :install_device_packages "%DEVICE_INFO_STR%"
+	if errorlevel 1 exit /b 3
 	call :install_python_packages
-	if errorlevel 1 (endlocal & exit /b 3)
-	echo %APP_VERSION% > "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned"
-	endlocal
+	if errorlevel 1 exit /b 3
+	echo %APP_VERSION%>"%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned"
 )
+exit /b 0
 exit /b 0
 
 :check_wsl
