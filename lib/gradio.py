@@ -1260,6 +1260,14 @@ def build_interface(args:dict)->gr.Blocks:
                     return True
                 return bool(session.get('ebook_selected'))
 
+            def upload_gr_ebook_src(session_id:str, ebook_mode:str)->None:
+                if ebook_mode == ebook_modes['DIRECTORY']:
+                    msg = 'Click on each file in the list to set its voice individually.'
+                    show_alert(session_id, {
+                        'type': 'info',
+                        'msg': msg
+                    })
+
             def change_gr_ebook_src(session_id:str, ebook_mode:str, data:any)->tuple:
                 try:
                     session = context.get_session(session_id)
@@ -2645,6 +2653,11 @@ def build_interface(args:dict)->gr.Blocks:
             
             ######### event triggers
             
+            gr_ebook_src.upload(
+                fn=upload_gr_ebook_src,
+                inputs=[gr_session, gr_ebook_mode],
+                outputs=None
+            )
             chain_enable(
                 gr_ebook_src.change(
                     fn=change_gr_ebook_src,
