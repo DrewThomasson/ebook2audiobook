@@ -87,7 +87,7 @@ set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
 set "FFMPEG_BIN=%USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
 set "FFMPEG_VARIANT=none"
-set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
+set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
@@ -596,52 +596,53 @@ goto :main
 :check_conda
 where.exe /Q conda
 if errorlevel 1 (
-    echo Miniforge3 is not installed.
-    exit /b 1
+	echo Conda is not installed.
+	exit /b 1
 )
+set "DETECTED_BASE="
+for /f "usebackq delims=" %%B in (`conda info --base 2^>nul`) do set "DETECTED_BASE=%%B"
+if not defined DETECTED_BASE (
+	echo Failed to query 'conda info --base'; aborting.
+	exit /b 1
+)
+set "CONDA_HOME=%DETECTED_BASE%"
+set "CONDA_PATH=%DETECTED_BASE%\condabin"
+set "CONDA_ENV=%DETECTED_BASE%\condabin\conda.bat"
+set "PATH=%CONDA_PATH%;%PATH%"
+set "CURRENT_ENV="
 if defined CONDA_DEFAULT_ENV (
-    set "CURRENT_ENV=%CONDA_PREFIX%"
+	:: 'base' is acceptable — we'll deactivate it before creating our env.
+	if /i not "%CONDA_DEFAULT_ENV%"=="base" (
+		set "CURRENT_ENV=%CONDA_PREFIX%"
+	)
 )
 if defined VIRTUAL_ENV (
-    set "CURRENT_ENV=%VIRTUAL_ENV%"
+	set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
-for /f "delims=" %%i in ('where.exe python 2^>nul') do (
-    if defined CONDA_PREFIX (
-        if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-            set "CURRENT_ENV=%CONDA_PREFIX%"
-            break
-        )
-    ) else if defined VIRTUAL_ENV (
-        if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-            set "CURRENT_ENV=%VIRTUAL_ENV%"
-            break
-        )
-    )
+if defined CURRENT_ENV (
+	echo Current python virtual environment detected: %CURRENT_ENV%.
+	echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+	exit /b 2
 )
-if "%CURRENT_ENV%"=="" (
-    if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-        setlocal enabledelayedexpansion
-        echo Creating ./python_env version %PYTHON_VERSION%...
-        call "%CONDA_HOME%\Scripts\activate.bat"
-        call conda update -n base -c conda-forge conda -y
-        call conda update --all -y
-        call conda clean --index-cache -y
-        call conda clean --packages --tarballs -y
-        call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
-        rem call conda activate base
-        call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-        call :check_device_info %SCRIPT_MODE%
-        if errorlevel 1 (endlocal & exit /b 1)
-        call :install_device_packages "!DEVICE_INFO_STR!"
-        if errorlevel 1 (endlocal & exit /b 1)
-        call :install_python_packages
-        if errorlevel 1 (endlocal & exit /b 1)
-        endlocal
-    )
-) else (
-    echo Current python virtual environment detected: %CURRENT_ENV%.
-    echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-    exit /b 2
+if /i "%CONDA_DEFAULT_ENV%"=="base" (
+	call conda deactivate >nul 2>&1
+)
+if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+	setlocal enabledelayedexpansion
+	echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION%...
+	call "%CONDA_HOME%\Scripts\activate.bat"
+	:: Pin -c conda-forge for our env regardless of the user's default channel,
+	:: so dependency resolution is consistent across Miniconda/Miniforge3 hosts.
+	call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" -c conda-forge python=%PYTHON_VERSION% pip -y
+	if errorlevel 1 (endlocal & exit /b 1)
+	call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+	call :check_device_info %SCRIPT_MODE%
+	if errorlevel 1 (endlocal & exit /b 1)
+	call :install_device_packages "!DEVICE_INFO_STR!"
+	if errorlevel 1 (endlocal & exit /b 1)
+	call :install_python_packages
+	if errorlevel 1 (endlocal & exit /b 1)
+	endlocal
 )
 exit /b 0
 
