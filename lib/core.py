@@ -1469,8 +1469,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             break_token = re.escape(sml_token('break'))
             strip_break_spaces_re = re.compile(rf'\s*{break_token}\s*')
             break_between_alnum_re = re.compile(rf'(?<=[\w]){break_token}(?=[\w])', flags=re.UNICODE)
-            text = strip_break_spaces_re.sub(sml_token('break'), text)
             text = break_between_alnum_re.sub(' ', text)
+            text = strip_break_spaces_re.sub(sml_token('break'), text)
             # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
             if sml_blocks and sml_blocks[0] == '[break]':
