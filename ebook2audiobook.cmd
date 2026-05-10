@@ -45,7 +45,9 @@ set "SCRIPT_MODE=%NATIVE%"
 set "APP_NAME=ebook2audiobook"
 set /p APP_VERSION=<"%SAFE_SCRIPT_DIR%\VERSION.txt"
 set "APP_FILE=%APP_NAME%.cmd"
-set "OS_LANG=%LANG%" & if "%OS_LANG%"=="" set "OS_LANG=en" & call set "OS_LANG=%%OS_LANG:~0,2%%"
+set "OS_LANG="
+for /f "usebackq tokens=*" %%L in (`""%PS_EXE%" %PS_ARGS% -Command "(Get-Culture).TwoLetterISOLanguageName""`) do set "OS_LANG=%%L"
+if "%OS_LANG%"=="" set "OS_LANG=en"
 set "TEST_HOST=127.0.0.1"
 set "TEST_PORT=7860"
 set "ICON_PATH=%SAFE_SCRIPT_DIR%\tools\icons\windows\appIcon.ico"
@@ -523,6 +525,14 @@ if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 )
 goto :restart_script
 
+:download_tessdata
+setlocal
+set "_LANG=%~1"
+set "_DEST=%~2"
+"%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%TESSDATA_BASE_URL%/%_LANG%.traineddata' -OutFile '%_DEST%\%_LANG%.traineddata' -ErrorAction Stop"
+set "RC=%errorlevel%"
+endlocal & exit /b %RC%
+
 :install_programs
 echo Installing missing programs…
 setlocal EnableDelayedExpansion
@@ -537,7 +547,7 @@ for %%p in (%missing_prog_array%) do (
 			set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 			if not exist "!tessdata!" mkdir "!tessdata!"
 			if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
-				call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri 'https://github.com/tesseract-ocr/tessdata_best/raw/main/!ISO3_LANG!.traineddata' -OutFile '!tessdata!\!ISO3_LANG!.traineddata' -ErrorAction Stop" || goto :failed
+				call :download_tessdata "!ISO3_LANG!" "!tessdata!" || goto :failed
 			)
 			if exist "!tessdata!\!ISO3_LANG!.traineddata" (
 				echo Tesseract OCR language !ISO3_LANG! installed in !tessdata!
