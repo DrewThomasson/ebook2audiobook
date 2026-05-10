@@ -339,28 +339,27 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_ebook_src .file-preview-holder {
                     padding-top: 16px !important;
                 }
-                /* Per-file voice override (DIRECTORY mode) — hover + selected row */
                 .gr-voice-highlight-css { display: none !important; }
                 #gr_ebook_src table.file-preview tbody > tr.file:hover {
                     background: var(--color-accent-soft) !important;
                 }
                 #gr_voice_selected_filename {
                     display: flex !important;
-                    align-items: center;
-                    padding: 0 8px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    width: 100%;
-                    height: 100%;
+                    align-items: center !important;
+                    padding: 0 8px !important;
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
+                    white-space: nowrap !important;
+                    width: 100% !important;
+                    height: 100% !important;
                 }
                 #gr_voice_selected_filename p {
                     margin: auto !important;
-                    vertical-align: middle;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    width: 100%;
-                    height: 100%;
+                    vertical-align: middle !important;
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
+                    width: 100% !important;
+                    height: 100% !important;
                 }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
