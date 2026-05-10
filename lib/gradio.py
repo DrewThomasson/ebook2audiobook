@@ -346,20 +346,15 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_voice_selected_filename {
                     display: flex !important;
                     align-items: center !important;
-                    padding: 0 8px !important;
                     overflow: hidden !important;
                     text-overflow: ellipsis !important;
                     white-space: nowrap !important;
-                    width: 100% !important;
-                    height: 100% !important;
                 }
                 #gr_voice_selected_filename p {
                     margin: auto !important;
                     vertical-align: middle !important;
                     overflow: hidden !important;
                     text-overflow: ellipsis !important;
-                    width: 100% !important;
-                    height: 100% !important;
                 }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
