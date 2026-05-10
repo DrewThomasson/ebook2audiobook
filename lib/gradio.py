@@ -344,22 +344,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_ebook_src table.file-preview tbody > tr.file:hover {
                     background: var(--color-accent-soft) !important;
                 }
-                /* Filename label rendered beside the voice dropdown */
-                #gr_voice_selected_filename {
-                    display: flex !important;
-                    align-items: center;
-                    font-style: italic;
-                    color: var(--color-accent);
-                    padding: 0 8px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                }
-                #gr_voice_selected_filename p {
-                    margin: 0 !important;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
+
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
                 }               
