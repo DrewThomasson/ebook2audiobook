@@ -340,7 +340,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding-top: 16px !important;
                 }
                 /* Per-file voice override (DIRECTORY mode) — hover + selected row */
-                .e2a-style-injector { display: none !important; }
+                .gr-voice-highlight-css { display: none !important; }
                 #gr_ebook_src table.file-preview tbody > tr.file:hover {
                     background: var(--color-accent-soft) !important;
                 }
@@ -635,9 +635,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_ebook_src', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
                                     gr_ebook_src = gr.File(show_label=False, label='-', elem_id='gr_ebook_src', visible=True, file_types=ebook_formats, file_count=ebook_modes['SINGLE'], allow_reordering=True, height=100)
-                                    # Hidden style-injector for the per-file highlight in DIRECTORY mode.
-                                    # Container is collapsed via .e2a-style-injector { display:none }; the <style> inside still applies.
-                                    gr_voice_highlight_css = gr.HTML(value='', elem_classes=['e2a-style-injector'])
+                                    gr_voice_highlight_css = gr.HTML(value='', elem_classes=['gr-voice-highlight-css'])
                                     gr_ebook_textarea = gr.Textbox(show_label=True, label='Text Prompt', elem_id='gr_ebook_textarea', visible=False, lines=8, max_length=max_ebook_textarea_length)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File',ebook_modes['SINGLE']), ('Directory',ebook_modes['DIRECTORY']), ('Text',ebook_modes['TEXT'])], interactive=True, scale=2)
@@ -1263,7 +1261,6 @@ def build_interface(args:dict)->gr.Blocks:
                 return bool(session.get('ebook_selected'))
 
             def change_gr_ebook_src(session_id:str, ebook_mode:str, data:any)->tuple:
-                # Returns (modal_update, voice_highlight_css_update, voice_list_update, voice_player_row_update, selected_filename_update)
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
@@ -1278,16 +1275,12 @@ def build_interface(args:dict)->gr.Blocks:
                             session['ebook_list'] = data
                             files = data or []
                             abs_files = [os.path.abspath(f) for f in files] if isinstance(files, list) else []
-                            # Refresh voice_map: dense by design — every file has an explicit voice entry.
-                            # New files inherit the current global session['voice']; existing entries are preserved.
                             prev_map = dict(session.get('voice_map') or {})  # read once
                             default_voice = session.get('voice')
                             new_map = {p: (prev_map[p] if p in prev_map else default_voice) for p in abs_files}
                             session['voice_map'] = new_map                   # write back
                             prev_selected = session.get('ebook_selected')
                             if prev_selected and prev_selected in abs_files:
-                                # Selection survived — recompute its row index and refresh highlight.
-                                # Voice dropdown stays untouched (selected file's voice didn't change).
                                 new_row = abs_files.index(prev_selected)
                                 if data is None:
                                     session['cancellation_requested'] = True
@@ -1301,10 +1294,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr.update(value=Path(prev_selected).name, visible=True),
                                 )
                             else:
-                                # Either no prior selection, or the selected file was deleted.
                                 session['ebook_selected'] = None
-                                # If the selection was the deleted file, reset dropdown to the directory default
-                                # so the user has a coherent "I'm editing the default again" state.
                                 voice_update = gr.update(value=session.get('voice')) if prev_selected else gr.update()
                                 if data is None and session.get('status', None) in [status_tags['EDIT'], status_tags['CONVERTING']]:
                                     session['cancellation_requested'] = True
@@ -1321,12 +1311,9 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'change_gr_ebook_src(): {e}'
                     exception_alert(session_id, error)
-                # Default fallback (SINGLE mode reaches here): no highlight, no dropdown change, row stays as-is.
                 return gr.update(), gr.update(value=''), gr.update(), gr.update(), gr.update()
 
             def select_gr_ebook_src(session_id:str, ebook_mode:str, evt:gr.SelectData)->tuple:
-                # Fired when the user clicks a row in gr_ebook_src (DIRECTORY mode only).
-                # Returns (voice_list_update, voice_highlight_css_update, voice_player_row_update, selected_filename_update)
                 try:
                     session = context.get_session(session_id)
                     if not (session and session.get('id', False)):
@@ -1341,8 +1328,6 @@ def build_interface(args:dict)->gr.Blocks:
                     abs_path = os.path.abspath(ebook_list[row])
                     session['ebook_selected'] = abs_path
                     voice_map = session.get('voice_map') or {}
-                    # Dense map: every file in the list has an explicit voice entry (set at directory load).
-                    # Fall back to session['voice'] only if a key is missing (defensive — shouldn't happen).
                     assigned_voice = voice_map[abs_path] if abs_path in voice_map else session.get('voice')
                     style = build_voice_highlight_css(row)
                     filename = Path(abs_path).name
@@ -1365,31 +1350,20 @@ def build_interface(args:dict)->gr.Blocks:
                 return
 
             def change_gr_ebook_mode(session_id:str, val:str)->tuple:
-                # Returns (ebook_src_update, ebook_textarea_update, convert_btn_update,
-                #          voice_highlight_css_update, voice_player_row_update, selected_filename_update)
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session.get('ebook_mode') == val:
                             return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                         session['ebook_mode'] = val
-                        # Per-file highlight + selection are DIRECTORY-only state.
                         css_update = gr.update() if val == ebook_modes['DIRECTORY'] else gr.update(value='')
                         if val != ebook_modes['DIRECTORY']:
                             session['ebook_selected'] = None
-                        # voice_player_row: visible in SINGLE/TEXT; in DIRECTORY only when a row is currently selected
                         row_visible = voice_player_visible(session)
-                        # Filename label: only meaningful in DIRECTORY with a selection
                         if val == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
                             filename_update = gr.update(value=Path(session['ebook_selected']).name, visible=True)
                         else:
                             filename_update = gr.update(value='', visible=False)
-                        # One-time hint when entering DIRECTORY mode — guide the user to the new per-file flow.
-                        if val == ebook_modes['DIRECTORY']:
-                            show_alert(session_id, {
-                                'type': 'info',
-                                'msg': 'Click on each file in the list to set its voice individually.'
-                            })
                         enabled_convert_btn = False
                         if val == ebook_modes['SINGLE']:
                             if session.get('ebook_src'):
@@ -1455,12 +1429,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 (value for label, value in voice_options if value == selected),
                                 voice_value,
                             )
-                        # Routing: in DIRECTORY mode with a file currently selected, the dropdown
-                        # mutates that file's per-file override. Otherwise it mutates the global default.
                         if session.get('ebook_mode') == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
-                            voice_map = dict(session.get('voice_map') or {})       # read once
-                            voice_map[session['ebook_selected']] = new_voice       # mutate
-                            session['voice_map'] = voice_map                       # write back
+                            voice_map = dict(session.get('voice_map') or {})
+                            voice_map[session['ebook_selected']] = new_voice
+                            session['voice_map'] = voice_map
                         else:
                             session['voice'] = new_voice
                         visible_voice_buttons = new_voice is not None
@@ -1480,7 +1452,6 @@ def build_interface(args:dict)->gr.Blocks:
                             builtin_root = os.path.join(voices_dir, session['language'])
                             is_in_builtin = os.path.commonpath([speaker_path, os.path.abspath(builtin_root)]) == os.path.abspath(builtin_root)
                             is_in_models = os.path.commonpath([speaker_path, os.path.abspath(session['custom_model_dir'])]) == os.path.abspath(session['custom_model_dir'])
-                            # Check if voice is built-in
                             is_builtin = any(
                                 speaker in settings.get('voices', {})
                                 for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
@@ -1511,7 +1482,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 error = f'Could not delete the voice file {selected}!\n{e}'
                                 exception_alert(session_id, error)
                                 return gr.update(visible=False), gr.update()
-                    # Fallback/default return if not selected or after errors
                     return gr.update(visible=False), gr.update()
                 except Exception as e:
                     error = f'click_gr_voice_del_btn(): {e}'
@@ -2086,11 +2056,8 @@ def build_interface(args:dict)->gr.Blocks:
                             if args['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if args['ebook_list']:
                                     if isinstance(args['ebook_list'], list):
-                                        # Snapshot dropdown choice as the directory-wide default,
-                                        # and snapshot the per-file overrides up front.
                                         default_voice = args.get('voice')
                                         voice_map = dict(session.get('voice_map') or {})
-                                        # Filter unsupported formats upfront and sort for reproducible ordering.
                                         clean_list = sorted([
                                             f for f in args['ebook_list']
                                             if any(f.endswith(ext) for ext in ebook_formats)
@@ -2105,7 +2072,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             file = ebook_list.pop(0)
                                             args['ebook_list'] = ebook_list
                                             args['ebook_src'] = file
-                                            # Per-file voice resolution: abs-path override -> basename override -> default
                                             abs_file = os.path.abspath(file)
                                             override = voice_map.get(abs_file) or voice_map.get(os.path.basename(file))
                                             if override and not os.path.exists(override):
@@ -2353,7 +2319,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 ebook_name = Path(session['ebook']).stem
                                 blocks_current = session['blocks_current']
                                 blocks = blocks_current['blocks']
-                                # restore saved page, clamp in case blocks shrank or page_size changed
                                 max_page = max((len(blocks) - 1) // page_size, 0)
                                 page = max(0, min(int(blocks_current.get('page', 0)), max_page))
                                 page_updates = list(populate_page(session_id, page, blocks))
