@@ -359,6 +359,8 @@ def build_interface(args:dict)->gr.Blocks:
                     vertical-align: middle;
                     overflow: hidden;
                     text-overflow: ellipsis;
+                    width: 100%;
+                    height: 100%;
                 }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
