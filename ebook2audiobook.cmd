@@ -616,7 +616,7 @@ set "DETECTED_BASE="
 for /f "usebackq delims=" %%B in (`conda info --base 2^>nul`) do set "DETECTED_BASE=%%B"
 if not defined DETECTED_BASE (
 	echo Failed to query 'conda info --base'; aborting.
-	exit /b 1
+	exit /b 3
 )
 set "CONDA_HOME=%DETECTED_BASE%"
 set "CONDA_PATH=%DETECTED_BASE%\condabin"
@@ -624,7 +624,6 @@ set "CONDA_ENV=%DETECTED_BASE%\condabin\conda.bat"
 set "PATH=%CONDA_PATH%;%PATH%"
 set "CURRENT_ENV="
 if defined CONDA_DEFAULT_ENV (
-	:: 'base' is acceptable — we'll deactivate it before creating our env.
 	if /i not "%CONDA_DEFAULT_ENV%"=="base" (
 		set "CURRENT_ENV=%CONDA_PREFIX%"
 	)
@@ -648,18 +647,15 @@ if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 	setlocal enabledelayedexpansion
 	echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION%...
 	call "%CONDA_HOME%\Scripts\activate.bat"
-	:: Pin -c conda-forge for our env regardless of the user's default channel,
-	:: so dependency resolution is consistent across Miniconda/Miniforge3 hosts.
 	call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" -c conda-forge python=%PYTHON_VERSION% pip -y
-	if errorlevel 1 (endlocal & exit /b 1)
+	if errorlevel 1 (endlocal & exit /b 3)
 	call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 	call :check_device_info %SCRIPT_MODE%
-	if errorlevel 1 (endlocal & exit /b 1)
+	if errorlevel 1 (endlocal & exit /b 3)
 	call :install_device_packages "!DEVICE_INFO_STR!"
-	if errorlevel 1 (endlocal & exit /b 1)
+	if errorlevel 1 (endlocal & exit /b 3)
 	call :install_python_packages
-	if errorlevel 1 (endlocal & exit /b 1)
-	:: All installs succeeded — mark env as fully provisioned.
+	if errorlevel 1 (endlocal & exit /b 3)
 	echo %APP_VERSION% > "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned"
 	endlocal
 )
@@ -1019,6 +1015,7 @@ if defined arguments.help (
 		call :check_programs
 		if errorlevel 1 goto :install_programs
 		call :check_conda
+		if errorlevel 3 goto :failed
 		if errorlevel 2 goto :eof
 		if errorlevel 1 goto :install_conda
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
