@@ -653,110 +653,126 @@ EOF
 
 function check_conda {
 
-	function compare_versions {
-		local ver1=$1
-		local ver2=$2
-		# Pad each version to 3 parts
-		IFS='.' read -r v1_major v1_minor <<<"$ver1"
-		IFS='.' read -r v2_major v2_minor <<<"$ver2"
+    function compare_versions {
+        local ver1=$1
+        local ver2=$2
+        IFS='.' read -r v1_major v1_minor <<<"$ver1"
+        IFS='.' read -r v2_major v2_minor <<<"$ver2"
+        ((v1_major < v2_major)) && return 1
+        ((v1_major > v2_major)) && return 2
+        ((v1_minor < v2_minor)) && return 1
+        ((v1_minor > v2_minor)) && return 2
+        return 0
+    }
 
-		((v1_major < v2_major)) && return 1
-		((v1_major > v2_major)) && return 2
-		((v1_minor < v2_minor)) && return 1
-		((v1_minor > v2_minor)) && return 2
-		return 0
-	}
+    local conda_owned=0
+    if ! command -v conda &>/dev/null; then
+        local installer_url
+        local installer_path="/tmp/Miniforge3.sh"
+        local config_path
+        echo -e "\e[33mDownloading Miniforge3 installer…\e[0m"
+        if [[ "${OSTYPE-}" == darwin* ]]; then
+            config_path="$HOME/.zshrc"
+            curl -fsSLo "$installer_path" "$MINIFORGE_MACOSX_INSTALLER_URL"
+        else
+            config_path="$HOME/.bashrc"
+            wget -O "$installer_path" "$MINIFORGE_LINUX_INSTALLER_URL"
+        fi
+        if [[ ! -f "$installer_path" ]]; then
+            echo -e "\e[31m=============== Miniforge3 installer not found!\e[0m"
+            return 1
+        fi
+        echo -e "\e[33mInstalling Miniforge3…\e[0m"
+        bash "$installer_path" -b -u -p "$CONDA_HOME"
+        rm -f "$installer_path"
+        if [[ ! -f "$CONDA_HOME/bin/conda" ]]; then
+            echo -e "\e[31m=============== Miniforge3 failed.\e[0m"
+            return 1
+        fi
+        if [[ ! -f "$HOME/.condarc" ]]; then
+            "$CONDA_HOME/bin/conda" config --set auto_activate_base false
+        fi
+        [[ -f "$config_path" ]] || touch "$config_path"
+        if ! grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path"; then
+            echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
+        fi
+        case ":$PATH:" in
+            *":$HOME/Miniforge3/bin:"*) ;;
+            *) export PATH="$HOME/Miniforge3/bin:$PATH" ;;
+        esac
+        echo -e "\e[32m=============== Miniforge3 OK! ===============\e[0m"
+        if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
+            echo "Miniforge3" >> "$INSTALLED_LOG"
+        fi
+        conda_owned=1
+    fi
+    local detected_base
+    detected_base="$(conda info --base 2>/dev/null || true)"
+    if [[ -z "$detected_base" ]]; then
+        echo -e "\e[31m=============== Failed to query 'conda info --base'.\e[0m"
+        return 1
+    fi
+    export CONDA_HOME="$detected_base"
+    export CONDA_BIN_PATH="$CONDA_HOME/bin"
+    export CONDA_ENV="$CONDA_HOME/etc/profile.d/conda.sh"
+    case ":$PATH:" in
+        *":$CONDA_BIN_PATH:"*) ;;
+        *) export PATH="$CONDA_BIN_PATH:$PATH" ;;
+    esac
+    if [[ ! -f "$CONDA_ENV" ]]; then
+        echo -e "\e[31m=============== conda.sh not found at $CONDA_ENV.\e[0m"
+        return 1
+    fi
+    if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/.provisioned" ]]; then
+        if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+            echo -e "\e[33mDetected incomplete $PYTHON_ENV — removing and recreating…\e[0m"
+            rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
+        fi
 
-	if ! command -v conda &> /dev/null || [[ ! -f "$CONDA_ENV" ]]; then
-		local installer_url
-		local installer_path="/tmp/Miniforge3.sh"
-		local config_path
-		echo -e "\e[33mDownloading Miniforge3 installer…\e[0m"
-		if [[ "${OSTYPE-}" == darwin* ]]; then
-			config_path="$HOME/.zshrc"
-			curl -fsSLo "$installer_path" "$MINIFORGE_MACOSX_INSTALLER_URL"
-		else
-			config_path="$HOME/.bashrc"
-			wget -O "$installer_path" "$MINIFORGE_LINUX_INSTALLER_URL"
-		fi
-		if [[ -f "$installer_path" ]]; then
-			echo -e "\e[33mInstalling Miniforge3…\e[0m"
-			bash "$installer_path" -b -u -p "$CONDA_HOME"
-			rm -f "$installer_path"
-			if [[ -f "$CONDA_HOME/bin/conda" ]]; then
-				if [[ ! -f "$HOME/.condarc" ]]; then
-					$CONDA_HOME/bin/conda config --set auto_activate_base false
-				fi
-				[[ -f "$config_path" ]] || touch "$config_path"
-				if [[ "$CONDA_HOME" == "$HOME/Miniforge3" ]]; then
-					if ! grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$config_path"; then
-						echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$config_path"
-					fi
-					case ":$PATH:" in
-						*":$HOME/Miniforge3/bin:"*) ;;
-						*) export PATH="$HOME/Miniforge3/bin:$PATH" ;;
-					esac
-				fi
-				echo -e "\e[32m=============== Miniforge3 OK! ===============\e[0m"
-					if ! grep -iqFx "Miniforge3" "$INSTALLED_LOG"; then
-						echo "Miniforge3" >> "$INSTALLED_LOG"
-					fi
-			else
-				echo -e "\e[31m=============== Miniforge3 failed.\e[0m"
-				return 1
-			fi
-		else
-			echo -e "\e[31m=============== Miniforge3 installer not found!.\e[0m"
-			return 1
-		fi
-	fi
-	if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
-		model="other"
-		if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then
-			PYTHON_VERSION="3.11"
-		else
-			if [[ -r /proc/device-tree/model ]]; then
-				# Detect Jetson and select correct Python version
-				model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
-				if [[ "$model" == *jetson* ]]; then
-					PYTHON_VERSION="$MIN_PYTHON_VERSION"
-				fi
-			else
-				compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
-				case $? in
-					1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;;
-				esac
-				compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
-				case $? in
-					2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
-				esac
-			fi
-		fi
-		echo -e "\e[33mCreating ./python_env version $PYTHON_VERSION…\e[0m"
-		chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
-		chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models"
-		conda update -n base -c conda-forge conda -y
-		conda update --all -y
-		conda clean --index-cache -y
-		conda clean --packages --tarballs -y
-		conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION pip -y || return 1
-		source "$CONDA_ENV" || return 1
-		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
-		if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
-			# needed gfortran to compile pip scipy pkg
-			conda install -c conda-forge gfortran -y || return 1
-		fi
-		DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
-		if [[ "$DEVICE_INFO_STR" == "" ]]; then
-			echo "check_device_info() error: result is empty"
-			exit 1
-		fi
-		install_device_packages "$DEVICE_INFO_STR" || exit 1
-		install_python_packages || return 1
-		conda deactivate > /dev/null 2>&1
-		conda deactivate > /dev/null 2>&1
-	fi
-	return 0
+        local model="other"
+        if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then
+            PYTHON_VERSION="3.11"
+        else
+            if [[ -r /proc/device-tree/model ]]; then
+                model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
+                if [[ "$model" == *jetson* ]]; then
+                    PYTHON_VERSION="$MIN_PYTHON_VERSION"
+                fi
+            else
+                compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
+                case $? in 1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;; esac
+                compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
+                case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
+            fi
+        fi
+        echo -e "\e[33mCreating ./$PYTHON_ENV with python $PYTHON_VERSION…\e[0m"
+        chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
+        chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
+        source "$CONDA_ENV" || return 1
+        if (( conda_owned == 1 )); then
+            conda update -n base -c conda-forge conda -y
+            conda update --all -y
+            conda clean --index-cache -y
+            conda clean --packages --tarballs -y
+        fi
+        conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" -c conda-forge python=$PYTHON_VERSION pip -y || return 1
+        conda activate "$SCRIPT_DIR/$PYTHON_ENV" || return 1
+        if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
+            # gfortran needed to compile scipy from pip on Jetson
+            conda install -c conda-forge gfortran -y || return 1
+        fi
+        DEVICE_INFO_STR="$(check_device_info "$SCRIPT_MODE")"
+        if [[ -z "$DEVICE_INFO_STR" ]]; then
+            echo "check_device_info() error: result is empty"
+            return 1
+        fi
+        install_device_packages "$DEVICE_INFO_STR" || return 1
+        install_python_packages || return 1
+        echo "$APP_VERSION" > "$SCRIPT_DIR/$PYTHON_ENV/.provisioned"
+        conda deactivate &>/dev/null || true
+        conda deactivate &>/dev/null || true
+    fi
+    return 0
 }
 
 function check_docker {
@@ -999,26 +1015,24 @@ EOF
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 		chmod 777 "$TMPDIR"
 		# Check if running in a Conda or Python virtual environment
-		if [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
+		if [[ -n "${CONDA_DEFAULT_ENV:-}" && "$CONDA_DEFAULT_ENV" != "base" ]]; then
 			CURRENT_PYVENV="${CONDA_PREFIX:-}"
 		elif [[ -n "${VIRTUAL_ENV:-}" ]]; then
 			CURRENT_PYVENV="$VIRTUAL_ENV"
 		fi
-		# If neither environment variable is set, check Python path
-		if [[ -z "${CURRENT_PYVENV:-}" ]]; then
-			PYTHON_PATH="$(command -v python 2>/dev/null || true)"
-			if [[ ( -n "${CONDA_PREFIX:-}" && "$PYTHON_PATH" == "${CONDA_PREFIX:-}/bin/python" ) || \
-				  ( -n "${VIRTUAL_ENV:-}" && "$PYTHON_PATH" == "${VIRTUAL_ENV:-}/bin/python" ) ]]; then
-				CURRENT_PYVENV="${CONDA_PREFIX:-${VIRTUAL_ENV:-}}"
-			fi
-		fi
-		# Output result if a virtual environment is detected
 		if [[ -n "$CURRENT_PYVENV" ]]; then
-			echo -e "\e[31m=============== Error: Current python virtual environment detected: $CURRENT_PYVENV..\e[0m"
+			echo -e "\e[31m=============== Error: Current python virtual environment detected: $CURRENT_PYVENV.\e[0m"
 			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
-			echo -e "If you are using conda then you would type in:"
-			echo -e "conda deactivate"
+			echo -e "Run 'conda deactivate' (possibly twice) and retry."
 			exit 1
+		fi
+		# Auto-drop out of base if user has auto_activate_base=true.
+		if [[ "${CONDA_DEFAULT_ENV:-}" == "base" ]]; then
+			# Source conda hook if needed so deactivate is available.
+			if command -v conda &>/dev/null; then
+				eval "$(conda shell.bash hook 2>/dev/null || true)"
+				conda deactivate &>/dev/null || true
+			fi
 		fi
 		check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
 		check_conda || { echo -e "\e[31m=============== check_conda() failed.\e[0m"; exit 1; }
