@@ -658,7 +658,6 @@ if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 	echo %APP_VERSION%>"%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned"
 )
 exit /b 0
-exit /b 0
 
 :check_wsl
 where.exe /Q wsl
