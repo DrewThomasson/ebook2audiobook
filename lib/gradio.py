@@ -347,6 +347,7 @@ def build_interface(args:dict)->gr.Blocks:
                     display: flex !important;
                     align-items: center !important;
                     margin: auto !important;
+                    padding-left: 6px;
                     overflow: hidden !important;
                     text-overflow: ellipsis !important;
                     white-space: nowrap !important;
