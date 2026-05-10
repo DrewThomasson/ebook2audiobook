@@ -1240,6 +1240,37 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return []
 
+def apply_pronunciation_overrides(text:str, session:dict, lang:str)->str:
+    try:
+        upload_path = session.get('pronunciation_overrides') if session is not None and hasattr(session, 'get') else None
+        if not upload_path or not os.path.isfile(upload_path):
+            return text
+        try:
+            with open(upload_path, 'r', encoding='utf-8') as fh:
+                data = json.load(fh)
+        except Exception as e:
+            print(f'apply_pronunciation_overrides(): cannot read {upload_path}: {e}')
+            return text
+        # support either a flat dict {word: phonetic} or {lang: {word: phonetic}}
+        overrides:dict = {}
+        if isinstance(data, dict):
+            if lang in data and isinstance(data[lang], dict):
+                overrides = data[lang]
+            elif all(isinstance(v, str) for v in data.values()):
+                overrides = data
+        if not overrides:
+            return text
+        # apply longest keys first to avoid partial matches eating shorter keys
+        for word in sorted(overrides.keys(), key=len, reverse=True):
+            replacement = overrides[word]
+            if not word or not isinstance(replacement, str):
+                continue
+            text = re.sub(rf'\b{re.escape(word)}\b', replacement, text, flags=re.UNICODE)
+        return text
+    except Exception as e:
+        print(f'apply_pronunciation_overrides() error: {e}')
+        return text
+
 def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
     def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -1456,6 +1487,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 clean_list.append(current)
                 i += 1
             text = ' '.join(clean_list)
+            text = apply_pronunciation_overrides(text, session, lang)
             if not re.search(r"[^\W_]", text):
                 error = 'No valid text found!'
                 print(error)
@@ -3139,6 +3171,10 @@ def convert_ebook(args:dict)->tuple:
             session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if args['custom_model'] is not None else None
             session['fine_tuned'] = str(args['fine_tuned'])
             session['voice'] = args.get('voice', None)
+            if args.get('pronunciation_overrides') is not None:
+                session['pronunciation_overrides'] = args.get('pronunciation_overrides')
+            elif 'pronunciation_overrides' not in session:
+                session['pronunciation_overrides'] = None
             session['xtts_temperature'] =  float(args['xtts_temperature'])
             session['xtts_length_penalty'] = float(args['xtts_length_penalty'])
             session['xtts_num_beams'] = int(args['xtts_num_beams'])
