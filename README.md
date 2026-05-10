@@ -94,6 +94,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
+- [Pronunciation Overrides](#pronunciation-overrides)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
@@ -111,6 +112,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 💻 **Low-resource friendly** — runs on **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **SML tags supported** — fine-grained control of breaks, pauses, voice switching and more ([see below](#sml-tags-available))
+- 🗣️ **Pronunciation overrides** — optionally provide a JSON file to force specific pronunciations for words the model gets wrong ([see below](#pronunciation-overrides))
 - 🧩 **Optional custom model** using your own trained model (XTTSv2 only, other on request)
 - 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
      <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to the official preset list)</i>
@@ -155,6 +157,53 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
 
 **Check our other repo dedicated to add SML automatically in your ebook -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
+
+## Pronunciation Overrides
+
+XTTS and other multilingual models occasionally pronounce a word in the wrong language — typically English loanwords inside German text (e.g. *Captain*, *Ranger*, *Sergeant*) where the model flips between English, German and sometimes French between consecutive sentences. Pronunciation overrides let you force a fixed phonetic respelling so the same word is pronounced consistently every time.
+
+This feature is **fully optional** — when no overrides file is provided, the conversion behaves exactly as before. There are no built-in defaults; everything comes from the JSON file you supply.
+
+The overrides are applied during text flattening, before any other normalization step, as a whole-word substitution (`\b...\b`).
+
+**Two ways to provide the file:**
+
+1. **CLI (headless mode)** — pass `--pronunciation_overrides /path/to/file.json`:
+   ```bash
+   python app.py --headless \
+       --ebook /path/to/book.epub \
+       --language deu \
+       --voice /path/to/voice.wav \
+       --pronunciation_overrides /path/to/overrides.json
+   ```
+
+2. **Web UI** — upload the JSON file via *Upload Pronunciation Overrides (JSON)* under the voice section. The file is stored in the active voice directory for the session.
+
+**JSON format**
+
+Per language (recommended):
+```json
+{
+  "deu": {
+    "Captain": "Käpten",
+    "Ranger": "Rändscher",
+    "Sergeant": "Sardschent"
+  },
+  "eng": {
+    "Foo": "Fuu"
+  }
+}
+```
+
+Or a flat dict, applied regardless of language:
+```json
+{ "Captain": "Käpten", "Ranger": "Rändscher" }
+```
+
+**Notes**
+- Matching is **case-sensitive** and uses word boundaries — `"Captain"` does **not** match `"captain"` or `"Captains"`. Add separate entries for plural or lowercase forms.
+- Longest keys are applied first, so `"Sergeant Major"` is replaced before `"Major"`.
+- The phonetic spelling should use the orthography of the **target language**, not IPA. For German output, write `Käpten` (not `/ˈkæptən/`).
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
@@ -259,7 +308,7 @@ usage: app.py [-h] [--session SESSION] [--share] [--headless] [--ebook EBOOK] [-
               [--output_channel OUTPUT_CHANNEL] [--temperature TEMPERATURE] [--length_penalty LENGTH_PENALTY]
               [--num_beams NUM_BEAMS] [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K] [--top_p TOP_P]
               [--speed SPEED] [--enable_text_splitting] [--text_temp TEXT_TEMP] [--waveform_temp WAVEFORM_TEMP]
-              [--output_dir OUTPUT_DIR] [--version]
+              [--output_dir OUTPUT_DIR] [--pronunciation_overrides PRONUNCIATION_OVERRIDES] [--version]
 
 Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
 
@@ -334,6 +383,10 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --pronunciation_overrides PRONUNCIATION_OVERRIDES
+                        (Optional) Path to a JSON file with pronunciation overrides.
+                        Maps words to phonetic respellings to force a specific pronunciation.
+                        Format: { "deu": { "Captain": "Käpten" } } or a flat { "Captain": "Käpten" }.
   --version             Show the version of the script and exit
 
 Example usage:
