@@ -1,4 +1,4 @@
-import argparse, socket, shutil, multiprocessing, sys, uuid, copy, warnings
+import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warnings
 
 from pathlib import Path
 
@@ -219,8 +219,16 @@ SML tags available:
     headless_optional_group.add_argument(cli_options[28], action='store_true', help=argparse.SUPPRESS)
     headless_optional_group.add_argument(cli_options[29], action='store_true', help=argparse.SUPPRESS)
 
+    # Extra cli options not (yet) registered in lib.conf.cli_options.
+    # Move into cli_options at next refactor opportunity.
+    extra_cli_options = ['--voice-map']
+    headless_optional_group.add_argument('--voice-map', dest='voice_map', type=str, default=None,
+        help='''(Optional, --ebooks_dir only) Path to a JSON file mapping ebook path -> voice path.
+        Each entry overrides --voice for that specific ebook. Missing/null entries fall back to --voice.
+        Example: {"/abs/path/book1.epub": "/voices/eng/adult/female/alice.wav", "/abs/path/book2.epub": null}''')
+
     for arg in sys.argv:
-        if arg.startswith('--') and arg not in cli_options:
+        if arg.startswith('--') and arg not in cli_options and arg not in extra_cli_options:
             error = f'Error: Unrecognized option "{arg}"'
             print(error)
             sys.exit(1)
@@ -318,33 +326,61 @@ SML tags available:
                     if not os.path.exists(args['ebooks_dir']):
                         error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."                 
                     else:
-                        args['ebook_list'] = [
-                            os.path.abspath(os.path.join(args['ebooks_dir'], file))
-                            for file in os.listdir(args['ebooks_dir'])
-                        ]
-                        ebook_list = copy.deepcopy(args['ebook_list'])
-                        skipped_ebooks = []
-                        conversions_ran = 0
-                        for i, file in enumerate(ebook_list):
-                            if not any(file.endswith(ext) for ext in ebook_formats):
-                                warning_msg = f'{Path(file).name} has not a supported format! skipping'
-                                print(warning_msg)
-                                skipped_ebooks.append(file)
-                                if file in args['ebook_list']:
-                                    args['ebook_list'].remove(file)
-                                continue
-                            c.context.sessions[args['id']]['status'] = c.status_tags['READY']
-                            c.reset_ebook_session(args['id'], force=True, filter_keys=False)
-                            args['ebook_src'] = file
-                            progress_status, passed = c.convert_ebook(args)
-                            conversions_ran += 1
-                            if passed:
-                                args['ebook_list'].remove(file)
+                        # --- voice_map: load the optional per-file override map ---
+                        voice_map:dict = {}
+                        if args.get('voice_map'):
+                            voice_map_path = os.path.abspath(args['voice_map'])
+                            if not os.path.exists(voice_map_path):
+                                error = f'Error: The provided --voice-map {voice_map_path} does not exist.'
                             else:
-                                error = progress_status
-                                break
-                        if conversions_ran == 0:
-                            error = 'Error: No supported ebook files found in --ebooks_dir.'
+                                try:
+                                    with open(voice_map_path, 'r', encoding='utf-8') as f:
+                                        raw = json.load(f)
+                                    if not isinstance(raw, dict):
+                                        error = 'Error: --voice-map JSON must be an object {ebook_path: voice_path}.'
+                                    else:
+                                        voice_map = {
+                                            os.path.abspath(k): (os.path.abspath(v) if v else None)
+                                            for k, v in raw.items()
+                                        }
+                                except Exception as e:
+                                    error = f'Error: Failed to parse --voice-map: {e}'
+                        if error is None:
+                            # Persist the map onto the session so resolve_voice() can read it.
+                            c.context.sessions[args['id']]['voice_map'] = voice_map
+                            default_voice = args.get('voice')
+                            # Filter and sort upfront: ebook_list becomes the authoritative to-process set.
+                            # sorted() gives reproducible ordering across Linux/macOS/Windows.
+                            all_entries = sorted(os.listdir(args['ebooks_dir']))
+                            args['ebook_list'] = []
+                            for name in all_entries:
+                                abs_path = os.path.abspath(os.path.join(args['ebooks_dir'], name))
+                                if not os.path.isfile(abs_path):
+                                    continue
+                                if not any(name.endswith(ext) for ext in ebook_formats):
+                                    print(f'{name} skipped (unsupported format)')
+                                    continue
+                                args['ebook_list'].append(abs_path)
+                            if not args['ebook_list']:
+                                error = 'Error: No supported ebook files found in --ebooks_dir.'
+                            else:
+                                ebook_list = copy.deepcopy(args['ebook_list'])
+                                for file in ebook_list:
+                                    c.context.sessions[args['id']]['status'] = c.status_tags['READY']
+                                    c.reset_ebook_session(args['id'], force=True, filter_keys=False)
+                                    args['ebook_src'] = file
+                                    # Per-file voice resolution: abs-path override -> basename override -> default
+                                    override = voice_map.get(file) or voice_map.get(os.path.basename(file))
+                                    if override and not os.path.exists(override):
+                                        print(f'--voice-map: override for {Path(file).name} ({override}) not found, falling back to --voice')
+                                        override = None
+                                    args['voice'] = override or default_voice
+                                    progress_status, passed = c.convert_ebook(args)
+                                    if passed:
+                                        args['ebook_list'].remove(file)
+                                    else:
+                                        error = progress_status
+                                        break
                 elif args.get('ebook', None) is not None:
                     args['ebook_mode'] = 'single'
                     args['ebook_src'] = os.path.abspath(args['ebook'])
