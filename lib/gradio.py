@@ -344,7 +344,22 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_ebook_src table.file-preview tbody > tr.file:hover {
                     background: var(--color-accent-soft) !important;
                 }
-
+                #gr_voice_selected_filename {
+                    display: flex !important;
+                    align-items: center;
+                    padding: 0 8px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    width: 100%;
+                    height: 100%;
+                }
+                #gr_voice_selected_filename p {
+                    margin: auto !important;
+                    vertical-align: middle;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
                 }               
