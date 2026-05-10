@@ -627,7 +627,11 @@ if defined CURRENT_ENV (
 if /i "%CONDA_DEFAULT_ENV%"=="base" (
 	call conda deactivate >nul 2>&1
 )
-if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
+	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+		echo Detected incomplete %PYTHON_ENV% — removing and recreating...
+		rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+	)
 	setlocal enabledelayedexpansion
 	echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION%...
 	call "%CONDA_HOME%\Scripts\activate.bat"
@@ -642,6 +646,8 @@ if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
 	if errorlevel 1 (endlocal & exit /b 1)
 	call :install_python_packages
 	if errorlevel 1 (endlocal & exit /b 1)
+	:: All installs succeeded — mark env as fully provisioned.
+	echo %APP_VERSION% > "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned"
 	endlocal
 )
 exit /b 0
