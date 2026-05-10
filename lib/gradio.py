@@ -344,6 +344,22 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_ebook_src table.file-preview tbody > tr.file:hover {
                     background: var(--color-accent-soft) !important;
                 }
+                /* Filename label rendered beside the voice dropdown */
+                #gr_voice_selected_filename {
+                    display: flex !important;
+                    align-items: center;
+                    font-style: italic;
+                    color: var(--color-accent);
+                    padding: 0 8px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                #gr_voice_selected_filename p {
+                    margin: 0 !important;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
                 }               
@@ -637,6 +653,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
                                         gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                         gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
+                                        gr_voice_selected_filename = gr.Markdown(value='', elem_id='gr_voice_selected_filename', elem_classes=['gr-voice-selected-filename'], visible=False)
                                         gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
                                     gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
@@ -1246,12 +1263,12 @@ def build_interface(args:dict)->gr.Blocks:
                 return bool(session.get('ebook_selected'))
 
             def change_gr_ebook_src(session_id:str, ebook_mode:str, data:any)->tuple:
-                # Returns (modal_update, voice_highlight_css_update, voice_list_update, voice_player_row_update)
+                # Returns (modal_update, voice_highlight_css_update, voice_list_update, voice_player_row_update, selected_filename_update)
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if (session.get('ebook_src') == data and ebook_mode == ebook_modes['SINGLE']) or (session.get('ebook_list') == data and ebook_mode == ebook_modes['DIRECTORY']):
-                            return gr.update(), gr.update(), gr.update(), gr.update()
+                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                         if ebook_mode == ebook_modes['SINGLE']:
                             session['ebook_src'] = data
                             # since ebook_textarea override ebook_src during the conversion
@@ -1276,7 +1293,13 @@ def build_interface(args:dict)->gr.Blocks:
                                     session['cancellation_requested'] = True
                                 else:
                                     session['cancellation_requested'] = False
-                                return gr.update(), gr.update(value=build_voice_highlight_css(new_row)), gr.update(), gr.update(visible=True)
+                                return (
+                                    gr.update(),
+                                    gr.update(value=build_voice_highlight_css(new_row)),
+                                    gr.update(),
+                                    gr.update(visible=True),
+                                    gr.update(value=Path(prev_selected).name, visible=True),
+                                )
                             else:
                                 # Either no prior selection, or the selected file was deleted.
                                 session['ebook_selected'] = None
@@ -1286,48 +1309,53 @@ def build_interface(args:dict)->gr.Blocks:
                                 if data is None and session.get('status', None) in [status_tags['EDIT'], status_tags['CONVERTING']]:
                                     session['cancellation_requested'] = True
                                     msg = 'Cancellation requested, please wait…'
-                                    return gr.update(value=show_gr_modal('wait', msg), visible=True), gr.update(value=''), voice_update, gr.update(visible=False)
+                                    return gr.update(value=show_gr_modal('wait', msg), visible=True), gr.update(value=''), voice_update, gr.update(visible=False), gr.update(value='', visible=False)
                                 session['cancellation_requested'] = False
-                                return gr.update(), gr.update(value=''), voice_update, gr.update(visible=False)
+                                return gr.update(), gr.update(value=''), voice_update, gr.update(visible=False), gr.update(value='', visible=False)
                         if data is None:
                             if session.get('status', None) in [status_tags['EDIT'], status_tags['CONVERTING']]:
                                 session['cancellation_requested'] = True
                                 msg = 'Cancellation requested, please wait…'
-                                return gr.update(value=show_gr_modal('wait', msg), visible=True), gr.update(value=''), gr.update(), gr.update()
+                                return gr.update(value=show_gr_modal('wait', msg), visible=True), gr.update(value=''), gr.update(), gr.update(), gr.update()
                         session['cancellation_requested'] = False
                 except Exception as e:
                     error = f'change_gr_ebook_src(): {e}'
                     exception_alert(session_id, error)
                 # Default fallback (SINGLE mode reaches here): no highlight, no dropdown change, row stays as-is.
-                return gr.update(), gr.update(value=''), gr.update(), gr.update()
+                return gr.update(), gr.update(value=''), gr.update(), gr.update(), gr.update()
 
             def select_gr_ebook_src(session_id:str, ebook_mode:str, evt:gr.SelectData)->tuple:
                 # Fired when the user clicks a row in gr_ebook_src (DIRECTORY mode only).
-                # Returns (voice_list_update, voice_highlight_css_update, voice_player_row_update)
+                # Returns (voice_list_update, voice_highlight_css_update, voice_player_row_update, selected_filename_update)
                 try:
                     session = context.get_session(session_id)
                     if not (session and session.get('id', False)):
-                        return gr.update(), gr.update(), gr.update()
+                        return gr.update(), gr.update(), gr.update(), gr.update()
                     if ebook_mode != ebook_modes['DIRECTORY'] or evt.index is None:
-                        return gr.update(), gr.update(value=''), gr.update()
+                        return gr.update(), gr.update(value=''), gr.update(), gr.update()
                     # evt.index can be int or (row, col) tuple — normalise.
                     row = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
                     ebook_list = session.get('ebook_list') or []
                     if not isinstance(ebook_list, list) or row < 0 or row >= len(ebook_list):
-                        return gr.update(), gr.update(value=''), gr.update()
+                        return gr.update(), gr.update(value=''), gr.update(), gr.update()
                     abs_path = os.path.abspath(ebook_list[row])
                     session['ebook_selected'] = abs_path
                     voice_map = session.get('voice_map') or {}
                     # Dense map: every file in the list has an explicit voice entry (set at directory load).
                     # Fall back to session['voice'] only if a key is missing (defensive — shouldn't happen).
                     assigned_voice = voice_map[abs_path] if abs_path in voice_map else session.get('voice')
-                    label = f'Voices — {Path(abs_path).name}'
                     style = build_voice_highlight_css(row)
-                    return gr.update(value=assigned_voice, label=label), gr.update(value=style), gr.update(visible=True)
+                    filename = Path(abs_path).name
+                    return (
+                        gr.update(value=assigned_voice, label='Voices'),
+                        gr.update(value=style),
+                        gr.update(visible=True),
+                        gr.update(value=filename, visible=True),
+                    )
                 except Exception as e:
                     error = f'select_gr_ebook_src(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_ebook_textarea(session_id:str, ebook_textarea:str)->None:
                 session = context.get_session(session_id)
@@ -1337,12 +1365,13 @@ def build_interface(args:dict)->gr.Blocks:
                 return
 
             def change_gr_ebook_mode(session_id:str, val:str)->tuple:
-                # Returns (ebook_src_update, ebook_textarea_update, convert_btn_update, voice_highlight_css_update, voice_player_row_update)
+                # Returns (ebook_src_update, ebook_textarea_update, convert_btn_update,
+                #          voice_highlight_css_update, voice_player_row_update, selected_filename_update)
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session.get('ebook_mode') == val:
-                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                         session['ebook_mode'] = val
                         # Per-file highlight + selection are DIRECTORY-only state.
                         css_update = gr.update() if val == ebook_modes['DIRECTORY'] else gr.update(value='')
@@ -1350,21 +1379,32 @@ def build_interface(args:dict)->gr.Blocks:
                             session['ebook_selected'] = None
                         # voice_player_row: visible in SINGLE/TEXT; in DIRECTORY only when a row is currently selected
                         row_visible = voice_player_visible(session)
+                        # Filename label: only meaningful in DIRECTORY with a selection
+                        if val == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
+                            filename_update = gr.update(value=Path(session['ebook_selected']).name, visible=True)
+                        else:
+                            filename_update = gr.update(value='', visible=False)
+                        # One-time hint when entering DIRECTORY mode — guide the user to the new per-file flow.
+                        if val == ebook_modes['DIRECTORY']:
+                            show_alert(session_id, {
+                                'type': 'info',
+                                'msg': 'Click on each file in the list to set its voice individually.'
+                            })
                         enabled_convert_btn = False
                         if val == ebook_modes['SINGLE']:
                             if session.get('ebook_src'):
                                 enabled_convert_btn = True
-                            return gr.update(visible=True, label='-', file_count=ebook_modes['SINGLE'], value=session['ebook_src']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn), css_update, gr.update(visible=row_visible)
+                            return gr.update(visible=True, label='-', file_count=ebook_modes['SINGLE'], value=session['ebook_src']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn), css_update, gr.update(visible=row_visible), filename_update
                         elif val == ebook_modes['DIRECTORY']:
                             if session.get('ebook_list'):
                                 enabled_convert_btn = True
-                            return gr.update(visible=True, label='-', file_count=ebook_modes['DIRECTORY'], value=session['ebook_list']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn), css_update, gr.update(visible=row_visible)
+                            return gr.update(visible=True, label='-', file_count=ebook_modes['DIRECTORY'], value=session['ebook_list']), gr.update(visible=False), gr.update(interactive=enabled_convert_btn), css_update, gr.update(visible=row_visible), filename_update
                         elif val == ebook_modes['TEXT']:
-                            return gr.update(visible=False), gr.update(visible=True, value=session['ebook_textarea']), gr.update(interactive=True), css_update, gr.update(visible=row_visible)
+                            return gr.update(visible=False), gr.update(visible=True, value=session['ebook_textarea']), gr.update(interactive=True), css_update, gr.update(visible=row_visible), filename_update
                 except Exception as e:
                     error = f'change_gr_ebook_mode(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_voice_file(session_id:str, f:str|None)->tuple:
                 try:
@@ -2644,7 +2684,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_src.change(
                     fn=change_gr_ebook_src,
                     inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
-                    outputs=[gr_modal, gr_voice_highlight_css, gr_voice_list, gr_row_voice_player],
+                    outputs=[gr_modal, gr_voice_highlight_css, gr_voice_list, gr_row_voice_player, gr_voice_selected_filename],
                     show_progress_on=[gr_ebook_src]
                 ),
                 always=True
@@ -2652,7 +2692,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_ebook_src.select(
                 fn=select_gr_ebook_src,
                 inputs=[gr_session, gr_ebook_mode],
-                outputs=[gr_voice_list, gr_voice_highlight_css, gr_row_voice_player],
+                outputs=[gr_voice_list, gr_voice_highlight_css, gr_row_voice_player, gr_voice_selected_filename],
                 show_progress='hidden'
             )
             gr_ebook_textarea.change(
@@ -2663,7 +2703,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_ebook_mode.change(
                 fn=change_gr_ebook_mode,
                 inputs=[gr_session, gr_ebook_mode],
-                outputs=[gr_ebook_src, gr_ebook_textarea, gr_convert_btn, gr_voice_highlight_css, gr_row_voice_player],
+                outputs=[gr_ebook_src, gr_ebook_textarea, gr_convert_btn, gr_voice_highlight_css, gr_row_voice_player, gr_voice_selected_filename],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=None,
