@@ -346,6 +346,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_voice_selected_filename {
                     display: flex !important;
                     align-items: center !important;
+                    margin: auto !important;
                     overflow: hidden !important;
                     text-overflow: ellipsis !important;
                     white-space: nowrap !important;
