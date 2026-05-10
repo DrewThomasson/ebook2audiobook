@@ -180,6 +180,8 @@ class SessionContext:
             "language_iso1": None,
             "voice": None,
             "voice_dir": None,
+            "voice_map": {},                # per-file voice override map (DIRECTORY mode); abs_path -> voice_path|None
+            "ebook_selected": None,         # abs_path of currently-clicked file in DIRECTORY mode (UI-only)
             "custom_model": None,
             "custom_model_dir": None,
             "output_dir": None,
@@ -3037,6 +3039,24 @@ def get_compatible_tts_engines(language:str)->list[str]:
         for engine, cfg in default_engine_settings.items()
         if language in cfg.get('languages', {})
     ]
+
+def resolve_voice(session_id:str, ebook_src:str)->str|None:
+    """
+    Returns the voice to use for a given ebook in DIRECTORY mode.
+    Lookup order: voice_map[abs(ebook_src)] -> voice_map[basename] -> session['voice'] -> None.
+    Voice file existence is checked; missing overrides fall through to the default.
+    """
+    session = context.get_session(session_id)
+    if not session:
+        return None
+    if not ebook_src:
+        return session.get('voice')
+    voice_map = session.get('voice_map') or {}
+    abs_src = os.path.abspath(ebook_src)
+    override = voice_map.get(abs_src) or voice_map.get(os.path.basename(ebook_src))
+    if override and os.path.exists(override):
+        return override
+    return session.get('voice')
 
 def convert_ebook(args:dict)->tuple:
     try:
