@@ -1067,6 +1067,7 @@ def build_interface(args:dict)->gr.Blocks:
                         ebook_data = None
                         ebook_textarea = None
                         upload_mode = session['ebook_mode']
+                        ebook_file_count = ebook_modes['SINGLE']
                         visible_ebook_src = False
                         visible_ebook_textarea = False
                         enabled_convert_btn = False
@@ -1075,6 +1076,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_ebook_textarea = True
                             enabled_convert_btn = True
                         elif session.get('ebook_mode') == ebook_modes['DIRECTORY']:
+                            ebook_file_count = ebook_modes['DIRECTORY']
                             if session.get('ebook_list', None) is not None:
                                 if len(session['ebook_list']) > 0:
                                     ebook_data = [f for f in session['ebook_list'] if is_valid_gradio_cache(f)]
@@ -1095,7 +1097,7 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                         voice_file = session.get('voice')
                         return (
-                            gr.update(visible=visible_ebook_src, value=ebook_data),
+                            gr.update(visible=visible_ebook_src, value=ebook_data, file_count=ebook_file_count),
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                             gr.update(value=session['ebook_mode']),
                             gr.update(value=bool(session['blocks_preview'])),
