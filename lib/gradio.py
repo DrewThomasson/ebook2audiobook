@@ -625,6 +625,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr_group_voice_file:
                                     gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
                                     gr_voice_file = gr.File(show_label=False, label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
+                                    gr_pronunciation_overrides_file = gr.File(show_label=True, label='Upload Pronunciation Overrides (JSON)', elem_id='gr_pronunciation_overrides_file', file_types=['.json'], value=None, height=80)
                                     with gr.Row(elem_id='gr_row_voice_player') as gr_row_voice_player:
                                         gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
                                         gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
@@ -1305,6 +1306,35 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'change_gr_voice_file(): {e}'
                     exception_alert(session_id, error)
                 return gr.update()
+
+            def change_gr_pronunciation_overrides_file(session_id:str, f)->None:
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        if f is None:
+                            session['pronunciation_overrides'] = None
+                            return
+                        src_path = f.name if hasattr(f, 'name') else str(f)
+                        if not src_path.lower().endswith('.json'):
+                            show_alert(session_id, {'type': 'warning', 'msg': 'Pronunciation overrides file must be .json'})
+                            return
+                        try:
+                            with open(src_path, 'r', encoding='utf-8') as fh:
+                                import json as _json
+                                _json.load(fh)
+                        except Exception as e:
+                            show_alert(session_id, {'type': 'warning', 'msg': f'Invalid JSON: {e}'})
+                            return
+                        dst_dir = session.get('voice_dir') or os.path.dirname(src_path)
+                        os.makedirs(dst_dir, exist_ok=True)
+                        dst_path = os.path.join(dst_dir, 'pronunciation_overrides.json')
+                        import shutil as _shutil
+                        _shutil.copyfile(src_path, dst_path)
+                        session['pronunciation_overrides'] = dst_path
+                        show_alert(session_id, {'type': 'success', 'msg': 'Pronunciation overrides loaded'})
+                except Exception as e:
+                    error = f'change_gr_pronunciation_overrides_file(): {e}'
+                    exception_alert(session_id, error)
 
             def change_gr_voice_list(session_id:str, selected:str|None)->tuple:
                 try:
@@ -2572,6 +2602,12 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=outputs_on_voice_upload,
                 show_progress_on=[gr_voice_list]
+            )
+
+            gr_pronunciation_overrides_file.change(
+                fn=change_gr_pronunciation_overrides_file,
+                inputs=[gr_session, gr_pronunciation_overrides_file],
+                outputs=None
             )
             gr_voice_list.change(
                 fn=change_gr_voice_list,

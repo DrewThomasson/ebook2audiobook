@@ -215,6 +215,9 @@ SML tags available:
     headless_optional_group.add_argument(cli_options[25], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model. 
     Default to config.json model.""")
     headless_optional_group.add_argument(cli_options[26], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
+    headless_optional_group.add_argument(cli_options[30], type=str, default=None, help=f'''(Optional) Path to a JSON file with pronunciation overrides.
+Maps words to phonetic respellings to force a specific pronunciation.
+Format: {{ "deu": {{ "Captain": "Käpten" }} }} or a flat {{ "Captain": "Käpten" }}.''')
     headless_optional_group.add_argument(cli_options[27], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
     headless_optional_group.add_argument(cli_options[28], action='store_true', help=argparse.SUPPRESS)
     headless_optional_group.add_argument(cli_options[29], action='store_true', help=argparse.SUPPRESS)
