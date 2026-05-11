@@ -64,15 +64,24 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.cleanup_memory()
             engine = loaded_tts.get(self.tts_key)
             if not engine:
-                #if self.session['custom_model'] is not None:
-                #    error = f"{self.session['tts_engine']} custom model not implemented yet!"
-                #    raise NotImplementedError(error)
-                self.tts_key = self.model_path
-                try:
-                    engine = self._load_api(self.tts_key, self.model_path, self.device)
-                except Exception as e:
-                    error = 'load_engine(): _load_api() failed'
-                    raise RuntimeError(error) from e
+                if self.session['custom_model'] is not None:
+                    try:
+                        files = default_engine_settings[self.session['tts_engine']]['files']
+                        custom_dir = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'])
+                        config_path = os.path.join(custom_dir, files[0])
+                        checkpoint_path = os.path.join(custom_dir, files[1])
+                        self.tts_key = f'{self.session["tts_engine"]}-{self.session["custom_model"]}'
+                        engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
+                    except Exception as e:
+                        error = f'load_engine(): custom checkpoint loading failed: {e}'
+                        raise RuntimeError(error) from e
+                else:
+                    self.tts_key = self.model_path
+                    try:
+                        engine = self._load_api(self.tts_key, self.model_path, self.device)
+                    except Exception as e:
+                        error = 'load_engine(): _load_api() failed'
+                        raise RuntimeError(error) from e
             if engine:
                 msg = f'TTS {self.tts_key} Loaded!'
                 print(msg)
@@ -128,12 +137,13 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                             part = part[:-1]
                         #part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         speaker_argument = {}
-                        if self.language == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
-                            if self.language in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
-                                speaker_argument = {"speaker": "p262"}
-                        elif self.language == 'cat' and 'custom/vits' in self.models['internal']['sub']:
-                            if self.language in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
-                                speaker_argument = {"speaker": "09901"}
+                        if not self.session.get('custom_model'):
+                            if self.language == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
+                                if self.language in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
+                                    speaker_argument = {"speaker": "p262"}
+                            elif self.language == 'cat' and 'custom/vits' in self.models['internal']['sub']:
+                                if self.language in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
+                                    speaker_argument = {"speaker": "09901"}
                         if use_zs:
                             tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                             tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')

@@ -45,7 +45,10 @@ set "SCRIPT_MODE=%NATIVE%"
 set "APP_NAME=ebook2audiobook"
 set /p APP_VERSION=<"%SAFE_SCRIPT_DIR%\VERSION.txt"
 set "APP_FILE=%APP_NAME%.cmd"
-set "OS_LANG=%LANG%" & if "%OS_LANG%"=="" set "OS_LANG=en" & call set "OS_LANG=%%OS_LANG:~0,2%%"
+set "OS_LANG="
+for /f "skip=1 tokens=3" %%A in ('reg query "HKCU\Control Panel\International" /v LocaleName 2^>nul') do set "OS_LANG=%%A"
+if defined OS_LANG set "OS_LANG=%OS_LANG:~0,2%"
+if not defined OS_LANG set "OS_LANG=en"
 set "TEST_HOST=127.0.0.1"
 set "TEST_PORT=7860"
 set "ICON_PATH=%SAFE_SCRIPT_DIR%\tools\icons\windows\appIcon.ico"
@@ -74,6 +77,7 @@ set "DOCKER_DEVICE_STR="
 set "DEVICE_INFO_STR="
 set "TMP=%SAFE_SCRIPT_DIR%\run"
 set "TEMP=%SAFE_SCRIPT_DIR%\run"
+if not exist "%TMP%" mkdir "%TMP%" >nul 2>&1
 set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
 set "SCOOP_HOME=%SAFE_USERPROFILE%\scoop"
@@ -85,9 +89,10 @@ set "CONDA_PATH=%CONDA_HOME%\condabin"
 set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
+set "TESSDATA_BASE_URL=https://github.com/tesseract-ocr/tessdata_best/raw/main"
 set "FFMPEG_BIN=%USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
 set "FFMPEG_VARIANT=none"
-set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
+set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
@@ -523,6 +528,14 @@ if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 )
 goto :restart_script
 
+:download_tessdata
+setlocal
+set "_LANG=%~1"
+set "_DEST=%~2"
+"%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%TESSDATA_BASE_URL%/%_LANG%.traineddata' -OutFile '%_DEST%\%_LANG%.traineddata' -ErrorAction Stop"
+set "RC=%errorlevel%"
+endlocal & exit /b %RC%
+
 :install_programs
 echo Installing missing programs…
 setlocal EnableDelayedExpansion
@@ -537,7 +550,7 @@ for %%p in (%missing_prog_array%) do (
 			set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
 			if not exist "!tessdata!" mkdir "!tessdata!"
 			if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
-				call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri 'https://github.com/tesseract-ocr/tessdata_best/raw/main/!ISO3_LANG!.traineddata' -OutFile '!tessdata!\!ISO3_LANG!.traineddata' -ErrorAction Stop" || goto :failed
+				call :download_tessdata "!ISO3_LANG!" "!tessdata!" || goto :failed
 			)
 			if exist "!tessdata!\!ISO3_LANG!.traineddata" (
 				echo Tesseract OCR language !ISO3_LANG! installed in !tessdata!
@@ -596,54 +609,72 @@ goto :main
 :check_conda
 where.exe /Q conda
 if errorlevel 1 (
-    echo Miniforge3 is not installed.
-    exit /b 1
+	echo Conda is not installed.
+	exit /b 1
 )
+set "DETECTED_BASE="
+for /f "usebackq delims=" %%B in (`conda info --base 2^>nul`) do set "DETECTED_BASE=%%B"
+if not defined DETECTED_BASE (
+	echo Failed to query 'conda info --base'; aborting.
+	exit /b 3
+)
+set "CONDA_HOME=%DETECTED_BASE%"
+set "CONDA_PATH=%DETECTED_BASE%\condabin"
+set "CONDA_ENV=%DETECTED_BASE%\condabin\conda.bat"
+set "PATH=%CONDA_PATH%;%PATH%"
+set "CURRENT_ENV="
 if defined CONDA_DEFAULT_ENV (
-    set "CURRENT_ENV=%CONDA_PREFIX%"
+	if /i not "%CONDA_DEFAULT_ENV%"=="base" (
+		set "CURRENT_ENV=%CONDA_PREFIX%"
+	)
 )
 if defined VIRTUAL_ENV (
-    set "CURRENT_ENV=%VIRTUAL_ENV%"
+	set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
-for /f "delims=" %%i in ('where.exe python 2^>nul') do (
-    if defined CONDA_PREFIX (
-        if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-            set "CURRENT_ENV=%CONDA_PREFIX%"
-            break
-        )
-    ) else if defined VIRTUAL_ENV (
-        if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-            set "CURRENT_ENV=%VIRTUAL_ENV%"
-            break
-        )
-    )
+if defined CURRENT_ENV (
+	echo Current python virtual environment detected: %CURRENT_ENV%.
+	echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+	exit /b 2
 )
-if "%CURRENT_ENV%"=="" (
-    if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-        setlocal enabledelayedexpansion
-        echo Creating ./python_env version %PYTHON_VERSION%...
-        call "%CONDA_HOME%\Scripts\activate.bat"
-        call conda update -n base -c conda-forge conda -y
-        call conda update --all -y
-        call conda clean --index-cache -y
-        call conda clean --packages --tarballs -y
-        call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% pip -y
-        rem call conda activate base
-        call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-        call :check_device_info %SCRIPT_MODE%
-        if errorlevel 1 (endlocal & exit /b 1)
-        call :install_device_packages "!DEVICE_INFO_STR!"
-        if errorlevel 1 (endlocal & exit /b 1)
-        call :install_python_packages
-        if errorlevel 1 (endlocal & exit /b 1)
-        endlocal
-    )
-) else (
-    echo Current python virtual environment detected: %CURRENT_ENV%.
-    echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-    exit /b 2
+if /i "%CONDA_DEFAULT_ENV%"=="base" (
+	call conda deactivate >nul 2>&1
+)
+if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
+	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+		echo Detected incomplete %PYTHON_ENV% — removing and recreating...
+		rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+	)
+	echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION%...
+	call "%CONDA_HOME%\Scripts\activate.bat"
+	call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" -c conda-forge python=%PYTHON_VERSION% pip -y
+	if errorlevel 1 exit /b 3
+	call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+	call :provision_env
+	if errorlevel 1 exit /b 3
+	> "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" echo %APP_VERSION%
 )
 exit /b 0
+
+:provision_env
+setlocal enabledelayedexpansion
+set "RC=0"
+call :check_device_info %SCRIPT_MODE%
+if errorlevel 1 (
+	set "RC=1"
+	goto :provision_env_end
+)
+call :install_device_packages
+if errorlevel 1 (
+	set "RC=1"
+	goto :provision_env_end
+)
+call :install_python_packages
+if errorlevel 1 (
+	set "RC=1"
+	goto :provision_env_end
+)
+:provision_env_end
+endlocal & exit /b %RC%
 
 :check_wsl
 where.exe /Q wsl
@@ -746,16 +777,15 @@ if "!JSON_VALUE!"=="" (
 endlocal & set "DEVICE_TAG=%JSON_VALUE%"
 exit /b 0
 
+:install_device_packages
+"%PS_EXE%" %PS_ARGS% -Command ^
+"python -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
+exit /b %errorlevel%
+
 :install_python_packages
 echo Installing python dependencies…
 "%PS_EXE%" %PS_ARGS% -Command ^
 "python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
-exit /b %errorlevel%
-
-:install_device_packages
-set "arg=%~1"
-"%PS_EXE%" %PS_ARGS% -Command ^
-"python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(r'%arg%'))\""
 exit /b %errorlevel%
 
 :check_sitecustomized
@@ -999,6 +1029,7 @@ if defined arguments.help (
 		call :check_programs
 		if errorlevel 1 goto :install_programs
 		call :check_conda
+		if errorlevel 3 goto :failed
 		if errorlevel 2 goto :eof
 		if errorlevel 1 goto :install_conda
         call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
