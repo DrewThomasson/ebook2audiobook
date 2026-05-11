@@ -2088,10 +2088,11 @@ def build_interface(args:dict)->gr.Blocks:
                                                 "type": "warning",
                                                 "msg": f'{Path(skipped).name} has not a supported format! skipping'
                                             })
-                                        ebook_list = copy.deepcopy(clean_list)
-                                        while ebook_list:
-                                            file = ebook_list.pop(0)
-                                            args['ebook_list'] = ebook_list
+                                        ebook_list_full = copy.deepcopy(clean_list)
+                                        args['ebook_list'] = ebook_list_full
+                                        queue = list(ebook_list_full)
+                                        while queue:
+                                            file = queue.pop(0)
                                             args['ebook_src'] = file
                                             abs_file = os.path.abspath(file)
                                             if abs_file in voice_map:
@@ -2114,7 +2115,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             else:
                                                 error = progress_status
                                                 break
-                                        args['ebook_list'] = ebook_list
                             elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
