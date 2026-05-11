@@ -3582,8 +3582,6 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
-        "ebook_selected": None,
-        "voice_map": {},
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
