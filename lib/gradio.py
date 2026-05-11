@@ -1333,7 +1333,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if ebook_mode != ebook_modes['DIRECTORY'] or evt.index is None:
                         return gr.update(), gr.update(value=''), gr.update(), gr.update()
                     if session.get('status') != status_tags['READY']:
-                        return gr.update(value=build_voice_highlight_css(None)), gr.update(), gr.update(visible=False), gr.update()
+                        return gr.update(), gr.update(), gr.update(), gr.update()
                     # evt.index can be int or (row, col) tuple — normalise.
                     row = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
                     ebook_list = session.get('ebook_list') or []
@@ -1354,7 +1354,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'select_gr_ebook_src(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update(), gr.update(), gr.update()
+                    return gr.update(), gr.update(), gr.update(), gr.update()
 
             def change_gr_ebook_textarea(session_id:str, ebook_textarea:str)->None:
                 session = context.get_session(session_id)
