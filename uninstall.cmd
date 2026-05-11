@@ -16,6 +16,9 @@ set "INSTALLED_LOG=%SCRIPT_DIR%\.installed"
 
 set "CONDA_HOME=%USERPROFILE%\Miniforge3"
 set "CONDA_PATH=%CONDA_HOME%\condabin"
+
+:: Honor SCOOP env var if set, otherwise default user-install location
+if defined SCOOP (set "SCOOP_HOME=%SCOOP%") else (set "SCOOP_HOME=%USERPROFILE%\scoop")
 :: ========================================================
 
 echo ========================================================
@@ -49,10 +52,12 @@ tasklist | find /i "%APP_NAME%.exe" >nul && (
 :: PROCESS .installed (CONTROLLED REMOVAL)
 :: ========================================================
 set "REMOVE_CONDA="
+set "REMOVE_SCOOP="
 
 if exist "%INSTALLED_LOG%" (
 	for /f "usebackq delims=" %%A in ("%INSTALLED_LOG%") do (
 		if /i "%%A"=="Miniforge3" set "REMOVE_CONDA=1"
+		if /i "%%A"=="Scoop"      set "REMOVE_SCOOP=1"
 	)
 )
 
@@ -72,6 +77,16 @@ if defined REMOVE_CONDA (
 if defined REMOVE_CONDA if exist "%CONDA_HOME%" (
 	echo %CONDA_HOME%
 	rd /s /q "%CONDA_HOME%" >nul 2>&1
+)
+
+:: ========================================================
+:: REMOVE SCOOP (USER INSTALL)
+:: - scoop 'current' folders are junctions
+:: - rd /s /q removes the junction, not the target
+:: ========================================================
+if defined REMOVE_SCOOP if exist "%SCOOP_HOME%" (
+	echo %SCOOP_HOME%
+	rd /s /q "%SCOOP_HOME%" >nul 2>&1
 )
 
 :: ========================================================
