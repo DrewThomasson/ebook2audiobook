@@ -1858,7 +1858,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_custom_model = supports_custom and session['fine_tuned'] == 'internal'
                             if supports_custom:
                                 file_label = f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"
-                                file_label += ' <a href=''>Fine Tune my own model</a>'
+                                file_label += ' <a href="" target="_blank">Fine Tune My Own Model</a>'
                                 custom_model_list_update = update_gr_custom_model_list(session_id)
                                 custom_model_label_value = f"My {session['tts_engine']} Custom Models"
                             else:
