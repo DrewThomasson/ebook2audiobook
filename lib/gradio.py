@@ -1451,7 +1451,6 @@ def build_interface(args:dict)->gr.Blocks:
                             voice_map = dict(session.get('voice_map') or {})
                             voice_map[session['ebook_selected']] = new_voice
                             session['voice_map'] = voice_map
-                            print(f'---------------------{voice_map}---------------')
                         else:
                             session['voice'] = new_voice
                         visible_voice_buttons = new_voice is not None
