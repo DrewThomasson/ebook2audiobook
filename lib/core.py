@@ -3520,6 +3520,8 @@ def finalize_audiobook(session_id:str)->tuple:
         else:
             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                 session['ebook_list'] = None
+                session['voice_map'] = {}
+                session['ebook_selected'] = None
             elif session['ebook_mode'] == ebook_modes['SINGLE']:
                 session['ebook_src'] = None
             elif session['ebook_mode'] == ebook_modes['TEXT']:
