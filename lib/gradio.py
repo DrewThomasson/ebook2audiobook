@@ -343,11 +343,11 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_ebook_src table.file-preview tbody > tr.file:hover {
                     background: var(--color-accent-soft) !important;
                 }
-                #gr_voice_selected_filename {
+                #gr_voice_selected_filename, #gr_custom_model_train_link {
                     display: flex !important;
                     align-items: center !important;
                     margin: auto !important;
-                    padding-left: 6px;
+                    padding-left: 6px !important;
                     overflow: hidden !important;
                     text-overflow: ellipsis !important;
                     white-space: nowrap !important;
@@ -355,7 +355,7 @@ def build_interface(args:dict)->gr.Blocks:
                     width: 100% !important;
                     height: 100% !important;
                 }
-                #gr_voice_selected_filename p {
+                #gr_voice_selected_filename p, #gr_custom_model_train_link p {
                     margin: auto !important;
                     vertical-align: middle !important;
                     overflow: hidden !important;
@@ -363,6 +363,9 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                     width: 100% !important;
                     height: 100% !important;
+                }
+                #gr_voice_selected_filename a, #gr_custom_model_train_link a {
+                    text-decoration: none !important;
                 }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
@@ -670,10 +673,11 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_group_custom_model = gr.Group(visible=False)
                                     with gr_group_custom_model:
                                         gr_custom_model_label = gr.Textbox(label='', elem_id='gr_custom_model_label', elem_classes=['gr-label'], interactive=False)
-                                        gr_custom_model_file = gr.File(show_label=True, label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
+                                        gr_custom_model_file = gr.File(show_label=True, label=f"Upload a ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
                                         gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
                                         with gr_row_custom_model_list:
                                             gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
+                                            gr_custom_model_train_link = gr.Markdown(value='<a href="https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu" target="_blank" rel="noopener noreferrer">Create My Own Model</a>', elem_id='gr_custom_model_train_link', elem_classes=['gr-markdown'], visible=True)
                                             gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 with gr.Group(elem_id='gr_group_output_format'):
                                     gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value='Output')
@@ -1081,7 +1085,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(22)])
+                            outputs = tuple([gr.update() for _ in range(23)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1103,7 +1107,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     enabled_convert_btn = True
                                 else:
                                     ebook_data = None
-                                visible_ebook_src = True
+                            visible_ebook_src = True
                         elif session.get('ebook_mode') == ebook_modes['SINGLE']:
                             if is_valid_gradio_cache(session['ebook_src']):
                                 ebook_data = session['ebook_src']
@@ -1137,12 +1141,13 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=voice_file),
                             gr.update(visible=visible_voice_buttons),
                             gr.update(visible=visible_voice_buttons),
+                            gr.update(label=f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
                             gr.update(visible=visible_custom_model_del_btn)
                         )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(22)])
+                outputs = tuple([gr.update() for _ in range(23)])
                 return outputs
 
             def restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -1857,7 +1862,7 @@ def build_interface(args:dict)->gr.Blocks:
                             supports_custom = session['tts_engine'] in tts_engines_with_custom_model
                             visible_custom_model = supports_custom and session['fine_tuned'] == 'internal'
                             if supports_custom:
-                                file_label = f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"
+                                file_label = f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"
                                 custom_model_list_update = update_gr_custom_model_list(session_id)
                                 custom_model_label_value = f"My {session['tts_engine']} Custom Models"
                             else:
@@ -2655,7 +2660,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
-                gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn
+                gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn
             ]
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
