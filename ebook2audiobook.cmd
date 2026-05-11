@@ -649,15 +649,32 @@ if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 	call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" -c conda-forge python=%PYTHON_VERSION% pip -y
 	if errorlevel 1 exit /b 3
 	call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-	call :check_device_info %SCRIPT_MODE%
+	call :provision_env
 	if errorlevel 1 exit /b 3
-	call :install_device_packages "%DEVICE_INFO_STR%"
-	if errorlevel 1 exit /b 3
-	call :install_python_packages
-	if errorlevel 1 exit /b 3
-	echo %APP_VERSION%>"%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned"
+	> "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" echo %APP_VERSION%
 )
 exit /b 0
+
+:provision_env
+setlocal enabledelayedexpansion
+set "RC=0"
+call :check_device_info %SCRIPT_MODE%
+if errorlevel 1 (
+	set "RC=1"
+	goto :provision_env_end
+)
+call :install_device_packages "!DEVICE_INFO_STR!"
+if errorlevel 1 (
+	set "RC=1"
+	goto :provision_env_end
+)
+call :install_python_packages
+if errorlevel 1 (
+	set "RC=1"
+	goto :provision_env_end
+)
+:provision_env_end
+endlocal & exit /b %RC%
 
 :check_wsl
 where.exe /Q wsl
