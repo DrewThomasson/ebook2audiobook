@@ -2092,15 +2092,20 @@ def build_interface(args:dict)->gr.Blocks:
                                             args['ebook_list'] = ebook_list
                                             args['ebook_src'] = file
                                             abs_file = os.path.abspath(file)
-                                            override = voice_map.get(abs_file) or voice_map.get(os.path.basename(file))
-                                            if override and not os.path.exists(override):
+                                            if abs_file in voice_map:
+                                                override = voice_map[abs_file]
+                                            elif os.path.basename(file) in voice_map:
+                                                override = voice_map[os.path.basename(file)]
+                                            else:
+                                                override = default_voice
+                                            if override is not None and not os.path.exists(override):
                                                 msg = f'Voice override for {Path(file).name} not found, using default.'
                                                 show_alert(session_id, {
                                                     "type": "warning",
                                                     "msg": msg
                                                 })
-                                                override = None
-                                            args['voice'] = override or default_voice
+                                                override = default_voice
+                                            args['voice'] = override
                                             progress_status, passed = convert_ebook(args)
                                             if passed:
                                                 return gr.update(value=progress_status)
