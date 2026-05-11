@@ -663,7 +663,7 @@ if errorlevel 1 (
 	set "RC=1"
 	goto :provision_env_end
 )
-call :install_device_packages "!DEVICE_INFO_STR!"
+call :install_device_packages
 if errorlevel 1 (
 	set "RC=1"
 	goto :provision_env_end
