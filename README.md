@@ -268,13 +268,8 @@ options:
   --session SESSION     Session to resume the conversion in case of interruption, crash,
                             or reuse of custom models and custom cloning voices.
 
-**** The following options are for all modes:
-  Optional
-
 **** The following option are for gradio/gui mode only:
-  Optional
-
-  --share               Enable a public shareable Gradio link.
+  --share               (Optional) Enable a public shareable Gradio link.
 
 **** The following options are for --headless mode only:
   --headless            Run the script in headless mode
