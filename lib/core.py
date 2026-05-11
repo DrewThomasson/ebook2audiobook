@@ -364,10 +364,10 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
                 if file_info.is_dir():
                     continue
                 base_name = os.path.basename(file_name)
-                files_in_zip[base_name.lower()] = file_info.file_size
+                files_in_zip[base_name] = file_info.file_size
                 if file_info.file_size == 0:
-                    empty_files.add(base_name.lower())
-        required_files = [file.lower() for file in required_files]
+                    empty_files.add(base_name)
+        required_files = [file for file in required_files]
         missing_files = [f for f in required_files if f not in files_in_zip]
         required_empty_files = [f for f in required_files if f in empty_files]
         if missing_files:
@@ -3102,7 +3102,6 @@ def convert_ebook(args:dict)->tuple:
                 session['ebook_textarea'] = args['ebook_textarea']
                 session['ebook_src'] = text_filepath
             else:
-                session['ebook_list'] = args.get('ebook_list', None)
                 if args.get('ebook_src'):
                     if not os.path.splitext(args['ebook_src'])[1]:
                         error = f"{args['ebook_src']} needs a format extension."
@@ -3119,7 +3118,7 @@ def convert_ebook(args:dict)->tuple:
             session['language'] = str(args['language'])
             session['language_iso1'] = str(args['language_iso1'])
             session['tts_engine'] = str(args['tts_engine']) if args.get('tts_engine') is not None else str(get_compatible_tts_engines(args['language'])[0])
-            session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if args['custom_model'] is not None else None
+            session['custom_model'] =  args['custom_model']
             session['fine_tuned'] = str(args['fine_tuned'])
             session['voice'] = args.get('voice', None)
             session['xtts_temperature'] =  float(args['xtts_temperature'])
