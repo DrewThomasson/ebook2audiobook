@@ -663,7 +663,6 @@ if errorlevel 1 (
 	set "RC=1"
 	goto :provision_env_end
 )
-echo DEBUG: DEVICE_INFO_STR=[!DEVICE_INFO_STR!]
 call :install_device_packages
 if errorlevel 1 (
 	set "RC=1"
@@ -785,9 +784,8 @@ echo Installing python dependencies…
 exit /b %errorlevel%
 
 :install_device_packages
-set "arg=%~1"
 "%PS_EXE%" %PS_ARGS% -Command ^
-"python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(r'%arg%'))\""
+"python -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
 exit /b %errorlevel%
 
 :check_sitecustomized
