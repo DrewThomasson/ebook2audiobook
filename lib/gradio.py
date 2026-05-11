@@ -2077,6 +2077,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if isinstance(args['ebook_list'], list):
                                         default_voice = args.get('voice')
                                         voice_map = dict(session.get('voice_map') or {})
+                                        print(f'-------------------{voice_map.values()}----------------')
                                         clean_list = sorted([
                                             f for f in args['ebook_list']
                                             if any(f.endswith(ext) for ext in ebook_formats)
