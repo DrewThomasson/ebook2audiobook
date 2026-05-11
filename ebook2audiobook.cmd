@@ -612,7 +612,6 @@ if errorlevel 1 (
 	echo Conda is not installed.
 	exit /b 1
 )
-
 set "DETECTED_BASE="
 for /f "usebackq delims=" %%B in (`conda info --base 2^>nul`) do set "DETECTED_BASE=%%B"
 if not defined DETECTED_BASE (
@@ -624,7 +623,6 @@ set "CONDA_HOME=%DETECTED_BASE%"
 set "CONDA_PATH=%DETECTED_BASE%\condabin"
 set "CONDA_ENV=%DETECTED_BASE%\condabin\conda.bat"
 set "PATH=%CONDA_PATH%;%PATH%"
-
 set "CURRENT_ENV="
 if defined CONDA_DEFAULT_ENV (
 	if /i not "%CONDA_DEFAULT_ENV%"=="base" (
@@ -639,11 +637,9 @@ if defined CURRENT_ENV (
 	echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
 	exit /b 2
 )
-
 if /i "%CONDA_DEFAULT_ENV%"=="base" (
 	call conda deactivate >nul 2>&1
 )
-
 if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
 		echo Detected incomplete %PYTHON_ENV% — removing and recreating...
@@ -662,13 +658,15 @@ exit /b 0
 
 :provision_env
 setlocal enabledelayedexpansion
+set "RC=0"
 call :check_device_info %SCRIPT_MODE%
-if errorlevel 1 (endlocal & exit /b 1)
+if errorlevel 1 set "RC=1" & goto :provision_env_end
 call :install_device_packages "!DEVICE_INFO_STR!"
-if errorlevel 1 (endlocal & exit /b 1)
+if errorlevel 1 set "RC=1" & goto :provision_env_end
 call :install_python_packages
-if errorlevel 1 (endlocal & exit /b 1)
-endlocal & exit /b 0
+if errorlevel 1 set "RC=1" & goto :provision_env_end
+:provision_env_end
+endlocal & exit /b %RC%
 
 :check_wsl
 where.exe /Q wsl
