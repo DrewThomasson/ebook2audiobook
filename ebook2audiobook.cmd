@@ -663,6 +663,7 @@ if errorlevel 1 (
 	set "RC=1"
 	goto :provision_env_end
 )
+echo DEBUG: DEVICE_INFO_STR=[!DEVICE_INFO_STR!]
 call :install_device_packages
 if errorlevel 1 (
 	set "RC=1"
