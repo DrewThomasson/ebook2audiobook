@@ -1201,7 +1201,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'refresh_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(12)])
+                outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
 
             def change_gr_audiobook_list(session_id:str, selected:str|None)->dict:
@@ -2074,7 +2074,6 @@ def build_interface(args:dict)->gr.Blocks:
                             if args['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if args['ebook_list']:
                                     if isinstance(args['ebook_list'], list):
-                                        default_voice = args.get('voice')
                                         default_voice = session.get('voice')
                                         voice_map = dict(session.get('voice_map') or {})
                                         clean_list = sorted([
