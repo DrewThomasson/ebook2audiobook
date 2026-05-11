@@ -674,6 +674,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
                                         with gr_row_custom_model_list:
                                             gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
+                                            gr_custom_model_train_link = gr.Markdown(value='<a href="" target="_blank">Create My Own Model</a>', elem_id='gr_custom_model_train_link', elem_classes=['gr-markdown'], visible=True)
                                             gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 with gr.Group(elem_id='gr_group_output_format'):
                                     gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value='Output')
@@ -1858,7 +1859,6 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_custom_model = supports_custom and session['fine_tuned'] == 'internal'
                             if supports_custom:
                                 file_label = f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"
-                                file_label += ' <a href="" target="_blank">Fine Tune My Own Model</a>'
                                 custom_model_list_update = update_gr_custom_model_list(session_id)
                                 custom_model_label_value = f"My {session['tts_engine']} Custom Models"
                             else:
