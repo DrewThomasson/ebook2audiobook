@@ -268,7 +268,7 @@ options:
   --session SESSION     Session to resume the conversion in case of interruption, crash,
                             or reuse of custom models and custom cloning voices.
 
-**** The following option are for gradio/gui mode only:
+**** The following option is for gradio/gui mode only:
   --share               (Optional) Enable a public shareable Gradio link.
 
 **** The following options are for --headless mode only:
@@ -349,10 +349,10 @@ Linux/Mac:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 
 SML tags available:
-        [break] — silence (random range **0.3–0.6 sec.**)
-        [pause] — silence (random range **1.0–1.6 sec.**)
-        [pause:N] — fixed pause (**N sec.**)
-        [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+	[break] — silence (random range **0.3–0.6 sec.**)
+	[pause] — silence (random range **1.0–1.6 sec.**)
+	[pause:N] — fixed pause (**N sec.**)
+	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
 
 ```
 
