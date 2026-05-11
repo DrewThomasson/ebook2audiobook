@@ -3102,7 +3102,6 @@ def convert_ebook(args:dict)->tuple:
                 session['ebook_textarea'] = args['ebook_textarea']
                 session['ebook_src'] = text_filepath
             else:
-                session['ebook_list'] = args.get('ebook_list', None)
                 if args.get('ebook_src'):
                     if not os.path.splitext(args['ebook_src'])[1]:
                         error = f"{args['ebook_src']} needs a format extension."
