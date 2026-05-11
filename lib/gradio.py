@@ -1189,14 +1189,14 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
                                 gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_ebook_src, value=ebook_data), gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                                 gr.update(value=session['device']), gr.update(value=session['audiobook']), update_gr_audiobook_list(session_id),
-                                update_gr_voice_list(session_id), gr.update(value='')
+                                update_gr_voice_list(session_id), gr.update(''), gr.update(value='')
                             )
                         elif session['status'] in [status_tags['CONVERTING']]:
                             return (
                                 gr.update(), gr.update(), gr.update(),
                                 gr.update(), gr.update(), gr.update(visible=True, value=session['ebook_list']), gr.update(),
                                 gr.update(), gr.update(), gr.update(),
-                                gr.update(), gr.update()
+                                gr.update(), gr.update(), gr.update()
                             )
                 except Exception as e:
                     error = f'refresh_interface(): {e}'
@@ -2644,7 +2644,7 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
                 gr_ebook_src, gr_ebook_textarea, gr_device, gr_audiobook_player, gr_audiobook_list,
-                gr_voice_list, gr_progress
+                gr_voice_list, gr_voice_highlight_css, gr_progress
             ]
             outputs_on_voice_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
