@@ -2358,6 +2358,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     blocks, page,
                                     gr.update(interactive=page > 0),
                                     gr.update(interactive=page < max_page),
+                                    gr.update(interactive=True),
+                                    gr.update(interactive=True),
                                     *page_updates
                                 )
                                 return result
@@ -2365,7 +2367,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'edit_blocks(): {e}'
                     exception_alert(session_id, error)
                 n = len(blocks_components_flat) + 1
-                return tuple(gr.update() for _ in range(7 + n + 1))
+                return tuple(gr.update() for _ in range(9 + n + 1))
 
             def click_reset_block(session_id:str, block_id:int)->dict:
                 session = context.get_session(session_id)
@@ -2646,6 +2648,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
                 gr_blocks_data, gr_blocks_page,
                 gr_blocks_back_btn, gr_blocks_next_btn,
+                gr_blocks_cancel_btn, gr_blocks_confirm_btn,
                 *blocks_components_flat, gr_blocks_header, gr_blocks_expands
             ]
             outputs_restore_interface = [
