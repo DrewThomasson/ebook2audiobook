@@ -1329,22 +1329,25 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return gr.update(), gr.update(value=''), gr.update(), gr.update(), gr.update()
 
-            def select_gr_ebook_src(session_id:str, ebook_mode:str, evt:gr.SelectData)->tuple:
+            def select_gr_ebook_src(session_id:str, ebook_mode:str, ebook_src:list|None, evt:gr.SelectData)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if not (session and session.get('id', False)):
                         return gr.update(), gr.update(), gr.update(), gr.update()
                     if ebook_mode != ebook_modes['DIRECTORY'] or evt.index is None:
-                        return gr.update(), gr.update(value=''), gr.update(), gr.update()
+                        return gr.update(), gr.update(value=''), gr.update(), gr.update(value='', visible=False)
                     if session.get('status') != status_tags['READY']:
                         return gr.update(), gr.update(), gr.update(), gr.update()
                     # evt.index can be int or (row, col) tuple — normalise.
                     row = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
-                    ebook_list = session.get('ebook_list') or []
+                    live_list = ebook_src if isinstance(ebook_src, list) and ebook_src else None
+                    ebook_list = live_list if live_list is not None else (session.get('ebook_list') or [])
                     if not isinstance(ebook_list, list) or row < 0 or row >= len(ebook_list):
-                        return gr.update(), gr.update(value=''), gr.update(), gr.update()
+                        return gr.update(), gr.update(value=''), gr.update(), gr.update(value='', visible=False)
                     abs_path = os.path.abspath(ebook_list[row])
                     session['ebook_selected'] = abs_path
+                    if live_list is not None and session.get('ebook_list') != live_list:
+                        session['ebook_list'] = live_list
                     voice_map = session.get('voice_map') or {}
                     assigned_voice = voice_map[abs_path] if abs_path in voice_map else session.get('voice')
                     style = build_voice_highlight_css(row)
