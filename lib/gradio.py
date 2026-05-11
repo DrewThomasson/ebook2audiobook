@@ -1332,8 +1332,6 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(), gr.update(), gr.update(), gr.update()
                     if ebook_mode != ebook_modes['DIRECTORY'] or evt.index is None:
                         return gr.update(), gr.update(value=''), gr.update(), gr.update()
-                    if session.get('status') != status_tags['READY']:
-                        return gr.update(), gr.update(), gr.update(), gr.update()
                     # evt.index can be int or (row, col) tuple — normalise.
                     row = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
                     ebook_list = session.get('ebook_list') or []
