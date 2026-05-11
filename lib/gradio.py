@@ -2685,7 +2685,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_ebook_src.select(
                 fn=select_gr_ebook_src,
-                inputs=[gr_session, gr_ebook_mode],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
                 outputs=[gr_voice_list, gr_voice_highlight_css, gr_row_voice_player, gr_voice_selected_filename],
                 show_progress='hidden'
             )
