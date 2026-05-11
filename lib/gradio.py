@@ -343,7 +343,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_ebook_src table.file-preview tbody > tr.file:hover {
                     background: var(--color-accent-soft) !important;
                 }
-                #gr_voice_selected_filename {
+                #gr_voice_selected_filename, #gr_custom_model_train_link {
                     display: flex !important;
                     align-items: center !important;
                     margin: auto !important;
@@ -355,7 +355,7 @@ def build_interface(args:dict)->gr.Blocks:
                     width: 100% !important;
                     height: 100% !important;
                 }
-                #gr_voice_selected_filename p {
+                #gr_voice_selected_filename p, #gr_custom_model_train_link p {
                     margin: auto !important;
                     vertical-align: middle !important;
                     overflow: hidden !important;
