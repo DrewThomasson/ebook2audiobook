@@ -342,7 +342,7 @@ SML tags available:
                                         }
                                 except Exception as e:
                                     error = f'Error: Failed to parse --voice_map: {e}'
-                        if error is None:
+                        if not error:
                             # Persist the map onto the session so resolve_voice() can read it.
                             c.context.sessions[args['id']]['voice_map'] = voice_map
                             default_voice = args.get('voice')
