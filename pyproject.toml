@@ -42,7 +42,7 @@ dependencies = [
     "iso639-lang",
     "soynlp",
     "jieba",
-	"uroman",
+    "uroman",
     "pycantonese",
     "pypinyin",
     "pythainlp",
