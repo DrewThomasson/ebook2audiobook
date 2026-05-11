@@ -1266,11 +1266,15 @@ def build_interface(args:dict)->gr.Blocks:
 
             def upload_gr_ebook_src(session_id:str, ebook_mode:str)->None:
                 if ebook_mode == ebook_modes['DIRECTORY']:
-                    msg = 'Click on each file in the list to set its voice individually.'
-                    show_alert(session_id, {
-                        'type': 'info',
-                        'msg': msg
-                    })
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        session['ebook_selected'] = None
+                        session['voice_map'] = {}
+                        msg = 'Click on each file in the list to set its voice individually.'
+                        show_alert(session_id, {
+                            'type': 'info',
+                            'msg': msg
+                        })
 
             def change_gr_ebook_src(session_id:str, ebook_mode:str, data:any)->tuple:
                 try:
@@ -1290,7 +1294,7 @@ def build_interface(args:dict)->gr.Blocks:
                             prev_map = dict(session.get('voice_map') or {})  # read once
                             default_voice = session.get('voice')
                             new_map = {p: (prev_map[p] if p in prev_map else default_voice) for p in abs_files}
-                            session['voice_map'] = new_map                   # write back
+                            session['voice_map'] = new_map
                             prev_selected = session.get('ebook_selected')
                             if prev_selected and prev_selected in abs_files:
                                 new_row = abs_files.index(prev_selected)
