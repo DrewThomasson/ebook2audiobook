@@ -670,7 +670,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_group_custom_model = gr.Group(visible=False)
                                     with gr_group_custom_model:
                                         gr_custom_model_label = gr.Textbox(label='', elem_id='gr_custom_model_label', elem_classes=['gr-label'], interactive=False)
-                                        gr_custom_model_file = gr.File(show_label=True, label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
+                                        gr_custom_model_file = gr.File(show_label=True, label=f"Upload a ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
                                         gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
                                         with gr_row_custom_model_list:
                                             gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
@@ -1104,7 +1104,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     enabled_convert_btn = True
                                 else:
                                     ebook_data = None
-                                visible_ebook_src = True
+                            visible_ebook_src = True
                         elif session.get('ebook_mode') == ebook_modes['SINGLE']:
                             if is_valid_gradio_cache(session['ebook_src']):
                                 ebook_data = session['ebook_src']
@@ -1138,12 +1138,13 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=voice_file),
                             gr.update(visible=visible_voice_buttons),
                             gr.update(visible=visible_voice_buttons),
+                            gr.update(label=f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
                             gr.update(visible=visible_custom_model_del_btn)
                         )
                 except Exception as e:
                     error = f'restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(22)])
+                outputs = tuple([gr.update() for _ in range(23)])
                 return outputs
 
             def restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -1858,7 +1859,7 @@ def build_interface(args:dict)->gr.Blocks:
                             supports_custom = session['tts_engine'] in tts_engines_with_custom_model
                             visible_custom_model = supports_custom and session['fine_tuned'] == 'internal'
                             if supports_custom:
-                                file_label = f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[default_fine_tuned]['files'])})"
+                                file_label = f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"
                                 custom_model_list_update = update_gr_custom_model_list(session_id)
                                 custom_model_label_value = f"My {session['tts_engine']} Custom Models"
                             else:
@@ -2656,7 +2657,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
-                gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn
+                gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn
             ]
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
