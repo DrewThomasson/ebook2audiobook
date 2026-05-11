@@ -354,6 +354,8 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                     width: 100% !important;
                     height: 100% !important;
+                    text-decoration:none;
+                    font-size:14px;
                 }
                 #gr_voice_selected_filename p, #gr_custom_model_train_link p {
                     margin: auto !important;
@@ -363,6 +365,8 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                     width: 100% !important;
                     height: 100% !important;
+                    text-decoration:none;
+                    font-size:14px;
                 }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
