@@ -253,7 +253,7 @@ to let the web page reconnect to the new connection socket.**
 <a id="help-command-output"></a>
 ```bash
 usage: app.py [-h] [--session SESSION] [--share] [--headless] [--ebook EBOOK] [--ebooks_dir EBOOKS_DIR]
-              [--language LANGUAGE] [--voice VOICE] [--device {CPU,CUDA,MPS,ROCM,XPU,JETSON}]
+              [--language LANGUAGE] [--voice VOICE] [--voice_map VOICE_MAP] [--device {CPU,CUDA,MPS,ROCM,XPU,JETSON}]
               [--tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}]
               [--custom_model CUSTOM_MODEL] [--fine_tuned FINE_TUNED] [--output_format OUTPUT_FORMAT]
               [--output_channel OUTPUT_CHANNEL] [--temperature TEMPERATURE] [--length_penalty LENGTH_PENALTY]
@@ -289,6 +289,11 @@ options:
 optional parameters:
   --voice VOICE         (Optional) Path to the voice cloning file for TTS engine.
                             Uses the default voice if not present.
+  --voice_map VOICE_MAP
+                        (Optional, --ebooks_dir only) Path to a JSON file mapping ebook path -> voice path.
+                            Each entry overrides --voice for that specific ebook. Missing/null entries fall back to --voice.
+                            Keys may be absolute paths or basenames. Example:
+                            {"book1.epub": "/voices/eng/adult/female/alice.wav", "/abs/path/book2.epub": null}
   --device {CPU,CUDA,MPS,ROCM,XPU,JETSON}
                         (Optional) Processor unit type for the conversion.
                             Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.
