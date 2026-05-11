@@ -184,11 +184,10 @@ SML tags available:
     headless_optional_group = parser.add_argument_group('optional parameters')
     headless_optional_group.add_argument(cli_options[9], type=str, default=None, help='''(Optional) Path to the voice cloning file for TTS engine. 
     Uses the default voice if not present.''')
-    headless_optional_group.add_argument(cli_options[10], type=str, default=None,
-        help='''(Optional, --ebooks_dir only) Path to a JSON file mapping ebook path -> voice path.
-        Each entry overrides --voice for that specific ebook. Missing/null entries fall back to --voice.
-        Keys may be absolute paths or basenames. Example:
-        {"book1.epub": "/voices/eng/adult/female/alice.wav", "/abs/path/book2.epub": null}''')
+    headless_optional_group.add_argument(cli_options[10], type=str, default=None, help='''(Optional, --ebooks_dir only) Path to a JSON file mapping ebook path -> voice path.
+    Each entry overrides --voice for that specific ebook. Missing/null entries fall back to --voice.
+    Keys may be absolute paths or basenames. Example:
+    {"book1.epub": "/voices/eng/adult/female/alice.wav", "/abs/path/book2.epub": null}''')
     headless_optional_group.add_argument(cli_options[11], type=str, default=default_device, choices=list(devices.keys())+[k.lower() for k in devices.keys()], help=f'''(Optional) Processor unit type for the conversion.
     Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.''')
     headless_optional_group.add_argument(cli_options[12], type=str, default=None, choices=tts_engine_list_keys+tts_engine_list_values, help=f'''(Optional) Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
@@ -336,13 +335,13 @@ SML tags available:
                                     if not isinstance(raw, dict):
                                         error = 'Error: --voice_map JSON must be an object {ebook_path: voice_path}.'
                                     else:
-                                        voice_map = {
-                                            os.path.abspath(k): (os.path.abspath(v) if v else None)
-                                            for k, v in raw.items()
-                                        }
+                                        voice_map = {}
+                                        for k, v in raw.items():
+                                            normalized_key = os.path.abspath(k) if os.path.isabs(k) else k
+                                            voice_map[normalized_key] = os.path.abspath(v) if v else None
                                 except Exception as e:
                                     error = f'Error: Failed to parse --voice_map: {e}'
-                        if error is None:
+                        if not error:
                             # Persist the map onto the session so resolve_voice() can read it.
                             c.context.sessions[args['id']]['voice_map'] = voice_map
                             default_voice = args.get('voice')

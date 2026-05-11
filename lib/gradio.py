@@ -1201,7 +1201,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'refresh_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(12)])
+                outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
 
             def change_gr_audiobook_list(session_id:str, selected:str|None)->dict:
@@ -1329,22 +1329,25 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return gr.update(), gr.update(value=''), gr.update(), gr.update(), gr.update()
 
-            def select_gr_ebook_src(session_id:str, ebook_mode:str, evt:gr.SelectData)->tuple:
+            def select_gr_ebook_src(session_id:str, ebook_mode:str, ebook_src:list|None, evt:gr.SelectData)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if not (session and session.get('id', False)):
                         return gr.update(), gr.update(), gr.update(), gr.update()
                     if ebook_mode != ebook_modes['DIRECTORY'] or evt.index is None:
-                        return gr.update(), gr.update(value=''), gr.update(), gr.update()
+                        return gr.update(), gr.update(value=''), gr.update(), gr.update(value='', visible=False)
                     if session.get('status') != status_tags['READY']:
                         return gr.update(), gr.update(), gr.update(), gr.update()
                     # evt.index can be int or (row, col) tuple — normalise.
                     row = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
-                    ebook_list = session.get('ebook_list') or []
+                    live_list = ebook_src if isinstance(ebook_src, list) and ebook_src else None
+                    ebook_list = live_list if live_list is not None else (session.get('ebook_list') or [])
                     if not isinstance(ebook_list, list) or row < 0 or row >= len(ebook_list):
-                        return gr.update(), gr.update(value=''), gr.update(), gr.update()
+                        return gr.update(), gr.update(value=''), gr.update(), gr.update(value='', visible=False)
                     abs_path = os.path.abspath(ebook_list[row])
                     session['ebook_selected'] = abs_path
+                    if live_list is not None and session.get('ebook_list') != live_list:
+                        session['ebook_list'] = live_list
                     voice_map = session.get('voice_map') or {}
                     assigned_voice = voice_map[abs_path] if abs_path in voice_map else session.get('voice')
                     style = build_voice_highlight_css(row)
@@ -2074,7 +2077,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if args['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 if args['ebook_list']:
                                     if isinstance(args['ebook_list'], list):
-                                        default_voice = args.get('voice')
+                                        default_voice = session.get('voice')
                                         voice_map = dict(session.get('voice_map') or {})
                                         clean_list = sorted([
                                             f for f in args['ebook_list']
@@ -2085,10 +2088,11 @@ def build_interface(args:dict)->gr.Blocks:
                                                 "type": "warning",
                                                 "msg": f'{Path(skipped).name} has not a supported format! skipping'
                                             })
-                                        ebook_list = copy.deepcopy(clean_list)
-                                        while ebook_list:
-                                            file = ebook_list.pop(0)
-                                            args['ebook_list'] = ebook_list
+                                        ebook_list_full = copy.deepcopy(clean_list)
+                                        args['ebook_list'] = ebook_list_full
+                                        queue = list(ebook_list_full)
+                                        while queue:
+                                            file = queue.pop(0)
                                             args['ebook_src'] = file
                                             abs_file = os.path.abspath(file)
                                             if abs_file in voice_map:
@@ -2111,7 +2115,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             else:
                                                 error = progress_status
                                                 break
-                                        args['ebook_list'] = ebook_list
                             elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                 progress_status, passed = convert_ebook(args)
                                 if passed:
@@ -2355,6 +2358,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     blocks, page,
                                     gr.update(interactive=page > 0),
                                     gr.update(interactive=page < max_page),
+                                    gr.update(interactive=True),
+                                    gr.update(interactive=True),
                                     *page_updates
                                 )
                                 return result
@@ -2362,7 +2367,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'edit_blocks(): {e}'
                     exception_alert(session_id, error)
                 n = len(blocks_components_flat) + 1
-                return tuple(gr.update() for _ in range(7 + n + 1))
+                return tuple(gr.update() for _ in range(9 + n + 1))
 
             def click_reset_block(session_id:str, block_id:int)->dict:
                 session = context.get_session(session_id)
@@ -2643,6 +2648,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
                 gr_blocks_data, gr_blocks_page,
                 gr_blocks_back_btn, gr_blocks_next_btn,
+                gr_blocks_cancel_btn, gr_blocks_confirm_btn,
                 *blocks_components_flat, gr_blocks_header, gr_blocks_expands
             ]
             outputs_restore_interface = [
@@ -2685,7 +2691,7 @@ def build_interface(args:dict)->gr.Blocks:
             )
             gr_ebook_src.select(
                 fn=select_gr_ebook_src,
-                inputs=[gr_session, gr_ebook_mode],
+                inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
                 outputs=[gr_voice_list, gr_voice_highlight_css, gr_row_voice_player, gr_voice_selected_filename],
                 show_progress='hidden'
             )
