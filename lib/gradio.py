@@ -1332,6 +1332,8 @@ def build_interface(args:dict)->gr.Blocks:
                         return gr.update(), gr.update(), gr.update(), gr.update()
                     if ebook_mode != ebook_modes['DIRECTORY'] or evt.index is None:
                         return gr.update(), gr.update(value=''), gr.update(), gr.update()
+                    if session.get('status') != status_tags['READY']:
+                        return gr.update(), gr.update(), gr.update(), gr.update()
                     # evt.index can be int or (row, col) tuple — normalise.
                     row = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
                     ebook_list = session.get('ebook_list') or []
@@ -2070,6 +2072,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if isinstance(args['ebook_list'], list):
                                         default_voice = args.get('voice')
                                         voice_map = dict(session.get('voice_map') or {})
+                                        print(f'-----------------{voice_map}---------------')
                                         clean_list = sorted([
                                             f for f in args['ebook_list']
                                             if any(f.endswith(ext) for ext in ebook_formats)
@@ -2087,9 +2090,10 @@ def build_interface(args:dict)->gr.Blocks:
                                             abs_file = os.path.abspath(file)
                                             override = voice_map.get(abs_file) or voice_map.get(os.path.basename(file))
                                             if override and not os.path.exists(override):
+                                                msg = f'Voice override for {Path(file).name} not found, using default.'
                                                 show_alert(session_id, {
                                                     "type": "warning",
-                                                    "msg": f'Voice override for {Path(file).name} not found, using default.'
+                                                    "msg": msg
                                                 })
                                                 override = None
                                             args['voice'] = override or default_voice
