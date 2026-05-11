@@ -23,6 +23,7 @@ hangul-romanize
 iso639-lang
 soynlp
 jieba
+uroman
 pycantonese
 pypinyin
 pythainlp

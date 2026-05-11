@@ -324,10 +324,9 @@ class TTSUtils:
                 engine = loaded_tts.get(key, False)
                 device = kwargs.get('device', 'cpu')
                 target_dev = torch.device(device)
+                is_accel = target_dev.type != 'cpu'
                 if not engine:
                     engine_name = kwargs.get('tts_engine', None)
-                    from TTS.tts.configs.xtts_config import XttsConfig
-                    from TTS.tts.models.xtts import Xtts
                     checkpoint_path = kwargs.get('checkpoint_path')
                     config_path = kwargs.get('config_path', None)
                     vocab_path = kwargs.get('vocab_path', None)
@@ -337,31 +336,70 @@ class TTSUtils:
                     if not config_path or not os.path.exists(config_path):
                         error = f'Missing or invalid config_path: {config_path}'
                         raise FileNotFoundError(error)
-                    config = XttsConfig()
-                    config.models_dir = os.path.join('models','tts')
-                    config.load_json(config_path)
-                    engine = Xtts.init_from_config(config)
-                    engine.load_checkpoint(
-                        config,
-                        checkpoint_path = checkpoint_path,
-                        vocab_path = vocab_path,
-                        eval = True
-                    )
+                    if engine_name == TTS_ENGINES['XTTSv2']:
+                        from TTS.tts.configs.xtts_config import XttsConfig
+                        from TTS.tts.models.xtts import Xtts
+                        config = XttsConfig()
+                        config.models_dir = os.path.join('models','tts')
+                        config.load_json(config_path)
+                        engine = Xtts.init_from_config(config)
+                        engine.load_checkpoint(
+                            config,
+                            checkpoint_path = checkpoint_path,
+                            vocab_path = vocab_path,
+                            eval = True
+                        )
+                    elif engine_name == TTS_ENGINES['VITS']:
+                        from TTS.api import TTS as TTSEngine
+                        engine = TTSEngine(model_path=checkpoint_path, config_path=config_path, progress_bar=False)
+                    elif engine_name == TTS_ENGINES['FAIRSEQ']:
+                        from TTS.utils.synthesizer import Synthesizer
+                        if not vocab_path or not os.path.exists(vocab_path):
+                            error = f'Missing or invalid vocab_path: {vocab_path}'
+                            raise FileNotFoundError(error)
+                        custom_dir = os.path.dirname(checkpoint_path)
+                        syn = Synthesizer(model_dir=custom_dir, use_cuda=is_accel)
+                        class _FairseqEngine(nn.Module):
+                            def __init__(self, synthesizer:'Synthesizer'):
+                                super().__init__()
+                                self.synthesizer = synthesizer
+                                self.output_sample_rate = synthesizer.output_sample_rate
+                            def tts(self, text:str, **_:Any)->Any:
+                                return self.synthesizer.tts(text)
+                            def tts_to_file(self, text:str, file_path:str, **_:Any)->str:
+                                wav = self.synthesizer.tts(text)
+                                self.synthesizer.save_wav(wav, file_path)
+                                return file_path
+                        engine = _FairseqEngine(syn)
+                    else:
+                        error = f'_load_checkpoint(): unsupported tts_engine {engine_name}'
+                        raise ValueError(error)
                 if engine:
                     engine.to(device)
                     engine.eval()
-                    for _, m in engine.named_modules():
-                        m.to(device)
-                        m.eval()
-                        for pname, p in list(m.named_parameters(recurse=False)):
-                            if p.device != target_dev:
-                                with torch.no_grad():
-                                    new_p = nn.Parameter(p.data.to(device), requires_grad=p.requires_grad)
-                                setattr(m, pname, new_p)
-                        for bname, b in list(m.named_buffers(recurse=False)):
-                            if b.device != target_dev:
-                                persistent = bname not in m._non_persistent_buffers_set
-                                m.register_buffer(bname, b.to(device), persistent=persistent)
+                    ## Walk the actual weight-bearing module(s).
+                    ## XTTS / fairseq shim: engine itself is an nn.Module that owns the params.
+                    ## VITS via TTS API: weights live inside engine.synthesizer (TTS class doesn't register it as a submodule).
+                    walk_targets = []
+                    syn = getattr(engine, 'synthesizer', None)
+                    if syn is not None:
+                        syn.use_cuda = is_accel
+                        walk_targets.append(syn)
+                    else:
+                        walk_targets.append(engine)
+                    for tgt in walk_targets:
+                        for _, m in tgt.named_modules():
+                            m.to(device)
+                            m.eval()
+                            for pname, p in list(m.named_parameters(recurse=False)):
+                                if p.device != target_dev:
+                                    with torch.no_grad():
+                                        new_p = nn.Parameter(p.data.to(device), requires_grad=p.requires_grad)
+                                    setattr(m, pname, new_p)
+                            for bname, b in list(m.named_buffers(recurse=False)):
+                                if b.device != target_dev:
+                                    persistent = bname not in m._non_persistent_buffers_set
+                                    m.register_buffer(bname, b.to(device), persistent=persistent)
                     vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                     self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
