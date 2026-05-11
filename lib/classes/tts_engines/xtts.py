@@ -50,10 +50,12 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             if not engine:
                 if self.session['custom_model'] is not None:
                     try:
-                        config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
-                        checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
-                        vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][2])
-                        self.tts_key = f'{self.session["tts_engine"]}-{self.session["custom_model"]}'
+                        model_path = self.session['custom_model']
+                        config_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
+                        checkpoint_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
+                        vocab_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][2])
+                        custom_model_name = os.path.basename(os.path.normpath(model_path))
+                        self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
                         engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
                     except Exception as e:
                         error = f'load_engine(): custom checkpoint loading failed: {e}'
