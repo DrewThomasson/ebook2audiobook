@@ -347,15 +347,14 @@ def build_interface(args:dict)->gr.Blocks:
                     display: flex !important;
                     align-items: center !important;
                     margin: auto !important;
-                    padding-left: 6px;
+                    padding-left: 6px !important;
                     overflow: hidden !important;
                     text-overflow: ellipsis !important;
                     white-space: nowrap !important;
                     background: var(--block-background-fill) !important;
                     width: 100% !important;
                     height: 100% !important;
-                    text-decoration:none;
-                    font-size:14px;
+                    text-decoration: none !important;
                 }
                 #gr_voice_selected_filename p, #gr_custom_model_train_link p {
                     margin: auto !important;
@@ -365,8 +364,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                     width: 100% !important;
                     height: 100% !important;
-                    text-decoration:none;
-                    font-size:14px;
+                    text-decoration: none !important;
                 }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
