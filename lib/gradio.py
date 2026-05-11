@@ -365,6 +365,7 @@ def build_interface(args:dict)->gr.Blocks:
                     height: 100% !important;
                 }
                 #gr_voice_selected_filename a, #gr_custom_model_train_link a {
+                    color: blue !important;
                     text-decoration: none !important;
                 }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
