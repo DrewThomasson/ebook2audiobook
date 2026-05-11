@@ -3850,6 +3850,7 @@ def build_interface(args:dict)->gr.Blocks:
             app.unload(on_unload)
             all_ips = get_all_ip_addresses()
             msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
+            msg += "\nAlways reload the app page if it's already opened"
             show_alert(None, {"type": "info", "msg": msg})
             os.environ['no_proxy'] = ' ,'.join(all_ips)
             return app
