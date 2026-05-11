@@ -615,8 +615,7 @@ if errorlevel 1 (
 set "DETECTED_BASE="
 for /f "usebackq delims=" %%B in (`conda info --base 2^>nul`) do set "DETECTED_BASE=%%B"
 if not defined DETECTED_BASE (
-	echo =============== Existing conda installation is broken (cannot run 'conda info --base').
-	echo Please repair or uninstall it before retrying.
+	echo Failed to query 'conda info --base'; aborting.
 	exit /b 3
 )
 set "CONDA_HOME=%DETECTED_BASE%"
@@ -650,23 +649,15 @@ if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 	call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" -c conda-forge python=%PYTHON_VERSION% pip -y
 	if errorlevel 1 exit /b 3
 	call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-	call :provision_env
+	call :check_device_info %SCRIPT_MODE%
+	if errorlevel 1 exit /b 3
+	call :install_device_packages "%DEVICE_INFO_STR%"
+	if errorlevel 1 exit /b 3
+	call :install_python_packages
 	if errorlevel 1 exit /b 3
 	echo %APP_VERSION%>"%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned"
 )
 exit /b 0
-
-:provision_env
-setlocal enabledelayedexpansion
-set "RC=0"
-call :check_device_info %SCRIPT_MODE%
-if errorlevel 1 set "RC=1" & goto :provision_env_end
-call :install_device_packages "!DEVICE_INFO_STR!"
-if errorlevel 1 set "RC=1" & goto :provision_env_end
-call :install_python_packages
-if errorlevel 1 set "RC=1" & goto :provision_env_end
-:provision_env_end
-endlocal & exit /b %RC%
 
 :check_wsl
 where.exe /Q wsl
