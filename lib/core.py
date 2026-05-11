@@ -180,6 +180,8 @@ class SessionContext:
             "language_iso1": None,
             "voice": None,
             "voice_dir": None,
+            "voice_map": {},
+            "ebook_selected": None,
             "custom_model": None,
             "custom_model_dir": None,
             "output_dir": None,
@@ -399,12 +401,11 @@ def extract_custom_model(session_id)->str|None:
                 tts_dir = session['tts_engine']
                 model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
                 os.makedirs(model_path, exist_ok=True)
-                required_files_lc = set(x.lower() for x in required_files)
                 msg = f'Extracting files to {model_path}…'
                 with tqdm(total=files_length, unit='files') as t:
                     for f in files:
-                        base_f = os.path.basename(f).lower()
-                        if base_f in required_files_lc:
+                        base_f = os.path.basename(f)
+                        if base_f in required_files:
                             out_path = os.path.join(model_path, base_f)
                             with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
                                 shutil.copyfileobj(src, dst)
@@ -412,6 +413,10 @@ def extract_custom_model(session_id)->str|None:
                         if session['is_gui_process']:
                             progress_bar((t.n + 1) / files_length, desc=msg)
             if model_path is not None:
+                if session['tts_engine'] in tts_engines_with_inner_speaker:
+                    if os.path.exists(file_src):
+                        os.remove(file_src)
+                    return model_path
                 msg = f'Normalizing ref.wav…'
                 print(msg)
                 voice_ref = os.path.join(model_path, 'ref.wav')
@@ -3035,6 +3040,24 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
+def resolve_voice(session_id:str, ebook_src:str)->str|None:
+    """
+    Returns the voice to use for a given ebook in DIRECTORY mode.
+    Lookup order: voice_map[abs(ebook_src)] -> voice_map[basename] -> session['voice'] -> None.
+    Voice file existence is checked; missing overrides fall through to the default.
+    """
+    session = context.get_session(session_id)
+    if not session:
+        return None
+    if not ebook_src:
+        return session.get('voice')
+    voice_map = session.get('voice_map') or {}
+    abs_src = os.path.abspath(ebook_src)
+    override = voice_map.get(abs_src) or voice_map.get(os.path.basename(ebook_src))
+    if override and os.path.exists(override):
+        return override
+    return session.get('voice')
+
 def convert_ebook(args:dict)->tuple:
     try:
         global context
@@ -3497,6 +3520,8 @@ def finalize_audiobook(session_id:str)->tuple:
         else:
             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                 session['ebook_list'] = None
+                session['voice_map'] = {}
+                session['ebook_selected'] = None
             elif session['ebook_mode'] == ebook_modes['SINGLE']:
                 session['ebook_src'] = None
             elif session['ebook_mode'] == ebook_modes['TEXT']:
