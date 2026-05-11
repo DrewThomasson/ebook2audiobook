@@ -615,7 +615,8 @@ if errorlevel 1 (
 set "DETECTED_BASE="
 for /f "usebackq delims=" %%B in (`conda info --base 2^>nul`) do set "DETECTED_BASE=%%B"
 if not defined DETECTED_BASE (
-	echo Failed to query 'conda info --base'; aborting.
+	echo =============== Existing conda installation is broken (cannot run 'conda info --base').
+	echo Please repair or uninstall it before retrying.
 	exit /b 3
 )
 set "CONDA_HOME=%DETECTED_BASE%"
@@ -649,15 +650,21 @@ if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 	call conda create --prefix "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" -c conda-forge python=%PYTHON_VERSION% pip -y
 	if errorlevel 1 exit /b 3
 	call conda activate "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-	call :check_device_info %SCRIPT_MODE%
-	if errorlevel 1 exit /b 3
-	call :install_device_packages "%DEVICE_INFO_STR%"
-	if errorlevel 1 exit /b 3
-	call :install_python_packages
+	call :provision_env
 	if errorlevel 1 exit /b 3
 	echo %APP_VERSION%>"%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned"
 )
 exit /b 0
+
+:provision_env
+setlocal enabledelayedexpansion
+call :check_device_info %SCRIPT_MODE%
+if errorlevel 1 (endlocal & exit /b 1)
+call :install_device_packages "!DEVICE_INFO_STR!"
+if errorlevel 1 (endlocal & exit /b 1)
+call :install_python_packages
+if errorlevel 1 (endlocal & exit /b 1)
+endlocal & exit /b 0
 
 :check_wsl
 where.exe /Q wsl
