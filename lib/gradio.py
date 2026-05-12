@@ -650,6 +650,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                     gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
+                                with gr.Group(elem_id='gr_group_translate', elem_classes=['gr-group']):
+                                    gr_translate_markdown = gr.Markdown(elem_id='gr_translate_markdown', elem_classes=['gr-markdown'], value='Translate')
+                                    gr_translate_enabled = gr.Checkbox(label='Translate source ebook before TTS', elem_id='gr_translate_enabled', value=False, interactive=True)
+                                    gr_translate_target = gr.Dropdown(label='Target language', elem_id='gr_translate_target', choices=[], value=None, type='value', interactive=True, visible=False)
                                 gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', elem_classes=['gr-group'], visible=visible_gr_group_voice_file)
                                 with gr_group_voice_file:
                                     gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
@@ -1784,6 +1788,48 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
+            def _build_translate_targets(source_iso3:str)->list:
+                try:
+                    if not source_iso3:
+                        return []
+                    return ArgosTranslator().get_target_options(source_iso3)
+                except Exception as e:
+                    print(f'_build_translate_targets() error: {e}')
+                    return []
+
+            def change_gr_translate_enabled(session_id:str, enabled:bool)->dict:
+                session = context.get_session(session_id)
+                if not session or not session.get('id', False):
+                    return gr.update()
+                session['translate_enabled'] = bool(enabled)
+                if not enabled:
+                    session['translate_to'] = None
+                    session['translate_from'] = None
+                    session['translate_from_iso1'] = None
+                    return gr.update(visible=False, choices=[], value=None)
+                options = _build_translate_targets(session.get('language'))
+                default = options[0][1] if options else None
+                if default:
+                    session['translate_to'] = default
+                return gr.update(visible=True, choices=options, value=default)
+
+            def change_gr_translate_target(session_id:str, target:str)->None:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    session['translate_to'] = target or None
+                return
+
+            def refresh_translate_target_for_language(session_id:str, source_iso3:str)->dict:
+                session = context.get_session(session_id)
+                if not session or not session.get('id', False):
+                    return gr.update()
+                if not session.get('translate_enabled'):
+                    return gr.update(visible=False, choices=[], value=None)
+                options = _build_translate_targets(source_iso3)
+                default = options[0][1] if options else None
+                session['translate_to'] = default
+                return gr.update(visible=True, choices=options, value=default)
+
             def check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
                 dir_path = None
                 if custom_model_dir is not None and tts_engine is not None:
@@ -2021,7 +2067,8 @@ def build_interface(args:dict)->gr.Blocks:
             def start_conversion(
                     session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
-                    output_split:bool, output_split_hours:str
+                    output_split:bool, output_split_hours:str,
+                    translate_enabled:bool, translate_target:str|None
                 )->tuple:
                 error = None
                 try:
@@ -2057,7 +2104,9 @@ def build_interface(args:dict)->gr.Blocks:
                             "bark_text_temp": float(bark_text_temp),
                             "bark_waveform_temp": float(bark_waveform_temp),
                             "output_split":bool(output_split),
-                            "output_split_hours": output_split_hours
+                            "output_split_hours": output_split_hours,
+                            "translate_enabled": bool(translate_enabled),
+                            "translate_to": translate_target if translate_enabled else None
                         }
                         if args['ebook_mode'] == ebook_modes['DIRECTORY']:
                             if isinstance(args['ebook_list'], list):
@@ -2178,7 +2227,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)              
                 return gr.update()
 
-            def check_override_ebook(session_id:str, ebook_mode:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int)->tuple:
+            def check_override_ebook(session_id:str, ebook_mode:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int, translate_enabled:bool, translate_target:str|None)->tuple:
                 try:
                     session = context.get_session(session_id)
                     source = None
@@ -2224,11 +2273,18 @@ def build_interface(args:dict)->gr.Blocks:
                                             return gr.update(), (event + 1)
                                         else:
                                             session['ebook_src'] = source
-                                            final_name = f"{get_sanitized(Path(source).stem)}.{session['output_format']}"
+                                            # --- mirror the filename fork that convert_ebook will perform ---
+                                            stem_base = get_sanitized(Path(source).stem)
+                                            if translate_enabled and translate_target and translate_target != session.get('language'):
+                                                stem = f"{stem_base}_{translate_target}"
+                                            else:
+                                                stem = stem_base
+                                            # ----------------------------------------------------------------
+                                            final_name = f"{stem}.{session['output_format']}"
                                             process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(final_name).stem).encode()).hexdigest()}")
                                             chapters_dir = os.path.join(process_dir, 'chapters')
                                             sentences_dir = os.path.join(chapters_dir, 'sentences')
-                                            pre_name = f"{get_sanitized(Path(source).stem)}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
+                                            pre_name = f"{stem}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
                                             pre_file = os.path.join(process_dir, pre_name)
                                             final_file = os.path.join(session['audiobooks_dir'], final_name)
                                             audio_sentences_exist = False
@@ -2576,7 +2632,7 @@ def build_interface(args:dict)->gr.Blocks:
             def chain_check_override(event):
                 return event.then(
                     fn=check_override_ebook,
-                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event],
+                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event, gr_translate_enabled, gr_translate_target],
                     outputs=[gr_modal, gr_event],
                     show_progress_on=[gr_progress]
                 )
@@ -2635,18 +2691,21 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
+                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours,
+                gr_translate_enabled, gr_translate_target
             ]
             outputs_disable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
+                gr_translate_enabled, gr_translate_target,
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn
             ]
             outputs_enable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
+                gr_translate_enabled, gr_translate_target,
                 gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn
             ]
             outputs_edit_blocks = [
@@ -2769,6 +2828,22 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session],
                 outputs=[gr_voice_list],
                 show_progress_on=[gr_progress]
+            ).then(
+                fn=refresh_translate_target_for_language,
+                inputs=[gr_session, gr_language],
+                outputs=[gr_translate_target],
+                show_progress_on=[gr_progress]
+            )
+            gr_translate_enabled.change(
+                fn=change_gr_translate_enabled,
+                inputs=[gr_session, gr_translate_enabled],
+                outputs=[gr_translate_target],
+                show_progress_on=[gr_progress]
+            )
+            gr_translate_target.change(
+                fn=change_gr_translate_target,
+                inputs=[gr_session, gr_translate_target],
+                outputs=None
             )
             gr_tts_engine_list.change(
                 fn=change_gr_tts_engine_list,
