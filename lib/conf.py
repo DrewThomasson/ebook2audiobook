@@ -18,13 +18,17 @@ archs = {
 }
 
 cli_options = [
-    '--script_mode', '--docker_mode', '--session', '--share', '--headless', 
-    '--ebook', '--ebooks_dir', '--text', '--language', '--voice', '--voice_map',
-    '--device', '--tts_engine', '--custom_model', '--fine_tuned',
-    '--output_format', '--output_channel',
-    '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', 
-    '--top_k', '--top_p', '--speed', '--enable_text_splitting', '--text_temp',
-    '--waveform_temp', '--output_dir', '--version', '--docker_device', '--workflow', '--help'
+    '--script_mode', '--docker_mode', '--session',
+    '--share', '--headless', '--ebook', 
+    '--ebooks_dir', '--text', '--language', 
+    '--translate', '--voice', '--voice_map',
+    '--device', '--tts_engine', '--custom_model', 
+    '--fine_tuned', '--output_format', '--output_channel',
+    '--temperature', '--length_penalty', '--num_beams', 
+    '--repetition_penalty', '--top_k', '--top_p', 
+    '--speed', '--enable_text_splitting', '--text_temp',
+    '--waveform_temp', '--output_dir', '--version', 
+    '--docker_device', '--workflow', '--help'
 ]
 
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
