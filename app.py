@@ -1,7 +1,6 @@
 import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warnings
 
 from pathlib import Path
-from iso639 import Lang
 
 from lib.conf import *
 from lib.conf_lang import default_language_code, language_mapping
@@ -183,10 +182,7 @@ SML tags available:
     headless_group.add_argument(cli_options[8], type=str, default=default_language_code, help=f'''Language of the e-book. Default language is set 
     in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py''')
     headless_optional_group = parser.add_argument_group('optional parameters')
-    headless_optional_group.add_argument(cli_options[9], type=str, default=None, metavar='ISO3', help='''(Optional) Translate ebook to a target language (ISO 639-3 code, e.g. eng, fra, deu) before TTS synthesis.
-    Uses argostranslate. The target language becomes the effective TTS language for the run.
-    A copy of the source ebook is made with the _<iso3> suffix so translated and non-translated
-    outputs stay isolated (independent process folder, audio chunks, and final file).''')
+    headless_optional_group.add_argument(cli_options[9], type=str, default=None, metavar='ISO3', help='''(Optional) Translate ebook to a target language (ISO 639-3 code, e.g. eng, fra, deu).''')
     headless_optional_group.add_argument(cli_options[10], type=str, default=None, help='''(Optional) Path to the voice cloning file for TTS engine. 
     Uses the default voice if not present.''')
     headless_optional_group.add_argument(cli_options[11], type=str, default=None, help='''(Optional, --ebooks_dir only) Path to a JSON file mapping ebook path -> voice path.
@@ -306,13 +302,13 @@ SML tags available:
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
-            # --- translate (ISO 639-3): normalize, validate, derive effective state ---
             args['translate_enabled'] = False
             args['translate_to'] = None
             if args.get('translate'):
                 tgt = str(args['translate']).strip().lower()
                 try:
                     if len(tgt) in (2, 3):
+                        from iso639 import Lang
                         ld = Lang(tgt)
                         if ld:
                             tgt = ld.pt3
@@ -327,7 +323,6 @@ SML tags available:
                 else:
                     args['translate_enabled'] = True
                     args['translate_to'] = tgt
-            # -------------------------------------------------------------------------
             specified_input = sum(
                 args.get(k, None) is not None
                 for k in ('ebook', 'ebooks_dir', 'text')
