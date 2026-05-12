@@ -17,6 +17,14 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
+            # effective language for TTS (target when translating, else source)
+            self.language = self.session.get('language')
+            self.language_iso1 = self.session.get('language_iso1')
+            if self.session.get('translate_enabled'):
+                if self.session.get('translate'):
+                    self.language = self.session['translate']
+                if self.session.get('translate_iso1'):
+                    self.language_iso1 = self.session['translate_iso1']
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'

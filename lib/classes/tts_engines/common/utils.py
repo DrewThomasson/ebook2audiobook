@@ -436,14 +436,14 @@ class TTSUtils:
             import numpy as np
             from huggingface_hub import hf_hub_download
             voice_parts = Path(current_voice).parts
-            if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
+            if (self.language in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.language == 'eng'):
                 if os.path.exists(current_voice):
                     return current_voice
             xtts = TTS_ENGINES['XTTSv2']
-            if self.session['language'] in default_engine_settings[xtts].get('languages', {}):
-                default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
+            if self.language in default_engine_settings[xtts].get('languages', {}):
+                default_text_file = os.path.join(voices_dir, self.language, 'default.txt')
                 if os.path.exists(default_text_file):
-                    msg = f"Converting builtin eng voice to {self.session['language']}…"
+                    msg = f"Converting builtin eng voice to {self.language}…"
                     print(msg)
                     key = f'{xtts}-internal'
                     default_text = Path(default_text_file).read_text(encoding='utf-8')
@@ -490,7 +490,7 @@ class TTSUtils:
                             with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 result = engine.inference(
                                     text=default_text.strip(),
-                                    language=self.session['language_iso1'],
+                                    language=self.language_iso1,
                                     gpt_cond_latent=gpt_cond_latent,
                                     speaker_embedding=speaker_embedding,
                                     **fine_tuned_params,
@@ -504,7 +504,7 @@ class TTSUtils:
                             audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                             if audio_tensor is not None and audio_tensor.numel() > 0:
                                 # CON is a reserved name on windows
-                                lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
+                                lang_dir = 'con-' if self.language == 'con' else self.language
                                 # Rebuild the path under the new language folder.
                                 # Works for any old-language → any new-language swap (eng→fra, zho→fra, …),
                                 # not just eng→X. xtts voices are always absolute paths under voices_dir.
@@ -630,7 +630,7 @@ class TTSUtils:
             if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:
                 current_voice = self._check_xtts_builtin_speakers(current_voice, speaker)
                 if not current_voice:
-                    error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
+                    error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.language}"
                     return None, error
         return current_voice, None
         

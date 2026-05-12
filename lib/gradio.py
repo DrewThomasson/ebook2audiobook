@@ -945,14 +945,14 @@ def build_interface(args:dict)->gr.Blocks:
 
             def disable_components(session_id:str, exceptions:list|None=None)->tuple:
                 if session_id is None:
-                    outputs = tuple(gr.update() for _ in range(20))
+                    outputs = tuple(gr.update() for _ in range(22))
                 else:
                     if exceptions is None:
                         exceptions = []
                     if 'gr_session_switch_btn' in exceptions:
-                        outputs = tuple(gr.update(interactive=False) for _ in range(19)) + (gr.update(interactive=True),)
+                        outputs = tuple(gr.update(interactive=False) for _ in range(21)) + (gr.update(interactive=True),)
                     else:
-                        outputs = tuple(gr.update(interactive=False) for _ in range(20))
+                        outputs = tuple(gr.update(interactive=False) for _ in range(22))
                 return outputs
 
             def enable_components(session_id:str)->tuple:
@@ -962,7 +962,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
-                            outputs = list(gr.update(interactive=True) for _ in range(20))
+                            outputs = list(gr.update(interactive=True) for _ in range(22))
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             enabled_convert_btn = False
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
@@ -977,7 +977,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'enable_components(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(23))
+                outputs = tuple(gr.update() for _ in range(25))
                 return outputs
 
             def disable_on_voice_upload()->tuple:
@@ -1089,7 +1089,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(23)])
+                            outputs = tuple([gr.update() for _ in range(25)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1123,6 +1123,19 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_voice_buttons = True if session.get('voice') is not None else False
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                         voice_file = session.get('voice')
+                        # --- translate state restore ---
+                        # session['language'] / ['language_iso1'] are never modified during conversion,
+                        # so they always reflect the user's source pick. session['translate'] (iso3) and
+                        # session['translate_iso1'] are the target pair.
+                        translate_enabled_state = bool(session.get('translate_enabled'))
+                        source_iso3 = session.get('language')
+                        translate_target_value = session.get('translate')
+                        translate_options = _build_translate_targets(source_iso3) if source_iso3 else []
+                        valid_target_codes = {o[1] for o in translate_options}
+                        if translate_target_value not in valid_target_codes:
+                            translate_target_value = translate_options[0][1] if translate_options else None
+                        translate_visible = translate_enabled_state and bool(translate_options)
+                        # --------------------------------
                         return (
                             gr.update(visible=visible_ebook_src, value=ebook_data, file_count=ebook_file_count),
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
@@ -1130,6 +1143,8 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=bool(session['blocks_preview'])),
                             gr.update(value=session['device']),
                             gr.update(value=session['language']),
+                            gr.update(value=translate_enabled_state),
+                            gr.update(visible=translate_visible, choices=translate_options, value=translate_target_value),
                             update_gr_voice_list(session_id),
                             update_gr_tts_engine_list(session_id),
                             update_gr_custom_model_list(session_id),
@@ -1151,7 +1166,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(23)])
+                outputs = tuple([gr.update() for _ in range(25)])
                 return outputs
 
             def restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -1803,20 +1818,35 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update()
                 session['translate_enabled'] = bool(enabled)
                 if not enabled:
-                    session['translate_to'] = None
-                    session['translate_from'] = None
-                    session['translate_from_iso1'] = None
+                    session['translate'] = None
+                    session['translate_iso1'] = None
                     return gr.update(visible=False, choices=[], value=None)
-                options = _build_translate_targets(session.get('language'))
+                source_iso3 = session.get('language')
+                options = _build_translate_targets(source_iso3)
                 default = options[0][1] if options else None
                 if default:
-                    session['translate_to'] = default
+                    session['translate'] = default
+                    try:
+                        session['translate_iso1'] = Lang(default).pt1
+                    except Exception:
+                        session['translate_iso1'] = None
+                else:
+                    session['translate'] = None
+                    session['translate_iso1'] = None
                 return gr.update(visible=True, choices=options, value=default)
 
             def change_gr_translate_target(session_id:str, target:str)->None:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    session['translate_to'] = target or None
+                    if target:
+                        session['translate'] = target
+                        try:
+                            session['translate_iso1'] = Lang(target).pt1
+                        except Exception:
+                            session['translate_iso1'] = None
+                    else:
+                        session['translate'] = None
+                        session['translate_iso1'] = None
                 return
 
             def refresh_translate_target_for_language(session_id:str, source_iso3:str)->dict:
@@ -1824,10 +1854,20 @@ def build_interface(args:dict)->gr.Blocks:
                 if not session or not session.get('id', False):
                     return gr.update()
                 if not session.get('translate_enabled'):
+                    session['translate'] = None
+                    session['translate_iso1'] = None
                     return gr.update(visible=False, choices=[], value=None)
                 options = _build_translate_targets(source_iso3)
                 default = options[0][1] if options else None
-                session['translate_to'] = default
+                if default:
+                    session['translate'] = default
+                    try:
+                        session['translate_iso1'] = Lang(default).pt1
+                    except Exception:
+                        session['translate_iso1'] = None
+                else:
+                    session['translate'] = None
+                    session['translate_iso1'] = None
                 return gr.update(visible=True, choices=options, value=default)
 
             def check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
@@ -2106,7 +2146,8 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_split":bool(output_split),
                             "output_split_hours": output_split_hours,
                             "translate_enabled": bool(translate_enabled),
-                            "translate_to": translate_target if translate_enabled else None
+                            "translate": translate_target if translate_enabled else None,
+                            "translate_iso1": (Lang(translate_target).pt1 if (translate_enabled and translate_target) else None)
                         }
                         if args['ebook_mode'] == ebook_modes['DIRECTORY']:
                             if isinstance(args['ebook_list'], list):
@@ -2716,7 +2757,9 @@ def build_interface(args:dict)->gr.Blocks:
                 *blocks_components_flat, gr_blocks_header, gr_blocks_expands
             ]
             outputs_restore_interface = [
-                gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language, gr_voice_list,
+                gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
+                gr_translate_enabled, gr_translate_target,
+                gr_voice_list,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn

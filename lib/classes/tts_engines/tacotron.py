@@ -19,7 +19,14 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones":{}}
+            # effective language for TTS (target when translating, else source)
             self.language = self.session.get('language')
+            self.language_iso1 = self.session.get('language_iso1')
+            if self.session.get('translate_enabled'):
+                if self.session.get('translate'):
+                    self.language = self.session['translate']
+                if self.session.get('translate_iso1'):
+                    self.language_iso1 = self.session['translate_iso1']
             tts_engine = self.session.get('tts_engine')
             if tts_engine not in default_engine_settings:
                 error = f'Invalid tts_engine {tts_engine}.'

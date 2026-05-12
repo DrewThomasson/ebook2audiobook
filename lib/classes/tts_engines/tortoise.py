@@ -19,7 +19,14 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
             tts_engine = self.session.get('tts_engine')
+            # effective language for TTS (target when translating, else source)
             self.language = self.session.get('language')
+            self.language_iso1 = self.session.get('language_iso1')
+            if self.session.get('translate_enabled'):
+                if self.session.get('translate'):
+                    self.language = self.session['translate']
+                if self.session.get('translate_iso1'):
+                    self.language_iso1 = self.session['translate_iso1']
             fine_tuned = self.session.get('fine_tuned')
             if tts_engine not in default_engine_settings:
                 error = f'Invalid tts_engine {tts_engine}.'

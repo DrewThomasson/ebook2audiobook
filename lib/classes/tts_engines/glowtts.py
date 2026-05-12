@@ -19,7 +19,14 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones": {}, "samplerate": None}
+            # effective language for TTS (target when translating, else source)
             self.language = self.session.get('language')
+            self.language_iso1 = self.session.get('language_iso1')
+            if self.session.get('translate_enabled'):
+                if self.session.get('translate'):
+                    self.language = self.session['translate']
+                if self.session.get('translate_iso1'):
+                    self.language_iso1 = self.session['translate_iso1']
             tts_engine = self.session.get('tts_engine')
             if tts_engine not in default_engine_settings:
                 error = f'Invalid tts_engine {tts_engine}.'
@@ -124,7 +131,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                         if part.endswith("'"):
                             part = part[:-1]
                         #part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        if self.session['language'] == 'bel':
+                        if self.language == 'bel':
                             from phonemizer import phonemize
                             part_ipa = phonemize(
                                 part,

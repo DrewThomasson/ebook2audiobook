@@ -18,7 +18,16 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
-            self.language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
+            # effective language for TTS (target when translating, else source)
+            self.language = self.session.get('language')
+            self.language_iso1 = self.session.get('language_iso1')
+            if self.session.get('translate_enabled'):
+                if self.session.get('translate'):
+                    self.language = self.session['translate']
+                if self.session.get('translate_iso1'):
+                    self.language_iso1 = self.session['translate_iso1']
+            # yourtts-specific regional language tag passed to engine.tts(language=...)
+            self.yourtts_language = self.language_iso1 if self.language_iso1 == 'en' else 'fr-fr' if self.language_iso1 == 'fr' else 'pt-br' if self.language_iso1 == 'pt' else 'en'
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
@@ -29,7 +38,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                     error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
                     raise ValueError(error)
             self.params['samplerate'] = model_cfg['samplerate']
-            self.model_path = model_cfg['repo'].replace("[lang]", self.session['language'])
+            self.model_path = model_cfg['repo'].replace("[lang]", self.language)
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
@@ -115,7 +124,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 audio_part = self.engine.tts(
                                     text=part,
-                                    language=self.language,
+                                    language=self.yourtts_language,
                                     **speaker_argument
                                 )
                         if torch.is_tensor(audio_part):
