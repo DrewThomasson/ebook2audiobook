@@ -1792,7 +1792,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session.get('translate_enabled') and session.get('translate'):
                             language = session['translate']
                         tts_engine_options = get_compatible_tts_engines(language)
-                        if session['tts_engine'] not in tts_engine_options
+                        if session['tts_engine'] not in tts_engine_options:
                             session['tts_engine'] = tts_engine_options[0]
                         return gr.update(choices=tts_engine_options, value=session['tts_engine'])
                 except Exception as e:
