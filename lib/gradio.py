@@ -1871,7 +1871,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return tuple(gr.update() for _ in range(4))
                 session['translate_enabled'] = bool(enabled)
                 return (
-                    _update_gr_translate(session_id),,
+                    _update_gr_translate(session_id),
                     _update_gr_tts_engine_list(session_id),
                     _update_gr_custom_model_list(session_id),
                     _update_gr_fine_tuned_list(session_id)
