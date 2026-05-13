@@ -1830,7 +1830,7 @@ def build_interface(args:dict)->gr.Blocks:
                             translate = session.get('translate')
                             if not any(translate == name for name, val in translate_options):
                                 msg = 'No translate languages available'
-                                translate = translate_options[0][1] if translate_options else msg
+                                translate = translate_options[0][1] if translate_options else None
                             session['translate'] = translate
                             if not translate_options:
                                 translate_options.append((msg, None))
