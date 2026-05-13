@@ -1148,7 +1148,6 @@ def build_interface(args:dict)->gr.Blocks:
                         voice_file = session.get('voice')
                         translate_enabled_state = bool(session.get('translate_enabled'))
                         source_iso3 = session.get('language')
-                        print(f"--------------------{session.get('translate')}---------------")
                         translate_value = session.get('translate')
                         translate_options = _build_translate_targets(source_iso3) if source_iso3 else []
                         valid_target_codes = {o[1] for o in translate_options}
@@ -1886,6 +1885,7 @@ def build_interface(args:dict)->gr.Blocks:
                 else:
                     session['translate'] = None
                     session['translate_iso1'] = None
+                print(f"---------------{session['translate']}-----------------")
                 return (
                     update_gr_tts_engine_list(session_id),
                     update_gr_custom_model_list(session_id),
