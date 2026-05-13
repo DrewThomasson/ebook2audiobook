@@ -676,7 +676,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     with gr.Row(elem_id='gr_row_language') as gr_row_language:
                                         gr_language = gr.Dropdown(show_label=False, elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True, scale=2)
                                         gr_translate_enabled = gr.Checkbox(label='Translate', elem_id='gr_translate_enabled', value=False, interactive=True, scale=1, min_width=120)
-                                        gr_translate_target = gr.Dropdown(show_label=False, elem_id='gr_translate_target', choices=[], value=None, type='value', interactive=True, visible=False, scale=2)
+                                        gr_translate = gr.Dropdown(show_label=False, elem_id='gr_translate', choices=[], value=None, type='value', interactive=True, visible=False, scale=2)
                                 gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', elem_classes=['gr-group'], visible=visible_gr_group_voice_file)
                                 with gr_group_voice_file:
                                     gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
@@ -1148,10 +1148,10 @@ def build_interface(args:dict)->gr.Blocks:
                         voice_file = session.get('voice')
                         translate_enabled_state = bool(session.get('translate_enabled'))
                         source_iso3 = session.get('language')
+                        print(f"--------------------{session.get('translate')}---------------")
                         translate_value = session.get('translate')
                         translate_options = _build_translate_targets(source_iso3) if source_iso3 else []
                         valid_target_codes = {o[1] for o in translate_options}
-                        print(f'-------------{valid_target_codes}-------------')
                         if translate_value not in valid_target_codes:
                             translate_value = translate_options[0][1] if translate_options else None
                             session['translate'] = translate_value
@@ -1873,7 +1873,7 @@ def build_interface(args:dict)->gr.Blocks:
                     update_gr_fine_tuned_list(session_id)
                 )
 
-            def change_gr_translate_target(session_id:str, target:str)->tuple:
+            def change_gr_translate(session_id:str, target:str)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
                     return gr.update(), gr.update(), gr.update()
@@ -2736,7 +2736,7 @@ def build_interface(args:dict)->gr.Blocks:
             def chain_check_override(event):
                 return event.then(
                     fn=check_override_ebook,
-                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event, gr_translate_enabled, gr_translate_target],
+                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event, gr_translate_enabled, gr_translate],
                     outputs=[gr_modal, gr_event],
                     show_progress_on=[gr_progress]
                 )
@@ -2796,20 +2796,20 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours,
-                gr_translate_enabled, gr_translate_target
+                gr_translate_enabled, gr_translate
             ]
             outputs_disable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
-                gr_translate_enabled, gr_translate_target,
+                gr_translate_enabled, gr_translate,
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn
             ]
             outputs_enable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
-                gr_translate_enabled, gr_translate_target,
+                gr_translate_enabled, gr_translate,
                 gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn
             ]
             outputs_edit_blocks = [
@@ -2821,7 +2821,7 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_restore_interface = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
-                gr_translate_enabled, gr_translate_target, gr_voice_list, gr_tts_engine_list, 
+                gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, 
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn
@@ -2936,18 +2936,18 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_translate_target_for_language,
                 inputs=[gr_session, gr_language],
-                outputs=[gr_translate_target, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
                 show_progress_on=[gr_progress]
             )
             gr_translate_enabled.change(
                 fn=change_gr_translate_enabled,
                 inputs=[gr_session, gr_translate_enabled],
-                outputs=[gr_translate_target, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
                 show_progress_on=[gr_progress]
             )
-            gr_translate_target.change(
-                fn=change_gr_translate_target,
-                inputs=[gr_session, gr_translate_target],
+            gr_translate.change(
+                fn=change_gr_translate,
+                inputs=[gr_session, gr_translate],
                 outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
                 show_progress_on=[gr_progress]
             )
