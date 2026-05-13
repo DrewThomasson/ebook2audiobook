@@ -1825,19 +1825,22 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session.get('language') != selected:   
-                            session['language'] = selected
                             translate_options = build_translate_targets(selected)
                             translate = session.get('translate')
-                            if not any(translate == name for name, val in translate_options):
-                                msg = 'No translate languages available'
-                                translate = translate_options[0][1] if translate_options else None
+                            session['language'] = selected
                             session['translate'] = translate
-                            if not translate_options:
-                                translate_options.append((msg, None))
-                            try:
-                                session['translate_iso1'] = Lang(translate).pt1
-                            except Exception:
+                            if translate_options:
+                                if not any(translate == name for name, val in translate_options):
+                                    translate = translate_options[0][1]
+                                try:
+                                    session['translate_iso1'] = Lang(translate).pt1
+                                except Exception:
+                                    session['translate_iso1'] = None
+                            else:
+                                msg = 'No translate languages available'
+                                session['translate'] = None
                                 session['translate_iso1'] = None
+                                translate_options.append((msg, None))
                             visible_gr_translate = True if session.get('translate_enabled') else False
                             return (
                                 gr.update(value=session['language']),
