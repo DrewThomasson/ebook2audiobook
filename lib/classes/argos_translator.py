@@ -83,7 +83,8 @@ class ArgosTranslator:
             tgt = next((l for l in installed if l.code == target_iso1),None)
             return src is not None and tgt is not None
         except Exception as e:
-            print(f'ArgosTranslator.is_package_installed() error: {e}')
+            error = f'ArgosTranslator.is_package_installed() error: {e}'
+            print(error)
             return False
 
     def _is_pair_installed(self, from_iso1:str, to_iso1:str)->bool:
@@ -104,25 +105,31 @@ class ArgosTranslator:
                 direct_pkg = next((p for p in available if p.from_code == source_iso1 and p.to_code == target_iso1),None)
                 if direct_pkg is not None:
                     if not self._is_pair_installed(source_iso1, target_iso1):
-                        print(f"Downloading argos package {source_iso1} -> {target_iso1}...")
+                        msg = f'Downloading argos package {source_iso1} -> {target_iso1}...'
+                        print(msg)
                         argostranslate.package.install_from_path(direct_pkg.download())
-                        print(f"Installed argos package {source_iso1} -> {target_iso1}")
+                        msg = f'Installed argos package {source_iso1} -> {target_iso1}'
+                        print(msg)
                     return None, True
                 # english-pivot
                 if source_iso1!='en' and target_iso1!='en':
                     src_to_en = next((p for p in available if p.from_code == source_iso1 and p.to_code=='en'),None)
                     en_to_tgt = next((p for p in available if p.from_code=='en' and p.to_code == target_iso1),None)
                     if src_to_en is not None and en_to_tgt is not None:
-                        print(f"No direct {source_iso1}->{target_iso1}; using English pivot.")
+                        msg = f"No direct {source_iso1}->{target_iso1}; using English pivot."
+                        print(msg)
                         if not self._is_pair_installed(source_iso1,'en'):
-                            print(f"Downloading argos package {source_iso1} -> en...")
+                            msg = f"Downloading argos package {source_iso1} -> en..."
+                            print(msg)
                             argostranslate.package.install_from_path(src_to_en.download())
                         if not self._is_pair_installed('en',target_iso1):
-                            print(f"Downloading argos package en -> {target_iso1}...")
+                            msg = f'Downloading argos package en -> {target_iso1}...'
+                            print(msg)
                             argostranslate.package.install_from_path(en_to_tgt.download())
-                        print(f"English pivot ready: {source_iso1} -> en -> {target_iso1}")
+                        msg = f'English pivot ready: {source_iso1} -> en -> {target_iso1}'
+                        print(msg)
                         return None, True
-                error = f"No argos package available for {source_iso1} -> {target_iso1} (direct or English-pivoted)"
+                error = f'No argos package available for {source_iso1} -> {target_iso1} (direct or English-pivoted)'
                 return error, False
         except Exception as e:
             error = f'ArgosTranslator.download_and_install() error: {e}'
@@ -130,43 +137,49 @@ class ArgosTranslator:
 
     def start(self, source_iso1:str, target_iso1:str)->tuple[str|None, bool]:
         try:
-            if self.neural_machine!="argostranslate":
-                return f"Neural machine '{self.neural_machine}' is not supported.",False
-            err, ok = self.download_and_install(source_iso1, target_iso1)
+            if self.neural_machine != "argostranslate":
+                error = f'Neural machine '{self.neural_machine}' is not supported.'
+                return error, False
+            error, ok = self.download_and_install(source_iso1, target_iso1)
             if not ok:
-                return err, False
+                return error, False
             installed = argostranslate.translate.get_installed_languages()
             src = next((l for l in installed if l.code == source_iso1),None)
             tgt = next((l for l in installed if l.code == target_iso1),None)
             if not src or not tgt:
-                return f"Translation languages not installed: {source_iso1} -> {target_iso1}",False
+                error = f'Translation languages not installed: {source_iso1} -> {target_iso1}'
+                return error, False
             # get_translation() returns a PackageTranslation for direct pairs and a
             # CompositeTranslation when only a pivot path exists (via Bellman-Ford)
             self.translation = src.get_translation(tgt)
             if self.translation is None:
-                return f"No translation path available: {source_iso1} -> {target_iso1}",False
+                error = f'No translation path available: {source_iso1} -> {target_iso1}'
+                return , False
             self.source_lang_iso1 = source_iso1
             self.target_lang_iso1 = target_iso1
             return None, True
         except Exception as e:
-            return f'ArgosTranslator.start() error: {e}',False
+            error = f'ArgosTranslator.start() error: {e}'
+            return error, False
 
     def process(self, text:str)->tuple[str, bool]:
         try:
             if not text or not text.strip():
                 return text, True
             if self.translation is None:
-                return 'ArgosTranslator.process() error: not started',False
+                error = 'ArgosTranslator.process() error: not started'
+                return error, False
             return self.translation.translate(text),True
         except Exception as e:
-            return f'ArgosTranslator.process() error: {e}',False
+            error = f'ArgosTranslator.process() error: {e}'
+            return error, False
 
-    def translate_with_sml(self, text:str, sml_pattern)->tuple:
+    def translate_with_sml(self, text:str, sml_pattern)->tuple[str, bool]:
 
         def _stash(m):
-            key = f"SMLZZ{len(placeholders)}ZZSML"
+            key = f'SMLZZ{len(placeholders)}ZZSML'
             placeholders[key]=m.group(0)
-            return f" {key} "
+            return f' {key} '
 
         try:
             if not text or not text.strip():
@@ -181,4 +194,4 @@ class ArgosTranslator:
             return out, True
         except Exception as e:
             error = f'translate_with_sml() error: {e}'
-            return None, False
+            return error, False
