@@ -1160,18 +1160,6 @@ def build_interface(args:dict)->gr.Blocks:
                         voice_file = session.get('voice')
                         translate_enabled_state = bool(session.get('translate_enabled'))
                         language = session.get('language')
-                        translate = session.get('translate')
-                        translate_options = _build_translate_targets(language) if language else []
-                        translate_codes = {o[1] for o in translate_options}
-                        if translate not in translate_codes:
-                            translate = translate_options[0][1] if translate_options else None
-                            session['translate'] = translate
-                            try:
-                                session['translate_iso1'] = Lang(translate).pt1
-                            except Exception:
-                                session['translate_iso1'] = None
-                        translate_visible = translate_enabled_state and bool(translate_options)
-                        print(f"-------------------{session['translate']}--------------------")
                         return (
                             gr.update(visible=visible_ebook_src, value=ebook_data, file_count=ebook_file_count),
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
@@ -1180,7 +1168,6 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=session['device']),
                             gr.update(value=session['language']),
                             gr.update(value=translate_enabled_state),
-                            gr.update(visible=translate_visible, choices=translate_options, value=translate),
                             _update_gr_voice_list(session_id),
                             _update_gr_tts_engine_list(session_id),
                             _update_gr_custom_model_list(session_id),
