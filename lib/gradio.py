@@ -1876,14 +1876,10 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
                     return gr.update(), gr.update(), gr.update()
-                if target:
-                    session['translate'] = target
-                    try:
-                        session['translate_iso1'] = Lang(target).pt1
-                    except Exception:
-                        session['translate_iso1'] = None
-                else:
-                    session['translate'] = None
+                session['translate'] = target
+                try:
+                    session['translate_iso1'] = Lang(target).pt1
+                except Exception:
                     session['translate_iso1'] = None
                 return (
                     update_gr_tts_engine_list(session_id),
@@ -2933,7 +2929,7 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_voice_list],
                 show_progress_on=[gr_progress]
             ).then(
-                fn=refresh_translate_target_for_language,
+                fn=change_gr_translate,
                 inputs=[gr_session, gr_language],
                 outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
                 show_progress_on=[gr_progress]
@@ -2947,7 +2943,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_translate.change(
                 fn=change_gr_translate,
                 inputs=[gr_session, gr_translate],
-                outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
                 show_progress_on=[gr_progress]
             )
             gr_tts_engine_list.change(
