@@ -274,16 +274,28 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                 }
                 #gr_row_language {
-                    align-items: center !important;
+                    align-items: stretch !important;
                 }
                 #gr_row_language > * {
                     margin-top: 0 !important;
                     margin-bottom: 0 !important;
                 }
-                #gr_translate_enabled,
-                #gr_translate_enabled > label {
-                    padding-top: 0 !important;
-                    padding-bottom: 0 !important;
+                #gr_translate_enabled {
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    padding: 0 !important;
+                }
+                #gr_translate_enabled > *,
+                #gr_translate_enabled label,
+                #gr_translate_enabled .wrap {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: 100% !important;
+                    height: 100% !important;
                 }
                 .play-pause-button:hover svg {
                     fill: #ffab00 !important;
