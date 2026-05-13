@@ -1,0 +1,11 @@
+services:
+  sml-extractor:
+    build: .
+    ports:
+      - "7860:7860"
+    volumes:
+      # Mount the parent ebook2audiobook folder for voice library access.
+      # Automatically mounts the directory two levels up.
+      - ../../:/ebook2audiobook
+      # Mount a local output directory to persist generated SML files
+      - ./output:/app/output
