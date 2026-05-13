@@ -315,8 +315,13 @@ def generate_output(progress=gr.Progress()):
     )
 
 
-def create_app(default_e2a_path: str = ""):
-    """Create the Gradio web application.
+def create_app(default_e2a_path: str = "") -> gr.Blocks:
+    if not default_e2a_path:
+        default_e2a_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        if not os.path.isdir(os.path.join(default_e2a_path, "voices")) and os.path.isdir("/ebook2audiobook/voices"):
+            default_e2a_path = "/ebook2audiobook"
+    
+    """Create the Gradio web interface.
 
     Args:
         default_e2a_path: Default value for the ebook2audiobook path field.
@@ -360,10 +365,10 @@ def create_app(default_e2a_path: str = ""):
                         info="'big' is more accurate but slower and requires more RAM/GPU",
                     )
                     e2a_path = gr.Textbox(
-                        label="📂 ebook2audiobook Path (required)",
+                        label="📂 ebook2audiobook Path",
                         placeholder="/path/to/ebook2audiobook",
                         value=default_e2a_path,
-                        info="Full path to your local ebook2audiobook folder (supports ~/)",
+                        info="Full path to your local ebook2audiobook folder (auto-detected by default)",
                     )
 
             process_btn = gr.Button("🔍 Analyze Book", variant="primary", size="lg")

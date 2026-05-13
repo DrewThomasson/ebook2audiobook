@@ -24,8 +24,7 @@ The easiest way to run the tool — all dependencies (BookNLP, spaCy, Calibre, G
 git clone https://github.com/DrewThomasson/E2A-SML.git
 cd E2A-SML
 
-# 2. Edit docker-compose.yml to point to your local ebook2audiobook folder
-#    (default: ~/ebook2audiobook)
+# 2. Start the container (it automatically mounts the parent ebook2audiobook folder)
 
 # 3. Build and run
 docker compose up --build
@@ -40,12 +39,12 @@ Open http://localhost:7860 in your browser. The ebook2audiobook path is pre-fill
 docker build -t sml-extractor .
 
 # Run the web GUI (mount your ebook2audiobook folder)
-docker run -p 7860:7860 -v ~/ebook2audiobook:/ebook2audiobook sml-extractor
+docker run -p 7860:7860 -v $(pwd)/../..:/ebook2audiobook sml-extractor
 
 # Run headless mode
-docker run -v ~/ebook2audiobook:/ebook2audiobook -v ./output:/app/output \
+docker run -v $(pwd)/../..:/ebook2audiobook -v ./output:/app/output \
   -v ./mybook.txt:/app/mybook.txt \
-  sml-extractor python cli.py /app/mybook.txt --e2a-path /ebook2audiobook -o /app/output
+  sml-extractor python cli.py /app/mybook.txt -o /app/output
 ```
 
 ## 🚀 Local Installation
@@ -62,7 +61,7 @@ python -m spacy download en_core_web_sm
 ### Web GUI
 
 ```bash
-python cli.py --gui --e2a-path /path/to/ebook2audiobook
+python cli.py --gui
 ```
 
 Opens a browser-based interface where you can:
@@ -75,19 +74,19 @@ Opens a browser-based interface where you can:
 
 ```bash
 # Basic - analyze a book and generate SML output
-python cli.py mybook.txt --e2a-path /path/to/ebook2audiobook
+python cli.py mybook.txt
 
 # With custom output directory
-python cli.py mybook.txt --e2a-path ~/ebook2audiobook -o output/
+python cli.py mybook.txt -o output/
 
 # Process an epub (requires Calibre)
-python cli.py mybook.epub --e2a-path ~/ebook2audiobook
+python cli.py mybook.epub
 
 # Use the more accurate (but slower) BookNLP model
-python cli.py mybook.txt --e2a-path ~/ebook2audiobook --model big
+python cli.py mybook.txt --model big
 
 # Use pre-existing BookNLP output
-python cli.py --booknlp-dir existing_output/ --book-id mybook --e2a-path ~/ebook2audiobook -o sml_output/
+python cli.py --booknlp-dir existing_output/ --book-id mybook -o sml_output/
 ```
 
 ## 📖 How It Works
@@ -195,7 +194,7 @@ Options:
   input_file              Input book file (.txt, .epub, .mobi, .pdf, etc.)
   -o, --output-dir        Output directory (default: output/)
   --model {small,big}     BookNLP model size (default: small)
-  --e2a-path              Path to ebook2audiobook repo for voice auto-assignment
+  --e2a-path              Path to ebook2audiobook repo (auto-detected by default)
   --voices-dir            Path to custom voice files directory
   --language              Language code for voice selection (default: eng)
   --booknlp-dir           Use existing BookNLP output directory
