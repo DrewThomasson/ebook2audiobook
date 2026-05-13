@@ -46,7 +46,7 @@ docker run -v $(pwd)/../..:/ebook2audiobook -v ./output:/app/output \
 ### Installation
 
 ```bash
-git clone https://github.com/DrewThomasson/E2A-SML.git
+git clone https://github.com/DrewThomasson/ebook2audiobook.git
 cd ebook2audiobook/tools/E2A-SML
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
