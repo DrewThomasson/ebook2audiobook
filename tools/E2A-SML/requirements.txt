@@ -1,0 +1,13 @@
+# BookNLP dependencies
+tokenizers>=0.13.0
+spacy>=3.5.0
+sentence-transformers
+tqdm>=4.65.0
+
+# Web GUI
+gradio>=4.0.0
+
+# Core dependencies
+torch>=2.0.0
+transformers>=4.30.0
+numpy>=1.24.0
