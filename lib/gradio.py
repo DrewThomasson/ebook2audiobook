@@ -1830,7 +1830,7 @@ def build_interface(args:dict)->gr.Blocks:
                             translate = session.get('translate')
                             if not any(translate == name for name, val in translate_options):
                                 translate = translate_options[0][1]
-                            session['translate'] = translate if translate
+                            session['translate'] = translate
                             try:
                                 session['translate_iso1'] = Lang(translate).pt1
                             except Exception:
