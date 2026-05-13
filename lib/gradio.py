@@ -1764,20 +1764,22 @@ def build_interface(args:dict)->gr.Blocks:
                     return gr.update()
                 lang = session.get('language')
                 translate = session.get('translate', None)
+                translate_iso1 = session['translate_iso1']
                 translate_options = _build_translate_targets(lang)
                 if translate_options:
                     if not any(translate == name for name, val in translate_options):
-                        session['translate'] = translate_options[0][1]
+                        translate = translate_options[0][1]
                     try:
-                        session['translate_iso1'] = Lang(translate).pt1
+                        translate_iso1 = Lang(translate).pt1
                     except Exception:
-                        session['translate_iso1'] = None
+                        translate_iso1 = None
                 else:
                     msg = 'No translate languages available'
-                    session['translate'] = None
-                    session['translate_iso1'] = None
+                    translate = None
+                    translate_iso1 = None
                     translate_options.append((msg, None))
                 session['translate'] = translate
+                session['translate_iso1'] = translate_iso1
                 visible_gr_translate = True if session.get('translate_enabled') else False
                 return gr.update(visible=visible_gr_translate, choices=translate_options, value=session['translate'])
 
