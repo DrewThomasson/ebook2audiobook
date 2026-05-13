@@ -1849,6 +1849,7 @@ def build_interface(args:dict)->gr.Blocks:
                         session['translate_iso1'] = None
                         translate_options.append((msg, None))
                     visible_gr_translate = True if session.get('translate_enabled') else False
+                    print(f"-------------------{session['translate']}--------------------")
                     return (
                         gr.update(value=session['language']),
                         gr.update(visible=visible_gr_translate, choices=translate_options, value=translate),
