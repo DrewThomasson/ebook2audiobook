@@ -1124,7 +1124,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(25)])
+                            outputs = tuple([gr.update() for _ in range(24)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1189,7 +1189,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(25)])
+                outputs = tuple([gr.update() for _ in range(24)])
                 return outputs
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -2794,7 +2794,7 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_restore_interface = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
-                gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, 
+                gr_translate_enabled, gr_voice_list, gr_tts_engine_list, 
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn
