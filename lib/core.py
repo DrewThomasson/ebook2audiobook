@@ -1547,7 +1547,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
 
 def get_sentences(session_id:str, text:str)->list|None:
 
-    def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
+    def _split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
         last_end = 0
         for match in pattern.finditer(text):
@@ -1559,7 +1559,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 result.append(tail)
         return result
 
-    def split_sentence_on_sml(sentence:str)->list[str]:
+    def _split_sentence_on_sml(sentence:str)->list[str]:
         parts:list[str] = []
         last = 0
         for m in SML_TAG_PATTERN.finditer(sentence):
@@ -1576,36 +1576,20 @@ def get_sentences(session_id:str, text:str)->list|None:
                 parts.append(tail)
         return parts
 
-    def strip_escaped_sml(s:str)->str:
+    def _strip_escaped_sml(s:str)->str:
         return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
-    def clean_len(s:str)->int:
-        return len(strip_escaped_sml(s))
+    def _clean_len(s:str)->int:
+        return len(_strip_escaped_sml(s))
 
-    def is_latin_only(s:str)->bool:
-        s = strip_escaped_sml(s)
+    def _is_latin_only(s:str)->bool:
+        s = _strip_escaped_sml(s)
         s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
         has_latin = bool(re.search(r'[A-Za-z]', s))
         has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
         return has_latin and not has_nonlatin
 
-    def split_at_space_limit(s:str)->list[str]:
-        out = []
-        rest = s.strip()
-        while rest and len(strip_escaped_sml(rest)) > max_chars:
-            cut = rest[:max_chars + 1]
-            idx = cut.rfind(' ')
-            if idx == -1:
-                out.append(rest[:max_chars].strip())
-                rest = rest[max_chars:].strip()
-            else:
-                out.append(rest[:idx].strip())
-                rest = rest[idx + 1:].strip()
-        if rest:
-            out.append(rest.strip())
-        return out
-
-    def segment_ideogramms(text:str)->list[str]:
+    def _segment_ideogramms(text:str)->list[str]:
         result = []
         try:
             if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
@@ -1632,7 +1616,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             DependencyError(e)
             return [text]
 
-    def join_ideogramms(idg_list:list[str])->str:
+    def _join_ideogramms(idg_list:list[str])->str:
         try:
             buffer = ''
             prev_latin = False
@@ -1673,7 +1657,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
             re.DOTALL
         )
-        hard_list = split_inclusive(text, hard_pattern)
+        hard_list = _split_inclusive(text, hard_pattern)
         if not hard_list:
             hard_list = [text.strip()]
         hard_list = [s.strip() for s in hard_list if s.strip()]
@@ -1693,7 +1677,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 continue
             if i + 1 < n:
                 next_s = hard_list[i + 1].strip()
-                next_clean = strip_escaped_sml(next_s)
+                next_clean = _strip_escaped_sml(next_s)
                 if next_clean and sum(c.isalnum() for c in next_clean) < 3:
                     s = f"{s} {next_s}"
                     i += 2
@@ -1701,14 +1685,14 @@ def get_sentences(session_id:str, text:str)->list|None:
                     i += 1
             else:
                 i += 1
-            if len(strip_escaped_sml(s)) <= max_chars:
+            if len(_strip_escaped_sml(s)) <= max_chars:
                 soft_list.append(s)
                 continue
-            parts = split_inclusive(s, soft_pattern)
+            parts = _split_inclusive(s, soft_pattern)
             if parts:
                 valid = False
                 for p in parts:
-                    if len(strip_escaped_sml(p.strip())) <= max_chars:
+                    if len(_strip_escaped_sml(p.strip())) <= max_chars:
                         valid = True
                         break
                 if valid:
@@ -1726,7 +1710,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 continue
             rest = s
             while rest:
-                current_len = len(strip_escaped_sml(rest))   # ← rename variable
+                current_len = len(_strip_escaped_sml(rest))   # ← rename variable
                 if current_len <= max_chars:
                     last_list.append(rest.strip())
                     break
@@ -1758,7 +1742,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 final_list.append(cur)
                 i += 1
                 continue
-            cur_len = clean_len(cur)
+            cur_len = _clean_len(cur)
             if cur_len <= merge_max_chars:
                 j = i + 1
                 while j < n:
@@ -1766,15 +1750,15 @@ def get_sentences(session_id:str, text:str)->list|None:
                     if not nxt:
                         j += 1
                         continue
-                    if cur_len + clean_len(nxt) <= max_chars:
+                    if cur_len + _clean_len(nxt) <= max_chars:
                         cur = cur.rstrip() + ' ' + nxt.lstrip()
-                        cur_len = clean_len(cur)
+                        cur_len = _clean_len(cur)
                         j += 1
                         continue
                     break
                 if final_list:
                     prev = final_list[-1]
-                    if clean_len(prev) + cur_len <= max_chars:
+                    if _clean_len(prev) + cur_len <= max_chars:
                         final_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
                         i = j
                         continue
@@ -1787,7 +1771,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = split_sentence_on_sml(s)
+                parts = _split_sentence_on_sml(s)
                 for part in parts:
                     part = part.strip()
                     if not part:
@@ -1795,7 +1779,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                     if SML_TAG_PATTERN.fullmatch(part):
                         result.append(part)
                         continue
-                    tokens = segment_ideogramms(part)
+                    tokens = _segment_ideogramms(part)
                     if isinstance(tokens, list):
                         result.extend([t for t in tokens if t.strip()])
                     else:
@@ -1803,8 +1787,8 @@ def get_sentences(session_id:str, text:str)->list|None:
                         if tokens:
                             result.append(tokens)
             ideogram_list = []
-            for s in join_ideogramms(result):
-                if not is_latin_only(s):
+            for s in _join_ideogramms(result):
+                if not _is_latin_only(s):
                     ideogram_list.append(s)
             if ideogram_list:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
@@ -1858,7 +1842,7 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
         re.UNICODE
     )
 
-    def normalize_commas(num_str:str)->str:
+    def _normalize_commas(num_str:str)->str:
         # ormalize number string to standard comma format: 1,234,567
         tok = num_str.replace('\u00A0', '').replace(' ', '')
         if '.' in tok:
@@ -1870,7 +1854,7 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
             integer_part = tok.replace(',', '')
             return "{:,}".format(int(integer_part))
 
-    def clean_single_num(num_str:str)->str:
+    def _clean_single_num(num_str:str)->str:
         tok = unicodedata.normalize('NFKC', num_str)
         if tok.lower() in ('inf', 'infinity', 'nan'):
             return tok
@@ -1883,7 +1867,7 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
             return tok
 
         # Normalize commas before final output
-        tok = normalize_commas(tok)
+        tok = _normalize_commas(tok)
 
         if is_num2words_compat:
             new_lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
@@ -1896,9 +1880,9 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
             return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
 
     def clean_match(match:re.Match)->str:
-        first_num = clean_single_num(match.group(1))
+        first_num = _clean_single_num(match.group(1))
         dash_char = match.group(2) or ''
-        second_num = clean_single_num(match.group(3)) if match.group(3) else ''
+        second_num = _clean_single_num(match.group(3)) if match.group(3) else ''
         trailing = match.group(4) or ''
         if second_num:
             return f'{first_num}{dash_char}{second_num}{trailing}'
@@ -1930,7 +1914,7 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
 
 def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
 
-    def n2w(n:int)->str:
+    def _n2w(n:int)->str:
         key = (n, lang, is_num2words_compat)
         if key in _n2w_cache:
             return _n2w_cache[key]
@@ -1943,7 +1927,7 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
         _n2w_cache[key] = word
         return word
 
-    def repl_num(m:re.Match)->str:
+    def _repl_num(m:re.Match)->str:
         # Reject enumeration patterns like "(1.2)"
         start, end = m.start(), m.end()
         if (
@@ -1965,11 +1949,11 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             return m.group(0)
         # If no language clock rules, just say numbers plainly
         if not lc:
-            parts = [n2w(h)]
+            parts = [_n2w(h)]
             if mnt != 0:
-                parts.append(n2w(mnt))
+                parts.append(_n2w(mnt))
             if sec is not None and sec > 0:
-                parts.append(n2w(sec))
+                parts.append(_n2w(sec))
             return ' '.join(parts)
         next_hour = (h + 1) % 24
         special_hours = lc.get('special_hours', {})
@@ -1977,27 +1961,27 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             if h in special_hours:
                 phrase = special_hours[h]
             else:
-                phrase = lc['oclock'].format(hour=n2w(h))
+                phrase = lc['oclock'].format(hour=_n2w(h))
         elif mnt == 15:
-            phrase = lc['quarter_past'].format(hour=n2w(h))
+            phrase = lc['quarter_past'].format(hour=_n2w(h))
         elif mnt == 30:
             if lang == 'deu':
-                phrase = lc['half_past'].format(next_hour=n2w(next_hour))
+                phrase = lc['half_past'].format(next_hour=_n2w(next_hour))
             else:
-                phrase = lc['half_past'].format(hour=n2w(h))
+                phrase = lc['half_past'].format(hour=_n2w(h))
         elif mnt == 45:
-            phrase = lc['quarter_to'].format(next_hour=n2w(next_hour))
+            phrase = lc['quarter_to'].format(next_hour=_n2w(next_hour))
         elif mnt < 30:
-            phrase = lc['past'].format(hour=n2w(h), minute=n2w(mnt)) if mnt != 0 else lc['oclock'].format(hour=n2w(h))
+            phrase = lc['past'].format(hour=_n2w(h), minute=_n2w(mnt)) if mnt != 0 else lc['oclock'].format(hour=_n2w(h))
         else:
             minute_to_hour = 60 - mnt
             phrase = lc['to'].format(
-                next_hour=n2w(next_hour),
-                minute=n2w(minute_to_hour),
-                minute_to_hour=n2w(minute_to_hour)
+                next_hour=_n2w(next_hour),
+                minute=_n2w(minute_to_hour),
+                minute_to_hour=_n2w(minute_to_hour)
             )
         if sec is not None and sec > 0:
-            second_phrase = lc['second'].format(second=n2w(sec))
+            second_phrase = lc['second'].format(second=_n2w(sec))
             phrase = lc['full'].format(phrase=phrase, second_phrase=second_phrase)
         return phrase
 
@@ -2006,11 +1990,11 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
     )
     lc = language_clock.get(lang) if 'language_clock' in globals() else None
     _n2w_cache = {}
-    return time_rx.sub(repl_num, text)
+    return time_rx.sub(_repl_num, text)
 
 def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
 
-    def repl_ambiguous(match:re.Match)->str:
+    def _repl_ambiguous(match:re.Match)->str:
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
             return f'{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}'
@@ -2051,16 +2035,16 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
             r'|'                         # or
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
-        text = re.sub(ambiguous_pattern, repl_ambiguous, text)
+        text = re.sub(ambiguous_pattern, _repl_ambiguous, text)
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
 def roman2number(text:str)->str:
 
-    def is_valid_roman(s:str)->bool:
+    def _is_valid_roman(s:str)->bool:
         return bool(valid_roman.fullmatch(s))
 
-    def to_int(s:str)->str:
+    def _to_int(s:str)->str:
         s = s.upper()
         i = 0
         result = 0
@@ -2074,30 +2058,30 @@ def roman2number(text:str)->str:
                 return s
         return str(result)
 
-    def repl_heading(m:re.Match)->str:
+    def _repl_heading(m:re.Match)->str:
         roman = m.group(1)
-        if not is_valid_roman(roman):
+        if not _is_valid_roman(roman):
             return m.group(0)
-        return f"{to_int(roman)}{m.group(2)}{m.group(3)}"
+        return f"{_to_int(roman)}{m.group(2)}{m.group(3)}"
 
-    def repl_standalone(m:re.Match)->str:
+    def _repl_standalone(m:re.Match)->str:
         roman = m.group(1)
-        if not is_valid_roman(roman):
+        if not _is_valid_roman(roman):
             return m.group(0)
-        return f"{to_int(roman)}{m.group(2)}"
+        return f"{_to_int(roman)}{m.group(2)}"
 
-    def repl_word(m:re.Match)->str:
+    def _repl_word(m:re.Match)->str:
         roman = m.group(1)
-        if not is_valid_roman(roman):
+        if not _is_valid_roman(roman):
             return m.group(0)
-        return to_int(roman)
+        return _to_int(roman)
 
-    def repl_chapter_single(m:re.Match)->str:
+    def _repl_chapter_single(m:re.Match)->str:
         word = m.group(1)
         roman = m.group(2)
-        if not is_valid_roman(roman):
+        if not _is_valid_roman(roman):
             return m.group(0)
-        return f'{word} {to_int(roman)}'
+        return f'{word} {_to_int(roman)}'
 
     valid_roman = re.compile(
         r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
@@ -2114,20 +2098,20 @@ def roman2number(text:str)->str:
     )
     text = re.sub(
         r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
-        repl_heading,
+        _repl_heading,
         text,
         flags=re.MULTILINE
     )
     text = re.sub(
         r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
-        repl_standalone,
+        _repl_standalone,
         text,
         flags=re.MULTILINE
     )
-    text = chapter_words_re.sub(repl_chapter_single, text)
+    text = chapter_words_re.sub(_repl_chapter_single, text)
     text = re.sub(
         r'(?<!\S)([IVXLCDM]{2,})(?!\S)',
-        repl_word,
+        _repl_word,
         text
     )
     return text
@@ -2137,7 +2121,7 @@ def is_latin(s:str)->bool:
 
 def foreign2latin(text:str, base_lang:str)->str:
 
-    def script_of(word:str)->str:
+    def _script_of(word:str)->str:
         for ch in word:
             if ch.isalpha():
                 name = unicodedata.name(ch, '')
@@ -2155,8 +2139,8 @@ def foreign2latin(text:str, base_lang:str)->str:
                     return 'chinese'
         return 'unknown'
 
-    def romanize(word:str)->str:
-        scr = script_of(word)
+    def _romanize(word:str)->str:
+        scr = _script_of(word)
         if scr == 'latin':
             return word
         try:
@@ -2193,7 +2177,7 @@ def foreign2latin(text:str, base_lang:str)->str:
         if t in protected:
             buf.append(t)
         elif re.match(r"^\w+$", t):
-            buf.append(romanize(t))
+            buf.append(_romanize(t))
         else:
             buf.append(t)
     out:str = ''
@@ -2253,11 +2237,11 @@ def normalize_sml_tags(text:str)->tuple[bool, str]:
 def escape_sml(text:str)->tuple[str, list[str]]:
     sml_blocks:list[str] = []
 
-    def replace(m:re.Match[str])->str:
+    def _replace(m:re.Match[str])->str:
         sml_blocks.append(m.group(0))
         return chr(sml_escape_tag + len(sml_blocks) - 1)
 
-    return SML_TAG_PATTERN.sub(replace, text), sml_blocks
+    return SML_TAG_PATTERN.sub(_replace, text), sml_blocks
 
 def restore_sml(text:str, sml_blocks:list[str])->str:
     for i, block in enumerate(sml_blocks):
@@ -2273,7 +2257,7 @@ def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
-    def replace(match:re.Match)->str:
+    def _replace(match:re.Match)->str:
         token = match.group(1)
         for k, expansion in mapping.items():
             if token.lower() == k.lower():
@@ -2292,7 +2276,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
             flags=re.IGNORECASE
         )
-        text = pattern.sub(replace, text)
+        text = pattern.sub(_replace, text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc…
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
@@ -2593,7 +2577,7 @@ def combine_audio_sentences(session_id:str, file:str, block_id:str, sentence_cou
 
 def combine_audio_chapters(session_id:str)->list[str]|None:
 
-    def generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
+    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
         try:
             out_fmt = session['output_format']
             is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
@@ -2649,13 +2633,13 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 f.write(ffmpeg_metadata)
             return output_metadata_path
         except Exception as e:
-            error = f'generate_ffmpeg_metadata() Error: {e}'
+            error = f'_generate_ffmpeg_metadata() Error: {e}'
             print(error)
             return False
 
-    def export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
+    def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
 
-        def on_progress(p:float)->None:
+        def _on_progress(p:float)->None:
             if is_gui_process:
                 progress_bar(p / 100.0, desc=f'Export Part {part_num}' if part_num is not None else 'Export')
 
@@ -2730,7 +2714,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-progress', 'pipe:2',
                     '-y', final_file
                 ]
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=on_progress)
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=_on_progress)
             if not proc_pipe.result:
                 error = f'ffmpeg export failed for {final_file}'
                 print(error)
@@ -2861,14 +2845,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     return None
                 metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
                 part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
+                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
                 final_file = os.path.join(
                     session['audiobooks_dir'],
                     f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
                     if is_multi_part else session['final_name']
                 )
                 block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
-                if export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
+                if _export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
                     exported_files.append(final_file)
         else:
             concat_list = os.path.join(concat_dir, 'concat_list_chapters_1.txt')
@@ -2885,9 +2869,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 return None
             metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
             chapters_zip = list(zip(chapter_files, chapter_titles))
-            generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
+            _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
             final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-            if export_audio(merged_audio, metadata_file, final_file):
+            if _export_audio(merged_audio, metadata_file, final_file):
                 exported_files.append(final_file)
         return exported_files if exported_files else None
     except Exception as e:
@@ -2896,7 +2880,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
-    def on_progress(p:float)->None:
+    def _on_progress(p:float)->None:
         if is_gui_process:
             progress_bar(p / 100.0, desc='Assemble')
 
@@ -2945,7 +2929,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             is_gui_process=is_gui_process,
             total_duration=total_duration,
             msg='Assemble',
-            on_progress=on_progress
+            on_progress=_on_progress
         )
         if proc_pipe.result and os.path.exists(out_file):
             msg = f'Completed → {out_file}'
@@ -3564,7 +3548,7 @@ def finalize_audiobook(session_id:str)->tuple:
         is_preview = session.get('blocks_preview', False) if session else False
         result = lambda msg, ok: (gr.update(value=msg), gr.update(value=ok)) if is_preview else (msg, ok)
 
-        def fail(error):
+        def _fail(error):
             session['status'] = status_tags['END']
             return result(error, False)
 
@@ -3576,7 +3560,7 @@ def finalize_audiobook(session_id:str)->tuple:
             return result(msg, False)
         if not session.get('blocks_current', {}):
             error = 'finalize_audiobook() failed! blocks_current empty!'
-            return fail(error)
+            return _fail(error)
         session['status'] = status_tags['CONVERTING']
         print('Get sentences…')
         blocks_current = session['blocks_current']
@@ -3609,11 +3593,11 @@ def finalize_audiobook(session_id:str)->tuple:
             if session and session.get('id', False):
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
-            return fail(error)
+            return _fail(error)
         show_alert(session_id, {'type': 'info', 'msg': 'Combining sentences and chapters…'})
         exported_files = combine_audio_chapters(session_id)
         if exported_files is None:
-            return fail('combine_audio_chapters() error: exported_files not created!')
+            return _fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
