@@ -1860,7 +1860,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if session.get('language') != selected:
                     session['language'] = selected
                     return (
-                        gr.update(value=session['language']),
+                        gr.update(value=selected),
                         _update_gr_translate_list(session_id),
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
@@ -1872,28 +1872,32 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
                     return tuple(gr.update() for _ in range(4))
-                session['translate_enabled'] = bool(enabled)
-                return (
-                    _update_gr_translate_list(session_id),
-                    _update_gr_tts_engine_list(session_id),
-                    _update_gr_custom_model_list(session_id),
-                    _update_gr_fine_tuned_list(session_id)
-                )
+                if session['translate_enabled'] != enabled:
+                    session['translate_enabled'] = enabled
+                    return (
+                        _update_gr_translate_list(session_id),
+                        _update_gr_tts_engine_list(session_id),
+                        _update_gr_custom_model_list(session_id),
+                        _update_gr_fine_tuned_list(session_id)
+                    )
+                return tuple(gr.update() for _ in range(4))
 
-            def _change_gr_translate(session_id:str, target:str)->tuple:
+            def _change_gr_translate(session_id:str, translate:str)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
                     return tuple(gr.update() for _ in range(4))
-                session['translate'] = target
-                try:
-                    session['translate_iso1'] = Lang(target).pt1
-                except Exception:
-                    session['translate_iso1'] = None
-                return (
-                    _update_gr_tts_engine_list(session_id),
-                    _update_gr_custom_model_list(session_id),
-                    _update_gr_fine_tuned_list(session_id)
-                )
+                if translate != session['translate']:
+                    session['translate'] = translate
+                    try:
+                        session['translate_iso1'] = Lang(translate).pt1
+                    except Exception:
+                        session['translate_iso1'] = None
+                    return (
+                        _update_gr_tts_engine_list(session_id),
+                        _update_gr_custom_model_list(session_id),
+                        _update_gr_fine_tuned_list(session_id)
+                    )
+                return tuple(gr.update() for _ in range(4))
 
             def _check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
                 dir_path = None
