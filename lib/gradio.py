@@ -1885,7 +1885,6 @@ def build_interface(args:dict)->gr.Blocks:
                 else:
                     session['translate'] = None
                     session['translate_iso1'] = None
-                print(f"---------------{session['translate']}-----------------")
                 return (
                     update_gr_tts_engine_list(session_id),
                     update_gr_custom_model_list(session_id),
