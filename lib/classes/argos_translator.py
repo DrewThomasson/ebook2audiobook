@@ -161,18 +161,24 @@ class ArgosTranslator:
         except Exception as e:
             return f'ArgosTranslator.process() error: {e}',False
 
-    def translate_with_sml(self, text:str, sml_pattern)->tuple[str, bool]:
-        if not text or not text.strip():
-            return text, True
-        placeholders:dict={}
+    def translate_with_sml(self, text:str, sml_pattern)->tuple:
+
         def _stash(m):
             key = f"SMLZZ{len(placeholders)}ZZSML"
             placeholders[key]=m.group(0)
             return f" {key} "
-        masked = sml_pattern.sub(_stash, text) if sml_pattern is not None else text
-        out, ok = self.process(masked)
-        if not ok:
-            return out, False
-        for key, original in placeholders.items():
-            out = out.replace(key, original)
-        return out, True
+
+        try:
+            if not text or not text.strip():
+                return text, True
+            placeholders = {}
+            masked = sml_pattern.sub(_stash, text) if sml_pattern is not None else text
+            out, ok = self.process(masked)
+            if not ok:
+                return out, False
+            for key, original in placeholders.items():
+                out = out.replace(key, original)
+            return out, True
+        except Exception as e:
+            error = f'translate_with_sml() error: {e}'
+            return None, False
