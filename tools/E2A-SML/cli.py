@@ -277,7 +277,6 @@ def _launch_gui(args):
             server_name=args.host,
             server_port=args.port,
             share=args.share,
-            theme=gr.themes.Soft(),
         )
     except ImportError as e:
         print(f"Error: Could not launch GUI. Make sure gradio is installed: {e}")
