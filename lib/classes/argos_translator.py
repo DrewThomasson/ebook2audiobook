@@ -53,10 +53,6 @@ class ArgosTranslator:
         return sorted(set(p.from_code for p in pkgs))
 
     def get_target_options(self,source_iso3:str)->list[tuple[str,str]]:
-        """Return [(display_label, iso3), ...] reachable from source_iso3.
-        Includes English-pivot routes (source -> en -> target) when no direct
-        package exists, since argostranslate auto-pivots via CompositeTranslation
-        whenever both legs are installed."""
         source_iso1=self.get_language_iso1(source_iso3)
         if not source_iso1:
             return []
@@ -64,8 +60,6 @@ class ArgosTranslator:
         pkgs=argostranslate.package.get_available_packages()
         direct=set(p.to_code for p in pkgs if p.from_code==source_iso1)
         reachable=set(direct)
-        # english-pivot: if source can reach English (or IS English), it can reach
-        # everything English can reach in one extra hop
         if source_iso1=='en':
             pass
         elif 'en' in direct:
@@ -96,8 +90,6 @@ class ArgosTranslator:
             return False
 
     def _is_pair_installed(self,from_iso1:str,to_iso1:str)->bool:
-        """Strict per-package check on installed Argos packages (not just
-        installed languages, which may already exist via a different pair)."""
         try:
             for pkg in argostranslate.package.get_installed_packages():
                 if pkg.from_code==from_iso1 and pkg.to_code==to_iso1:
@@ -107,8 +99,6 @@ class ArgosTranslator:
             return False
 
     def download_and_install(self,source_iso1:str,target_iso1:str)->tuple[str|None,bool]:
-        """Install the direct (source -> target) package when available; otherwise
-        install both legs of the English pivot (source -> en, en -> target)."""
         try:
             with self._install_lock:
                 self._ensure_index()
@@ -175,7 +165,6 @@ class ArgosTranslator:
             return f'ArgosTranslator.process() error: {e}',False
 
     def translate_with_sml(self,text:str,sml_pattern)->tuple[str,bool]:
-        """Translate while preserving SML tags via alphanumeric placeholders."""
         if not text or not text.strip():
             return text,True
         placeholders:dict={}
