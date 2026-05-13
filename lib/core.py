@@ -1082,7 +1082,7 @@ def convert2epub(session_id:str)-> bool:
             print(error)
             return False
 
-def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
+def get_ebook_title(epubBook:EpubBook, all_docs:list[Any])->str|None:
     # 1. Try metadata (official EPUB title)
     meta_title = epubBook.get_metadata('DC','title')
     if meta_title and meta_title[0][0].strip():
@@ -2074,30 +2074,30 @@ def roman2number(text:str)->str:
                 return s
         return str(result)
 
-    def repl_heading(m: re.Match)->str:
+    def repl_heading(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
         return f"{to_int(roman)}{m.group(2)}{m.group(3)}"
 
-    def repl_standalone(m: re.Match)->str:
+    def repl_standalone(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
         return f"{to_int(roman)}{m.group(2)}"
 
-    def repl_word(m: re.Match)->str:
+    def repl_word(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
         return to_int(roman)
 
-    def repl_chapter_single(m: re.Match)->str:
+    def repl_chapter_single(m:re.Match)->str:
         word = m.group(1)
         roman = m.group(2)
         if not is_valid_roman(roman):
             return m.group(0)
-        return f"{word} {to_int(roman)}"
+        return f'{word} {to_int(roman)}'
 
     valid_roman = re.compile(
         r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
