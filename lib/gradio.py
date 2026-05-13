@@ -1865,7 +1865,6 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
                     return gr.update(), gr.update(), gr.update(), gr.update()
-                target_update = gr.update()
                 session['translate_enabled'] = bool(enabled)
                 if enabled:
                     lang = session.get('language')
@@ -1890,6 +1889,8 @@ def build_interface(args:dict)->gr.Blocks:
                     except Exception:
                         session['translate_iso1'] = None
                     target_update = gr.update(visible=True, choices=translate_options, value=translate)
+                else:
+                    target_update = gr.update(visible=False)
                 return (
                     target_update,
                     update_gr_tts_engine_list(session_id),
