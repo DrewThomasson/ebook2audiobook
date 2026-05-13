@@ -24,4 +24,4 @@ RUN mkdir -p /ebook2audiobook
 EXPOSE 7860
 
 # Default: launch the web GUI accessible from outside the container
-CMD ["python", "cli.py", "--gui", "--host", "0.0.0.0", "--e2a-path", "/ebook2audiobook"]
+CMD ["python", "cli.py", "--gui", "--host", "0.0.0.0"]

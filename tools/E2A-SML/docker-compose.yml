@@ -4,8 +4,8 @@ services:
     ports:
       - "7860:7860"
     volumes:
-      # Mount your local ebook2audiobook folder for voice library access.
-      # Update the path on the left side to match your local ebook2audiobook location.
-      - ~/ebook2audiobook:/ebook2audiobook
+      # Mount the parent ebook2audiobook folder for voice library access.
+      # Automatically mounts the directory two levels up.
+      - ../../:/ebook2audiobook
       # Mount a local output directory to persist generated SML files
       - ./output:/app/output

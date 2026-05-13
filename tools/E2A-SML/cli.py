@@ -63,10 +63,15 @@ Examples:
         default="small",
         help="BookNLP model size (default: small)",
     )
+    default_e2a_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    if not os.path.isdir(os.path.join(default_e2a_path, "voices")) and os.path.isdir("/ebook2audiobook/voices"):
+        default_e2a_path = "/ebook2audiobook"
+
     parser.add_argument(
         "--e2a-path",
+        default=default_e2a_path,
         help="Path to ebook2audiobook repository (required for voice assignment). "
-        "Supports ~ for home directory, e.g. ~/ebook2audiobook",
+        "Defaults to the parent directory of this tool.",
     )
     parser.add_argument(
         "--voices-dir",
@@ -128,8 +133,7 @@ Examples:
     if not args.input_file and not args.booknlp_dir:
         parser.error("Either input_file or --booknlp-dir is required (or use --gui)")
 
-    if not args.e2a_path:
-        parser.error("--e2a-path is required. Provide the path to your ebook2audiobook folder.")
+
 
     if not os.path.isdir(args.e2a_path):
         parser.error(f"ebook2audiobook path not found: {args.e2a_path}")
