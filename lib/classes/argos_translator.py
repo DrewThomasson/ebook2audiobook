@@ -138,7 +138,7 @@ class ArgosTranslator:
     def start(self, source_iso1:str, target_iso1:str)->tuple[str|None, bool]:
         try:
             if self.neural_machine != "argostranslate":
-                error = f'Neural machine '{self.neural_machine}' is not supported.'
+                error = f'Neural machine {self.neural_machine} is not supported.'
                 return error, False
             error, ok = self.download_and_install(source_iso1, target_iso1)
             if not ok:
