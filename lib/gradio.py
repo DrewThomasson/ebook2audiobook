@@ -1758,7 +1758,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return gr.update()
 
-            def _update_gr_translate(session_id:str)->dict:
+            def _update_gr_translate_list(session_id:str)->dict:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
                     return gr.update()
@@ -1793,6 +1793,7 @@ def build_interface(args:dict)->gr.Blocks:
                             language = session['translate']
                         tts_engine_options = get_compatible_tts_engines(language)
                         session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
+                        print(f"tts_engine: {session['tts_engine']}--------------")
                         return gr.update(choices=tts_engine_options, value=session['tts_engine'])
                 except Exception as e:
                     error = f'_update_gr_tts_engine_list(): {e}!'
@@ -1860,7 +1861,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session['language'] = selected
                     return (
                         gr.update(value=session['language']),
-                        _update_gr_translate(session_id),
+                        _update_gr_translate_list(session_id),
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
                         _update_gr_fine_tuned_list(session_id)
@@ -1873,7 +1874,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return tuple(gr.update() for _ in range(4))
                 session['translate_enabled'] = bool(enabled)
                 return (
-                    _update_gr_translate(session_id),
+                    _update_gr_translate_list(session_id),
                     _update_gr_tts_engine_list(session_id),
                     _update_gr_custom_model_list(session_id),
                     _update_gr_fine_tuned_list(session_id)
