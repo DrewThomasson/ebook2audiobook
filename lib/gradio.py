@@ -1862,25 +1862,31 @@ def build_interface(args:dict)->gr.Blocks:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
                     return gr.update(), gr.update(), gr.update(), gr.update()
+                target_update = gr.update()
                 session['translate_enabled'] = bool(enabled)
-                if not enabled:
-                    session['translate'] = None
-                    session['translate_iso1'] = None
-                    target_update = gr.update(visible=False, choices=[], value=None)
-                else:
+                if enabled:
                     lang = session.get('language')
                     translate_options = build_translate_targets(lang)
-                    default = translate_options[0][1] if translate_options else None
-                    if default:
-                        session['translate'] = default
+                    translate = session['translate'] 
+                    if not any(translate == name for name, val in translate_options):
+                        msg = 'No translate languages available'
+                        translate = translate_options[0][1] if translate_options else None
+                    if translate:
+                        session['translate'] = translate
                         try:
-                            session['translate_iso1'] = Lang(default).pt1
+                            session['translate_iso1'] = Lang(translate).pt1
                         except Exception:
                             session['translate_iso1'] = None
                     else:
                         session['translate'] = None
                         session['translate_iso1'] = None
-                    target_update = gr.update(visible=True, choices=translate_options, value=default)
+                    if not translate_options:
+                        translate_options.append((msg, None))
+                    try:
+                        session['translate_iso1'] = Lang(translate).pt1
+                    except Exception:
+                        session['translate_iso1'] = None
+                    target_update = gr.update(visible=True, choices=translate_options, value=translate)
                 return (
                     target_update,
                     update_gr_tts_engine_list(session_id),
