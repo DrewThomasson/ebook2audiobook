@@ -273,6 +273,18 @@ def build_interface(args:dict)->gr.Blocks:
                     height: 60px !important;
                     background: var(--block-background-fill) !important;
                 }
+                #gr_row_language {
+                    align-items: center !important;
+                }
+                #gr_row_language > * {
+                    margin-top: 0 !important;
+                    margin-bottom: 0 !important;
+                }
+                #gr_translate_enabled,
+                #gr_translate_enabled > label {
+                    padding-top: 0 !important;
+                    padding-bottom: 0 !important;
+                }
                 .play-pause-button:hover svg {
                     fill: #ffab00 !important;
                     stroke: #ffab00 !important;
@@ -650,9 +662,9 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                     with gr.Row(elem_id='gr_row_language') as gr_row_language:
-                                        gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True, scale=2)
+                                        gr_language = gr.Dropdown(show_label=False, elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True, scale=2)
                                         gr_translate_enabled = gr.Checkbox(label='Translate', elem_id='gr_translate_enabled', value=False, interactive=True, scale=1, min_width=120)
-                                        gr_translate_target = gr.Dropdown(label='', elem_id='gr_translate_target', choices=[], value=None, type='value', interactive=True, visible=False, scale=2)
+                                        gr_translate_target = gr.Dropdown(show_label=False, elem_id='gr_translate_target', choices=[], value=None, type='value', interactive=True, visible=False, scale=2)
                                 gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', elem_classes=['gr-group'], visible=visible_gr_group_voice_file)
                                 with gr_group_voice_file:
                                     gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
