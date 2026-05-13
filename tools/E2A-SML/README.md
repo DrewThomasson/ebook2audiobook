@@ -20,13 +20,7 @@ The easiest way to run the tool — all dependencies (BookNLP, spaCy, Calibre, G
 ### Quick Start with Docker Compose
 
 ```bash
-# 1. Clone this repo
-git clone https://github.com/DrewThomasson/E2A-SML.git
-cd E2A-SML
-
-# 2. Start the container (it automatically mounts the parent ebook2audiobook folder)
-
-# 3. Build and run
+# 1. Build and run
 docker compose up --build
 ```
 
@@ -53,7 +47,7 @@ docker run -v $(pwd)/../..:/ebook2audiobook -v ./output:/app/output \
 
 ```bash
 git clone https://github.com/DrewThomasson/E2A-SML.git
-cd E2A-SML
+cd ebook2audiobook/tools/E2A-SML
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
