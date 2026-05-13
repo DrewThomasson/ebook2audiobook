@@ -1109,6 +1109,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def restore_interface(session_id:str, req:gr.Request)->tuple:
                 try:
+                    nonlocal translate_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
@@ -1875,6 +1876,7 @@ def build_interface(args:dict)->gr.Blocks:
                 )
 
             def change_gr_translate(session_id:str, src:str, target:str)->tuple:
+                nonlocal translate_options
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
                     return gr.update(), gr.update(), gr.update(), gr.update()
