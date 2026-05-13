@@ -1832,6 +1832,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 msg = 'No translate languages available'
                                 translate = translate_options[0][1] if translate_options else msg
                             session['translate'] = translate
+                            if not translate_options
+                                translate_options.append((None, msg))
                             try:
                                 session['translate_iso1'] = Lang(translate).pt1
                             except Exception:
