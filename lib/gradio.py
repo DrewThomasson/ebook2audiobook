@@ -1157,6 +1157,17 @@ def build_interface(args:dict)->gr.Blocks:
                         valid_target_codes = {o[1] for o in translate_options}
                         if translate_target_value not in valid_target_codes:
                             translate_target_value = translate_options[0][1] if translate_options else None
+                            # write back so downstream update_gr_tts_engine_list sees the
+                            # corrected target (otherwise effective_language would use the
+                            # stale saved value and engine choices would mismatch the UI)
+                            session['translate'] = translate_target_value
+                            if translate_target_value:
+                                try:
+                                    session['translate_iso1'] = Lang(translate_target_value).pt1
+                                except Exception:
+                                    session['translate_iso1'] = None
+                            else:
+                                session['translate_iso1'] = None
                         translate_visible = translate_enabled_state and bool(translate_options)
                         # --------------------------------
                         return (
@@ -2632,6 +2643,30 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['tts_engine'] = default_tts_engine
                             session['fine_tuned'] = default_fine_tuned
+                    # --- translate + tts_engine consistency pass ---
+                    # A saved session can have a translate target that is no longer
+                    # valid (package removed, language_mapping changed) or a tts_engine
+                    # that isn't compatible with the EFFECTIVE language (target when
+                    # translating, else source). Fix both BEFORE any UI handler runs,
+                    # otherwise the dropdowns may briefly hold a stale value while
+                    # restore_interface narrows their choices, which gradio's strict
+                    # Dropdown.preprocess catches as "Value X is not in the list of choices".
+                    if session.get('translate_enabled'):
+                        translate_target = session.get('translate')
+                        if not translate_target or translate_target not in language_mapping:
+                            session['translate_enabled'] = False
+                            session['translate'] = None
+                            session['translate_iso1'] = None
+                    effective_lang = session.get('language')
+                    if session.get('translate_enabled') and session.get('translate'):
+                        effective_lang = session['translate']
+                    if effective_lang:
+                        compatible = get_compatible_tts_engines(effective_lang)
+                        if compatible and session.get('tts_engine') not in compatible:
+                            session['tts_engine'] = compatible[0]
+                            session['fine_tuned'] = default_fine_tuned
+                            models = load_engine_presets(session['tts_engine'])
+                    # -----------------------------------------------
                     if isinstance(session.get('audiobook'), str):
                         if not os.path.exists(session['audiobook']):
                             session['audiobook'] = None
