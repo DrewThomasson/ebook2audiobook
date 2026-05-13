@@ -117,13 +117,13 @@ The tool converts BookNLP's tagged output into SML format:
 
 **SML output** (for ebook2audiobook):
 ```
-[voice:/path/to/narrator_voice.wav]
+[voice:Narrator]
 It was a bright cold day in April, and the clocks were striking thirteen.
 [/voice]
-[voice:/path/to/winston_voice.wav]
+[voice:Winston]
 "Freedom is the freedom to say that two plus two make four."
 [/voice]
-[voice:/path/to/obrien_voice.wav]
+[voice:OBrien]
 "How many fingers am I holding up, Winston?"
 [/voice]
 ```
@@ -147,31 +147,21 @@ When given the path to an ebook2audiobook installation, voices are automatically
 
 | File | Description |
 |---|---|
-| `{book_id}.sml.txt` | SML-tagged text with `[voice:]...[/voice]` tags |
-| `{book_id}.characters.json` | Character metadata with voice assignments |
+| `{book_id}.sml.txt` | SML-tagged text with `[voice:CharacterName]` macro tags |
+| `{book_id}.sml.json` | SML macros mapping character names to voice file paths |
+| `{book_id}.deprecated.sml.txt` | Legacy SML format with raw file paths in tags |
 
-### characters.json format
+### sml.json format
 
 ```json
 {
-  "characters": [
-    {
-      "normalized_name": "Narrator",
-      "inferred_gender": "unknown",
-      "inferred_age_category": "unknown",
-      "tts_engine": "XTTSv2",
-      "language": "eng",
-      "voice": "/path/to/voice.wav"
-    },
-    {
-      "normalized_name": "Winston",
-      "inferred_gender": "male",
-      "inferred_age_category": "adult",
-      "tts_engine": "XTTSv2",
-      "language": "eng",
-      "voice": "/path/to/male_voice.wav"
+  "macros": {
+    "voices": {
+      "Narrator": "/path/to/narrator_voice.wav",
+      "Winston": "/path/to/male_voice.wav",
+      "OBrien": "/path/to/obrien_voice.wav"
     }
-  ]
+  }
 }
 ```
 
