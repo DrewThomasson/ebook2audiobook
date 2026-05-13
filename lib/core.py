@@ -1660,18 +1660,14 @@ def get_sentences(session_id:str, text:str)->list|None:
         session = context.get_session(session_id)
         if not session:
             return None
-
         lang = session['language']
         if session.get('translate_enabled') and session.get('translate'):
             lang = session['translate']
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-
         # escape all SML tags to not be touched by any text treatment
         text, sml_blocks = escape_sml(text)
-
         assert not SML_TAG_PATTERN.search(text)
-
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
@@ -3049,30 +3045,7 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
-def resolve_voice(session_id:str, ebook_src:str)->str|None:
-    """
-    Returns the voice to use for a given ebook in DIRECTORY mode.
-    Lookup order: voice_map[abs(ebook_src)] -> voice_map[basename] -> session['voice'] -> None.
-    Voice file existence is checked; missing overrides fall through to the default.
-    """
-    session = context.get_session(session_id)
-    if not session:
-        return None
-    if not ebook_src:
-        return session.get('voice')
-    voice_map = session.get('voice_map') or {}
-    abs_src = os.path.abspath(ebook_src)
-    override = voice_map.get(abs_src) or voice_map.get(os.path.basename(ebook_src))
-    if override and os.path.exists(override):
-        return override
-    return session.get('voice')
-
 def fork_ebook_for_translation(session_id:str)->bool:
-    """
-    Copy session['ebook_src'] to <basename>_<target_iso3><ext> next to itself
-    and repoint session['ebook_src'] at the forked file. Idempotent.
-    Target iso3 comes from session['translate'].
-    """
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
@@ -3099,11 +3072,6 @@ def fork_ebook_for_translation(session_id:str)->bool:
         return False
 
 def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple[list, str|None]:
-    """
-    Translate a list of plain-text blocks. Source iso1 from session['language_iso1'],
-    target iso1 from session['translate_iso1']. SML tags preserved via the placeholder
-    pattern. Returns (blocks, error). Cancellation-aware via session['cancellation_requested'].
-    """
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
@@ -3120,7 +3088,8 @@ def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple[list, str|None]
         err, ok = translator.start(source_iso1, target_iso1)
         if not ok:
             return raw_blocks, err
-        print(f'Translating {len(raw_blocks)} block(s) {source_iso1} -> {target_iso1} …')
+        msg = f'Translating {len(raw_blocks)} block(s) {source_iso1} -> {target_iso1} …'
+        print(msg)
         out:list = []
         for idx, text in enumerate(tqdm(raw_blocks, desc='translate', unit='block')):
             if session['cancellation_requested']:
@@ -3132,10 +3101,12 @@ def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple[list, str|None]
             if not ok:
                 return raw_blocks, f'Translation failed at block {idx}: {translated}'
             out.append(translated)
-        print('Translation done.')
+        msg = 'Translation done.'
+        print(msg)
         return out, None
     except Exception as e:
-        return raw_blocks, f'translate_raw_blocks() error: {e}'
+        error = f'translate_raw_blocks() error: {e}'
+        return raw_blocks, error
 
 def convert_ebook(args:dict)->tuple:
     try:
@@ -3165,13 +3136,6 @@ def convert_ebook(args:dict)->tuple:
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 return error, False
-            # --- translation: validate target iso3 and derive target iso1 ---
-            # session['language'] / ['language_iso1'] stay as the user-selected SOURCE
-            # throughout the conversion. The target pair is kept separately in
-            # session['translate'] (iso3) and session['translate_iso1'] (iso1).
-            # Every function that needs the effective language captures it locally
-            # via: language = session['language']; language_iso1 = session['language_iso1']
-            # if session.get('translate_enabled'): language = session['translate']; language_iso1 = session['translate_iso1']
             translate_to = args.get('translate')
             translate_enabled = bool(args.get('translate_enabled')) and bool(translate_to)
             if translate_enabled:
@@ -3206,7 +3170,6 @@ def convert_ebook(args:dict)->tuple:
                 args['translate_enabled'] = False
                 args['translate'] = None
                 args['translate_iso1'] = None
-            # ----------------------------------------------------------------
             if args.get('ebook_mode') == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
                     error = 'Ebook textarea is empty.'
@@ -3241,7 +3204,6 @@ def convert_ebook(args:dict)->tuple:
             session['translate_enabled'] = bool(args.get('translate_enabled', False))
             session['translate'] = args.get('translate')
             session['translate_iso1'] = args.get('translate_iso1')
-            # tts_engine compat must check the EFFECTIVE language (target when translating)
             language = args['language']
             if args.get('translate_enabled') and args.get('translate'):
                 language = args['translate']
@@ -3266,12 +3228,10 @@ def convert_ebook(args:dict)->tuple:
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
-            # --- fork the source file so all downstream paths inherit the _<iso3> suffix ---
             if session['translate_enabled']:
                 if not fork_ebook_for_translation(session_id):
                     error = 'fork_ebook_for_translation() failed.'
                     return error, False
-            # -------------------------------------------------------------------------------
             ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             cleanup_models_cache()
             print(f"Processing eBook file: {os.path.basename(session['ebook_src'])}")
@@ -3485,7 +3445,6 @@ def convert_ebook(args:dict)->tuple:
                                         if data:
                                             for value, attributes in data:
                                                 metadata[key] = value
-                                    # effective language (target when translating) for output audiobook metadata
                                     language = session['language']
                                     language_iso1 = session['language_iso1']
                                     if session.get('translate_enabled') and session.get('translate'):
@@ -3502,7 +3461,6 @@ def convert_ebook(args:dict)->tuple:
                                                 session['metadata']['language'] = lang_dict.pt3
                                     except Exception as e:
                                         pass
-                                    # mismatch warning only makes sense when NOT translating
                                     if not session.get('translate_enabled'):
                                         if session['metadata']['language'] != session['language']:
                                             error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
@@ -3516,13 +3474,11 @@ def convert_ebook(args:dict)->tuple:
                                         if session.get('cover', False):
                                             if missing_orig_json:
                                                 raw_blocks = get_blocks(session_id, epubBook)
-                                                # translate AFTER get_blocks (source-text NLP ran on source language)
                                                 if raw_blocks and session.get('translate_enabled'):
                                                     raw_blocks, terr = translate_raw_blocks(session_id, list(raw_blocks))
                                                     if terr:
                                                         error = terr
                                                         return error, False
-                                                # ----------------------------------------------------------------------
                                                 if raw_blocks:
                                                     session['blocks_orig'] = {
                                                         "page": 0,

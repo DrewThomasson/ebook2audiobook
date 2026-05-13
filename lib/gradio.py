@@ -1146,10 +1146,6 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_voice_buttons = True if session.get('voice') is not None else False
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                         voice_file = session.get('voice')
-                        # --- translate state restore ---
-                        # session['language'] / ['language_iso1'] are never modified during conversion,
-                        # so they always reflect the user's source pick. session['translate'] (iso3) and
-                        # session['translate_iso1'] are the target pair.
                         translate_enabled_state = bool(session.get('translate_enabled'))
                         source_iso3 = session.get('language')
                         translate_target_value = session.get('translate')
@@ -1157,9 +1153,6 @@ def build_interface(args:dict)->gr.Blocks:
                         valid_target_codes = {o[1] for o in translate_options}
                         if translate_target_value not in valid_target_codes:
                             translate_target_value = translate_options[0][1] if translate_options else None
-                            # write back so downstream update_gr_tts_engine_list sees the
-                            # corrected target (otherwise effective_language would use the
-                            # stale saved value and engine choices would mismatch the UI)
                             session['translate'] = translate_target_value
                             if translate_target_value:
                                 try:
@@ -1169,7 +1162,6 @@ def build_interface(args:dict)->gr.Blocks:
                             else:
                                 session['translate_iso1'] = None
                         translate_visible = translate_enabled_state and bool(translate_options)
-                        # --------------------------------
                         return (
                             gr.update(visible=visible_ebook_src, value=ebook_data, file_count=ebook_file_count),
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
@@ -1762,7 +1754,6 @@ def build_interface(args:dict)->gr.Blocks:
                     nonlocal tts_engine_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        # effective language: target when translating, else source
                         language = session['language']
                         if session.get('translate_enabled') and session.get('translate'):
                             language = session['translate']
@@ -1847,7 +1838,8 @@ def build_interface(args:dict)->gr.Blocks:
                         return []
                     return ArgosTranslator().get_target_options(source_iso3)
                 except Exception as e:
-                    print(f'_build_translate_targets() error: {e}')
+                    error = f'_build_translate_targets() error: {e}'
+                    print(error)
                     return []
 
             def change_gr_translate_enabled(session_id:str, enabled:bool)->tuple:
@@ -1873,7 +1865,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session['translate'] = None
                         session['translate_iso1'] = None
                     target_update = gr.update(visible=True, choices=options, value=default)
-                # effective language changed -> refresh the engine cascade
                 return (
                     target_update,
                     update_gr_tts_engine_list(session_id),
@@ -1894,7 +1885,6 @@ def build_interface(args:dict)->gr.Blocks:
                 else:
                     session['translate'] = None
                     session['translate_iso1'] = None
-                # target changed -> effective language changed -> refresh engine cascade
                 return (
                     update_gr_tts_engine_list(session_id),
                     update_gr_custom_model_list(session_id),
@@ -1922,7 +1912,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session['translate'] = None
                         session['translate_iso1'] = None
                     target_update = gr.update(visible=True, choices=options, value=default)
-                # source changed -> if translate is on the target was rebuilt -> refresh engine cascade
                 return (
                     target_update,
                     update_gr_tts_engine_list(session_id),
@@ -2374,13 +2363,11 @@ def build_interface(args:dict)->gr.Blocks:
                                             return gr.update(), (event + 1)
                                         else:
                                             session['ebook_src'] = source
-                                            # --- mirror the filename fork that convert_ebook will perform ---
                                             stem_base = get_sanitized(Path(source).stem)
                                             if translate_enabled and translate_target and translate_target != session.get('language'):
                                                 stem = f"{stem_base}_{translate_target}"
                                             else:
                                                 stem = stem_base
-                                            # ----------------------------------------------------------------
                                             final_name = f"{stem}.{session['output_format']}"
                                             process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(final_name).stem).encode()).hexdigest()}")
                                             chapters_dir = os.path.join(process_dir, 'chapters')
@@ -2643,14 +2630,6 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             session['tts_engine'] = default_tts_engine
                             session['fine_tuned'] = default_fine_tuned
-                    # --- translate + tts_engine consistency pass ---
-                    # A saved session can have a translate target that is no longer
-                    # valid (package removed, language_mapping changed) or a tts_engine
-                    # that isn't compatible with the EFFECTIVE language (target when
-                    # translating, else source). Fix both BEFORE any UI handler runs,
-                    # otherwise the dropdowns may briefly hold a stale value while
-                    # restore_interface narrows their choices, which gradio's strict
-                    # Dropdown.preprocess catches as "Value X is not in the list of choices".
                     if session.get('translate_enabled'):
                         translate_target = session.get('translate')
                         if not translate_target or translate_target not in language_mapping:
@@ -2666,7 +2645,6 @@ def build_interface(args:dict)->gr.Blocks:
                             session['tts_engine'] = compatible[0]
                             session['fine_tuned'] = default_fine_tuned
                             models = load_engine_presets(session['tts_engine'])
-                    # -----------------------------------------------
                     if isinstance(session.get('audiobook'), str):
                         if not os.path.exists(session['audiobook']):
                             session['audiobook'] = None
