@@ -1171,6 +1171,7 @@ def build_interface(args:dict)->gr.Blocks:
                             except Exception:
                                 session['translate_iso1'] = None
                         translate_visible = translate_enabled_state and bool(translate_options)
+                        print(f"-------------------{session['translate']}--------------------")
                         return (
                             gr.update(visible=visible_ebook_src, value=ebook_data, file_count=ebook_file_count),
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
@@ -1849,7 +1850,6 @@ def build_interface(args:dict)->gr.Blocks:
                         session['translate_iso1'] = None
                         translate_options.append((msg, None))
                     visible_gr_translate = True if session.get('translate_enabled') else False
-                    print(f"-------------------{session['translate']}--------------------")
                     return (
                         gr.update(value=session['language']),
                         gr.update(visible=visible_gr_translate, choices=translate_options, value=translate),
