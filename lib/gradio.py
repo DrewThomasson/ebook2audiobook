@@ -1159,19 +1159,16 @@ def build_interface(args:dict)->gr.Blocks:
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                         voice_file = session.get('voice')
                         translate_enabled_state = bool(session.get('translate_enabled'))
-                        source_iso3 = session.get('language')
-                        translate_value = session.get('translate')
-                        translate_options = build_translate_targets(source_iso3) if source_iso3 else []
-                        valid_target_codes = {o[1] for o in translate_options}
-                        if translate_value not in valid_target_codes:
-                            translate_value = translate_options[0][1] if translate_options else None
-                            session['translate'] = translate_value
-                            if translate_value:
-                                try:
-                                    session['translate_iso1'] = Lang(translate_value).pt1
-                                except Exception:
-                                    session['translate_iso1'] = None
-                            else:
+                        language = session.get('language')
+                        translate = session.get('translate')
+                        translate_options = build_translate_targets(language) if language else []
+                        translate_codes = {o[1] for o in translate_options}
+                        if translate not in translate_codes:
+                            translate = translate_options[0][1] if translate_options else None
+                            session['translate'] = translate
+                            try:
+                                session['translate_iso1'] = Lang(translate).pt1
+                            except Exception:
                                 session['translate_iso1'] = None
                         translate_visible = translate_enabled_state and bool(translate_options)
                         return (
@@ -1182,7 +1179,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=session['device']),
                             gr.update(value=session['language']),
                             gr.update(value=translate_enabled_state),
-                            gr.update(visible=translate_visible, choices=translate_options, value=translate_value),
+                            gr.update(visible=translate_visible, choices=translate_options, value=translate),
                             update_gr_voice_list(session_id),
                             update_gr_tts_engine_list(session_id),
                             update_gr_custom_model_list(session_id),
