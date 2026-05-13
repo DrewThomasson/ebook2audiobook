@@ -649,10 +649,9 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
-                                    gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
-                                with gr.Group(elem_id='gr_group_translate', elem_classes=['gr-group']):
-                                    gr_translate_markdown = gr.Markdown(elem_id='gr_translate_markdown', elem_classes=['gr-markdown'], value='Translate')
-                                    gr_translate_enabled = gr.Checkbox(label='Translate source ebook before TTS', elem_id='gr_translate_enabled', value=False, interactive=True)
+                                    with gr.Row(elem_id='gr_row_language') as gr_row_language:
+                                        gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True, scale=2)
+                                        gr_translate_enabled = gr.Checkbox(label='Translate before TTS', elem_id='gr_translate_enabled', value=False, interactive=True, scale=1)
                                     gr_translate_target = gr.Dropdown(label='Target language', elem_id='gr_translate_target', choices=[], value=None, type='value', interactive=True, visible=False)
                                 gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', elem_classes=['gr-group'], visible=visible_gr_group_voice_file)
                                 with gr_group_voice_file:

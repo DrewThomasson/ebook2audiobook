@@ -53,23 +53,36 @@ class ArgosTranslator:
         return sorted(set(p.from_code for p in pkgs))
 
     def get_target_options(self,source_iso3:str)->list[tuple[str,str]]:
-        """Return [(display_label, iso3), ...] for languages reachable from source_iso3 via argos."""
+        """Return [(display_label, iso3), ...] reachable from source_iso3.
+        Includes English-pivot routes (source -> en -> target) when no direct
+        package exists, since argostranslate auto-pivots via CompositeTranslation
+        whenever both legs are installed."""
         source_iso1=self.get_language_iso1(source_iso3)
         if not source_iso1:
             return []
         self._ensure_index()
         pkgs=argostranslate.package.get_available_packages()
-        target_iso1_list=sorted(set(p.to_code for p in pkgs if p.from_code==source_iso1))
+        direct=set(p.to_code for p in pkgs if p.from_code==source_iso1)
+        reachable=set(direct)
+        # english-pivot: if source can reach English (or IS English), it can reach
+        # everything English can reach in one extra hop
+        if source_iso1=='en':
+            pass
+        elif 'en' in direct:
+            en_targets=set(p.to_code for p in pkgs if p.from_code=='en')
+            reachable|=en_targets
+        reachable.discard(source_iso1)
         options:list=[]
-        for iso1 in target_iso1_list:
+        for iso1 in reachable:
             iso3=self.get_language_iso3(iso1)
-            if iso3 == source_iso3:
+            if iso3==source_iso3:
                 continue
             if iso3 not in language_mapping:
                 continue
             details=language_mapping[iso3]
             label=f"{details['name']} - {details['native_name']}" if details['name']!=details['native_name'] else details['name']
             options.append((label,iso3))
+        options.sort(key=lambda o:o[0])
         return options
 
     def is_package_installed(self,source_iso1:str,target_iso1:str)->bool:
@@ -82,22 +95,48 @@ class ArgosTranslator:
             print(f'ArgosTranslator.is_package_installed() error: {e}')
             return False
 
+    def _is_pair_installed(self,from_iso1:str,to_iso1:str)->bool:
+        """Strict per-package check on installed Argos packages (not just
+        installed languages, which may already exist via a different pair)."""
+        try:
+            for pkg in argostranslate.package.get_installed_packages():
+                if pkg.from_code==from_iso1 and pkg.to_code==to_iso1:
+                    return True
+            return False
+        except Exception:
+            return False
+
     def download_and_install(self,source_iso1:str,target_iso1:str)->tuple[str|None,bool]:
+        """Install the direct (source -> target) package when available; otherwise
+        install both legs of the English pivot (source -> en, en -> target)."""
         try:
             with self._install_lock:
-                if self.is_package_installed(source_iso1,target_iso1):
-                    return None,True
                 self._ensure_index()
                 available=argostranslate.package.get_available_packages()
-                target_pkg=next((p for p in available if p.from_code==source_iso1 and p.to_code==target_iso1),None)
-                if target_pkg is None:
-                    error=f"No argos package available for {source_iso1} -> {target_iso1}"
-                    return error,False
-                print(f"Downloading argos package {source_iso1} -> {target_iso1}...")
-                pkg_path=target_pkg.download()
-                argostranslate.package.install_from_path(pkg_path)
-                print(f"Installed argos package {source_iso1} -> {target_iso1}")
-                return None,True
+                # direct
+                direct_pkg=next((p for p in available if p.from_code==source_iso1 and p.to_code==target_iso1),None)
+                if direct_pkg is not None:
+                    if not self._is_pair_installed(source_iso1,target_iso1):
+                        print(f"Downloading argos package {source_iso1} -> {target_iso1}...")
+                        argostranslate.package.install_from_path(direct_pkg.download())
+                        print(f"Installed argos package {source_iso1} -> {target_iso1}")
+                    return None,True
+                # english-pivot
+                if source_iso1!='en' and target_iso1!='en':
+                    src_to_en=next((p for p in available if p.from_code==source_iso1 and p.to_code=='en'),None)
+                    en_to_tgt=next((p for p in available if p.from_code=='en' and p.to_code==target_iso1),None)
+                    if src_to_en is not None and en_to_tgt is not None:
+                        print(f"No direct {source_iso1}->{target_iso1}; using English pivot.")
+                        if not self._is_pair_installed(source_iso1,'en'):
+                            print(f"Downloading argos package {source_iso1} -> en...")
+                            argostranslate.package.install_from_path(src_to_en.download())
+                        if not self._is_pair_installed('en',target_iso1):
+                            print(f"Downloading argos package en -> {target_iso1}...")
+                            argostranslate.package.install_from_path(en_to_tgt.download())
+                        print(f"English pivot ready: {source_iso1} -> en -> {target_iso1}")
+                        return None,True
+                error=f"No argos package available for {source_iso1} -> {target_iso1} (direct or English-pivoted)"
+                return error,False
         except Exception as e:
             error=f'ArgosTranslator.download_and_install() error: {e}'
             return error,False
@@ -114,7 +153,11 @@ class ArgosTranslator:
             tgt=next((l for l in installed if l.code==target_iso1),None)
             if not src or not tgt:
                 return f"Translation languages not installed: {source_iso1} -> {target_iso1}",False
+            # get_translation() returns a PackageTranslation for direct pairs and a
+            # CompositeTranslation when only a pivot path exists (via Bellman-Ford)
             self.translation=src.get_translation(tgt)
+            if self.translation is None:
+                return f"No translation path available: {source_iso1} -> {target_iso1}",False
             self.source_lang_iso1=source_iso1
             self.target_lang_iso1=target_iso1
             return None,True
