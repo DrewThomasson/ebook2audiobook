@@ -154,7 +154,7 @@ class ArgosTranslator:
             self.translation = src.get_translation(tgt)
             if self.translation is None:
                 error = f'No translation path available: {source_iso1} -> {target_iso1}'
-                return , False
+                return error, False
             self.source_lang_iso1 = source_iso1
             self.target_lang_iso1 = target_iso1
             return None, True
