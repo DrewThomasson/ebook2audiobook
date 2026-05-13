@@ -1833,12 +1833,12 @@ def build_interface(args:dict)->gr.Blocks:
                     return tuple(gr.update() for _ in range(5))
                 if session.get('language') != selected:   
                     translate_options = _build_translate_targets(selected)
-                    translate = session.get('translate')
+                    translate = session.get('translate', None)
                     session['language'] = selected
                     session['translate'] = translate
                     if translate_options:
                         if not any(translate == name for name, val in translate_options):
-                            translate = translate_options[0][1]
+                            session['translate'] = translate_options[0][1]
                         try:
                             session['translate_iso1'] = Lang(translate).pt1
                         except Exception:
