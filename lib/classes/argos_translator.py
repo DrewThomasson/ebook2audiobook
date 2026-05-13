@@ -7,6 +7,9 @@ from lib.conf_lang import language_mapping
 # NOTE: argostranslate API requires iso639-1 (2 letters) codes.
 # All public methods here accept/return iso639-3 except where explicitly named *_iso1.
 
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 class ArgosTranslator:
 
     _index_lock = threading.Lock()
@@ -144,8 +147,8 @@ class ArgosTranslator:
             if not ok:
                 return error, False
             installed = argostranslate.translate.get_installed_languages()
-            src = next((l for l in installed if l.code == source_iso1),None)
-            tgt = next((l for l in installed if l.code == target_iso1),None)
+            src = next((l for l in installed if l.code == source_iso1), None)
+            tgt = next((l for l in installed if l.code == target_iso1), None)
             if not src or not tgt:
                 error = f'Translation languages not installed: {source_iso1} -> {target_iso1}'
                 return error, False

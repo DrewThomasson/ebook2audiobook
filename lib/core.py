@@ -3055,7 +3055,7 @@ def fork_ebook_for_translation(session_id:str)->bool:
         print(error)
         return False
 
-def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple[list, str|None]:
+def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
@@ -3065,7 +3065,8 @@ def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple[list, str|None]
         source_iso1 = session.get('language_iso1')
         target_iso1 = session.get('translate_iso1')
         if not source_iso1 or not target_iso1:
-            return raw_blocks, f'Translation iso1 codes missing: {source_iso1} -> {target_iso1}'
+            msg = f'Translation iso1 codes missing: {source_iso1} -> {target_iso1}'
+            return raw_blocks, msg
         if source_iso1 == target_iso1:
             return raw_blocks, None
         translator = ArgosTranslator(neural_machine='argostranslate')
@@ -3074,7 +3075,7 @@ def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple[list, str|None]
             return raw_blocks, err
         msg = f'Translating {len(raw_blocks)} block(s) {source_iso1} -> {target_iso1} …'
         print(msg)
-        out:list = []
+        out = []
         for idx, text in enumerate(tqdm(raw_blocks, desc='translate', unit='block')):
             if session['cancellation_requested']:
                 return raw_blocks, 'Conversion cancelled'
