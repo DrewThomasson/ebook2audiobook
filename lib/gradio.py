@@ -1751,7 +1751,11 @@ def build_interface(args:dict)->gr.Blocks:
                     nonlocal tts_engine_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        tts_engine_options = get_compatible_tts_engines(session['language'])
+                        # effective language: target when translating, else source
+                        language = session['language']
+                        if session.get('translate_enabled') and session.get('translate'):
+                            language = session['translate']
+                        tts_engine_options = get_compatible_tts_engines(language)
                         session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
                         return gr.update(choices=tts_engine_options, value=session['tts_engine'])
                 except Exception as e:
@@ -1835,63 +1839,85 @@ def build_interface(args:dict)->gr.Blocks:
                     print(f'_build_translate_targets() error: {e}')
                     return []
 
-            def change_gr_translate_enabled(session_id:str, enabled:bool)->dict:
+            def change_gr_translate_enabled(session_id:str, enabled:bool)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return gr.update()
+                    return gr.update(), gr.update(), gr.update(), gr.update()
                 session['translate_enabled'] = bool(enabled)
                 if not enabled:
                     session['translate'] = None
                     session['translate_iso1'] = None
-                    return gr.update(visible=False, choices=[], value=None)
-                source_iso3 = session.get('language')
-                options = _build_translate_targets(source_iso3)
-                default = options[0][1] if options else None
-                if default:
-                    session['translate'] = default
-                    try:
-                        session['translate_iso1'] = Lang(default).pt1
-                    except Exception:
-                        session['translate_iso1'] = None
+                    target_update = gr.update(visible=False, choices=[], value=None)
                 else:
-                    session['translate'] = None
-                    session['translate_iso1'] = None
-                return gr.update(visible=True, choices=options, value=default)
-
-            def change_gr_translate_target(session_id:str, target:str)->None:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    if target:
-                        session['translate'] = target
+                    source_iso3 = session.get('language')
+                    options = _build_translate_targets(source_iso3)
+                    default = options[0][1] if options else None
+                    if default:
+                        session['translate'] = default
                         try:
-                            session['translate_iso1'] = Lang(target).pt1
+                            session['translate_iso1'] = Lang(default).pt1
                         except Exception:
                             session['translate_iso1'] = None
                     else:
                         session['translate'] = None
                         session['translate_iso1'] = None
-                return
+                    target_update = gr.update(visible=True, choices=options, value=default)
+                # effective language changed -> refresh the engine cascade
+                return (
+                    target_update,
+                    update_gr_tts_engine_list(session_id),
+                    update_gr_custom_model_list(session_id),
+                    update_gr_fine_tuned_list(session_id)
+                )
 
-            def refresh_translate_target_for_language(session_id:str, source_iso3:str)->dict:
+            def change_gr_translate_target(session_id:str, target:str)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return gr.update()
-                if not session.get('translate_enabled'):
-                    session['translate'] = None
-                    session['translate_iso1'] = None
-                    return gr.update(visible=False, choices=[], value=None)
-                options = _build_translate_targets(source_iso3)
-                default = options[0][1] if options else None
-                if default:
-                    session['translate'] = default
+                    return gr.update(), gr.update(), gr.update()
+                if target:
+                    session['translate'] = target
                     try:
-                        session['translate_iso1'] = Lang(default).pt1
+                        session['translate_iso1'] = Lang(target).pt1
                     except Exception:
                         session['translate_iso1'] = None
                 else:
                     session['translate'] = None
                     session['translate_iso1'] = None
-                return gr.update(visible=True, choices=options, value=default)
+                # target changed -> effective language changed -> refresh engine cascade
+                return (
+                    update_gr_tts_engine_list(session_id),
+                    update_gr_custom_model_list(session_id),
+                    update_gr_fine_tuned_list(session_id)
+                )
+
+            def refresh_translate_target_for_language(session_id:str, source_iso3:str)->tuple:
+                session = context.get_session(session_id)
+                if not session or not session.get('id', False):
+                    return gr.update(), gr.update(), gr.update(), gr.update()
+                if not session.get('translate_enabled'):
+                    session['translate'] = None
+                    session['translate_iso1'] = None
+                    target_update = gr.update(visible=False, choices=[], value=None)
+                else:
+                    options = _build_translate_targets(source_iso3)
+                    default = options[0][1] if options else None
+                    if default:
+                        session['translate'] = default
+                        try:
+                            session['translate_iso1'] = Lang(default).pt1
+                        except Exception:
+                            session['translate_iso1'] = None
+                    else:
+                        session['translate'] = None
+                        session['translate_iso1'] = None
+                    target_update = gr.update(visible=True, choices=options, value=default)
+                # source changed -> if translate is on the target was rebuilt -> refresh engine cascade
+                return (
+                    target_update,
+                    update_gr_tts_engine_list(session_id),
+                    update_gr_custom_model_list(session_id),
+                    update_gr_fine_tuned_list(session_id)
+                )
 
             def check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
                 dir_path = None
@@ -2897,19 +2923,20 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=refresh_translate_target_for_language,
                 inputs=[gr_session, gr_language],
-                outputs=[gr_translate_target],
+                outputs=[gr_translate_target, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
                 show_progress_on=[gr_progress]
             )
             gr_translate_enabled.change(
                 fn=change_gr_translate_enabled,
                 inputs=[gr_session, gr_translate_enabled],
-                outputs=[gr_translate_target],
+                outputs=[gr_translate_target, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
                 show_progress_on=[gr_progress]
             )
             gr_translate_target.change(
                 fn=change_gr_translate_target,
                 inputs=[gr_session, gr_translate_target],
-                outputs=None
+                outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                show_progress_on=[gr_progress]
             )
             gr_tts_engine_list.change(
                 fn=change_gr_tts_engine_list,
