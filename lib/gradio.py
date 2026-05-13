@@ -1106,6 +1106,16 @@ def build_interface(args:dict)->gr.Blocks:
                     parent.startswith(gradio_cache_dir) and
                     len(os.path.basename(parent)) >= 32
                 )
+                
+            def build_translate_targets(lang:str)->list:
+                try:
+                    if not lang:
+                        return []
+                    return ArgosTranslator().get_target_options(lang)
+                except Exception as e:
+                    error = f'build_translate_targets() error: {e}'
+                    print(error)
+                    return []
 
             def restore_interface(session_id:str, req:gr.Request)->tuple:
                 try:
@@ -1333,7 +1343,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if (session.get('ebook_src') == data and ebook_mode == ebook_modes['SINGLE']) or (session.get('ebook_list') == data and ebook_mode == ebook_modes['DIRECTORY']):
-                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                            return tuple(gr.update() for _ in range(5))
                         if ebook_mode == ebook_modes['SINGLE']:
                             session['ebook_src'] = data
                             # since ebook_textarea override ebook_src during the conversion
@@ -1385,11 +1395,11 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if not (session and session.get('id', False)):
-                        return gr.update(), gr.update(), gr.update(), gr.update()
+                        return tuple(gr.update() for _ in range(4))
                     if ebook_mode != ebook_modes['DIRECTORY'] or evt.index is None:
                         return gr.update(), gr.update(value=''), gr.update(), gr.update(value='', visible=False)
                     if session.get('status') != status_tags['READY']:
-                        return gr.update(), gr.update(), gr.update(), gr.update()
+                        return tuple(gr.update() for _ in range(4))
                     # evt.index can be int or (row, col) tuple — normalise.
                     row = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
                     live_list = ebook_src if isinstance(ebook_src, list) and ebook_src else None
@@ -1413,7 +1423,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'select_gr_ebook_src(): {e}'
                     exception_alert(session_id, error)
-                    return gr.update(), gr.update(), gr.update(), gr.update()
+                    return tuple(gr.update() for _ in range(4))
 
             def change_gr_ebook_textarea(session_id:str, ebook_textarea:str)->None:
                 session = context.get_session(session_id)
@@ -1427,7 +1437,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session.get('ebook_mode') == val:
-                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                            return tuple(gr.update() for _ in range(6))
                         session['ebook_mode'] = val
                         css_update = gr.update() if val == ebook_modes['DIRECTORY'] else gr.update(value='')
                         if val != ebook_modes['DIRECTORY']:
@@ -1451,7 +1461,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'change_gr_ebook_mode(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                return tuple(gr.update() for _ in range(6))
 
             def change_gr_voice_file(session_id:str, f:str|None)->tuple:
                 try:
@@ -1513,7 +1523,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'change_gr_voice_list(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update(), gr.update()
+                return tuple(gr.update() for _ in range(3))
 
             def click_gr_voice_del_btn(session_id:str, selected:str)->tuple:
                 try:
@@ -1821,50 +1831,40 @@ def build_interface(args:dict)->gr.Blocks:
 
             def change_gr_language(session_id:str, selected:str)->tuple:
                 nonlocal translate_options
-                if selected:
-                    session = context.get_session(session_id)
-                    if session and session.get('id', False):
-                        if session.get('language') != selected:   
-                            translate_options = build_translate_targets(selected)
-                            translate = session.get('translate')
-                            session['language'] = selected
-                            session['translate'] = translate
-                            if translate_options:
-                                if not any(translate == name for name, val in translate_options):
-                                    translate = translate_options[0][1]
-                                try:
-                                    session['translate_iso1'] = Lang(translate).pt1
-                                except Exception:
-                                    session['translate_iso1'] = None
-                            else:
-                                msg = 'No translate languages available'
-                                session['translate'] = None
-                                session['translate_iso1'] = None
-                                translate_options.append((msg, None))
-                            visible_gr_translate = True if session.get('translate_enabled') else False
-                            return (
-                                gr.update(value=session['language']),
-                                gr.update(visible=visible_gr_translate, choices=translate_options, value=translate),
-                                update_gr_tts_engine_list(session_id),
-                                update_gr_custom_model_list(session_id),
-                                update_gr_fine_tuned_list(session_id)
-                            )
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
-
-            def build_translate_targets(lang:str)->list:
-                try:
-                    if not lang:
-                        return []
-                    return ArgosTranslator().get_target_options(lang)
-                except Exception as e:
-                    error = f'build_translate_targets() error: {e}'
-                    print(error)
-                    return []
+                session = context.get_session(session_id)
+                if not session or not session.get('id', False):
+                    return tuple(gr.update() for _ in range(5))
+                if session.get('language') != selected:   
+                    translate_options = build_translate_targets(selected)
+                    translate = session.get('translate')
+                    session['language'] = selected
+                    session['translate'] = translate
+                    if translate_options:
+                        if not any(translate == name for name, val in translate_options):
+                            translate = translate_options[0][1]
+                        try:
+                            session['translate_iso1'] = Lang(translate).pt1
+                        except Exception:
+                            session['translate_iso1'] = None
+                    else:
+                        msg = 'No translate languages available'
+                        session['translate'] = None
+                        session['translate_iso1'] = None
+                        translate_options.append((msg, None))
+                    visible_gr_translate = True if session.get('translate_enabled') else False
+                    return (
+                        gr.update(value=session['language']),
+                        gr.update(visible=visible_gr_translate, choices=translate_options, value=translate),
+                        update_gr_tts_engine_list(session_id),
+                        update_gr_custom_model_list(session_id),
+                        update_gr_fine_tuned_list(session_id)
+                    )
+                return tuple(gr.update() for _ in range(5))
 
             def change_gr_translate_enabled(session_id:str, enabled:bool)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return gr.update(), gr.update(), gr.update(), gr.update()
+                    return tuple(gr.update() for _ in range(4))
                 session['translate_enabled'] = bool(enabled)
                 if enabled:
                     lang = session.get('language')
@@ -1901,7 +1901,7 @@ def build_interface(args:dict)->gr.Blocks:
             def change_gr_translate(session_id:str, target:str)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return gr.update(), gr.update(), gr.update(), gr.update()
+                    return tuple(gr.update() for _ in range(4))
                 session['translate'] = target
                 try:
                     session['translate_iso1'] = Lang(target).pt1
@@ -1974,7 +1974,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'change_gr_custom_model_list(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update(), gr.update()
+                return tuple(gr.update() for _ in range(3))
 
             def change_gr_tts_engine_list(session_id:str, engine:str)->tuple:
                 try:
@@ -2576,14 +2576,14 @@ def build_interface(args:dict)->gr.Blocks:
                         if not any(b['keep'] and b['text'].strip() for b in blocks):
                             error = 'At least one block must be kept.'
                             show_alert(session_id, {'type': 'warning', 'msg': error})
-                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                            return tuple(gr.update() for _ in range(7))
                         change_current_blocks(session_id, page, blocks, *args)
                         if session['ebook_mode'] == ebook_modes['TEXT']:
                             blocks_current = session['blocks_current']
                             blocks = blocks_current['blocks']
                             session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
                         return gr.update(interactive=False), gr.update(interactive=False), gr.update(visible=True), gr.update(visible=False), update_gr_audiobook_list(session_id), gr.update(value=session['ebook_textarea']), (event + 1)
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                return tuple(gr.update() for _ in range(7))
 
             def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -2669,13 +2669,13 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'change_gr_restore_session(): {e}'
                     exception_alert(None, error)
-                    return gr.update(), gr.update(), gr.update(), gr.update()
+                    return tuple(gr.update() for _ in range(4))
 
             async def update_gr_save_session(session_id:str, state:dict)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if not session or (session and not session.get('id', False)):
-                        yield gr.update(), gr.update(), gr.update()
+                        yield tuple(gr.update() for _ in range(3))
                         return
                     previous_hash = state.get("hash")
                     if session.get('status', None) == status_tags['CONVERTING']:
@@ -2692,7 +2692,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     update_gr_audiobook_list(session_id),
                                 )
                             else:
-                                yield gr.update(), gr.update(), gr.update()
+                                yield tuple(gr.update() for _ in range(3))
                         except NameError:
                             new_hash = hash_proxy_dict(MappingProxyType(session))
                             state['hash'] = new_hash
@@ -2708,7 +2708,7 @@ def build_interface(args:dict)->gr.Blocks:
                             save_db_blocks(session_id)
                         new_hash = hash_proxy_dict(MappingProxyType(session))
                         if previous_hash == new_hash:
-                            yield gr.update(), gr.update(), gr.update()
+                            yield tuple(gr.update() for _ in range(3))
                         else:
                             state['hash'] = new_hash
                             session_filtered = {k: v for k, v in session.items() if k not in save_session_keys_except}
@@ -2718,7 +2718,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(value=state),
                                 gr.update(),
                             )
-                    yield gr.update(), gr.update(), gr.update()
+                    yield tuple(gr.update() for _ in range(3))
                 except Exception as e:
                     error = f'update_gr_save_session(): {e}!'
                     exception_alert(session_id, error)
