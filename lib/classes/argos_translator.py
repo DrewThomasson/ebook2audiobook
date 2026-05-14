@@ -108,27 +108,22 @@ class ArgosTranslator:
         while True:
             try:
                 installed = argostranslate.translate.get_installed_languages()
-                
                 # Map codes to language objects
                 src_lang = next((l for l in installed if l.code == source_iso1), None)
                 tgt_lang = next((l for l in installed if l.code == target_iso1), None)
                 en_lang = next((l for l in installed if l.code == "en"), None)
-
                 if src_lang is None or tgt_lang is None:
-                    # Languages not installed yet
                     pass 
                 elif src_lang is not None and tgt_lang is not None:
                     # 1. Try direct translation
                     translation = src_lang.get_translation(tgt_lang)
                     if translation is not None:
                         return translation
-                    
                     # 2. Try English Pivot Manually
                     # If direct fails but we have English, check if pivot path exists
                     if en_lang is not None and source_iso1 != "en" and target_iso1 != "en":
                         trans_src_en = src_lang.get_translation(en_lang)
                         trans_en_tgt = en_lang.get_translation(tgt_lang)
-                        
                         if trans_src_en is not None and trans_en_tgt is not None:
                             # Create a custom pivot translator object
                             class PivotTranslation:
@@ -137,12 +132,10 @@ class ArgosTranslator:
                                     self.t2 = t2
                                 def translate(self, text):
                                     return self.t2.translate(self.t1.translate(text))
-                            
                             return PivotTranslation(trans_src_en, trans_en_tgt)
-
             except Exception as e:
-                print(f"build_translation() retry error: {e}")
-
+                error = f'build_translation() retry error: {e}'
+                print(error)
             elapsed = time.monotonic() - started
             if elapsed >= timeout:
                 break
@@ -169,7 +162,8 @@ class ArgosTranslator:
                         print(f"Downloading argos package {source_iso1} -> {target_iso1}...")
                         download_path = direct_pkg.download()
                         argostranslate.package.install_from_path(download_path)
-                        print(f"Installed argos package {source_iso1} -> {target_iso1}")
+                        msg = f'Installed argos package {source_iso1} -> {target_iso1}'
+                        print(msg)
                     return None, True
                 # English-pivot fallback
                 if source_iso1 != "en" and target_iso1 != "en":
@@ -225,7 +219,8 @@ class ArgosTranslator:
                 return error, False
             translation = self.build_translation(source_iso1, target_iso1, timeout=60.0)
             if translation is None:
-                return f"No translation path available: {source_iso1} -> {target_iso1}", False
+                error = f'No translation path available: {source_iso1} -> {target_iso1}'
+                return error, False
             self.translation = translation
             self.source_lang_iso1 = source_iso1
             self.target_lang_iso1 = target_iso1
