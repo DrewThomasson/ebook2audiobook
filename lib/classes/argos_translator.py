@@ -237,35 +237,31 @@ class ArgosTranslator:
                 matches = list(sml_pattern.finditer(text))
                 for i, m in enumerate(reversed(matches)):
                     match_index = len(matches) - 1 - i
-                    key = f'SMLTAG{match_index}Z' 
+                    key = f'SMLTAG{match_index}Z'
                     protected[key] = m.group(0)
-                    masked_text = masked_text[:m.start()] + key + masked_text[m.end():]
+                    masked_text = (
+                        masked_text[:m.start()]
+                        + key
+                        + masked_text[m.end():]
+                    )
             translated_text, ok = self.process(masked_text)
             if not ok:
                 return translated_text, False
-            tokens: list[str] = re.findall(r"SMLTAG\d+Z|\w+|[^\w\s]", translated_text, re.UNICODE)
+            tokens: list[str] = re.findall(
+                r"\s+|SMLTAG\d+Z|\w+|[^\w\s]+",
+                translated_text,
+                re.UNICODE
+            )
             buf: list[str] = []
             for t in tokens:
-                is_marker = False
                 upper_t = t.upper()
                 if upper_t in protected:
-                    buf.append(upper_t) # Normalize to uppercase for replacement later
-                    is_marker = True
-                elif re.match(r"^\w+$", t):
-                    buf.append(self.romanize(t)) 
+                    buf.append(upper_t)
+                elif re.match(r"^\w+$", t, re.UNICODE):
+                    buf.append(self.romanize(t))
                 else:
                     buf.append(t)
-            out: str = ''
-            for i, t in enumerate(buf):
-                if i == 0:
-                    out += t
-                else:
-                    prev_is_word = re.match(r"^\w+$", buf[i - 1]) and buf[i-1] not in protected
-                    curr_is_word = re.match(r"^\w+$", t) and t not in protected
-                    if prev_is_word and curr_is_word:
-                        out += ' ' + t
-                    else:
-                        out += t
+            out: str = ''.join(buf)
             for key, original_sml in protected.items():
                 pattern = re.compile(re.escape(key), re.IGNORECASE)
                 out = pattern.sub(original_sml, out)
