@@ -830,7 +830,6 @@ def convert2epub(session_id:str)->bool:
                 print(error)
                 return False
             file_ext = os.path.splitext(file_input)[1].lower()
-            print(f'--------------{file_input}--------------')
             if file_ext not in ebook_formats:
                 error = f'Unsupported file format: {file_ext}'
                 print(error)
@@ -3189,6 +3188,7 @@ def convert_ebook(args:dict)->tuple:
                     f.write(text)
                 session['ebook_textarea'] = args['ebook_textarea']
                 session['ebook_textarea_src'] = text_filepath
+                ebook_file = text_filename
                 ebook_name = Path(text_filename).stem
             else:
                 if not args.get('ebook_src'):
@@ -3201,8 +3201,9 @@ def convert_ebook(args:dict)->tuple:
                     error = 'File does not exist or Directory empty.'
                     return error, False
                 session['ebook_src'] = str(args['ebook_src'])
+                ebook_file = Path(session['ebook_src'])
                 ebook_name = get_sanitized(Path(session['ebook_src']).stem)
-            print(f"Processing eBook file: {ebook_name}")
+            print(f"Processing eBook file: {ebook_file}")
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
@@ -3315,7 +3316,7 @@ def convert_ebook(args:dict)->tuple:
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
                     if prepare_dirs(session_id):
-                        session['ebook'] = os.path.join(session['process_dir'], ebook_name)
+                        session['ebook'] = os.path.join(session['process_dir'], ebook_file)
                         shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
