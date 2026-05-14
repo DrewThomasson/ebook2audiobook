@@ -103,7 +103,7 @@ class ArgosTranslator:
         options.sort(key=lambda o: o[0])
         return options
 
-    def build_translation(self, source_iso1:str, target_iso1:str, timeout:float = 60.0)->argostranslate.translate.Translation|None:
+    def build_translation(self, source_iso1:str, target_iso1:str, timeout:float = 60.0)->okbject|None:
         started = time.monotonic()
         while True:
             try:
