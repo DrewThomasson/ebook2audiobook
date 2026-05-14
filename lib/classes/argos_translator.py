@@ -1,4 +1,4 @@
-import os,  threading
+import os,  threading, regex as re
 import argostranslate.package,  argostranslate.translate
 
 from iso639 import Lang
@@ -20,7 +20,7 @@ class ArgosTranslator:
         self.target_lang_iso1 = None
 
     @classmethod
-    def _ensure_index(cls)->None:
+    def ensure_index(cls)->None:
         with cls._index_lock:
             if not cls._index_updated:
                 argostranslate.package.update_package_index()
@@ -45,7 +45,7 @@ class ArgosTranslator:
         return None
 
     def get_all_sources_iso1(self)->list[str]:
-        self._ensure_index()
+        self.ensure_index()
         pkgs = argostranslate.package.get_available_packages()
         return sorted(set(p.from_code for p in pkgs))
 
@@ -53,7 +53,7 @@ class ArgosTranslator:
         source_iso1 = self.get_language_iso1(source_iso3)
         if not source_iso1:
             return []
-        self._ensure_index()
+        self.ensure_index()
         pkgs = argostranslate.package.get_available_packages()
         direct = set(p.to_code for p in pkgs if p.from_code == source_iso1)
         reachable = set(direct)
@@ -87,7 +87,7 @@ class ArgosTranslator:
             print(error)
             return False
 
-    def _is_pair_installed(self, from_iso1:str, to_iso1:str)->bool:
+    def is_pair_installed(self, from_iso1:str, to_iso1:str)->bool:
         try:
             for pkg in argostranslate.package.get_installed_packages():
                 if pkg.from_code == from_iso1 and pkg.to_code == to_iso1:
@@ -99,12 +99,12 @@ class ArgosTranslator:
     def download_and_install(self, source_iso1:str, target_iso1:str)->tuple[str|None, bool]:
         try:
             with self._install_lock:
-                self._ensure_index()
+                self.ensure_index()
                 available = argostranslate.package.get_available_packages()
                 # direct
                 direct_pkg = next((p for p in available if p.from_code == source_iso1 and p.to_code == target_iso1),None)
                 if direct_pkg is not None:
-                    if not self._is_pair_installed(source_iso1, target_iso1):
+                    if not self.is_pair_installed(source_iso1, target_iso1):
                         msg = f'Downloading argos package {source_iso1} -> {target_iso1}...'
                         print(msg)
                         argostranslate.package.install_from_path(direct_pkg.download())
@@ -174,24 +174,73 @@ class ArgosTranslator:
             error = f'ArgosTranslator.process() error: {e}'
             return error, False
 
-    def translate_with_sml(self, text:str, sml_pattern)->tuple[str, bool]:
+    def romanize(token:str)->str:
+        scr = _script_of(token)
+        if scr == 'latin':
+            return token
+        try:
+            if scr == 'chinese':
+                from pypinyin import pinyin, Style
+                return ''.join(x[0] for x in pinyin(token, style=Style.NORMAL))
+            if scr == 'japanese':
+                import pykakasi
+                k = pykakasi.kakasi()
+                k.setMode('H', 'a')
+                k.setMode('K', 'a')
+                k.setMode('J', 'a')
+                k.setMode('r', 'Hepburn')
+                return k.getConverter().do(token)
+            if scr == 'hangul':
+                return unidecode(token)
+            if scr == 'arabic':
+                return unidecode(phonemize(token, language='ar', backend='espeak'))
+            if scr == 'cyrillic':
+                return unidecode(phonemize(token, language='ru', backend='espeak'))
+            return unidecode(token)
+        except Exception:
+            return unidecode(token)
 
-        def _stash(m):
-            key = f'SMLZZ{len(placeholders)}ZZSML'
-            placeholders[key]=m.group(0)
-            return f' {key} '
-
+    def translate(self, text: str, sml_pattern: re.Pattern) -> tuple[str, bool]:
         try:
             if not text or not text.strip():
                 return text, True
-            placeholders = {}
-            masked = sml_pattern.sub(_stash, text) if sml_pattern is not None else text
-            out, ok = self.process(masked)
+            protected:dict[str, str] = {}
+            masked_text = text
+            # Replace SML tags with unique markers
+            if sml_pattern:
+                matches = list(sml_pattern.finditer(text))
+                for i, m in enumerate(reversed(matches)):
+                    match_index = len(matches) - 1 - i
+                    key = f'__TTS_MARKER_{match_index}__'
+                    protected[key] = m.group(0)
+                    masked_text = masked_text[:m.start()] + key + masked_text[m.end():]
+            translated_text, ok = self.process(masked_text)
             if not ok:
-                return out, False
-            for key, original in placeholders.items():
-                out = out.replace(key, original)
+                return translated_text, False
+            tokens:list[str] = re.findall(r"\w+|[^\w\s]", translated_text, re.UNICODE)
+            buf:list[str] = []
+            for t in tokens:
+                if t in protected:
+                    buf.append(t)
+                elif re.match(r"^\w+$", t):
+                    buf.append(self.romanize(t)) 
+                else:
+                    buf.append(t)
+            out: str = ''
+            for i, t in enumerate(buf):
+                if i == 0:
+                    out += t
+                else:
+                    # Add space between two consecutive word-tokens
+                    prev_is_word = re.match(r"^\w+$", buf[i - 1])
+                    curr_is_word = re.match(r"^\w+$", t)
+                    if prev_is_word and curr_is_word:
+                        out += ' ' + t
+                    else:
+                        out += t
+            for k, v in protected.items():
+                out = out.replace(k, v)
             return out, True
         except Exception as e:
-            error = f'translate_with_sml() error: {e}'
+            error = f'ArgosTranslator.translate_with_sml() error: {e}'
             return error, False

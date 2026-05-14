@@ -3082,7 +3082,7 @@ def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple:
             if not text or not text.strip():
                 out.append(text)
                 continue
-            translated, ok = translator.translate_with_sml(text, SML_TAG_PATTERN)
+            translated, ok = translator.translate(text, SML_TAG_PATTERN)
             if not ok:
                 return raw_blocks, f'Translation failed at block {idx}: {translated}'
             out.append(translated)
