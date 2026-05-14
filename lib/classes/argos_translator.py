@@ -1,5 +1,9 @@
-import os,  threading, stanza, regex as re
+import os,  threading, stanza, unicodedata, pykakasi, regex as re
 import argostranslate.package,  argostranslate.translate
+
+from unidecode import unidecode
+from phonemizer import phonemize
+from pypinyin import pinyin, Style
 
 from iso639 import Lang
 from lib.conf_lang import language_mapping
@@ -118,11 +122,11 @@ class ArgosTranslator:
                     if src_to_en is not None and en_to_tgt is not None:
                         msg = f"No direct {source_iso1}->{target_iso1}; using English pivot."
                         print(msg)
-                        if not self._is_pair_installed(source_iso1,'en'):
+                        if not self.is_pair_installed(source_iso1,'en'):
                             msg = f"Downloading argos package {source_iso1} -> en..."
                             print(msg)
                             argostranslate.package.install_from_path(src_to_en.download())
-                        if not self._is_pair_installed('en',target_iso1):
+                        if not self.is_pair_installed('en',target_iso1):
                             msg = f'Downloading argos package en -> {target_iso1}...'
                             print(msg)
                             argostranslate.package.install_from_path(en_to_tgt.download())
@@ -178,16 +182,33 @@ class ArgosTranslator:
             error = f'ArgosTranslator.process() error: {e}'
             return error, False
 
-    def romanize(token:str)->str:
+    def romanize(self, token:str)->str:
+
+        def _script_of(word:str)->str:
+            for ch in word:
+                if ch.isalpha():
+                    name = unicodedata.name(ch, '')
+                    if 'CYRILLIC' in name:
+                        return 'cyrillic'
+                    if 'LATIN' in name:
+                        return 'latin'
+                    if 'ARABIC' in name:
+                        return 'arabic'
+                    if 'HANGUL' in name:
+                        return 'hangul'
+                    if 'HIRAGANA' in name or 'KATAKANA' in name:
+                        return 'japanese'
+                    if 'CJK' in name or 'IDEOGRAPH' in name:
+                        return 'chinese'
+            return 'unknown'
+
         scr = _script_of(token)
         if scr == 'latin':
             return token
         try:
             if scr == 'chinese':
-                from pypinyin import pinyin, Style
                 return ''.join(x[0] for x in pinyin(token, style=Style.NORMAL))
             if scr == 'japanese':
-                import pykakasi
                 k = pykakasi.kakasi()
                 k.setMode('H', 'a')
                 k.setMode('K', 'a')
@@ -246,5 +267,5 @@ class ArgosTranslator:
                 out = out.replace(k, v)
             return out, True
         except Exception as e:
-            error = f'ArgosTranslator.translate_with_sml() error: {e}'
+            error = f'ArgosTranslator.translate() error: {e}'
             return error, False

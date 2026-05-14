@@ -8,7 +8,7 @@
 import argparse, asyncio, csv, fnmatch, sqlite3, hashlib, io, json, math, os, pytesseract, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
-import ebooklib, psutil, requests, stanza, importlib, queue
+import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
 
 from typing import Any, Generator, Dict
@@ -38,6 +38,7 @@ from types import MappingProxyType
 from langdetect import detect
 from unidecode import unidecode
 from phonemizer import phonemize
+from pypinyin import pinyin, Style
 
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
@@ -2145,10 +2146,8 @@ def foreign2latin(text:str, base_lang:str)->str:
             return word
         try:
             if scr == 'chinese':
-                from pypinyin import pinyin, Style
                 return ''.join(x[0] for x in pinyin(word, style=Style.NORMAL))
             if scr == 'japanese':
-                import pykakasi
                 k = pykakasi.kakasi()
                 k.setMode('H', 'a')
                 k.setMode('K', 'a')
