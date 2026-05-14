@@ -183,103 +183,40 @@ class ArgosTranslator:
             error = f'ArgosTranslator.process() error: {e}'
             return error, False
 
-    def romanize(self, token:str)->str:
-
-        def _script_of(word:str)->str:
-            for ch in word:
-                if ch.isalpha():
-                    name = unicodedata.name(ch, '')
-                    if 'CYRILLIC' in name:
-                        return 'cyrillic'
-                    if 'LATIN' in name:
-                        return 'latin'
-                    if 'ARABIC' in name:
-                        return 'arabic'
-                    if 'HANGUL' in name:
-                        return 'hangul'
-                    if 'HIRAGANA' in name or 'KATAKANA' in name:
-                        return 'japanese'
-                    if 'CJK' in name or 'IDEOGRAPH' in name:
-                        return 'chinese'
-            return 'unknown'
-
-        scr = _script_of(token)
-        if scr == 'latin':
-            return token
-        try:
-            if scr == 'chinese':
-                return ''.join(x[0] for x in pinyin(token, style=Style.NORMAL))
-            if scr == 'japanese':
-                if self._kakasi is None:
-                    self._kakasi = pykakasi.kakasi()
-                    self._kakasi.setMode('H', 'a')
-                    self._kakasi.setMode('K', 'a')
-                    self._kakasi.setMode('J', 'a')
-                    self._kakasi.setMode('r', 'Hepburn')
-                return self._kakasi.getConverter().do(token)
-            if scr == 'hangul':
-                return unidecode(token)
-            if scr == 'arabic':
-                return unidecode(phonemize(token, language='ar', backend='espeak'))
-            if scr == 'cyrillic':
-                return unidecode(phonemize(token, language='ru', backend='espeak'))
-            return unidecode(token)
-        except Exception:
-            return unidecode(token)
-
     def translate(self, text: str, sml_pattern: re.Pattern) -> tuple[str, bool]:
         try:
             if not text or not text.strip():
                 return text, True
-
             sml_blocks: list[str] = []
-
             def store_sml(match: re.Match) -> str:
                 idx = len(sml_blocks)
-
                 sml_blocks.append(match.group(0))
-
                 return chr(0xE000 + idx)
-
             masked_text = (
                 sml_pattern.sub(store_sml, text)
                 if sml_pattern
                 else text
             )
-
             translated_text, ok = self.process(masked_text)
-
             if not ok:
                 return translated_text, False
-
             tokens: list[str] = re.findall(
                 r"\s+|[\uE000-\uF8FF]|\w+|[^\w\s]+",
                 translated_text,
                 re.UNICODE
             )
-
             buf: list[str] = []
-
             for t in tokens:
                 if len(t) == 1:
                     code = ord(t)
-
                     if 0xE000 <= code <= 0xF8FF:
                         idx = code - 0xE000
-
                         if 0 <= idx < len(sml_blocks):
                             buf.append(sml_blocks[idx])
                             continue
-
-                if re.match(r"^\w+$", t, re.UNICODE):
-                    buf.append(self.romanize(t))
-                else:
-                    buf.append(t)
-
+                buf.append(t)
             out: str = ''.join(buf)
-
             return out, True
-
         except Exception as e:
             error = f'ArgosTranslator.translate() error: {e}'
             return error, False
