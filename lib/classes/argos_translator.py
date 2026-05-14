@@ -262,7 +262,7 @@ class ArgosTranslator:
                 else:
                     prev_is_word = re.match(r"^\w+$", buf[i - 1]) and buf[i-1] not in protected
                     curr_is_word = re.match(r"^\w+$", t) and t not in protected
-                    if curr_is_word:
+                    if prev_is_word and curr_is_word:
                         out += ' ' + t
                     else:
                         out += t
