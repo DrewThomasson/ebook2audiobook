@@ -215,9 +215,9 @@ class SessionContext:
             ####### Ebook conversion
             "ebook": None,
             "ebook_src": None,
-            "ebook_textarea_src": None,
             "ebook_list": None,
             "ebook_textarea": None,
+            "ebook_textarea_src": None,
             "audiobook_overridden": None,
             "process_dir": None,
             "chapters_dir": None,
@@ -3698,6 +3698,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
+        "ebook_textarea_src": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,

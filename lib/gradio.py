@@ -2540,11 +2540,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session['status'] in [status_tags['EDIT']]:
                         session['status'] = status_tags['READY']
                         _change_current_blocks(session_id, page, blocks, *args)
-                        if session['ebook_mode'] == ebook_modes['TEXT']:
-                            blocks_current = session['blocks_current']
-                            blocks = blocks_current['blocks']
-                            session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
-                return gr.update(interactive=True), gr.update(visible=True), _update_gr_audiobook_list(session_id), gr.update(visible=False), session['blocks_current']['blocks'], gr.update(value=session['ebook_textarea'])
+                return gr.update(interactive=True), gr.update(visible=True), _update_gr_audiobook_list(session_id), gr.update(visible=False), session['blocks_current']['blocks']
 
             def _click_gr_blocks_confirm_btn(session_id:str, event:int, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
@@ -2553,14 +2549,10 @@ def build_interface(args:dict)->gr.Blocks:
                         if not any(b['keep'] and b['text'].strip() for b in blocks):
                             error = 'At least one block must be kept.'
                             show_alert(session_id, {'type': 'warning', 'msg': error})
-                            return tuple(gr.update() for _ in range(7))
+                            return tuple(gr.update() for _ in range(6))
                         _change_current_blocks(session_id, page, blocks, *args)
-                        if session['ebook_mode'] == ebook_modes['TEXT']:
-                            blocks_current = session['blocks_current']
-                            blocks = blocks_current['blocks']
-                            session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
-                        return gr.update(interactive=False), gr.update(interactive=False), gr.update(visible=True), gr.update(visible=False), _update_gr_audiobook_list(session_id), gr.update(value=session['ebook_textarea']), (event + 1)
-                return tuple(gr.update() for _ in range(7))
+                        return gr.update(interactive=False), gr.update(interactive=False), gr.update(visible=True), gr.update(visible=False), _update_gr_audiobook_list(session_id), (event + 1)
+                return tuple(gr.update() for _ in range(6))
 
             def _change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
                 try:
@@ -3291,7 +3283,7 @@ def build_interface(args:dict)->gr.Blocks:
                 ).then(
                     fn=_click_gr_blocks_cancel_btn,
                     inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                    outputs=[gr_convert_btn, gr_group_main, gr_audiobook_list, gr_group_blocks, gr_blocks_data, gr_ebook_textarea],
+                    outputs=[gr_convert_btn, gr_group_main, gr_audiobook_list, gr_group_blocks, gr_blocks_data],
                     show_progress_on=[gr_progress]
                 ),
                 always=True
@@ -3305,7 +3297,7 @@ def build_interface(args:dict)->gr.Blocks:
                 ).then(
                     fn=_click_gr_blocks_confirm_btn,
                     inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                    outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_group_main, gr_group_blocks, gr_audiobook_list, gr_ebook_textarea, gr_blocks_event],
+                    outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_group_main, gr_group_blocks, gr_audiobook_list, gr_blocks_event],
                     show_progress_on=[gr_progress]
                 )
             )
