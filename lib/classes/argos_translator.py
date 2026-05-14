@@ -1,9 +1,5 @@
-import os,  threading, stanza, unicodedata, pykakasi, regex as re
-import argostranslate.package,  argostranslate.translate
-
-from unidecode import unidecode
-from phonemizer import phonemize
-from pypinyin import pinyin, Style
+import os,  threading, stanza, regex as re
+import argostranslate.package, argostranslate.translate
 
 from iso639 import Lang
 from lib.conf_lang import language_mapping
