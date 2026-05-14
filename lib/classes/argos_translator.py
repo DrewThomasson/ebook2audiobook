@@ -179,29 +179,53 @@ class ArgosTranslator:
             error = f'ArgosTranslator.process() error: {e}'
             return error, False
 
-    def translate(self, text:str, sml_pattern:re.Pattern)->tuple[str, bool]:
+    def translate(self, text: str, sml_pattern: re.Pattern) -> tuple[str, bool]:
         try:
             if not text or not text.strip():
                 return text, True
+
             if not sml_pattern:
                 return self.process(text)
-            parts:list[str] = re.split(
-                f'({sml_pattern.pattern})',
-                text
-            )
-            buf:list[str] = []
-            for part in parts:
-                if not part:
-                    continue
-                if sml_pattern.fullmatch(part):
+
+            parts: list[tuple[str, bool]] = []
+
+            last_end = 0
+
+            for m in sml_pattern.finditer(text):
+                if m.start() > last_end:
+                    parts.append(
+                        (text[last_end:m.start()], False)
+                    )
+
+                parts.append(
+                    (m.group(0), True)
+                )
+
+                last_end = m.end()
+
+            if last_end < len(text):
+                parts.append(
+                    (text[last_end:], False)
+                )
+
+            buf: list[str] = []
+
+            for part, is_sml in parts:
+                if is_sml:
                     buf.append(part)
                     continue
+
                 translated_part, ok = self.process(part)
+
                 if not ok:
                     return translated_part, False
+
                 buf.append(translated_part)
-            out:str = ''.join(buf)
+
+            out: str = ''.join(buf)
+
             return out, True
+
         except Exception as e:
             error = f'ArgosTranslator.translate() error: {e}'
             return error, False

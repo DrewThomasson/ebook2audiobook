@@ -3075,13 +3075,27 @@ def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple:
         msg = f'Translating {len(raw_blocks)} block(s) {source_iso1} -> {target_iso1} …'
         print(msg)
         out = []
+        tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
+        sml_patterns = re.compile(
+            rf'''
+            \[
+                \s*
+                (?P<close>/)?
+                \s*
+                (?P<tag>{tag_keys})
+                (?:\s*:\s*(?P<value>[^\]]*))?
+                \s*
+            \]
+            ''',
+            re.VERBOSE
+        )
         for idx, text in enumerate(tqdm(raw_blocks, desc='translate', unit='block')):
             if session['cancellation_requested']:
                 return raw_blocks, 'Conversion cancelled'
             if not text or not text.strip():
                 out.append(text)
                 continue
-            translated, ok = translator.translate(text, SML_TAG_PATTERN)
+            translated, ok = translator.translate(text, sml_patterns)
             if not ok:
                 return raw_blocks, f'Translation failed at block {idx}: {translated}'
             out.append(translated)
