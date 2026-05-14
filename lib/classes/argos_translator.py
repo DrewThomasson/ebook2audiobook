@@ -183,34 +183,23 @@ class ArgosTranslator:
         try:
             if not text or not text.strip():
                 return text, True
-            sml_blocks: list[str] = []
-            def store_sml(match: re.Match) -> str:
-                idx = len(sml_blocks)
-                sml_blocks.append(match.group(0))
-                return chr(0xE000 + idx)
-            masked_text = (
-                sml_pattern.sub(store_sml, text)
-                if sml_pattern
-                else text
-            )
-            translated_text, ok = self.process(masked_text)
-            if not ok:
-                return translated_text, False
-            tokens: list[str] = re.findall(
-                r"\s+|[\uE000-\uF8FF]|\w+|[^\w\s]+",
-                translated_text,
-                re.UNICODE
+            if not sml_pattern:
+                return self.process(text)
+            parts: list[str] = re.split(
+                f'({sml_pattern.pattern})',
+                text
             )
             buf: list[str] = []
-            for t in tokens:
-                if len(t) == 1:
-                    code = ord(t)
-                    if 0xE000 <= code <= 0xF8FF:
-                        idx = code - 0xE000
-                        if 0 <= idx < len(sml_blocks):
-                            buf.append(sml_blocks[idx])
-                            continue
-                buf.append(t)
+            for part in parts:
+                if not part:
+                    continue
+                if sml_pattern.fullmatch(part):
+                    buf.append(part)
+                    continue
+                translated_part, ok = self.process(part)
+                if not ok:
+                    return translated_part, False
+                buf.append(translated_part)
             out: str = ''.join(buf)
             return out, True
         except Exception as e:
