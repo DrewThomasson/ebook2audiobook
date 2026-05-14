@@ -109,8 +109,9 @@ class ArgosTranslator:
         except Exception:
             return False
 
-    def build_translation(self, source_iso1:str, target_iso1:str, retries:int=15, delay:float=1.0):
-        for attempt in range(retries):
+    def build_translation(self, source_iso1:str, target_iso1:str, timeout:float=60.0):
+        started = time.monotonic()
+        while True:
             try:
                 installed = argostranslate.translate.get_installed_languages()
                 src = next(
@@ -125,9 +126,12 @@ class ArgosTranslator:
                     translation = src.get_translation(tgt)
                     if translation is not None:
                         return translation
-            except Exception:
-                pass
-            time.sleep(delay)
+            except Exception as e:
+                print(f'build_translation() retry error: {e}')
+            elapsed = time.monotonic() - started
+            if elapsed >= timeout:
+                break
+            time.sleep(1.0)
         return None
 
     def download_and_install(self, source_iso1:str, target_iso1:str)->tuple[str|None, bool]:
@@ -220,13 +224,10 @@ class ArgosTranslator:
             )
             if not ok:
                 return error, False
-            # allow filesystem/package metadata settle
-            time.sleep(0.5)
             translation = self.build_translation(
                 source_iso1,
                 target_iso1,
-                retries=15,
-                delay=1.0
+                timeout=60.0
             )
             if translation is None:
                 error = (
