@@ -1,4 +1,4 @@
-mport os, time, threading, stanza, regex as re
+import os, time, threading, stanza, regex as re
 import argostranslate.package, argostranslate.translate
 
 from iso639 import Lang
