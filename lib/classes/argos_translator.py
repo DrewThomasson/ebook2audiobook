@@ -231,28 +231,21 @@ class ArgosTranslator:
         try:
             if not text or not text.strip():
                 return text, True
-            
             protected: dict[str, str] = {}
             masked_text = text
-            # 1. MASKING
             if sml_pattern:
                 matches = list(sml_pattern.finditer(text))
                 for i, m in enumerate(reversed(matches)):
                     match_index = len(matches) - 1 - i
-                    # Use a very distinct, alphanumeric-only key
-                    # Argos is less likely to touch 'SMLTAG' than 'TTS_MARKER'
                     key = f'SMLTAG{match_index}Z' 
                     protected[key] = m.group(0)
                     masked_text = masked_text[:m.start()] + key + masked_text[m.end():]
             translated_text, ok = self.process(masked_text)
             if not ok:
                 return translated_text, False
-            # 2. TOKENIZATION
-            # We explicitly tell regex to find 'SMLTAG...Z' as a single unit first
             tokens: list[str] = re.findall(r"SMLTAG\d+Z|\w+|[^\w\s]", translated_text, re.UNICODE)
             buf: list[str] = []
             for t in tokens:
-                # Check if this token is one of our markers (case-insensitive check)
                 is_marker = False
                 upper_t = t.upper()
                 if upper_t in protected:
@@ -262,26 +255,18 @@ class ArgosTranslator:
                     buf.append(self.romanize(t)) 
                 else:
                     buf.append(t)
-            # 3. RECONSTRUCTION
             out: str = ''
             for i, t in enumerate(buf):
                 if i == 0:
                     out += t
                 else:
-                    # Logic: Only add space between two word-tokens
-                    # Our markers are NOT considered words here
                     prev_is_word = re.match(r"^\w+$", buf[i - 1]) and buf[i-1] not in protected
                     curr_is_word = re.match(r"^\w+$", t) and t not in protected
-                    
-                    if prev_is_word and curr_is_word:
+                    if curr_is_word:
                         out += ' ' + t
                     else:
                         out += t
-            # 4. RESTORATION
-            # We use a regex replace or case-insensitive search to ensure 
-            # that even if Argos changed 'SMLTAG0Z' to 'Smltag0z', we catch it.
             for key, original_sml in protected.items():
-                # This handles cases where the translator might have changed the case
                 pattern = re.compile(re.escape(key), re.IGNORECASE)
                 out = pattern.sub(original_sml, out)
             return out, True
