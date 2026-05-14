@@ -22,6 +22,7 @@ class ArgosTranslator:
         self.translation = None
         self.source_lang_iso1 = None
         self.target_lang_iso1 = None
+        self._kakasi = None
 
     @classmethod
     def ensure_index(cls)->None:
@@ -209,12 +210,13 @@ class ArgosTranslator:
             if scr == 'chinese':
                 return ''.join(x[0] for x in pinyin(token, style=Style.NORMAL))
             if scr == 'japanese':
-                k = pykakasi.kakasi()
-                k.setMode('H', 'a')
-                k.setMode('K', 'a')
-                k.setMode('J', 'a')
-                k.setMode('r', 'Hepburn')
-                return k.getConverter().do(token)
+                if self._kakasi is None:
+                    self._kakasi = pykakasi.kakasi()
+                    self._kakasi.setMode('H', 'a')
+                    self._kakasi.setMode('K', 'a')
+                    self._kakasi.setMode('J', 'a')
+                    self._kakasi.setMode('r', 'Hepburn')
+                return self._kakasi.getConverter().do(token)
             if scr == 'hangul':
                 return unidecode(token)
             if scr == 'arabic':
