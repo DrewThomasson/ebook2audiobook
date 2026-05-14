@@ -27,6 +27,7 @@ uroman
 pycantonese
 pypinyin
 pythainlp
+pykakasi
 mutagen
 PyOpenGL
 phonemizer-fork
