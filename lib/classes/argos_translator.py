@@ -1,4 +1,4 @@
-import os, time, threading, stanza, regex as re
+mport os, time, threading, stanza, regex as re
 import argostranslate.package, argostranslate.translate
 
 from iso639 import Lang
@@ -108,12 +108,38 @@ class ArgosTranslator:
         while True:
             try:
                 installed = argostranslate.translate.get_installed_languages()
-                src = next((l for l in installed if l.code == source_iso1), None)
-                tgt = next((l for l in installed if l.code == target_iso1), None)
-                if src is not None and tgt is not None:
-                    translation = src.get_translation(tgt)
+                
+                # Map codes to language objects
+                src_lang = next((l for l in installed if l.code == source_iso1), None)
+                tgt_lang = next((l for l in installed if l.code == target_iso1), None)
+                en_lang = next((l for l in installed if l.code == "en"), None)
+
+                if src_lang is None or tgt_lang is None:
+                    # Languages not installed yet
+                    pass 
+                elif src_lang is not None and tgt_lang is not None:
+                    # 1. Try direct translation
+                    translation = src_lang.get_translation(tgt_lang)
                     if translation is not None:
                         return translation
+                    
+                    # 2. Try English Pivot Manually
+                    # If direct fails but we have English, check if pivot path exists
+                    if en_lang is not None and source_iso1 != "en" and target_iso1 != "en":
+                        trans_src_en = src_lang.get_translation(en_lang)
+                        trans_en_tgt = en_lang.get_translation(tgt_lang)
+                        
+                        if trans_src_en is not None and trans_en_tgt is not None:
+                            # Create a custom pivot translator object
+                            class PivotTranslation:
+                                def __init__(self, t1, t2):
+                                    self.t1 = t1
+                                    self.t2 = t2
+                                def translate(self, text):
+                                    return self.t2.translate(self.t1.translate(text))
+                            
+                            return PivotTranslation(trans_src_en, trans_en_tgt)
+
             except Exception as e:
                 print(f"build_translation() retry error: {e}")
 
