@@ -3201,7 +3201,7 @@ def convert_ebook(args:dict)->tuple:
                     error = 'File does not exist or Directory empty.'
                     return error, False
                 session['ebook_src'] = str(args['ebook_src'])
-                ebook_file = Path(session['ebook_src'])
+                ebook_file = Path(session['ebook_src']).name
                 ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             print(f"Processing eBook file: {ebook_file}")
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
