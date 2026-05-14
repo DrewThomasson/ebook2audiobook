@@ -233,18 +233,20 @@ class ArgosTranslator:
                 return text, True
             protected:dict[str, str] = {}
             masked_text = text
-            # Replace SML tags with unique markers
             if sml_pattern:
                 matches = list(sml_pattern.finditer(text))
                 for i, m in enumerate(reversed(matches)):
                     match_index = len(matches) - 1 - i
-                    key = f'__TTS_MARKER_{match_index}__'
+                    # Use a key that is NOT a "word" (\w) to avoid the spacing logic
+                    # and make it unique enough to not be translated
+                    key = f'XYZMARKER{match_index}ZYX' 
                     protected[key] = m.group(0)
                     masked_text = masked_text[:m.start()] + key + masked_text[m.end():]
             translated_text, ok = self.process(masked_text)
             if not ok:
                 return translated_text, False
-            tokens:list[str] = re.findall(r"\w+|[^\w\s]", translated_text, re.UNICODE)
+            # Split into tokens including our custom markers
+            tokens:list[str] = re.findall(r"XYZMARKER\d+ZYX|\w+|[^\w\s]", translated_text, re.UNICODE)
             buf:list[str] = []
             for t in tokens:
                 if t in protected:
@@ -258,13 +260,16 @@ class ArgosTranslator:
                 if i == 0:
                     out += t
                 else:
-                    # Add space between two consecutive word-tokens
-                    prev_is_word = re.match(r"^\w+$", buf[i - 1])
-                    curr_is_word = re.match(r"^\w+$", t)
+                    # Logic: Only add a space if both the current and previous tokens are "real words"
+                    # We treat our markers as "not words" so they keep their original relative spacing
+                    prev_is_word = re.match(r"^\w+$", buf[i - 1]) and buf[i-1] not in protected
+                    curr_is_word = re.match(r"^\w+$", t) and t not in protected
+                    
                     if prev_is_word and curr_is_word:
                         out += ' ' + t
                     else:
                         out += t
+            # Final restoration: Replace the keys with the actual SML tags
             for k, v in protected.items():
                 out = out.replace(k, v)
             return out, True
