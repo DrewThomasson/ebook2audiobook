@@ -18,9 +18,9 @@ class ArgosTranslator:
 
     def __init__(self, neural_machine:str = "argostranslate")->None:
         self.neural_machine = neural_machine
-        self.translation:argostranslate.translate.Translation|None = None
-        self.source_lang_iso1:str|None = None
-        self.target_lang_iso1:str|None = None
+        self.translation = None
+        self.source_lang_iso1 = None
+        self.target_lang_iso1 = None
 
     @classmethod
     def ensure_index(cls)->None:
