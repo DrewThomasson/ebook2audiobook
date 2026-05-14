@@ -7,9 +7,6 @@ from lib.conf_lang import language_mapping
 # NOTE: argostranslate API requires iso639-1 (2 letters) codes.
 # All public methods here accept/return iso639-3 except where explicitly named *_iso1.
 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-os.environ["OMP_NUM_THREADS"] = "1"
-
 class ArgosTranslator:
 
     _index_lock = threading.Lock()
