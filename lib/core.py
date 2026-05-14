@@ -3069,9 +3069,9 @@ def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple:
         if source_iso1 == target_iso1:
             return raw_blocks, None
         translator = ArgosTranslator(neural_machine='argostranslate')
-        err, ok = translator.start(source_iso1, target_iso1)
+        error, ok = translator.start(source_iso1, target_iso1)
         if not ok:
-            return raw_blocks, err
+            return raw_blocks, error
         msg = f'Translating {len(raw_blocks)} block(s) {source_iso1} -> {target_iso1} …'
         print(msg)
         out = []
@@ -3459,9 +3459,8 @@ def convert_ebook(args:dict)->tuple:
                                             if missing_orig_json:
                                                 raw_blocks = get_blocks(session_id, epubBook)
                                                 if raw_blocks and session.get('translate_enabled'):
-                                                    raw_blocks, terr = translate_raw_blocks(session_id, list(raw_blocks))
-                                                    if terr:
-                                                        error = terr
+                                                    raw_blocks, error = translate_raw_blocks(session_id, list(raw_blocks))
+                                                    if error is not None:
                                                         return error, False
                                                 if raw_blocks:
                                                     session['blocks_orig'] = {
