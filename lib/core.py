@@ -3315,6 +3315,7 @@ def convert_ebook(args:dict)->tuple:
                         session['ebook'] = os.path.join(session['process_dir'], ebook_name)
                         shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
+                        print(f"-------------{session['ebook_textarea_src']}------------")
                         msg = ''
                         msg_extra = ''                      
                         if session['device'] == devices['CUDA']['proc']:
