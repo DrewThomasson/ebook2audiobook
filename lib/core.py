@@ -3028,14 +3028,14 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
-def fork_ebook_for_translation(session_id:str)->bool:
+def translate_ebook(session_id:str)->bool:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
             return False
         if not session.get('translate_enabled') or not session.get('translate'):
             return False
-        src = session['ebook_src']
+        src = session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src'] 
         if not src or not os.path.exists(src):
             return False
         target_iso3 = session['translate']
@@ -3047,10 +3047,13 @@ def fork_ebook_for_translation(session_id:str)->bool:
         forked = f'{base}{suffix}{ext}'
         if not os.path.exists(forked):
             shutil.copy2(src, forked)
-        session['ebook_src'] = forked
+        if session['ebook_mode'] == ebook_modes['TEXT']:
+            session['ebook_textarea_src'] = forked
+        else:
+            session['ebook_src'] = forked
         return True
     except Exception as e:
-        error = f'fork_ebook_for_translation() error: {e}'
+        error = f'translate_ebook() error: {e}'
         print(error)
         return False
 
@@ -3232,8 +3235,8 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
             if session['translate_enabled']:
-                if not fork_ebook_for_translation(session_id):
-                    error = 'fork_ebook_for_translation() failed.'
+                if not translate_ebook(session_id):
+                    error = 'translate_ebook() failed.'
                     return error, False
             cleanup_models_cache()
             if session['is_gui_process']:
