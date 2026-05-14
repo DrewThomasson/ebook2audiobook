@@ -811,7 +811,7 @@ def sync_globals_to_blocks(session_id:str)->None:
     except Exception as e:
         exception_alert(session_id, f'sync_globals_to_blocks(): {e}')
 
-def convert2epub(session_id:str)-> bool:
+def convert2epub(session_id:str)->bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
@@ -830,6 +830,7 @@ def convert2epub(session_id:str)-> bool:
                 print(error)
                 return False
             file_ext = os.path.splitext(file_input)[1].lower()
+            print(f'--------------{file_ext}--------------')
             if file_ext not in ebook_formats:
                 error = f'Unsupported file format: {file_ext}'
                 print(error)
@@ -1375,7 +1376,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         if img_zip_path not in zip_names:
                             img_zip_path = zip_basenames.get(os.path.basename(img_ref))
                         if not img_zip_path:
-                            print(f'Could not resolve image in EPUB: {img_ref}')
+                            msg = f'Could not resolve image in EPUB: {img_ref}'
+                            print(msg)
                             continue
                         try:
                             img_data = zf.read(img_zip_path)
@@ -1387,7 +1389,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             else:
                                 show_alert(session_id, {"type": "warning", "msg": error})
                         except Exception as ocr_err:
-                            print(f'OCR error on {img_zip_path}: {ocr_err}')
+                            error = f'OCR error on {img_zip_path}: {ocr_err}'
+                            print(error)
             tuples_list = list(_tuple_row(body))
             if not tuples_list:
                 msg = 'No body text and no images found. Skip to next doc…'
@@ -3315,7 +3318,6 @@ def convert_ebook(args:dict)->tuple:
                         session['ebook'] = os.path.join(session['process_dir'], ebook_name)
                         shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
-                        print(f"-------------{session['ebook_textarea_src']}------------")
                         msg = ''
                         msg_extra = ''                      
                         if session['device'] == devices['CUDA']['proc']:
@@ -3351,15 +3353,15 @@ def convert_ebook(args:dict)->tuple:
                                 msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
                             if session['free_vram_gb'] > 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'False'  
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'  
                         if session['tts_engine'] == TTS_ENGINES['BARK']:
                             if session['free_vram_gb'] < 12.0:
-                                os.environ['SUNO_OFFLOAD_CPU'] = "True"
-                                os.environ['SUNO_USE_SMALL_MODELS'] = "True"
+                                os.environ['SUNO_OFFLOAD_CPU'] = "TRUE"
+                                os.environ['SUNO_USE_SMALL_MODELS'] = "TRUE"
                                 msg_extra += f"<br/>Switching BARK to SMALL models"  
                             else:
-                                os.environ['SUNO_OFFLOAD_CPU'] = "False"
-                                os.environ['SUNO_USE_SMALL_MODELS'] = "False"
+                                os.environ['SUNO_OFFLOAD_CPU'] = "FALSE"
+                                os.environ['SUNO_USE_SMALL_MODELS'] = "FALSE"
                         if msg == '':
                             msg_extra = f"Using {session['device'].upper()}" + msg_extra
                         device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
