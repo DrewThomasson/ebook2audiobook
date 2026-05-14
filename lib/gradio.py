@@ -1343,9 +1343,6 @@ def build_interface(args:dict)->gr.Blocks:
                             return tuple(gr.update() for _ in range(5))
                         if ebook_mode == ebook_modes['SINGLE']:
                             session['ebook_src'] = data
-                            # since ebook_textarea override ebook_src during the conversion
-                            # so it needs to save the current real ebook_src to get it back after the textarea conversion.
-                            session['ebook_src_notextarea'] = data
                         elif ebook_mode == ebook_modes['DIRECTORY']:
                             session['ebook_list'] = data
                             files = data or []
@@ -2252,8 +2249,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     error = progress_status
                         if error is not None:
-                            if session['ebook_mode'] == ebook_modes['TEXT']:
-                                session['ebook_src'] = session['ebook_src_notextarea']
                             show_alert(session_id, {"type": "warning", "msg": error})
                             if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
                                 context_tracker.end_session(session_id, session['socket_hash'])
@@ -2340,6 +2335,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if source is not None:
                                         if ebook_mode == ebook_modes['TEXT']:
                                             session['status'] = status_tags['SKIP']
+                                            session['ebook_textarea'] = source
                                             return gr.update(), (event + 1)
                                         else:
                                             session['ebook_src'] = source

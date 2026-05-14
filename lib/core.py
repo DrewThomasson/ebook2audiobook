@@ -215,7 +215,7 @@ class SessionContext:
             ####### Ebook conversion
             "ebook": None,
             "ebook_src": None,
-            "ebook_src_notextarea": None,
+            "ebook_textarea_src": None,
             "ebook_list": None,
             "ebook_textarea": None,
             "audiobook_overridden": None,
@@ -3182,16 +3182,21 @@ def convert_ebook(args:dict)->tuple:
                 with open(text_filepath, 'w', encoding='utf-8') as f:
                     f.write(text)
                 session['ebook_textarea'] = args['ebook_textarea']
-                session['ebook_src'] = text_filepath
+                session['ebook_textarea_src'] = text_filepath
+                ebook_name = Path(text_filename).stem
             else:
-                if args.get('ebook_src'):
-                    if not os.path.splitext(args['ebook_src'])[1]:
-                        error = f"{args['ebook_src']} needs a format extension."
-                        return error, False
-                    if not os.path.exists(args['ebook_src']):
-                        error = 'File does not exist or Directory empty.'
-                        return error, False
-                    session['ebook_src'] = str(args['ebook_src'])
+                if not args.get('ebook_src'):
+                    error = 'File source is empty.'
+                    return error, False
+                elif not os.path.splitext(args['ebook_src'])[1]:
+                    error = f"{args['ebook_src']} needs a format extension."
+                    return error, False
+                elif not os.path.exists(args['ebook_src']):
+                    error = 'File does not exist or Directory empty.'
+                    return error, False
+                session['ebook_src'] = str(args['ebook_src'])
+                ebook_name = get_sanitized(Path(session['ebook_src']).stem)
+            print(f"Processing eBook file: {ebook_name}")
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
@@ -3230,9 +3235,7 @@ def convert_ebook(args:dict)->tuple:
                 if not fork_ebook_for_translation(session_id):
                     error = 'fork_ebook_for_translation() failed.'
                     return error, False
-            ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             cleanup_models_cache()
-            print(f"Processing eBook file: {os.path.basename(session['ebook_src'])}")
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + '.' + session['output_format']
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
@@ -3306,8 +3309,8 @@ def convert_ebook(args:dict)->tuple:
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
                     if prepare_dirs(session_id):
-                        session['ebook'] = os.path.join(session['process_dir'], os.path.basename(session['ebook_src']))
-                        shutil.copy(session['ebook_src'], session['ebook'])
+                        session['ebook'] = os.path.join(session['process_dir'], ebook_name))
+                        shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
                         msg_extra = ''                      
@@ -3632,15 +3635,12 @@ def finalize_audiobook(session_id:str)->tuple:
             elif session['ebook_mode'] == ebook_modes['SINGLE']:
                 session['ebook_src'] = None
             elif session['ebook_mode'] == ebook_modes['TEXT']:
-                ebook_src = session['ebook_src']
-                if ebook_src:
-                    try:
-                        os.remove(ebook_src)
-                    except FileNotFoundError:
-                        pass
-                    except OSError:
-                        pass
-                session['ebook_src'] = session['ebook_src_notextarea']
+                try:
+                    os.remove(session['ebook_textarea_src'])
+                except FileNotFoundError:
+                    pass
+                except OSError:
+                    pass
             session['status'] = status_tags['END']
             reset_ebook_session(session_id, force=True, filter_keys=False)
             show_alert(session_id, {'type': 'success', 'msg': f'{filename} / converted.'})
