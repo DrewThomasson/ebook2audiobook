@@ -231,41 +231,55 @@ class ArgosTranslator:
         try:
             if not text or not text.strip():
                 return text, True
-            protected: dict[str, str] = {}
-            masked_text = text
-            if sml_pattern:
-                matches = list(sml_pattern.finditer(text))
-                for i, m in enumerate(reversed(matches)):
-                    match_index = len(matches) - 1 - i
-                    key = f'SMLTAG{match_index}Z'
-                    protected[key] = m.group(0)
-                    masked_text = (
-                        masked_text[:m.start()]
-                        + key
-                        + masked_text[m.end():]
-                    )
+
+            sml_blocks: list[str] = []
+
+            def store_sml(match: re.Match) -> str:
+                idx = len(sml_blocks)
+
+                sml_blocks.append(match.group(0))
+
+                return chr(0xE000 + idx)
+
+            masked_text = (
+                sml_pattern.sub(store_sml, text)
+                if sml_pattern
+                else text
+            )
+
             translated_text, ok = self.process(masked_text)
+
             if not ok:
                 return translated_text, False
+
             tokens: list[str] = re.findall(
-                r"\s+|SMLTAG\d+Z|\w+|[^\w\s]+",
+                r"\s+|[\uE000-\uF8FF]|\w+|[^\w\s]+",
                 translated_text,
                 re.UNICODE
             )
+
             buf: list[str] = []
+
             for t in tokens:
-                upper_t = t.upper()
-                if upper_t in protected:
-                    buf.append(upper_t)
-                elif re.match(r"^\w+$", t, re.UNICODE):
+                if len(t) == 1:
+                    code = ord(t)
+
+                    if 0xE000 <= code <= 0xF8FF:
+                        idx = code - 0xE000
+
+                        if 0 <= idx < len(sml_blocks):
+                            buf.append(sml_blocks[idx])
+                            continue
+
+                if re.match(r"^\w+$", t, re.UNICODE):
                     buf.append(self.romanize(t))
                 else:
                     buf.append(t)
+
             out: str = ''.join(buf)
-            for key, original_sml in protected.items():
-                pattern = re.compile(re.escape(key), re.IGNORECASE)
-                out = pattern.sub(original_sml, out)
+
             return out, True
+
         except Exception as e:
             error = f'ArgosTranslator.translate() error: {e}'
             return error, False
