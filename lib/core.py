@@ -830,7 +830,7 @@ def convert2epub(session_id:str)->bool:
                 print(error)
                 return False
             file_ext = os.path.splitext(file_input)[1].lower()
-            print(f'--------------{file_ext}--------------')
+            print(f'--------------{file_input}--------------')
             if file_ext not in ebook_formats:
                 error = f'Unsupported file format: {file_ext}'
                 print(error)
