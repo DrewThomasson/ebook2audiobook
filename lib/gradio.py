@@ -1384,7 +1384,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_change_gr_ebook_src(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(), gr.update(value=''), gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(value=''), gr.update(), gr.update(), gr.update(), gr.update()
 
             def _select_gr_ebook_src(session_id:str, ebook_mode:str, ebook_src:list|None, evt:gr.SelectData)->tuple:
                 try:
