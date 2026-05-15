@@ -3139,7 +3139,7 @@ def convert_ebook(args:dict)->tuple:
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 return error, False
-            translate_to = args.get('translate')
+            translate_to = args.get('translate') if args.get('translate') != args.get('language') else False
             translate_enabled = bool(args.get('translate_enabled')) and bool(translate_to)
             if translate_enabled:
                 try:
@@ -3159,20 +3159,15 @@ def convert_ebook(args:dict)->tuple:
                 if not target_iso1:
                     error = f'--translate target {translate_to} has no iso639-1 mapping'
                     return error, False
-                if translate_to == args['language']:
-                    # source equals target — translation is a no-op
-                    translate_enabled = False
-                    args['translate_enabled'] = False
-                    args['translate'] = None
-                    args['translate_iso1'] = None
-                else:
-                    args['translate_enabled'] = True
-                    args['translate'] = translate_to
-                    args['translate_iso1'] = target_iso1
+                args['translate_enabled'] = True
+                args['translate'] = translate_to
+                args['translate_iso1'] = target_iso1
+                language = str(args['translate'])
             else:
                 args['translate_enabled'] = False
                 args['translate'] = None
                 args['translate_iso1'] = None
+                language = str(args['language']
             if args.get('ebook_mode') == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
                     error = 'Ebook textarea is empty.'
@@ -3214,10 +3209,7 @@ def convert_ebook(args:dict)->tuple:
             session['translate_enabled'] = bool(args.get('translate_enabled', False))
             session['translate'] = args.get('translate')
             session['translate_iso1'] = args.get('translate_iso1')
-            language = args['language']
-            if args.get('translate_enabled') and args.get('translate'):
-                language = args['translate']
-            session['tts_engine'] = str(args['tts_engine']) if args.get('tts_engine') is not None else str(get_compatible_tts_engines(language)[0])
+            session['tts_engine'] = str(args['tts_engine'])
             session['custom_model'] =  args['custom_model']
             session['fine_tuned'] = str(args['fine_tuned'])
             session['voice'] = args.get('voice', None)
@@ -3244,21 +3236,18 @@ def convert_ebook(args:dict)->tuple:
                     return error, False
             cleanup_models_cache()
             if session['is_gui_process']:
-                session['final_name'] = ebook_name + '.' + session['output_format']
+                session['final_name'] = ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format']
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
-                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
+                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format'])
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
-                _voice_lang = session['language']
-                if session.get('translate_enabled') and session.get('translate'):
-                    _voice_lang = session['translate']
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', _voice_lang)
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
@@ -3453,11 +3442,6 @@ def convert_ebook(args:dict)->tuple:
                                         if data:
                                             for value, attributes in data:
                                                 metadata[key] = value
-                                    language = session['language']
-                                    language_iso1 = session['language_iso1']
-                                    if session.get('translate_enabled') and session.get('translate'):
-                                        language = session['translate']
-                                        language_iso1 = session['translate_iso1']
                                     metadata['language'] = language
                                     metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_', ' ')
                                     metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
@@ -3548,10 +3532,7 @@ def convert_ebook(args:dict)->tuple:
                                         else:
                                             error = 'get_cover() failed!'
                                     else:
-                                        _err_lang = session['language']
-                                        if session.get('translate_enabled') and session.get('translate'):
-                                            _err_lang = session['translate']
-                                        error = f"language {_err_lang} not supported by {session['tts_engine']}!"
+                                        error = f"language {language} not supported by {session['tts_engine']}!"
                                 else:
                                     error = 'epubBook.read_epub failed!'
                         else:
