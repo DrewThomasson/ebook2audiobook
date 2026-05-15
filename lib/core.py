@@ -1405,42 +1405,62 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text_list = []
             handled_tables = set()
             prev_typ = None
+
+            # Buffer to collect consecutive break/pause tokens for batch processing
+            marker_buffer = []
+
+            def flush_markers():
+                """Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break.
+                Pauses from headings are preserved immediately."""
+                nonlocal marker_buffer
+                if not marker_buffer:
+                    return
+
+                if not text_list:
+                    marker_buffer = []
+                    return
+
+                last_item = text_list[-1]
+
+                # Separate pauses and breaks in the buffer
+                pauses = [m for m in marker_buffer if m == sml_token('pause')]
+                breaks = [m for m in marker_buffer if m == sml_token('break')]
+
+                break_count = len(breaks)
+
+                # Calculate: pairs of breaks -> pauses, remainder -> break
+                num_pauses_from_breaks = break_count // 2
+                num_breaks = break_count % 2
+
+                # If we have any pauses (from headings or break pairs), add one pause
+                total_pauses = len(pauses) + num_pauses_from_breaks
+                if total_pauses > 0:
+                    pause_tok = sml_token('pause')
+                    if not last_item.endswith(pause_tok):
+                        last_item = last_item + pause_tok
+
+                # Add remaining break if any
+                if num_breaks > 0:
+                    break_tok = sml_token('break')
+                    if not last_item.endswith(break_tok):
+                        last_item = last_item + break_tok
+
+                text_list[-1] = last_item
+                marker_buffer = []
+
             for typ, payload in tuples_list:
                 if typ == 'heading':
+                    flush_markers()  # Flush any pending breaks before a heading
                     text_list.append(payload.strip())
+                    prev_typ = typ
+
                 elif typ in ('break', 'pause'):
-                    token = sml_token(typ)
-                    # If this is a pause, skip any preceding break that would create [break][pause] or [pause][break]
-                    if typ == 'pause':
-                        # Don't add pause if the last item is already a pause
-                        if text_list and text_list[-1] in {v['static'] for v in TTS_SML.values() if 'static' in v}:
-                            last_token_type = None
-                            for t_name, t_val in TTS_SML.items():
-                                if 'static' in t_val and t_val['static'] == text_list[-1]:
-                                    last_token_type = t_name
-                                    break
-                            if last_token_type == 'pause':
-                                prev_typ = typ
-                                continue
-                        # Append pause to the last text element, or add as new item
-                        if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
-                            text_list[-1] = text_list[-1] + token
-                        else:
-                            text_list.append(token)
-                        # Reset prev_typ if it was break, to avoid break-pause sequence
-                        if prev_typ == 'break':
-                            # Remove the trailing break from the last text element if present
-                            break_tok = sml_token('break')
-                            if text_list and text_list[-1].endswith(break_tok):
-                                text_list[-1] = text_list[-1][:-len(break_tok)]
-                    else:  # typ == 'break'
-                        # Only add break if the previous token wasn't pause
-                        if prev_typ != 'pause':
-                            if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
-                                text_list[-1] = text_list[-1] + token
-                            else:
-                                text_list.append(token)
+                    # Collect into buffer instead of adding immediately
+                    marker_buffer.append(sml_token(typ))
+                    prev_typ = typ
+
                 elif typ == 'table':
+                    flush_markers()
                     table = payload
                     if table in handled_tables:
                         prev_typ = typ
@@ -1461,11 +1481,16 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             line = ' — '.join(cells)
                         if line:
                             text_list.append(line.strip())
+                    prev_typ = typ
                 else:
+                    flush_markers()  # Flush breaks before adding text
                     text = payload.strip()
                     if text:
                         text_list.append(text)
-                prev_typ = typ
+                    prev_typ = typ
+
+            # Flush any remaining markers at the end
+            flush_markers()
             msg = f'Flattening as raw text…'
             print(msg)
             max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
