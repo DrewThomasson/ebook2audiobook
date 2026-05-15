@@ -1339,18 +1339,21 @@ class DeviceInstaller():
                     if device_info['os'] == 'linux' and ('jetpack' in device_info.get('note', '').lower() or device_info['name'] == devices['JETSON']['proc']):
                         libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
                         if os.path.exists(libgomp_src):
-                            libs_dir = os.path.join('python_env', 'lib', f'python{sys.version_info.major}.{sys.version_info.minor}', 'site-packages', 'scikit_learn.libs')
-                            if os.path.isdir(libs_dir):
-                                for libgomp_dst in glob(os.path.join(libs_dir, 'libgomp*')):
-                                    if os.path.islink(libgomp_dst):
-                                        if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
-                                            continue
-                                        os.unlink(libgomp_dst)
-                                    else:
-                                        os.unlink(libgomp_dst)
-                                    msg = 'Create symlink to use OS libgomp.'
-                                    print(msg)
-                                    os.symlink(libgomp_src, libgomp_dst)
+                            libs_list = ['ctranslate2.libs', 'scikit_learn.libs']
+                            libs_dir = os.path.join('python_env', 'lib', f'python{sys.version_info.major}.{sys.version_info.minor}', 'site-packages')
+                            for lib in libs_list:
+                                lib_path = os.path.join(libs_dir, lib)
+                                if os.path.isdir(lib_path):
+                                    for libgomp_dst in glob(os.path.join(lib_path, 'libgomp*')):
+                                        if os.path.islink(libgomp_dst):
+                                            if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
+                                                continue
+                                            os.unlink(libgomp_dst)
+                                        else:
+                                            os.unlink(libgomp_dst)
+                                        msg = 'Create symlink to use OS libgomp.'
+                                        print(msg)
+                                        os.symlink(libgomp_src, libgomp_dst)
                     if not self.check_numpy():
                         return 1
                     return 0
