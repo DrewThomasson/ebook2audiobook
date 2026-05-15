@@ -1821,6 +1821,12 @@ def get_sentences(session_id:str, text:str)->list|None:
         # Escape all SML tags so downstream regex passes can't mangle them
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
+
+        # PASS 0 — AUTHORITATIVE SML BOUNDARY SPLIT
+        # [break]/[pause] are now escaped to single high-unicode chars. Split the
+        # text into chunks at every run of escaped-SML chars; each chunk gets the
+        # following SML run as its trailing marker. Punctuation passes (PASS 1-4)
+        # run INSIDE each chunk only, so they cannot cross or eat an SML boundary.
         sml_chunks:list[tuple[str, str]] = []
         cur_buf:list[str] = []
         idx = 0
