@@ -1617,22 +1617,75 @@ def get_sentences(session_id:str, text:str)->list|None:
                 result.append(tail)
         return result
 
-    def _split_sentence_on_sml(sentence:str)->list[str]:
+    def _clean_leading_noise(s:str)->str:
+        """Remove non-alphanumeric UTF-8 chars from the start of a string (ignoring SML escapes)."""
+        # We need to be careful not to strip SML escape codes if they are at the start
+        # But the requirement says "non alphanum utf8 chars". Usually SML tags are restored later.
+        # Since text is currently escaped, we look for actual unicode punctuation/numbers that aren't letters/digits.
+        # We iterate until we find an alphanumeric char or an SML escape marker.
+        idx = 0
+        while idx < len(s):
+            char = s[idx]
+            # If it's an SML escape marker (high unicode), stop stripping
+            if ord(char) >= sml_escape_tag:
+                break
+            # If it's alphanumeric, stop stripping
+            if char.isalnum():
+                break
+            # Otherwise, it's noise (punctuation, spaces, symbols) at the start -> skip
+            idx += 1
+        return s[idx:]
+
+    def _split_sentence_on_sml(sentence:str, attach_to_prev:bool=False)->list[str]:
+        """
+        Split sentence by SML tags.
+        If attach_to_prev is True, tags like [break]/[pause] are appended to the previous text segment
+        instead of starting a new one.
+        """
         parts:list[str] = []
         last = 0
+        pending_tag = None
+        
         for m in SML_TAG_PATTERN.finditer(sentence):
             start, end = m.span()
+            tag_content = m.group(0)
+            
+            # Capture text before the tag
             if start > last:
                 text = sentence[last:start]
                 if text:
-                    parts.append(text)
-            parts.append(m.group(0))
+                    # If we have a pending tag from previous iteration (or logic), attach it here?
+                    # No, the loop processes sequentially. 
+                    # If attach_to_prev is true, we check if the current tag is a marker.
+                    
+                    # Actually, simpler logic: 
+                    # 1. Add text segment.
+                    # 2. If attach_to_prev and tag is marker, append tag to this text segment.
+                    # 3. Else add tag as separate item.
+                    
+                    if attach_to_prev and tag_content in {sml_token('break'), sml_token('pause')}:
+                        parts.append(text + tag_content)
+                    else:
+                        parts.append(text)
+                        parts.append(tag_content)
+            else:
+                # Tag is at the very beginning or consecutive
+                if attach_to_prev and parts and tag_content in {sml_token('break'), sml_token('pause')}:
+                    # Append to the last existing part
+                    parts[-1] = parts[-1] + tag_content
+                else:
+                    parts.append(tag_content)
+            
             last = end
+
+        # Handle tail
         if last < len(sentence):
             tail = sentence[last:]
             if tail:
                 parts.append(tail)
-        return parts
+        
+        # Filter out empty strings resulting from the logic
+        return [p for p in parts if p]
 
     def _strip_escaped_sml(s:str)->str:
         return ''.join(c for c in s if ord(c) < sml_escape_tag)
@@ -1707,9 +1760,11 @@ def get_sentences(session_id:str, text:str)->list|None:
             lang = session['translate']
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
+        
         # escape all SML tags to not be touched by any text treatment
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
+        
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
@@ -1718,7 +1773,9 @@ def get_sentences(session_id:str, text:str)->list|None:
         hard_list = _split_inclusive(text, hard_pattern)
         if not hard_list:
             hard_list = [text.strip()]
-        hard_list = [s.strip() for s in hard_list if s.strip()]
+        
+        # Clean leading noise from each segment
+        hard_list = [_clean_leading_noise(s.strip()) for s in hard_list if s.strip()]
 
         # PASS 2 — soft punctuation
         soft_pattern = re.compile(
@@ -1733,6 +1790,8 @@ def get_sentences(session_id:str, text:str)->list|None:
             if not s:
                 i += 1
                 continue
+            
+            # Check next segment for merging short fragments
             if i + 1 < n:
                 next_s = hard_list[i + 1].strip()
                 next_clean = _strip_escaped_sml(next_s)
@@ -1743,18 +1802,25 @@ def get_sentences(session_id:str, text:str)->list|None:
                     i += 1
             else:
                 i += 1
+            
+            # Clean leading noise again after potential merge
+            s = _clean_leading_noise(s)
+            
             if len(_strip_escaped_sml(s)) <= max_chars:
                 soft_list.append(s)
                 continue
+            
             parts = _split_inclusive(s, soft_pattern)
             if parts:
                 valid = False
-                for p in parts:
-                    if len(_strip_escaped_sml(p.strip())) <= max_chars:
+                # Clean parts before validation
+                clean_parts = [_clean_leading_noise(p.strip()) for p in parts if p.strip()]
+                for p in clean_parts:
+                    if len(_strip_escaped_sml(p)) <= max_chars:
                         valid = True
                         break
                 if valid:
-                    soft_list.extend([p.strip() for p in parts if p.strip()])
+                    soft_list.extend(clean_parts)
                 else:
                     soft_list.append(s)
             else:
@@ -1768,10 +1834,13 @@ def get_sentences(session_id:str, text:str)->list|None:
                 continue
             rest = s
             while rest:
-                current_len = len(_strip_escaped_sml(rest))   # ← rename variable
+                current_len = len(_strip_escaped_sml(rest))
                 if current_len <= max_chars:
-                    last_list.append(rest.strip())
+                    cleaned = _clean_leading_noise(rest.strip())
+                    if cleaned:
+                        last_list.append(cleaned)
                     break
+                
                 cut = rest[:max_chars + 1]
                 idx = cut.rfind(' ')
                 if idx > 0:
@@ -1780,10 +1849,16 @@ def get_sentences(session_id:str, text:str)->list|None:
                 else:
                     left = rest[:max_chars].strip()
                     right = rest[max_chars:].strip()
+                
                 if not left or right == rest:
-                    last_list.append(rest.strip())
+                    cleaned = _clean_leading_noise(rest.strip())
+                    if cleaned:
+                        last_list.append(cleaned)
                     break
-                last_list.append(left)
+                
+                cleaned_left = _clean_leading_noise(left)
+                if cleaned_left:
+                    last_list.append(cleaned_left)
                 rest = right
 
         # PASS 4 — merge very short rows
@@ -1826,10 +1901,59 @@ def get_sentences(session_id:str, text:str)->list|None:
             final_list.append(cur)
             i += 1
 
+        # Process SML tags: Move [break]/[pause] to end of previous sentence
+        processed_final_list = []
+        markers = {sml_token('break'), sml_token('pause')}
+        
+        for s in final_list:
+            # Split by SML tags, attaching markers to previous text
+            parts = _split_sentence_on_sml(s, attach_to_prev=True)
+            processed_final_list.extend(parts)
+        
+        # Filter out any standalone markers that might have ended up at the start of the whole list
+        # (e.g. if the very first block started with a pause)
+        # Though attach_to_prev handles internal ones, a leading marker in the first chunk needs care.
+        # If the first item in processed_final_list is purely a marker, it means the text started with one.
+        # In this case, we should probably attach it to the next item or drop it? 
+        # Requirement: "at the END of the previous sentence". If no previous sentence, it stays at start?
+        # Usually, a block shouldn't start with a pause unless it's a continuation. 
+        # Let's assume if it's the very first element, we leave it or attach to next if next exists.
+        # But logically, if text starts with [pause], it applies to the silence before speaking.
+        # However, user said "not at the start of the current sentence".
+        # If it's the absolute first sentence, there is no previous. We'll leave it or attach to first text.
+        
+        cleaned_processed = []
+        i = 0
+        while i < len(processed_final_list):
+            item = processed_final_list[i]
+            if item in markers:
+                # It's a standalone marker
+                if i == 0:
+                    # Start of text: attach to next if possible, else keep
+                    if i + 1 < len(processed_final_list):
+                        processed_final_list[i+1] = item + processed_final_list[i+1]
+                        i += 1 # Skip the marker, process next
+                    else:
+                        cleaned_processed.append(item)
+                        i += 1
+                else:
+                    # Should have been attached to previous by _split_sentence_on_sml logic
+                    # If it's still here, it means previous was also a marker or logic gap.
+                    # Attach to previous
+                    cleaned_processed[-1] = cleaned_processed[-1] + item
+                i += 1
+            else:
+                cleaned_processed.append(item)
+                i += 1
+
+        final_list = cleaned_processed
+
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = _split_sentence_on_sml(s)
+                # Re-split strictly for ideogram processing if needed, but markers are already moved
+                # We just need to ensure we don't break markers inside _segment_ideogramms
+                parts = _split_sentence_on_sml(s, attach_to_prev=False) # Already processed, just split for tokens
                 for part in parts:
                     part = part.strip()
                     if not part:
@@ -1851,6 +1975,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             if ideogram_list:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
             return ideogram_list
+        
         if final_list:
             final_list = [restore_sml(s, sml_blocks) for s in final_list]
         return final_list
