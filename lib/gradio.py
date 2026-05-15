@@ -1891,7 +1891,7 @@ def build_interface(args:dict)->gr.Blocks:
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
                         _update_gr_fine_tuned_list(session_id),
-                        gr.update(label='OOOOOKKKK')
+                        gr.update(label=file_label)
                     )
                 return tuple(gr.update() for _ in range(3))
 
@@ -2904,7 +2904,12 @@ def build_interface(args:dict)->gr.Blocks:
             gr_translate.change(
                 fn=_change_gr_translate,
                 inputs=[gr_session, gr_translate],
-                outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_custom_model_file],
+                outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                show_progress_on=[gr_progress]
+            ).then(
+                fn=lambda tts_engine: gr.update(label=f"Upload a {tts_engine.upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
+                inputs=[gr_tts_engine],
+                outputs=[gr_custom_model_file],
                 show_progress_on=[gr_progress]
             )
             gr_tts_engine_list.change(
