@@ -1960,7 +1960,6 @@ def build_interface(args:dict)->gr.Blocks:
             def _change_gr_tts_engine_list(session_id:str, engine:str)->tuple:
                 try:
                     nonlocal models
-                    print('--------------------ok-----------')
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session.get('tts_engine') != engine:
@@ -2905,11 +2904,6 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_change_gr_translate,
                 inputs=[gr_session, gr_translate],
                 outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
-                show_progress_on=[gr_progress]
-            ).then(
-                fn=_change_gr_tts_engine_list,
-                inputs=[gr_session, gr_tts_engine_list],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_custom_model_label],
                 show_progress_on=[gr_progress]
             )
             gr_tts_engine_list.change(
