@@ -1368,7 +1368,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 images = body.find_all('img') + body.find_all('image')
                 if images and zf:
                     msg = f'Doc {idx}: no text but {len(images)} image(s) detected. Running OCR…'
-                    show_alert(session_id, {"type": "warning", "msg": msg})
+                    show_alert(session_id, {"type": "info", "msg": msg})
                     ocr_parts = []
                     doc_dir = os.path.dirname(doc.get_name())
                     for img_tag in images:
