@@ -1595,7 +1595,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
 
 def get_sentences(session_id:str, text:str)->list|None:
 
-    def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
+    def _split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
         last_end = 0
         for match in pattern.finditer(text):
@@ -1607,7 +1607,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 result.append(tail)
         return result
 
-    def split_sentence_on_sml(sentence:str)->list[str]:
+    def _split_sentence_on_sml(sentence:str)->list[str]:
         parts:list[str] = []
         last = 0
         for m in SML_TAG_PATTERN.finditer(sentence):
@@ -1624,36 +1624,20 @@ def get_sentences(session_id:str, text:str)->list|None:
                 parts.append(tail)
         return parts
 
-    def strip_escaped_sml(s:str)->str:
+    def _strip_escaped_sml(s:str)->str:
         return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
-    def clean_len(s:str)->int:
-        return len(strip_escaped_sml(s))
+    def _clean_len(s:str)->int:
+        return len(_strip_escaped_sml(s))
 
-    def is_latin_only(s:str)->bool:
-        s = strip_escaped_sml(s)
+    def _is_latin_only(s:str)->bool:
+        s = _strip_escaped_sml(s)
         s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
         has_latin = bool(re.search(r'[A-Za-z]', s))
         has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
         return has_latin and not has_nonlatin
 
-    def split_at_space_limit(s:str)->list[str]:
-        out = []
-        rest = s.strip()
-        while rest and len(strip_escaped_sml(rest)) > max_chars:
-            cut = rest[:max_chars + 1]
-            idx = cut.rfind(' ')
-            if idx == -1:
-                out.append(rest[:max_chars].strip())
-                rest = rest[max_chars:].strip()
-            else:
-                out.append(rest[:idx].strip())
-                rest = rest[idx + 1:].strip()
-        if rest:
-            out.append(rest.strip())
-        return out
-
-    def segment_ideogramms(text:str)->list[str]:
+    def _segment_ideogramms(text:str)->list[str]:
         result = []
         try:
             if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
@@ -1680,7 +1664,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             DependencyError(e)
             return [text]
 
-    def join_ideogramms(idg_list:list[str])->str:
+    def _join_ideogramms(idg_list:list[str])->str:
         try:
             buffer = ''
             prev_latin = False
@@ -1708,21 +1692,20 @@ def get_sentences(session_id:str, text:str)->list|None:
         session = context.get_session(session_id)
         if not session:
             return None
-
-        lang, tts_engine = session['language'], session['tts_engine']
+        lang = session['language']
+        if session.get('translate_enabled') and session.get('translate'):
+            lang = session['translate']
+        tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-
         # escape all SML tags to not be touched by any text treatment
         text, sml_blocks = escape_sml(text)
-
         assert not SML_TAG_PATTERN.search(text)
-
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
             re.DOTALL
         )
-        hard_list = split_inclusive(text, hard_pattern)
+        hard_list = _split_inclusive(text, hard_pattern)
         if not hard_list:
             hard_list = [text.strip()]
         hard_list = [s.strip() for s in hard_list if s.strip()]
@@ -1742,7 +1725,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 continue
             if i + 1 < n:
                 next_s = hard_list[i + 1].strip()
-                next_clean = strip_escaped_sml(next_s)
+                next_clean = _strip_escaped_sml(next_s)
                 if next_clean and sum(c.isalnum() for c in next_clean) < 3:
                     s = f"{s} {next_s}"
                     i += 2
@@ -1750,14 +1733,14 @@ def get_sentences(session_id:str, text:str)->list|None:
                     i += 1
             else:
                 i += 1
-            if len(strip_escaped_sml(s)) <= max_chars:
+            if len(_strip_escaped_sml(s)) <= max_chars:
                 soft_list.append(s)
                 continue
-            parts = split_inclusive(s, soft_pattern)
+            parts = _split_inclusive(s, soft_pattern)
             if parts:
                 valid = False
                 for p in parts:
-                    if len(strip_escaped_sml(p.strip())) <= max_chars:
+                    if len(_strip_escaped_sml(p.strip())) <= max_chars:
                         valid = True
                         break
                 if valid:
@@ -1775,7 +1758,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 continue
             rest = s
             while rest:
-                current_len = len(strip_escaped_sml(rest))   # ← rename variable
+                current_len = len(_strip_escaped_sml(rest))   # ← rename variable
                 if current_len <= max_chars:
                     last_list.append(rest.strip())
                     break
@@ -1807,7 +1790,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 final_list.append(cur)
                 i += 1
                 continue
-            cur_len = clean_len(cur)
+            cur_len = _clean_len(cur)
             if cur_len <= merge_max_chars:
                 j = i + 1
                 while j < n:
@@ -1815,15 +1798,15 @@ def get_sentences(session_id:str, text:str)->list|None:
                     if not nxt:
                         j += 1
                         continue
-                    if cur_len + clean_len(nxt) <= max_chars:
+                    if cur_len + _clean_len(nxt) <= max_chars:
                         cur = cur.rstrip() + ' ' + nxt.lstrip()
-                        cur_len = clean_len(cur)
+                        cur_len = _clean_len(cur)
                         j += 1
                         continue
                     break
                 if final_list:
                     prev = final_list[-1]
-                    if clean_len(prev) + cur_len <= max_chars:
+                    if _clean_len(prev) + cur_len <= max_chars:
                         final_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
                         i = j
                         continue
@@ -1836,7 +1819,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = split_sentence_on_sml(s)
+                parts = _split_sentence_on_sml(s)
                 for part in parts:
                     part = part.strip()
                     if not part:
@@ -1844,7 +1827,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                     if SML_TAG_PATTERN.fullmatch(part):
                         result.append(part)
                         continue
-                    tokens = segment_ideogramms(part)
+                    tokens = _segment_ideogramms(part)
                     if isinstance(tokens, list):
                         result.extend([t for t in tokens if t.strip()])
                     else:
@@ -1852,8 +1835,8 @@ def get_sentences(session_id:str, text:str)->list|None:
                         if tokens:
                             result.append(tokens)
             ideogram_list = []
-            for s in join_ideogramms(result):
-                if not is_latin_only(s):
+            for s in _join_ideogramms(result):
+                if not _is_latin_only(s):
                     ideogram_list.append(s)
             if ideogram_list:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
