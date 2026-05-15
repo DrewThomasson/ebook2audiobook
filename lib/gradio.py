@@ -2908,7 +2908,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_progress]
             ).then(
                 fn=lambda tts_engine: gr.update(label=f"Upload a {tts_engine.upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
-                inputs=[gr_tts_engine],
+                inputs=[gr_tts_engine_list],
                 outputs=[gr_custom_model_file],
                 show_progress_on=[gr_progress]
             )
