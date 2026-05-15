@@ -3048,7 +3048,7 @@ def translate_blocks(session_id:str, raw_blocks:list)->tuple:
         error, ok = translator.start(source_iso1, target_iso1)
         if not ok:
             return raw_blocks, error
-        msg = f'Translating {len(raw_blocks)} block(s) {source_iso1} -> {target_iso1} …'
+        msg = f'Translating {len(raw_blocks)} block(s) {source_iso1} -> {target_iso1}…'
         print(msg)
         out = []
         tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
