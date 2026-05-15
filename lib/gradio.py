@@ -1760,11 +1760,11 @@ def build_interface(args:dict)->gr.Blocks:
                 if not session or not session.get('id', False):
                     return gr.update()
                 lang = session.get('language')
-                translate = session.get('translate', None)
+                translate = session.get('translate')
                 translate_iso1 = session['translate_iso1']
                 translate_options = _build_translate_targets(lang)
                 if translate_options:
-                    if not any(translate == name for name, val in translate_options):
+                    if not translate or not any(translate == name for name, val in translate_options):
                         translate = translate_options[0][1]
                     try:
                         translate_iso1 = Lang(translate).pt1
@@ -1778,7 +1778,7 @@ def build_interface(args:dict)->gr.Blocks:
                 session['translate'] = translate
                 session['translate_iso1'] = translate_iso1
                 visible_gr_translate = True if session.get('translate_enabled') else False
-                return gr.update(visible=visible_gr_translate, choices=translate_options, value=session['translate'])
+                return gr.update(visible=visible_gr_translate, choices=translate_options, value=translate)
 
             def _update_gr_tts_engine_list(session_id:str)->dict:
                 try:
@@ -1850,20 +1850,18 @@ def build_interface(args:dict)->gr.Blocks:
                 return
 
             def _change_gr_language(session_id:str, selected:str)->tuple:
-                nonlocal translate_options
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return tuple(gr.update() for _ in range(5))
+                    return tuple(gr.update() for _ in range(4))
                 if session.get('language') != selected:
                     session['language'] = selected
                     return (
-                        gr.update(value=selected),
                         _update_gr_translate_list(session_id),
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
                         _update_gr_fine_tuned_list(session_id)
                     )
-                return tuple(gr.update() for _ in range(5))
+                return tuple(gr.update() for _ in range(4))
 
             def _change_gr_translate_enabled(session_id:str, enabled:bool)->tuple:
                 session = context.get_session(session_id)
@@ -2888,7 +2886,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_language.change(
                 fn=_change_gr_language,
                 inputs=[gr_session, gr_language],
-                outputs=[gr_language, gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
