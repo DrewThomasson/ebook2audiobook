@@ -1409,12 +1409,37 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 if typ == 'heading':
                     text_list.append(payload.strip())
                 elif typ in ('break', 'pause'):
-                    if prev_typ != typ:
-                        token = sml_token(typ)
+                    token = sml_token(typ)
+                    # If this is a pause, skip any preceding break that would create [break][pause] or [pause][break]
+                    if typ == 'pause':
+                        # Don't add pause if the last item is already a pause
+                        if text_list and text_list[-1] in {v['static'] for v in TTS_SML.values() if 'static' in v}:
+                            last_token_type = None
+                            for t_name, t_val in TTS_SML.items():
+                                if 'static' in t_val and t_val['static'] == text_list[-1]:
+                                    last_token_type = t_name
+                                    break
+                            if last_token_type == 'pause':
+                                prev_typ = typ
+                                continue
+                        # Append pause to the last text element, or add as new item
                         if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
                             text_list[-1] = text_list[-1] + token
                         else:
                             text_list.append(token)
+                        # Reset prev_typ if it was break, to avoid break-pause sequence
+                        if prev_typ == 'break':
+                            # Remove the trailing break from the last text element if present
+                            break_tok = sml_token('break')
+                            if text_list and text_list[-1].endswith(break_tok):
+                                text_list[-1] = text_list[-1][:-len(break_tok)]
+                    else:  # typ == 'break'
+                        # Only add break if the previous token wasn't pause
+                        if prev_typ != 'pause':
+                            if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
+                                text_list[-1] = text_list[-1] + token
+                            else:
+                                text_list.append(token)
                 elif typ == 'table':
                     table = payload
                     if table in handled_tables:
