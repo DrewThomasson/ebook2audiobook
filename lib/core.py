@@ -1410,11 +1410,21 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             marker_buffer = []
 
             def flush_markers():
-                """Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break.
-                Pauses from headings are preserved immediately."""
+                # Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break
                 nonlocal marker_buffer
                 if not marker_buffer:
                     return
+
+                # Count breaks in buffer
+                break_count = sum(1 for m in marker_buffer if m == sml_token('break'))
+
+                if break_count == 0:
+                    marker_buffer = []
+                    return
+
+                # Calculate: pairs of breaks -> pauses, remainder -> break
+                num_pauses = break_count // 2
+                num_breaks = break_count % 2
 
                 if not text_list:
                     marker_buffer = []
@@ -1422,24 +1432,13 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
 
                 last_item = text_list[-1]
 
-                # Separate pauses and breaks in the buffer
-                pauses = [m for m in marker_buffer if m == sml_token('pause')]
-                breaks = [m for m in marker_buffer if m == sml_token('break')]
-
-                break_count = len(breaks)
-
-                # Calculate: pairs of breaks -> pauses, remainder -> break
-                num_pauses_from_breaks = break_count // 2
-                num_breaks = break_count % 2
-
-                # If we have any pauses (from headings or break pairs), add one pause
-                total_pauses = len(pauses) + num_pauses_from_breaks
-                if total_pauses > 0:
+                # Append pauses first
+                for _ in range(num_pauses):
                     pause_tok = sml_token('pause')
                     if not last_item.endswith(pause_tok):
                         last_item = last_item + pause_tok
 
-                # Add remaining break if any
+                # Append remaining break if any
                 if num_breaks > 0:
                     break_tok = sml_token('break')
                     if not last_item.endswith(break_tok):
@@ -1604,10 +1603,6 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         return None
 
 def get_sentences(session_id:str, text:str)->list|None:
-    import re
-    import os
-    # Ensure necessary imports are available in your context
-    # from your_module import context, language_mapping, SML_TAG_PATTERN, escape_sml, restore_sml, DependencyError, punctuation_split_hard_set, punctuation_split_soft_set
 
     def _split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
@@ -1627,9 +1622,9 @@ def get_sentences(session_id:str, text:str)->list|None:
         for m in SML_TAG_PATTERN.finditer(sentence):
             start, end = m.span()
             if start > last:
-                text_part = sentence[last:start]
-                if text_part:
-                    parts.append(text_part)
+                text = sentence[last:start]
+                if text:
+                    parts.append(text)
             parts.append(m.group(0))
             last = end
         if last < len(sentence):
@@ -1639,13 +1634,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         return parts
 
     def _strip_escaped_sml(s:str)->str:
-        # Assuming sml_escape_tag is defined in your global scope
-        # If not, you might need to define it or adjust this logic based on your escape mechanism
-        try:
-            limit = sml_escape_tag 
-        except NameError:
-            limit = 0x80 # Fallback if variable not found in this scope
-        return ''.join(c for c in s if ord(c) < limit)
+        return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
     def _clean_len(s:str)->int:
         return len(_strip_escaped_sml(s))
@@ -1708,16 +1697,6 @@ def get_sentences(session_id:str, text:str)->list|None:
             if buffer:
                 yield buffer
 
-    def _clean_leading_noise(s:str)->str:
-        """Remove non-alphanumeric UTF8 chars from the start of the string."""
-        # Match any sequence of non-word/non-space characters at the start
-        # \w includes alphanumeric and underscore. We want to keep alnum.
-        # We strip anything that is NOT alphanumeric until we hit an alnum char.
-        match = re.match(r'^[^\w\d]+', s)
-        if match:
-            return s[match.end():]
-        return s
-
     try:
         session = context.get_session(session_id)
         if not session:
@@ -1727,11 +1706,9 @@ def get_sentences(session_id:str, text:str)->list|None:
             lang = session['translate']
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-        
         # escape all SML tags to not be touched by any text treatment
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
-
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
@@ -1755,44 +1732,28 @@ def get_sentences(session_id:str, text:str)->list|None:
             if not s:
                 i += 1
                 continue
-            
-            # Clean leading noise immediately after splitting
-            s = _clean_leading_noise(s)
-            if not s:
-                i += 1
-                continue
-
             if i + 1 < n:
                 next_s = hard_list[i + 1].strip()
-                # Clean leading noise for lookahead too
-                next_s_clean_content = _clean_leading_noise(next_s)
-                
-                # Check if next part is very short (likely continuation)
-                if next_s_clean_content and sum(c.isalnum() for c in _strip_escaped_sml(next_s_clean_content)) < 3:
+                next_clean = _strip_escaped_sml(next_s)
+                if next_clean and sum(c.isalnum() for c in next_clean) < 3:
                     s = f"{s} {next_s}"
                     i += 2
                 else:
                     i += 1
             else:
                 i += 1
-            
             if len(_strip_escaped_sml(s)) <= max_chars:
                 soft_list.append(s)
                 continue
-            
             parts = _split_inclusive(s, soft_pattern)
             if parts:
                 valid = False
                 for p in parts:
-                    p_clean = _clean_leading_noise(p.strip())
-                    if len(_strip_escaped_sml(p_clean)) <= max_chars:
+                    if len(_strip_escaped_sml(p.strip())) <= max_chars:
                         valid = True
                         break
                 if valid:
-                    for p in parts:
-                        p_clean = _clean_leading_noise(p.strip())
-                        if p_clean:
-                            soft_list.append(p_clean)
+                    soft_list.extend([p.strip() for p in parts if p.strip()])
                 else:
                     soft_list.append(s)
             else:
@@ -1804,21 +1765,12 @@ def get_sentences(session_id:str, text:str)->list|None:
             s = s.strip()
             if not s:
                 continue
-            
-            # Clean leading noise again just in case
-            s = _clean_leading_noise(s)
-            if not s:
-                continue
-
             rest = s
             while rest:
-                current_len = len(_strip_escaped_sml(rest))
+                current_len = len(_strip_escaped_sml(rest))   # ← rename variable
                 if current_len <= max_chars:
-                    cleaned_rest = _clean_leading_noise(rest.strip())
-                    if cleaned_rest:
-                        last_list.append(cleaned_rest)
+                    last_list.append(rest.strip())
                     break
-                
                 cut = rest[:max_chars + 1]
                 idx = cut.rfind(' ')
                 if idx > 0:
@@ -1827,16 +1779,10 @@ def get_sentences(session_id:str, text:str)->list|None:
                 else:
                     left = rest[:max_chars].strip()
                     right = rest[max_chars:].strip()
-                
                 if not left or right == rest:
-                    cleaned_rest = _clean_leading_noise(rest.strip())
-                    if cleaned_rest:
-                        last_list.append(cleaned_rest)
+                    last_list.append(rest.strip())
                     break
-                
-                cleaned_left = _clean_leading_noise(left)
-                if cleaned_left:
-                    last_list.append(cleaned_left)
+                last_list.append(left)
                 rest = right
 
         # PASS 4 — merge very short rows
@@ -1853,7 +1799,6 @@ def get_sentences(session_id:str, text:str)->list|None:
                 final_list.append(cur)
                 i += 1
                 continue
-            
             cur_len = _clean_len(cur)
             if cur_len <= merge_max_chars:
                 j = i + 1
@@ -1880,42 +1825,6 @@ def get_sentences(session_id:str, text:str)->list|None:
             final_list.append(cur)
             i += 1
 
-        # PASS 5 — Move SML tags ([pause], [break]) from start of current to end of previous
-        processed_list = []
-        for i, sentence in enumerate(final_list):
-            if not sentence:
-                continue
-            
-            # Check if sentence starts with SML tags
-            # We look for tags at the very beginning
-            match = SML_TAG_PATTERN.match(sentence)
-            
-            if match and i > 0:
-                # There is a tag at the start, and there is a previous sentence
-                tag = match.group(0)
-                remaining_text = sentence[match.end():].strip()
-                
-                # Clean any noise that might have been exposed after removing the tag
-                remaining_text = _clean_leading_noise(remaining_text)
-                
-                if remaining_text:
-                    # Append tag to the end of the previous sentence in the result list
-                    processed_list[-1] = processed_list[-1] + tag
-                    processed_list.append(remaining_text)
-                else:
-                    # If nothing remains after the tag, just append the tag to previous
-                    # (This handles cases where a sentence was ONLY a tag)
-                    processed_list[-1] = processed_list[-1] + tag
-            else:
-                # No leading tag, or it's the first sentence (tags stay if they are at start of first sentence? 
-                # Usually first sentence shouldn't start with break/pause unless it's a chapter start, 
-                # but we preserve behavior for index 0)
-                if sentence:
-                    processed_list.append(sentence)
-        
-        final_list = processed_list
-
-        # Handle Ideograms if needed
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
@@ -1941,7 +1850,6 @@ def get_sentences(session_id:str, text:str)->list|None:
             if ideogram_list:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
             return ideogram_list
-        
         if final_list:
             final_list = [restore_sml(s, sml_blocks) for s in final_list]
         return final_list
