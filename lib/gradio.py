@@ -1866,16 +1866,17 @@ def build_interface(args:dict)->gr.Blocks:
             def _change_gr_translate_enabled(session_id:str, enabled:bool)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return tuple(gr.update() for _ in range(4))
+                    return tuple(gr.update() for _ in range(5))
                 if session['translate_enabled'] != enabled:
                     session['translate_enabled'] = enabled
                     return (
                         _update_gr_translate_list(session_id),
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
-                        _update_gr_fine_tuned_list(session_id)
+                        _update_gr_fine_tuned_list(session_id),
+                        gr.update(label='OOOOOKKKK')
                     )
-                return tuple(gr.update() for _ in range(4))
+                return tuple(gr.update() for _ in range(5))
 
             def _change_gr_translate(session_id:str, translate:str)->tuple:
                 session = context.get_session(session_id)
@@ -1963,7 +1964,6 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session.get('tts_engine') != engine:
-                            print(f'-------------{engine}-------------')
                             models = load_engine_presets(engine)
                             session['voice'] = None if session['voice'] == default_engine_settings[session['tts_engine']]['voice'] else session['voice']
                             session['tts_engine'] = engine
@@ -2904,7 +2904,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_translate.change(
                 fn=_change_gr_translate,
                 inputs=[gr_session, gr_translate],
-                outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_custom_model_file],
                 show_progress_on=[gr_progress]
             )
             gr_tts_engine_list.change(
