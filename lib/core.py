@@ -1410,7 +1410,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             marker_buffer = []
 
             def flush_markers():
-                # Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break
+                """Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break"""
                 nonlocal marker_buffer
                 if not marker_buffer:
                     return
