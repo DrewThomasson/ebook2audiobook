@@ -1374,7 +1374,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     msg = 'Cancellation requested, please wait…'
                                     return gr.update(value=_show_gr_modal('wait', msg), visible=True), gr.update(value=''), voice_update, gr.update(visible=False), gr.update(value='', visible=False), gr.update(value='')
                                 session['cancellation_requested'] = False
-                                return gr.update(), gr.update(value=''), voice_update, gr.update(visible=False), gr.update(value='', visible=False), gr.update()
+                                return gr.update(), gr.update(value=''), voice_update, gr.update(visible=False), gr.update(value='', visible=False), gr.update(value='')
                         if data is None:
                             if session.get('status', None) in [status_tags['EDIT'], status_tags['CONVERTING']]:
                                 session['cancellation_requested'] = True
