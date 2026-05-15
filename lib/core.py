@@ -1410,41 +1410,31 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             marker_buffer = []
 
             def flush_markers():
-                """Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break.
-                Pauses from headings are preserved immediately."""
                 nonlocal marker_buffer
                 if not marker_buffer:
                     return
-
                 if not text_list:
                     marker_buffer = []
                     return
-
                 last_item = text_list[-1]
-
                 # Separate pauses and breaks in the buffer
                 pauses = [m for m in marker_buffer if m == sml_token('pause')]
                 breaks = [m for m in marker_buffer if m == sml_token('break')]
-
                 break_count = len(breaks)
-
                 # Calculate: pairs of breaks -> pauses, remainder -> break
                 num_pauses_from_breaks = break_count // 2
                 num_breaks = break_count % 2
-
                 # If we have any pauses (from headings or break pairs), add one pause
                 total_pauses = len(pauses) + num_pauses_from_breaks
                 if total_pauses > 0:
                     pause_tok = sml_token('pause')
                     if not last_item.endswith(pause_tok):
                         last_item = last_item + pause_tok
-
                 # Add remaining break if any
                 if num_breaks > 0:
                     break_tok = sml_token('break')
                     if not last_item.endswith(break_tok):
                         last_item = last_item + break_tok
-
                 text_list[-1] = last_item
                 marker_buffer = []
 
