@@ -1873,8 +1873,7 @@ def build_interface(args:dict)->gr.Blocks:
                         _update_gr_translate_list(session_id),
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
-                        _update_gr_fine_tuned_list(session_id),
-                        gr.update(label='OOOOOKKKK')
+                        _update_gr_fine_tuned_list(session_id)
                     )
                 return tuple(gr.update() for _ in range(5))
 
@@ -1892,6 +1891,7 @@ def build_interface(args:dict)->gr.Blocks:
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
                         _update_gr_fine_tuned_list(session_id),
+                        gr.update(label='OOOOOKKKK')
                     )
                 return tuple(gr.update() for _ in range(3))
 
