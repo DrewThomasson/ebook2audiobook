@@ -3167,7 +3167,7 @@ def convert_ebook(args:dict)->tuple:
                 args['translate_enabled'] = False
                 args['translate'] = None
                 args['translate_iso1'] = None
-                language = str(args['language']
+                language = str(args['language'])
             if args.get('ebook_mode') == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
                     error = 'Ebook textarea is empty.'
