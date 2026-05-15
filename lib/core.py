@@ -1571,9 +1571,6 @@ def get_sentences(session_id:str, text:str)->list|None:
         return result
 
     def _split_sentence_on_sml(sentence:str)->list[str]:
-        # Handles both the unescaped form ([break]/[pause]) and the escaped
-        # high-unicode form produced by escape_sml. Needed for the CJK path,
-        # which is called BEFORE restore_sml.
         parts:list[str] = []
         last = 0
         i = 0
@@ -1670,8 +1667,6 @@ def get_sentences(session_id:str, text:str)->list|None:
         return bool(s) and all(ord(c) >= sml_escape_tag for c in s)
 
     def _strip_leading_noise(s:str)->str:
-        # Strip leading non-word, non-space chars, BUT keep escaped SML chars
-        # (high-unicode placeholders) since those carry the [break]/[pause] mapping.
         i = 0
         n = len(s)
         while i < n:
@@ -1682,8 +1677,6 @@ def get_sentences(session_id:str, text:str)->list|None:
         return s[i:].lstrip()
 
     def _process_chunk(chunk_text:str)->list[str]:
-        # Runs PASS 1-4 on text that is guaranteed to contain no SML tags
-        # (PASS 0 has already stripped them out as chunk boundaries).
         if not chunk_text or not chunk_text.strip():
             return []
 
@@ -1763,9 +1756,13 @@ def get_sentences(session_id:str, text:str)->list|None:
                 last_list.append(left)
                 rest = right
 
-        # PASS 4 — merge very short rows
+        # PASS 4 — AGGRESSIVE MERGE
+        # Merge short sentences OR sentences ending in markers if they fit in max_chars
         chunk_final = []
-        merge_max_chars = int((max_chars / 2) / 3)
+        # Threshold for "very short" (e.g., < 15% of max_chars)
+        merge_threshold = int(max_chars * 0.15) 
+        if merge_threshold < 5: merge_threshold = 5
+
         i = 0
         n = len(last_list)
         while i < n:
@@ -1773,37 +1770,59 @@ def get_sentences(session_id:str, text:str)->list|None:
             if not cur:
                 i += 1
                 continue
-            if i == 0:
-                chunk_final.append(cur)
-                i += 1
-                continue
+            
             cur_len = _clean_len(cur)
-            if cur_len <= merge_max_chars:
+            cur_has_marker = bool(re.search(r'\[[^\]]+\]$', cur)) # Ends with [break] or [pause]
+            
+            # Determine if we should try to merge this sentence with the next one(s)
+            # Condition 1: It is very short
+            # Condition 2: It ends with a marker (often headings or short exclamations)
+            should_merge = (cur_len <= merge_threshold) or cur_has_marker
+            
+            if should_merge and i + 1 < n:
+                # Look ahead and merge as many as possible until we hit a "solid" sentence or max_chars
                 j = i + 1
                 while j < n:
                     nxt = last_list[j].strip()
                     if not nxt:
                         j += 1
                         continue
-                    if cur_len + _clean_len(nxt) <= max_chars:
+                    
+                    nxt_len = _clean_len(nxt)
+                    combined_len = cur_len + 1 + nxt_len # +1 for space
+                    
+                    if combined_len <= max_chars:
+                        # Merge
                         cur = cur.rstrip() + ' ' + nxt.lstrip()
-                        cur_len = _clean_len(cur)
+                        cur_len = combined_len
+                        # Check if the NEW combined sentence ends with a marker or is still short
+                        # If it now ends with a marker, we might stop merging to preserve the pause location?
+                        # Actually, if we merged a marker-ending sentence with a normal one, 
+                        # the marker is now in the middle. This is usually fine for TTS flow 
+                        # unless strict separation is needed. 
+                        # However, the user's goal is to avoid tiny sentences.
+                        # If the original 'cur' had a marker, it's now inside 'cur'. 
+                        # We continue merging if the result is still relatively short or if the next one is also tiny.
+                        
+                        # Optimization: If the accumulated text is now "long enough" (> 30% max_chars)
+                        # and doesn't end in a marker, stop merging to create a substantial chunk.
+                        if cur_len > int(max_chars * 0.3) and not cur_has_marker:
+                             # Only stop if the next sentence isn't tiny itself
+                             if nxt_len > merge_threshold:
+                                 break
+                        
                         j += 1
-                        continue
-                    break
-                if chunk_final:
-                    prev = chunk_final[-1]
-                    if _clean_len(prev) + cur_len <= max_chars:
-                        chunk_final[-1] = prev.rstrip() + ' ' + cur.lstrip()
-                        i = j
-                        continue
+                    else:
+                        break
+                
                 chunk_final.append(cur)
                 i = j
                 continue
+            
             chunk_final.append(cur)
             i += 1
 
-        # Strip leading punctuation noise from each sentence (keeps SML if any)
+        # Strip leading punctuation noise from each sentence
         chunk_final = [_strip_leading_noise(s) for s in chunk_final if s.strip()]
         chunk_final = [s for s in chunk_final if s]
         return chunk_final
@@ -1818,15 +1837,10 @@ def get_sentences(session_id:str, text:str)->list|None:
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
 
-        # Escape all SML tags so downstream regex passes can't mangle them
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
 
-        # PASS 0 — AUTHORITATIVE SML BOUNDARY SPLIT
-        # [break]/[pause] are now escaped to single high-unicode chars. Split the
-        # text into chunks at every run of escaped-SML chars; each chunk gets the
-        # following SML run as its trailing marker. Punctuation passes (PASS 1-4)
-        # run INSIDE each chunk only, so they cannot cross or eat an SML boundary.
+        # PASS 0 — SML BOUNDARY SPLIT
         sml_chunks:list[tuple[str, str]] = []
         cur_buf:list[str] = []
         idx = 0
@@ -1845,18 +1859,14 @@ def get_sentences(session_id:str, text:str)->list|None:
         if cur_buf:
             sml_chunks.append((''.join(cur_buf), ''))
 
-        # Run PASS 1-4 per chunk; attach each chunk's trailing SML to the END of
-        # that chunk's last sentence so TTS pauses BETWEEN utterances.
         final_list:list[str] = []
         pending_sml = ''
         for chunk_text, trailing_sml in sml_chunks:
             chunk_sents = _process_chunk(chunk_text)
             if not chunk_sents:
-                # Pure-whitespace or empty chunk; carry its SML to the next chunk
                 pending_sml += trailing_sml
                 continue
             if pending_sml:
-                # Drain SML accumulated from prior empty chunk(s)
                 if final_list:
                     sep = '' if final_list[-1].endswith(' ') else ' '
                     final_list[-1] = final_list[-1] + sep + pending_sml
