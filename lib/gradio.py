@@ -1959,11 +1959,11 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _change_gr_tts_engine_list(session_id:str, engine:str)->tuple:
                 try:
-                    print('---------------------ok-------------------')
                     nonlocal models
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if session.get('tts_engine') != engine:
+                            print(f'-------------{engine}-------------')
                             models = load_engine_presets(engine)
                             session['voice'] = None if session['voice'] == default_engine_settings[session['tts_engine']]['voice'] else session['voice']
                             session['tts_engine'] = engine
