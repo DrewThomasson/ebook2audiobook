@@ -1866,7 +1866,7 @@ def build_interface(args:dict)->gr.Blocks:
             def _change_gr_translate_enabled(session_id:str, enabled:bool)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return tuple(gr.update() for _ in range(5))
+                    return tuple(gr.update() for _ in range(4))
                 if session['translate_enabled'] != enabled:
                     session['translate_enabled'] = enabled
                     return (
@@ -1875,7 +1875,7 @@ def build_interface(args:dict)->gr.Blocks:
                         _update_gr_custom_model_list(session_id),
                         _update_gr_fine_tuned_list(session_id)
                     )
-                return tuple(gr.update() for _ in range(5))
+                return tuple(gr.update() for _ in range(4))
 
             def _change_gr_translate(session_id:str, translate:str)->tuple:
                 session = context.get_session(session_id)
