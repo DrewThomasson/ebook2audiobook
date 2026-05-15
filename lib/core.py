@@ -8,7 +8,7 @@
 import argparse, asyncio, csv, fnmatch, sqlite3, hashlib, io, json, math, os, pytesseract, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
-import ebooklib, psutil, requests, stanza, importlib, queue
+import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
 
 from typing import Any, Generator, Dict
@@ -38,13 +38,14 @@ from types import MappingProxyType
 from langdetect import detect
 from unidecode import unidecode
 from phonemizer import phonemize
+from pypinyin import pinyin, Style
 
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
-#from lib.classes.argos_translator import ArgosTranslator
+from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
 from lib.classes.tts_engines.common.utils import build_vtt_file
 
@@ -178,6 +179,9 @@ class SessionContext:
             "client": None,
             "language": default_language_code,
             "language_iso1": None,
+            "translate_enabled": False,
+            "translate": None,
+            "translate_iso1": None,
             "voice": None,
             "voice_dir": None,
             "voice_map": {},
@@ -211,9 +215,9 @@ class SessionContext:
             ####### Ebook conversion
             "ebook": None,
             "ebook_src": None,
-            "ebook_src_notextarea": None,
             "ebook_list": None,
             "ebook_textarea": None,
+            "ebook_textarea_src": None,
             "audiobook_overridden": None,
             "process_dir": None,
             "chapters_dir": None,
@@ -807,7 +811,7 @@ def sync_globals_to_blocks(session_id:str)->None:
     except Exception as e:
         exception_alert(session_id, f'sync_globals_to_blocks(): {e}')
 
-def convert2epub(session_id:str)-> bool:
+def convert2epub(session_id:str)->bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
@@ -1079,7 +1083,7 @@ def convert2epub(session_id:str)-> bool:
             print(error)
             return False
 
-def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
+def get_ebook_title(epubBook:EpubBook, all_docs:list[Any])->str|None:
     # 1. Try metadata (official EPUB title)
     meta_title = epubBook.get_metadata('DC','title')
     if meta_title and meta_title[0][0].strip():
@@ -1246,7 +1250,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return []
 
 def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
-    def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
+    def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
             prev_child_had_data = False
             for idx, child in enumerate(node.children):
@@ -1254,23 +1258,28 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
-                        if prev_child_had_data:
+                        if prev_child_had_data and not in_heading:
                             yield ('break', sml_token("break"))
-                        yield ('text', text)
+                        yield ('heading' if in_heading else 'text', text)
                         last_text_char = text[-1]
                         current_child_had_data = True
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
+                        # Process heading tag and all its children as heading content
                         title = child.get_text(strip=True)
                         if title:
-                            if prev_child_had_data:
+                            if prev_child_had_data and not in_heading:
                                 yield ('break', sml_token("break"))
-                            yield ('heading', title)
+                            # Always process heading children recursively to handle nested elements
+                            for inner in _tuple_row(child, last_text_char, in_heading=True):
+                                yield inner
+                            # After finishing the heading, yield a pause marker
+                            yield ('pause', sml_token("pause"))
                             last_text_char = title[-1]
                             current_child_had_data = True
                     elif name == 'table':
-                        if prev_child_had_data:
+                        if prev_child_had_data and not in_heading:
                             yield ('break', sml_token("break"))
                         yield ('table', child)
                         current_child_had_data = True
@@ -1278,9 +1287,9 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         return_data = False
                         if name in proc_tags:
                             is_header = False
-                            if prev_child_had_data and name in break_tags:
+                            if prev_child_had_data and name in break_tags and not in_heading:
                                 yield ('break', sml_token("break"))
-                            for inner in _tuple_row(child, last_text_char):
+                            for inner in _tuple_row(child, last_text_char, in_heading=in_heading):
                                 return_data = True
                                 yield inner
                                 if len(inner) > 1 and isinstance(inner[1], str) and inner[1]:
@@ -1289,13 +1298,13 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                                 if inner[0] in ('text', 'heading') and isinstance(inner[1], str) and inner[1]:
                                     is_header = True
                             if return_data:
-                                if name in break_tags and name != 'span':
+                                if name in break_tags and name != 'span' and not in_heading:
                                     if is_header or (last_text_char and not last_text_char.isalnum() and not last_text_char.isspace()):
                                         yield ('break', sml_token("break"))
-                                elif name in heading_tags or name in pause_tags:
+                                elif name in pause_tags and not in_heading:
                                     yield ('pause', sml_token("pause"))
                         else:
-                            yield from _tuple_row(child, last_text_char)
+                            yield from _tuple_row(child, last_text_char, in_heading=in_heading)
                             current_child_had_data = True
                 if current_child_had_data:
                     prev_child_had_data = True
@@ -1322,7 +1331,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         if session and session.get('id', False):
             lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
             heading_tags = [f'h{i}' for i in range(1, 5)]
-            break_tags = ['br', 'p', 'span']
+            break_tags = ['br', 'p', 'span', 'div']
             pause_tags = ['div']
             proc_tags = heading_tags + break_tags + pause_tags
             doc_body = doc.get_body_content()
@@ -1371,7 +1380,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         if img_zip_path not in zip_names:
                             img_zip_path = zip_basenames.get(os.path.basename(img_ref))
                         if not img_zip_path:
-                            print(f'Could not resolve image in EPUB: {img_ref}')
+                            msg = f'Could not resolve image in EPUB: {img_ref}'
+                            print(msg)
                             continue
                         try:
                             img_data = zf.read(img_zip_path)
@@ -1383,7 +1393,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             else:
                                 show_alert(session_id, {"type": "warning", "msg": error})
                         except Exception as ocr_err:
-                            print(f'OCR error on {img_zip_path}: {ocr_err}')
+                            error = f'OCR error on {img_zip_path}: {ocr_err}'
+                            print(error)
             tuples_list = list(_tuple_row(body))
             if not tuples_list:
                 msg = 'No body text and no images found. Skip to next doc…'
@@ -1394,17 +1405,52 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text_list = []
             handled_tables = set()
             prev_typ = None
+
+            # Buffer to collect consecutive break/pause tokens for batch processing
+            marker_buffer = []
+
+            def flush_markers():
+                nonlocal marker_buffer
+                if not marker_buffer:
+                    return
+                if not text_list:
+                    marker_buffer = []
+                    return
+                last_item = text_list[-1]
+                # Separate pauses and breaks in the buffer
+                pauses = [m for m in marker_buffer if m == sml_token('pause')]
+                breaks = [m for m in marker_buffer if m == sml_token('break')]
+                break_count = len(breaks)
+                # Calculate: pairs of breaks -> pauses, remainder -> break
+                num_pauses_from_breaks = break_count // 2
+                num_breaks = break_count % 2
+                # If we have any pauses (from headings or break pairs), add one pause
+                total_pauses = len(pauses) + num_pauses_from_breaks
+                if total_pauses > 0:
+                    pause_tok = sml_token('pause')
+                    if not last_item.endswith(pause_tok):
+                        last_item = last_item + pause_tok
+                # Add remaining break if any
+                if num_breaks > 0:
+                    break_tok = sml_token('break')
+                    if not last_item.endswith(break_tok):
+                        last_item = last_item + break_tok
+                text_list[-1] = last_item
+                marker_buffer = []
+
             for typ, payload in tuples_list:
                 if typ == 'heading':
+                    flush_markers()  # Flush any pending breaks before a heading
                     text_list.append(payload.strip())
+                    prev_typ = typ
+
                 elif typ in ('break', 'pause'):
-                    if prev_typ != typ:
-                        token = sml_token(typ)
-                        if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
-                            text_list[-1] = text_list[-1] + token
-                        else:
-                            text_list.append(token)
+                    # Collect into buffer instead of adding immediately
+                    marker_buffer.append(sml_token(typ))
+                    prev_typ = typ
+
                 elif typ == 'table':
+                    flush_markers()
                     table = payload
                     if table in handled_tables:
                         prev_typ = typ
@@ -1425,11 +1471,16 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             line = ' — '.join(cells)
                         if line:
                             text_list.append(line.strip())
+                    prev_typ = typ
                 else:
+                    flush_markers()  # Flush breaks before adding text
                     text = payload.strip()
                     if text:
                         text_list.append(text)
-                prev_typ = typ
+                    prev_typ = typ
+
+            # Flush any remaining markers at the end
+            flush_markers()
             msg = f'Flattening as raw text…'
             print(msg)
             max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
@@ -1856,7 +1907,7 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
         re.UNICODE
     )
 
-    def normalize_commas(num_str:str)->str:
+    def _normalize_commas(num_str:str)->str:
         # ormalize number string to standard comma format: 1,234,567
         tok = num_str.replace('\u00A0', '').replace(' ', '')
         if '.' in tok:
@@ -1868,7 +1919,7 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
             integer_part = tok.replace(',', '')
             return "{:,}".format(int(integer_part))
 
-    def clean_single_num(num_str:str)->str:
+    def _clean_single_num(num_str:str)->str:
         tok = unicodedata.normalize('NFKC', num_str)
         if tok.lower() in ('inf', 'infinity', 'nan'):
             return tok
@@ -1881,7 +1932,7 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
             return tok
 
         # Normalize commas before final output
-        tok = normalize_commas(tok)
+        tok = _normalize_commas(tok)
 
         if is_num2words_compat:
             new_lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
@@ -1894,9 +1945,9 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
             return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
 
     def clean_match(match:re.Match)->str:
-        first_num = clean_single_num(match.group(1))
+        first_num = _clean_single_num(match.group(1))
         dash_char = match.group(2) or ''
-        second_num = clean_single_num(match.group(3)) if match.group(3) else ''
+        second_num = _clean_single_num(match.group(3)) if match.group(3) else ''
         trailing = match.group(4) or ''
         if second_num:
             return f'{first_num}{dash_char}{second_num}{trailing}'
@@ -1928,7 +1979,7 @@ def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
 
 def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
 
-    def n2w(n:int)->str:
+    def _n2w(n:int)->str:
         key = (n, lang, is_num2words_compat)
         if key in _n2w_cache:
             return _n2w_cache[key]
@@ -1941,7 +1992,7 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
         _n2w_cache[key] = word
         return word
 
-    def repl_num(m:re.Match)->str:
+    def _repl_num(m:re.Match)->str:
         # Reject enumeration patterns like "(1.2)"
         start, end = m.start(), m.end()
         if (
@@ -1963,11 +2014,11 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             return m.group(0)
         # If no language clock rules, just say numbers plainly
         if not lc:
-            parts = [n2w(h)]
+            parts = [_n2w(h)]
             if mnt != 0:
-                parts.append(n2w(mnt))
+                parts.append(_n2w(mnt))
             if sec is not None and sec > 0:
-                parts.append(n2w(sec))
+                parts.append(_n2w(sec))
             return ' '.join(parts)
         next_hour = (h + 1) % 24
         special_hours = lc.get('special_hours', {})
@@ -1975,27 +2026,27 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
             if h in special_hours:
                 phrase = special_hours[h]
             else:
-                phrase = lc['oclock'].format(hour=n2w(h))
+                phrase = lc['oclock'].format(hour=_n2w(h))
         elif mnt == 15:
-            phrase = lc['quarter_past'].format(hour=n2w(h))
+            phrase = lc['quarter_past'].format(hour=_n2w(h))
         elif mnt == 30:
             if lang == 'deu':
-                phrase = lc['half_past'].format(next_hour=n2w(next_hour))
+                phrase = lc['half_past'].format(next_hour=_n2w(next_hour))
             else:
-                phrase = lc['half_past'].format(hour=n2w(h))
+                phrase = lc['half_past'].format(hour=_n2w(h))
         elif mnt == 45:
-            phrase = lc['quarter_to'].format(next_hour=n2w(next_hour))
+            phrase = lc['quarter_to'].format(next_hour=_n2w(next_hour))
         elif mnt < 30:
-            phrase = lc['past'].format(hour=n2w(h), minute=n2w(mnt)) if mnt != 0 else lc['oclock'].format(hour=n2w(h))
+            phrase = lc['past'].format(hour=_n2w(h), minute=_n2w(mnt)) if mnt != 0 else lc['oclock'].format(hour=_n2w(h))
         else:
             minute_to_hour = 60 - mnt
             phrase = lc['to'].format(
-                next_hour=n2w(next_hour),
-                minute=n2w(minute_to_hour),
-                minute_to_hour=n2w(minute_to_hour)
+                next_hour=_n2w(next_hour),
+                minute=_n2w(minute_to_hour),
+                minute_to_hour=_n2w(minute_to_hour)
             )
         if sec is not None and sec > 0:
-            second_phrase = lc['second'].format(second=n2w(sec))
+            second_phrase = lc['second'].format(second=_n2w(sec))
             phrase = lc['full'].format(phrase=phrase, second_phrase=second_phrase)
         return phrase
 
@@ -2004,11 +2055,11 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
     )
     lc = language_clock.get(lang) if 'language_clock' in globals() else None
     _n2w_cache = {}
-    return time_rx.sub(repl_num, text)
+    return time_rx.sub(_repl_num, text)
 
 def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
 
-    def repl_ambiguous(match:re.Match)->str:
+    def _repl_ambiguous(match:re.Match)->str:
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
             return f'{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}'
@@ -2049,16 +2100,16 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
             r'|'                         # or
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
-        text = re.sub(ambiguous_pattern, repl_ambiguous, text)
+        text = re.sub(ambiguous_pattern, _repl_ambiguous, text)
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
 def roman2number(text:str)->str:
 
-    def is_valid_roman(s:str)->bool:
+    def _is_valid_roman(s:str)->bool:
         return bool(valid_roman.fullmatch(s))
 
-    def to_int(s:str)->str:
+    def _to_int(s:str)->str:
         s = s.upper()
         i = 0
         result = 0
@@ -2072,30 +2123,30 @@ def roman2number(text:str)->str:
                 return s
         return str(result)
 
-    def repl_heading(m: re.Match)->str:
+    def _repl_heading(m:re.Match)->str:
         roman = m.group(1)
-        if not is_valid_roman(roman):
+        if not _is_valid_roman(roman):
             return m.group(0)
-        return f"{to_int(roman)}{m.group(2)}{m.group(3)}"
+        return f"{_to_int(roman)}{m.group(2)}{m.group(3)}"
 
-    def repl_standalone(m: re.Match)->str:
+    def _repl_standalone(m:re.Match)->str:
         roman = m.group(1)
-        if not is_valid_roman(roman):
+        if not _is_valid_roman(roman):
             return m.group(0)
-        return f"{to_int(roman)}{m.group(2)}"
+        return f"{_to_int(roman)}{m.group(2)}"
 
-    def repl_word(m: re.Match)->str:
+    def _repl_word(m:re.Match)->str:
         roman = m.group(1)
-        if not is_valid_roman(roman):
+        if not _is_valid_roman(roman):
             return m.group(0)
-        return to_int(roman)
+        return _to_int(roman)
 
-    def repl_chapter_single(m: re.Match)->str:
+    def _repl_chapter_single(m:re.Match)->str:
         word = m.group(1)
         roman = m.group(2)
-        if not is_valid_roman(roman):
+        if not _is_valid_roman(roman):
             return m.group(0)
-        return f"{word} {to_int(roman)}"
+        return f'{word} {_to_int(roman)}'
 
     valid_roman = re.compile(
         r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
@@ -2112,20 +2163,20 @@ def roman2number(text:str)->str:
     )
     text = re.sub(
         r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
-        repl_heading,
+        _repl_heading,
         text,
         flags=re.MULTILINE
     )
     text = re.sub(
         r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
-        repl_standalone,
+        _repl_standalone,
         text,
         flags=re.MULTILINE
     )
-    text = chapter_words_re.sub(repl_chapter_single, text)
+    text = chapter_words_re.sub(_repl_chapter_single, text)
     text = re.sub(
         r'(?<!\S)([IVXLCDM]{2,})(?!\S)',
-        repl_word,
+        _repl_word,
         text
     )
     return text
@@ -2135,7 +2186,7 @@ def is_latin(s:str)->bool:
 
 def foreign2latin(text:str, base_lang:str)->str:
 
-    def script_of(word:str)->str:
+    def _script_of(word:str)->str:
         for ch in word:
             if ch.isalpha():
                 name = unicodedata.name(ch, '')
@@ -2153,16 +2204,14 @@ def foreign2latin(text:str, base_lang:str)->str:
                     return 'chinese'
         return 'unknown'
 
-    def romanize(word:str)->str:
-        scr = script_of(word)
+    def _romanize(word:str)->str:
+        scr = _script_of(word)
         if scr == 'latin':
             return word
         try:
             if scr == 'chinese':
-                from pypinyin import pinyin, Style
                 return ''.join(x[0] for x in pinyin(word, style=Style.NORMAL))
             if scr == 'japanese':
-                import pykakasi
                 k = pykakasi.kakasi()
                 k.setMode('H', 'a')
                 k.setMode('K', 'a')
@@ -2191,7 +2240,7 @@ def foreign2latin(text:str, base_lang:str)->str:
         if t in protected:
             buf.append(t)
         elif re.match(r"^\w+$", t):
-            buf.append(romanize(t))
+            buf.append(_romanize(t))
         else:
             buf.append(t)
     out:str = ''
@@ -2251,11 +2300,11 @@ def normalize_sml_tags(text:str)->tuple[bool, str]:
 def escape_sml(text:str)->tuple[str, list[str]]:
     sml_blocks:list[str] = []
 
-    def replace(m:re.Match[str])->str:
+    def _replace(m:re.Match[str])->str:
         sml_blocks.append(m.group(0))
         return chr(sml_escape_tag + len(sml_blocks) - 1)
 
-    return SML_TAG_PATTERN.sub(replace, text), sml_blocks
+    return SML_TAG_PATTERN.sub(_replace, text), sml_blocks
 
 def restore_sml(text:str, sml_blocks:list[str])->str:
     for i, block in enumerate(sml_blocks):
@@ -2271,7 +2320,7 @@ def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
-    def replace(match:re.Match)->str:
+    def _replace(match:re.Match)->str:
         token = match.group(1)
         for k, expansion in mapping.items():
             if token.lower() == k.lower():
@@ -2290,7 +2339,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
             flags=re.IGNORECASE
         )
-        text = pattern.sub(replace, text)
+        text = pattern.sub(_replace, text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc…
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
@@ -2385,7 +2434,10 @@ def convert_chapters2audio(session_id:str)->bool:
         prev_blocks_list = blocks_saved.get('blocks', [])
         prev_blocks = {b['id']: b for b in prev_blocks_list} if isinstance(prev_blocks_list, list) else prev_blocks_list
         xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
-        if session['language'] != 'eng' and session['language'] in xtts_languages:
+        _lang = session['language']
+        if session.get('translate_enabled') and session.get('translate'):
+            _lang = session['translate']
+        if _lang != 'eng' and _lang in xtts_languages:
             is_voice_changed = False
             voice_cache = {}
             for block in blocks:
@@ -2588,7 +2640,7 @@ def combine_audio_sentences(session_id:str, file:str, block_id:str, sentence_cou
 
 def combine_audio_chapters(session_id:str)->list[str]|None:
 
-    def generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
+    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
         try:
             out_fmt = session['output_format']
             is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
@@ -2644,13 +2696,13 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 f.write(ffmpeg_metadata)
             return output_metadata_path
         except Exception as e:
-            error = f'generate_ffmpeg_metadata() Error: {e}'
+            error = f'_generate_ffmpeg_metadata() Error: {e}'
             print(error)
             return False
 
-    def export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
+    def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
 
-        def on_progress(p:float)->None:
+        def _on_progress(p:float)->None:
             if is_gui_process:
                 progress_bar(p / 100.0, desc=f'Export Part {part_num}' if part_num is not None else 'Export')
 
@@ -2725,7 +2777,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-progress', 'pipe:2',
                     '-y', final_file
                 ]
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=on_progress)
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=_on_progress)
             if not proc_pipe.result:
                 error = f'ffmpeg export failed for {final_file}'
                 print(error)
@@ -2856,14 +2908,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     return None
                 metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
                 part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
+                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
                 final_file = os.path.join(
                     session['audiobooks_dir'],
                     f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
                     if is_multi_part else session['final_name']
                 )
                 block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
-                if export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
+                if _export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
                     exported_files.append(final_file)
         else:
             concat_list = os.path.join(concat_dir, 'concat_list_chapters_1.txt')
@@ -2880,9 +2932,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 return None
             metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
             chapters_zip = list(zip(chapter_files, chapter_titles))
-            generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
+            _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
             final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-            if export_audio(merged_audio, metadata_file, final_file):
+            if _export_audio(merged_audio, metadata_file, final_file):
                 exported_files.append(final_file)
         return exported_files if exported_files else None
     except Exception as e:
@@ -2891,7 +2943,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
 
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
-    def on_progress(p:float)->None:
+    def _on_progress(p:float)->None:
         if is_gui_process:
             progress_bar(p / 100.0, desc='Assemble')
 
@@ -2940,7 +2992,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             is_gui_process=is_gui_process,
             total_duration=total_duration,
             msg='Assemble',
-            on_progress=on_progress
+            on_progress=_on_progress
         )
         if proc_pipe.result and os.path.exists(out_file):
             msg = f'Completed → {out_file}'
@@ -3040,23 +3092,58 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
-def resolve_voice(session_id:str, ebook_src:str)->str|None:
-    """
-    Returns the voice to use for a given ebook in DIRECTORY mode.
-    Lookup order: voice_map[abs(ebook_src)] -> voice_map[basename] -> session['voice'] -> None.
-    Voice file existence is checked; missing overrides fall through to the default.
-    """
-    session = context.get_session(session_id)
-    if not session:
-        return None
-    if not ebook_src:
-        return session.get('voice')
-    voice_map = session.get('voice_map') or {}
-    abs_src = os.path.abspath(ebook_src)
-    override = voice_map.get(abs_src) or voice_map.get(os.path.basename(ebook_src))
-    if override and os.path.exists(override):
-        return override
-    return session.get('voice')
+def translate_blocks(session_id:str, raw_blocks:list)->tuple:
+    try:
+        session = context.get_session(session_id)
+        if not session or not session.get('id', False):
+            return raw_blocks, 'Session expired'
+        if not session.get('translate_enabled') or not session.get('translate'):
+            return raw_blocks, None
+        source_iso1 = session.get('language_iso1')
+        target_iso1 = session.get('translate_iso1')
+        if not source_iso1 or not target_iso1:
+            msg = f'Translation iso1 codes missing: {source_iso1} -> {target_iso1}'
+            return raw_blocks, msg
+        if source_iso1 == target_iso1:
+            return raw_blocks, None
+        translator = ArgosTranslator(neural_machine='argostranslate')
+        error, ok = translator.start(source_iso1, target_iso1)
+        if not ok:
+            return raw_blocks, error
+        msg = f'Translating {len(raw_blocks)} block(s) {source_iso1} -> {target_iso1}…'
+        print(msg)
+        out = []
+        tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
+        sml_patterns = re.compile(
+            rf'''
+            \[
+                \s*
+                (?P<close>/)?
+                \s*
+                (?P<tag>{tag_keys})
+                (?:\s*:\s*(?P<value>[^\]]*))?
+                \s*
+            \]
+            ''',
+            re.VERBOSE
+        )
+        for idx, text in enumerate(tqdm(raw_blocks, desc='translate', unit='block')):
+            if session['cancellation_requested']:
+                return raw_blocks, 'Conversion cancelled'
+            if not text or not text.strip():
+                out.append(text)
+                continue
+            translated, ok = translator.translate(text, sml_patterns)
+            if not ok:
+                error = f'Translation failed at block {idx}: {translated}'
+                return raw_blocks, error
+            out.append(translated)
+        msg = 'Translation done.'
+        print(msg)
+        return out, None
+    except Exception as e:
+        error = f'translate_blocks() error: {e}'
+        return raw_blocks, error
 
 def convert_ebook(args:dict)->tuple:
     try:
@@ -3086,6 +3173,35 @@ def convert_ebook(args:dict)->tuple:
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 return error, False
+            translate_to = args.get('translate') if args.get('translate') != args.get('language') else False
+            translate_enabled = bool(args.get('translate_enabled')) and bool(translate_to)
+            if translate_enabled:
+                try:
+                    if len(translate_to) in (2, 3):
+                        ld_t = Lang(translate_to)
+                        if ld_t:
+                            translate_to = ld_t.pt3
+                except Exception:
+                    pass
+                if translate_to not in language_mapping.keys():
+                    error = f'--translate target language {translate_to} is not (yet) supported'
+                    return error, False
+                try:
+                    target_iso1 = Lang(translate_to).pt1
+                except Exception:
+                    target_iso1 = None
+                if not target_iso1:
+                    error = f'--translate target {translate_to} has no iso639-1 mapping'
+                    return error, False
+                args['translate_enabled'] = True
+                args['translate'] = translate_to
+                args['translate_iso1'] = target_iso1
+                language = str(args['translate'])
+            else:
+                args['translate_enabled'] = False
+                args['translate'] = None
+                args['translate_iso1'] = None
+                language = str(args['language'])
             if args.get('ebook_mode') == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
                     error = 'Ebook textarea is empty.'
@@ -3100,16 +3216,23 @@ def convert_ebook(args:dict)->tuple:
                 with open(text_filepath, 'w', encoding='utf-8') as f:
                     f.write(text)
                 session['ebook_textarea'] = args['ebook_textarea']
-                session['ebook_src'] = text_filepath
+                session['ebook_textarea_src'] = text_filepath
+                ebook_file = text_filename
+                ebook_name = Path(text_filename).stem
             else:
-                if args.get('ebook_src'):
-                    if not os.path.splitext(args['ebook_src'])[1]:
-                        error = f"{args['ebook_src']} needs a format extension."
-                        return error, False
-                    if not os.path.exists(args['ebook_src']):
-                        error = 'File does not exist or Directory empty.'
-                        return error, False
-                    session['ebook_src'] = str(args['ebook_src'])
+                if not args.get('ebook_src'):
+                    error = 'File source is empty.'
+                    return error, False
+                elif not os.path.splitext(args['ebook_src'])[1]:
+                    error = f"{args['ebook_src']} needs a format extension."
+                    return error, False
+                elif not os.path.exists(args['ebook_src']):
+                    error = 'File does not exist or Directory empty.'
+                    return error, False
+                session['ebook_src'] = str(args['ebook_src'])
+                ebook_file = Path(session['ebook_src']).name
+                ebook_name = get_sanitized(Path(session['ebook_src']).stem)
+            print(f"Processing eBook file: {ebook_file}")
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
@@ -3117,7 +3240,10 @@ def convert_ebook(args:dict)->tuple:
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
             session['language_iso1'] = str(args['language_iso1'])
-            session['tts_engine'] = str(args['tts_engine']) if args.get('tts_engine') is not None else str(get_compatible_tts_engines(args['language'])[0])
+            session['translate_enabled'] = bool(args.get('translate_enabled', False))
+            session['translate'] = args.get('translate')
+            session['translate_iso1'] = args.get('translate_iso1')
+            session['tts_engine'] = str(args['tts_engine'])
             session['custom_model'] =  args['custom_model']
             session['fine_tuned'] = str(args['fine_tuned'])
             session['voice'] = args.get('voice', None)
@@ -3138,22 +3264,20 @@ def convert_ebook(args:dict)->tuple:
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
-            ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             cleanup_models_cache()
-            print(f"Processing eBook file: {os.path.basename(session['ebook_src'])}")
             if session['is_gui_process']:
-                session['final_name'] = ebook_name + '.' + session['output_format']
+                session['final_name'] = ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format']
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
-                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + '.' + session['output_format'])
+                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format'])
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
                 session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                 session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
@@ -3172,7 +3296,7 @@ def convert_ebook(args:dict)->tuple:
                         msg = 'Conversion skipped.'
                         return msg, True
                 if error is None:
-                    #delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
+                    delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
@@ -3211,8 +3335,8 @@ def convert_ebook(args:dict)->tuple:
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
                     if prepare_dirs(session_id):
-                        session['ebook'] = os.path.join(session['process_dir'], os.path.basename(session['ebook_src']))
-                        shutil.copy(session['ebook_src'], session['ebook'])
+                        session['ebook'] = os.path.join(session['process_dir'], ebook_file)
+                        shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
                         msg_extra = ''                      
@@ -3249,15 +3373,15 @@ def convert_ebook(args:dict)->tuple:
                                 msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
                             if session['free_vram_gb'] > 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'False'  
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'  
                         if session['tts_engine'] == TTS_ENGINES['BARK']:
                             if session['free_vram_gb'] < 12.0:
-                                os.environ['SUNO_OFFLOAD_CPU'] = "True"
-                                os.environ['SUNO_USE_SMALL_MODELS'] = "True"
+                                os.environ['SUNO_OFFLOAD_CPU'] = "TRUE"
+                                os.environ['SUNO_USE_SMALL_MODELS'] = "TRUE"
                                 msg_extra += f"<br/>Switching BARK to SMALL models"  
                             else:
-                                os.environ['SUNO_OFFLOAD_CPU'] = "False"
-                                os.environ['SUNO_USE_SMALL_MODELS'] = "False"
+                                os.environ['SUNO_OFFLOAD_CPU'] = "FALSE"
+                                os.environ['SUNO_USE_SMALL_MODELS'] = "FALSE"
                         if msg == '':
                             msg_extra = f"Using {session['device'].upper()}" + msg_extra
                         device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
@@ -3348,29 +3472,34 @@ def convert_ebook(args:dict)->tuple:
                                         if data:
                                             for value, attributes in data:
                                                 metadata[key] = value
-                                    metadata['language'] = session['language']
+                                    metadata['language'] = language
                                     metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_', ' ')
                                     metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                                     session['metadata'] = metadata
                                     try:
                                         if len(session['metadata']['language']) == 2:
-                                            lang_dict = Lang(session['language'])
+                                            lang_dict = Lang(language)
                                             if lang_dict:
                                                 session['metadata']['language'] = lang_dict.pt3
                                     except Exception as e:
                                         pass
-                                    if session['metadata']['language'] != session['language']:
-                                        error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                        show_alert(session_id, {'type': 'warning', 'msg': error})
+                                    if not session.get('translate_enabled'):
+                                        if session['metadata']['language'] != session['language']:
+                                            error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                            show_alert(session_id, {'type': 'warning', 'msg': error})
                                     is_lang_in_tts_engine = (
                                         session.get('tts_engine') in default_engine_settings and
-                                        session.get('language') in default_engine_settings[session['tts_engine']].get('languages', {})
+                                        language in default_engine_settings[session['tts_engine']].get('languages', {})
                                     )
                                     if is_lang_in_tts_engine:
                                         session['cover'] = get_cover(epubBook, session_id)
                                         if session.get('cover', False):
                                             if missing_orig_json:
                                                 raw_blocks = get_blocks(session_id, epubBook)
+                                                if raw_blocks and session.get('translate_enabled'):
+                                                    raw_blocks, error = translate_blocks(session_id, list(raw_blocks))
+                                                    if error is not None:
+                                                        return error, False
                                                 if raw_blocks:
                                                     session['blocks_orig'] = {
                                                         "page": 0,
@@ -3433,7 +3562,7 @@ def convert_ebook(args:dict)->tuple:
                                         else:
                                             error = 'get_cover() failed!'
                                     else:
-                                        error = f"language {session['language']} not supported by {session['tts_engine']}!"
+                                        error = f"language {language} not supported by {session['tts_engine']}!"
                                 else:
                                     error = 'epubBook.read_epub failed!'
                         else:
@@ -3453,7 +3582,7 @@ def finalize_audiobook(session_id:str)->tuple:
         is_preview = session.get('blocks_preview', False) if session else False
         result = lambda msg, ok: (gr.update(value=msg), gr.update(value=ok)) if is_preview else (msg, ok)
 
-        def fail(error):
+        def _fail(error):
             session['status'] = status_tags['END']
             return result(error, False)
 
@@ -3465,7 +3594,7 @@ def finalize_audiobook(session_id:str)->tuple:
             return result(msg, False)
         if not session.get('blocks_current', {}):
             error = 'finalize_audiobook() failed! blocks_current empty!'
-            return fail(error)
+            return _fail(error)
         session['status'] = status_tags['CONVERTING']
         print('Get sentences…')
         blocks_current = session['blocks_current']
@@ -3498,11 +3627,11 @@ def finalize_audiobook(session_id:str)->tuple:
             if session and session.get('id', False):
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
-            return fail(error)
+            return _fail(error)
         show_alert(session_id, {'type': 'info', 'msg': 'Combining sentences and chapters…'})
         exported_files = combine_audio_chapters(session_id)
         if exported_files is None:
-            return fail('combine_audio_chapters() error: exported_files not created!')
+            return _fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
@@ -3524,15 +3653,12 @@ def finalize_audiobook(session_id:str)->tuple:
             elif session['ebook_mode'] == ebook_modes['SINGLE']:
                 session['ebook_src'] = None
             elif session['ebook_mode'] == ebook_modes['TEXT']:
-                ebook_src = session['ebook_src']
-                if ebook_src:
-                    try:
-                        os.remove(ebook_src)
-                    except FileNotFoundError:
-                        pass
-                    except OSError:
-                        pass
-                session['ebook_src'] = session['ebook_src_notextarea']
+                try:
+                    os.remove(session['ebook_textarea_src'])
+                except FileNotFoundError:
+                    pass
+                except OSError:
+                    pass
             session['status'] = status_tags['END']
             reset_ebook_session(session_id, force=True, filter_keys=False)
             show_alert(session_id, {'type': 'success', 'msg': f'{filename} / converted.'})
@@ -3583,6 +3709,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     session = context.get_session(session_id)
     data = {
         "ebook": None,
+        "ebook_textarea_src": None,
         "process_dir": None,
         "chapters_dir": None,
         "sentences_dir": None,
