@@ -3030,36 +3030,7 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
-def translate_ebook(session_id:str)->bool:
-    try:
-        session = context.get_session(session_id)
-        if not session or not session.get('id', False):
-            return False
-        if not session.get('translate_enabled') or not session.get('translate'):
-            return False
-        src = session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src'] 
-        if not src or not os.path.exists(src):
-            return False
-        target_iso3 = session['translate']
-        base, ext = os.path.splitext(src)
-        suffix = f'_{target_iso3}'
-        # avoid double-suffix on accidental reruns
-        if base.endswith(suffix):
-            return True
-        forked = f'{base}{suffix}{ext}'
-        if not os.path.exists(forked):
-            shutil.copy2(src, forked)
-        if session['ebook_mode'] == ebook_modes['TEXT']:
-            session['ebook_textarea_src'] = forked
-        else:
-            session['ebook_src'] = forked
-        return True
-    except Exception as e:
-        error = f'translate_ebook() error: {e}'
-        print(error)
-        return False
-
-def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple:
+def translate_blocks(session_id:str, raw_blocks:list)->tuple:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
@@ -3108,7 +3079,7 @@ def translate_raw_blocks(session_id:str, raw_blocks:list)->tuple:
         print(msg)
         return out, None
     except Exception as e:
-        error = f'translate_raw_blocks() error: {e}'
+        error = f'translate_blocks() error: {e}'
         return raw_blocks, error
 
 def convert_ebook(args:dict)->tuple:
@@ -3230,10 +3201,6 @@ def convert_ebook(args:dict)->tuple:
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
-            if session['translate_enabled']:
-                if not translate_ebook(session_id):
-                    error = 'translate_ebook() failed.'
-                    return error, False
             cleanup_models_cache()
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format']
@@ -3467,7 +3434,7 @@ def convert_ebook(args:dict)->tuple:
                                             if missing_orig_json:
                                                 raw_blocks = get_blocks(session_id, epubBook)
                                                 if raw_blocks and session.get('translate_enabled'):
-                                                    raw_blocks, error = translate_raw_blocks(session_id, list(raw_blocks))
+                                                    raw_blocks, error = translate_blocks(session_id, list(raw_blocks))
                                                     if error is not None:
                                                         return error, False
                                                 if raw_blocks:
