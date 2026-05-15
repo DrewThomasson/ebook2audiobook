@@ -1340,7 +1340,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if (session.get('ebook_src') == data and ebook_mode == ebook_modes['SINGLE']) or (session.get('ebook_list') == data and ebook_mode == ebook_modes['DIRECTORY']):
-                            return tuple(gr.update() for _ in range(6))
+                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value='')
                         if ebook_mode == ebook_modes['SINGLE']:
                             session['ebook_src'] = data
                         elif ebook_mode == ebook_modes['DIRECTORY']:
