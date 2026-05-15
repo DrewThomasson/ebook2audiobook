@@ -100,9 +100,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                     self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
-                    if self.session['voice'] == self.params['block_voice']:
-                        self.session['voice'] = self.params['current_voice']
-                    self.params['block_voice'] = self.params['current_voice']
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()

@@ -109,9 +109,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
-                    if self.session['voice'] == self.params['block_voice']:
-                        self.session['voice'] = self.params['current_voice']
-                    self.params['block_voice'] = self.params['current_voice']
                 fine_tuned_params = {
                     key.removeprefix('xtts_'): cast_type(self.session[key])
                     for key, cast_type in {

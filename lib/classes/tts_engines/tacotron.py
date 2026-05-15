@@ -122,9 +122,6 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
-                    if self.session['voice'] == self.params['block_voice']:
-                        self.session['voice'] = self.params['current_voice']
-                    self.params['block_voice'] = self.params['current_voice']
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                 os.makedirs(proc_dir, exist_ok=True)

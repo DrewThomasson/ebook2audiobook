@@ -111,9 +111,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                     self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
-                    if self.session['voice'] == self.params['block_voice']:
-                        self.session['voice'] = self.params['current_voice']
-                    self.params['block_voice'] = self.params['current_voice']
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 self.audio_segments = []
                 use_zs = self.params['current_voice'] is not None

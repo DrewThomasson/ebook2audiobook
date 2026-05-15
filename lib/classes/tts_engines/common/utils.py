@@ -674,10 +674,10 @@ class TTSUtils:
             return True, None
         elif tag == 'voice':
             if close:
-                self.params['inline_voice'] = None
                 voice_orig, error = self._set_voice(self.params['block_voice'])
                 if voice_orig is None and error is not None:
                     return False, error
+                self.params['inline_voice'] = None
                 self.params['block_voice'] = self.params['current_voice'] = voice_orig
                 return True, None
             if not value:

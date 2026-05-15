@@ -3073,7 +3073,8 @@ def translate_blocks(session_id:str, raw_blocks:list)->tuple:
                 continue
             translated, ok = translator.translate(text, sml_patterns)
             if not ok:
-                return raw_blocks, f'Translation failed at block {idx}: {translated}'
+                error = f'Translation failed at block {idx}: {translated}'
+                return raw_blocks, error
             out.append(translated)
         msg = 'Translation done.'
         print(msg)
