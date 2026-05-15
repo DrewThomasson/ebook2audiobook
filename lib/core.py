@@ -1249,6 +1249,10 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return []
 
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool--- filter_blocks_fixed.py (原始)
+
+
++++ filter_blocks_fixed.py (修改后)
 def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -1410,7 +1414,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             marker_buffer = []
 
             def flush_markers():
-                # Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break
+                """Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break"""
                 nonlocal marker_buffer
                 if not marker_buffer:
                     return
