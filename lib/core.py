@@ -1258,8 +1258,10 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
+                        # Only add break if not inside a heading and previous had data
                         if prev_child_had_data and not in_heading:
                             yield ('break', sml_token("break"))
+                        # Yield as heading if inside heading, else text
                         yield ('heading' if in_heading else 'text', text)
                         last_text_char = text[-1]
                         current_child_had_data = True
@@ -1269,6 +1271,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         # Process heading tag and all its children as heading content
                         title = child.get_text(strip=True)
                         if title:
+                            # Add break before heading if needed (only if not already in heading)
                             if prev_child_had_data and not in_heading:
                                 yield ('break', sml_token("break"))
                             # Always process heading children recursively to handle nested elements
@@ -1287,6 +1290,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         return_data = False
                         if name in proc_tags:
                             is_header = False
+                            # Add break before processing tag content if needed
                             if prev_child_had_data and name in break_tags and not in_heading:
                                 yield ('break', sml_token("break"))
                             for inner in _tuple_row(child, last_text_char, in_heading=in_heading):
@@ -1380,8 +1384,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         if img_zip_path not in zip_names:
                             img_zip_path = zip_basenames.get(os.path.basename(img_ref))
                         if not img_zip_path:
-                            msg = f'Could not resolve image in EPUB: {img_ref}'
-                            print(msg)
+                            print(f'Could not resolve image in EPUB: {img_ref}')
                             continue
                         try:
                             img_data = zf.read(img_zip_path)
@@ -1393,8 +1396,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             else:
                                 show_alert(session_id, {"type": "warning", "msg": error})
                         except Exception as ocr_err:
-                            error = f'OCR error on {img_zip_path}: {ocr_err}'
-                            print(error)
+                            print(f'OCR error on {img_zip_path}: {ocr_err}')
             tuples_list = list(_tuple_row(body))
             if not tuples_list:
                 msg = 'No body text and no images found. Skip to next doc…'
@@ -1405,62 +1407,18 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text_list = []
             handled_tables = set()
             prev_typ = None
-
-            # Buffer to collect consecutive break/pause tokens for batch processing
-            marker_buffer = []
-
-            def flush_markers():
-                """Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break.
-                Pauses from headings are preserved immediately."""
-                nonlocal marker_buffer
-                if not marker_buffer:
-                    return
-
-                if not text_list:
-                    marker_buffer = []
-                    return
-
-                last_item = text_list[-1]
-
-                # Separate pauses and breaks in the buffer
-                pauses = [m for m in marker_buffer if m == sml_token('pause')]
-                breaks = [m for m in marker_buffer if m == sml_token('break')]
-
-                break_count = len(breaks)
-
-                # Calculate: pairs of breaks -> pauses, remainder -> break
-                num_pauses_from_breaks = break_count // 2
-                num_breaks = break_count % 2
-
-                # If we have any pauses (from headings or break pairs), add one pause
-                total_pauses = len(pauses) + num_pauses_from_breaks
-                if total_pauses > 0:
-                    pause_tok = sml_token('pause')
-                    if not last_item.endswith(pause_tok):
-                        last_item = last_item + pause_tok
-
-                # Add remaining break if any
-                if num_breaks > 0:
-                    break_tok = sml_token('break')
-                    if not last_item.endswith(break_tok):
-                        last_item = last_item + break_tok
-
-                text_list[-1] = last_item
-                marker_buffer = []
-
             for typ, payload in tuples_list:
                 if typ == 'heading':
-                    flush_markers()  # Flush any pending breaks before a heading
                     text_list.append(payload.strip())
-                    prev_typ = typ
-
                 elif typ in ('break', 'pause'):
-                    # Collect into buffer instead of adding immediately
-                    marker_buffer.append(sml_token(typ))
-                    prev_typ = typ
-
+                    # Original logic: add token if different from previous type
+                    if prev_typ != typ:
+                        token = sml_token(typ)
+                        if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
+                            text_list[-1] = text_list[-1] + token
+                        else:
+                            text_list.append(token)
                 elif typ == 'table':
-                    flush_markers()
                     table = payload
                     if table in handled_tables:
                         prev_typ = typ
@@ -1481,16 +1439,11 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             line = ' — '.join(cells)
                         if line:
                             text_list.append(line.strip())
-                    prev_typ = typ
                 else:
-                    flush_markers()  # Flush breaks before adding text
                     text = payload.strip()
                     if text:
                         text_list.append(text)
-                    prev_typ = typ
-
-            # Flush any remaining markers at the end
-            flush_markers()
+                prev_typ = typ
             msg = f'Flattening as raw text…'
             print(msg)
             max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
@@ -1605,7 +1558,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
 
 def get_sentences(session_id:str, text:str)->list|None:
 
-    def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
+    def _split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
         last_end = 0
         for match in pattern.finditer(text):
@@ -1617,15 +1570,15 @@ def get_sentences(session_id:str, text:str)->list|None:
                 result.append(tail)
         return result
 
-    def split_sentence_on_sml(sentence:str)->list[str]:
+    def _split_sentence_on_sml(sentence:str)->list[str]:
         parts:list[str] = []
         last = 0
         for m in SML_TAG_PATTERN.finditer(sentence):
             start, end = m.span()
             if start > last:
-                text = sentence[last:start]
-                if text:
-                    parts.append(text)
+                text_part = sentence[last:start]
+                if text_part:
+                    parts.append(text_part)
             parts.append(m.group(0))
             last = end
         if last < len(sentence):
@@ -1634,36 +1587,20 @@ def get_sentences(session_id:str, text:str)->list|None:
                 parts.append(tail)
         return parts
 
-    def strip_escaped_sml(s:str)->str:
+    def _strip_escaped_sml(s:str)->str:
         return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
-    def clean_len(s:str)->int:
-        return len(strip_escaped_sml(s))
+    def _clean_len(s:str)->int:
+        return len(_strip_escaped_sml(s))
 
-    def is_latin_only(s:str)->bool:
-        s = strip_escaped_sml(s)
+    def _is_latin_only(s:str)->bool:
+        s = _strip_escaped_sml(s)
         s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
         has_latin = bool(re.search(r'[A-Za-z]', s))
         has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
         return has_latin and not has_nonlatin
 
-    def split_at_space_limit(s:str)->list[str]:
-        out = []
-        rest = s.strip()
-        while rest and len(strip_escaped_sml(rest)) > max_chars:
-            cut = rest[:max_chars + 1]
-            idx = cut.rfind(' ')
-            if idx == -1:
-                out.append(rest[:max_chars].strip())
-                rest = rest[max_chars:].strip()
-            else:
-                out.append(rest[:idx].strip())
-                rest = rest[idx + 1:].strip()
-        if rest:
-            out.append(rest.strip())
-        return out
-
-    def segment_ideogramms(text:str)->list[str]:
+    def _segment_ideogramms(text:str)->list[str]:
         result = []
         try:
             if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
@@ -1690,7 +1627,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             DependencyError(e)
             return [text]
 
-    def join_ideogramms(idg_list:list[str])->str:
+    def _join_ideogramms(idg_list:list[str])->str:
         try:
             buffer = ''
             prev_latin = False
@@ -1718,21 +1655,21 @@ def get_sentences(session_id:str, text:str)->list|None:
         session = context.get_session(session_id)
         if not session:
             return None
-
-        lang, tts_engine = session['language'], session['tts_engine']
+        lang = session['language']
+        if session.get('translate_enabled') and session.get('translate'):
+            lang = session['translate']
+        tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-
         # escape all SML tags to not be touched by any text treatment
         text, sml_blocks = escape_sml(text)
-
         assert not SML_TAG_PATTERN.search(text)
-
+        
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
             re.DOTALL
         )
-        hard_list = split_inclusive(text, hard_pattern)
+        hard_list = _split_inclusive(text, hard_pattern)
         if not hard_list:
             hard_list = [text.strip()]
         hard_list = [s.strip() for s in hard_list if s.strip()]
@@ -1752,7 +1689,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 continue
             if i + 1 < n:
                 next_s = hard_list[i + 1].strip()
-                next_clean = strip_escaped_sml(next_s)
+                next_clean = _strip_escaped_sml(next_s)
                 if next_clean and sum(c.isalnum() for c in next_clean) < 3:
                     s = f"{s} {next_s}"
                     i += 2
@@ -1760,14 +1697,14 @@ def get_sentences(session_id:str, text:str)->list|None:
                     i += 1
             else:
                 i += 1
-            if len(strip_escaped_sml(s)) <= max_chars:
+            if len(_strip_escaped_sml(s)) <= max_chars:
                 soft_list.append(s)
                 continue
-            parts = split_inclusive(s, soft_pattern)
+            parts = _split_inclusive(s, soft_pattern)
             if parts:
                 valid = False
                 for p in parts:
-                    if len(strip_escaped_sml(p.strip())) <= max_chars:
+                    if len(_strip_escaped_sml(p.strip())) <= max_chars:
                         valid = True
                         break
                 if valid:
@@ -1785,7 +1722,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 continue
             rest = s
             while rest:
-                current_len = len(strip_escaped_sml(rest))   # ← rename variable
+                current_len = len(_strip_escaped_sml(rest))
                 if current_len <= max_chars:
                     last_list.append(rest.strip())
                     break
@@ -1817,7 +1754,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 final_list.append(cur)
                 i += 1
                 continue
-            cur_len = clean_len(cur)
+            cur_len = _clean_len(cur)
             if cur_len <= merge_max_chars:
                 j = i + 1
                 while j < n:
@@ -1825,15 +1762,15 @@ def get_sentences(session_id:str, text:str)->list|None:
                     if not nxt:
                         j += 1
                         continue
-                    if cur_len + clean_len(nxt) <= max_chars:
+                    if cur_len + _clean_len(nxt) <= max_chars:
                         cur = cur.rstrip() + ' ' + nxt.lstrip()
-                        cur_len = clean_len(cur)
+                        cur_len = _clean_len(cur)
                         j += 1
                         continue
                     break
                 if final_list:
                     prev = final_list[-1]
-                    if clean_len(prev) + cur_len <= max_chars:
+                    if _clean_len(prev) + cur_len <= max_chars:
                         final_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
                         i = j
                         continue
@@ -1843,10 +1780,62 @@ def get_sentences(session_id:str, text:str)->list|None:
             final_list.append(cur)
             i += 1
 
+        # --- NEW LOGIC START ---
+        # Fix 1: Strip leading non-alphanumeric (including escaped SML tags) from each sentence
+        # Fix 2: Move leading SML tags to the end of the previous sentence
+        cleaned_list = []
+        for i, s in enumerate(final_list):
+            s_stripped = s.strip()
+            if not s_stripped:
+                continue
+            
+            # Identify leading SML tags
+            leading_tags = []
+            text_start_idx = 0
+            for m in SML_TAG_PATTERN.finditer(s_stripped):
+                if m.start() == 0:
+                    leading_tags.append(m.group(0))
+                    text_start_idx = m.end()
+                else:
+                    break
+            
+            # Extract the actual text part after leading tags
+            text_part = s_stripped[text_start_idx:].strip()
+            
+            # Fix 1: Remove leading non-alphanumeric chars from the text part itself
+            # This handles cases like "...?! text" becoming "text"
+            match_text = re.match(r'^[^\w]+', text_part, flags=re.UNICODE)
+            if match_text:
+                text_part = text_part[match_text.end():]
+            
+            if not text_part and not leading_tags:
+                continue # Skip if nothing left
+            
+            current_item = text_part
+            
+            # Fix 2: Attach leading tags to the previous sentence
+            if leading_tags and cleaned_list:
+                prev_item = cleaned_list[-1]
+                # Append tags to the end of the previous item
+                for tag in leading_tags:
+                    if not prev_item.endswith(tag):
+                        prev_item += tag
+                cleaned_list[-1] = prev_item
+            elif leading_tags and not cleaned_list:
+                # If tags are at the very beginning of the whole text, prepend them to the first text part
+                # Or discard them if they make no sense at the start. Usually prepend.
+                current_item = "".join(leading_tags) + current_item
+            
+            if current_item:
+                cleaned_list.append(current_item)
+        
+        final_list = cleaned_list
+        # --- NEW LOGIC END ---
+
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
-                parts = split_sentence_on_sml(s)
+                parts = _split_sentence_on_sml(s)
                 for part in parts:
                     part = part.strip()
                     if not part:
@@ -1854,7 +1843,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                     if SML_TAG_PATTERN.fullmatch(part):
                         result.append(part)
                         continue
-                    tokens = segment_ideogramms(part)
+                    tokens = _segment_ideogramms(part)
                     if isinstance(tokens, list):
                         result.extend([t for t in tokens if t.strip()])
                     else:
@@ -1862,8 +1851,8 @@ def get_sentences(session_id:str, text:str)->list|None:
                         if tokens:
                             result.append(tokens)
             ideogram_list = []
-            for s in join_ideogramms(result):
-                if not is_latin_only(s):
+            for s in _join_ideogramms(result):
+                if not _is_latin_only(s):
                     ideogram_list.append(s)
             if ideogram_list:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
