@@ -1340,7 +1340,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if (session.get('ebook_src') == data and ebook_mode == ebook_modes['SINGLE']) or (session.get('ebook_list') == data and ebook_mode == ebook_modes['DIRECTORY']):
-                            return tuple(gr.update() for _ in range(5))
+                            return tuple(gr.update() for _ in range(6))
                         if ebook_mode == ebook_modes['SINGLE']:
                             session['ebook_src'] = data
                         elif ebook_mode == ebook_modes['DIRECTORY']:
@@ -1364,6 +1364,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr.update(),
                                     gr.update(visible=True),
                                     gr.update(value=Path(prev_selected).name, visible=True),
+                                    gr.update()
                                 )
                             else:
                                 session['ebook_selected'] = None
@@ -1373,12 +1374,12 @@ def build_interface(args:dict)->gr.Blocks:
                                     msg = 'Cancellation requested, please wait…'
                                     return gr.update(value=_show_gr_modal('wait', msg), visible=True), gr.update(value=''), voice_update, gr.update(visible=False), gr.update(value='', visible=False)
                                 session['cancellation_requested'] = False
-                                return gr.update(), gr.update(value=''), voice_update, gr.update(visible=False), gr.update(value='', visible=False)
+                                return gr.update(), gr.update(value=''), voice_update, gr.update(visible=False), gr.update(value='', visible=False), gr.update()
                         if data is None:
                             if session.get('status', None) in [status_tags['EDIT'], status_tags['CONVERTING']]:
                                 session['cancellation_requested'] = True
                                 msg = 'Cancellation requested, please wait…'
-                                return gr.update(value=_show_gr_modal('wait', msg), visible=True), gr.update(value=''), gr.update(), gr.update(), gr.update()
+                                return gr.update(value=_show_gr_modal('wait', msg), visible=True), gr.update(value=''), gr.update(), gr.update(), gr.update(), gr.update(value='')
                         session['cancellation_requested'] = False
                 except Exception as e:
                     error = f'_change_gr_ebook_src(): {e}'
@@ -2813,7 +2814,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_src.change(
                     fn=_change_gr_ebook_src,
                     inputs=[gr_session, gr_ebook_mode, gr_ebook_src],
-                    outputs=[gr_modal, gr_voice_highlight_css, gr_voice_list, gr_row_voice_player, gr_voice_selected_filename],
+                    outputs=[gr_modal, gr_voice_highlight_css, gr_voice_list, gr_row_voice_player, gr_voice_selected_filename, gr_progress],
                     show_progress_on=[gr_ebook_src]
                 ),
                 always=True
