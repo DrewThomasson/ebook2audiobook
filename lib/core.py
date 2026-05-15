@@ -1556,7 +1556,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         DependencyError(error)
         return None
 
-def get_sentences(session_id:str, text:str)->list|None:
+encyError, models_dir, pycantonese, jieba, nagisa, soynlp, pythainlp
 
     def _split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
@@ -1660,10 +1660,11 @@ def get_sentences(session_id:str, text:str)->list|None:
             lang = session['translate']
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-        # escape all SML tags to not be touched by any text treatment
+        
+        # Escape all SML tags to not be touched by any text treatment
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
-        
+
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
@@ -1780,57 +1781,55 @@ def get_sentences(session_id:str, text:str)->list|None:
             final_list.append(cur)
             i += 1
 
-        # --- NEW LOGIC START ---
-        # Fix 1: Strip leading non-alphanumeric (including escaped SML tags) from each sentence
-        # Fix 2: Move leading SML tags to the end of the previous sentence
+        # --- NEW STEP: Fix Leading SML Tags and Clean Start of Sentences ---
+        # 1. Move any SML tag found at the START of a sentence to the END of the previous one.
+        # 2. Remove leading non-alphanumeric noise (punctuation) from the start of sentences, 
+        #    ensuring we don't remove valid SML tags.
+        
         cleaned_list = []
         for i, s in enumerate(final_list):
-            s_stripped = s.strip()
-            if not s_stripped:
+            if not s:
                 continue
             
-            # Identify leading SML tags
+            # Check for leading SML tags
             leading_tags = []
-            text_start_idx = 0
-            for m in SML_TAG_PATTERN.finditer(s_stripped):
-                if m.start() == 0:
-                    leading_tags.append(m.group(0))
-                    text_start_idx = m.end()
+            remaining_text = s
+            
+            # Extract all leading tags
+            while True:
+                match = SML_TAG_PATTERN.match(remaining_text)
+                if match:
+                    leading_tags.append(match.group(0))
+                    remaining_text = remaining_text[match.end():].lstrip() # Strip space after tag
                 else:
                     break
             
-            # Extract the actual text part after leading tags
-            text_part = s_stripped[text_start_idx:].strip()
+            # If we found leading tags, attach them to the previous sentence
+            if leading_tags:
+                if cleaned_list:
+                    # Append tags to the end of the previous sentence
+                    tag_str = " ".join(leading_tags)
+                    # Avoid double spaces if previous already ends with space (unlikely but safe)
+                    if not cleaned_list[-1].endswith(' '):
+                        cleaned_list[-1] += " "
+                    cleaned_list[-1] += tag_str
+                # If there is no previous sentence (first sentence starts with tag), 
+                # we keep them at the start (edge case, but better than losing them)
+                else:
+                    remaining_text = " ".join(leading_tags) + " " + remaining_text
             
-            # Fix 1: Remove leading non-alphanumeric chars from the text part itself
-            # This handles cases like "...?! text" becoming "text"
-            match_text = re.match(r'^[^\w]+', text_part, flags=re.UNICODE)
-            if match_text:
-                text_part = text_part[match_text.end():]
+            # Now clean leading non-alphanumeric noise from the remaining text
+            # We want to remove things like "...", "!!!", etc. if they appear at the very start
+            # But we must NOT remove valid letters/numbers or SML tags (which are already handled)
+            # Since SML tags are escaped with high unicode chars, simple regex on standard punct works
+            # Pattern: Remove non-word, non-space chars from the start
+            cleaned_start = re.sub(r'^[^\w\s]+', '', remaining_text)
             
-            if not text_part and not leading_tags:
-                continue # Skip if nothing left
-            
-            current_item = text_part
-            
-            # Fix 2: Attach leading tags to the previous sentence
-            if leading_tags and cleaned_list:
-                prev_item = cleaned_list[-1]
-                # Append tags to the end of the previous item
-                for tag in leading_tags:
-                    if not prev_item.endswith(tag):
-                        prev_item += tag
-                cleaned_list[-1] = prev_item
-            elif leading_tags and not cleaned_list:
-                # If tags are at the very beginning of the whole text, prepend them to the first text part
-                # Or discard them if they make no sense at the start. Usually prepend.
-                current_item = "".join(leading_tags) + current_item
-            
-            if current_item:
-                cleaned_list.append(current_item)
+            if cleaned_start:
+                cleaned_list.append(cleaned_start)
         
         final_list = cleaned_list
-        # --- NEW LOGIC END ---
+        # ---------------------------------------------------------------
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
@@ -1857,6 +1856,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             if ideogram_list:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
             return ideogram_list
+        
         if final_list:
             final_list = [restore_sml(s, sml_blocks) for s in final_list]
         return final_list
