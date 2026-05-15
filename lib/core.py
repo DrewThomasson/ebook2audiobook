@@ -1556,7 +1556,13 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         DependencyError(error)
         return None
 
-encyError, models_dir, pycantonese, jieba, nagisa, soynlp, pythainlp
+def get_sentences(session_id:str, text:str)->list|None:
+    import re
+    import os
+    # Assuming these imports and globals exist in your environment:
+    # context, language_mapping, SML_TAG_PATTERN, escape_sml, restore_sml, 
+    # sml_escape_tag, punctuation_split_hard_set, punctuation_split_soft_set,
+    # DependencyError, models_dir, pycantonese, jieba, nagisa, soynlp, pythainlp
 
     def _split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
