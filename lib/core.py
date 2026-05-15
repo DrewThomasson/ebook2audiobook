@@ -1249,21 +1249,12 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
-    def _flat_text(tag:Any)->str:
-        # get_text(strip=True) joins text nodes with '' and would turn
-        # <h1>Chapter <em>One</em></h1> into "ChapterOne".
-        # Join with a space, then normalize whitespace and tighten punctuation.
-        if tag is None:
-            return ''
-        raw = tag.get_text(separator=' ', strip=True) if hasattr(tag, 'get_text') else str(tag)
-        raw = raw.replace('\xa0', ' ')
-        raw = re.sub(r'\s+', ' ', raw)
-        raw = re.sub(r'\s+([,;:.!?…»”’\)\]])', r'\1', raw)  # no space before closing punct
-        raw = re.sub(r'([«“‘\(\[])\s+', r'\1', raw)         # no space after opening punct
-        return raw.strip()
+--- filter_blocks.py (原始)
 
-    def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
+
++++ filter_blocks.py (修改后)
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
+    def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
             prev_child_had_data = False
             for idx, child in enumerate(node.children):
@@ -1271,24 +1262,28 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
-                        if prev_child_had_data:
+                        if prev_child_had_data and not in_heading:
                             yield ('break', sml_token("break"))
-                        yield ('text', text)
+                        yield ('heading' if in_heading else 'text', text)
                         last_text_char = text[-1]
                         current_child_had_data = True
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
-                        title = _flat_text(child)
+                        # Process heading tag and all its children as heading content
+                        title = child.get_text(strip=True)
                         if title:
-                            if prev_child_had_data:
+                            if prev_child_had_data and not in_heading:
                                 yield ('break', sml_token("break"))
-                            yield ('heading', title)
+                            # Always process heading children recursively to handle nested elements
+                            for inner in _tuple_row(child, last_text_char, in_heading=True):
+                                yield inner
+                            # After finishing the heading, yield a pause marker
                             yield ('pause', sml_token("pause"))
                             last_text_char = title[-1]
                             current_child_had_data = True
                     elif name == 'table':
-                        if prev_child_had_data:
+                        if prev_child_had_data and not in_heading:
                             yield ('break', sml_token("break"))
                         yield ('table', child)
                         current_child_had_data = True
@@ -1296,9 +1291,9 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         return_data = False
                         if name in proc_tags:
                             is_header = False
-                            if prev_child_had_data and name in break_tags:
+                            if prev_child_had_data and name in break_tags and not in_heading:
                                 yield ('break', sml_token("break"))
-                            for inner in _tuple_row(child, last_text_char):
+                            for inner in _tuple_row(child, last_text_char, in_heading=in_heading):
                                 return_data = True
                                 yield inner
                                 if len(inner) > 1 and isinstance(inner[1], str) and inner[1]:
@@ -1307,13 +1302,13 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                                 if inner[0] in ('text', 'heading') and isinstance(inner[1], str) and inner[1]:
                                     is_header = True
                             if return_data:
-                                if name in break_tags and name != 'span':
+                                if name in break_tags and name != 'span' and not in_heading:
                                     if is_header or (last_text_char and not last_text_char.isalnum() and not last_text_char.isspace()):
                                         yield ('break', sml_token("break"))
-                                elif name in heading_tags or name in pause_tags:
+                                elif name in pause_tags and not in_heading:
                                     yield ('pause', sml_token("pause"))
                         else:
-                            yield from _tuple_row(child, last_text_char)
+                            yield from _tuple_row(child, last_text_char, in_heading=in_heading)
                             current_child_had_data = True
                 if current_child_had_data:
                     prev_child_had_data = True
@@ -1339,7 +1334,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         session = context.get_session(session_id)
         if session and session.get('id', False):
             lang, lang_iso1, tts_engine = session['language'], session['language_iso1'], session['tts_engine']
-            heading_tags = [f'h{i}' for i in range(1, 7)]
+            heading_tags = [f'h{i}' for i in range(1, 5)]
             break_tags = ['br', 'p', 'span']
             pause_tags = ['div']
             proc_tags = heading_tags + break_tags + pause_tags
@@ -1389,7 +1384,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         if img_zip_path not in zip_names:
                             img_zip_path = zip_basenames.get(os.path.basename(img_ref))
                         if not img_zip_path:
-                            print(f'Could not resolve image in EPUB: {img_ref}')
+                            msg = f'Could not resolve image in EPUB: {img_ref}'
+                            print(msg)
                             continue
                         try:
                             img_data = zf.read(img_zip_path)
@@ -1401,7 +1397,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             else:
                                 show_alert(session_id, {"type": "warning", "msg": error})
                         except Exception as ocr_err:
-                            print(f'OCR error on {img_zip_path}: {ocr_err}')
+                            error = f'OCR error on {img_zip_path}: {ocr_err}'
+                            print(error)
             tuples_list = list(_tuple_row(body))
             if not tuples_list:
                 msg = 'No body text and no images found. Skip to next doc…'
@@ -1412,22 +1409,62 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text_list = []
             handled_tables = set()
             prev_typ = None
+
+            # Buffer to collect consecutive break/pause tokens for batch processing
+            marker_buffer = []
+
+            def flush_markers():
+                """Convert buffered markers: every 2 breaks become 1 pause, remainder stays as break.
+                Pauses from headings are preserved immediately."""
+                nonlocal marker_buffer
+                if not marker_buffer:
+                    return
+
+                if not text_list:
+                    marker_buffer = []
+                    return
+
+                last_item = text_list[-1]
+
+                # Separate pauses and breaks in the buffer
+                pauses = [m for m in marker_buffer if m == sml_token('pause')]
+                breaks = [m for m in marker_buffer if m == sml_token('break')]
+
+                break_count = len(breaks)
+
+                # Calculate: pairs of breaks -> pauses, remainder -> break
+                num_pauses_from_breaks = break_count // 2
+                num_breaks = break_count % 2
+
+                # If we have any pauses (from headings or break pairs), add one pause
+                total_pauses = len(pauses) + num_pauses_from_breaks
+                if total_pauses > 0:
+                    pause_tok = sml_token('pause')
+                    if not last_item.endswith(pause_tok):
+                        last_item = last_item + pause_tok
+
+                # Add remaining break if any
+                if num_breaks > 0:
+                    break_tok = sml_token('break')
+                    if not last_item.endswith(break_tok):
+                        last_item = last_item + break_tok
+
+                text_list[-1] = last_item
+                marker_buffer = []
+
             for typ, payload in tuples_list:
                 if typ == 'heading':
+                    flush_markers()  # Flush any pending breaks before a heading
                     text_list.append(payload.strip())
+                    prev_typ = typ
+
                 elif typ in ('break', 'pause'):
-                    # dedupe same-type adjacency
-                    if prev_typ == typ:
-                        continue
-                    # pause supersedes break: skip a [break] right after a [pause]
-                    if typ == 'break' and prev_typ == 'pause':
-                        continue
-                    token = sml_token(typ)
-                    if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
-                        text_list[-1] = text_list[-1] + token
-                    else:
-                        text_list.append(token)
+                    # Collect into buffer instead of adding immediately
+                    marker_buffer.append(sml_token(typ))
+                    prev_typ = typ
+
                 elif typ == 'table':
+                    flush_markers()
                     table = payload
                     if table in handled_tables:
                         prev_typ = typ
@@ -1437,9 +1474,9 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                     if not rows:
                         prev_typ = typ
                         continue
-                    headers = [_flat_text(c) for c in rows[0].find_all(['td', 'th'])]
+                    headers = [c.get_text(strip=True) for c in rows[0].find_all(['td', 'th'])]
                     for row in rows[1:]:
-                        cells = [_flat_text(c) for c in row.find_all(['td', 'th'])]
+                        cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all('td')]
                         if not cells:
                             continue
                         if len(cells) == len(headers) and headers:
@@ -1448,11 +1485,16 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             line = ' — '.join(cells)
                         if line:
                             text_list.append(line.strip())
+                    prev_typ = typ
                 else:
+                    flush_markers()  # Flush breaks before adding text
                     text = payload.strip()
                     if text:
                         text_list.append(text)
-                prev_typ = typ
+                    prev_typ = typ
+
+            # Flush any remaining markers at the end
+            flush_markers()
             msg = f'Flattening as raw text…'
             print(msg)
             max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
