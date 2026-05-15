@@ -1975,8 +1975,8 @@ def build_interface(args:dict)->gr.Blocks:
                             session['fine_tuned'] = default_fine_tuned
                             visible_xtts = visible_gr_tab_xtts_params if session['tts_engine'] == TTS_ENGINES['XTTSv2'] else False
                             visible_bark = visible_gr_tab_bark_params if session['tts_engine'] == TTS_ENGINES['BARK'] else False
-                            visible_custom_model = supports_custom and session['fine_tuned'] == 'internal'
                             supports_custom = session['tts_engine'] in tts_engines_with_custom_model
+                            visible_custom_model = supports_custom and session['fine_tuned'] == 'internal'
                             if supports_custom:
                                 file_label = f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"
                                 custom_model_list_update = _update_gr_custom_model_list(session_id)
