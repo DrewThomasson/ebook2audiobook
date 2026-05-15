@@ -1557,12 +1557,6 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         return None
 
 def get_sentences(session_id:str, text:str)->list|None:
-    import re
-    import os
-    # Assuming these imports and globals exist in your environment:
-    # context, language_mapping, SML_TAG_PATTERN, escape_sml, restore_sml, 
-    # sml_escape_tag, punctuation_split_hard_set, punctuation_split_soft_set,
-    # DependencyError, models_dir, pycantonese, jieba, nagisa, soynlp, pythainlp
 
     def _split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
@@ -1577,20 +1571,35 @@ def get_sentences(session_id:str, text:str)->list|None:
         return result
 
     def _split_sentence_on_sml(sentence:str)->list[str]:
+        # Handles both the unescaped form ([break]/[pause]) and the escaped
+        # high-unicode form produced by escape_sml. Needed for the CJK path,
+        # which is called BEFORE restore_sml.
         parts:list[str] = []
         last = 0
-        for m in SML_TAG_PATTERN.finditer(sentence):
-            start, end = m.span()
-            if start > last:
-                text_part = sentence[last:start]
-                if text_part:
-                    parts.append(text_part)
-            parts.append(m.group(0))
-            last = end
-        if last < len(sentence):
-            tail = sentence[last:]
-            if tail:
-                parts.append(tail)
+        i = 0
+        n = len(sentence)
+        while i < n:
+            m = SML_TAG_PATTERN.match(sentence, i)
+            if m:
+                if m.start() > last:
+                    parts.append(sentence[last:m.start()])
+                parts.append(m.group(0))
+                i = m.end()
+                last = i
+                continue
+            if ord(sentence[i]) >= sml_escape_tag:
+                if i > last:
+                    parts.append(sentence[last:i])
+                j = i
+                while j < n and ord(sentence[j]) >= sml_escape_tag:
+                    j += 1
+                parts.append(sentence[i:j])
+                i = j
+                last = i
+                continue
+            i += 1
+        if last < n:
+            parts.append(sentence[last:])
         return parts
 
     def _strip_escaped_sml(s:str)->str:
@@ -1657,28 +1666,35 @@ def get_sentences(session_id:str, text:str)->list|None:
             if buffer:
                 yield buffer
 
-    try:
-        session = context.get_session(session_id)
-        if not session:
-            return None
-        lang = session['language']
-        if session.get('translate_enabled') and session.get('translate'):
-            lang = session['translate']
-        tts_engine = session['tts_engine']
-        max_chars = int(language_mapping[lang]['max_chars'] / 2)
-        
-        # Escape all SML tags to not be touched by any text treatment
-        text, sml_blocks = escape_sml(text)
-        assert not SML_TAG_PATTERN.search(text)
+    def _is_pure_escaped_sml(s:str)->bool:
+        return bool(s) and all(ord(c) >= sml_escape_tag for c in s)
+
+    def _strip_leading_noise(s:str)->str:
+        # Strip leading non-word, non-space chars, BUT keep escaped SML chars
+        # (high-unicode placeholders) since those carry the [break]/[pause] mapping.
+        i = 0
+        n = len(s)
+        while i < n:
+            c = s[i]
+            if c.isalnum() or c == '_' or c.isspace() or ord(c) >= sml_escape_tag:
+                break
+            i += 1
+        return s[i:].lstrip()
+
+    def _process_chunk(chunk_text:str)->list[str]:
+        # Runs PASS 1-4 on text that is guaranteed to contain no SML tags
+        # (PASS 0 has already stripped them out as chunk boundaries).
+        if not chunk_text or not chunk_text.strip():
+            return []
 
         # PASS 1 — hard punctuation
         hard_pattern = re.compile(
             rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
             re.DOTALL
         )
-        hard_list = _split_inclusive(text, hard_pattern)
+        hard_list = _split_inclusive(chunk_text, hard_pattern)
         if not hard_list:
-            hard_list = [text.strip()]
+            hard_list = [chunk_text.strip()]
         hard_list = [s.strip() for s in hard_list if s.strip()]
 
         # PASS 2 — soft punctuation
@@ -1748,7 +1764,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 rest = right
 
         # PASS 4 — merge very short rows
-        final_list = []
+        chunk_final = []
         merge_max_chars = int((max_chars / 2) / 3)
         i = 0
         n = len(last_list)
@@ -1758,7 +1774,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                 i += 1
                 continue
             if i == 0:
-                final_list.append(cur)
+                chunk_final.append(cur)
                 i += 1
                 continue
             cur_len = _clean_len(cur)
@@ -1775,67 +1791,82 @@ def get_sentences(session_id:str, text:str)->list|None:
                         j += 1
                         continue
                     break
-                if final_list:
-                    prev = final_list[-1]
+                if chunk_final:
+                    prev = chunk_final[-1]
                     if _clean_len(prev) + cur_len <= max_chars:
-                        final_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
+                        chunk_final[-1] = prev.rstrip() + ' ' + cur.lstrip()
                         i = j
                         continue
-                final_list.append(cur)
+                chunk_final.append(cur)
                 i = j
                 continue
-            final_list.append(cur)
+            chunk_final.append(cur)
             i += 1
 
-        # --- NEW STEP: Fix Leading SML Tags and Clean Start of Sentences ---
-        # 1. Move any SML tag found at the START of a sentence to the END of the previous one.
-        # 2. Remove leading non-alphanumeric noise (punctuation) from the start of sentences, 
-        #    ensuring we don't remove valid SML tags.
-        
-        cleaned_list = []
-        for i, s in enumerate(final_list):
-            if not s:
+        # Strip leading punctuation noise from each sentence (keeps SML if any)
+        chunk_final = [_strip_leading_noise(s) for s in chunk_final if s.strip()]
+        chunk_final = [s for s in chunk_final if s]
+        return chunk_final
+
+    try:
+        session = context.get_session(session_id)
+        if not session:
+            return None
+        lang = session['language']
+        if session.get('translate_enabled') and session.get('translate'):
+            lang = session['translate']
+        tts_engine = session['tts_engine']
+        max_chars = int(language_mapping[lang]['max_chars'] / 2)
+
+        # Escape all SML tags so downstream regex passes can't mangle them
+        text, sml_blocks = escape_sml(text)
+        assert not SML_TAG_PATTERN.search(text)
+        sml_chunks:list[tuple[str, str]] = []
+        cur_buf:list[str] = []
+        idx = 0
+        tlen = len(text)
+        while idx < tlen:
+            c = text[idx]
+            if ord(c) >= sml_escape_tag:
+                start = idx
+                while idx < tlen and ord(text[idx]) >= sml_escape_tag:
+                    idx += 1
+                sml_chunks.append((''.join(cur_buf), text[start:idx]))
+                cur_buf = []
+            else:
+                cur_buf.append(c)
+                idx += 1
+        if cur_buf:
+            sml_chunks.append((''.join(cur_buf), ''))
+
+        # Run PASS 1-4 per chunk; attach each chunk's trailing SML to the END of
+        # that chunk's last sentence so TTS pauses BETWEEN utterances.
+        final_list:list[str] = []
+        pending_sml = ''
+        for chunk_text, trailing_sml in sml_chunks:
+            chunk_sents = _process_chunk(chunk_text)
+            if not chunk_sents:
+                # Pure-whitespace or empty chunk; carry its SML to the next chunk
+                pending_sml += trailing_sml
                 continue
-            
-            # Check for leading SML tags
-            leading_tags = []
-            remaining_text = s
-            
-            # Extract all leading tags
-            while True:
-                match = SML_TAG_PATTERN.match(remaining_text)
-                if match:
-                    leading_tags.append(match.group(0))
-                    remaining_text = remaining_text[match.end():].lstrip() # Strip space after tag
+            if pending_sml:
+                # Drain SML accumulated from prior empty chunk(s)
+                if final_list:
+                    sep = '' if final_list[-1].endswith(' ') else ' '
+                    final_list[-1] = final_list[-1] + sep + pending_sml
                 else:
-                    break
-            
-            # If we found leading tags, attach them to the previous sentence
-            if leading_tags:
-                if cleaned_list:
-                    # Append tags to the end of the previous sentence
-                    tag_str = " ".join(leading_tags)
-                    # Avoid double spaces if previous already ends with space (unlikely but safe)
-                    if not cleaned_list[-1].endswith(' '):
-                        cleaned_list[-1] += " "
-                    cleaned_list[-1] += tag_str
-                # If there is no previous sentence (first sentence starts with tag), 
-                # we keep them at the start (edge case, but better than losing them)
-                else:
-                    remaining_text = " ".join(leading_tags) + " " + remaining_text
-            
-            # Now clean leading non-alphanumeric noise from the remaining text
-            # We want to remove things like "...", "!!!", etc. if they appear at the very start
-            # But we must NOT remove valid letters/numbers or SML tags (which are already handled)
-            # Since SML tags are escaped with high unicode chars, simple regex on standard punct works
-            # Pattern: Remove non-word, non-space chars from the start
-            cleaned_start = re.sub(r'^[^\w\s]+', '', remaining_text)
-            
-            if cleaned_start:
-                cleaned_list.append(cleaned_start)
-        
-        final_list = cleaned_list
-        # ---------------------------------------------------------------
+                    chunk_sents[0] = pending_sml + ' ' + chunk_sents[0]
+                pending_sml = ''
+            if trailing_sml:
+                chunk_sents[-1] = chunk_sents[-1].rstrip() + ' ' + trailing_sml
+            final_list.extend(chunk_sents)
+
+        if pending_sml:
+            if final_list:
+                sep = '' if final_list[-1].endswith(' ') else ' '
+                final_list[-1] = final_list[-1] + sep + pending_sml
+            else:
+                final_list.append(pending_sml)
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
@@ -1845,7 +1876,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                     part = part.strip()
                     if not part:
                         continue
-                    if SML_TAG_PATTERN.fullmatch(part):
+                    if _is_pure_escaped_sml(part) or SML_TAG_PATTERN.fullmatch(part):
                         result.append(part)
                         continue
                     tokens = _segment_ideogramms(part)
@@ -1862,7 +1893,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             if ideogram_list:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
             return ideogram_list
-        
+
         if final_list:
             final_list = [restore_sml(s, sml_blocks) for s in final_list]
         return final_list
