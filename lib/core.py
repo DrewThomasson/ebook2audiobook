@@ -1250,7 +1250,8 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return []
 
 def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
-    def _tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
+
+    def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
             prev_child_had_data = False
             for idx, child in enumerate(node.children):
@@ -1258,23 +1259,32 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
-                        if prev_child_had_data:
+                        if prev_child_had_data and not in_heading:
                             yield ('break', sml_token("break"))
-                        yield ('text', text)
+                        yield ('heading' if in_heading else 'text', text)
                         last_text_char = text[-1]
                         current_child_had_data = True
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
+                        # Process heading tag and all its children as heading content
                         title = child.get_text(strip=True)
                         if title:
-                            if prev_child_had_data:
+                            if prev_child_had_data and not in_heading:
                                 yield ('break', sml_token("break"))
-                            yield ('heading', title)
-                            last_text_char = title[-1]
+                            # Check if heading has nested elements that need special processing
+                            nested_elements = [c for c in child.children if isinstance(c, Tag)]
+                            if nested_elements:
+                                # Recursively process heading children to preserve structure
+                                for inner in _tuple_row(child, last_text_char, in_heading=True):
+                                    yield inner
+                                last_text_char = title[-1]
+                            else:
+                                yield ('heading', title)
+                                last_text_char = title[-1]
                             current_child_had_data = True
                     elif name == 'table':
-                        if prev_child_had_data:
+                        if prev_child_had_data and not in_heading:
                             yield ('break', sml_token("break"))
                         yield ('table', child)
                         current_child_had_data = True
@@ -1282,9 +1292,9 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         return_data = False
                         if name in proc_tags:
                             is_header = False
-                            if prev_child_had_data and name in break_tags:
+                            if prev_child_had_data and name in break_tags and not in_heading:
                                 yield ('break', sml_token("break"))
-                            for inner in _tuple_row(child, last_text_char):
+                            for inner in _tuple_row(child, last_text_char, in_heading=in_heading):
                                 return_data = True
                                 yield inner
                                 if len(inner) > 1 and isinstance(inner[1], str) and inner[1]:
@@ -1293,13 +1303,13 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                                 if inner[0] in ('text', 'heading') and isinstance(inner[1], str) and inner[1]:
                                     is_header = True
                             if return_data:
-                                if name in break_tags and name != 'span':
+                                if name in break_tags and name != 'span' and not in_heading:
                                     if is_header or (last_text_char and not last_text_char.isalnum() and not last_text_char.isspace()):
                                         yield ('break', sml_token("break"))
-                                elif name in heading_tags or name in pause_tags:
+                                elif (name in heading_tags or name in pause_tags) and not in_heading:
                                     yield ('pause', sml_token("pause"))
                         else:
-                            yield from _tuple_row(child, last_text_char)
+                            yield from _tuple_row(child, last_text_char, in_heading=in_heading)
                             current_child_had_data = True
                 if current_child_had_data:
                     prev_child_had_data = True
