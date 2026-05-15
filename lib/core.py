@@ -1284,6 +1284,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             if prev_child_had_data:
                                 yield ('break', sml_token("break"))
                             yield ('heading', title)
+                            yield ('pause', sml_token("pause"))
                             last_text_char = title[-1]
                             current_child_had_data = True
                     elif name == 'table':
@@ -1415,12 +1416,17 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 if typ == 'heading':
                     text_list.append(payload.strip())
                 elif typ in ('break', 'pause'):
-                    if prev_typ != typ:
-                        token = sml_token(typ)
-                        if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
-                            text_list[-1] = text_list[-1] + token
-                        else:
-                            text_list.append(token)
+                    # dedupe same-type adjacency
+                    if prev_typ == typ:
+                        continue
+                    # pause supersedes break: skip a [break] right after a [pause]
+                    if typ == 'break' and prev_typ == 'pause':
+                        continue
+                    token = sml_token(typ)
+                    if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
+                        text_list[-1] = text_list[-1] + token
+                    else:
+                        text_list.append(token)
                 elif typ == 'table':
                     table = payload
                     if table in handled_tables:
