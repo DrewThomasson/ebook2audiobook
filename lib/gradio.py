@@ -1890,8 +1890,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return (
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
-                        _update_gr_fine_tuned_list(session_id),
-                        gr.update(label=file_label)
+                        _update_gr_fine_tuned_list(session_id)
                     )
                 return tuple(gr.update() for _ in range(3))
 
