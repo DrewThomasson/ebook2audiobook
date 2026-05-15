@@ -126,7 +126,9 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
-                        if not success:
+                        if success:
+                             use_zs = self.params['current_voice'] is not None
+                        else:
                             return False, error
                         continue
                     if not any(c.isalnum() for c in part):
