@@ -1880,7 +1880,7 @@ def build_interface(args:dict)->gr.Blocks:
             def _change_gr_translate(session_id:str, translate:str)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return tuple(gr.update() for _ in range(3))
+                    return tuple(gr.update() for _ in range(4))
                 if translate != session['translate']:
                     session['translate'] = translate
                     try:
@@ -1898,7 +1898,7 @@ def build_interface(args:dict)->gr.Blocks:
                         _update_gr_fine_tuned_list(session_id),
                         gr.update(label=file_label)
                     )
-                return tuple(gr.update() for _ in range(3))
+                return tuple(gr.update() for _ in range(4))
 
             def _check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
                 dir_path = None
