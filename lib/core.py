@@ -3137,7 +3137,7 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
-def translate_blocks(session_id:str, raw_blocks:list)->tuple:
+def translate_blocks(session_id:str, raw_blocks:list, progress_bar=None)->tuple:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
@@ -3155,8 +3155,11 @@ def translate_blocks(session_id:str, raw_blocks:list)->tuple:
         error, ok = translator.start(source_iso1, target_iso1)
         if not ok:
             return raw_blocks, error
-        msg = f'Translating {len(raw_blocks)} block(s) {source_iso1} -> {target_iso1}…'
+        total = len(raw_blocks)
+        msg = f'Translating {total} block(s) {source_iso1} -> {target_iso1}'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(0.0, desc=msg)
         out = []
         tag_keys = '|'.join(map(re.escape, TTS_SML.keys()))
         sml_patterns = re.compile(
@@ -3172,19 +3175,25 @@ def translate_blocks(session_id:str, raw_blocks:list)->tuple:
             ''',
             re.VERBOSE
         )
-        for idx, text in enumerate(tqdm(raw_blocks, desc='translate', unit='block')):
-            if session['cancellation_requested']:
-                return raw_blocks, 'Conversion cancelled'
-            if not text or not text.strip():
-                out.append(text)
-                continue
-            translated, ok = translator.translate(text, sml_patterns)
-            if not ok:
-                error = f'Translation failed at block {idx}: {translated}'
-                return raw_blocks, error
-            out.append(translated)
+        with tqdm(total=total, desc='translate', unit='block') as t:
+            for idx, text in enumerate(raw_blocks):
+                if session['cancellation_requested']:
+                    return raw_blocks, 'Conversion cancelled'
+                if not text or not text.strip():
+                    out.append(text)
+                else:
+                    translated, ok = translator.translate(text, sml_patterns)
+                    if not ok:
+                        error = f'Translation failed at block {idx}: {translated}'
+                        return raw_blocks, error
+                    out.append(translated)
+                t.update(1)
+                if progress_bar is not None:
+                    progress_bar((t.n) / total, desc=f'Translating block {t.n}/{total} {source_iso1} -> {target_iso1}')
         msg = 'Translation done.'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(1.0, desc=msg)
         return out, None
     except Exception as e:
         error = f'translate_blocks() error: {e}'
