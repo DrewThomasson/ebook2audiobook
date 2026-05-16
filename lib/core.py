@@ -1622,6 +1622,35 @@ def get_sentences(session_id:str, text:str)->list|None:
             if buffer:
                 yield buffer
 
+    def _split_sentence_on_sml(sentence:str)->list[str]:
+        parts:list[str] = []
+        last = 0
+        i = 0
+        n = len(sentence)
+        while i < n:
+            m = SML_TAG_PATTERN.match(sentence, i)
+            if m:
+                if m.start() > last:
+                    parts.append(sentence[last:m.start()])
+                parts.append(m.group(0))
+                i = m.end()
+                last = i
+                continue
+            if ord(sentence[i]) >= sml_escape_tag:
+                if i > last:
+                    parts.append(sentence[last:i])
+                j = i
+                while j < n and ord(sentence[j]) >= sml_escape_tag:
+                    j += 1
+                parts.append(sentence[i:j])
+                i = j
+                last = i
+                continue
+            i += 1
+        if last < n:
+            parts.append(sentence[last:])
+        return parts
+
     def _is_pure_escaped_sml(s:str)->bool:
         return bool(s) and all(ord(c) >= sml_escape_tag for c in s)
 
@@ -1635,50 +1664,6 @@ def get_sentences(session_id:str, text:str)->list|None:
             i += 1
         return s[i:].lstrip()
 
-    def _split_by_punctuation_fallback(chunk_text:str)->list[str]:
-        """Fallback splitter if no SML tags are found in an overflow scenario."""
-        if not chunk_text.strip():
-            return []
-        
-        # Hard punctuation
-        hard_pattern = re.compile(
-            rf"(.*?(?:{'|'.join(map(re.escape, punctuation_split_hard_set))}))(?=\s|$)",
-            re.DOTALL
-        )
-        hard_list = []
-        last_end = 0
-        for match in hard_pattern.finditer(chunk_text):
-            hard_list.append(chunk_text[last_end:match.end()].strip())
-            last_end = match.end()
-        if last_end < len(chunk_text):
-            tail = chunk_text[last_end:].strip()
-            if tail: hard_list.append(tail)
-        
-        if not hard_list:
-            hard_list = [chunk_text.strip()]
-        
-        # Soft punctuation & Space split logic simplified for fallback
-        final_fallback = []
-        for s in hard_list:
-            if len(_strip_escaped_sml(s)) <= max_chars:
-                final_fallback.append(s)
-            else:
-                # Simple space split for fallback
-                rest = s
-                while rest:
-                    if len(_strip_escaped_sml(rest)) <= max_chars:
-                        final_fallback.append(rest)
-                        break
-                    cut = rest[:max_chars+1]
-                    idx = cut.rfind(' ')
-                    if idx > 0:
-                        final_fallback.append(rest[:idx])
-                        rest = rest[idx+1:]
-                    else:
-                        final_fallback.append(rest[:max_chars])
-                        rest = rest[max_chars:]
-        return [x for x in final_fallback if x.strip()]
-
     try:
         session = context.get_session(session_id)
         if not session:
@@ -1688,178 +1673,219 @@ def get_sentences(session_id:str, text:str)->list|None:
             lang = session['translate']
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
+        merge_threshold = int(max_chars * 0.15)
 
-        # 1. Escape SML tags
+        # Escape SML tags
         text, sml_blocks = escape_sml(text)
         
-        # 2. Tokenize into a flat list of (type, content)
-        # Types: 'sml' (tags), 'text' (content)
+        # Tokenize into text segments and SML markers
+        # We will accumulate text segments and attach SML markers to the end of the previous segment
         tokens = []
-        idx = 0
-        tlen = len(text)
-        while idx < tlen:
-            c = text[idx]
-            if ord(c) >= sml_escape_tag:
-                start = idx
-                while idx < tlen and ord(text[idx]) >= sml_escape_tag:
-                    idx += 1
-                tokens.append(('sml', text[start:idx]))
-            else:
-                # Collect text until next SML or end
-                start = idx
-                while idx < tlen and ord(text[idx]) < sml_escape_tag:
-                    idx += 1
-                txt = text[start:idx]
-                if txt.strip():
-                    tokens.append(('text', txt))
-                elif txt: # whitespace only between SMLs, ignore or keep as spacer if needed? ignoring for now
-                    pass
-        
-        # 3. Accumulate tokens into sentences
-        final_list = []
-        current_sentence_parts = []
-        current_len = 0
-        
+        last = 0
         i = 0
-        while i < len(tokens):
-            typ, content = tokens[i]
-            content_stripped = content.strip()
-            if not content_stripped and typ == 'text':
+        n = len(text)
+        while i < n:
+            # Check for escaped SML (high unicode)
+            if ord(text[i]) >= sml_escape_tag:
+                if i > last:
+                    tokens.append(('text', text[last:i]))
+                start = i
+                while i < n and ord(text[i]) >= sml_escape_tag:
+                    i += 1
+                tokens.append(('sml', text[start:i]))
+                last = i
+                continue
+            
+            # Check for unescaped SML pattern (shouldn't exist after escape_sml but safe to check)
+            m = SML_TAG_PATTERN.match(text, i)
+            if m:
+                if m.start() > last:
+                    tokens.append(('text', text[last:m.start()]))
+                tokens.append(('sml', m.group(0)))
+                i = m.end()
+                last = i
+                continue
+            
+            i += 1
+        if last < n:
+            tokens.append(('text', text[last:n]))
+
+        # Build initial list with SML attached to preceding text
+        # This creates a list of strings like "Hello [break]", "World [pause]"
+        processed_items = []
+        current_text = ""
+        
+        for typ, val in tokens:
+            if typ == 'text':
+                current_text += val
+            elif typ == 'sml':
+                # Attach SML to the current text buffer
+                if current_text.strip():
+                    # Add space if needed before SML
+                    if current_text and not current_text.endswith(' '):
+                        current_text += ' '
+                    current_text += val
+                    processed_items.append(current_text)
+                    current_text = ""
+                else:
+                    # SML at very start? Keep it in buffer
+                    current_text += val
+        
+        if current_text.strip():
+            processed_items.append(current_text)
+
+        # Smart Accumulation Pass
+        final_list = []
+        current_buffer = ""
+        
+        for item in processed_items:
+            item_clean = item.strip()
+            if not item_clean:
+                continue
+                
+            item_len = _clean_len(item_clean)
+            
+            # If buffer is empty, just add
+            if not current_buffer:
+                current_buffer = item_clean
+                continue
+            
+            # Calculate potential new length
+            # We need a space between buffer and new item if buffer doesn't end with SML or space
+            sep = ""
+            if not current_buffer.endswith(' '):
+                # Check if it ends with an SML tag (escaped or pattern)
+                # Simple heuristic: if last char is high unicode or ']', assume no space needed? 
+                # Actually, our items already have spaces before SML in the construction above.
+                # But let's be safe: if item starts with SML, no space needed.
+                if not (ord(item_clean[0]) >= sml_escape_tag or item_clean.startswith('[')):
+                    sep = " "
+            
+            combined_len = _clean_len(current_buffer) + len(sep) + item_len
+            
+            if combined_len <= max_chars:
+                current_buffer += sep + item_clean
+            else:
+                # Cannot fit. Need to cut.
+                # Strategy: Look backwards in current_buffer for the LAST SML tag.
+                # Cut after that tag. Move the rest to next iteration (or handle recursively)
+                
+                cut_point = -1
+                # Search for last occurrence of escaped SML or [break]/[pause]
+                # Since we are dealing with escaped text mostly, look for high unicode runs
+                
+                best_idx = -1
+                idx = 0
+                buf_len = len(current_buffer)
+                while idx < buf_len:
+                    if ord(current_buffer[idx]) >= sml_escape_tag:
+                        # Found start of SML block
+                        j = idx
+                        while j < buf_len and ord(current_buffer[j]) >= sml_escape_tag:
+                            j += 1
+                        best_idx = j # Cut AFTER this block
+                        idx = j
+                    elif current_buffer[idx:idx+1] == '[':
+                        # Check for [break] or [pause] just in case
+                        if current_buffer.startswith('[break]', idx) or current_buffer.startswith('[pause]', idx):
+                            # Find closing bracket
+                            end_br = current_buffer.find(']', idx)
+                            if end_br != -1:
+                                best_idx = end_br + 1
+                                idx = best_idx
+                            else:
+                                idx += 1
+                        else:
+                            idx += 1
+                    else:
+                        idx += 1
+                
+                if best_idx > 0 and best_idx < len(current_buffer):
+                    # Split here
+                    part1 = current_buffer[:best_idx].strip()
+                    part2 = current_buffer[best_idx:].strip()
+                    
+                    if part1:
+                        final_list.append(part1)
+                    
+                    # Part2 becomes the start of the new buffer, combined with current item
+                    current_buffer = part2
+                    if current_buffer and item_clean:
+                        if not current_buffer.endswith(' ') and not (ord(item_clean[0]) >= sml_escape_tag or item_clean.startswith('[')):
+                            current_buffer += " "
+                        current_buffer += item_clean
+                    elif item_clean:
+                        current_buffer = item_clean
+                else:
+                    # No SML found to split on nicely. 
+                    # Fallback: Split at last space within limit
+                    if _clean_len(current_buffer) > max_chars:
+                        # This shouldn't happen often as we add item by item, 
+                        # but if a single item is huge, we must split it.
+                        # For now, just push what we have and start new with item
+                        if current_buffer:
+                            final_list.append(current_buffer)
+                        current_buffer = item_clean
+                    else:
+                        # Buffer fits alone, item doesn't fit with buffer.
+                        final_list.append(current_buffer)
+                        current_buffer = item_clean
+
+        if current_buffer:
+            final_list.append(current_buffer)
+
+        # Merge very short sentences (Post-processing)
+        merged_list = []
+        i = 0
+        n = len(final_list)
+        while i < n:
+            cur = final_list[i].strip()
+            if not cur:
                 i += 1
                 continue
             
-            # Calculate length of this token
-            token_len = len(_strip_escaped_sml(content_stripped)) if typ == 'text' else len(content)
+            cur_len = _clean_len(cur)
             
-            # Check if adding this token exceeds max_chars
-            if current_len + token_len > max_chars:
-                # OVERFLOW DETECTED
-                
-                # Strategy A: Does the current accumulated sentence END with an SML tag?
-                if current_sentence_parts and current_sentence_parts[-1][0] == 'sml':
-                    # Yes! Cut here immediately.
-                    sent_text = ''.join([p[1] for p in current_sentence_parts]).strip()
-                    if sent_text:
-                        final_list.append(sent_text)
-                    current_sentence_parts = []
-                    current_len = 0
-                    # Re-evaluate current token in new empty buffer (it should fit now unless single token > max_chars)
-                    continue 
-                
-                # Strategy B: No SML at end. Look BACKWARDS for the last SML in the buffer.
-                last_sml_idx = -1
-                for k in range(len(current_sentence_parts) - 1, -1, -1):
-                    if current_sentence_parts[k][0] == 'sml':
-                        last_sml_idx = k
-                        break
-                
-                if last_sml_idx != -1:
-                    # Split AFTER the last found SML
-                    # Keep parts [0...last_sml_idx] in current sentence
-                    # Move parts [last_sml_idx+1...end] + current token to next iteration
-                    
-                    # Form the sentence to save
-                    sent_parts = current_sentence_parts[:last_sml_idx+1]
-                    sent_text = ''.join([p[1] for p in sent_parts]).strip()
-                    if sent_text:
-                        final_list.append(sent_text)
-                    
-                    # Remaining parts become the start of the new buffer
-                    remaining_parts = current_sentence_parts[last_sml_idx+1:]
-                    current_sentence_parts = remaining_parts
-                    current_len = sum(len(_strip_escaped_sml(p[1])) if p[0]=='text' else len(p[1]) for p in remaining_parts)
-                    
-                    # Re-evaluate current token (don't increment i)
-                    continue
-                else:
-                    # Strategy C: No SML tags in the buffer at all.
-                    # We must force a split using punctuation/space on the accumulated text + current token.
-                    # Combine current buffer and current token into one big string and split it.
-                    big_text = ''.join([p[1] for p in current_sentence_parts]) + content_stripped
-                    splits = _split_by_punctuation_fallback(big_text)
-                    
-                    # Add all but the last split to final_list (they are guaranteed <= max_chars)
-                    if len(splits) > 1:
-                        final_list.extend(splits[:-1])
-                        # The last split starts the new buffer
-                        current_sentence_parts = [('text', splits[-1])]
-                        current_len = len(_strip_escaped_sml(splits[-1]))
-                    else:
-                        # Edge case: even after splitting, we got one huge chunk? 
-                        # (Shouldn't happen if fallback works, but safety net)
-                        current_sentence_parts = [('text', splits[0])]
-                        current_len = len(_strip_escaped_sml(splits[0]))
-                    
+            # If current is very short, try to merge with previous
+            if cur_len <= merge_threshold and merged_list:
+                prev = merged_list[-1]
+                prev_len = _clean_len(prev)
+                if prev_len + 1 + cur_len <= max_chars:
+                    merged_list[-1] = prev.rstrip() + " " + cur.lstrip()
                     i += 1
                     continue
-
-            # If no overflow, simply add token
-            if typ == 'text' and content_stripped:
-                # Normalize spaces between text parts
-                if current_sentence_parts and current_sentence_parts[-1][0] == 'text':
-                    if not current_sentence_parts[-1][1].endswith(' '):
-                         content = ' ' + content
-                current_sentence_parts.append((typ, content_stripped))
-                current_len += token_len
-            elif typ == 'sml':
-                current_sentence_parts.append((typ, content))
-                current_len += token_len
             
+            # If current is short and next is short, merge them together first?
+            # Or just let the next iteration merge 'cur' into 'prev'? 
+            # The logic above merges 'cur' into 'prev' if 'cur' is tiny.
+            # What if 'cur' is medium but 'next' is tiny? That will be handled when 'next' is processed.
+            
+            merged_list.append(cur)
             i += 1
 
-        # Flush remaining buffer
-        if current_sentence_parts:
-            sent_text = ''.join([p[1] for p in current_sentence_parts]).strip()
-            if sent_text:
-                final_list.append(sent_text)
+        # Strip leading noise from final list
+        merged_list = [_strip_leading_noise(s) for s in merged_list if s.strip()]
+        merged_list = [s for s in merged_list if s]
 
-        # 4. Post-processing: Strip leading noise and restore SML
-        cleaned_list = []
-        for s in final_list:
-            s = _strip_leading_noise(s)
-            if s:
-                cleaned_list.append(s)
-        
+        # Handle Ideogram languages
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-            # CJK specific processing if needed, similar to original
             result = []
-            for s in cleaned_list:
-                # Re-split on SML for CJK tokenization boundaries
-                parts = []
-                last = 0
-                n = len(s)
-                idx_p = 0
-                while idx_p < n:
-                    m = SML_TAG_PATTERN.match(s, idx_p)
-                    if m:
-                        if m.start() > last: parts.append(s[last:m.start()])
-                        parts.append(m.group(0))
-                        idx_p = m.end()
-                        last = idx_p
-                        continue
-                    if ord(s[idx_p]) >= sml_escape_tag:
-                        if idx_p > last: parts.append(s[last:idx_p])
-                        j = idx_p
-                        while j < n and ord(s[j]) >= sml_escape_tag: j+=1
-                        parts.append(s[idx_p:j])
-                        idx_p = j
-                        last = idx_p
-                        continue
-                    idx_p += 1
-                if last < n: parts.append(s[last:])
-                
+            for s in merged_list:
+                parts = _split_sentence_on_sml(s)
                 for part in parts:
                     part = part.strip()
-                    if not part: continue
+                    if not part:
+                        continue
                     if _is_pure_escaped_sml(part) or SML_TAG_PATTERN.fullmatch(part):
                         result.append(part)
                         continue
-                    tokens_cjk = _segment_ideogramms(part)
-                    if isinstance(tokens_cjk, list):
-                        result.extend([t for t in tokens_cjk if t.strip()])
+                    tokens = _segment_ideogramms(part)
+                    if isinstance(tokens, list):
+                        result.extend([t for t in tokens if t.strip()])
                     else:
-                        if tokens_cjk.strip(): result.append(tokens_cjk.strip())
-            
+                        tokens = tokens.strip()
+                        if tokens:
+                            result.append(tokens)
             ideogram_list = []
             for s in _join_ideogramms(result):
                 if not _is_latin_only(s):
@@ -1868,9 +1894,9 @@ def get_sentences(session_id:str, text:str)->list|None:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
             return ideogram_list
 
-        if cleaned_list:
-            cleaned_list = [restore_sml(s, sml_blocks) for s in cleaned_list]
-        return cleaned_list
+        if merged_list:
+            merged_list = [restore_sml(s, sml_blocks) for s in merged_list]
+        return merged_list
 
     except Exception as e:
         print(f'get_sentences() error: {e}')
