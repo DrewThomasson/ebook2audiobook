@@ -1600,9 +1600,11 @@ def get_sentences(session_id:str, text:str)->list|None:
         return parts
 
     def _strip_escaped_sml(s:str)->str:
+        if not s: return ''
         return ''.join(c for c in s if ord(c) < sml_escape_tag)
 
     def _clean_len(s:str)->int:
+        if not s: return 0
         return len(_strip_escaped_sml(s))
 
     def _is_latin_only(s:str)->bool:
@@ -1667,6 +1669,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         return bool(s) and all(ord(c) >= sml_escape_tag for c in s)
 
     def _strip_leading_noise(s:str)->str:
+        if not s: return ''
         i = 0
         n = len(s)
         while i < n:
@@ -1676,12 +1679,70 @@ def get_sentences(session_id:str, text:str)->list|None:
             i += 1
         return s[i:].lstrip()
 
+    def _dedup_sml_tags(s:str)->str:
+        """Remove consecutive identical SML tags."""
+        if not s: return s
+        # Find all SML tags
+        tags = list(SML_TAG_PATTERN.finditer(s))
+        if not tags:
+            # Check for escaped high-unicode runs
+            runs = []
+            i = 0
+            n = len(s)
+            while i < n:
+                if ord(s[i]) >= sml_escape_tag:
+                    start = i
+                    while i < n and ord(s[i]) >= sml_escape_tag:
+                        i += 1
+                    runs.append((start, i, s[start:i]))
+                else:
+                    i += 1
+            
+            if not runs: return s
+            
+            # Dedup adjacent identical runs
+            new_runs = []
+            for start, end, tag_str in runs:
+                if new_runs and new_runs[-1][2] == tag_str:
+                    # Skip duplicate
+                    continue
+                new_runs.append((start, end, tag_str))
+            
+            if len(new_runs) == len(runs):
+                return s
+            
+            # Reconstruct string
+            result = []
+            last_end = 0
+            for start, end, tag_str in new_runs:
+                result.append(s[last_end:start])
+                result.append(tag_str)
+                last_end = end
+            result.append(s[last_end:])
+            return ''.join(result)
+        
+        # Standard regex dedup
+        # Simple pass: replace ([tag])\1+ with \1
+        # Since tags vary, we do a manual pass or a complex regex. 
+        # Manual pass is safer for mixed content.
+        # Actually, let's just rely on the logic preventing them in the first place,
+        # but this acts as a safety net.
+        # We will just return s for now as the main logic handles it, 
+        # unless we see specific duplicates. 
+        # Let's implement a simple lookahead regex for standard tags.
+        def repl(m):
+            return m.group(1)
+        # Match a tag followed by itself one or more times
+        pattern = re.compile(r'(\[(?:break|pause)\])(?:\s*\1)+', re.IGNORECASE)
+        return pattern.sub(repl, s)
+
     def _force_split_segment(segment:str)->list[str]:
-        """Force split a segment that is too long. Assumes segment has NO trailing SML tags."""
+        """Force split a segment that is too long."""
         results = []
         rest = segment
         while rest:
-            if len(_strip_escaped_sml(rest)) <= max_chars:
+            clean_rest = _strip_escaped_sml(rest)
+            if len(clean_rest) <= max_chars:
                 results.append(rest.strip())
                 break
             
@@ -1714,6 +1775,37 @@ def get_sentences(session_id:str, text:str)->list|None:
             rest = right
         return results
 
+    def _finalize_buffer(buffer_text:str, buffer_sml:str, final_list:list[str]):
+        """Combine buffer text and SML, deduplicate, check length, and split if needed."""
+        if not buffer_text.strip() and not buffer_sml:
+            return
+        
+        # Combine
+        full = buffer_text.rstrip()
+        if buffer_sml:
+            # Ensure single space before SML if text exists
+            if full:
+                full += ' '
+            full += buffer_sml
+        
+        full = full.strip()
+        if not full:
+            return
+
+        # Deduplicate tags immediately before length check
+        full = _dedup_sml_tags(full)
+        
+        clean_len = _clean_len(full)
+        
+        if clean_len <= max_chars:
+            final_list.append(full)
+        else:
+            # Too long, force split
+            parts = _force_split_segment(full)
+            # Dedup again on parts just in case split occurred inside a tag run (unlikely but safe)
+            for p in parts:
+                final_list.append(_dedup_sml_tags(p))
+
     try:
         session = context.get_session(session_id)
         if not session:
@@ -1723,6 +1815,10 @@ def get_sentences(session_id:str, text:str)->list|None:
             lang = session['translate']
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
+        
+        # Safety check for max_chars
+        if max_chars < 10:
+            max_chars = 100 # Fallback
 
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
@@ -1750,185 +1846,108 @@ def get_sentences(session_id:str, text:str)->list|None:
             segments.append(('text', ''.join(current_text)))
 
         final_list = []
-        buffer_text = []
+        buffer_text_list = [] # Use list for efficient joining
+        buffer_sml = ''
         current_len = 0
         
-        # Helper to commit the current buffer as a sentence
-        def commit_buffer(trailing_sml:str = ''):
-            nonlocal buffer_text, current_len
-            if not buffer_text and not trailing_sml:
-                return
-            
-            text_part = ''.join(buffer_text).strip()
-            if not text_part and not trailing_sml:
-                buffer_text = []
-                current_len = 0
-                return
-
-            # Construct final sentence
-            if text_part and trailing_sml:
-                sentence = text_part + ' ' + trailing_sml
-            elif text_part:
-                sentence = text_part
-            else:
-                sentence = trailing_sml
-            
-            # If sentence is too long, force split (only on text part effectively)
-            if _clean_len(sentence) > max_chars and text_part:
-                # If we have SML, we try to keep it at the very end of the LAST split part
-                parts = _force_split_segment(text_part)
-                if len(parts) == 1:
-                    # Only one part, just append SML
-                    final_list.append(parts[0] + (' ' + trailing_sml if trailing_sml else ''))
-                else:
-                    # Multiple parts: earlier parts get no SML, last part gets SML
-                    for p in parts[:-1]:
-                        final_list.append(p)
-                    final_list.append(parts[-1] + (' ' + trailing_sml if trailing_sml else ''))
-            else:
-                final_list.append(sentence)
-            
-            buffer_text = []
-            current_len = 0
+        # Threshold to trigger a split search (e.g., 85% of max)
+        split_threshold = int(max_chars * 0.85)
 
         for seg_type, seg_content in segments:
             seg_clean_len = _clean_len(seg_content)
             
             if seg_type == 'sml':
-                # Immediate commit: Attach this SML to the current buffer and finalize the sentence
-                commit_buffer(seg_content)
+                # Append SML to buffer_sml
+                # Dedup immediately if same as last added
+                if buffer_sml and seg_content == buffer_sml:
+                    continue # Skip duplicate consecutive SML runs
+                buffer_sml += seg_content
+                current_len += seg_clean_len 
             else:
                 # Text segment
                 potential_len = current_len + seg_clean_len
                 
-                if potential_len > max_chars and buffer_text:
-                    # Buffer is full. Commit what we have WITHOUT waiting for more SML 
-                    # (since SML usually follows text immediately in the stream, 
-                    # but if we are overflowing, we must cut now).
-                    # However, our stream order is Text -> SML. 
-                    # If we hit overflow on TEXT, it means we missed a previous SML cut or there wasn't one.
-                    # We commit the buffer as is (no trailing SML yet), then start new buffer.
-                    commit_buffer() 
+                # Check if adding this text exceeds limit
+                if potential_len > max_chars:
+                    # We need to split.
                     
-                    # Now add the new segment to the fresh buffer
-                    if seg_clean_len > max_chars:
-                        parts = _force_split_segment(seg_content)
-                        for p in parts[:-1]:
-                            final_list.append(p)
-                        buffer_text = [parts[-1]]
-                        current_len = _clean_len(parts[-1])
+                    # Strategy 1: If we have pending SML and buffer is substantial, cut there.
+                    if buffer_sml and current_len > split_threshold:
+                        # Finalize current buffer (text + sml)
+                        _finalize_buffer(''.join(buffer_text_list), buffer_sml, final_list)
+                        
+                        # Reset buffer
+                        buffer_text_list = []
+                        buffer_sml = ''
+                        current_len = 0
+                    
+                    # Now handle the new text segment (which might itself be too long or just cumulative)
+                    # Re-calculate potential length with reset buffer if split happened above
+                    if current_len == 0:
+                        # Buffer was flushed. Now we just have the new text segment.
+                        if seg_clean_len > max_chars:
+                            # Segment itself is huge, force split it
+                            parts = _force_split_segment(seg_content)
+                            for p in parts[:-1]:
+                                final_list.append(p)
+                            buffer_text_list = [parts[-1]]
+                            current_len = _clean_len(parts[-1])
+                        else:
+                            buffer_text_list = [seg_content]
+                            current_len = seg_clean_len
                     else:
-                        buffer_text.append(seg_content)
-                        current_len = seg_clean_len
+                        # Buffer wasn't flushed (no SML or too small). 
+                        # We must split the combination of existing buffer + new text at punctuation.
+                        full_pending = ''.join(buffer_text_list) + seg_content
+                        
+                        # Find split point within max_chars
+                        cut_point = -1
+                        # Search area: up to max_chars
+                        search_limit = min(len(full_pending), max_chars)
+                        search_area = full_pending[:search_limit]
+                        
+                        # 1. Look for last punctuation
+                        for i in range(len(search_area)-1, -1, -1):
+                            if search_area[i] in '.!?':
+                                cut_point = i + 1
+                                break
+                        
+                        # 2. If no punctuation, look for space
+                        if cut_point == -1:
+                            idx_space = search_area.rfind(' ')
+                            if idx_space > 0:
+                                cut_point = idx_space
+                        
+                        if cut_point > 0:
+                            part1 = full_pending[:cut_point].strip()
+                            part2 = full_pending[cut_point:].strip()
+                            
+                            # Add part1
+                            if part1:
+                                final_list.append(part1)
+                            
+                            # Part2 becomes new buffer
+                            buffer_text_list = [part2]
+                            current_len = _clean_len(part2)
+                        else:
+                            # No good split point, force hard cut
+                            part1 = full_pending[:max_chars].strip()
+                            part2 = full_pending[max_chars:].strip()
+                            if part1:
+                                final_list.append(part1)
+                            buffer_text_list = [part2]
+                            current_len = _clean_len(part2)
                 else:
-                    buffer_text.append(seg_content)
+                    # Fits comfortably
+                    buffer_text_list.append(seg_content)
                     current_len += seg_clean_len
 
-        # Commit any remaining buffer
-        commit_buffer()
+        # Process remaining buffer (Fixes the "last sentence huge" issue)
+        _finalize_buffer(''.join(buffer_text_list), buffer_sml, final_list)
 
-        # PASS 4 — Merge very short rows & Deduplicate adjacent SML tags
-        merge_max_chars = int((max_chars / 2) / 3)
-        cleaned_list = []
-        i = 0
-        n = len(final_list)
-        
-        while i < n:
-            cur = _strip_leading_noise(final_list[i]).strip()
-            if not cur:
-                i += 1
-                continue
-            
-            if i == 0:
-                cleaned_list.append(cur)
-                i += 1
-                continue
-                
-            cur_len = _clean_len(cur)
-            
-            # Check for merging
-            if cur_len <= merge_max_chars:
-                j = i + 1
-                while j < n:
-                    nxt = _strip_leading_noise(final_list[j]).strip()
-                    if not nxt:
-                        j += 1
-                        continue
-                    
-                    # Deduplicate SML tags at boundary
-                    # If cur ends with SML and nxt starts with SAME SML, remove from nxt
-                    # Note: Since we attach SML to end, and strip leading noise, 
-                    # we need to check if cur ends with high-unicode and nxt starts with same.
-                    merged = cur.rstrip() + ' ' + nxt.lstrip()
-                    
-                    # Simple deduplication check for identical adjacent SML blocks
-                    # This regex finds trailing SML in cur and leading SML in nxt
-                    # But since we stripped leading noise, nxt should start with text or SML.
-                    # Let's rely on the fact that our stream processing usually puts SML at end.
-                    # If cur ends with SML and nxt starts with SML, we might have a double.
-                    # However, the stream processor commits on SML, so nxt usually starts with Text.
-                    # The only case for double SML is if multiple SML tags appeared in sequence in source.
-                    # Our stream processor handles consecutive SML by committing empty text + SML, 
-                    # creating a sentence that is JUST SML.
-                    # We should merge standalone SML sentences into the previous text sentence.
-                    
-                    if _is_pure_escaped_sml(nxt):
-                        # nxt is just SML tags. Append to cur.
-                        # Dedup logic: if cur ends with same tags, skip? 
-                        # Actually, if source had [break][break], stream made two sentences: "text [break]", "[break]".
-                        # We want "text [break]".
-                        if cur.endswith(nxt):
-                             # Duplicate, skip nxt
-                             j += 1
-                             continue
-                        else:
-                             merged = cur + ' ' + nxt
-                    elif _is_pure_escaped_sml(cur):
-                         # cur is just SML (unlikely if i>0 and prev was text, but possible at start)
-                         merged = cur + ' ' + nxt
-                    
-                    if _clean_len(merged) <= max_chars:
-                        cur = merged
-                        cur_len = _clean_len(cur)
-                        j += 1
-                        continue
-                    break
-                
-                # Try merging with previous in cleaned_list
-                if cleaned_list:
-                    prev = cleaned_list[-1]
-                    if _clean_len(prev) + cur_len <= max_chars:
-                        # Check dedup again between prev and cur
-                        if _is_pure_escaped_sml(cur):
-                            if prev.endswith(cur):
-                                i = j
-                                continue
-                            else:
-                                merged_prev = prev + ' ' + cur
-                        else:
-                            merged_prev = prev.rstrip() + ' ' + cur.lstrip()
-                        
-                        cleaned_list[-1] = merged_prev
-                        i = j
-                        continue
-                
-                cleaned_list.append(cur)
-                i = j
-                continue
-            
-            # Handle standalone SML sentences appearing here (not merged above)
-            if _is_pure_escaped_sml(cur):
-                if cleaned_list:
-                    if not cleaned_list[-1].endswith(cur):
-                        cleaned_list[-1] = cleaned_list[-1] + ' ' + cur
-                    # else skip duplicate
-                    i += 1
-                    continue
-            
-            cleaned_list.append(cur)
-            i += 1
-
-        final_list = [s for s in cleaned_list if s]
+        # Post-process: Strip leading noise and clean empty strings
+        final_list = [_strip_leading_noise(s) for s in final_list if s.strip()]
+        final_list = [s for s in final_list if s]
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
@@ -1961,6 +1980,8 @@ def get_sentences(session_id:str, text:str)->list|None:
         return final_list
     except Exception as e:
         print(f'get_sentences() error: {e}')
+        import traceback
+        traceback.print_exc()
         return None
 
 def get_sanitized(str:str, replacement:str='_')->str:
