@@ -203,7 +203,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                     **speaker_argument,
                                     **fine_tuned_params
                                 )
-                            if audio_part:
+                            if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
                                 if is_audio_data_valid(audio_part):

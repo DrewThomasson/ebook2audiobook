@@ -205,7 +205,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                         audio_part = self.engine.tts(
                                             text=part
                                         )
-                            if audio_part:
+                            if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
                                 if is_audio_data_valid(audio_part):
