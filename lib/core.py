@@ -1676,17 +1676,61 @@ def get_sentences(session_id:str, text:str)->list|None:
             i += 1
         return s[i:].lstrip()
 
+    def _deduplicate_trailing_sml(s:str)->str:
+        # Find trailing SML tags and deduplicate consecutive identical ones
+        # e.g., "[break][break]" -> "[break]", "[pause][pause]" -> "[pause]"
+        # But keep "[pause][break]" as is.
+        if not s:
+            return s
+        
+        # Extract trailing SML sequence
+        match = re.search(r'((?:\[[^\]]+\])+)$', s)
+        if not match:
+            # Check for escaped high-unicode SML
+            idx = len(s)
+            while idx > 0 and ord(s[idx-1]) >= sml_escape_tag:
+                idx -= 1
+            if idx < len(s):
+                sml_seq = s[idx:]
+                prefix = s[:idx]
+                # Deduplicate logic for high-unicode (simplified: just ensure no immediate repeats if possible, 
+                # but primarily handled by escape/restore consistency)
+                # For now, focus on regex-matchable tags which are the main issue
+                return s
+            return s
+            
+        sml_seq = match.group(1)
+        prefix = s[:match.start()]
+        
+        if not sml_seq:
+            return s
+            
+        # Parse individual tags
+        tags = re.findall(r'\[[^\]]+\]', sml_seq)
+        if not tags:
+            return s
+            
+        unique_tags = []
+        if tags:
+            unique_tags.append(tags[0])
+            for i in range(1, len(tags)):
+                if tags[i] != tags[i-1]:
+                    unique_tags.append(tags[i])
+        
+        return prefix + ''.join(unique_tags)
+
     def _force_split_segment(segment:str)->list[str]:
         results = []
         rest = segment
         while rest:
             if len(_strip_escaped_sml(rest)) <= max_chars:
-                results.append(rest.strip())
+                results.append(_deduplicate_trailing_sml(rest.strip()))
                 break
             
             cut = rest[:max_chars + 1]
             best_idx = -1
             
+            # Look for hard punctuation backwards
             for i in range(len(cut) - 1, -1, -1):
                 if cut[i] in '.!?':
                     best_idx = i + 1
@@ -1705,30 +1749,12 @@ def get_sentences(session_id:str, text:str)->list|None:
                 right = rest[max_chars:].strip()
             
             if not left or right == rest:
-                results.append(rest.strip())
+                results.append(_deduplicate_trailing_sml(rest.strip()))
                 break
             
-            results.append(left)
+            results.append(_deduplicate_trailing_sml(left))
             rest = right
         return results
-
-    def _process_and_split_buffer(buffer_text:str, buffer_sml:str, final_list:list[str]):
-        if not buffer_text.strip() and not buffer_sml:
-            return
-        
-        full_segment = buffer_text.rstrip() + (' ' + buffer_sml if buffer_sml else '')
-        full_segment = full_segment.strip()
-        
-        if not full_segment:
-            return
-            
-        clean_len = _clean_len(full_segment)
-        
-        if clean_len <= max_chars:
-            final_list.append(full_segment)
-        else:
-            parts = _force_split_segment(full_segment)
-            final_list.extend(parts)
 
     try:
         session = context.get_session(session_id)
@@ -1739,9 +1765,6 @@ def get_sentences(session_id:str, text:str)->list|None:
             lang = session['translate']
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-        # Tolerance threshold: if we have a valid split point after this length, take it
-        # to avoid leaving a tiny fragment for the next sentence.
-        min_split = int(max_chars * 0.5)
 
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
@@ -1769,107 +1792,54 @@ def get_sentences(session_id:str, text:str)->list|None:
             segments.append(('text', ''.join(current_text)))
 
         final_list = []
-        buffer_text = []
-        buffer_sml = ''
+        buffer_text = ''
         current_len = 0
+        
+        split_threshold = int(max_chars * 0.8)
 
         for seg_type, seg_content in segments:
             seg_clean_len = _clean_len(seg_content)
             
             if seg_type == 'sml':
-                buffer_sml += seg_content
-                current_len += seg_clean_len 
+                # Append SML directly to buffer_text with space if needed
+                if buffer_text:
+                    # Ensure space before SML if previous char is not space or SML
+                    if not buffer_text.endswith(' ') and not (buffer_text[-1] and ord(buffer_text[-1]) >= sml_escape_tag):
+                        buffer_text += ' '
+                buffer_text += seg_content
+                current_len += seg_clean_len
             else:
-                potential_len = current_len + seg_clean_len
+                # Text segment
+                # Ensure space between existing buffer and new text
+                if buffer_text and not buffer_text.endswith(' '):
+                    # Check if buffer ends with SML
+                    ends_with_sml = (ord(buffer_text[-1]) >= sml_escape_tag)
+                    if not ends_with_sml:
+                        buffer_text += ' '
+                
+                potential_len = current_len + seg_clean_len + (1 if buffer_text and not buffer_text.endswith(' ') else 0)
                 
                 if potential_len > max_chars:
-                    # OVERFLOW DETECTED
+                    # Need to split
                     
-                    # 1. Check if we can split EARLY inside the current buffer to avoid a tiny next sentence
-                    # We look for the LAST valid split point (SML or Punctuation) that is AFTER min_split
-                    if current_len > min_split:
-                        combined_buf = ''.join(buffer_text)
-                        best_cut = -1
-                        
-                        # Search for SML tags first
-                        for m in SML_TAG_PATTERN.finditer(combined_buf):
-                            pos = m.end()
-                            if pos >= min_split and pos < current_len:
-                                best_cut = pos
-                        
-                        # Search for escaped SML
-                        idx_scan = 0
-                        while idx_scan < len(combined_buf):
-                            if ord(combined_buf[idx_scan]) >= sml_escape_tag:
-                                j = idx_scan
-                                while j < len(combined_buf) and ord(combined_buf[j]) >= sml_escape_tag:
-                                    j += 1
-                                if j >= min_split:
-                                    best_cut = j
-                                idx_scan = j
-                            else:
-                                idx_scan += 1
-
-                        # Search for Hard Punctuation if no SML found recently
-                        if best_cut == -1:
-                            for i in range(len(combined_buf)-1, min_split-1, -1):
-                                if combined_buf[i] in '.!?':
-                                    best_cut = i + 1
-                                    break
-                        
-                        # If a safe early split point was found, execute it NOW
-                        if best_cut != -1:
-                            part1 = combined_buf[:best_cut].rstrip()
-                            part2 = combined_buf[best_cut:].lstrip()
-                            
-                            # Flush part1 with existing SML
-                            if part1:
-                                sml_suffix = ' ' + buffer_sml if buffer_sml else ''
-                                final_list.append((part1 + sml_suffix).strip())
-                            
-                            # Reset buffer to part2 and new segment
-                            buffer_text = [part2]
-                            buffer_sml = ''
-                            current_len = _clean_len(part2)
-                            
-                            # Now add the new incoming segment (which caused overflow)
-                            # It might still be too big, so we recurse or handle simply:
-                            if _clean_len(seg_content) > max_chars:
-                                # Handle large incoming segment immediately
-                                parts = _force_split_segment(seg_content)
-                                for p in parts[:-1]:
-                                    final_list.append(p)
-                                buffer_text.append(parts[-1])
-                                current_len += _clean_len(parts[-1])
-                            else:
-                                buffer_text.append(seg_content)
-                                current_len += seg_clean_len
-                            continue
-
-                    # 2. Standard Overflow Handling (if no early split possible or buffer too small)
+                    # 1. Check if buffer ends with SML and is substantial
+                    ends_with_sml = bool(re.search(r'(\[[^\]]+\]+)$', buffer_text)) or (buffer_text and ord(buffer_text[-1]) >= sml_escape_tag)
                     
-                    # If we have pending SML, cut there first (Authoritative boundary)
-                    if buffer_sml:
-                        combined = ''.join(buffer_text).rstrip() + ' ' + buffer_sml
-                        final_list.append(combined.strip())
-                        buffer_text = []
-                        buffer_sml = ''
-                        current_len = 0
-                    
-                    # Handle the new segment
-                    if seg_clean_len > max_chars:
-                        parts = _force_split_segment(seg_content)
-                        for p in parts[:-1]:
-                            final_list.append(p)
-                        buffer_text = [parts[-1]]
-                        current_len = _clean_len(parts[-1])
+                    if ends_with_sml and current_len > split_threshold:
+                        # Split here, keeping SML with the previous sentence
+                        sentence = _deduplicate_trailing_sml(buffer_text.strip())
+                        final_list.append(sentence)
+                        buffer_text = seg_content
+                        current_len = seg_clean_len
                     else:
-                        # Cumulative was too big, no SML to cut at.
-                        # Split combination at punctuation/space
-                        full_pending = ''.join(buffer_text) + seg_content
+                        # No SML to split at, or buffer too small. 
+                        # Combine and split based on punctuation/space
+                        full_pending = buffer_text + (' ' if buffer_text and not buffer_text.endswith(' ') else '') + seg_content
+                        
                         cut_point = -1
                         search_area = full_pending[:max_chars]
                         
+                        # Find last punctuation
                         for i in range(len(search_area)-1, -1, -1):
                             if search_area[i] in '.!?':
                                 cut_point = i + 1
@@ -1883,22 +1853,29 @@ def get_sentences(session_id:str, text:str)->list|None:
                         if cut_point > 0:
                             part1 = full_pending[:cut_point].strip()
                             part2 = full_pending[cut_point:].strip()
-                            final_list.append(part1)
-                            buffer_text = [part2]
+                            final_list.append(_deduplicate_trailing_sml(part1))
+                            buffer_text = part2
                             current_len = _clean_len(part2)
                         else:
+                            # Hard cut
                             part1 = full_pending[:max_chars].strip()
                             part2 = full_pending[max_chars:].strip()
-                            final_list.append(part1)
-                            buffer_text = [part2]
+                            final_list.append(_deduplicate_trailing_sml(part1))
+                            buffer_text = part2
                             current_len = _clean_len(part2)
                 else:
-                    # Fits comfortably
-                    buffer_text.append(seg_content)
+                    # Fits
+                    buffer_text += seg_content
                     current_len += seg_clean_len
 
         # Process remaining buffer
-        _process_and_split_buffer(''.join(buffer_text), buffer_sml, final_list)
+        if buffer_text.strip():
+            sentence = _deduplicate_trailing_sml(buffer_text.strip())
+            if len(_clean_len(sentence)) <= max_chars:
+                final_list.append(sentence)
+            else:
+                parts = _force_split_segment(sentence)
+                final_list.extend(parts)
 
         # Post-process
         final_list = [_strip_leading_noise(s) for s in final_list if s.strip()]
