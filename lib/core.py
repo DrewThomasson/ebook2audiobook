@@ -3139,7 +3139,7 @@ def get_compatible_tts_engines(language:str)->list[str]:
         if language in cfg.get('languages', {})
     ]
 
-def translate_blocks(session_id:str, raw_blocks:list, progress_bar=None)->tuple:
+def translate_blocks(session_id:str, raw_blocks:list)->tuple:
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
@@ -3153,13 +3153,13 @@ def translate_blocks(session_id:str, raw_blocks:list, progress_bar=None)->tuple:
             return raw_blocks, msg
         if source_iso1 == target_iso1:
             return raw_blocks, None
+        total = len(raw_blocks)
+        msg = f'Translating {total} block(s) {source_iso1} -> {target_iso1}'
+        show_alert(session_id, {"type": "warning", "msg": msg})
         translator = ArgosTranslator(neural_machine='argostranslate')
         error, ok = translator.start(source_iso1, target_iso1)
         if not ok:
             return raw_blocks, error
-        total = len(raw_blocks)
-        msg = f'Translating {total} block(s) {source_iso1} -> {target_iso1}'
-        print(msg)
         if progress_bar is not None:
             progress_bar(0.0, desc=msg)
         out = []
