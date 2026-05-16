@@ -153,6 +153,9 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                                     else:
                                         error = f'part_tensor not valid'
                                         return False, error
+                                else:
+                                    error = f'audio_part not valid'
+                                    return False, error
                             else:
                                 error = f'audio_part not valid'
                                 return False, error

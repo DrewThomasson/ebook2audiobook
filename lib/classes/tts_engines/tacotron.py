@@ -237,6 +237,9 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                     else:
                                         error = f'part_tensor not valid'
                                         return False, error
+                                else:
+                                    error = f'audio_part not valid'
+                                    return False, error
                             else:
                                 error = f'audio_part not valid'
                                 return False, error

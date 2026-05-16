@@ -239,6 +239,9 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     else:
                                         error = f'part_tensor not valid'
                                         return False, error
+                                else:
+                                    error = f'audio_part not valid'
+                                    return False, error
                             else:
                                 error = f'audio_part not valid'
                                 return False, error

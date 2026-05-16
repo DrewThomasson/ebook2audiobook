@@ -184,6 +184,9 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                                     else:
                                         error = f'part_tensor not valid'
                                         return False, error
+                                else:
+                                    error = f'audio_part not valid'
+                                    return False, error
                             else:
                                 error = f'audio_part not valid'
                                 return False, error

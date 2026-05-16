@@ -229,6 +229,9 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 else:
                                     error = f'audio_part not valid'
                                     return False, error
+                            else:
+                                error = f'audio_part not valid'
+                                return False, error
                         except IndexError as e:
                             error = f'tts_to_file() error at {e} segment: {part}'
                             print(error)
