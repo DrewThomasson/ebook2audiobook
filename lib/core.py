@@ -1693,12 +1693,14 @@ def get_sentences(session_id:str, text:str)->list|None:
                 idx = cut.rfind(' ')
                 if idx > 0:
                     best_idx = idx
-            if best_idx > 0:
-                left = rest[:best_idx].strip()
-                right = rest[best_idx:].strip()
-            else:
-                left = rest[:max_chars].strip()
-                right = rest[max_chars:].strip()
+            if best_idx <= 0:
+                best_idx = max_chars
+            # Safety: never cut between SML markers of a group.
+            # If the cut point lands inside an SML run, advance past the whole run.
+            while best_idx < len(rest) and ord(rest[best_idx]) >= sml_escape_tag:
+                best_idx += 1
+            left = rest[:best_idx].strip()
+            right = rest[best_idx:].strip()
             if not left or right == rest:
                 results.append(rest.strip())
                 break
