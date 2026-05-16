@@ -1556,7 +1556,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         DependencyError(error)
         return None
 
-ef get_sentences(session_id:str, text:str)->list|None:
+def get_sentences(session_id:str, text:str)->list|None:
 
     def _split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
