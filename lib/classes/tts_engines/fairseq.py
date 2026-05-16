@@ -138,71 +138,77 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         if part.endswith("'"):
                             part = part[:-1]
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
-                        if use_zs:
-                            tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
-                            tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
-                            with torch.inference_mode():
-                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                    self.engine.tts_to_file(
-                                        text=part,
-                                        file_path=tmp_in_wav
-                                    )
-                            if self.params['current_voice'] in self.params['semitones'].keys():
-                                semitones = self.params['semitones'][self.params['current_voice']]
-                            else:
-                                current_voice_gender = detect_gender(self.params['current_voice'])
-                                voice_builtin_gender = detect_gender(tmp_in_wav)
-                                msg = f'Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}'
-                                print(msg)
-                                if voice_builtin_gender != current_voice_gender:
-                                    semitones = -4 if current_voice_gender == 'male' else 4
-                                    msg = f'Adapting builtin voice frequencies from the clone voice…'
-                                    print(msg)
+                        try:
+                            if use_zs:
+                                tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
+                                tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
+                                result = False
+                                with torch.inference_mode():
+                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                        self.engine.tts_to_file(
+                                            text=part,
+                                            file_path=tmp_in_wav
+                                        )
+                                if self.params['current_voice'] in self.params['semitones'].keys():
+                                    semitones = self.params['semitones'][self.params['current_voice']]
                                 else:
-                                    semitones = 0
-                                self.params['semitones'][self.params['current_voice']] = semitones
-                            if semitones > 0:
-                                try:
-                                    cmd = [
-                                        shutil.which('sox'), tmp_in_wav,
-                                        '-r', str(self.params['samplerate']), tmp_out_wav,
-                                        'pitch', str(semitones * 100)
-                                    ]
-                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                except subprocess.CalledProcessError as e:
-                                    error = f'Subprocess error: {e.stderr}'
-                                    DependencyError(error)
-                                    return False, error
-                                except FileNotFoundError as e:
-                                    error = f'File not found: {e}'
-                                    DependencyError(error)
-                                    return False, error
+                                    current_voice_gender = detect_gender(self.params['current_voice'])
+                                    voice_builtin_gender = detect_gender(tmp_in_wav)
+                                    msg = f'Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}'
+                                    print(msg)
+                                    if voice_builtin_gender != current_voice_gender:
+                                        semitones = -4 if current_voice_gender == 'male' else 4
+                                        msg = f'Adapting builtin voice frequencies from the clone voice…'
+                                        print(msg)
+                                    else:
+                                        semitones = 0
+                                    self.params['semitones'][self.params['current_voice']] = semitones
+                                if semitones > 0:
+                                    try:
+                                        cmd = [
+                                            shutil.which('sox'), tmp_in_wav,
+                                            '-r', str(self.params['samplerate']), tmp_out_wav,
+                                            'pitch', str(semitones * 100)
+                                        ]
+                                        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                    except subprocess.CalledProcessError as e:
+                                        error = f'Subprocess error: {e.stderr}'
+                                        DependencyError(error)
+                                        return False, error
+                                    except FileNotFoundError as e:
+                                        error = f'File not found: {e}'
+                                        DependencyError(error)
+                                        return False, error
+                                else:
+                                    tmp_out_wav = tmp_in_wav
+                                samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
+                                source_wav = self._resample_wav(tmp_out_wav, samplerate)
+                                target_wav = self._resample_wav(self.params['current_voice'], samplerate)
+                                speaker_argument = {}
+                                if (self.engine_zs.speakers is not None and self.speaker not in self.engine_zs.speakers) or self.engine_zs.speakers is None:
+                                    speaker_argument['target_wav'] = target_wav
+                                audio_part = self.engine_zs.voice_conversion(
+                                    source_wav=source_wav,
+                                    speaker=self.speaker,
+                                    **speaker_argument
+                                )
+                                if os.path.exists(tmp_in_wav):
+                                    os.remove(tmp_in_wav)
+                                if os.path.exists(tmp_out_wav):
+                                    os.remove(tmp_out_wav)
+                                if os.path.exists(source_wav):
+                                    os.remove(source_wav)
+                                audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
                             else:
-                                tmp_out_wav = tmp_in_wav
-                            samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
-                            source_wav = self._resample_wav(tmp_out_wav, samplerate)
-                            target_wav = self._resample_wav(self.params['current_voice'], samplerate)
-                            speaker_argument = {}
-                            if (self.engine_zs.speakers is not None and self.speaker not in self.engine_zs.speakers) or self.engine_zs.speakers is None:
-                                speaker_argument['target_wav'] = target_wav
-                            audio_part = self.engine_zs.voice_conversion(
-                                source_wav=source_wav,
-                                speaker=self.speaker,
-                                **speaker_argument
-                            )
-                            if os.path.exists(tmp_in_wav):
-                                os.remove(tmp_in_wav)
-                            if os.path.exists(tmp_out_wav):
-                                os.remove(tmp_out_wav)
-                            if os.path.exists(source_wav):
-                                os.remove(source_wav)
-                            audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
-                        else:
-                            with torch.inference_mode():
-                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                    audio_part = self.engine.tts(
-                                        text=part
-                                    )
+                                with torch.inference_mode():
+                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                        audio_part = self.engine.tts(
+                                            text=part
+                                        )
+                        except IndexError as e:
+                            error = f'tts_to_file() error at {e} segment: {part}'
+                            print(error)
+                            audio_part = False
                         if torch.is_tensor(audio_part):
                             audio_part = audio_part.detach().cpu()
                         if is_audio_data_valid(audio_part):
