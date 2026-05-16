@@ -1679,24 +1679,34 @@ def get_sentences(session_id:str, text:str)->list|None:
     def _force_split_segment(segment:str)->list[str]:
         results = []
         rest = segment
+        hard_set = tuple(punctuation_split_hard_set)
+        soft_set = tuple(punctuation_split_soft_set)
         while rest:
             if _clean_len(rest) <= max_chars:
                 results.append(rest.strip())
                 break
             cut = rest[:max_chars + 1]
             best_idx = -1
+            # 1) regress to the last hard punctuation in the window
             for i in range(len(cut) - 1, -1, -1):
-                if cut[i] in '.!?':
+                if cut[i] in hard_set:
                     best_idx = i + 1
                     break
+            # 2) no hard punct -> regress to the last soft punctuation
+            if best_idx == -1:
+                for i in range(len(cut) - 1, -1, -1):
+                    if cut[i] in soft_set:
+                        best_idx = i + 1
+                        break
+            # 3) no punctuation at all -> fall back to last space
             if best_idx == -1:
                 idx = cut.rfind(' ')
                 if idx > 0:
                     best_idx = idx
+            # 4) last resort -> hard cut at max_chars
             if best_idx <= 0:
                 best_idx = max_chars
-            # Safety: never cut between SML markers of a group.
-            # If the cut point lands inside an SML run, advance past the whole run.
+            # Safety: never cut inside an SML group
             while best_idx < len(rest) and ord(rest[best_idx]) >= sml_escape_tag:
                 best_idx += 1
             left = rest[:best_idx].strip()
