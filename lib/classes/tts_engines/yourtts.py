@@ -117,32 +117,38 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                         else:
                             self.speaker = default_engine_settings[self.session['tts_engine']]['voices']['ElectroMale-2']
                             speaker_argument = {"speaker": self.speaker}
-                        with torch.inference_mode():
-                            with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                audio_part = self.engine.tts(
-                                    text=part,
-                                    language=self.yourtts_language,
-                                    **speaker_argument
-                                )
-                        if torch.is_tensor(audio_part):
-                            audio_part = audio_part.detach().cpu()
-                        if is_audio_data_valid(audio_part):
-                            src_tensor = self._tensor_type(audio_part)
-                            part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                            if part_tensor is not None and part_tensor.numel() > 0:
-                                if part[-1].isalnum() or part[-1] == '—':
-                                    part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                self.audio_segments.append(part_tensor)
-                                del part_tensor
-                                """
-                                if not re.search(r'\w$', part, flags=re.UNICODE):
-                                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                    break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                    self.audio_segments.append(break_tensor.clone())
-                                """
-                            else:
-                                error = f'part_tensor not valid'
-                                return False, error
+                        try:
+                            with torch.inference_mode():
+                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                    audio_part = self.engine.tts(
+                                        text=part,
+                                        language=self.yourtts_language,
+                                        **speaker_argument
+                                    )
+                        except IndexError as e:
+                            error = f'tts() error at {e} segment: {part}'
+                            print(error)
+                            audio_part = False
+                        if audio_part:
+                            if torch.is_tensor(audio_part):
+                                audio_part = audio_part.detach().cpu()
+                            if is_audio_data_valid(audio_part):
+                                src_tensor = self._tensor_type(audio_part)
+                                part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
+                                if part_tensor is not None and part_tensor.numel() > 0:
+                                    if part[-1].isalnum() or part[-1] == '—':
+                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                    self.audio_segments.append(part_tensor)
+                                    del part_tensor
+                                    """
+                                    if not re.search(r'\w$', part, flags=re.UNICODE):
+                                        silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                        break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
+                                        self.audio_segments.append(break_tensor.clone())
+                                    """
+                                else:
+                                    error = f'part_tensor not valid'
+                                    return False, error
                         else:
                             error = f'audio_part not valid'
                             return False, error
