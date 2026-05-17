@@ -1,3 +1,4 @@
+from .piper import Piper
 from .xtts import XTTSv2
 from .bark import Bark
 from .vits import Vits
