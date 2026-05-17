@@ -1028,6 +1028,8 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
+        if self.system == systems['MACOS']:
+            overrides['onnxruntime-gpu'] = None
         if self.system == systems['MACOS'] and self.arch == archs['X86_64']:
             overrides['numba'] = 'numba==0.62.0'
         try:
