@@ -168,7 +168,7 @@ class TTSUtils:
             error = f'self._load_xtts_builtin_list() failed: {e}'
             raise RuntimeError(error)
 
-    def _apply_gpu_policy(self, enough_vram:bool, seed:int)->'torch.dtype':
+def _apply_gpu_policy(self, enough_vram: bool, seed: int) -> 'torch.dtype':
         import torch
         using_gpu = self.session['device'] != devices['CPU']['proc']
         device = self.session['device']
@@ -188,18 +188,23 @@ class TTSUtils:
         if not using_gpu:
             return amp_dtype
         if has_cuda:
-            amp_dtype = torch.float16
             # --- CUDA health check: fail fast instead of configuring a broken context ---
             try:
                 torch.cuda.manual_seed_all(seed)
+                # Safeguard: Resolve the exact active device index instead of hardcoding 0
+                current_device = torch.cuda.current_device()
             except Exception as e:
                 error = f'[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32'
                 print(error)
                 return torch.float32
             # --- Device info (fetched once) ---
             try:
-                cc = torch.cuda.get_device_capability(0)
+                cc = torch.cuda.get_device_capability(current_device)
                 cc_major = cc[0]
+                if cc_major >= 8:
+                    amp_dtype = torch.bfloat16
+                else:
+                    amp_dtype = torch.float16
             except Exception:
                 cc = (0, 0)
                 cc_major = 0
@@ -210,13 +215,25 @@ class TTSUtils:
                 is_jetson = is_cuda and platform.machine() in ('aarch64', 'arm64')
             except Exception:
                 is_jetson = False
-            # Memory pressure handling — only throttle on cards with headroom
+            # --- ADAPTIVE VRAM POLICY ---
             if hasattr(torch.cuda, 'set_per_process_memory_fraction'):
                 try:
-                    total_gb = torch.cuda.get_device_properties(0).total_memory / 1024**3
-                    if total_gb >= 10:
-                        torch.cuda.set_per_process_memory_fraction(0.90 if quality_mode else 0.80)
-                    # else: let the caching allocator breathe on 6–8 GB cards
+                    # Query actual real-time physical VRAM states (returns in bytes)
+                    free_bytes, total_bytes = torch.cuda.mem_get_info(current_device)
+                    free_gb = free_bytes / (1024**3)
+                    total_gb = total_bytes / (1024**3)
+                    # 1. Cloud / Enterprise check: Leave data center cards (>25GB) completely unthrottled
+                    if total_gb <= 25:
+                        # 2. Safety Buffer: Reserve space for OS / display / web browser
+                        os_buffer_gb = 1.0 if quality_mode else 2.0
+                        allowed_gb = free_gb - os_buffer_gb
+                        # 3. Headroom constraint: Only limit if the physical hardware is >= 10GB total 
+                        # and we aren't completely starved for remaining space (< 4GB allowed)
+                        if total_gb >= 10 and allowed_gb >= 4.0:
+                            # Map the absolute target GB back into an allocator percentage fraction
+                            fraction = allowed_gb / total_gb
+                            fraction = max(0.40, min(0.95, fraction))  # Clamp between 40% and 95%
+                            torch.cuda.set_per_process_memory_fraction(fraction, current_device)
                 except Exception:
                     pass
             # cuDNN base config — benchmark=True is bad for TTS (variable-length inputs)
@@ -226,7 +243,7 @@ class TTSUtils:
                     torch.backends.cudnn.benchmark = False
                     torch.backends.cudnn.deterministic = not quality_mode
                 except Exception:
-                    pass
+                    pass    
             # TF32 — Ampere+, non-Jetson, non-ROCm, quality mode only
             tf32_ok = bool(
                 is_cuda and not is_jetson and not is_rocm
@@ -270,7 +287,6 @@ class TTSUtils:
                     torch.xpu.manual_seed(seed)
                 except Exception:
                     pass
-            #return torch.bfloat16
             return torch.float16
         return amp_dtype
 
