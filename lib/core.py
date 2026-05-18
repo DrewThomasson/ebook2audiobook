@@ -2588,7 +2588,6 @@ def convert_chapters2audio(session_id:str)->bool:
                 for j in range(block_len):
                     if session['cancellation_requested']:
                         msg = 'Conversion Cancelled'
-                        show_alert(session_id, {'type': 'warning', 'msg': msg})
                         return False
                     sentence = sentences[j].strip()
                     if j in valid_idx:
