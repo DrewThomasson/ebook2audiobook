@@ -275,4 +275,12 @@ models = {
         "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
         "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
     }
+    "Konishev": {
+        "lang": "deu",
+        "repo": "drewThomasson/fineTunedTTSModels",
+        "sub": "xtts-v2/deu/JuliaCasper/",
+        "voice": os.path.join(voices_dir, 'deu', 'adult', 'female', 'JuliaCasper.wav'),
+        "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
+        "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
+    }
 }
