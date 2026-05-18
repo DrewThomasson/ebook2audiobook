@@ -44,18 +44,12 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                 if required_key not in model_cfg:
                     error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
                     raise ValueError(error)
-            # Resolve the piper voice code (e.g. 'en_US-lessac-medium') for this language.
-            # Lookup chain:
-            #   1) session['piper_voice'] explicit override
-            #   2) default_engine_settings[piper]['voice_codes'][<piper_lang_code>]
-            #   3) error
             piper_lang = engine_langs[self.language]
             voice_codes = default_engine_settings[tts_engine].get('voice_codes', {})
             self.voice_code = self.session.get('piper_voice') or voice_codes.get(piper_lang)
             if not self.voice_code:
                 error = f'No piper voice code mapped for language {self.language} ({piper_lang}). Set session["piper_voice"] or extend voice_codes.'
                 raise ValueError(error)
-            # Samplerate preset is only a hint; the loaded voice config is the source of truth.
             self.params['samplerate'] = model_cfg['samplerate']
             self.model_path = self.voice_code
             enough_vram = self.session['free_vram_gb'] > 4.0
@@ -65,7 +59,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine = self.load_engine()
-            # Pin the real samplerate from the loaded voice config.
             if self.engine is not None and hasattr(self.engine, 'output_sample_rate'):
                 self.params['samplerate'] = int(self.engine.output_sample_rate)
             self.engine_zs = self._load_engine_zs(self.device)
@@ -296,7 +289,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                         if part[-1].isalnum() or part[-1] == '—':
                                             part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                         self.audio_segments.append(part_tensor)
-                                        del part_tensor
                                     else:
                                         error = f'part_tensor not valid'
                                         return False, error
@@ -316,8 +308,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error
-                    del segment_tensor
-                    self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
                         error = f'Cannot create {sentence_file}'
@@ -328,6 +318,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                 return False, error
         except Exception as e:
             self.cleanup_memory()
+            self.audio_segments = []
             return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:

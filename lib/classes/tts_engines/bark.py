@@ -42,6 +42,14 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
+            self.fine_tuned_params = {
+                key.removeprefix('bark_'): cast_type(self.session[key])
+                for key, cast_type in {
+                    'bark_text_temp': float,
+                    'bark_waveform_temp': float
+                }.items()
+                if self.session.get(key) is not None
+            }
             self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -147,14 +155,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 if not os.path.exists(pth_voice_dir):
                     os.makedirs(pth_voice_dir, exist_ok=True)
                 self.engine.synthesizer.voice_dir = pth_voice_dir
-                fine_tuned_params = {
-                    key.removeprefix('bark_'): cast_type(self.session[key])
-                    for key, cast_type in {
-                        'bark_text_temp': float,
-                        'bark_waveform_temp': float
-                    }.items()
-                    if self.session.get(key) is not None
-                }
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -201,7 +201,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                     speaker=self.speaker,
                                     voice_dir=pth_voice_dir,
                                     **speaker_argument,
-                                    **fine_tuned_params
+                                    **self.fine_tuned_params
                                 )
                             if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
@@ -213,13 +213,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                         if part[-1].isalnum() or part[-1] == '—':
                                             part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                         self.audio_segments.append(part_tensor)
-                                        del part_tensor
-                                        """
-                                        if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                            break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                            self.audio_segments.append(break_tensor.clone())
-                                        """
                                     else:
                                         error = f'part_tensor not valid'
                                         return False, error
@@ -240,8 +233,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error
-                    del segment_tensor
-                    self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
                         error = f'Cannot create {sentence_file}'
@@ -252,6 +243,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                 return False, error
         except Exception as e:
             self.cleanup_memory()
+            self.audio_segments = []
             return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:

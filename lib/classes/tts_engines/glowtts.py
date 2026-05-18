@@ -216,13 +216,6 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                         if part[-1].isalnum() or part[-1] == '—':
                                             part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                         self.audio_segments.append(part_tensor)
-                                        del part_tensor
-                                        """
-                                        if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                            break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                            self.audio_segments.append(break_tensor.clone())
-                                        """
                                     else:
                                         error = f'part_tensor not valid'
                                         return False, error
@@ -243,8 +236,6 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error
-                    del segment_tensor
-                    self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
                         error = f'Cannot create {sentence_file}'
@@ -255,6 +246,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                 return False, error
         except Exception as e:
             self.cleanup_memory()
+            self.audio_segments = []
             return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:
