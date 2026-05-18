@@ -1261,7 +1261,7 @@ class DeviceInstaller():
             return False
 
         def _probe_gpus()->dict:
-            script = os.path.join(os.path.dirname(__file__), 'tools', 'detect_gpus.py')
+            script = os.path.abspath('./tools/detect_gpus.py')
             try:
                 proc = subprocess.run(
                     [sys.executable, script],
