@@ -129,6 +129,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
                                 if is_audio_data_valid(audio_part):
+                                    '''
                                     src_tensor = self._tensor_type(audio_part)
                                     part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
                                     if part_tensor is not None and part_tensor.numel() > 0:
@@ -138,6 +139,17 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                                     else:
                                         error = f'part_tensor not valid'
                                         return False, error
+                                    '''
+                                    if not is_audio_data_valid(audio_part):
+                                        error = 'audio_part not valid'
+                                        return False, error
+                                    part_tensor = self._tensor_type(audio_part).detach().cpu().unsqueeze(0)
+                                    if part_tensor.numel() == 0:
+                                        error = 'part_tensor not valid'
+                                        return False, error
+                                    if part[-1].isalnum() or part[-1] == '—':
+                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                    self.audio_segments.append(part_tensor)
                                 else:
                                     error = f'audio_part not valid'
                                     return False, error

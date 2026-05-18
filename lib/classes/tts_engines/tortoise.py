@@ -136,6 +136,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                             if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
+                                '''
                                 if is_audio_data_valid(audio_part):
                                     src_tensor = self._tensor_type(audio_part)
                                     part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
@@ -148,6 +149,14 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                                         return False, error
                                 else:
                                     error = f'audio_part not valid'
+                                    return False, error
+                                '''
+                                if not is_audio_data_valid(audio_part):
+                                    error = 'audio_part not valid'
+                                    return False, error
+                                part_tensor = self._tensor_type(audio_part).detach().unsqueeze(0)
+                                if part_tensor.numel() == 0:
+                                    error = 'part_tensor not valid'
                                     return False, error
                             else:
                                 error = f'audio_part not valid'
