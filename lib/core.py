@@ -2733,8 +2733,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         ffmpeg_metadata += f"{tag('asin')}={asin}\n"
             start_time = 0
             total = len(part_chapters)
-            desc = f'Metadata Part {part_num}' if part_num is not None else 'Metadata'
-            iterable = part_chapters if is_gui_process else tqdm(part_chapters, desc=desc, total=total, unit='ch')
+            progress_desc = f'Metadata Part {part_num}' if part_num is not None else 'Metadata'
+            iterable = part_chapters if is_gui_process else tqdm(part_chapters, desc=progress_desc, total=total, unit='ch')
             for i, (filename, chapter_title) in enumerate(iterable):
                 if session['cancellation_requested']:
                     return False
@@ -2826,8 +2826,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-progress', 'pipe:2',
                     '-y', final_file
                 ]
-            desc = f'Export Part {part_num}' if part_num is not None else 'Export'
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=lambda p: _on_progress(p, desc))
+            progress_desc = f'Export Part {part_num}' if part_num is not None else 'Export'
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=lambda p: _on_progress(p, progress_desc))
             if not proc_pipe.result:
                 error = f'ffmpeg export failed for {final_file}'
                 print(error)
