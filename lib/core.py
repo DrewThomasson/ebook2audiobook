@@ -2746,7 +2746,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
                 start_time += duration_ms
                 if is_gui_process:
-                    _on_progress(((i + 1) / total) * 100.0)
+                    _on_progress((((i + 1) / total) * 100.0), progress_desc)
             with open(output_metadata_path, 'w', encoding='utf-8') as f:
                 f.write(ffmpeg_metadata)
             return output_metadata_path
