@@ -274,7 +274,7 @@ models = {
         "voice": os.path.join(voices_dir, 'rus', 'adult', 'male', 'Konishev.wav'),
         "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
         "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
-    }
+    },
     "Konishev": {
         "lang": "deu",
         "repo": "drewThomasson/fineTunedTTSModels",

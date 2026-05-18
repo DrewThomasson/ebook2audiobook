@@ -92,9 +92,9 @@ def main()->None:
     if os.environ.get('DOCKER_IN_WSL', '0') == '1' and os.environ.get('DOCKER_DESKTOP', '0') == '0' and os.environ.get('PODMAN_DESKTOP', '0') == '0':
         wsl_cmd = 'wsl --user root --'
     if wsl_cmd:
-        wsl_extra = 'DEVICE_TAG=cu128'
+        wsl_extra = f'DEVICE_TAG=cu128'
     else:
-        wsl_extra = 'DEVICE_TAG=cu128 &&'
+        wsl_extra = f'DEVICE_TAG=cu128 &&'
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
