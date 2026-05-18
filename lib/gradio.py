@@ -419,6 +419,9 @@ def build_interface(args:dict)->gr.Blocks:
                     overflow-y: auto !important;
                     scrollbar-width: none !important;
                 }
+                #gr_progress textarea {
+                    height: 60px !important;
+                }
                 #gr_session textarea::-webkit-scrollbar, #gr_progress textarea::-webkit-scrollbar {
                     display: none !important; 
                 }
