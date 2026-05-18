@@ -2685,8 +2685,12 @@ def combine_audio_sentences(session_id:str, file:str, block_id:str, sentence_cou
         return False
 
 def combine_audio_chapters(session_id:str)->list[str]|None:
+    
+    def _on_progress(p:float, desc:str)->None:
+        if is_gui_process:
+            progress_bar(p / 100.0, desc=desc)
 
-    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
+    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str, part_num:int=None)->str|bool:
         try:
             out_fmt = session['output_format']
             is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
@@ -2728,7 +2732,10 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     if asin:
                         ffmpeg_metadata += f"{tag('asin')}={asin}\n"
             start_time = 0
-            for filename, chapter_title in part_chapters:
+            total = len(part_chapters)
+            desc = f'Metadata Part {part_num}' if part_num is not None else 'Metadata'
+            iterable = part_chapters if is_gui_process else tqdm(part_chapters, desc=desc, total=total, unit='ch')
+            for i, (filename, chapter_title) in enumerate(iterable):
                 if session['cancellation_requested']:
                     return False
                 filepath = os.path.join(session['chapters_dir'], filename)
@@ -2738,6 +2745,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
                 ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
                 start_time += duration_ms
+                if is_gui_process:
+                    _on_progress(((i + 1) / total) * 100.0)
             with open(output_metadata_path, 'w', encoding='utf-8') as f:
                 f.write(ffmpeg_metadata)
             return output_metadata_path
@@ -2747,12 +2756,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             return False
 
     def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
-
-        def _on_progress(p:float)->None:
-            if is_gui_process:
-                progress_bar(p / 100.0, desc=f'Export Part {part_num}' if part_num is not None else 'Export')
-
-        is_gui_process = session['is_gui_process']
         try:
             if session['cancellation_requested']:
                 return False
@@ -2823,7 +2826,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-progress', 'pipe:2',
                     '-y', final_file
                 ]
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=_on_progress)
+            desc = f'Export Part {part_num}' if part_num is not None else 'Export'
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=lambda p: _on_progress(p, desc))
             if not proc_pipe.result:
                 error = f'ffmpeg export failed for {final_file}'
                 print(error)
@@ -2871,6 +2875,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
             return None
+        is_gui_process = session['is_gui_process']
         chapter_files = []
         chapter_titles = []
         chapter_positions = []
@@ -2891,7 +2896,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             chapter_files.append(fname)
             chapter_titles.append(block['sentences'][0])
             chapter_positions.append(x)
-        is_gui_process = session['is_gui_process']
         if len(chapter_files) == 0:
             print('No block files exist!')
             return None
