@@ -1260,6 +1260,19 @@ class DeviceInstaller():
                 return True
             return False
 
+        def _probe_gpus()->dict:
+            script = os.path.join(os.path.dirname(__file__), 'tools', 'detect_gpus.py')
+            try:
+                proc = subprocess.run(
+                    [sys.executable, script],
+                    capture_output=True, text=True, timeout=30,
+                )
+                if proc.returncode != 0:
+                    return {'count': 0, 'backend': None, 'error': proc.stderr.strip() or 'non-zero exit'}
+                return json.loads(proc.stdout.strip() or '{}')
+            except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as e:
+                return {'count': 0, 'backend': None, 'error': str(e)}
+
         try:
             if device_info_str:
                 device_info = json.loads(device_info_str)
@@ -1377,6 +1390,21 @@ class DeviceInstaller():
                                         os.symlink(libgomp_src, libgomp_dst)
                     if not self.check_numpy():
                         return 1
+                    gpu_info = _probe_gpus()
+                    device_info_dict['gpu_count'] = gpu_info['count']
+                    device_info_dict['gpu_backend'] = gpu_info['backend']
+                    if gpu_info.get('error'):
+                        error = f'GPU detection warning: {gpu_info["error"]}'
+                        print(error)
+                    if gpu_info['count'] > 0:
+                        idx = ','.join(str(i) for i in range(gpu_info['count']))
+                        if gpu_info['backend'] == 'cuda':
+                            os.environ['CUDA_VISIBLE_DEVICES'] = idx
+                        elif gpu_info['backend'] == 'rocm':
+                            os.environ['HIP_VISIBLE_DEVICES'] = idx
+                        elif gpu_info['backend'] == 'xpu':
+                            os.environ['ONEAPI_DEVICE_SELECTOR'] = f'level_zero:{idx}'
+                            os.environ['ZE_AFFINITY_MASK'] = idx
                     return 0
                 else:
                     error = 'install_device_packages() error: device_info_str is empty'
