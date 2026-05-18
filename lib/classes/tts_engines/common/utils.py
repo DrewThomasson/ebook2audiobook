@@ -172,7 +172,7 @@ class TTSUtils:
         import torch
         using_gpu = self.session['device'] != devices['CPU']['proc']
         device = self.session['device']
-        torch.manual_seed(seed)
+        #torch.manual_seed(seed)
         has_cuda = hasattr(torch, 'cuda') and torch.cuda.is_available()
         has_mps = hasattr(torch.backends, 'mps') and torch.backends.mps.is_available()
         has_xpu = hasattr(torch, 'xpu') and torch.xpu.is_available()
@@ -188,23 +188,18 @@ class TTSUtils:
         if not using_gpu:
             return amp_dtype
         if has_cuda:
-            # --- CUDA health check: fail fast instead of configuring a broken context ---
+            # --- CUDA health check: force lazy init, fail fast on a broken context ---
             try:
-                torch.cuda.manual_seed_all(seed)
-                # Safeguard: Resolve the exact active device index instead of hardcoding 0
-                current_device = torch.cuda.current_device()
+                #torch.cuda.manual_seed_all(seed)
+                torch.cuda.current_device()
             except Exception as e:
                 error = f'[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32'
                 print(error)
                 return torch.float32
             # --- Device info (fetched once) ---
             try:
-                cc = torch.cuda.get_device_capability(current_device)
+                cc = torch.cuda.get_device_capability(0)
                 cc_major = cc[0]
-                if cc_major >= 8:
-                    amp_dtype = torch.bfloat16
-                else:
-                    amp_dtype = torch.float16
             except Exception:
                 cc = (0, 0)
                 cc_major = 0
@@ -215,45 +210,29 @@ class TTSUtils:
                 is_jetson = is_cuda and platform.machine() in ('aarch64', 'arm64')
             except Exception:
                 is_jetson = False
-            # --- ADAPTIVE VRAM POLICY ---
-            if hasattr(torch.cuda, 'set_per_process_memory_fraction'):
-                try:
-                    # Query actual real-time physical VRAM states (returns in bytes)
-                    free_bytes, total_bytes = torch.cuda.mem_get_info(current_device)
-                    free_gb = free_bytes / (1024**3)
-                    total_gb = total_bytes / (1024**3)
-                    # 1. Cloud / Enterprise check: Leave data center cards (>25GB) completely unthrottled
-                    if total_gb <= 25:
-                        # 2. Safety Buffer: Reserve space for OS / display / web browser
-                        os_buffer_gb = 1.0 if quality_mode else 2.0
-                        allowed_gb = free_gb - os_buffer_gb
-                        # 3. Headroom constraint: Only limit if the physical hardware is >= 10GB total 
-                        # and we aren't completely starved for remaining space (< 4GB allowed)
-                        if total_gb >= 10 and allowed_gb >= 4.0:
-                            # Map the absolute target GB back into an allocator percentage fraction
-                            fraction = allowed_gb / total_gb
-                            fraction = max(0.40, min(0.95, fraction))  # Clamp between 40% and 95%
-                            torch.cuda.set_per_process_memory_fraction(fraction, current_device)
-                except Exception:
-                    pass
+            # BF16 on Ampere+, FP16 on Turing/Volta — BF16 is safer for autoregressive decoders (XTTS GPT)
+            if cc_major >= 8:
+                amp_dtype = torch.bfloat16
+            else:
+                amp_dtype = torch.float16
             # cuDNN base config — benchmark=True is bad for TTS (variable-length inputs)
             if hasattr(torch.backends, 'cudnn'):
                 try:
                     torch.backends.cudnn.enabled = True
                     torch.backends.cudnn.benchmark = False
-                    torch.backends.cudnn.deterministic = not quality_mode
+                    torch.backends.cudnn.deterministic = False
                 except Exception:
-                    pass    
+                    pass
             # TF32 — Ampere+, non-Jetson, non-ROCm, quality mode only
             tf32_ok = bool(
                 is_cuda and not is_jetson and not is_rocm
                 and cc_major >= 8 and quality_mode
             )
-            # SDP attention — flash + mem-efficient are Ampere+ only; math kernel always on
+            # SDP attention — flash is Ampere+, mem-efficient is Volta+, math always on
             if hasattr(torch.backends, 'cuda'):
                 try:
                     torch.backends.cuda.enable_flash_sdp(cc_major >= 8)
-                    torch.backends.cuda.enable_mem_efficient_sdp(cc_major >= 8)
+                    torch.backends.cuda.enable_mem_efficient_sdp(cc_major >= 7)
                     torch.backends.cuda.enable_math_sdp(True)
                 except Exception:
                     pass
@@ -275,19 +254,19 @@ class TTSUtils:
             return amp_dtype
         # ================= Apple MPS =================
         if has_mps:
-            torch.mps.manual_seed(seed)
+            #torch.mps.manual_seed(seed)
             amp_dtype = torch.float16
             return amp_dtype
         # ================= Intel XPU =================
         if has_xpu:
-            try:
-                torch.xpu.manual_seed_all(seed)
-            except Exception:
-                try:
-                    torch.xpu.manual_seed(seed)
-                except Exception:
-                    pass
-            return torch.float16
+            #try:
+            #    torch.xpu.manual_seed_all(seed)
+            #except Exception:
+            #    try:
+            #        torch.xpu.manual_seed(seed)
+            #    except Exception:
+            #        pass
+            return torch.bfloat16
         return amp_dtype
 
     def _load_api(self, key:str, model_path:str, device:str)->Any:
