@@ -213,7 +213,7 @@ jobs:
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
-          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+          $RUN_CMD --headless  --language eng --translate spa --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
       - name: FAIRSEQ Custom-Voice headless single long spanish -> german translate test
         shell: bash
