@@ -263,6 +263,14 @@ jobs:
 
           $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
 
+      - name: English YOURTTS Custom-Voice headless single english -> spanish translate test
+        shell: bash
+        run: |
+          cd ~/ebook2audiobook
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language eng --translate spa --ebook "tools/workflow-testing/long_test.txt" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
+
       - name: English TORTOISE Custom-Voice headless single test
         shell: bash
         run: |
