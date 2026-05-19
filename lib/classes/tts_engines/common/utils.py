@@ -325,7 +325,7 @@ class TTSUtils:
                     engine = loaded_tts.get(key, False)
                     if engine:
                         return engine
-                    download_voice(Path(self.model_path).stem, self.model_path)
+                    download_voice(Path(self.model_path).stem, Path(self.model_path))
                     use_cuda = self.device == devices['CUDA']['proc']
                     engine = PiperVoice.load(onnx_path, config_path=config_path, use_cuda=use_cuda)
                 else:
