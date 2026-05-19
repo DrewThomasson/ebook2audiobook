@@ -99,9 +99,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                         download_voice(self.model_path, download_dir)
                 try:
                     from piper import PiperVoice
-                    engine = loaded_tts.get(key)
-                    if engine:
-                        return engine
                     use_cuda = self.device == devices['CUDA']['proc']
                     engine = PiperVoice.load(onnx_path, config_path=config_path, use_cuda=use_cuda)
                     self.output_sample_rate = int(engine.config.sample_rate)
