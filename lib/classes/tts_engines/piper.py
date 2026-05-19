@@ -7,6 +7,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
 
     def __init__(self, session: DictProxy):
         try:
+            from piper import SynthesisConfig
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
@@ -108,7 +109,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
         try:
             import torch
             import numpy as np
-            from piper import SynthesisConfig
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
