@@ -221,13 +221,13 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                 if part_tensor.numel() == 0:
                                     error = 'part_tensor not valid'
                                     return False, error
-                                self.audio_segments.append(part_tensor)  # ← must be here, inside try
+                                self.audio_segments.append(part_tensor)
                             else:
                                 error = f'audio_part not valid'
                                 return False, error
                         except IndexError as e:
                             error = f'synthesize() IndexError at segment "{part}": {e}'
-                            return False, error  # ← propagate, don't swallow
+                            return False, error
                         except Exception as e:
                             return False, self.log_exception(f'{self.__class__.__name__}.convert() part loop', e)
                 if self.audio_segments:
