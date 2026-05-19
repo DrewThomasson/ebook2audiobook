@@ -5,7 +5,6 @@ loaded_tts = {}
 xtts_builtin_speakers_list = {}
 
 TTS_ENGINES = {
-    "PIPER": "piper",
     "XTTSv2": "xtts",
     "BARK": "bark",
     "TORTOISE": "tortoise",
@@ -13,6 +12,7 @@ TTS_ENGINES = {
     "FAIRSEQ": "fairseq",
     "GLOWTTS": "glowtts",
     "TACOTRON2": "tacotron",
+    "PIPER": "piper",
     "YOURTTS": "yourtts"
 }
 
@@ -72,41 +72,6 @@ max_custom_model = 100
 max_custom_voices = 1000
 
 default_engine_settings = {
-    TTS_ENGINES['PIPER']: {
-        "languages": {
-            "ara": "ar_JO", "cat": "ca_ES", "ces": "cs_CZ", "cym": "cy_GB", "dan": "da_DK",
-            "deu": "de_DE", "ell": "el_GR", "eng": "en_GB", "spa": "es_ES", "fas": "fa_IR",
-            "fin": "fi_FI", "fra": "fr_FR", "hun": "hu_HU", "isl": "is_IS", "ita": "it_IT",
-            "kat": "ka_GE", "kaz": "kk_KZ", "ltz": "lb_LU", "lav": "lv_LV", "nep": "ne_NP",
-            "nld": "nl_NL", "nor": "no_NO", "pol": "pl_PL", "por": "pt_PT", "ron": "ro_RO",
-            "rus": "ru_RU", "slk": "sk_SK", "slv": "sl_SI", "srp": "sr_RS", "swe": "sv_SE",
-            "swa": "sw_CD", "tur": "tr_TR", "ukr": "uk_UA", "urd": "ur_PK", "vie": "vi_VN",
-            "zho": "zh_CN"
-        },
-        "samplerate": 22050,
-        "files": ['config.onnx.json', 'model.onnx'],
-        "voice": None,
-        "voices": {
-            "ar_JO-kareem-medium": "Kareem", "ca_ES-upc_pau-medium": "Pau", "ca_ES-upc_ona-medium": "Ona",
-            "cs_CZ-jirka-medium": "Jirka", "cy_GB-gwryw_gogleddol-medium": "Gwryw Gogleddol", "cy_GB-bu_tts-medium": "Bu TTS",
-            "da_DK-talesyntese-medium": "Talesyntese", "de_DE-thorsten-high": "Thorsten", "de_DE-eva_k-high": "Eva",
-            "el_GR-rapunzelina-low": "Rapunzelina", "en_GB-alan-medium": "Alan", "en_GB-cori-high": "Cori",
-            "es_ES-davefx-medium": "DaveFX", "es_ES-sharvard-medium": "Sharvard", "fa_IR-amir-medium": "Amir",
-            "fi_FI-harri-medium": "Harri", "fr_FR-tom-medium": "Tom", "fr_FR-siwis-medium": "Siwis",
-            "hu_HU-anna-medium": "Anna", "is_IS-bui-medium": "Bui", "is_IS-salka-medium": "Salka",
-            "it_IT-riccardo-x_low": "Riccardo", "it_IT-paola-medium": "Paola", "ka_GE-natia-medium": "Natia",
-            "kk_KZ-issai-high": "Issai", "kk_KZ-iseke-x_low": "Iseke", "lb_LU-marylux-medium": "MaryLux",
-            "lv_LV-aivars-medium": "Aivars", "ne_NP-google-medium": "Google", "nl_NL-mls-medium": "MLS",
-            "no_NO-talesyntese-medium": "Talesyntese", "pl_PL-darkman-medium": "Darkman", "pl_PL-gosia-medium": "Gosia",
-            "pt_PT-tugão-medium": "Tugão", "pt_PT-faber-medium": "Faber", "ro_RO-mihai-medium": "Mihai",
-            "ru_RU-denis-medium": "Denis", "ru_RU-irinia-medium": "Irinia", "sk_SK-lili-medium": "Lili",
-            "sl_SI-artur-medium": "Artur", "sr_RS-serbski_institut-medium": "Serbski Institut", "sv_SE-nst-medium": "NST",
-            "sw_CD-lanfrica-medium": "Lanfrica", "tr_TR-fettah-medium": "Fettah", "tr_TR-dfki-medium": "DFKI",
-            "uk_UA-ukrainian_tts-medium": "Ukrainian TTS", "ur_PK-fasih-medium": "Fasih", "ur_PK-umer-medium": "Umer",
-            "vi_VN-vais1000-medium": "VAIS1000", "zh_CN-huayan-medium": "Huayan"
-        },
-        "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 4}
-    },
     TTS_ENGINES['XTTSv2']: {
         "repo": "coqui/XTTS-v2",
         "languages": {"ara": "ar", "ces": "cs", "deu": "de", "eng": "en", "fra": "fr", "hin": "hi", "hun": "hu", "ita": "it", "jpn": "ja", "kor": "ko", "nld": "nl", "pol": "pl", "por": "pt", "rus": "ru", "spa": "es", "tur": "tr", "zho": "zh-cn"},
@@ -244,6 +209,41 @@ default_engine_settings = {
         "files": [],
         "voice": None,
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 3}
+    },
+    TTS_ENGINES['PIPER']: {
+        "languages": {
+            "ara": "ar_JO", "cat": "ca_ES", "ces": "cs_CZ", "cym": "cy_GB", "dan": "da_DK",
+            "deu": "de_DE", "ell": "el_GR", "eng": "en_GB", "spa": "es_ES", "fas": "fa_IR",
+            "fin": "fi_FI", "fra": "fr_FR", "hun": "hu_HU", "isl": "is_IS", "ita": "it_IT",
+            "kat": "ka_GE", "kaz": "kk_KZ", "ltz": "lb_LU", "lav": "lv_LV", "nep": "ne_NP",
+            "nld": "nl_NL", "nor": "no_NO", "pol": "pl_PL", "por": "pt_PT", "ron": "ro_RO",
+            "rus": "ru_RU", "slk": "sk_SK", "slv": "sl_SI", "srp": "sr_RS", "swe": "sv_SE",
+            "swa": "sw_CD", "tur": "tr_TR", "ukr": "uk_UA", "urd": "ur_PK", "vie": "vi_VN",
+            "zho": "zh_CN"
+        },
+        "samplerate": 22050,
+        "files": ['config.onnx.json', 'model.onnx'],
+        "voice": None,
+        "voices": {
+            "ar_JO-kareem-medium": "Kareem", "ca_ES-upc_pau-medium": "Pau", "ca_ES-upc_ona-medium": "Ona",
+            "cs_CZ-jirka-medium": "Jirka", "cy_GB-gwryw_gogleddol-medium": "Gwryw Gogleddol", "cy_GB-bu_tts-medium": "Bu TTS",
+            "da_DK-talesyntese-medium": "Talesyntese", "de_DE-thorsten-high": "Thorsten", "de_DE-eva_k-high": "Eva",
+            "el_GR-rapunzelina-low": "Rapunzelina", "en_GB-alan-medium": "Alan", "en_GB-cori-high": "Cori",
+            "es_ES-davefx-medium": "DaveFX", "es_ES-sharvard-medium": "Sharvard", "fa_IR-amir-medium": "Amir",
+            "fi_FI-harri-medium": "Harri", "fr_FR-tom-medium": "Tom", "fr_FR-siwis-medium": "Siwis",
+            "hu_HU-anna-medium": "Anna", "is_IS-bui-medium": "Bui", "is_IS-salka-medium": "Salka",
+            "it_IT-riccardo-x_low": "Riccardo", "it_IT-paola-medium": "Paola", "ka_GE-natia-medium": "Natia",
+            "kk_KZ-issai-high": "Issai", "kk_KZ-iseke-x_low": "Iseke", "lb_LU-marylux-medium": "MaryLux",
+            "lv_LV-aivars-medium": "Aivars", "ne_NP-google-medium": "Google", "nl_NL-mls-medium": "MLS",
+            "no_NO-talesyntese-medium": "Talesyntese", "pl_PL-darkman-medium": "Darkman", "pl_PL-gosia-medium": "Gosia",
+            "pt_PT-tugão-medium": "Tugão", "pt_PT-faber-medium": "Faber", "ro_RO-mihai-medium": "Mihai",
+            "ru_RU-denis-medium": "Denis", "ru_RU-irinia-medium": "Irinia", "sk_SK-lili-medium": "Lili",
+            "sl_SI-artur-medium": "Artur", "sr_RS-serbski_institut-medium": "Serbski Institut", "sv_SE-nst-medium": "NST",
+            "sw_CD-lanfrica-medium": "Lanfrica", "tr_TR-fettah-medium": "Fettah", "tr_TR-dfki-medium": "DFKI",
+            "uk_UA-ukrainian_tts-medium": "Ukrainian TTS", "ur_PK-fasih-medium": "Fasih", "ur_PK-umer-medium": "Umer",
+            "vi_VN-vais1000-medium": "VAIS1000", "zh_CN-huayan-medium": "Huayan"
+        },
+        "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 4}
     },
     TTS_ENGINES['YOURTTS']: {
         "languages": {"eng": "en", "fra": "fr", "por": "pt"},
