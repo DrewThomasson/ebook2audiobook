@@ -166,7 +166,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     if not any(c.isalnum() for c in part):
                         continue
                     else:
-                        trim_audio_buffer = 0.002
                         if part.endswith("'"):
                             part = part[:-1]
                         '''

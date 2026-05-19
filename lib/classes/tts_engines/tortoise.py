@@ -112,7 +112,6 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                     if not any(c.isalnum() for c in part):
                         continue
                     else:
-                        trim_audio_buffer = 0.004
                         if part.endswith("'"):
                             part = part[:-1]
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
