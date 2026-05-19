@@ -1417,7 +1417,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         token = sml_token(typ)
                         if text_list and text_list[-1] not in {v['static'] for v in TTS_SML.values() if 'static' in v}:
                             sep = '; ' if prev_typ == 'heading' else ''
-                            text_list[-1] = text_list[-1] + sep + token 
+                            text_list[-1] = text_list[-1] + sep + token
                         else:
                             text_list.append(token)
                 elif typ == 'table':
