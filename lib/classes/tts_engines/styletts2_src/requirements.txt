@@ -1,0 +1,17 @@
+SoundFile
+torchaudio
+munch
+torch
+pydub
+pyyaml
+librosa
+nltk
+matplotlib
+accelerate
+transformers
+einops
+einops-exts
+tqdm
+typing
+typing-extensions
+git+https://github.com/resemble-ai/monotonic_align.git

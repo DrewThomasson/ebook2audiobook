@@ -12,7 +12,8 @@ TTS_ENGINES = {
     "FAIRSEQ": "fairseq",
     "GLOWTTS": "glowtts",
     "TACOTRON2": "tacotron",
-    "YOURTTS": "yourtts"
+    "YOURTTS": "yourtts",
+    "STYLETTS2": "styletts2"
 }
 
 TTS_VOICE_CONVERSION = {
@@ -216,5 +217,13 @@ default_engine_settings = {
         "voice": None,
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
+    },
+    TTS_ENGINES['STYLETTS2']: {
+        "languages": {"eng": "en"},
+        "samplerate": 24000,
+        "files": ["config.yml", "epochs_2nd_00020.pth"],
+        "voice": default_speaker,
+        "voices": {},
+        "rating": {"VRAM": 4, "CPU": 3, "RAM": 4, "Realism": 5}
     }
 }
